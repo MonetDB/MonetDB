@@ -8,58 +8,19 @@ statement ok
 create table t3 (id int DEFAULT 5, num int, FOREIGN KEY(id) REFERENCES t2(id) ON DELETE SET DEFAULT)
 
 statement ok
-insert into t1 values(1, 'monetdb')
+insert into t1 values(1, 'monetdb'), (2, 'mon'), (3, 'monb'), (4, 'motdb'), (5, 'mob'), (6, 'moetdb'), (7, 'mo')
 
 statement ok
-insert into t1 values(2, 'mon')
+insert into t2 values(1, 23), (2, 24), (3, 25), (4, 26), (5, 27)
 
 statement ok
-insert into t1 values(3, 'monb')
-
-statement ok
-insert into t1 values(4, 'motdb')
-
-statement ok
-insert into t1 values(5, 'mob')
-
-statement ok
-insert into t1 values(6, 'moetdb')
-
-statement ok
-insert into t1 values(7, 'mo')
-
-statement ok
-insert into t2 values(1, 23)
-
-statement ok
-insert into t2 values(2, 24)
-
-statement ok
-insert into t2 values(3, 25)
-
-statement ok
-insert into t2 values(4, 26)
-
-statement ok
-insert into t2 values(5, 27)
-
-statement ok
-insert into t3 values(3, 5)
-
-statement ok
-insert into t3 values(3, 5)
-
-statement ok
-insert into t3 values(4, 6)
-
-statement ok
-insert into t3 values(5, 7)
+insert into t3 values(3, 5), (3, 5), (4, 6), (5, 7)
 
 statement error
 delete from t1 where id > 2 and id < 5
 
 query IT rowsort
-select * from t1
+select * from t1 order by id;
 ----
 1
 monetdb
@@ -77,7 +38,7 @@ moetdb
 mo
 
 query II rowsort
-select * from t2
+select * from t2 order by id;
 ----
 1
 23
@@ -91,7 +52,7 @@ select * from t2
 27
 
 query II rowsort
-select * from t3
+select * from t3 order by id, num
 ----
 3
 5
@@ -106,7 +67,7 @@ statement ok
 delete from t1 where id = 1
 
 query IT rowsort
-select * from t1
+select * from t1 order by id
 ----
 2
 mon
@@ -122,7 +83,7 @@ moetdb
 mo
 
 query II rowsort
-select * from t2
+select * from t2 order by id
 ----
 2
 24
@@ -136,7 +97,7 @@ select * from t2
 23
 
 query II rowsort
-select * from t3
+select * from t3 order by id, num
 ----
 3
 5
@@ -151,7 +112,7 @@ statement ok
 delete from t2 where id = 3
 
 query IT rowsort
-select * from t1
+select * from t1 order by id
 ----
 2
 mon
@@ -167,7 +128,7 @@ moetdb
 mo
 
 query II rowsort
-select * from t2
+select * from t2 order by id
 ----
 2
 24
@@ -179,7 +140,7 @@ select * from t2
 23
 
 query II rowsort
-select * from t3
+select * from t3 order by id, num
 ----
 4
 6

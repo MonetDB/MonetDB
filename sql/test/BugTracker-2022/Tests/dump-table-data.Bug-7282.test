@@ -37,7 +37,7 @@ delete from dump_statements
 statement ok
 call sys.dump_table_data()
 
-query IT nosort
+query IT rowsort
 select * from dump_statements
 ----
 1

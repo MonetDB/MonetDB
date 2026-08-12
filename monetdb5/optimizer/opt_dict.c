@@ -30,6 +30,18 @@ allConstExcept(MalBlkPtr mb, InstrPtr p, int except)
 	return true;
 }
 
+static int
+findPipelines(MalBlkPtr mb)
+{
+	for(int i = 0; i<mb->stop;i++) {
+		InstrPtr p = mb->stmt[i];
+
+		if (blockStart(p) && getModuleId(p) == languageRef && getFunctionId(p) == pipelinesRef)
+			return 1;
+	}
+	return 0;
+}
+
 str
 OPTdictImplementation(Client ctx, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
@@ -43,7 +55,7 @@ OPTdictImplementation(Client ctx, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	(void) stk;
 
-	if (mb->inlineProp || MB_LARGE(mb))
+	if (mb->inlineProp || MB_LARGE(mb) || findPipelines(mb))
 		goto wrapup1;
 
 	allocator_state ta_state = ma_open(ta);
@@ -313,7 +325,8 @@ OPTdictImplementation(Client ctx, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 					old[i] = NULL;
 					done = true;
 					break;
-				} else if (getModuleId(p) == groupRef
+				} else if (p->retc == 3 && /* for now keep pipeline group intact TODO */
+						   getModuleId(p) == groupRef
 						   && (getFunctionId(p) == subgroupRef
 							   || getFunctionId(p) == subgroupdoneRef
 							   || getFunctionId(p) == groupRef

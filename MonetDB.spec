@@ -119,6 +119,7 @@ BuildRequires: pkgconfig(libpcre2-8)
 %endif
 BuildRequires: pkgconfig(zlib)
 BuildRequires: pkgconfig(liblz4) >= 1.8
+BuildRequires: pkgconfig(libxxhash)
 # optional packages:
 # BuildRequires: pkgconfig(cmocka)      # -DWITH_CMOCKA=ON
 # BuildRequires: pkgconfig(gdal)        # -DSHP=ON
@@ -512,6 +513,7 @@ embedded library (%{name}-embedded).
 %{_libdir}/libmonetdbsql*.so*
 %dir %{_libdir}/monetdb5-%{version}
 %{_libdir}/monetdb5*/lib_csv.so
+%{_libdir}/monetdb5*/lib_parquet.so
 %{_libdir}/monetdb5*/lib_generator.so
 %{_libdir}/monetdb5*/lib_monetdb_loader.so
 

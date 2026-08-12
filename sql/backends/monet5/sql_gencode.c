@@ -1131,6 +1131,7 @@ backend_dumpproc_body(backend *be, Client c, sql_rel *r)
 		c->curprg->def->errors = SQLoptimizeFunction(c,c->curprg->def);
 	if (c->curprg->def->errors) {
 		sql_error(m, 10, SQLSTATE(42000) "Internal error while compiling statement: %s", c->curprg->def->errors);
+		res = -1;
 	} else {
 		res = 0;				/* success */
 	}
@@ -1283,6 +1284,11 @@ monet5_resolve_function(ptr M, sql_func *f, const char *fimp, bool *side_effect)
 			}
 			int nfargs = list_length(f->ops), nfres = list_length(f->res);
 
+			if (!nfargs && retc == 1 && argc == 1 && IS_PROC(f) && unsafe) { /* for unsafe procedures we inject mvc_var */
+				*side_effect = (bool) unsafe;
+				MT_lock_unset(&sql_gencodeLock);
+				return 1;
+			}
 			if (varargs || f->vararg || f->varres) {
 				*side_effect = (bool) unsafe;
 				MT_lock_unset(&sql_gencodeLock);
@@ -1462,12 +1468,18 @@ backend_create_sql_func_body(backend *be, sql_func *f, list *restypes, list *ops
 	sql_func *pf = NULL;
 	sql_rel *r;
 
+	allocator *sa = m->sa;
+	assert(!prepare || f->sa);
+	if (f->sa)
+		m->sa = f->sa;
 	r = rel_parse(m, f->s, f->query, prepare?m_prepare:m_instantiate);
 	if (r) {
 		r = sql_processrelation(m, r, 0, 1, 1, 0);
 		r = rel_physical(m, r);
 	}
 	if (!r) {
+		if (f->sa)
+			m->sa = sa;
 		goto cleanup;
 	}
 
@@ -1479,6 +1491,8 @@ backend_create_sql_func_body(backend *be, sql_func *f, list *restypes, list *ops
 			curInstr = table_func_create_result(curBlk, curInstr, f, restypes);
 			if( curInstr == NULL) {
 				sql_error(m, 10, SQLSTATE(HY013) MAL_MALLOC_FAIL);
+				if (f->sa)
+					m->sa = sa;
 				goto cleanup;
 			}
 		} else {
@@ -1500,6 +1514,8 @@ backend_create_sql_func_body(backend *be, sql_func *f, list *restypes, list *ops
 			(void) snprintf(buf, sizeof(buf), "A%d", argc);
 			if ((varid = newVariable(curBlk, buf, strlen(buf), type)) < 0) {
 				sql_error(m, 10, SQLSTATE(42000) "Internal error while compiling statement: variable id too long");
+				if (f->sa)
+					m->sa = sa;
 				goto cleanup;
 			}
 			curInstr = pushArgument(curBlk, curInstr, varid);
@@ -1525,10 +1541,14 @@ backend_create_sql_func_body(backend *be, sql_func *f, list *restypes, list *ops
 			}
 			if (!buf) {
 				sql_error(m, 10, SQLSTATE(HY013) MAL_MALLOC_FAIL);
+				if (f->sa)
+					m->sa = sa;
 				goto cleanup;
 			}
 			if ((varid = newVariable(curBlk, buf, strlen(buf), type)) < 0) {
 				sql_error(m, 10, SQLSTATE(42000) "Internal error while compiling statement: variable id too long");
+				if (f->sa)
+					m->sa = sa;
 				goto cleanup;
 			}
 			curInstr = pushArgument(curBlk, curInstr, varid);
@@ -1537,10 +1557,13 @@ backend_create_sql_func_body(backend *be, sql_func *f, list *restypes, list *ops
 	}
 	/* for recursive functions, avoid infinite loops */
 	pf = m->forward;
-	m->forward = f;
+	if (!prepare)
+		m->forward = f;
 	be->fimp = fimp; /* for recursive functions keep the generated name */
 	res = backend_dumpstmt(be, curBlk, r, prepare, 1, NULL);
 	m->forward = pf;
+	if (f->sa)
+		m->sa = sa;
 	if (res < 0)
 		goto cleanup;
 	/* selectively make functions available for inlineing */
@@ -1585,7 +1608,8 @@ backend_create_sql_func_body(backend *be, sql_func *f, list *restypes, list *ops
 			res = -1;
 			goto cleanup;
 		}
-		f->imp = fimp;
+		if (fimp)
+			f->imp = fimp;
 		f->instantiated = TRUE; /* make sure 'instantiated' gets set after 'imp' */
 	}
 	MT_lock_unset(&sql_gencodeLock);
@@ -1618,18 +1642,22 @@ backend_create_sql_func(backend *be, sql_subfunc *sf, list *restypes, list *ops)
 	exception_buffer ebsave = *ma_get_eb(m->sa);
 	char befname[IDLENGTH];
 	int nargs;
-	char *fimp;
+	char *fimp = NULL;
 
 	/* already instantiated or instantiating a recursive function */
 	if (f->instantiated || (m->forward && m->forward->base.id == f->base.id))
 		return 0;
 
-	(void) snprintf(befname, sizeof(befname), "f_" ULLFMT, store_function_counter(m->store));
-	TRC_INFO(SQL_PARSER, "Mapping SQL name '%s' to MAL name '%s'\n", f->base.name, befname);
+	if (!prepare || !f->imp) {
+		(void) snprintf(befname, sizeof(befname), "f_" ULLFMT, store_function_counter(m->store));
+		TRC_INFO(SQL_PARSER, "Mapping SQL name '%s' to MAL name '%s'\n", f->base.name, befname);
+	}
 	nargs = (f->res && f->type == F_UNION ? list_length(f->res) : 1) + (f->vararg && ops ? list_length(ops) : f->ops ? list_length(f->ops) : 0);
-	c->curprg = newFunctionArgs(modname, putName(befname), FUNCTIONsymbol, nargs);
+	c->curprg = newFunctionArgs(modname, putName(prepare ? f->imp : befname), FUNCTIONsymbol, nargs);
 
-	if ((fimp = _STRDUP(befname)) == NULL) {
+	if (prepare)
+		fimp = f->imp;
+	if (!fimp && (fimp = _STRDUP(befname)) == NULL) {
 		sql_error(m, 10, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto bailout;
 	} else if (c->curprg == NULL) {
@@ -1647,7 +1675,16 @@ backend_create_sql_func(backend *be, sql_subfunc *sf, list *restypes, list *ops)
 	*ma_get_eb(m->sa) = ebsave;
 	return 0;
   bailout:
-	_DELETE(fimp);
+	if (!prepare) {
+		/* We need to #undef GDKfree in case the compiler optimizes and
+		 * asserts are enabled (more specifically, NDEBUG is not defined
+		 * but __GNUC__ is).  In these specific circumstances, the
+		 * assignment inside the GDKfree debug macro triggers a compiler
+		 * warning about a variable that may get clobbered by
+		 * longjmp. */
+#undef GDKfree
+		_DELETE(fimp);
+	}
 	*be = bebackup;
 	c->curprg = symbackup;
 	*ma_get_eb(m->sa) = ebsave;

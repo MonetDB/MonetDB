@@ -9,9 +9,9 @@
  */
 
 #include "monetdb_config.h"
+#include "gdk.h"
 #include "opt_mitosis.h"
 #include "mal_interpreter.h"
-#include "gdk_utils.h"
 
 #define MIN_PART_SIZE 100000	/* minimal record count per partition */
 #define MAX_PARTS2THREADS_RATIO 4	/* There should be at most this multiple more of partitions than threads */

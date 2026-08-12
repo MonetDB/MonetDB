@@ -1,18 +1,159 @@
-statement ok
-create table integers (i int)
+# Tests for the split_select optimizer.
+# split_select splits caselike functions (case, casewhen, coalesce, nullif)
+# out of SELECT expressions into a separate PROJECT node underneath.
+# This is a prerequisite for Common Subexpression Elimination (CSE).
 
 statement ok
-insert into integers values(1),(2),(3),(NULL)
+CREATE TABLE split_test (i INT, j INT, k VARCHAR(20))
 
-# split case into project under select
-query T python .plan.filter
-explain show details select i from integers where case i when i*i then i else i end > 1
+statement ok
+INSERT INTO split_test VALUES (1, 10, 'a'), (2, 20, 'b'), (NULL, 30, 'c'), (4, NULL, 'd'), (5, 50, 'e')
+
+# =============================================
+# CASE WHEN (searched case) -> 'case' function
+# =============================================
+
+query T python .explain.filter
+EXPLAIN SHOW DETAILS SELECT i FROM split_test WHERE CASE WHEN i > 2 THEN i ELSE 0 END > 1
 ----
 project (
 | select (
 | | project (
-| | | table("sys"."integers") [ "integers"."i" ]
-| | ) [ "integers"."i", "sys"."casewhen"("integers"."i", "sys"."sql_mul"("integers"."i", "integers"."i"), "integers"."i", "integers"."i") as "%1"."%1" ]
-| ) [ ("%1"."%1") > (int(2) "1") ]
-) [ "integers"."i" ]
+| | | table("sys"."split_test") [ "split_test"."i" ]
+| | ) [ "split_test"."i", "sys"."case"(("split_test"."i") > (int(3) "2"), "split_test"."i", int(3) "0") as "%1"."%1" ]
+| ) [ ("%1"."%1") > (int(3) "1") ]
+) [ "split_test"."i" ]
 
+query I rowsort
+SELECT i FROM split_test WHERE CASE WHEN i > 2 THEN i ELSE 0 END > 1
+----
+4
+5
+
+# =============================================
+# CASE expr WHEN (simple case) -> 'casewhen' function
+# =============================================
+
+query T python .explain.filter
+EXPLAIN SHOW DETAILS SELECT i FROM split_test WHERE CASE i WHEN 1 THEN 10 WHEN 2 THEN 20 ELSE 0 END > 5
+----
+project (
+| select (
+| | project (
+| | | table("sys"."split_test") [ "split_test"."i" ]
+| | ) [ "split_test"."i", "sys"."casewhen"("split_test"."i", int(3) "1", tinyint(5) "10", int(3) "2", tinyint(5) "20", tinyint(5) "0") as "%1"."%1" ]
+| ) [ ("%1"."%1") > (tinyint(3) "5") ]
+) [ "split_test"."i" ]
+
+query I rowsort
+SELECT i FROM split_test WHERE CASE i WHEN 1 THEN 10 WHEN 2 THEN 20 ELSE 0 END > 5
+----
+1
+2
+
+# =============================================
+# COALESCE
+# =============================================
+
+query T python .explain.filter
+EXPLAIN SHOW DETAILS SELECT i FROM split_test WHERE COALESCE(j, 0) > 15
+----
+project (
+| select (
+| | project (
+| | | table("sys"."split_test") [ "split_test"."i", "split_test"."j" ]
+| | ) [ "split_test"."i", "sys"."coalesce"("split_test"."j", int(6) "0") as "%1"."%1" ]
+| ) [ ("%1"."%1") > (int(6) "15") ]
+) [ "split_test"."i" ]
+
+query I rowsort
+SELECT i FROM split_test WHERE COALESCE(j, 0) > 15
+----
+2
+5
+NULL
+
+# =============================================
+# NULLIF
+# =============================================
+
+query T python .explain.filter
+EXPLAIN SHOW DETAILS SELECT i FROM split_test WHERE NULLIF(i, 2) IS NOT NULL
+----
+project (
+| select (
+| | project (
+| | | table("sys"."split_test") [ "split_test"."i" ]
+| | ) [ "split_test"."i", "sys"."nullif"("split_test"."i", int(3) "2") as "%1"."%1" ]
+| ) [ ("%1"."%1") ! * = (int(3) NULL) ]
+) [ "split_test"."i" ]
+
+query I rowsort
+SELECT i FROM split_test WHERE NULLIF(i, 2) IS NOT NULL
+----
+1
+4
+5
+
+# =============================================
+# Nested CASE inside WHERE
+# =============================================
+
+query T python .explain.filter
+EXPLAIN SHOW DETAILS SELECT i FROM split_test WHERE CASE WHEN j IS NULL THEN k ELSE CAST(j AS VARCHAR) END = '10'
+----
+project (
+| select (
+| | project (
+| | | table("sys"."split_test") [ "split_test"."i", "split_test"."j", "split_test"."k" NOT NULL UNIQUE ]
+| | ) [ "split_test"."i", "sys"."case"(("split_test"."j") * = (int(6) NULL), varchar["split_test"."k" NOT NULL UNIQUE] NOT NULL, varchar["split_test"."j"]) as "%2"."%2" ]
+| ) [ ("%2"."%2") = (varchar "10") ]
+) [ "split_test"."i" ]
+
+query I rowsort
+SELECT i FROM split_test WHERE CASE WHEN j IS NULL THEN k ELSE CAST(j AS VARCHAR) END = '10'
+----
+1
+
+# =============================================
+# CASE inside projection (should NOT split)
+# =============================================
+
+query T python .explain.filter
+EXPLAIN SHOW DETAILS SELECT CASE WHEN i > 2 THEN 'big' ELSE 'small' END AS label FROM split_test
+----
+project (
+| table("sys"."split_test") [ "split_test"."i" ]
+) [ "sys"."case"(("split_test"."i") > (int(3) "2"), varchar(5) "big", varchar(5) "small") as "label" ]
+
+query T rowsort
+SELECT CASE WHEN i > 2 THEN 'big' ELSE 'small' END AS label FROM split_test
+----
+big
+big
+small
+small
+small
+
+# =============================================
+# Multiple CASE expressions in WHERE
+# =============================================
+
+query T python .explain.filter
+EXPLAIN SHOW DETAILS SELECT i FROM split_test WHERE CASE WHEN i > 3 THEN 1 ELSE 0 END = 1 AND CASE WHEN j IS NULL THEN 1 ELSE 0 END = 1
+----
+project (
+| select (
+| | project (
+| | | table("sys"."split_test") [ "split_test"."i", "split_test"."j" ]
+| | ) [ "split_test"."i", "sys"."case"(("split_test"."i") > (int(3) "3"), tinyint(1) "1", tinyint(1) "0") as "%1"."%1", "sys"."case"(("split_test"."j") * = (int(6) NULL), tinyint(1) "1", tinyint(1) "0") as "%2"."%2" ]
+| ) [ ("%1"."%1") = (tinyint(1) "1"), ("%2"."%2") = (tinyint(1) "1") ]
+) [ "split_test"."i" ]
+
+query I rowsort
+SELECT i FROM split_test WHERE CASE WHEN i > 3 THEN 1 ELSE 0 END = 1 AND CASE WHEN j IS NULL THEN 1 ELSE 0 END = 1
+----
+4
+
+statement ok
+DROP TABLE split_test

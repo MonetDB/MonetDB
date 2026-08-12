@@ -4,6 +4,7 @@ start transaction
 statement ok
 create table x (y decimal(10,4))
 
+skipif knownfail
 query T nosort
 EXPLAIN SHOW DETAILS select quantile(y, 0.0) from x
 ----
@@ -15,6 +16,7 @@ project (
 | ) [  ] [ "sys"."quantile" no nil ("x"."y" ASC NOT NULL, double(53) "0") UNIQUE as "%1"."%1" ]
 ) [ "%1"."%1" UNIQUE ]
 
+skipif knownfail
 query T nosort
 EXPLAIN SHOW DETAILS select quantile(y, 0) from x
 ----

@@ -11,16 +11,20 @@ statement ok
 INSERT INTO weather VALUES ('Amsterdam', 10, '2022-10-14'), ('Seattle', 8, '2022-10-12')
 
 query T nosort
-SELECT * FROM capitals UNION ALL CORRESPONDING SELECT * FROM weather
+SELECT * FROM capitals UNION ALL CORRESPONDING SELECT * FROM weather order by 1;
 ----
 Amsterdam
-Berlin
 Amsterdam
+Berlin
 Seattle
 
 query TTIT nosort
-SELECT * FROM capitals OUTER UNION ALL CORRESPONDING SELECT * FROM weather
+SELECT * FROM capitals OUTER UNION ALL CORRESPONDING SELECT * FROM weather order by 1, 2;
 ----
+Amsterdam
+NULL
+10
+2022-10-14
 Amsterdam
 NL
 NULL
@@ -29,10 +33,6 @@ Berlin
 Germany
 NULL
 NULL
-Amsterdam
-NULL
-10
-2022-10-14
 Seattle
 NULL
 8

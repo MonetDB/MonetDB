@@ -25,6 +25,8 @@ target_sources(kernel
   aggr.c aggr.h
   batmmath.c
   batstr.c
+  pp_group.c
+  pp_aggr.c
   vss.c
   PUBLIC
   ${CMAKE_CURRENT_SOURCE_DIR}/bat5.h)
@@ -35,6 +37,8 @@ target_sources(microbenchmark
   ${CMAKE_CURRENT_SOURCE_DIR}/bat5.h)
 
 target_include_directories(kernel
+  PRIVATE
+  ../mal
   PUBLIC
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
   $<INSTALL_INTERFACE:${INCLUDEDIR}/monetdb>)

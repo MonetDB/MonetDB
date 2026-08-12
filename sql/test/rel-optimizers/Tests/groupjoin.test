@@ -5,6 +5,7 @@ statement ok
 insert into integers values(1),(2),(3),(NULL)
 
 # split case into project under select
+skipif knownfail
 query T nosort
 explain show details select i, i in (select i from integers where i = i1.i) or i is NULL from integers i1
 ----

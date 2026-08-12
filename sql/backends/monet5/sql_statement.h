@@ -151,6 +151,8 @@ typedef struct stmt {
 extern int stmt_key(stmt *s);
 
 extern stmt *stmt_bat_new(backend *be, sql_subtype *tpe, lng estimate);
+extern stmt *stmt_bat_new2(backend *be, sql_subtype *tpe, stmt *sz_base);
+extern stmt *stmt_bat_declare(backend *be, sql_subtype *tpe);
 
 sql_export stmt *stmt_none(backend *be);
 
@@ -165,10 +167,10 @@ extern stmt *stmt_bat(backend *be, sql_column *c, sql_alias *tname, int access, 
 extern stmt *stmt_idxbat(backend *be, sql_idx *i, sql_alias *tname, int access, int partition);
 extern stmt *stmt_tid(backend *be, sql_table *t, int partition);
 
-extern stmt *stmt_claim(backend *be, sql_table *t, stmt *cnt);
+extern stmt *stmt_claim(backend *be, sql_table *t, stmt *cnt, int sync);
 extern void stmt_add_dependency_change(backend *be, sql_table *t, stmt *cnt);
 extern void stmt_add_column_predicate(backend *be, sql_column *c);
-extern stmt *stmt_append_col(backend *be, sql_column *c, stmt *offset, stmt *b, int *mvc_var_update, int locked);
+extern stmt *stmt_append_col(backend *be, sql_column *c, stmt *offset, stmt *b, int *mvc_var_update, int locked, bool first);
 extern stmt *stmt_append_idx(backend *be, sql_idx *i, stmt *offset, stmt *b);
 extern stmt *stmt_update_col(backend *be, sql_column *c, stmt *tids, stmt *upd);
 extern stmt *stmt_update_idx(backend *be, sql_idx *i, stmt *tids, stmt *upd);
@@ -193,6 +195,7 @@ extern stmt *stmt_atom_string_nil(backend *be);
 extern stmt *stmt_atom_int(backend *be, int i);
 extern stmt *stmt_atom_lng(backend *be, lng i);
 extern stmt *stmt_atom_lng_nil(backend *be);
+extern stmt *stmt_atom_dbl(backend *be, dbl d);
 extern stmt *stmt_bool(backend *be, int b);
 
 extern stmt *stmt_uselect(backend *be, stmt *op1, stmt *op2, comp_type cmptype, stmt *sub, int anti, int is_semantics);
@@ -204,7 +207,9 @@ extern stmt *stmt_uselect(backend *be, stmt *op1, stmt *op2, comp_type cmptype, 
        */
 extern stmt *stmt_uselect2(backend *be, stmt *op1, stmt *op2, stmt *op3, int cmp, stmt *sub, int anti, int symmetric, int reduce);
 extern stmt *stmt_genselect(backend *be, stmt *lops, stmt *rops, sql_subfunc *f, stmt *sub, int anti);
-extern stmt *stmt_outerselect(backend *be, stmt *g, stmt *m, stmt *p, bool any);
+extern stmt *stmt_single(backend *be, stmt *c, stmt *i);
+extern stmt *stmt_outerselect(backend *be, stmt *g, stmt *m, stmt *p, bool any, bool single);
+extern stmt *stmt_thetaselect(backend *be, stmt *op1, stmt *op2, stmt *val, const char *cmp, sql_subtype *tpe);
 extern stmt *stmt_markselect(backend *be, stmt *g, stmt *m, stmt *p, bool any);
 extern stmt *stmt_markjoin(backend *be, stmt *l, stmt *r, bool nil_matches, bool final);
 
@@ -283,6 +288,8 @@ extern sql_alias *table_name(allocator *sa, stmt *st);
 extern stmt *const_column(backend *ba, stmt *val);
 extern stmt *stmt_fetch(backend *ba, stmt *val);
 extern stmt *stmt_rename(backend *ba, sql_exp *e, stmt *s);
+extern stmt *stmt_instruction(backend *ba, InstrPtr p, stmt *s);
+extern stmt *stmt_create(allocator *sa, st_type type);
 
 sql_export InstrPtr pushPtr(MalBlkPtr mb, InstrPtr q, ptr val);
 

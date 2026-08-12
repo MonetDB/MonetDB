@@ -17,6 +17,19 @@
 #include "rel_basetable.h"
 #include "rel_prop.h"
 
+sql_subtype*
+first_arg_subtype(sql_exp *e)
+{
+	if (e->type == e_aggr || e->type == e_func) {
+		list *ops = e->l;
+		if (!list_empty(ops)) {
+			sql_exp *e = ops->h->data;
+			return exp_subtype(e);
+		}
+	}
+	return NULL;
+}
+
 comp_type
 compare_str2type(const char *compare_op)
 {
@@ -163,6 +176,10 @@ exp_compare(allocator *sa, sql_exp *l, sql_exp *r, int cmptype)
 	e->l = l;
 	e->r = r;
 	e->flag = cmptype;
+	if (cmptype == cmp_equal) {
+		prop *p = e->p = prop_create(sa, PROP_NUNIQUES, (prop *) e->p);
+		p->value.dval = 1;
+	}
 	if (!has_nil(l) && !has_nil(r))
 		set_has_no_nil(e);
 	return e;
@@ -180,6 +197,10 @@ exp_compare2(allocator *sa, sql_exp *l, sql_exp *r, sql_exp *f, int cmptype, int
 	e->r = r;
 	e->f = f;
 	e->flag = cmptype;
+	if (cmptype == cmp_equal) {
+		prop *p = e->p = prop_create(sa, PROP_NUNIQUES, (prop *) e->p);
+		p->value.dval = 1;
+	}
 	if (symmetric)
 		set_symmetric(e);
 	if (!has_nil(l) && !has_nil(r) && !has_nil(f))
@@ -238,6 +259,10 @@ exp_in(allocator *sa, sql_exp *l, list *r, int cmptype)
 	e->card = MAX(l->card, exps_card);
 	e->l = l;
 	e->r = r;
+	if (cmptype == cmp_in) {
+		prop *p = e->p = prop_create(sa, PROP_NUNIQUES, (prop *) e->p);
+		p->value.dval = (dbl) list_length(r);
+	}
 	assert( cmptype == cmp_in || cmptype == cmp_notin);
 	e->flag = cmptype;
 	if (!has_nil(l) && !have_nil(r))
@@ -1522,7 +1547,11 @@ exp_match_exp_semantics( sql_exp *e1, sql_exp *e2, bool semantics)
 	if (e1->type == e2->type) {
 		switch(e1->type) {
 		case e_cmp:
-			if (e1->flag == e2->flag && !is_complex_exp(e1->flag) &&
+			if (e1->flag == e2->flag && e1->flag == cmp_equal && !is_anti(e1) && !is_anti(e2) &&
+			    ((exp_match_exp(e1->l, e2->l) && exp_match_exp(e1->r, e2->r)) ||
+			    (exp_match_exp(e1->l, e2->r) && exp_match_exp(e1->r, e2->l))))
+				return 1;
+			else if (e1->flag == e2->flag && !is_complex_exp(e1->flag) &&
 			    exp_match_exp(e1->l, e2->l) && exp_match_exp(e1->r, e2->r) &&
 			    ((!e1->f && !e2->f) || (e1->f && e2->f && exp_match_exp(e1->f, e2->f))))
 				return 1;
@@ -1586,6 +1615,12 @@ int
 exp_match_exp( sql_exp *e1, sql_exp *e2)
 {
 	return exp_match_exp_semantics( e1, e2, true);
+}
+
+int
+exp_match_exp_cmp( sql_exp *e1, sql_exp *e2)
+{
+	return !exp_match_exp_semantics( e1, e2, true);
 }
 
 sql_exp *
@@ -1729,8 +1764,8 @@ rel_has_complete_exp(sql_rel *rel, sql_exp *e, bool subexp)
 		if (is_basetable(rel->op) && !rel->exps) {
 			assert(e->nid);
 			return (rel_base_has_nid(rel, e->nid));
-		} else if ((!list_empty(rel->exps) && (is_project(rel->op) || is_base(rel->op))) ||
-					(!list_empty(rel->attr) && is_join(rel->op))) {
+		} else if ((!list_empty(rel->exps) && (is_project(rel->op) || is_base(rel->op) || is_physical(rel->op))) ||
+					(!list_empty(rel->attr) && (is_join(rel->op) || is_physical(rel->op)))) {
 			list *l = rel->attr ? rel->attr : rel->exps;
 			assert(e->nid);
 			ne = exps_bind_nid(l, e->nid);
@@ -1861,7 +1896,7 @@ exp_is_eqjoin(sql_exp *e, void *dummy)
 }
 
 sql_exp *
-exps_find_prop(list *exps, rel_prop kind)
+exps_find_prop(list *exps, prop_kind kind)
 {
 	if (list_empty(exps))
 		return NULL;
@@ -1870,6 +1905,33 @@ exps_find_prop(list *exps, rel_prop kind)
 
 		if (find_prop(e->p, kind))
 			return e;
+	}
+	return NULL;
+}
+
+sql_exp *
+predicates_find_nid(const list *exps, int nid)
+{
+	if (list_empty(exps))
+		return NULL;
+	for (node *n = exps->h ; n ; n = n->next) {
+		sql_exp *e = n->data;
+
+		if (e->type == e_cmp) {
+			if (e->flag == cmp_filter) {
+				;
+			} else if (e->flag == cmp_con || e->flag == cmp_dis) {
+				;
+			} else if (e->flag == cmp_in || e->flag == cmp_notin) {
+				sql_exp *l = e->l;
+				if (l->nid == nid)
+					return e;
+			} else {
+				sql_exp *l = e->l;
+				if (l->nid == nid)
+					return e;
+			}
+		}
 	}
 	return NULL;
 }
@@ -2048,6 +2110,9 @@ rel_find_nid(sql_rel *rel, int nid)
 			break;
 		case op_ddl:
 		case op_truncate:
+		case op_buildhash:
+		case op_probehash:
+		case op_partition:
 			return false;
 		}
 	}
@@ -2059,6 +2124,8 @@ exp_is_true(sql_exp *e)
 {
 	if (e->type == e_atom && e->l)
 		return atom_is_true(e->l);
+	if (e->type == e_cmp && e->flag == cmp_equal && exp_match(e->l, e->r) && exp_is_not_null(e->l))
+		return true;
 	if (e->type == e_cmp && e->flag == cmp_equal)
 		return (exp_is_true(e->l) && exp_is_true(e->r) && exp_match_exp(e->l, e->r));
 	return 0;
@@ -2356,6 +2423,14 @@ exp_is_atom( sql_exp *e )
 		return 0;
 	}
 	return 0;
+}
+
+int
+exp_is_scalar( sql_exp *e )
+{
+	if (exp_is_atom(e))
+		return true;
+	return false;
 }
 
 static int
@@ -2950,7 +3025,7 @@ exp_unsafe(sql_exp *e, bool allow_identity, bool card)
 	case e_func: {
 		sql_subfunc *f = e->f;
 
-		if (IS_ANALYTIC(f->func) || !LANG_INT_OR_MAL(f->func->lang) || f->func->side_effect || (!allow_identity && is_identity(e, NULL)))
+		if (IS_ANALYTIC(f->func) || (!LANG_INT_OR_MAL(f->func->lang) && (!IS_FUNC(f->func) || f->func->lang != FUNC_LANG_SQL)) || f->func->side_effect || (!allow_identity && is_identity(e, NULL)))
 			return 1;
 		return exps_have_unsafe(e->l, allow_identity, card);
 	} break;
@@ -3291,13 +3366,13 @@ compare_func( comp_type t, int anti )
 	case cmp_equal:
 		return anti?"<>":"=";
 	case cmp_lt:
-		return anti?">":"<";
+		return anti?">=":"<";
 	case cmp_lte:
-		return anti?">=":"<=";
+		return anti?">":"<=";
 	case cmp_gte:
-		return anti?"<=":">=";
+		return anti?"<":">=";
 	case cmp_gt:
-		return anti?"<":">";
+		return anti?"<=":">";
 	case cmp_notequal:
 		return anti?"=":"<>";
 	default:
@@ -3799,6 +3874,17 @@ exp_aggr_is_count(sql_exp *e)
 {
 	if (e->type == e_aggr && !((sql_subfunc *)e->f)->func->s && strcmp(((sql_subfunc *)e->f)->func->base.name, "count") == 0)
 		return 1;
+	return 0;
+}
+
+int
+exp_aggr_is_countstar(sql_exp *e)
+{
+	if (exp_aggr_is_count(e)) {
+		list *l = e->l;
+		if (list_empty(l))
+			return 1;
+	}
 	return 0;
 }
 
@@ -4373,6 +4459,18 @@ list_find_exp(const list *exps, sql_exp *e)
 	return exps_bind_nid(exps, e->nid);
 }
 
+sql_exp*
+topn_limit(sql_rel *rel)
+{
+    if (rel->exps) {
+        sql_exp *limit = rel->exps->h->data;
+        if (exp_is_null(limit)) /* If the limit is NULL, ignore the value */
+            return NULL;
+        return limit;
+    }
+    return NULL;
+}
+
 int
 exp_is_rename(sql_exp *e)
 {
@@ -4585,6 +4683,137 @@ free_exp(allocator *sa, sql_exp *e)
 			break;
 	}
 	_free_exp_internal(sa, e);
+}
+
+dbl
+exp_estimate_selectivity(mvc *sql, sql_exp *e)
+{
+	dbl sel = 0.1;
+	(void)sql;
+	if (!e)
+		return 1.0;
+	switch (e->type) {
+	case e_atom:
+		if (exp_is_true(e))
+			return 1.0;
+		if (exp_is_false(e))
+			return 0.0;
+		return 0.5;
+	case e_column:
+		return 0.1;
+	case e_convert:
+		return exp_estimate_selectivity(sql, (sql_exp *) e->l);
+	case e_func:
+		return 0.1;
+	case e_aggr:
+		return 0.1;
+	case e_cmp: {
+		sql_exp *l = (sql_exp *) e->l, *r = (sql_exp *) e->r;
+		if (e->flag <= cmp_lte && e->f) {
+			sel = 0.50;
+		} else {
+			switch (e->flag) {
+			case cmp_equal:
+				if (exp_is_atom(r) && !exp_is_atom(l)) {
+					prop *p = find_prop(l->p, PROP_NUNIQUES);
+					if (p && p->value.dval > 1)
+						sel = 1.0 / p->value.dval;
+					else
+						sel = 0.1;
+				} else if (exp_is_atom(l) && !exp_is_atom(r)) {
+					prop *p = find_prop(r->p, PROP_NUNIQUES);
+					if (p && p->value.dval > 1)
+						sel = 1.0 / p->value.dval;
+					else
+						sel = 0.1;
+				} else if (!exp_is_atom(l) && !exp_is_atom(r)) {
+					prop *pl = find_prop(l->p, PROP_NUNIQUES), *pr = find_prop(r->p, PROP_NUNIQUES);
+					if (pl && pr && pl->value.dval > 0 && pr->value.dval > 0)
+						sel = 1.0 / MAX(pl->value.dval, pr->value.dval);
+					else if (pl && pl->value.dval > 0)
+						sel = 1.0 / pl->value.dval;
+					else if (pr && pr->value.dval > 0)
+						sel = 1.0 / pr->value.dval;
+					else
+						sel = 0.1;
+				} else {
+					sel = 0.5;
+				}
+				break;
+			case cmp_notequal:
+				if (exp_is_atom(r) && !exp_is_atom(l)) {
+					prop *p = find_prop(l->p, PROP_NUNIQUES);
+					if (p && p->value.dval > 1)
+						sel = 1.0 - 1.0 / p->value.dval;
+					else
+						sel = 0.9;
+				} else if (exp_is_atom(l) && !exp_is_atom(r)) {
+					prop *p = find_prop(r->p, PROP_NUNIQUES);
+					if (p && p->value.dval > 1)
+						sel = 1.0 - 1.0 / p->value.dval;
+					else
+						sel = 0.9;
+				} else {
+					sel = 0.9;
+				}
+				break;
+			case cmp_gt:
+			case cmp_gte:
+			case cmp_lt:
+			case cmp_lte:
+				sel = 0.50;
+				break;
+			case cmp_in:
+			case cmp_notin: {
+				list *vals = (list *) e->r;
+				int nvals = list_length(vals);
+				prop *p = find_prop(l->p, PROP_NUNIQUES);
+				if (p && p->value.dval > 0) {
+					sel = (dbl) nvals / p->value.dval;
+				} else {
+					sel = (dbl) nvals * 0.05;
+				}
+				if (sel > 0.5)
+					sel = 0.5;
+				if (e->flag == cmp_notin)
+					sel = 1.0 - sel;
+				break;
+			}
+			case cmp_con: {
+				  list *lst = (list *) e->l;
+				  sel = 1.0;
+				  for (node *n = lst->h; n; n = n->next)
+					  sel *= exp_estimate_selectivity(sql, (sql_exp *) n->data);
+				  break;
+			}
+			case cmp_dis: {
+				  list *lst = (list *) e->l;
+				  sel = 0.0;
+				  for (node *n = lst->h; n; n = n->next)
+				  sel += exp_estimate_selectivity(sql, (sql_exp *) n->data);
+				  if (sel > 1.0)
+					  sel = 1.0;
+				  break;
+			}
+			case cmp_filter:
+				  sel = 0.01;
+				  break;
+			default:
+				  sel = 0.1;
+				  break;
+			}
+		}
+		break;
+	}
+	case e_psm:
+		sel = 0.5;
+		break;
+	}
+	if (sel < 0.0)
+		sel = 0.0;
+	if (sel > 1.0)
+		sel = 1.0;
+	return sel;
 }
 
 bool

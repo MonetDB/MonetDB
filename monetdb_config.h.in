@@ -19,7 +19,8 @@
 #error Versions below Visual Studio 2015 are no longer supported
 #endif
 
-/* Prevent pollution through excessive inclusion of include files by Windows.h. */
+/* Prevent pollution through excessive inclusion of include files by
+ * Windows.h. */
 #ifndef WIN32_LEAN_AND_MEAN
 #define WIN32_LEAN_AND_MEAN 1
 #endif
@@ -34,8 +35,8 @@
 
 #endif
 
-#if !defined(_XOPEN_SOURCE) && defined(__CYGWIN__)
-#define _XOPEN_SOURCE 700
+#if !defined(_GNU_SOURCE) && defined(__CYGWIN__)
+#define _GNU_SOURCE 1
 #endif
 
 #include <stdlib.h>
@@ -69,6 +70,7 @@
 #cmakedefine HAVE_DLFCN_H 1
 #cmakedefine HAVE_FCNTL_H 1
 #cmakedefine HAVE_GETOPT_H 1
+#cmakedefine HAVE_GLOB_H 1
 #cmakedefine HAVE_KVM_H 1
 #cmakedefine HAVE_MACH_MACH_INIT_H 1
 #cmakedefine HAVE_MACH_O_DYLD_H 1
@@ -117,10 +119,6 @@
 #define NATIVE_WIN32 1
 
 #endif /* _MSC_VER */
-
-#if !defined(WIN32) && defined(__CYGWIN__)
-#define WIN32 1
-#endif
 
 // functions that may or may not be available
 #cmakedefine HAVE_ACCEPT4 1
@@ -183,6 +181,8 @@
 
 // optional code: libraries that may or may not be available,
 // optional extensions
+#cmakedefine HAVE_BROTLI 1
+#cmakedefine HAVE_CUDF 1
 #cmakedefine HAVE_CURL 1
 #cmakedefine HAVE_FITS 1
 #cmakedefine HAVE_GEOM 1
@@ -199,7 +199,9 @@
 #cmakedefine HAVE_READLINE 1
 #cmakedefine HAVE_RTREE 1
 #cmakedefine HAVE_SHP 1
+#cmakedefine HAVE_SNAPPY 1
 #cmakedefine HAVE_VALGRIND 1
+#cmakedefine HAVE_ZSTD 1
 
 // which malloc implementation to use (default: libc malloc)
 #cmakedefine WITH_JEMALLOC 1
@@ -363,10 +365,79 @@ typedef __uint128_t uint128_t;
 
 /* Does your compiler support `__attribute__' extension? */
 #if !defined(__has_attribute)
+/* if __has_attribute is not known to the preprocessor, we ignore
+ * attributes completely */
 #ifndef __attribute__
 #define __attribute__(...)
 #endif
+#else
+/* if it is known, use it to find out whether specific attributes that
+ * we use are known */
+#if !__has_attribute(__access__)
+#define __access__(...)
 #endif
+#if !__has_attribute(__aligned__)
+#define __aligned__(...)
+#endif
+#if !__has_attribute(__alloc_size__)
+#define __alloc_size__(...)
+#endif
+#if !__has_attribute(__cold__)
+#define __cold__
+#endif
+#if !__has_attribute(__const__)
+#define __const__
+#endif
+#if !__has_attribute(__constructor__)
+#define __constructor__
+#endif
+#if !__has_attribute(__counted_by__)
+#define __counted_by__(...)
+#endif
+#if !__has_attribute(__designated_init__)
+#define __designated_init__
+#endif
+#if !__has_attribute(__format__)
+#define __format__(...)
+#endif
+#if !__has_attribute(__malloc__)
+#define __malloc__
+#define __malloc__(...)
+#elif !defined(__GNUC__) || __GNUC__ < 13
+/* attribute malloc with argument seems to have been introduced in gcc 13 */
+#define __malloc__(...)
+#endif
+#if !__has_attribute(__noinline__)
+#define __noinline__
+#endif
+#if !__has_attribute(__nonnull__)
+#define __nonnull__(...)
+#endif
+#if !__has_attribute(__nonnull_if_nonzero__)
+#define __nonnull_if_nonzero__(...)
+#endif
+#if !__has_attribute(__nonstring__)
+#define __nonstring__
+#endif
+#if !__has_attribute(__pure__)
+#define __pure__
+#endif
+#if !__has_attribute(__returns_nonnull__)
+#define __returns_nonnull__
+#endif
+#if !__has_attribute(__sentinel__)
+#define __sentinel__
+#endif
+#if !__has_attribute(__visibility__)
+#define __visibility__(...)
+#elif defined(__CYGWIN__)
+#define __visibility__(...)
+#endif
+#if !__has_attribute(__warn_unused_result__)
+#define __warn_unused_result__
+#endif
+#endif
+
 
 #if !defined(__cplusplus) || __cplusplus < 201103L
 #ifndef static_assert
@@ -390,7 +461,7 @@ typedef __uint128_t uint128_t;
  * version, so that won't fly.  Instead we look at __USE_GNU which only
  * the GNU library defines (if _GNU_SOURCE is defined) and is the one
  * actually used in the GNU header file to make the distinction. */
-#if defined(__USE_GNU) && defined(HAVE_STRERROR_R)
+#if (defined(__USE_GNU) || defined(__GNU_VISIBLE)) && defined(HAVE_STRERROR_R)
 #define STRERROR_R_CHARP 1
 #endif
 

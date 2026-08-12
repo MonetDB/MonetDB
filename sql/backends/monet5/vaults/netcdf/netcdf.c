@@ -18,7 +18,7 @@
 #include "sql_catalog.h"
 #include "sql_list.h"
 #include "sql_mvc.h"
-#include "sql.h"
+#include "sql_monet_backend.h"
 #include "sql_execute.h"
 #include "sql_relation.h"
 #include "sql_scenario.h"

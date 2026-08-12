@@ -11,6 +11,8 @@
 #ifndef _MSTRING_H_
 #define _MSTRING_H_
 
+#include "monetdb_config.h"
+
 #include <string.h>
 
 #if defined(__GNUC__) && (__GNUC__ > 4 || (__GNUC__ == 4 && __GNUC_MINOR__ > 4))
@@ -18,30 +20,6 @@
 #define GCC_Pragma(pragma)	_Pragma(pragma)
 #else
 #define GCC_Pragma(pragma)
-#endif
-
-/* if __has_attribute is not known to the preprocessor, we ignore
- * attributes completely (see monetdb_config.h); if it is known, use it
- * to find out whether specific attributes that we use are known */
-#if defined(__has_attribute)
-#if !__has_attribute(__access__)
-#define __access__(...)
-#endif
-#if !__has_attribute(__format__)
-#define __format__(...)
-#endif
-#if !__has_attribute(__nonnull__)
-#define __nonnull__(...)
-#endif
-#if !__has_attribute(__nonnull_if_nonzero__)
-#define __nonnull_if_nonzero__(...)
-#endif
-#if !__has_attribute(__pure__)
-#define __pure__
-#endif
-#if !__has_attribute(__sentinel__)
-#define __sentinel__
-#endif
 #endif
 
 #ifndef mutils_export
@@ -194,13 +172,14 @@ mutils_export ssize_t strtconcat(char *restrict dst, size_t n,
  * U+D800..U+DFFF are not allowed to be encoded.
  */
 static inline bool
-checkUTF8(const char *v)
+checkUTF8(const char *v, size_t *ncp)
 {
 	/* It is unlikely that this functions returns false, because it is
 	 * likely that the string presented is a correctly coded UTF-8
 	 * string.  So we annotate the tests that are very (un)likely to
 	 * succeed, i.e. the ones that lead to a return of false.  This can
 	 * help the compiler produce more efficient code. */
+	size_t n = 0;				/* count number of code points */
 	if (v != NULL) {
 		if (v[0] != '\200' || v[1] != '\0') {
 			/* check that string is correctly encoded UTF-8 */
@@ -239,9 +218,12 @@ checkUTF8(const char *v)
 				} else {
 					return false;
 				}
+				n++;
 			}
 		}
 	}
+	if (ncp)
+		*ncp = n;
 	return true;
 }
 

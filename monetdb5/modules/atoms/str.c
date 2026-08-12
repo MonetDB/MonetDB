@@ -67,7 +67,7 @@
 #include "mutf8.h"
 #include "bigram.h"
 
-#define UTF8_assert(s)		assert(checkUTF8(s))
+#define UTF8_assert(s)		assert(checkUTF8(s, NULL))
 
 /* return the number of codepoints in `s' before `end'. */
 static inline int
@@ -1925,7 +1925,7 @@ BBPreclaim_n(int nargs, ...)
 	va_end(valist);
 }
 
-#define VALUE(s, x)  (s##_vars + VarHeapVal(s##_vals, (x), s##i->width))
+#define VALUE(s, x)  ((off = VarHeapVal(s##_vals, (x), s##i->width)) == 0 ? str_nil : s##_vars + off)
 #define APPEND(b, o) (((oid *) b->theap->base)[b->batCount++] = (o))
 
 #define SCAN_LOOP(STR_CMP)									\
@@ -1945,6 +1945,7 @@ scan_loop_strselect(BAT *rl, BATiter *li, struct canditer *lci, const char *r,
 {
 	oid l_base = li->b->hseqbase;
 	const char *l_vars = li->vh->base, *l_vals = li->base;
+	var_t off;
 	size_t r_len = strlen(r);
 
 	lng t0 = 0;
@@ -2190,6 +2191,7 @@ nested_loop_strjoin(BAT *rl, BAT *rr, BATiter *li, BATiter *ri,
 	oid lbase = li->b->hseqbase, rbase = ri->b->hseqbase, or, ol;
 	const char *l_vars = li->vh->base, *r_vars = ri->vh->base,
 		*l_vals = li->base, *r_vals = ri->base;
+	var_t off;
 
 	lng t0 = 0;
 	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
@@ -2258,6 +2260,7 @@ init_bigram_idx(NGrams *ng, BATiter *bi, struct canditer *bci, QryCtx *qry_ctx)
 
 	oid b_base = bi->b->hseqbase;
 	const char *b_vars = bi->vh->base, *b_vals = bi->base;
+	var_t off;
 
 	canditer_reset(bci);
 	TIMEOUT_LOOP(bci->ncand, qry_ctx) {
@@ -2361,6 +2364,7 @@ bigram_strjoin(BAT *rl, BAT *rr, BATiter *li, BATiter *ri,
 	oid l_base = li->b->hseqbase, r_base = ri->b->hseqbase;
 	const char *l_vars = li->vh->base, *r_vars = ri->vh->base,
 		*l_vals = li->base, *r_vals = ri->base;
+	var_t off;
 
 	lng t0 = 0;
 	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
@@ -2536,6 +2540,7 @@ sorted_strjoin(BAT **rl_ptr, BAT **rr_ptr, BATiter *li, BATiter *ri,
 		ol = 0, or = 0, ly = 0, rx = 0, n;
 	const char *sorted_l_vars = sorted_li->vh->base, *sorted_r_vars = sorted_ri->vh->base,
 		*sorted_l_vals = sorted_li->base, *sorted_r_vals = sorted_ri->base;
+	var_t off;
 	size_t new_cap;
 
 	TIMEOUT_LOOP(sorted_lci.ncand, qry_ctx) {
@@ -2675,9 +2680,6 @@ STRjoin(MalStkPtr stk, InstrPtr pci, const char *fname,
 
 	bool icase = false;
 
-	if (in_argc == 8 && (msg = ignorecase(IC, &icase, fname)))
-		return msg;
-
 	if (!(l = BATdescriptor(L)) || !(r = BATdescriptor(R))) {
 		BBPreclaim_n(2, l, r);
 		throw(MAL, fname, RUNTIME_OBJECT_MISSING);
@@ -2696,6 +2698,13 @@ STRjoin(MalStkPtr stk, InstrPtr pci, const char *fname,
 	size_t l_cnt = lci.ncand, r_cnt = rci.ncand;
 	size_t nested_cost = lci.ncand * rci.ncand,
 		sorted_cost = (size_t)floor(0.8 * (l_cnt * log2((double)l_cnt) + r_cnt * log2((double)r_cnt)));
+
+	if (l_cnt && in_argc == 8 && (msg = ignorecase(IC, &icase, fname))) {
+		bat_iterator_end(&li);
+		bat_iterator_end(&ri);
+		BBPreclaim_n(4, l, r, cl, cr);
+		return msg;
+	}
 
 	rl = COLnew(0, TYPE_oid, l_cnt, TRANSIENT);
 	if (RR)
@@ -2803,11 +2812,11 @@ STRcontainsjoin(Client ctx, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 #include "mel.h"
 static mel_func str_init_funcs[] = {
 	command("str", "str", STRtostr, false, "Noop routine.", args(1,2, arg("",str),arg("s",str))),
-	command("str", "string", STRTail, false, "Return the tail s[offset..n]\nof a string s[0..n].", args(1,3, arg("",str),arg("s",str),arg("offset",int))),
+	command("str", "string", STRTail, false, "Return the tail s[offset..n] of a string s[0..n].", args(1,3, arg("",str),arg("s",str),arg("offset",int))),
 	command("str", "string3", STRSubString, false, "Return substring s[offset..offset+count] of a string s[0..n]", args(1,4, arg("",str),arg("s",str),arg("offset",int),arg("count",int))),
 	command("str", "length", STRLength, false, "Return the length of a string.", args(1,2, arg("",int),arg("s",str))),
 	command("str", "nbytes", STRBytes, false, "Return the string length in bytes.", args(1,2, arg("",int),arg("s",str))),
-	command("str", "unicodeAt", STRWChrAt, false, "get a unicode character\n(as an int) from a string position.", args(1,3, arg("",int),arg("s",str),arg("index",int))),
+	command("str", "unicodeAt", STRWChrAt, false, "get a unicode character (as an int) from a string position.", args(1,3, arg("",int),arg("s",str),arg("index",int))),
 	command("str", "unicode", STRFromWChr, false, "convert a unicode to a character.", args(1,2, arg("",str),arg("wchar",int))),
 	pattern("str", "startswith", STRstartswith, false, "Check if string starts with substring.", args(1,3, arg("",bit),arg("s",str),arg("prefix",str))),
 	pattern("str", "startswith", STRstartswith, false, "Check if string starts with substring, icase flag.", args(1,4, arg("",bit),arg("s",str),arg("prefix",str),arg("icase",bit))),
@@ -2818,11 +2827,11 @@ static mel_func str_init_funcs[] = {
 	command("str", "toLower", STRlower, false, "Convert a string to lower case.", args(1,2, arg("",str),arg("s",str))),
 	command("str", "toUpper", STRupper, false, "Convert a string to upper case.", args(1,2, arg("",str),arg("s",str))),
 	command("str", "caseFold", STRcasefold, false, "Fold the case of a string.", args(1,2, arg("",str),arg("s",str))),
-	pattern("str", "search", STRstr_search, false, "Search for a substring. Returns\nposition, -1 if not found.", args(1,3, arg("",int),arg("s",str),arg("c",str))),
-	pattern("str", "search", STRstr_search, false, "Search for a substring, icase flag. Returns\nposition, -1 if not found.", args(1,4, arg("",int),arg("s",str),arg("c",str),arg("icase",bit))),
-	pattern("str", "r_search", STRrevstr_search, false, "Reverse search for a substring. Returns\nposition, -1 if not found.", args(1,3, arg("",int),arg("s",str),arg("c",str))),
-	pattern("str", "r_search", STRrevstr_search, false, "Reverse search for a substring, icase flag. Returns\nposition, -1 if not found.", args(1,4, arg("",int),arg("s",str),arg("c",str),arg("icase",bit))),
-	command("str", "splitpart", STRsplitpart, false, "Split string on delimiter. Returns\ngiven field (counting from one.)", args(1,4, arg("",str),arg("s",str),arg("needle",str),arg("field",int))),
+	pattern("str", "search", STRstr_search, false, "Search for a substring. Returns position, -1 if not found.", args(1,3, arg("",int),arg("s",str),arg("c",str))),
+	pattern("str", "search", STRstr_search, false, "Search for a substring, icase flag. Returns position, -1 if not found.", args(1,4, arg("",int),arg("s",str),arg("c",str),arg("icase",bit))),
+	pattern("str", "r_search", STRrevstr_search, false, "Reverse search for a substring. Returns position, -1 if not found.", args(1,3, arg("",int),arg("s",str),arg("c",str))),
+	pattern("str", "r_search", STRrevstr_search, false, "Reverse search for a substring, icase flag. Returns position, -1 if not found.", args(1,4, arg("",int),arg("s",str),arg("c",str),arg("icase",bit))),
+	command("str", "splitpart", STRsplitpart, false, "Split string on delimiter. Returns given field (counting from one.)", args(1,4, arg("",str),arg("s",str),arg("needle",str),arg("field",int))),
 	command("str", "trim", STRStrip, false, "Strip whitespaces around a string.", args(1,2, arg("",str),arg("s",str))),
 	command("str", "ltrim", STRLtrim, false, "Strip whitespaces from start of a string.", args(1,2, arg("",str),arg("s",str))),
 	command("str", "rtrim", STRRtrim, false, "Strip whitespaces from end of a string.", args(1,2, arg("",str),arg("s",str))),
@@ -2833,7 +2842,7 @@ static mel_func str_init_funcs[] = {
 	command("str", "rpad", STRRpad, false, "Fill up a string to the given length appending the whitespace character.", args(1,3, arg("",str),arg("s",str),arg("len",int))),
 	command("str", "lpad3", STRLpad3, false, "Fill up the first string to the given length prepending characters of the second string.", args(1,4, arg("",str),arg("s",str),arg("len",int),arg("s2",str))),
 	command("str", "rpad3", STRRpad3, false, "Fill up the first string to the given length appending characters of the second string.", args(1,4, arg("",str),arg("s",str),arg("len",int),arg("s2",str))),
-	command("str", "substitute", STRSubstitute, false, "Substitute first occurrence of 'src' by\n'dst'.  Iff repeated = true this is\nrepeated while 'src' can be found in the\nresult string. In order to prevent\nrecursion and result strings of unlimited\nsize, repeating is only done iff src is\nnot a substring of dst.", args(1,5, arg("",str),arg("s",str),arg("src",str),arg("dst",str),arg("rep",bit))),
+	command("str", "substitute", STRSubstitute, false, "Substitute first occurrence of 'src' by 'dst'.  Iff repeated = true this is repeated while 'src' can be found in the result string. In order to prevent recursion and result strings of unlimited size, repeating is only done iff src is not a substring of dst.", args(1,5, arg("",str),arg("s",str),arg("src",str),arg("dst",str),arg("rep",bit))),
 	command("str", "like", STRlikewrap, false, "SQL pattern match function", args(1,3, arg("",bit),arg("s",str),arg("pat",str))),
 	command("str", "like3", STRlikewrap3, false, "SQL pattern match function", args(1,4, arg("",bit),arg("s",str),arg("pat",str),arg("esc",str))),
 	command("str", "ascii", STRascii, false, "Return unicode of head of string", args(1,2, arg("",int),arg("s",str))),
@@ -2850,24 +2859,24 @@ static mel_func str_init_funcs[] = {
 	command("str", "repeat", STRrepeat, false, "", args(1,3, arg("",str),arg("s2",str),arg("c",int))),
 	command("str", "space", STRspace, false, "", args(1,2, arg("",str),arg("l",int))),
 	command("str", "asciify", STRasciify, false, "Transform string from UTF8 to ASCII", args(1, 2, arg("out",str), arg("in",str))),
-	pattern("str", "startswithselect", STRstartswithselect, false, "Select all head values of the first input BAT for which the\ntail value starts with the given prefix.", args(1,5, batarg("",oid),batarg("b",str),batarg("s",oid),arg("prefix",str),arg("anti",bit))),
-	pattern("str", "startswithselect", STRstartswithselect, false, "Select all head values of the first input BAT for which the\ntail value starts with the given prefix + icase.", args(1,6, batarg("",oid),batarg("b",str),batarg("s",oid),arg("prefix",str),arg("caseignore",bit),arg("anti",bit))),
-	pattern("str", "endswithselect", STRendswithselect, false, "Select all head values of the first input BAT for which the\ntail value end with the given suffix.", args(1,5, batarg("",oid),batarg("b",str),batarg("s",oid),arg("suffix",str),arg("anti",bit))),
-	pattern("str", "endswithselect", STRendswithselect, false, "Select all head values of the first input BAT for which the\ntail value end with the given suffix + icase.", args(1,6, batarg("",oid),batarg("b",str),batarg("s",oid),arg("suffix",str),arg("caseignore",bit),arg("anti",bit))),
-	pattern("str", "containsselect", STRcontainsselect, false, "Select all head values of the first input BAT for which the\ntail value contains the given needle.", args(1,5, batarg("",oid),batarg("b",str),batarg("s",oid),arg("needle",str),arg("anti",bit))),
-	pattern("str", "containsselect", STRcontainsselect, false, "Select all head values of the first input BAT for which the\ntail value contains the given needle + icase.", args(1,6, batarg("",oid),batarg("b",str),batarg("s",oid),arg("needle",str),arg("caseignore",bit),arg("anti",bit))),
+	pattern("str", "startswithselect", STRstartswithselect, false, "Select all head values of the first input BAT for which the tail value starts with the given prefix.", args(1,5, batarg("",oid),batarg("b",str),batarg("s",oid),arg("prefix",str),arg("anti",bit))),
+	pattern("str", "startswithselect", STRstartswithselect, false, "Select all head values of the first input BAT for which the tail value starts with the given prefix + icase.", args(1,6, batarg("",oid),batarg("b",str),batarg("s",oid),arg("prefix",str),arg("caseignore",bit),arg("anti",bit))),
+	pattern("str", "endswithselect", STRendswithselect, false, "Select all head values of the first input BAT for which the tail value end with the given suffix.", args(1,5, batarg("",oid),batarg("b",str),batarg("s",oid),arg("suffix",str),arg("anti",bit))),
+	pattern("str", "endswithselect", STRendswithselect, false, "Select all head values of the first input BAT for which the tail value end with the given suffix + icase.", args(1,6, batarg("",oid),batarg("b",str),batarg("s",oid),arg("suffix",str),arg("caseignore",bit),arg("anti",bit))),
+	pattern("str", "containsselect", STRcontainsselect, false, "Select all head values of the first input BAT for which the tail value contains the given needle.", args(1,5, batarg("",oid),batarg("b",str),batarg("s",oid),arg("needle",str),arg("anti",bit))),
+	pattern("str", "containsselect", STRcontainsselect, false, "Select all head values of the first input BAT for which the tail value contains the given needle + icase.", args(1,6, batarg("",oid),batarg("b",str),batarg("s",oid),arg("needle",str),arg("caseignore",bit),arg("anti",bit))),
 
-	pattern("str", "startswithjoin", STRstartswithjoin, false, "Join the string bat L with the prefix bat R\nwith optional candidate lists SL and SR\nThe result is two aligned bats with oids of matching rows.", args(2,9, batarg("",oid),batarg("",oid),batarg("l",str),batarg("r",str),batarg("sl",oid),batarg("sr",oid),arg("nil_matches",bit),arg("estimate",lng),arg("anti",bit))),
-	pattern("str", "startswithjoin", STRstartswithjoin, false, "Join the string bat L with the prefix bat R\nwith optional candidate lists SL and SR\nThe result is two aligned bats with oids of matching rows + icase.", args(2,10, batarg("",oid),batarg("",oid),batarg("l",str),batarg("r",str),batarg("caseignore",bit),batarg("sl",oid),batarg("sr",oid),arg("nil_matches",bit),arg("estimate",lng),arg("anti",bit))),
+	pattern("str", "startswithjoin", STRstartswithjoin, false, "Join the string bat L with the prefix bat R with optional candidate lists SL and SR The result is two aligned bats with oids of matching rows.", args(2,9, batarg("",oid),batarg("",oid),batarg("l",str),batarg("r",str),batarg("sl",oid),batarg("sr",oid),arg("nil_matches",bit),arg("estimate",lng),arg("anti",bit))),
+	pattern("str", "startswithjoin", STRstartswithjoin, false, "Join the string bat L with the prefix bat R with optional candidate lists SL and SR The result is two aligned bats with oids of matching rows + icase.", args(2,10, batarg("",oid),batarg("",oid),batarg("l",str),batarg("r",str),batarg("caseignore",bit),batarg("sl",oid),batarg("sr",oid),arg("nil_matches",bit),arg("estimate",lng),arg("anti",bit))),
 	pattern("str", "startswithjoin", STRstartswithjoin, false, "The same as STRstartswithjoin, but only produce one output.", args(1,8,batarg("",oid),batarg("l",str),batarg("r",str),batarg("sl",oid),batarg("sr",oid),arg("nil_matches",bit),arg("estimate",lng), arg("anti",bit))),
 	pattern("str", "startswithjoin", STRstartswithjoin, false, "The same as STRstartswithjoin, but only produce one output + icase.", args(1,9,batarg("",oid),batarg("l",str),batarg("r",str),batarg("caseignore",bit),batarg("sl",oid),batarg("sr",oid),arg("nil_matches",bit),arg("estimate",lng), arg("anti",bit))),
 
-	pattern("str", "endswithjoin", STRendswithjoin, false, "Join the string bat L with the suffix bat R\nwith optional candidate lists SL and SR\nThe result is two aligned bats with oids of matching rows.", args(2,9, batarg("",oid),batarg("",oid),batarg("l",str),batarg("r",str),batarg("sl",oid),batarg("sr",oid),arg("nil_matches",bit),arg("estimate",lng),arg("anti",bit))),
-	pattern("str", "endswithjoin", STRendswithjoin, false, "Join the string bat L with the suffix bat R\nwith optional candidate lists SL and SR\nThe result is two aligned bats with oids of matching rows + icase.", args(2,10, batarg("",oid),batarg("",oid),batarg("l",str),batarg("r",str),batarg("caseignore",bit),batarg("sl",oid),batarg("sr",oid),arg("nil_matches",bit),arg("estimate",lng),arg("anti",bit))),
+	pattern("str", "endswithjoin", STRendswithjoin, false, "Join the string bat L with the suffix bat R with optional candidate lists SL and SR The result is two aligned bats with oids of matching rows.", args(2,9, batarg("",oid),batarg("",oid),batarg("l",str),batarg("r",str),batarg("sl",oid),batarg("sr",oid),arg("nil_matches",bit),arg("estimate",lng),arg("anti",bit))),
+	pattern("str", "endswithjoin", STRendswithjoin, false, "Join the string bat L with the suffix bat R with optional candidate lists SL and SR The result is two aligned bats with oids of matching rows + icase.", args(2,10, batarg("",oid),batarg("",oid),batarg("l",str),batarg("r",str),batarg("caseignore",bit),batarg("sl",oid),batarg("sr",oid),arg("nil_matches",bit),arg("estimate",lng),arg("anti",bit))),
 	pattern("str", "endswithjoin", STRendswithjoin, false, "The same as STRendswithjoin, but only produce one output.", args(1,8,batarg("",oid),batarg("l",str),batarg("r",str),batarg("sl",oid),batarg("sr",oid),arg("nil_matches",bit),arg("estimate",lng), arg("anti",bit))),
 	pattern("str", "endswithjoin", STRendswithjoin, false, "The same as STRendswithjoin, but only produce one output + icase.", args(1,9,batarg("",oid),batarg("l",str),batarg("r",str),batarg("caseignore",bit),batarg("sl",oid),batarg("sr",oid),arg("nil_matches",bit),arg("estimate",lng), arg("anti",bit))),
-	pattern("str", "containsjoin", STRcontainsjoin, false, "Join the string bat L with the bat R if L contains the string of R\nwith optional candidate lists SL and SR\nThe result is two aligned bats with oids of matching rows.", args(2,9, batarg("",oid),batarg("",oid),batarg("l",str),batarg("r",str),batarg("sl",oid),batarg("sr",oid),arg("nil_matches",bit),arg("estimate",lng),arg("anti",bit))),
-	pattern("str", "containsjoin", STRcontainsjoin, false, "Join the string bat L with the bat R if L contains the string of R\nwith optional candidate lists SL and SR\nThe result is two aligned bats with oids of matching rows + icase.", args(2,10, batarg("",oid),batarg("",oid),batarg("l",str),batarg("r",str),batarg("caseignore",bit),batarg("sl",oid),batarg("sr",oid),arg("nil_matches",bit),arg("estimate",lng),arg("anti",bit))),
+	pattern("str", "containsjoin", STRcontainsjoin, false, "Join the string bat L with the bat R if L contains the string of R with optional candidate lists SL and SR The result is two aligned bats with oids of matching rows.", args(2,9, batarg("",oid),batarg("",oid),batarg("l",str),batarg("r",str),batarg("sl",oid),batarg("sr",oid),arg("nil_matches",bit),arg("estimate",lng),arg("anti",bit))),
+	pattern("str", "containsjoin", STRcontainsjoin, false, "Join the string bat L with the bat R if L contains the string of R with optional candidate lists SL and SR The result is two aligned bats with oids of matching rows + icase.", args(2,10, batarg("",oid),batarg("",oid),batarg("l",str),batarg("r",str),batarg("caseignore",bit),batarg("sl",oid),batarg("sr",oid),arg("nil_matches",bit),arg("estimate",lng),arg("anti",bit))),
 	pattern("str", "containsjoin", STRcontainsjoin, false, "The same as STRcontainsjoin, but only produce one output.", args(1,8,batarg("",oid),batarg("l",str),batarg("r",str),batarg("sl",oid),batarg("sr",oid),arg("nil_matches",bit),arg("estimate",lng), arg("anti",bit))),
 	pattern("str", "containsjoin", STRcontainsjoin, false, "The same as STRcontainsjoin, but only produce one output + icase.", args(1,9,batarg("",oid),batarg("l",str),batarg("r",str),batarg("caseignore",bit),batarg("sl",oid),batarg("sr",oid),arg("nil_matches",bit),arg("estimate",lng), arg("anti",bit))),
 	{ .imp=NULL }

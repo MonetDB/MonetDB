@@ -68,10 +68,11 @@
 #define mod_explain_phys 1
 #define mod_exec         2
 
-#define S_NONE            0
-#define S_LOGICAL_UNNEST  1
-#define S_LOGICAL_REWRITE 2
-#define S_PHYSICAL        3
+#define S_NONE             0
+#define S_LOGICAL_UNNEST   1
+#define S_LOGICAL_REWRITE  2
+#define S_LOGICAL_PHYSICAL 3
+#define S_PHYSICAL         4
 
 #define T_NONE   0
 #define T_BEFORE 1
@@ -81,6 +82,7 @@
 #define AFTER_LOGICAL_UNNEST(m)   (m->step == S_LOGICAL_UNNEST  && m->temporal == T_AFTER)
 #define BEFORE_LOGICAL_REWRITE(m) (m->step == S_LOGICAL_REWRITE && m->temporal == T_BEFORE)
 #define AFTER_LOGICAL_REWRITE(m)  (m->step == S_LOGICAL_REWRITE && m->temporal == T_AFTER)
+#define AFTER_LOGICAL_PHYSICAL(m) (m->step == S_LOGICAL_PHYSICAL && m->temporal == T_AFTER)
 #define BEFORE_PHYSICAL(m)        (m->step == S_PHYSICAL        && m->temporal == T_BEFORE)
 #define AFTER_PHYSICAL(m)         (m->step == S_PHYSICAL        && m->temporal == T_AFTER)
 
@@ -251,9 +253,11 @@ extern int mvc_default(mvc *c, sql_column *col, char *val);
 extern int mvc_check(mvc *m, sql_column *col, char *check);
 extern int mvc_drop_default(mvc *c, sql_column *col);
 extern int mvc_storage(mvc *c, sql_column *col, char *storage);
+extern int mvc_ustr(mvc *m, sql_schema *s, sql_column *col, dlist *l);
 extern int mvc_subtype(mvc *m, sql_column *col, sql_subtype *t);
 extern int mvc_access(mvc *m, sql_table *t, sht access);
-extern int mvc_is_sorted(mvc *c, sql_column *col);
+extern int mvc_is_sorted_col(mvc *c, sql_column *col);
+extern int mvc_is_sorted_idx(mvc *c, sql_idx *idx);
 extern int mvc_is_unique(mvc *m, sql_column *col);
 extern int mvc_is_duplicate_eliminated(mvc *c, sql_column *col);
 extern int mvc_col_stats(mvc *m, sql_column *col, bool *nonil, bool *unique, double *unique_est, ValPtr min, ValPtr max);

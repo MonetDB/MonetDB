@@ -4,26 +4,23 @@ create table analytics (aa int, bb int)
 statement ok
 insert into analytics values (15, 3), (3, 1), (2, 1), (5, 3), (NULL, 2), (3, 2), (4, 1), (6, 3), (8, 2), (NULL, 4)
 
-statement ok
-start transaction
-
 query I nosort
-select first_value(aa) over (w order by bb, aa) from analytics window w as (partition by bb)
+select first_value(aa) over (w order by bb, aa nulls first) from analytics window w as (partition by bb) order by 1 nulls first
 ----
+NULL
+NULL
+NULL
+NULL
 2
 2
 2
-NULL
-NULL
-NULL
 5
 5
 5
-NULL
 
 query II nosort
-select first_value(aa) over (w1 order by bb, aa),
-       last_value(aa) over (w2 order by bb, aa) from analytics window w1 as (w2), w2 as (), w3 as (w1)
+select first_value(aa) over (w1 order by bb, aa nulls first),
+       last_value(aa) over (w2 order by bb, aa nulls first) from analytics window w1 as (w2), w2 as (), w3 as (w1) order by bb, aa nulls first
 ----
 2
 2
@@ -49,41 +46,38 @@ NULL
 query III nosort
 select first_value(aa) over (w1 partition by bb),
        last_value(aa) over (w2 range unbounded preceding),
-       count(aa) over (w3) from analytics window w1 as (w2), w2 as (order by bb), w3 as (w2 partition by bb)
+       count(aa) over (w3) from analytics window w1 as (w2), w2 as (order by bb, aa nulls first), w3 as (w2 partition by bb) order by bb, aa nulls first
 ----
-3
-4
-3
-3
-4
-3
-3
-4
-3
-NULL
-8
 2
-NULL
-8
 2
-NULL
-8
+1
 2
-15
-6
 3
-15
-6
-3
-15
-6
+2
+2
+4
 3
 NULL
 NULL
 0
-
-statement ok
-rollback
+NULL
+3
+1
+NULL
+8
+2
+5
+5
+1
+5
+6
+2
+5
+15
+3
+NULL
+NULL
+0
 
 statement error
 select first_value(aa) over (w1 order by bb) from analytics

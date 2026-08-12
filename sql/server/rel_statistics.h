@@ -14,6 +14,7 @@
 #include "sql_relation.h"
 #include "sql_mvc.h"
 #include "rel_exp.h"
+#include "rel_rel.h"
 
 typedef void (*lookup_function) (mvc*, sql_exp*);
 
@@ -68,7 +69,7 @@ statistics_atom_min(mvc *sql, atom *v1, atom *v2)
 }
 
 static inline void
-set_minmax_property(mvc *sql, sql_exp *e, rel_prop kind, atom *val)
+set_minmax_property(mvc *sql, sql_exp *e, prop_kind kind, atom *val)
 {
 	if (val == NULL)
 		return;
@@ -91,5 +92,6 @@ set_minmax_property(mvc *sql, sql_exp *e, rel_prop kind, atom *val)
 
 extern sql_hash *sql_functions_lookup __attribute__((__visibility__("hidden")));
 extern void initialize_sql_functions_lookup(allocator *sa) __attribute__((__visibility__("hidden")));
+extern sql_rel * rel_get_statistics_(visitor *v, sql_rel *rel);
 
 #endif /*_REL_STATISTICS_H_*/

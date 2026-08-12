@@ -680,7 +680,7 @@ TXTSIMminjarowinkler(Client ctx, bit *res, const char *const *x, const char *con
 
 #undef VALUE
 #undef APPEND
-#define VALUE(s, x) (s##vars + VarHeapVal(s##vals, (x), s##width))
+#define VALUE(s, x) ((off = VarHeapVal(s##vals, (x), s##width)) == 0 ? str_nil : s##vars + off)
 #define APPEND(b, o) (((oid *) b->theap->base)[b->batCount++] = (o))
 
 #define PREP_BAT_STRITEM(B, CI, SI)										\
@@ -771,6 +771,7 @@ maxlevenshteinjoin(BAT **r1, BAT **r2, BAT *l, BAT *r, BAT *sl, BAT *sr, int k)
 	BUN n;
 	struct canditer lci, rci;
 	const char *lvals, *rvals, *lvars, *rvars;;
+	var_t off;
 	uint32_t lwidth, rwidth;
 	int d;
 	str_item *lsi = NULL, *rsi = NULL;
@@ -956,6 +957,7 @@ minjarowinklerjoin(BAT **r1, BAT **r2, BAT *l, BAT *r, BAT *sl, BAT *sr,
 	BUN n;
 	struct canditer lci, rci;
 	const char *lvals, *rvals, *lvars, *rvars;
+	var_t off;
 	uint32_t lwidth, rwidth;
 	int lb = 0, ub = 0, m = -1, *x_flags = NULL, *y_flags = NULL;
 	str_item *ssl = NULL, *ssr = NULL, shortest;
@@ -972,9 +974,6 @@ minjarowinklerjoin(BAT **r1, BAT **r2, BAT *l, BAT *r, BAT *sl, BAT *sr,
 	canditer_init(&lci, l, sl);
 	canditer_init(&rci, r, sr);
 
-	if (lci.ncand == 0 || rci.ncand == 0)
-		goto exit;
-
 	lvals = (const char *) Tloc(l, 0);
 	rvals = (const char *) Tloc(r, 0);
 	assert(r->ttype);
@@ -990,6 +989,9 @@ minjarowinklerjoin(BAT **r1, BAT **r2, BAT *l, BAT *r, BAT *sl, BAT *sr,
 							  SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto exit;
 	}
+
+	if (lci.ncand == 0 || rci.ncand == 0)
+		goto exit1;
 
 	r1t->tsorted = r1t->trevsorted = false;
 	r2t->tsorted = r2t->trevsorted = false;
@@ -1068,6 +1070,7 @@ minjarowinklerjoin(BAT **r1, BAT **r2, BAT *l, BAT *r, BAT *sl, BAT *sr,
 	}
 
 	FINALIZE_BATS(r1t, r2t, lci, rci, ssl, ssr);
+  exit1:
 	*r1 = r1t;
 	*r2 = r2t;
 

@@ -13,7 +13,8 @@
 #include "gdk_private.h"
 #include "gdk_calc_private.h"
 
-#define VALUE(x)	(vars ? vars + VarHeapVal(vals, (x), width) : vals + (x) * width)
+#define VALUE(x)	(vars ? (off = VarHeapVal(vals, (x), width)) == 0 ? nil : vars + off : vals + (x) * width)
+
 /* BATunique returns a bat that indicates the unique tail values of
  * the input bat.  This is essentially the same output as the
  * "extents" output of BATgroup.  The difference is that BATunique
@@ -31,6 +32,8 @@ BATunique(BAT *b, BAT *s)
 	const void *v;
 	const char *vals;
 	const char *vars;
+	var_t off;
+	const void *nil = ATOMnilptr(b->ttype);
 	uint32_t width;
 	oid o, hseq;
 	const char *nme;
@@ -105,12 +108,11 @@ BATunique(BAT *b, BAT *s)
 	hseq = b->hseqbase;
 
 	if (ATOMbasetype(bi.type) == TYPE_bte ||
-	    (bi.width == 1 &&
-	     ATOMstorage(bi.type) == TYPE_str &&
-	     GDK_ELIMDOUBLES(bi.vh))) {
+	    (bi.width == 1 && bi.vkey)) {
 		uint8_t val;
 
-		algomsg = "unique: byte-sized atoms";
+		algomsg = "byte-sized atoms";
+		MT_thread_setalgorithm(algomsg, __func__);
 		uint32_t seen[256 >> 5];
 		memset(seen, 0, sizeof(seen));
 		TIMEOUT_LOOP(ci.ncand, qry_ctx) {
@@ -131,12 +133,11 @@ BATunique(BAT *b, BAT *s)
 		TIMEOUT_CHECK(qry_ctx,
 			      GOTO_LABEL_TIMEOUT_HANDLER(bunins_failed, qry_ctx));
 	} else if (ATOMbasetype(bi.type) == TYPE_sht ||
-		   (bi.width == 2 &&
-		    ATOMstorage(bi.type) == TYPE_str &&
-		    GDK_ELIMDOUBLES(bi.vh))) {
+		   (bi.width == 2 && bi.vkey)) {
 		uint16_t val;
 
-		algomsg = "unique: short-sized atoms";
+		algomsg = "short-sized atoms";
+		MT_thread_setalgorithm(algomsg, __func__);
 		uint32_t seen[65536 >> 5];
 		memset(seen, 0, sizeof(seen));
 		TIMEOUT_LOOP(ci.ncand, qry_ctx) {
@@ -158,7 +159,8 @@ BATunique(BAT *b, BAT *s)
 			      GOTO_LABEL_TIMEOUT_HANDLER(bunins_failed, qry_ctx));
 	} else if (bi.sorted || bi.revsorted) {
 		const void *prev = NULL;
-		algomsg = "unique: sorted";
+		algomsg = "sorted";
+		MT_thread_setalgorithm(algomsg, __func__);
 		TIMEOUT_LOOP(ci.ncand, qry_ctx) {
 			o = canditer_next(&ci);
 			v = VALUE(o - hseq);
@@ -177,12 +179,27 @@ BATunique(BAT *b, BAT *s)
 		    BAThash(b) == GDK_SUCCEED)) {
 		/* we already have a hash table on b, or b is
 		 * persistent and we could create a hash table */
-		algomsg = "unique: existing hash";
+		algomsg = "existing hash";
+		MT_thread_setalgorithm(algomsg, __func__);
 		MT_rwlock_rdlock(&b->thashlock);
 		Hash *hs = b->thash;
 		if (hs == NULL) {
 			MT_rwlock_rdunlock(&b->thashlock);
 			goto lost_hash;
+		}
+		if (bi.vkey) {
+			/* we don't need to look at the actual string
+			 * values */
+			assert(bi.vh);
+			/* only width 4 and 8 since 1 and 2 are handled
+			 * above */
+			if (bi.width == 4)
+				eq = ATOMequal(TYPE_int);
+			else
+				eq = ATOMequal(TYPE_lng);
+			HEAPdecref(bi.vh, false);
+			bi.vh = NULL; /* force BUNtail to use BUNtloc */
+			vars = NULL;  /* same for VALUE macro */
 		}
 		TIMEOUT_LOOP(ci.ncand, qry_ctx) {
 			BUN p;
@@ -190,6 +207,13 @@ BATunique(BAT *b, BAT *s)
 			o = canditer_next(&ci);
 			p = o - hseq;
 			v = VALUE(p);
+			/* follow the collision list starting at the
+			 * current BUN; all BUNs thus encountered are
+			 * earlier in the BAT; if we encounter an
+			 * eligible one with the same value, we
+			 * therefore have seen it before and we're done;
+			 * if we don't encounter such a value, this one
+			 * is new and is recorded as such */
 			for (hb = HASHgetlink(hs, p);
 			     hb != BUN_NONE;
 			     hb = HASHgetlink(hs, hb)) {
@@ -218,8 +242,26 @@ BATunique(BAT *b, BAT *s)
 
 	  lost_hash:
 		GDKclrerr();	/* not interested in BAThash errors */
-		algomsg = "unique: new partial hash";
+		algomsg = "new partial hash";
+		MT_thread_setalgorithm(algomsg, __func__);
 		nme = BBP_physical(b->batCacheid);
+		if (bi.vkey) {
+			/* we don't need to look at the actual string
+			 * values */
+			assert(bi.vh);
+			/* only width 4 and 8 since 1 and 2 are handled
+			 * above */
+			if (bi.width == 4) {
+				eq = ATOMequal(TYPE_int);
+				bi.type = TYPE_int;
+			} else {
+				eq = ATOMequal(TYPE_lng);
+				bi.type = TYPE_lng;
+			}
+			HEAPdecref(bi.vh, false);
+			bi.vh = NULL; /* force BUNtail to use BUNtloc */
+			vars = NULL;  /* same for VALUE macro */
+		}
 		if (ATOMbasetype(bi.type) == TYPE_bte) {
 			mask = (BUN) 1 << 8;
 			eq = NULL; /* no compare needed, "hash" is perfect */
@@ -252,7 +294,8 @@ BATunique(BAT *b, BAT *s)
 			o = canditer_next(&ci);
 			v = VALUE(o - hseq);
 			prb = HASHprobe(&hsh, v);
-			for (hb = HASHget(&hsh, prb);
+			BUN hb1 = HASHget(&hsh, prb);
+			for (hb = hb1;
 			     hb != BUN_NONE;
 			     hb = HASHgetlink(&hsh, hb)) {
 				if (eq == NULL || eq(v, BUNtail(&bi, hb)))
@@ -266,8 +309,12 @@ BATunique(BAT *b, BAT *s)
 					goto bunins_failed;
 				}
 				/* enter into hash table */
-				HASHputlink(&hsh, p, HASHget(&hsh, prb));
+				HASHputlink(&hsh, p, hb1);
 				HASHput(&hsh, prb, p);
+#ifndef NDEBUG
+				hsh.nheads += hb1 == BUN_NONE;
+				hsh.nunique++;
+#endif
 			}
 		}
 		HEAPfree(&hsh.heaplink, true);
@@ -298,7 +345,6 @@ BATunique(BAT *b, BAT *s)
 	bn->tnil = false;
 	bn->tnonil = true;
 	bn = virtualize(bn);
-	MT_thread_setalgorithm(algomsg);
 	TRC_DEBUG(ALGO, "b=" ALGOBATFMT
 		  ",s=" ALGOOPTBATFMT " -> " ALGOOPTBATFMT
 		  " (%s -- " LLFMT "usec)\n",

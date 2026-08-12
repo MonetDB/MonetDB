@@ -36,7 +36,7 @@ full_column(sql_trans *tr, sql_column *c)
 	*/
 	sqlstore *store = tr->store;
 	BAT *b = store->storage_api.bind_col(tr, c, RDONLY), *ui = NULL, *uv = NULL;
-	int res = store->storage_api.bind_updates(tr, c, &ui, &uv);
+	int res = store->storage_api.bind_updates(tr, c, 0, BUN_NONE, &ui, &uv);
 
 	if (!b || !ui || !uv || res == LOG_ERR) {
 		bat_destroy(b);
@@ -205,7 +205,9 @@ column_update_value(sql_trans *tr, sql_column *c, oid rid, void *value)
 	sqlstore *store = tr->store;
 	assert(!is_oid_nil(rid));
 
-	return store->storage_api.update_col(tr, c, &rid, value, false);
+	int res = store->storage_api.update_col(tr, c, &rid, value, false);
+	tr->cnr++;
+	return res;
 }
 
 static int
@@ -246,6 +248,7 @@ table_insert(sql_trans *tr, sql_table *t, ...)
 		assert(0);
 		return LOG_ERR;
 	}
+	tr->cnr++;
 	return LOG_OK;
 }
 
@@ -255,7 +258,9 @@ table_delete(sql_trans *tr, sql_table *t, oid rid)
 	sqlstore *store = tr->store;
 	assert(!is_oid_nil(rid));
 
-	return store->storage_api.delete_tab(tr, t, &rid, false);
+	int res = store->storage_api.delete_tab(tr, t, &rid, false);
+	tr->cnr++;
+	return res;
 }
 
 static res_table *

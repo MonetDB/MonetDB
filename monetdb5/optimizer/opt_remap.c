@@ -486,7 +486,7 @@ OPTremapImplementation(Client ctx, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			} else {
 				pushInstruction(mb, p);
 			}
-		} else if (p->argc == 4 && getModuleId(p) == aggrRef
+		} else if (0 && p->argc == 4 && getModuleId(p) == aggrRef
 				   && getFunctionId(p) == avgRef) {
 			/* group aggr.avg -> aggr.sum/aggr.count */
 			InstrPtr sum, avg, t, iszero;

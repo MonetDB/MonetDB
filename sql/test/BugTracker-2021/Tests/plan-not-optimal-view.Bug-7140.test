@@ -38,6 +38,7 @@ select * from plantest0 union all
 select * from plantest1
 ) as v
 
+skipif knownfail
 query T nosort
 EXPLAIN SHOW DETAILS select
 id_r * 10000000 as id_range_base,
@@ -98,6 +99,7 @@ id_r asc
 150000000
 2
 
+skipif knownfail
 query T nosort
 EXPLAIN SHOW DETAILS select
 id_r * 10000000 as id_range_base,

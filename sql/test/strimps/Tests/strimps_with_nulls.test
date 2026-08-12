@@ -2,7 +2,7 @@ statement ok
 CREATE TABLE fal(x STRING)
 
 statement ok
-COPY 100 RECORDS INTO fal FROM STDIN USING DELIMITERS ',',E'\n','"' NULL AS ''
+COPY 100 RECORDS INTO fal FROM STDIN USING DELIMITERS ',',E'\n' NULL AS 'NULL'
 <COPY_INTO_DATA>
 Alexandria Harris
 Dakota Howell
@@ -50,13 +50,13 @@ Jeffrey Ingram
 Jessica Miller
 Karen Jones
 Terry Sanders
-""
+NULL
 Aaron Rodriguez
 Kyle Ortega
 David Clark
 Brent Garrett
 Scott Young
-""
+NULL
 Shannon Edwards
 Tiffany Macias
 Ricky Gonzalez
@@ -102,8 +102,8 @@ Laura Holland
 Brendan Bates
 Mary Miller
 Thomas Ramirez
-""
-""
+NULL
+NULL
 
 statement ok
 ALTER TABLE fal SET READ ONLY

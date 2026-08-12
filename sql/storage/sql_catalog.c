@@ -21,7 +21,7 @@ base_key( sql_base *b )
 }
 
 void
-trans_add(sql_trans *tr, sql_base *b, void *data, tc_cleanup_fptr cleanup, tc_commit_fptr commit, tc_log_fptr log)
+trans_add(sql_trans *tr, sql_base *b, void *data, tc_cleanup_fptr cleanup, tc_commit_fptr commit, tc_log_fptr log, bool locked)
 {
 	sql_change *change = MNEW(sql_change);
 
@@ -32,11 +32,13 @@ trans_add(sql_trans *tr, sql_base *b, void *data, tc_cleanup_fptr cleanup, tc_co
 		.commit = commit,
 		.log = log,
 	};
-	MT_lock_set(&tr->lock);
+	if (!locked)
+		MT_lock_set(&tr->lock);
 	tr->changes = list_add(tr->changes, change);
 	if (log)
 		tr->logchanges++;
-	MT_lock_unset(&tr->lock);
+	if (!locked)
+		MT_lock_unset(&tr->lock);
 }
 
 void
@@ -341,6 +343,18 @@ find_sql_schema_id(sql_trans *tr, sqlid id)
 	if (tr->tmp && tr->tmp->base.id == id)
 		return tr->tmp;
 	return (sql_schema*)os_find_id(tr->cat->schemas, tr, id);
+}
+
+sql_ustr *
+find_sql_ustr(sql_trans *tr, sql_schema *s, const char *uname)
+{
+	return (sql_ustr *) os_find_name(s->ustrs, tr, uname);
+}
+
+sql_ustr *
+find_sql_ustr_id(sql_trans *tr, sql_schema *s, sqlid id)
+{
+	return (sql_ustr *) os_find_id(s->ustrs, tr, id);
 }
 
 sql_type *

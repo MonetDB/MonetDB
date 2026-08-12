@@ -1187,6 +1187,7 @@ sqltypeinit( allocator *sa)
 	for (t = floats; t < dates; t++) {
 		sql_create_aggr(sa, "sum", "aggr", "sum", FALSE, FALSE, *t, 1, *t);
 		sql_create_aggr(sa, "prod", "aggr", "prod", FALSE, FALSE, *t, 1, *t);
+		sql_create_aggr(sa, "fsum", "aggr", "sum", FALSE, FALSE, *t, 1, *t);
 	}
 	sql_create_aggr(sa, "sum", "aggr", "sum", FALSE, FALSE, MONINT, 1, MONINT);
 	sql_create_aggr(sa, "sum", "aggr", "sum", FALSE, FALSE, DAYINT, 1, DAYINT);
@@ -1405,6 +1406,7 @@ sqltypeinit( allocator *sa)
 				sql_create_func(sa, "sql_div", "calc", "/", FALSE, FALSE, SCALE_DIV, 0, *t, 2, *t, *u);
 			}
 		}
+		sql_create_func(sa, "num_div", "calc", "num_div", FALSE, FALSE, SCALE_FIX, 0, *t, 2, *t, LNG);
 	}
 
 	/* all numericals */
@@ -1731,6 +1733,7 @@ sqltypeinit( allocator *sa)
 	/* copyfrom fname (arg 15) */
 	f = sql_create_union(sa, "copyfrom", "sql", "copy_from", TRUE, SCALE_FIX, 0, TABLE, 14, PTR, STR, STR, STR, STR, STR, LNG, LNG, INT, STR, INT, INT, STR, STR);
 	f->varres = 1;
+	f->pipeline = 1;
 
 	/* bincopyfrom */
 	f = sql_create_union(sa, "copyfrombinary", "", "", TRUE, SCALE_FIX, 0, TABLE, 3, STR, STR, INT);
@@ -1740,6 +1743,7 @@ sqltypeinit( allocator *sa)
 	f = sql_create_union(sa, "file_loader", "", "", TRUE, SCALE_FIX, 0, TABLE, 1, STR);
 	f->varres = 1;
 	f->vararg = 1;
+	f->pipeline = 1;
 
 	/* generic proto_loader which expects an URI starting with the protocol like: 'odbc:' or 'monetdb:' or 'file:' */
 	f = sql_create_union(sa, "proto_loader", "", "", TRUE, SCALE_FIX, 0, TABLE, 1, STR);

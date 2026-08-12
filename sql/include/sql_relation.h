@@ -13,6 +13,43 @@
 
 #include "sql_catalog.h"
 
+typedef enum prop_kind {
+	PROP_COUNT,     /* Number of expect rows for the relation */
+	PROP_NUNIQUES,  /* Estimated number of distinct rows for the expression */
+	PROP_MIN,       /* min value if available */
+	PROP_MAX,       /* max value if available */
+	PROP_JOINIDX,   /* could use join idx */
+	PROP_HASHIDX,   /* is hash idx */
+	PROP_HASHCOL,   /* could use hash idx */
+	PROP_UKEY,		/* p = list of exps */
+	PROP_REMOTE,    /* uri for remote execution */
+	PROP_USED,      /* number of times exp is used */
+	PROP_GROUPINGS, /* used by ROLLUP/CUBE/GROUPING SETS, value contains the list of sets */
+	PROP_NESTED,     /* used by basetable too pass the nested table name */
+	PROP_UNNEST,    /* used by UNNEST function, value contains the unnest expression */
+	PROP_UNNESTING,	/* used by unnesting rewriter */
+	PROP_SELECTIVITY,	/* selectivity estimate for predicates (dbl, 0.0-1.0) */
+	PROP_HASH,		/* an hash for the relational sub graph */
+} prop_kind;
+
+typedef struct prop {
+	prop_kind kind;  /* kind of property */
+	sqlid id;		/* optional id of object involved */
+	union {
+		BUN lval; /* property with simple counts */
+		dbl dval; /* property with estimate */
+		void *pval; /* property value */
+	} value;
+	struct prop *p; /* some relations may have many properties, which are kept in a chain list */
+} prop;
+
+/* for REMOTE prop we need to keep a list with tids and uris for the remote tables */
+typedef struct tid_uri {
+	sqlid id;
+	const char* uri;
+} tid_uri;
+
+
 typedef enum expression_type {
 	e_atom,
 	e_column,
@@ -59,8 +96,8 @@ typedef struct expression {
 	 zero_if_empty:1, 	/* in case of partial aggregator computation, some aggregators need to return 0 instead of NULL */
 	 distinct:1,
 
-	 semantics:1,	/* 1: use the SQL 'IS NULL' semantics (i.e. nil == nil); 0: use the SQL '= NULL' semantics (i.e. unknown != unknown). Also indicates ranges and aggregations with (i.e. 1) or without (i.e. 0) nil */
-	 any:1,			/* SQL '= NULL' vs SQL ANY semantics (i.e. 1: keep nil results) */
+	 semantics:1,	/* is vs = semantics (nil = nil vs unknown != unknown), ranges with or without nil, aggregation with or without nil */
+	 any:1,			/* = vs any semantics (keep nil results) */
 	 need_no_nil:1,
 	 has_no_nil:1,
 	 unique:1,	/* expression has unique values, but it may have multiple NULL values! */
@@ -72,7 +109,8 @@ typedef struct expression {
 	 used:1,	/* used for quick dead code removal */
 	 symmetric:1; /* compare between symmetric */
 	sql_subtype	tpe;
-	void *p;	/* properties for the optimizer */
+	int shared;		/* shared variable */
+	prop *p;	/* properties for the optimizer */
 	str comment;
 } sql_exp;
 
@@ -83,7 +121,6 @@ typedef struct expression {
 #define IS_TABLE_PROD_FUNC(X)  ((X & TABLE_PROD_FUNC) == TABLE_PROD_FUNC)
 
 /* or-ed with the above TABLE_PROD_FUNC */
-#define REL_PARTITION		8
 #define OUTER_ZERO		32
 
 /* We need bit wise exclusive numbers as we merge the level also in the flag */
@@ -145,7 +182,9 @@ typedef enum ddl_statement {
 	ddl_comment_on,
 	ddl_rename_schema,
 	ddl_rename_table,
-	ddl_rename_column
+	ddl_rename_column,
+	ddl_create_ustr,
+	ddl_drop_ustr,
 } ddl_statement;
 
 typedef enum operator_type {
@@ -170,6 +209,9 @@ typedef enum operator_type {
 	op_update,	/* update(l=table, r update expressions) */
 	op_delete,	/* delete(l=table, r delete expression) */
 	op_truncate, /* truncate(l=table) */
+	op_buildhash,
+	op_probehash,
+	op_partition
 } operator_type;
 
 #define is_atom(et) 		(et == e_atom)
@@ -205,7 +247,7 @@ typedef enum operator_type {
 #define is_except(op) 		(op == op_except)
 #define is_munion(op) 		(op == op_munion)
 #define is_simple_project(op) 	(op == op_project)
-#define is_project(op) 		(op == op_project || op == op_groupby || is_set(op) || is_munion(op))
+#define is_project(op) 		((op) == op_project || (op) == op_groupby || is_set(op) || is_munion(op) || (op) == op_partition)
 #define is_groupby(op) 		(op == op_groupby)
 #define is_topn(op) 		(op == op_topn)
 #define is_modify(op) 	 	(op == op_insert || op == op_update || op == op_delete || op == op_truncate)
@@ -214,6 +256,7 @@ typedef enum operator_type {
 #define is_update(op) 		(op == op_update)
 #define is_delete(op) 		(op == op_delete)
 #define is_truncate(op) 	(op == op_truncate)
+#define is_physical(op) 	((op) == op_buildhash || (op) == op_probehash || (op) == op_partition)
 
 /* ZERO on empty sets, needed for sum (of counts)). */
 #define zero_if_empty(e) 	((e)->zero_if_empty)
@@ -319,7 +362,14 @@ typedef struct relation {
 	 grouped:1,	/* groupby processed all the group by exps */
 	 single:1,
 	 recursive:1,	/* recursive unions */
-	 dynamic:1;		/* dynamic content (ie the double used base side of the recursive union) */
+	 dynamic:1,		/* dynamic content (ie the double used base side of the recursive union) */
+	 parallel:1,	/* suitable for parallel pipeline? */
+	 partition:2,	/* partition input relation?
+					 * 0 (no), 1 (left relation), 2 (right relation) */
+	 oahash:2,		/* op_join: generate parallel OAHash join plan?
+					 * 0 (no), 1 (hash left), 2 (hash right)
+					 * op_basetable: generate parallel hash table plan */
+	 spb:1;			/* should this `rel` start a pipeline block? */
 	/*
 	 * Used by rewriters at rel_unnest, rel_optimizer and rel_distribute so a relation is not modified twice
 	 * The list is kept at rel_optimizer_private.h Please update it accordingly
@@ -327,7 +377,7 @@ typedef struct relation {
 	uint16_t used;
 	uint16_t nr_outers;
 	int opt;
-	void *p;	/* properties for the optimizer, distribution */
+	prop *p;	/* properties for the optimizer, distribution */
 } sql_rel;
 
 #endif /* SQL_RELATION_H */

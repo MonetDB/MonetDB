@@ -55,6 +55,9 @@ void mal_client_reset(void)
 void mal_dataflow_reset(void)
 	__attribute__((__visibility__("hidden")));
 
+void mal_pipelines_reset(void)
+	__attribute__((__visibility__("hidden")));
+
 void mal_linker_reset(void)
 	__attribute__((__visibility__("hidden")));
 

@@ -11,7 +11,7 @@
 #ifndef _SQL_SUBQUERY_H
 #define _SQL_SUBQUERY_H
 
-#include "sql.h"
+#include "sql_monet_backend.h"
 
 extern str zero_or_one_error(Client ctx, ptr ret, const bat *bid, const bit *err );
 extern str zero_or_one_error_bat(Client ctx, ptr ret, const bat *bid, const bat *err );

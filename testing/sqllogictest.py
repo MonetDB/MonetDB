@@ -14,13 +14,14 @@
 # The skipif/onlyif mechanism has been slightly extended.  Recognized
 # "system"s are:
 # MonetDB, arch=<architecture>, system=<system>, bits=<bits>,
-# threads=<threads>, has-hugeint, knownfail
+# threads=<threads>, has-hugeint, knownfail, pipeline
 # where <architecture> is generally what the Python call
 # platform.machine() returns (i.e. x86_64, i686, aarch64, ppc64,
 # ppc64le, note 'AMD64' is translated to 'x86_64' and 'arm64' to
 # 'aarch64'); <system> is whatever platform.system() returns
 # (i.e. Linux, Darwin, Windows); <bits> is either 32bit or 64bit;
-# <threads> is the number of threads.
+# <threads> is the number of threads; pipeline is true when using the
+# pipeline execution engine.
 
 # statement (ok|ok rowcount|error) [arg]
 # query (I|D|T|R)+ (nosort|rowsort|valuesort|python)? [arg]
@@ -115,6 +116,7 @@ class SQLLogicConnection(object):
 def is_copyfrom_stmt(stmt:[str]=[]):
     return '<COPY_INTO_DATA>' in stmt
 
+
 def prepare_copyfrom_stmt(stmt:[str]=[]):
     index = stmt.index('<COPY_INTO_DATA>')
     head = stmt[:index]
@@ -133,8 +135,10 @@ def prepare_copyfrom_stmt(stmt:[str]=[]):
     tail='\n'.join(tail)
     return head + '\n' + tail, head, stmt
 
+
 def dq(s):
     return s.replace('"', '""')
+
 
 class SQLLogic:
     def __init__(self, srcdir='.', report=None, out=sys.stdout):
@@ -403,7 +407,7 @@ class SQLLogic:
             return ['statement', 'crash'] # should never be approved
         except KeyboardInterrupt:
             raise
-        except:
+        except Exception:
             type, value, traceback = sys.exc_info()
             self.query_error(statement, 'unexpected error from pymonetdb', str(value))
             return ['statement', 'error']
@@ -505,7 +509,8 @@ class SQLLogic:
             print("query text:", file=self.out)
             print(query, file=self.out)
 
-    def exec_query(self, query, columns, sorting, pyscript, hashlabel, nresult, hash, expected, conn=None, verbose=False) -> bool:
+    def exec_query(self, query, columns, sorting, pyscript, hashlabel, nresult,
+                   hash, expected, conn=None, verbose=False) -> bool:
         err = False
         crs = conn.cursor() if conn else self.crs
         if '<LAST_PREPARE_ID>' in query:
@@ -524,13 +529,15 @@ class SQLLogic:
             raise
         except TimeoutError as e:
             self.query_error(query, 'Timeout', str(e))
-            return ['statement', 'crash'] # should never be approved
+            return ['statement', 'crash']  # should never be approved
         except ConnectionError as e:
-            self.query_error(query, 'Timeout or server may have crashed', str(e))
-            return ['statement', 'crash'] # should never be approved
-        except:
+            self.query_error(query, 'Timeout or server may have crashed',
+                             str(e))
+            return ['statement', 'crash']  # should never be approved
+        except Exception:
             tpe, value, traceback = sys.exc_info()
-            self.query_error(query, 'unexpected error from pymonetdb', str(value))
+            self.query_error(query, 'unexpected error from pymonetdb',
+                             str(value))
             return ['statement', 'error'], []
         if crs.description is None:
             # it's not a query, it's a statement
@@ -540,9 +547,10 @@ class SQLLogic:
             data = crs.fetchall()
         except KeyboardInterrupt:
             raise
-        except:
+        except Exception:
             tpe, value, traceback = sys.exc_info()
-            self.query_error(query, 'unexpected error from pymonetdb', str(value))
+            self.query_error(query, 'unexpected error from pymonetdb',
+                             str(value))
             return ['statement', 'error'], []
         if crs.lastrowid is not None:
             # it was a PREPARE query
@@ -678,13 +686,13 @@ class SQLLogic:
             if not err:
                 try:
                     ndata = pyfnc(data)
-                except:
+                except Exception:
                     self.query_error(query, 'filter function failed')
                     err = True
                 if resdata is not None:
                     try:
                         resdata = pyfnc(resdata)
-                    except:
+                    except Exception:
                         resdata = None
             ncols = 1
             if (len(ndata)):
@@ -879,13 +887,13 @@ class SQLLogic:
                 assert k in ['conn_id', 'username', 'password']
                 assert res.get(k) is None
                 res[k] = v
-            except (ValueError, AssertionError) as e:
+            except (ValueError, AssertionError):
                 self.raise_error('invalid connection parameters definition!')
         if len(res.keys()) > 1:
             try:
                 assert res.get('username')
                 assert res.get('password')
-            except AssertionError as e:
+            except AssertionError:
                 self.raise_error('invalid connection parameters definition, username or password missing!')
         return res
 
@@ -893,6 +901,7 @@ class SQLLogic:
         self.approve = approve
         self.initfile(f, defines, run_until=run_until)
         nthreads = None
+        pipeline = None
         if self.timeout:
             timeout = int((time.time() - self.starttime) + self.timeout)
         else:
@@ -951,6 +960,12 @@ class SQLLogic:
                         elif words[1] == 'knownfail':
                             if not self.alltests:
                                 skipping = True
+                        elif words[1] == 'pipeline':
+                            if pipeline is None:
+                                self.crs.execute("select val from sys.debugflags() where flag = 'pipeline'")
+                                pipeline = self.crs.fetchall()[0][0]
+                            if pipeline:
+                                skipping = True
                     elif words[0] == 'onlyif':
                         skipping = True
                         if words[1] in ('MonetDB', f'arch={architecture}', f'system={system}', f'bits={bits}'):
@@ -966,6 +981,12 @@ class SQLLogic:
                                 skipping = False
                         elif words[1] == 'knownfail':
                             if self.alltests:
+                                skipping = False
+                        elif words[1] == 'pipeline':
+                            if pipeline is None:
+                                self.crs.execute("select val from sys.debugflags() where flag = 'pipeline'")
+                                pipeline = self.crs.fetchall()[0][0]
+                            if pipeline:
                                 skipping = False
                     self.writeline(line.rstrip())
                     line = self.readline()
@@ -1089,7 +1110,8 @@ class SQLLogic:
         if approve:
             approve.flush()
 
-if __name__ == '__main__':
+
+def main():
     import argparse
     parser = argparse.ArgumentParser(description='Run a Sqllogictest')
     parser.add_argument('--host', action='store', default='localhost',
@@ -1106,11 +1128,13 @@ if __name__ == '__main__':
                         help='language to use for testing')
     parser.add_argument('--data-dir', action='store',
                         type=Path,
-                        help='directory for relative paths in ON CLIENT processing (default: directory of test script)')
+                        help='directory for relative paths in ON CLIENT'
+                        ' processing (default: directory of test script)')
     parser.add_argument('--nodrop', action='store_true',
                         help='do not drop tables at start of test')
     parser.add_argument('--timeout', action='store', type=int, default=0,
-                        help='timeout in seconds (<= 0 is no timeout) after which test is terminated')
+                        help='timeout in seconds (<= 0 is no timeout) after'
+                        ' which test is terminated')
     parser.add_argument('--verbose', action='store_true',
                         help='be a bit more verbose')
     parser.add_argument('--results', action='store',
@@ -1161,3 +1185,12 @@ if __name__ == '__main__':
         sys.exit(2)
     if sql.timedout:
         sys.exit(1)
+
+
+if __name__ == '__main__':
+    if sys.argv[1] == '--pdb':
+        del sys.argv[1]
+        import pdb
+        pdb.run('main()')
+    else:
+        main()

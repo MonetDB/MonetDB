@@ -381,6 +381,8 @@ column_constraint_name(allocator *ta, symbol *s, sql_column *sc, sql_table *t)
 
 #define COL_NULL	0
 #define COL_DEFAULT 1
+#define COL_STORAGE 2
+#define COL_USTR	4
 
 static bool
 foreign_key_check_types(sql_subtype *lt, sql_subtype *rt)
@@ -699,67 +701,44 @@ column_options(sql_query *query, dlist *opt_list, sql_schema *ss, sql_table *t, 
 			symbol *s = n->data.sym;
 
 			switch (s->token) {
-				case SQL_CONSTRAINT: {
-					dlist *l = s->data.lval;
-					char *opt_name = l->h->data.sval, *default_name = NULL;
-					symbol *sym = l->h->next->data.sym;
-					allocator *ta = MT_thread_getallocator();
-					allocator_state ta_state = ma_open(ta);
+			case SQL_CONSTRAINT: {
+				dlist *l = s->data.lval;
+				char *opt_name = l->h->data.sval, *default_name = NULL;
+				symbol *sym = l->h->next->data.sym;
+				allocator *ta = MT_thread_getallocator();
+				allocator_state ta_state = ma_open(ta);
 
-					if (!opt_name && !(default_name = column_constraint_name(ta, sym, cs, t))) {
-						ma_close(&ta_state);
-						return SQL_ERR;
-					}
-
-					res = column_constraint_type(query, opt_name ? opt_name : default_name, sym, ss, t, cs, isDeclared, &used);
+				if (!opt_name && !(default_name = column_constraint_name(ta, sym, cs, t))) {
 					ma_close(&ta_state);
-					if (res<0)
-						res = SQL_ERR;
-				} 	break;
-				case SQL_DEFAULT: {
-					symbol *sym = s->data.sym;
-					char *err = NULL, *r;
+					return SQL_ERR;
+				}
 
-					if ((used&(1<<COL_DEFAULT))) {
-						(void) sql_error(sql, 02, SQLSTATE(42000) "A default value for a column may be specified at most once");
+				res = column_constraint_type(query, opt_name ? opt_name : default_name, sym, ss, t, cs, isDeclared, &used);
+				ma_close(&ta_state);
+				if (res<0)
+					res = SQL_ERR;
+			} 	break;
+			case SQL_DEFAULT: {
+				symbol *sym = s->data.sym;
+				char *err = NULL, *r;
+
+				if (used & (1 << COL_DEFAULT)) {
+					(void) sql_error(sql, 02, SQLSTATE(42000) "A default value for a column may be specified at most once");
+					return SQL_ERR;
+				}
+				used |= (1 << COL_DEFAULT);
+
+				if (sym->token == SQL_COLUMN || sym->token == SQL_IDENT || sym->token == SQL_NEXT) {
+					exp_kind ek = {type_value, card_value, FALSE};
+					sql_exp *e = rel_logical_value_exp(query, NULL, sym, sql_sel, ek);
+
+					if (!e)
 						return SQL_ERR;
-					}
-					used |= (1<<COL_DEFAULT);
+					if (e && is_atom(e->type)) {
+						atom *a = exp_value(sql, e);
 
-					if (sym->token == SQL_COLUMN || sym->token == SQL_IDENT || sym->token == SQL_NEXT) {
-						exp_kind ek = {type_value, card_value, FALSE};
-						sql_exp *e = rel_logical_value_exp(query, NULL, sym, sql_sel, ek);
-
-						if (!e)
-							return SQL_ERR;
-						if (e && is_atom(e->type)) {
-							atom *a = exp_value(sql, e);
-
-							if (a && atom_null(a)) {
-								switch (mvc_default(sql, cs, NULL)) {
-									case -1:
-										(void) sql_error(sql, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
-										return SQL_ERR;
-									case -2:
-									case -3:
-										(void) sql_error(sql, 02, SQLSTATE(42000) "DEFAULT: transaction conflict detected while setting default value");
-										return SQL_ERR;
-									default:
-										break;
-								}
-								break;
-							}
-						}
-						/* reset error */
-						sql->session->status = 0;
-						sql->errstr[0] = '\0';
-					}
-					r = symbol2string(sql, s->data.sym, 0, &err);
-					if (!r) {
-						(void) sql_error(sql, 02, SQLSTATE(42000) "Incorrect default value '%s'", err?err:"");
-						return SQL_ERR;
-					} else {
-						switch (mvc_default(sql, cs, r)) {
+						if (a && atom_null(a)) {
+							switch (mvc_default(sql, cs, NULL)) {
 							case -1:
 								(void) sql_error(sql, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 								return SQL_ERR;
@@ -769,35 +748,97 @@ column_options(sql_query *query, dlist *opt_list, sql_schema *ss, sql_table *t, 
 								return SQL_ERR;
 							default:
 								break;
+							}
+							break;
 						}
 					}
-				} 	break;
-				case SQL_NOT_NULL:
-				case SQL_NULL: {
-					int null = (s->token != SQL_NOT_NULL);
-
-					if ((used&(1<<COL_NULL))) {
-						(void) sql_error(sql, 02, SQLSTATE(42000) "NULL constraint for a column may be specified at most once");
-						return SQL_ERR;
-					}
-					used |= (1<<COL_NULL);
-
-					switch (mvc_null(sql, cs, null)) {
-						case -1:
-							(void) sql_error(sql, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
-							return SQL_ERR;
-						case -2:
-						case -3:
-							(void) sql_error(sql, 02, SQLSTATE(42000) "NULL CONSTRAINT: transaction conflict detected");
-							return SQL_ERR;
-						default:
-							break;
-					}
-				} 	break;
-				default: {
-					(void) sql_error(sql, 02, SQLSTATE(M0M03) "Unknown column option (%p)->token = %s", s, token2string(s->token));
+					/* reset error */
+					sql->session->status = 0;
+					sql->errstr[0] = '\0';
+				}
+				r = symbol2string(sql, s->data.sym, 0, &err);
+				if (!r) {
+					(void) sql_error(sql, 02, SQLSTATE(42000) "Incorrect default value '%s'", err?err:"");
 					return SQL_ERR;
 				}
+				switch (mvc_default(sql, cs, r)) {
+				case -1:
+					(void) sql_error(sql, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
+					return SQL_ERR;
+				case -2:
+				case -3:
+					(void) sql_error(sql, 02, SQLSTATE(42000) "DEFAULT: transaction conflict detected while setting default value");
+					return SQL_ERR;
+				default:
+					break;
+				}
+				break;
+			}
+			case SQL_NOT_NULL:
+			case SQL_NULL:
+				if (used & (1 << COL_NULL)) {
+					(void) sql_error(sql, 02, SQLSTATE(42000) "NULL constraint for a column may be specified at most once");
+					return SQL_ERR;
+				}
+				used |= (1 << COL_NULL);
+
+				switch (mvc_null(sql, cs, (s->token != SQL_NOT_NULL))) {
+				case -1:
+					(void) sql_error(sql, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
+					return SQL_ERR;
+				case -2:
+				case -3:
+					(void) sql_error(sql, 02, SQLSTATE(42000) "NULL CONSTRAINT: transaction conflict detected");
+					return SQL_ERR;
+				default:
+					break;
+				}
+				break;
+			case SQL_STORAGE:
+				if (used & (1 << COL_STORAGE)) {
+					(void) sql_error(sql, 02, SQLSTATE(42000) "STORAGE option for a column may be specified at most once");
+					return SQL_ERR;
+				}
+				used |= (1 << COL_STORAGE);
+				switch (mvc_storage(sql, cs, s->data.sval)) {
+				case -1:
+					(void) sql_error(sql, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
+					return SQL_ERR;
+				case -2:
+				case -3:
+					(void) sql_error(sql, 02, SQLSTATE(42000) "STORAGE option: transaction conflict detected");
+					return SQL_ERR;
+				default:
+					break;
+				}
+				break;
+			case SQL_USTR:
+				if (used & (1 << COL_USTR)) {
+					(void) sql_error(sql, 02, SQLSTATE(42000) "DISTINCT STRING COLUMN option for a column may be specified at most once");
+					return SQL_ERR;
+				}
+				used |= (1 << COL_USTR);
+				switch (mvc_ustr(sql, ss, cs, s->data.lval)) {
+				case -1:
+					(void) sql_error(sql, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
+					return SQL_ERR;
+				case -2:
+				case -3:
+					(void) sql_error(sql, 02, SQLSTATE(42000) "DISTINCT STRING COLUMN option: transaction conflict detected");
+					return SQL_ERR;
+				case -4:
+					(void) sql_error(sql, 02, SQLSTATE(42000) "DISTINCT STRING COLUMN option: no such schema '%s'", qname_schema(s->data.lval));
+					return SQL_ERR;
+				case -5:
+					(void) sql_error(sql, 02, SQLSTATE(42000) "DISTINCT STRING COLUMN option: column is not a (var)char column");
+					return SQL_ERR;
+				default:
+					break;
+				}
+				break;
+			default:
+				(void) sql_error(sql, 02, SQLSTATE(M0M03) "Unknown column option (%p)->token = %s", s, token2string(s->token));
+				return SQL_ERR;
 			}
 		}
 	}
@@ -1378,18 +1419,26 @@ table_element(sql_query *query, symbol *s, sql_schema *ss, sql_table *t, int alt
 			}
 			assert(oc->type.type->eclass != EC_ANY);
 			switch (mvc_create_column(&nc, sql, t, oc->base.name, &oc->type)) {
-				case -1:
-					sql_error(sql, 01, SQLSTATE(HY013) MAL_MALLOC_FAIL);
-					return SQL_ERR;
-				case -2:
-				case -3:
-					sql_error(sql, 01, SQLSTATE(42000) "%s: transaction conflict detected", action);
-					return SQL_ERR;
-				default:
-					break;
+			case -1:
+				sql_error(sql, 01, SQLSTATE(HY013) MAL_MALLOC_FAIL);
+				return SQL_ERR;
+			case -2:
+			case -3:
+				sql_error(sql, 01, SQLSTATE(42000) "%s: transaction conflict detected", action);
+				return SQL_ERR;
+			default:
+				sql_error(sql, 01, SQLSTATE(42000) "%s: unknown error", action);
+				return SQL_ERR;
+			case 0:
+				break;
 			}
-			if (nc && oc->null != nc->null)
+			assert(nc != NULL);
+			if (oc->null != nc->null)
 				mvc_null(sql, nc, oc->null);
+			if (oc->storage_type &&
+				(nc->storage_type == NULL ||
+				 strcmp(oc->storage_type, nc->storage_type) != 0))
+				mvc_storage(sql, nc, oc->storage_type);
 		}
 	} 	break;
 	case SQL_DROP_COLUMN:
@@ -1803,7 +1852,7 @@ rel_create_view(sql_query *query, int temp, dlist *qname, dlist *column_spec, sy
 }
 
 static sql_rel *
-rel_schema2(allocator *sa, int cat_type, char *sname, char *auth, int nr)
+rel_schema2(allocator *sa, int cat_type, const char *sname, const char *auth, int nr)
 {
 	sql_rel *rel = rel_create(sa);
 	list *exps = new_exp_list(sa);
@@ -1932,7 +1981,7 @@ schema_auth(dlist *name_auth)
 }
 
 static sql_rel *
-rel_drop(allocator *sa, int cat_type, char *sname, char *first_val, char *second_val, int nr, int exists_check)
+rel_drop(allocator *sa, ddl_statement cat_type, const char *sname, const char *first_val, const char *second_val, int nr, int exists_check)
 {
 	sql_rel *rel = rel_create(sa);
 	list *exps = new_exp_list(sa);
@@ -1977,7 +2026,7 @@ rel_create_schema_dll(allocator *sa, char *sname, char *auth, int nr)
 }
 
 static sql_rel *
-rel_create_schema(sql_query *query, dlist *auth_name, dlist *schema_elements, int if_not_exists)
+rel_create_schema(sql_query *query, dlist *auth_name, int if_not_exists)
 {
 	mvc *sql = query->sql;
 	char *name = dlist_get_schema_name(auth_name);
@@ -1996,28 +2045,7 @@ rel_create_schema(sql_query *query, dlist *auth_name, dlist *schema_elements, in
 			return sql_error(sql, 02, SQLSTATE(3F000) "CREATE SCHEMA: name '%s' already in use", name);
 		return rel_psm_block(sql->sa, new_exp_list(sql->sa));
 	} else {
-		sql_schema *os = cur_schema(sql);
-		dnode *n = schema_elements->h;
-		sql_schema *ss = SA_ZNEW(sql->sa, sql_schema);
-		sql_rel *ret = rel_create_schema_dll(sql->sa, name, auth, 0);
-
-		ss->base.name = name;
-		ss->auth_id = auth_id;
-		ss->owner = sql->user_id;
-
-		sql->session->schema = ss;
-		while (n) {
-			sql_rel *res = rel_semantic(query, n->data.sym);
-			if (!res) {
-				rel_destroy(sql, ret);
-				sql->session->schema = os;
-				return NULL;
-			}
-			ret = rel_list(sql->sa, ret, res);
-			n = n->next;
-		}
-		sql->session->schema = os;
-		return ret;
+		return rel_create_schema_dll(sql->sa, name, auth, 0);
 	}
 }
 
@@ -3104,6 +3132,34 @@ rel_set_table_schema(sql_query *query, char *old_schema, char *tname, char *new_
 	return rel;
 }
 
+static sql_rel *
+rel_create_ustr(allocator *sa, const char *sname, const char *uname, int if_not_exists)
+{
+	return rel_schema2(sa, ddl_create_ustr, sname, uname, if_not_exists);
+}
+
+static sql_rel *
+rel_drop_ustr(allocator *sa, const char *sname, const char *uname, int if_exists, int drop_action)
+{
+	sql_rel *rel = rel_create(sa);
+	list *exps = new_exp_list(sa);
+	if (!rel || !exps)
+		return NULL;
+
+	append(exps, exp_atom_clob(sa, sname));
+	append(exps, exp_atom_clob(sa, uname));
+	append(exps, exp_atom_int(sa, drop_action));
+	append(exps, exp_atom_int(sa, if_exists));
+	rel->l = NULL;
+	rel->r = NULL;
+	rel->op = op_ddl;
+	rel->flag = ddl_drop_ustr;
+	rel->exps = exps;
+	rel->card = 0;
+	rel->nrcols = 0;
+	return rel;
+}
+
 sql_rel *
 rel_schemas(sql_query *query, symbol *s)
 {
@@ -3118,9 +3174,7 @@ rel_schemas(sql_query *query, symbol *s)
 	{
 		dlist *l = s->data.lval;
 
-		ret = rel_create_schema(query, l->h->data.lval,
-				l->h->next->next->next->data.lval,
-				l->h->next->next->next->next->data.i_val); /* if not exists */
+		ret = rel_create_schema(query, l->h->data.lval, l->h->next->next->next->data.i_val); /* if not exists */
 	} 	break;
 	case SQL_DROP_SCHEMA:
 	{
@@ -3309,6 +3363,43 @@ rel_schemas(sql_query *query, symbol *s)
 		}
 		ret = rel_schema2(sql->sa, ddl_drop_index, idx->t->s->base.name, iname, 0);
 	} 	break;
+	case SQL_CREATE_USTR: {
+		dlist *l = s->data.lval;
+		dlist *qname = l->h->data.lval;
+		char *sname = qname_schema(qname);
+		char *cname = qname_schema_object(qname);
+		int if_not_exists = l->h->next->data.i_val;
+		sql_schema *sch;
+		if (sname == NULL) {
+			sch = cur_schema(sql);
+			sname = sch->base.name;
+		} else {
+			sch = mvc_bind_schema(sql, sname);
+		}
+		if (!mvc_schema_privs(sql, sch)) {
+			return sql_error(sql, 02, SQLSTATE(42000) "CREATE DISTINCT STRING COLUMN: insufficient privileges for user '%s' in schema '%s'", get_string_global_var(sql, "current_user"), sname);
+		}
+		ret = rel_create_ustr(sql->sa, sname, cname, if_not_exists);
+		break;
+	}
+	case SQL_DROP_USTR: {
+		dlist *l = s->data.lval;
+		dlist *qname = l->h->data.lval;
+		char *sname = qname_schema(qname);
+		char *cname = qname_schema_object(qname);
+		sql_schema *sch;
+		if (sname == NULL) {
+			sch = cur_schema(sql);
+			sname = sch->base.name;
+		} else {
+			sch = mvc_bind_schema(sql, sname);
+		}
+		if (!mvc_schema_privs(sql, sch)) {
+			return sql_error(sql, 02, SQLSTATE(42000) "CREATE DISTINCT STRING COLUMN: insufficient privileges for user '%s' in schema '%s'", get_string_global_var(sql, "current_user"), sname);
+		}
+		ret = rel_drop_ustr(sql->sa, sname, cname, l->h->next->data.i_val, l->h->next->next->data.i_val);
+		break;
+	}
 	case SQL_CREATE_USER: {
 		dlist *l = s->data.lval;
 		char *username = l->h->data.sval;

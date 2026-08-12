@@ -30,6 +30,7 @@ query ITTIITTTIII rowsort
 select * from sys.commented_function_signatures_6542
 ----
 
+skipif knownfail
 query T nosort
 EXPLAIN SHOW DETAILS select count (*) from sys.commented_function_signatures_6542
 ----

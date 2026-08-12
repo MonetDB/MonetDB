@@ -86,13 +86,15 @@ virtualize(BAT *bn)
 	return bn;
 }
 
-#define HASHloop_bound(bi, h, hb, v, lo, hi)		\
-	for (hb = HASHget(h, HASHprobe((h), v));	\
-	     hb != BUN_NONE;				\
-	     hb = HASHgetlink(h,hb))			\
-		if (hb >= (lo) && hb < (hi) &&		\
-		    (eq == NULL ||			\
-		     (*eq)(v, BUNtail(bi, hb))))
+#define HASHloop_bound(bi, h, hb, v, lo, hi)				\
+	for (hb = HASHget(h, HASHprobe((h), v));			\
+	     hb != BUN_NONE;						\
+	     hb = HASHgetlink(h,hb))					\
+		if (hb >= (lo) && hb < (hi) &&				\
+		    (eq == NULL ||					\
+		     (h->offsets ?					\
+		      *(var_t *) v == VarHeapVal(bi->base, hb, bi->width) : \
+		      (*eq)(v, BUNtail(bi, hb)))))
 
 static BAT *
 hashselect(BATiter *bi, struct canditer *restrict ci, BAT *bn,
@@ -116,7 +118,19 @@ hashselect(BATiter *bi, struct canditer *restrict ci, BAT *bn,
 	h = canditer_last(ci) + 1 - seq;
 
 	*algo = "hashselect";
-	if (phash && (b2 = BATdescriptor(VIEWtparent(bi->b))) != NULL) {
+	var_t off = 0;
+	if (bi->ustr) {
+		b2 = BATdescriptor(bi->ustr);
+		if ((i = BUNfnd(b2, tl)) == BUN_NONE) {
+			BBPreclaim(b2);
+			return bn;
+		}
+		pbi = bat_iterator(b2);
+		off = VarHeapVal(pbi.base, i, pbi.width);
+		bat_iterator_end(&pbi);
+		BBPreclaim(b2);
+		tl = &off;
+	} else if (phash && (b2 = BATdescriptor(VIEWtparent(bi->b))) != NULL) {
 		*algo = "hashselect on parent";
 		TRC_DEBUG(ALGO, ALGOBATFMT
 			  " using parent(" ALGOBATFMT ") "
@@ -217,7 +231,7 @@ hashselect(BATiter *bi, struct canditer *restrict ci, BAT *bn,
 #define scanloop(NAME,canditer_next,TEST)				\
 	do {								\
 		BUN ncand = ci->ncand;					\
-		*algo = "select: " #NAME " " #TEST " (" #canditer_next ")"; \
+		*algo = #NAME " " #TEST " (" #canditer_next ")"; \
 		if (BATcapacity(bn) < maximum) {			\
 			TIMEOUT_LOOP_IDX(p, ncand, qry_ctx) {		\
 				o = canditer_next(ci);			\
@@ -371,7 +385,7 @@ NAME##_##TYPE(BATiter *bi, struct canditer *restrict ci, BAT *bn,	\
 			if (!li) {					\
 				/* open range on left */		\
 				if (vl == MAXVALUE##TYPE) {		\
-					*algo = "select: empty range";	\
+					*algo = "empty range";	\
 					return 0;			\
 				}					\
 				/* vl < x === vl+1 <= x */		\
@@ -389,7 +403,7 @@ NAME##_##TYPE(BATiter *bi, struct canditer *restrict ci, BAT *bn,	\
 			if (!hi) {					\
 				/* open range on right */		\
 				if (vh == MINVALUE##TYPE) {		\
-					*algo = "select: empty range";	\
+					*algo = "empty range";	\
 					return 0;			\
 				}					\
 				/* x < vh === x <= vh-1 */		\
@@ -403,7 +417,7 @@ NAME##_##TYPE(BATiter *bi, struct canditer *restrict ci, BAT *bn,	\
 			hval = true;					\
 		}							\
 		if (vl > vh) {						\
-			*algo = "select: empty range";			\
+			*algo = "empty range";			\
 			return 0;					\
 		}							\
 	}								\
@@ -463,7 +477,7 @@ fullscan_any(BATiter *bi, struct canditer *restrict ci, BAT *bn,
 	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
 
 	if (equi) {
-		*algo = "select: fullscan equi";
+		*algo = "fullscan equi";
 		if (ci->tpe == cand_dense) {
 			TIMEOUT_LOOP_IDX(p, ncand, qry_ctx) {
 				o = canditer_next_dense(ci);
@@ -537,7 +551,7 @@ fullscan_any(BATiter *bi, struct canditer *restrict ci, BAT *bn,
 			}
 		}
 	} else if (anti) {
-		*algo = "select: fullscan anti";
+		*algo = "fullscan anti";
 		if (ci->tpe == cand_dense) {
 			TIMEOUT_LOOP_IDX(p, ncand, qry_ctx) {
 				o = canditer_next_dense(ci);
@@ -588,7 +602,7 @@ fullscan_any(BATiter *bi, struct canditer *restrict ci, BAT *bn,
 			}
 		}
 	} else {
-		*algo = "select: fullscan range";
+		*algo = "fullscan range";
 		if (ci->tpe == cand_dense) {
 			TIMEOUT_LOOP_IDX(p, ncand, qry_ctx) {
 				o = canditer_next_dense(ci);
@@ -649,59 +663,73 @@ fullscan_str(BATiter *bi, struct canditer *restrict ci, BAT *bn,
 	     bool lval, bool hval, bool lnil, BUN cnt, const oid hseq,
 	     oid *restrict dst, BUN maximum, const char **algo)
 {
-	var_t pos;
-	BUN p, ncand = ci->ncand;
+	var_t pos = 0;
+	BUN p = 0;
+	BUN ncand = ci->ncand;
+	BAT *pb = BBP_desc(bi->vh->parentid);
 	oid o;
 	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
 
-	if (anti && tl == th && !bi->nonil && GDK_ELIMDOUBLES(bi->vh) &&
-	    strcmp(tl, str_nil) != 0 &&
-	    strLocate(bi->vh, str_nil) == (var_t) -2) {
-		/* anti-equi select for non-nil value, and there are no
-		 * nils, so we can use fast path; trigger by setting
-		 * nonil */
-		bi->nonil = true;
-	}
-	if (!((equi ||
-	       (anti && tl == th && (bi->nonil || strcmp(tl, str_nil) == 0))) &&
-	      GDK_ELIMDOUBLES(bi->vh)))
+	if (!equi || !bi->vkey) {
+		/* we will need to examine actual values */
 		return fullscan_any(bi, ci, bn, tl, th, li, hi, equi, anti,
 				    nil_matches, lval, hval, lnil, cnt, hseq,
 				    dst, maximum, algo);
-	if ((pos = strLocate(bi->vh, tl)) == (var_t) -2) {
+	}
+
+	if (strNil(tl)) {
+		pos = 0;
+	} else if (GDK_ELIMDOUBLES(bi->vh)) {
+		pos = strLocate(bi->vh, tl);
+	} else if ((p = BUNfnd(pb, tl)) == BUN_NONE) {
+		pos = (var_t) -2;
+	} else {
+		MT_lock_set(&pb->theaplock);
+		pos = VarHeapVal(pb->theap->base, p, pb->twidth);
+		MT_lock_unset(&pb->theaplock);
+	}
+	if (pos == (var_t) -2) {
+		/* searched for value that does not occur */
 		if (anti) {
-			/* return the whole shebang */
-			*algo = "select: fullscan anti-equi strelim (all)";
-			if (BATextend(bn, ncand) != GDK_SUCCEED) {
-				BBPreclaim(bn);
-				return BUN_NONE;
+			if (bi->nonil) {
+				/* no nils: return the whole shebang */
+				*algo = "fullscan anti-equi strelim (all)";
+				if (BATextend(bn, ncand) != GDK_SUCCEED) {
+					BBPreclaim(bn);
+					return BUN_NONE;
+				}
+				dst = Tloc(bn, 0);
+				TIMEOUT_LOOP_IDX(p, ncand, qry_ctx) {
+					dst[p] = canditer_next(ci);
+				}
+				TIMEOUT_CHECK(qry_ctx, GOTO_LABEL_TIMEOUT_HANDLER(bailout, qry_ctx));
+				return ncand;
+			} else {
+				/* anti-equi for value that does not
+				 * occur: return everything except nil,
+				 * so turn into anti-equi for nil */
+				pos = 0;
 			}
-			dst = Tloc(bn, 0);
-			TIMEOUT_LOOP_IDX(p, ncand, qry_ctx) {
-				dst[p] = canditer_next(ci);
-			}
-			TIMEOUT_CHECK(qry_ctx, GOTO_LABEL_TIMEOUT_HANDLER(bailout, qry_ctx));
-			return ncand;
+		} else {
+			*algo = "fullscan equi strelim (nomatch)";
+			return 0;
 		}
-		*algo = "select: fullscan equi strelim (nomatch)";
-		return 0;
 	}
-	if (pos == (var_t) -1) {
-		*algo = NULL;
-		BBPreclaim(bn);
-		return BUN_NONE;
-	}
-	*algo = anti ? "select: fullscan anti-equi strelim" : "select: fullscan equi strelim";
-	assert(pos >= GDK_VAROFFSET);
+	*algo = anti
+		? "fullscan anti-equi strelim"
+		: "fullscan equi strelim";
+	assert(pos == 0 || pos >= GDK_VAROFFSET);
 	switch (bi->width) {
 	case 1: {
-		const unsigned char *ptr = (const unsigned char *) bi->base;
-		pos -= GDK_VAROFFSET;
+		const uint8_t *ptr = (const uint8_t *) bi->base;
+		if (pos != 0)
+			pos -= GDK_VAROFFSET;
 		if (ci->tpe == cand_dense) {
 			if (anti) {
 				TIMEOUT_LOOP_IDX(p, ncand, qry_ctx) {
 					o = canditer_next_dense(ci);
-					if (ptr[o - hseq] != pos) {
+					if (ptr[o - hseq] != pos &&
+					    (pos == 0 || ptr[o - hseq] != 0)) {
 						dst = buninsfix(bn, dst, cnt, o,
 								(BUN) ((dbl) cnt / (dbl) (p == 0 ? 1 : p)
 								       * (dbl) (ncand-p) * 1.1 + 1024),
@@ -733,7 +761,8 @@ fullscan_str(BATiter *bi, struct canditer *restrict ci, BAT *bn,
 			if (anti) {
 				TIMEOUT_LOOP_IDX(p, ncand, qry_ctx) {
 					o = canditer_next(ci);
-					if (ptr[o - hseq] != pos) {
+					if (ptr[o - hseq] != pos &&
+					    (pos == 0 || ptr[o - hseq] != 0)) {
 						dst = buninsfix(bn, dst, cnt, o,
 								(BUN) ((dbl) cnt / (dbl) (p == 0 ? 1 : p)
 								       * (dbl) (ncand-p) * 1.1 + 1024),
@@ -765,13 +794,15 @@ fullscan_str(BATiter *bi, struct canditer *restrict ci, BAT *bn,
 		break;
 	}
 	case 2: {
-		const unsigned short *ptr = (const unsigned short *) bi->base;
-		pos -= GDK_VAROFFSET;
+		const uint16_t *ptr = (const uint16_t *) bi->base;
+		if (pos != 0)
+			pos -= GDK_VAROFFSET;
 		if (ci->tpe == cand_dense) {
 			if (anti) {
 				TIMEOUT_LOOP_IDX(p, ncand, qry_ctx) {
 					o = canditer_next_dense(ci);
-					if (ptr[o - hseq] != pos) {
+					if (ptr[o - hseq] != pos &&
+					    (pos == 0 || ptr[o - hseq] != 0)) {
 						dst = buninsfix(bn, dst, cnt, o,
 								(BUN) ((dbl) cnt / (dbl) (p == 0 ? 1 : p)
 								       * (dbl) (ncand-p) * 1.1 + 1024),
@@ -803,7 +834,79 @@ fullscan_str(BATiter *bi, struct canditer *restrict ci, BAT *bn,
 			if (anti) {
 				TIMEOUT_LOOP_IDX(p, ncand, qry_ctx) {
 					o = canditer_next(ci);
-					if (ptr[o - hseq] != pos) {
+					if (ptr[o - hseq] != pos &&
+					    (pos == 0 || ptr[o - hseq] != 0)) {
+						dst = buninsfix(bn, dst, cnt, o,
+								(BUN) ((dbl) cnt / (dbl) (p == 0 ? 1 : p)
+								       * (dbl) (ncand-p) * 1.1 + 1024),
+								maximum);
+						if (dst == NULL) {
+							BBPreclaim(bn);
+							return BUN_NONE;
+						}
+						cnt++;
+					}
+				}
+			} else {
+				TIMEOUT_LOOP_IDX(p, ncand, qry_ctx) {
+					o = canditer_next(ci);
+					if (ptr[o - hseq] == pos) {
+						dst = buninsfix(bn, dst, cnt, o,
+								(BUN) ((dbl) cnt / (dbl) (p == 0 ? 1 : p)
+								       * (dbl) (ncand-p) * 1.1 + 1024),
+								maximum);
+						if (dst == NULL) {
+							BBPreclaim(bn);
+							return BUN_NONE;
+						}
+						cnt++;
+					}
+				}
+			}
+		}
+		break;
+	}
+	case 4: {
+		const uint32_t *ptr = (const uint32_t *) bi->base;
+		if (ci->tpe == cand_dense) {
+			if (anti) {
+				TIMEOUT_LOOP_IDX(p, ncand, qry_ctx) {
+					o = canditer_next_dense(ci);
+					if (ptr[o - hseq] != pos &&
+					    (pos == 0 || ptr[o - hseq] != 0)) {
+						dst = buninsfix(bn, dst, cnt, o,
+								(BUN) ((dbl) cnt / (dbl) (p == 0 ? 1 : p)
+								       * (dbl) (ncand-p) * 1.1 + 1024),
+								maximum);
+						if (dst == NULL) {
+							BBPreclaim(bn);
+							return BUN_NONE;
+						}
+						cnt++;
+					}
+				}
+			} else {
+				TIMEOUT_LOOP_IDX(p, ncand, qry_ctx) {
+					o = canditer_next_dense(ci);
+					if (ptr[o - hseq] == pos) {
+						dst = buninsfix(bn, dst, cnt, o,
+								(BUN) ((dbl) cnt / (dbl) (p == 0 ? 1 : p)
+								       * (dbl) (ncand-p) * 1.1 + 1024),
+								maximum);
+						if (dst == NULL) {
+							BBPreclaim(bn);
+							return BUN_NONE;
+						}
+						cnt++;
+					}
+				}
+			}
+		} else {
+			if (anti) {
+				TIMEOUT_LOOP_IDX(p, ncand, qry_ctx) {
+					o = canditer_next(ci);
+					if (ptr[o - hseq] != pos &&
+					    (pos == 0 || ptr[o - hseq] != 0)) {
 						dst = buninsfix(bn, dst, cnt, o,
 								(BUN) ((dbl) cnt / (dbl) (p == 0 ? 1 : p)
 								       * (dbl) (ncand-p) * 1.1 + 1024),
@@ -835,13 +938,14 @@ fullscan_str(BATiter *bi, struct canditer *restrict ci, BAT *bn,
 		break;
 	}
 #if SIZEOF_VAR_T == 8
-	case 4: {
-		const unsigned int *ptr = (const unsigned int *) bi->base;
+	case 8: {
+		const uint64_t *ptr = (const uint64_t *) bi->base;
 		if (ci->tpe == cand_dense) {
 			if (anti) {
 				TIMEOUT_LOOP_IDX(p, ncand, qry_ctx) {
 					o = canditer_next_dense(ci);
-					if (ptr[o - hseq] != pos) {
+					if (ptr[o - hseq] != pos &&
+					    (pos == 0 || ptr[o - hseq] != 0)) {
 						dst = buninsfix(bn, dst, cnt, o,
 								(BUN) ((dbl) cnt / (dbl) (p == 0 ? 1 : p)
 								       * (dbl) (ncand-p) * 1.1 + 1024),
@@ -873,7 +977,8 @@ fullscan_str(BATiter *bi, struct canditer *restrict ci, BAT *bn,
 			if (anti) {
 				TIMEOUT_LOOP_IDX(p, ncand, qry_ctx) {
 					o = canditer_next(ci);
-					if (ptr[o - hseq] != pos) {
+					if (ptr[o - hseq] != pos &&
+					    (pos == 0 || ptr[o - hseq] != 0)) {
 						dst = buninsfix(bn, dst, cnt, o,
 								(BUN) ((dbl) cnt / (dbl) (p == 0 ? 1 : p)
 								       * (dbl) (ncand-p) * 1.1 + 1024),
@@ -905,75 +1010,8 @@ fullscan_str(BATiter *bi, struct canditer *restrict ci, BAT *bn,
 		break;
 	}
 #endif
-	default: {
-		const var_t *ptr = (const var_t *) bi->base;
-		if (ci->tpe == cand_dense) {
-			if (anti) {
-				TIMEOUT_LOOP_IDX(p, ncand, qry_ctx) {
-					o = canditer_next_dense(ci);
-					if (ptr[o - hseq] != pos) {
-						dst = buninsfix(bn, dst, cnt, o,
-								(BUN) ((dbl) cnt / (dbl) (p == 0 ? 1 : p)
-								       * (dbl) (ncand-p) * 1.1 + 1024),
-								maximum);
-						if (dst == NULL) {
-							BBPreclaim(bn);
-							return BUN_NONE;
-						}
-						cnt++;
-					}
-				}
-			} else {
-				TIMEOUT_LOOP_IDX(p, ncand, qry_ctx) {
-					o = canditer_next_dense(ci);
-					if (ptr[o - hseq] == pos) {
-						dst = buninsfix(bn, dst, cnt, o,
-								(BUN) ((dbl) cnt / (dbl) (p == 0 ? 1 : p)
-								       * (dbl) (ncand-p) * 1.1 + 1024),
-								maximum);
-						if (dst == NULL) {
-							BBPreclaim(bn);
-							return BUN_NONE;
-						}
-						cnt++;
-					}
-				}
-			}
-		} else {
-			if (anti) {
-				TIMEOUT_LOOP_IDX(p, ncand, qry_ctx) {
-					o = canditer_next(ci);
-					if (ptr[o - hseq] != pos) {
-						dst = buninsfix(bn, dst, cnt, o,
-								(BUN) ((dbl) cnt / (dbl) (p == 0 ? 1 : p)
-								       * (dbl) (ncand-p) * 1.1 + 1024),
-								maximum);
-						if (dst == NULL) {
-							BBPreclaim(bn);
-							return BUN_NONE;
-						}
-						cnt++;
-					}
-				}
-			} else {
-				TIMEOUT_LOOP_IDX(p, ncand, qry_ctx) {
-					o = canditer_next(ci);
-					if (ptr[o - hseq] == pos) {
-						dst = buninsfix(bn, dst, cnt, o,
-								(BUN) ((dbl) cnt / (dbl) (p == 0 ? 1 : p)
-								       * (dbl) (ncand-p) * 1.1 + 1024),
-								maximum);
-						if (dst == NULL) {
-							BBPreclaim(bn);
-							return BUN_NONE;
-						}
-						cnt++;
-					}
-				}
-			}
-		}
-		break;
-	}
+	default:
+		MT_UNREACHABLE();
 	}
 	TIMEOUT_CHECK(qry_ctx, GOTO_LABEL_TIMEOUT_HANDLER(bailout, qry_ctx));
 	return cnt;
@@ -1419,7 +1457,7 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 	canditer_init(&ci, b, s);
 	if (ci.ncand == 0) {
 		/* trivially empty result */
-		MT_thread_setalgorithm("select: trivially empty");
+		MT_thread_setalgorithm("trivially empty", __func__);
 		bn = BATdense(0, 0, 0);
 		TRC_DEBUG(ALGO, "b=" ALGOBATFMT
 			  ",s=" ALGOOPTBATFMT ",anti=%d -> " ALGOOPTBATFMT
@@ -1458,7 +1496,7 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 			 * upper is NULL) and we want an interval that's
 			 * open on at least one side (v <= x < v or v <
 			 * x <= v or v < x < v all result in nothing) */
-			MT_thread_setalgorithm("select: empty interval");
+			MT_thread_setalgorithm("empty interval", __func__);
 			bn = BATdense(0, 0, 0);
 			TRC_DEBUG(ALGO, "b=" ALGOBATFMT
 				  ",s=" ALGOOPTBATFMT ",li=%d,hi=%d,anti=%d -> "
@@ -1511,7 +1549,7 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 			/* antiselect for nil-nil range: all non-nil
 			 * values are in range; we must return all
 			 * other non-nil values, i.e. nothing */
-			MT_thread_setalgorithm("select: anti: nil-nil range, nonil");
+			MT_thread_setalgorithm("anti: nil-nil range, nonil", __func__);
 			bn = BATdense(0, 0, 0);
 			TRC_DEBUG(ALGO, "b=" ALGOBATFMT
 				  ",s=" ALGOOPTBATFMT ",anti=%d -> "
@@ -1567,7 +1605,7 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 
 	if (hval && (equi ? !li || !hi : !antiequi && ATOMcmp(t, tl, th) > 0)) {
 		/* empty range */
-		MT_thread_setalgorithm("select: empty range");
+		MT_thread_setalgorithm("empty range", __func__);
 		bn = BATdense(0, 0, 0);
 		TRC_DEBUG(ALGO, "b=" ALGOBATFMT
 			  ",s=" ALGOOPTBATFMT ",anti=%d -> " ALGOOPTBATFMT
@@ -1580,7 +1618,7 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 	}
 	if (equi && lnil && (notnull || bi.nonil)) {
 		/* return all nils, but there aren't any */
-		MT_thread_setalgorithm("select: equi-nil, nonil");
+		MT_thread_setalgorithm("equi-nil, nonil", __func__);
 		bn = BATdense(0, 0, 0);
 		TRC_DEBUG(ALGO, "b=" ALGOBATFMT
 			  ",s=" ALGOOPTBATFMT ",anti=%d -> " ALGOOPTBATFMT
@@ -1595,7 +1633,7 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 	if (!equi && !lval && !hval && lnil && (notnull || bi.nonil)) {
 		/* return all non-nils from a BAT that doesn't have
 		 * any: i.e. return everything */
-		MT_thread_setalgorithm("select: everything, nonil");
+		MT_thread_setalgorithm("everything, nonil", __func__);
 		bn = canditer_slice(&ci, 0, ci.ncand);
 		TRC_DEBUG(ALGO, "b=" ALGOBATFMT
 			  ",s=" ALGOOPTBATFMT ",anti=%d -> " ALGOOPTBATFMT
@@ -1616,7 +1654,7 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 			/* MIN..MAX range of values in BAT fully inside
 			 * tl..th range, so nothing left over for
 			 * anti */
-			MT_thread_setalgorithm("select: nothing, out of range");
+			MT_thread_setalgorithm("nothing, out of range", __func__);
 			bn = BATdense(0, 0, 0);
 			TRC_DEBUG(ALGO, "b=" ALGOBATFMT
 				  ",s=" ALGOOPTBATFMT ",anti=%d -> " ALGOOPTBATFMT
@@ -1632,7 +1670,7 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 				 * BAT range, and there are no nils (or
 				 * we want to include nils), so we can
 				 * return everything */
-				MT_thread_setalgorithm("select: everything, anti, nonil");
+				MT_thread_setalgorithm("everything, anti, nonil", __func__);
 				bn = canditer_slice(&ci, 0, ci.ncand);
 				TRC_DEBUG(ALGO, "b=" ALGOBATFMT
 					  ",s=" ALGOOPTBATFMT ",anti=%d -> " ALGOOPTBATFMT
@@ -1654,7 +1692,7 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 			/* range we're looking for either completely
 			 * before or complete after the range of values
 			 * in the BAT */
-			MT_thread_setalgorithm("select: nothing, out of range");
+			MT_thread_setalgorithm("nothing, out of range", __func__);
 			bn = BATdense(0, 0, 0);
 			TRC_DEBUG(ALGO, "b="
 				  ALGOBATFMT ",s="
@@ -1671,7 +1709,7 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 				/* search range contains BAT range, and
 				 * there are no nils, so we can return
 				 * everything */
-				MT_thread_setalgorithm("select: everything, nonil");
+				MT_thread_setalgorithm("everything, nonil", __func__);
 				bn = canditer_slice(&ci, 0, ci.ncand);
 				TRC_DEBUG(ALGO, "b=" ALGOBATFMT
 					  ",s=" ALGOOPTBATFMT ",anti=%d -> " ALGOOPTBATFMT
@@ -1703,7 +1741,7 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 	 * large; check for existence of hash last since that may
 	 * involve I/O */
 	if ((equi || antiequi) && !bi.sorted && !bi.revsorted) {
-		double cost = joincost(b, 1, &ci, &havehash, &phash, NULL);
+		double cost = joincost(b, true, 1, &ci, &havehash, &phash, NULL);
 		if (cost > 0 && cost < ci.ncand) {
 			wanthash = true;
 			if (havehash) {
@@ -1815,7 +1853,7 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 			assert(bi.nonil);
 			assert(bi.sorted);
 			assert(oidxh == NULL);
-			algo = "select: dense";
+			algo = "dense";
 			if (hval) {
 				oid h = * (oid *) th + hi;
 				if (h > bi.tseq)
@@ -1839,7 +1877,7 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 			}
 		} else if (bi.sorted) {
 			assert(oidxh == NULL);
-			algo = "select: sorted";
+			algo = "sorted";
 			if (lval) {
 				if (li)
 					low = SORTfndfirst(b, tl);
@@ -1857,7 +1895,7 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 			}
 		} else if (bi.revsorted) {
 			assert(oidxh == NULL);
-			algo = "select: reverse sorted";
+			algo = "reverse sorted";
 			if (lval) {
 				if (li)
 					high = SORTfndlast(b, tl);
@@ -1875,7 +1913,7 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 			}
 		} else {
 			assert(oidxh != NULL);
-			algo = poidx ? "select: parent orderidx" : "select: orderidx";
+			algo = poidx ? "parent orderidx" : "orderidx";
 			if (lval) {
 				if (li)
 					low = ORDERfndfirst(b, oidxh, tl);
@@ -1964,7 +2002,7 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 		}
 
 		bn = virtualize(bn);
-		MT_thread_setalgorithm(algo);
+		MT_thread_setalgorithm(algo, __func__);
 		TRC_DEBUG(ALGO, "b=" ALGOBATFMT ",anti=%s -> "
 			  ALGOOPTBATFMT " %s (" LLFMT " usec)\n",
 			  ALGOBATPAR(b), anti ? "true" : "false",
@@ -2117,7 +2155,7 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 	BBPreclaim(pb);
 
 	bn = virtualize(bn);
-	MT_thread_setalgorithm(algo);
+	MT_thread_setalgorithm(algo, __func__);
 	TRC_DEBUG(ALGO, "b=" ALGOBATFMT ",s=" ALGOOPTBATFMT",anti=%s -> " ALGOOPTBATFMT
 		  " %s (" LLFMT " usec)\n",
 		  ALGOBATPAR(b), ALGOOPTBATPAR(s),

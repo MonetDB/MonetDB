@@ -1,0 +1,18 @@
+statement error 42S02!SELECT: no such table 't1'
+SELECT log , COUNT ( * ) FROM t1 GROUP BY log
+ UNION
+SELECT log , n FROM t1 WHERE n = 7 ORDER BY COUNT ( * ) , log
+
+statement error 42000!syntax error, unexpected STRING in: "select null union all select null union all select 1 union all select 2 as 'x'"
+SELECT NULL UNION ALL SELECT NULL UNION ALL SELECT 1 UNION ALL SELECT 2 AS 'x' ORDER BY x
+
+statement error 22018!conversion of string to type bte failed.
+WITH RECURSIVE x ( x ) AS ( SELECT 1 UNION ALL SELECT x + 1 FROM x WHERE x < 8 ) SELECT x FROM x WHERE x = '<your_schema_name>' AND x = '<your_table_name>' AND x = 'YES'
+
+# next query crashes in isLikeOp (p=0x0) at monetdb5/optimizer/opt_support.c:462 because p = 0x0
+# It is called from OPTpushselectImplementation (ctx=0x3a647510, mb=0x7f6a6c2147f0, stk=0x0, pci=0x7f6a6c14bfd0) at monetdb5/optimizer/opt_pushselect.c:308
+statement error 22018!conversion of string to type bte failed.
+SELECT x LIKE '%51%' FROM (
+WITH RECURSIVE x ( x ) AS ( SELECT 1 UNION ALL SELECT x + 1 FROM x WHERE x < 8 ) SELECT x FROM x WHERE x = '<your_schema_name>' AND x = '<your_table_name>' AND x = 'YES'
+) AS temp
+

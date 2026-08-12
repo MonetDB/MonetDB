@@ -1,0 +1,10 @@
+statement ok
+PREPARE SELECT 1
+
+statement error
+SELECT 1/0
+
+query I nosort
+EXEC <LAST_PREPARE_ID>()
+----
+1

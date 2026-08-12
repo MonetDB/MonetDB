@@ -13,7 +13,7 @@
 #include "copybinary.h"
 #include "copybinary_support.h"
 #include "sql_bincopyconvert.h"
-#include "sql.h"
+#include "sql_monet_backend.h"
 #include "gdk.h"
 #include "mal_backend.h"
 #include "mal_interpreter.h"
@@ -383,7 +383,7 @@ insert_non_nil(struct insert_state *st, const char *item)
 	int tpe = BATttype(st->bat);
 	const void *value;
 
-	if (!checkUTF8(item)) {
+	if (!checkUTF8(item, NULL)) {
 		throw(SQL, "insert_nul_terminated_values", SQLSTATE(42000) "malformed utf-8 byte sequence");
 	}
 	if (tpe == TYPE_str) {

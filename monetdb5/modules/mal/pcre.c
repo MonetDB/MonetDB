@@ -489,7 +489,7 @@ pcre_replace_bat(BAT **res, BAT *origin_strs, const char *pattern,
 		throw(MAL, "regexp.rematch", MAL_MALLOC_FAIL);
 	}
 
-	tmpbat = COLnew(origin_strs->hseqbase, TYPE_str, BATcount(origin_strs),
+	tmpbat = COLnew(origin_strs->hseqbase, TYPE_fstr, BATcount(origin_strs),
 					TRANSIENT);
 
 	/* the buffer for all destination strings is allocated only once,
@@ -507,11 +507,17 @@ pcre_replace_bat(BAT **res, BAT *origin_strs, const char *pattern,
 	BATiter origin_strsi = bat_iterator(origin_strs);
 	BATloop(&origin_strsi, p, q) {
 		origin_str = BUNtvar(&origin_strsi, p);
-		tmpres = single_replace(ta, pcre_code, match_data, origin_str,
-								(PCRE2_SIZE) strlen((char *) origin_str), exec_options,
-								(PCRE2_SPTR) replacement, len_replacement,
-								tmpres, &max_dest_size, errbuf, sizeof(errbuf));
-		if (tmpres == NULL || BUNappend(tmpbat, tmpres, false) != GDK_SUCCEED) {
+		if (strNil((const char *) origin_str)) {
+			strtcpy((char *) tmpres, str_nil, max_dest_size);
+			tmpbat->tnonil = false;
+			tmpbat->tnil = true;
+		} else {
+			tmpres = single_replace(ta, pcre_code, match_data, origin_str,
+									(PCRE2_SIZE) strlen((char *) origin_str), exec_options,
+									(PCRE2_SPTR) replacement, len_replacement,
+									tmpres, &max_dest_size, errbuf, sizeof(errbuf));
+		}
+		if (tmpres == NULL || tfastins_nocheckVAR(tmpbat, p, tmpres) != GDK_SUCCEED) {
 			bat_iterator_end(&origin_strsi);
 			pcre2_match_data_free(match_data);
 			pcre2_code_free(pcre_code);
@@ -532,6 +538,11 @@ pcre_replace_bat(BAT **res, BAT *origin_strs, const char *pattern,
 		else /* buffer is enlarged */
 			init_size = max_dest_size;
 	}
+	tmpbat->ttype = TYPE_str;
+	tmpbat->tsorted = tmpbat->trevsorted = false;
+	tmpbat->tkey = false;
+	tmpbat->tascii = false;
+	BATsetcount(tmpbat, BATcount(origin_strs));
 	bat_iterator_end(&origin_strsi);
 	pcre2_match_data_free(match_data);
 	pcre2_code_free(pcre_code);
@@ -978,10 +989,11 @@ PCRElike_imp(bit *ret, const char *const *s, const char *const *pat,
 								*pat, *esc)) != MAL_SUCCEED)
 		return res;
 
-	MT_thread_setalgorithm(empty ? "pcrelike: trivially empty" : use_strcmp ?
-						   "pcrelike: pattern matching using strcmp" : use_re ?
-						   "pcrelike: pattern matching using RE" :
-						   "pcrelike: pattern matching using pcre");
+	MT_thread_setalgorithm(empty ? "trivially empty" : use_strcmp ?
+						   "pattern matching using strcmp" : use_re ?
+						   "pattern matching using RE" :
+						   "pattern matching using pcre",
+						   __func__);
 
 	if (strNil(*s) || empty) {
 		*ret = bit_nil;
@@ -1171,10 +1183,11 @@ BATPCRElike_imp(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 			goto bailout;
 
 		bi = bat_iterator(b);
-		MT_thread_setalgorithm(empty ? "pcrelike: trivially empty" : use_strcmp
-							   ? "pcrelike: pattern matching using strcmp" :
-							   use_re ? "pcrelike: pattern matching using RE" :
-							   "pcrelike: pattern matching using pcre");
+		MT_thread_setalgorithm(empty ? "trivially empty" : use_strcmp
+							   ? "pattern matching using strcmp" :
+							   use_re ? "pattern matching using RE" :
+							   "pattern matching using pcre",
+							   __func__);
 
 		if (empty) {
 			for (BUN p = 0; p < q; p++)
@@ -1389,21 +1402,21 @@ PCRElikeselect(Client ctx, bat *ret, const bat *bid, const bat *sid, const char 
 
 	MT_thread_setalgorithm(use_strcmp
 						   ? (with_strimps ?
-							  "pcrelike: pattern matching using strcmp with strimps"
+							  "pattern matching using strcmp with strimps"
 							  : (with_strimps_anti ?
-								 "pcrelike: pattern matching using strcmp with strimps anti"
-								 : "pcrelike: pattern matching using strcmp")) :
+								 "pattern matching using strcmp with strimps anti"
+								 : "pattern matching using strcmp")) :
 						   use_re ? (with_strimps ?
-									 "pcrelike: pattern matching using RE with strimps"
+									 "pattern matching using RE with strimps"
 									 : (with_strimps_anti ?
-										"pcrelike: patterm matching using RE with strimps anti"
-										:
-										"pcrelike: pattern matching using RE"))
+										"patterm matching using RE with strimps anti"
+										: "pattern matching using RE"))
 						   : (with_strimps ?
-							  "pcrelike: pattern matching using pcre with strimps"
+							  "pattern matching using pcre with strimps"
 							  : (with_strimps_anti ?
-								 "pcrelike: pattermatching using pcre with strimps anti"
-								 : "pcrelike: pattern matching using pcre")));
+								 "pattermatching using pcre with strimps anti"
+								 : "pattern matching using pcre")),
+						   __func__);
 
 	canditer_init(&ci, b, s);
 	if (!(bn = COLnew(0, TYPE_oid, ci.ncand, TRANSIENT))) {
@@ -1477,7 +1490,7 @@ PCRElikeselect(Client ctx, bat *ret, const bat *bid, const bat *sid, const char 
 }
 
 #define APPEND(b, o)	(((oid *) b->theap->base)[b->batCount++] = (o))
-#define VALUE(s, x)		(s##vars + VarHeapVal(s##vals, (x), s##i.width))
+#define VALUE(s, x)		((off = VarHeapVal(s##vals, (x), s##i.width)) == 0 ? str_nil : s##vars + off)
 
 /* nested loop implementation for PCRE join */
 #define pcre_join_loop(STRCMP, MNRE_MATCH)								\
@@ -1567,6 +1580,7 @@ pcrejoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr, const char *esc,
 {
 	struct canditer lci, rci;
 	const char *lvals, *rvals, *lvars, *rvars, *vl, *vr;
+	var_t off;
 	int rskipped = 0;			/* whether we skipped values in r */
 	oid lbase, rbase, lo, ro, lastl = 0;	/* last value inserted into r1 */
 	BUN nl, newcap;

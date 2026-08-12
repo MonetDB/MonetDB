@@ -19,6 +19,10 @@ no_escape2
 crlf_normalization
 select-from-file
 flexible-order
+parse-misc
+parse-integer
+parse-decimal
+parse-besteffort
 HAVE_LIBZ?compressed-on-client-gz
 HAVE_LIBBZ2?compressed-on-client-bz2
 HAVE_LIBLZMA?compressed-on-client-xz

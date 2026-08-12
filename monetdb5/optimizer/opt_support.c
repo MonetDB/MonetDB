@@ -267,7 +267,7 @@ hasSideEffects(MalBlkPtr mb, InstrPtr p, int strict)
 		return TRUE;
 
 	if ((getModuleId(p) == batRef || getModuleId(p) == sqlRef)
-		&& (getFunctionId(p) == setAccessRef))
+		&& (getFunctionId(p) == setAccessRef || getFunctionId(p) == singleRef))
 		return TRUE;
 
 	if (getModuleId(p) == malRef && getFunctionId(p) == multiplexRef)
@@ -312,8 +312,6 @@ hasSideEffects(MalBlkPtr mb, InstrPtr p, int strict)
 		if (getFunctionId(p) == zero_or_oneRef)
 			return FALSE;
 		if (getFunctionId(p) == mvcRef)
-			return FALSE;
-		if (getFunctionId(p) == singleRef)
 			return FALSE;
 		if (getFunctionId(p) == importColumnRef)
 			return FALSE;
@@ -377,26 +375,6 @@ isSideEffectFree(MalBlkPtr mb)
 }
 
 /*
- * Breaking up a MAL program into pieces for distributed processing requires
- * identification of (partial) blocking instructions. A conservative
- * definition can be used.
- */
-inline int
-isBlocking(InstrPtr p)
-{
-	if (blockStart(p) || blockExit(p) || blockCntrl(p))
-		return TRUE;
-
-	if (getFunctionId(p) == sortRef)
-		return TRUE;
-
-	if (getModuleId(p) == aggrRef || getModuleId(p) == groupRef
-		|| getModuleId(p) == sqlcatalogRef)
-		return TRUE;
-	return FALSE;
-}
-
-/*
  * Used in the merge table optimizer. It is built incrementally
  * and should be conservative.
  */
@@ -407,7 +385,7 @@ isOrderDepenent(InstrPtr p)
 	if (getModuleId(p) != batsqlRef)
 		return 0;
 	if (getFunctionId(p) == diffRef || getFunctionId(p) == window_boundRef
-		|| getFunctionId(p) == row_numberRef || getFunctionId(p) == rankRef
+		/*|| getFunctionId(p) == row_numberRef*/ || getFunctionId(p) == rankRef
 		|| getFunctionId(p) == dense_rankRef
 		|| getFunctionId(p) == percent_rankRef
 		|| getFunctionId(p) == cume_distRef || getFunctionId(p) == ntileRef
@@ -441,6 +419,7 @@ isMap2Op(InstrPtr p)
 	return getModuleId(p)
 			&& ((getModuleId(p) == malRef && getFunctionId(p) == multiplexRef)
 				|| (getModuleId(p) == malRef && getFunctionId(p) == manifoldRef)
+				|| (getModuleId(p) == batsqlRef && getFunctionId(p) == row_numberRef)
 				|| (getModuleId(p) == batcalcRef)
 				|| (getModuleId(p) != batcalcRef && getModuleId(p) != batRef
 					&& strncmp(getModuleId(p), "bat", 3) == 0)

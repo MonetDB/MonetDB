@@ -31,7 +31,7 @@
 #include "mapi.h"
 #include "monetdbe_mapi.h"
 #include "remote.h"
-#include "sql.h"
+#include "sql_monet_backend.h"
 #include "sql_result.h"
 #include "mutils.h"
 
@@ -2402,7 +2402,7 @@ remote_cleanup:
 			for (size_t j=0; j<cnt; j++) {
 				if (!d[j]) {
 					d[j] = (char*) nil;
-				} else if (!checkUTF8(d[j])) {
+				} else if (!checkUTF8(d[j], NULL)) {
 					set_error(mdbe, createException(SQL, "monetdbe.monetdbe_append", "Incorrectly encoded UTF-8"));
 					goto cleanup;
 				}

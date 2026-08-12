@@ -276,6 +276,8 @@ CONDITIONALS = {
     'HAVE_LIBPCRE'         : '@HAVE_LIBPCRE_FALSE@',
     'HAVE_LIBXML'          : '@HAVE_LIBXML_FALSE@',
     'HAVE_LIBZ'            : '@HAVE_LIBZ_FALSE@',
+    'HAVE_SNAPPY'          : '@HAVE_SNAPPY_FALSE@',
+    'HAVE_ZSTD'            : '@HAVE_ZSTD_FALSE@',
     'HAVE_NETCDF'          : '@HAVE_NETCDF_FALSE@',
     'HAVE_ODBC'            : '@HAVE_ODBC_FALSE@',
     'HAVE_OPENSSL'         : '@HAVE_OPENSSL_FALSE@',
@@ -299,6 +301,7 @@ CONDITIONALS = {
     'HAVE_SQLITE3ODBC'     : False,
     'MERCURIAL'            : False,
     'NOWAL'                : False,
+    'PIPELINE'             : False,
     'RELEASERUN'           : False,
     # optional Python modules
 #    'HAVE_LIBPANDAS3'      : False,
@@ -1858,29 +1861,6 @@ def RunTest(env, TST, COND, oktests, length, pSrvr, total_tests, options, enviro
                 CALL = cll
                 SERVER = srv
                 break
-        else:
-            if os.name == 'nt':
-                reason = "test missing: '"+os.path.join(TSTSRCDIR,TST)+".(exe|com|bat|cmd|py|sql)`"
-            else:
-                reason = "test missing: '"+os.path.join(TSTSRCDIR,TST)+"[.py|.sql|.rb]`"
-            if verbose:
-                if ttywidth > 0 and length + 10 + 21 >= ttywidth:
-                    # 10 - length of prompt()
-                    # 21 - length of time plus result
-                    l = ttywidth - 10 - 21 - 1
-                    if len(TST) <= l:
-                        s = '%-*s ' % (l, TST)
-                    else:
-                        s = '%s...%s ' % (TST[:l//2 - 2], TST[l//2+1-l:])
-                else:
-                    s = '%-*s ' % (length, TST)
-                print('%s%s' % (prompt(), s), end='')
-                prred('TEST MISSING')
-                print()
-            else:
-                errors.append(('MISSING', os.path.join(TSTDIR, TSTSUFF, TST + EXT)))
-
-            return TX,Failed,Failed,elem,reason,links
 
     MissingMods = CheckMods(env, os.path.join(TSTSRCDIR, TST))
     MissingTests = CheckTests(env, os.path.join(TSTSRCDIR, TST), oktests)
@@ -1915,22 +1895,26 @@ def RunTest(env, TST, COND, oktests, length, pSrvr, total_tests, options, enviro
                     break
             elif cond.startswith('THREADS<='):
                 if (int(env['TST_THREADS']) <= int(cond[9:])) == negate:
-                    reason = 'as number of threads is wrong'
+                    reason = 'as number of threads is too' \
+                        f' {"small" if negate else "large"}'
                     elem = SkipTest(env, TST, EXT, reason, length, TSTDIR, TSTTRGDIR, TSTSRCDIR)
                     break
             elif cond.startswith('THREADS>='):
                 if (int(env['TST_THREADS']) >= int(cond[9:])) == negate:
-                    reason = 'as number of threads is wrong'
+                    reason = 'as number of threads is too' \
+                        f' {"large" if negate else "small"}'
                     elem = SkipTest(env, TST, EXT, reason, length, TSTDIR, TSTTRGDIR, TSTSRCDIR)
                     break
             elif cond.startswith('VMSIZE>='):
                 if (int(env['TST_VMSIZE']) >= int(cond[8:])) == negate:
-                    reason = 'as virtual memory size is wrong'
+                    reason = 'as virtual memory size is too' \
+                        f' {"large" if negate else "small"}'
                     elem = SkipTest(env, TST, EXT, reason, length, TSTDIR, TSTTRGDIR, TSTSRCDIR)
                     break
             elif cond.startswith('VMSIZE<='):
                 if (int(env['TST_VMSIZE']) <= int(cond[8:])) == negate:
-                    reason = 'as virtual memory size is wrong'
+                    reason = 'as virtual memory size is too' \
+                        f' {"small" if negate else "large"}'
                     elem = SkipTest(env, TST, EXT, reason, length, TSTDIR, TSTTRGDIR, TSTSRCDIR)
                     break
             elif cond.startswith('USER='):
@@ -2039,6 +2023,30 @@ def RunTest(env, TST, COND, oktests, length, pSrvr, total_tests, options, enviro
                 break
             elif cond in ('HAVE_ODBC', 'HAVE_PYODBC'):
                 odbc = True
+    if elem is None and not CALL:
+        if os.name == 'nt':
+            reason = "test missing: '"+os.path.join(TSTSRCDIR,TST)+".(exe|com|bat|cmd|py|sql)`"
+        else:
+            reason = "test missing: '"+os.path.join(TSTSRCDIR,TST)+"[.py|.sql|.rb]`"
+        if verbose:
+            if ttywidth > 0 and length + 10 + 21 >= ttywidth:
+                # 10 - length of prompt()
+                # 21 - length of time plus result
+                l = ttywidth - 10 - 21 - 1
+                if len(TST) <= l:
+                    s = '%-*s ' % (l, TST)
+                else:
+                    s = '%s...%s ' % (TST[:l//2 - 2], TST[l//2+1-l:])
+            else:
+                s = '%-*s ' % (length, TST)
+            print('%s%s' % (prompt(), s), end='')
+            prred('TEST MISSING')
+            print()
+        else:
+            errors.append(('MISSING', os.path.join(TSTDIR, TSTSUFF, TST + EXT)))
+
+        return TX,Failed,Failed,elem,reason,links
+
     if reason:
         pass
     elif MissingTests:
@@ -3145,6 +3153,7 @@ def DoIt(env, SERVER, CALL, TST, EXT, TestOutFile, TestErrFile, TIMEOUT, ME, len
                 pSrvr = ServerClass(Srvr, SrvrOut, SrvrErr, TIMEOUT, os.path.join(dbpath, '.started'), TSTDB, dbg=env.get('DBG'))
                 pSrvr.LaunchIt(cwd=TSTTRGDIR, env=environ)
                 if pSrvr.port is None:
+                    print('\nFailed to start server.\n', file=pSrvr.errfile)
                     print('\nFailed to start server.\n')
                     return 'serverfail'
                 environ['MAPIPORT'] = pSrvr.port
@@ -3707,6 +3716,7 @@ def main(argv):
     parser.add_argument('-t', action='store', dest='timeout', metavar='<sec>', type=int, default=60, help='timeout: kill (hanging) tests after <sec> seconds;\n-t0 means no timeout (default: -t60)')
     parser.add_argument('--debug', '-d', action=OrAction, dest='debug', metavar='<num>', type=int, default=int(TSTDBG), help="debug value to be used by mserver5, multiple -d options are ORed together (default: -d%s)\n(see `mserver5 --help' for details)" % TSTDBG)
     parser.add_argument('--nr_threads', '-n', action='store', dest='nr_threads', metavar='<num>', type=int, default=int(TSTTHREADS), help='number of threads for mserver5 (default: -n%s)\n-n0 => mserver5 automatically determines the number of CPU cores' % TSTTHREADS)
+    parser.add_argument('--pipeline', action='store_true', dest='pipeline', help='run with pipeline processing enabled')
     parser.add_argument('--monet_mod_path', action='store', dest='monet_mod_path', metavar='<pathlist>', help="override mserver5's default module search path")
     parser.add_argument('--dbfarm', action='store', dest='gdk_dbfarm', default=os.path.join('@QXlocalstatedir@','MonetDB'), metavar='<directory>', help='override default location of database directory')
     parser.add_argument('--MALCLIENT', action='store', dest='MALCLIENT', metavar='<mal-client program>', help='default: %s' % dft['MALCLIENT'])
@@ -3796,6 +3806,9 @@ def main(argv):
     restart = opts.restart
     if opts.alltests:
         CONDITIONALS['KNOWNFAIL'] = True
+    if opts.pipeline:
+        CONDITIONALS['PIPELINE'] = True
+        mserver5_opts.append(f'--debug={1<<19}')
     global checkkeys
     checkkeys = opts.checkkeys
     global usetcp

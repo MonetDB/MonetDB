@@ -23,6 +23,23 @@
 
 #include "monetdb_config.h"
 
+/* standard C-99 include files */
+#include <assert.h>
+#include <ctype.h>
+#include <errno.h>
+#include <float.h>
+#include <inttypes.h>
+#include <limits.h>
+#include <setjmp.h>
+#include <stdarg.h>
+#include <stdbool.h>
+#include <stddef.h>
+#include <stdint.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <time.h>
+
 /* standard includes upon which all configure tests depend */
 #ifdef HAVE_SYS_STAT_H
 # include <sys/stat.h>
@@ -39,6 +56,10 @@
 # include <dirent.h>
 #endif
 
+#include "stream.h"
+#include "mstring.h"
+#include "matomic.h"
+
 #ifndef PATH_MAX
 #define PATH_MAX	1024
 #endif
@@ -51,6 +72,20 @@
 #endif
 #else
 #define gdk_export extern
+#endif
+
+/* unreachable code */
+#ifdef __has_builtin
+#if __has_builtin(__builtin_unreachable)
+#define MT_UNREACHABLE()	do { assert(0); __builtin_unreachable(); } while (0)
+#endif
+#endif
+#ifndef MT_UNREACHABLE
+#if defined(_MSC_VER)
+#define MT_UNREACHABLE()	do { assert(0); __assume(0); } while (0)
+#else
+#define MT_UNREACHABLE()	do { assert(0); GDKfatal("Unreachable C code path reached"); } while (0)
+#endif
 #endif
 
 /* Only ever compare with GDK_SUCCEED, never with GDK_FAIL, and do not
@@ -81,10 +116,9 @@ typedef struct allocator_state {
 	allocator *ma;
 } allocator_state;
 
+#include "gdk_tracer.h"
 #include "gdk_system.h"
 #include "gdk_posix.h"
-#include "stream.h"
-#include "mstring.h"
 
 gdk_export _Noreturn void GDKfatal(_In_z_ _Printf_format_string_ const char *format, ...)
 	__attribute__((__format__(__printf__, 1, 2)));
@@ -174,6 +208,7 @@ enum {
 	TYPE_inet4,
 	TYPE_inet6,
 	TYPE_str,
+	TYPE_fstr,
 	TYPE_blob,
 	TYPE_fblock,
 	TYPE_any = 255,		/* limit types to <255! */
@@ -247,6 +282,14 @@ gdk_export size_t blobsize(size_t nitems) __attribute__((__const__));
 /* constants, printf format, scanf format: not supported for 128 bit
  * integers */
 #endif
+
+/* The types `oid`, `BUN` and `var_t` are all defined as `size_t`, but
+ * they serve different purposes.  `oid` is the *logical* row number of
+ * a BAT; `BUN` is the *physical* row number of a BAT and is therefore
+ * also used for the total number of rows and the potential capacity of
+ * a BAT; `var_t` is an *offset* into the var-size heap (vheap).  The
+ * difference between the *logical* and *physical* row number is the
+ * value of the head sequence base (`hseqbase`) of the BAT. */
 
 typedef oid var_t;		/* type used for heap index of var-sized BAT */
 #define SIZEOF_VAR_T	SIZEOF_OID
@@ -360,7 +403,31 @@ gdk_export bool VALisnil(const ValRecord *v);
 
 typedef struct PROPrec PROPrec;
 
+typedef void  (*pipeline_io_destroy)  (void *pl_io);
+typedef int   (*pipeline_io_done)     (void *pl_io, int wid, int nr_workers, bool redo);
+typedef int   (*pipeline_io_next)     (void *pl_io, int wid);
+typedef void *(*pipeline_io_next_bat) (void *pl_io, int wid);
+
+typedef struct pipeline_io {
+	pipeline_io_destroy destroy;
+	pipeline_io_done done;
+	pipeline_io_next next;         /* counter incrementing sources */
+	pipeline_io_next_bat next_bat; /* bat generating sources */
+	int type;                      /* sink/source type */
+	char *error;
+} pipeline_source, pipeline_sink;
+
+#define TSKdestroy(b) if (b->pl_io && b->pl_io->destroy) { b->pl_io->destroy(b->pl_io); b->pl_io = NULL; }
+#define TSKfree(b)    TSKdestroy(b)
+
 #define ORDERIDXOFF		3
+
+#define HLL_BITS 6
+#define BITS_MASK   ((1ULL << HLL_BITS) - 1)
+#define MAX_CLZ     (64 - HLL_BITS)
+#define BUCKETS     (1U << HLL_BITS)
+#define CLZ_BUCKETS (MAX_CLZ + 1)
+#define HLLSEED     0xadc83b19ULL
 
 /* assert that atom width is power of 2, i.e., width == 1<<shift */
 #define assert_shift_width(shift,width) assert(((shift) == 0 && (width) == 0) || ((unsigned)1<<(shift)) == (unsigned)(width))
@@ -369,7 +436,8 @@ typedef struct PROPrec PROPrec;
 #define GDKLIBRARY_HSIZE	061045U /* first in Jan2022: heap "size" values */
 #define GDKLIBRARY_JSON 	061046U /* first in Sep2022: json storage changes*/
 #define GDKLIBRARY_STATUS	061047U /* first in Dec2023: no status/filename columns */
-#define GDKLIBRARY		061050U /* first in Aug2024 */
+#define GDKLIBRARY_USTR		061050U /* first in Aug2024: no ustr */
+#define GDKLIBRARY		061051U /* first after Dec2025 */
 
 /* The batRestricted field indicates whether a BAT is readonly.
  * we have modes: BAT_WRITE  = all permitted
@@ -422,17 +490,21 @@ typedef struct BAT {
 	/* see also comment near BATassertProps() for more information
 	 * about the properties */
 	bool tkey:1;		/* no duplicate values present */
+	bool tvkey:1;		/* no duplicate values in tvheap */
 	bool tnonil:1;		/* there are no nils in the column */
 	bool tnil:1;		/* there is a nil in the column */
 	bool tsorted:1;		/* column is sorted in ascending order */
 	bool trevsorted:1;	/* column is sorted in descending order */
 	bool tascii:1;		/* string column is fully ASCII (7 bit) */
+	bat ustr;		/* use ustr bat */
 	BUN tnokey[2];		/* positions that prove key==FALSE */
 	BUN tnosorted;		/* position that proves sorted==FALSE */
 	BUN tnorevsorted;	/* position that proves revsorted==FALSE */
 	BUN tminpos, tmaxpos;	/* location of min/max value */
+	oid tmaxval;
 	double tunique_est;	/* estimated number of unique values */
 	oid tseqbase;		/* start of dense sequence */
+	bool tprivate_bat;	/* used by single worker thread only */
 
 	Heap *theap;		/* space for the column. */
 	BUN tbaseoff;		/* offset in heap->base (in whole items) */
@@ -444,6 +516,8 @@ typedef struct BAT {
 	Heap *torderidx;	/* order oid index */
 	Strimps *tstrimps;	/* string imprint index  */
 	PROPrec *tprops;	/* list of dynamic properties stored in the bat descriptor */
+
+	struct pipeline_io *pl_io;
 
 	MT_Lock theaplock;	/* lock protecting heap reference changes */
 	MT_RWLock thashlock;	/* lock specifically for hash management */
@@ -489,6 +563,9 @@ gdk_export size_t HEAPmemsize(const Heap *h)
 	__attribute__((__pure__));
 gdk_export void HEAPdecref(Heap *h, bool remove);
 gdk_export void HEAPincref(Heap *h);
+gdk_export gdk_return HEAPalloc(Heap *h, size_t nitems, size_t itemsize)
+	__attribute__((__warn_unused_result__));
+	//__attribute__((__visibility__("hidden")));
 
 __attribute__((__pure__))
 static inline bat
@@ -508,7 +585,7 @@ __attribute__((__pure__))
 static inline bool
 isVIEW(const BAT *b)
 {
-	return VIEWtparent(b) != 0 || VIEWvtparent(b) != 0;
+	return VIEWtparent(b) != 0 || (!b->ustr && VIEWvtparent(b) != 0);
 }
 
 typedef struct {
@@ -573,6 +650,10 @@ gdk_export void BBPtmunlock(void);
 
 gdk_export BAT *BBPquickdesc(bat b);
 
+#define GDK_VARALIGN SIZEOF_VAR_T
+
+#include "gdk_atoms.h"
+
 /* BAT iterator, also protects use of BAT heaps with reference counts.
  *
  * A BAT iterator has to be used with caution, but it does have to be
@@ -626,6 +707,7 @@ typedef struct BATiter {
 	uint8_t shift;
 	int8_t type;
 	bool key:1,
+		vkey:1,
 		nonil:1,
 		nil:1,
 		sorted:1,
@@ -635,6 +717,7 @@ typedef struct BATiter {
 		copiedtodisk:1,
 		transient:1,
 		ascii:1;
+	bat ustr;
 	restrict_t restricted:2;
 #ifndef NDEBUG
 	bool locked:1;
@@ -677,11 +760,18 @@ bat_iterator_nolock(BAT *b)
 			.maxpos = isview ? BUN_NONE : b->tmaxpos,
 			.unique_est = b->tunique_est,
 			.key = b->tkey,
+			.vkey = (b->tvheap &&
+				 (b->tvkey ||
+				  BBP_desc(b->tvheap->parentid)->tvkey ||
+				  (b->ttype > 0 &&
+				   ATOMstorage(b->ttype) == TYPE_str &&
+				   GDK_ELIMDOUBLES(b->tvheap)))),
 			.nonil = b->tnonil,
 			.nil = b->tnil,
 			.sorted = b->tsorted,
 			.revsorted = b->trevsorted,
 			.ascii = b->tascii,
+			.ustr = b->ustr,
 			/* only look at heap dirty flag if we own it */
 			.hdirty = b->theap->parentid == b->batCacheid && b->theap->dirty,
 			/* also, if there is no vheap, it's not dirty */
@@ -796,6 +886,8 @@ gdk_export BAT *BATdense(oid hseq, oid tseq, BUN cnt)
 	__attribute__((__warn_unused_result__));
 gdk_export gdk_return BATextend(BAT *b, BUN newcap)
 	__attribute__((__warn_unused_result__));
+gdk_export gdk_return BATconvert2ustr(BAT *b, BAT *bu)
+	__attribute__((__warn_unused_result__));
 
 /* internal */
 gdk_export uint8_t ATOMelmshift(uint32_t sz)
@@ -832,6 +924,8 @@ gdk_export gdk_return BATupdate(BAT *b, BAT *p, BAT *n, bool force)
 gdk_export gdk_return BATupdatepos(BAT *b, const oid *positions, BAT *n, bool autoincr, bool force)
 	__attribute__((__warn_unused_result__));
 
+gdk_export gdk_return unshare_varsized_heap(BAT *b)
+	__attribute__((__warn_unused_result__));
 /* Functions to perform a binary search on a sorted BAT.
  * See gdk_search.c for details. */
 gdk_export BUN SORTfnd(BAT *b, const void *v);
@@ -844,11 +938,6 @@ gdk_export BUN ORDERfndlast(BAT *b, Heap *oidxh, const void *v);
 
 gdk_export BUN BUNfnd(BAT *b, const void *right);
 
-typedef var_t stridx_t;
-#define SIZEOF_STRIDX_T SIZEOF_VAR_T
-#define GDK_VARALIGN SIZEOF_STRIDX_T
-
-#include "gdk_atoms.h"
 #include "gdk_cand.h"
 
 __attribute__((__pure__))
@@ -922,7 +1011,8 @@ static inline const void *
 BUNtvar(const BATiter *bi, BUN p)
 {
 	assert(bi->type && bi->vh);
-	return bi->vh->base + VarHeapVal(bi->base, p, bi->width);
+	var_t off = VarHeapVal(bi->base, p, bi->width);
+	return off == 0 ? ATOMnilptr(bi->type) : bi->vh->base + off;
 }
 
 __attribute__((__pure__))
@@ -1133,23 +1223,27 @@ BATsettrivprop(BAT *b)
 					b->tmaxpos = 0;
 				}
 				b->tseqbase = sqbs;
-			} else if (b->tvheap
-				   ? ATOMeq(b->ttype,
-					    b->tvheap->base + VarHeapVal(Tloc(b, 0), 0, b->twidth),
-					    ATOMnilptr(b->ttype))
-				   : ATOMeq(b->ttype, Tloc(b, 0),
-					    ATOMnilptr(b->ttype))) {
-				/* the only value is NIL */
-				b->tminpos = BUN_NONE;
-				b->tmaxpos = BUN_NONE;
-				b->tnil = true;
-				b->tnonil = false;
 			} else {
-				/* the only value is both min and max */
-				b->tminpos = 0;
-				b->tmaxpos = 0;
-				b->tnonil = true;
-				b->tnil = false;
+				var_t off;
+				if (b->tvheap
+				    ? ((off = VarHeapVal(Tloc(b, 0), 0, b->twidth)) == 0 ||
+				       ATOMeq(b->ttype,
+					      b->tvheap->base + off,
+					      ATOMnilptr(b->ttype)))
+				    : ATOMeq(b->ttype, Tloc(b, 0),
+					     ATOMnilptr(b->ttype))) {
+					/* the only value is NIL */
+					b->tminpos = BUN_NONE;
+					b->tmaxpos = BUN_NONE;
+					b->tnil = true;
+					b->tnonil = false;
+				} else {
+					/* the only value is both min and max */
+					b->tminpos = 0;
+					b->tmaxpos = 0;
+					b->tnonil = true;
+					b->tnil = false;
+				}
 			}
 		} else {
 			b->tsorted = false;
@@ -1159,11 +1253,24 @@ BATsettrivprop(BAT *b)
 		}
 	} else if (b->batCount == 2 && ATOMlinear(b->ttype)) {
 		int c;
-		if (b->tvheap)
-			c = ATOMcmp(b->ttype,
-				    b->tvheap->base + VarHeapVal(Tloc(b, 0), 0, b->twidth),
-				    b->tvheap->base + VarHeapVal(Tloc(b, 0), 1, b->twidth));
-		else
+		if (b->tvheap) {
+			var_t off0 = VarHeapVal(Tloc(b, 0), 0, b->twidth);
+			var_t off1 = VarHeapVal(Tloc(b, 0), 1, b->twidth);
+			if (off0 == off1)
+				c = 0;
+			else if (off0 == 0)
+				c = ATOMeq(b->ttype,
+					   b->tvheap->base + off1,
+					   ATOMnilptr(b->ttype)) - 1;
+			else if (off1 == 0)
+				c = !ATOMeq(b->ttype,
+					    b->tvheap->base + off0,
+					    ATOMnilptr(b->ttype));
+			else
+				c = ATOMcmp(b->ttype,
+					    b->tvheap->base + off0,
+					    b->tvheap->base + off1);
+		} else
 			c = ATOMcmp(b->ttype, Tloc(b, 0), Tloc(b, 1));
 		b->tsorted = c <= 0;
 		b->tnosorted = !b->tsorted;
@@ -1208,10 +1315,6 @@ BATnegateprops(BAT *b)
 #define GDKERROR	"!ERROR: "
 #define GDKFATAL	"!FATAL: "
 
-/* Data Distilleries uses ICU for internationalization of some MonetDB error messages */
-
-#include "gdk_tracer.h"
-
 gdk_export gdk_return GDKtracer_fill_comp_info(BAT *id, BAT *component, BAT *log_level);
 
 #define GDKerror(...)		TRC_ERROR(GDK, __VA_ARGS__)
@@ -1237,33 +1340,35 @@ gdk_export void GDKclrerr(void);
  */
 __attribute__((__warn_unused_result__))
 static inline gdk_return
-tfastins_nocheckVAR(BAT *b, BUN p, const void *v)
+tfastins_nochecknolockVAR(BAT *b, BUN p, const void *v)
 {
 	var_t d;
 	gdk_return rc;
 	assert(b->tbaseoff == 0);
 	assert(b->theap->parentid == b->batCacheid);
-	MT_lock_set(&b->theaplock);
 	rc = ATOMputVAR(b, &d, v);
 	if (rc != GDK_SUCCEED) {
-		MT_lock_unset(&b->theaplock);
 		return rc;
 	}
-	if (b->twidth < SIZEOF_VAR_T &&
+	if (d != 0 &&
+	    b->twidth < SIZEOF_VAR_T &&
 	    (b->twidth <= 2 ? d - GDK_VAROFFSET : d) >= ((size_t) 1 << (8 << b->tshift))) {
 		/* doesn't fit in current heap, upgrade it */
 		rc = GDKupgradevarheap(b, d, 0, MAX(p, b->batCount));
 		if (rc != GDK_SUCCEED) {
-			MT_lock_unset(&b->theaplock);
 			return rc;
 		}
 	}
 	switch (b->twidth) {
 	case 1:
-		((uint8_t *) b->theap->base)[p] = (uint8_t) (d - GDK_VAROFFSET);
+		if (d != 0)
+			d -= GDK_VAROFFSET;
+		((uint8_t *) b->theap->base)[p] = (uint8_t) d;
 		break;
 	case 2:
-		((uint16_t *) b->theap->base)[p] = (uint16_t) (d - GDK_VAROFFSET);
+		if (d != 0)
+			d -= GDK_VAROFFSET;
+		((uint16_t *) b->theap->base)[p] = (uint16_t) d;
 		break;
 	case 4:
 		((uint32_t *) b->theap->base)[p] = (uint32_t) d;
@@ -1276,8 +1381,17 @@ tfastins_nocheckVAR(BAT *b, BUN p, const void *v)
 	default:
 		MT_UNREACHABLE();
 	}
-	MT_lock_unset(&b->theaplock);
 	return GDK_SUCCEED;
+}
+
+__attribute__((__warn_unused_result__))
+static inline gdk_return
+tfastins_nocheckVAR(BAT *b, BUN p, const void *v)
+{
+	MT_lock_set(&b->theaplock);
+	gdk_return rc = tfastins_nochecknolockVAR(b, p, v);
+	MT_lock_unset(&b->theaplock);
+	return rc;
 }
 
 __attribute__((__warn_unused_result__))
@@ -1413,6 +1527,11 @@ gdk_export void STRMPdestroy(BAT *b);
 gdk_export bool BAThasstrimps(BAT *b);
 gdk_export gdk_return BATsetstrimps(BAT *b);
 
+gdk_export int sketch_populate(BAT* n, BATiter *ni, struct canditer *nci, uint8_t cnting_sketch[BUCKETS][CLZ_BUCKETS]);
+/* gdk_export void sketch_merge(BAT* b, BAT* n); */
+gdk_export double sketch_estimate(uint8_t cnt_sketch[BUCKETS][CLZ_BUCKETS]);
+gdk_export double bat_guess_uniques(BAT *b, BATiter *bi, struct canditer *bci);
+
 /* Rtree structure functions */
 #ifdef HAVE_RTREE
 gdk_export bool RTREEexists(BAT *b);
@@ -1493,7 +1612,10 @@ BBPcheck(bat x)
 		if (x < 0 || x >= getBBPsize() || BBP_logical(x) == NULL) {
 			TRC_DEBUG(CHECK, "range error %d\n", (int) x);
 		} else {
-			assert(BBP_pid(x) == 0 || BBP_pid(x) == MT_getpid());
+			/* No longer guaranteed in pipeline, hence disable it.
+			 * TODO: find a proper way for this check
+			 */
+			//assert(BBP_pid(x) == 0 || BBP_pid(x) == MT_getpid());
 			return x;
 		}
 	}
@@ -1854,6 +1976,7 @@ gdk_export void ma_close(const allocator_state *); /* close temporary frame, res
 gdk_export void ma_free(allocator *sa, void *);
 gdk_export exception_buffer *ma_get_eb(allocator *sa)
        __attribute__((__pure__));
+gdk_export char *ma_copy(allocator *sa, char *s, size_t l);
 
 gdk_export int ma_info(allocator *sa, char *buf, size_t buflen, const char *pref);
 

@@ -111,3 +111,15 @@ returns table (
 )
 external name sql."statistics";
 grant execute on function sys."statistics"(varchar(1024),varchar(1024),varchar(1024)) to public;
+
+create aggregate uniques_guess(c integer)
+returns bigint external name aggr.uniques_guess;
+grant execute on aggregate uniques_guess(integer) to public;
+
+create aggregate uniques_guess(c bigint)
+returns bigint external name aggr.uniques_guess;
+grant execute on aggregate uniques_guess(bigint) to public;
+
+create aggregate uniques_guess(c varchar)
+returns bigint external name aggr.uniques_guess;
+grant execute on aggregate uniques_guess(varchar) to public;

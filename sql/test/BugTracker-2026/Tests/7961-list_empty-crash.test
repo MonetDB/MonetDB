@@ -1,0 +1,44 @@
+statement error 42000!SELECT: subquery must return only one column
+SELECT ( 1 , 2 , 3 ) = ( 1 , 2 , 3 )
+
+statement error 42000!SELECT: subquery must return only one column
+SELECT ( 1 , 2 , 3 ) < ( 1 , 2 , 3 )
+
+statement error 42000!SELECT: subquery must return only one column
+SELECT NOT ( ( 1 , 2 , 3 ) = ( 1 , 2 , 3 ) )
+
+statement error 42000!Cannot match a tuple to a single value
+SELECT ( 1 , 2 , 3 ) IN ( ( 1 ) , ( 2 ) , ( 3 ) )
+
+statement error 42000!Subquery has too few columns
+SELECT ( 1 , 2 , 3 ) IN ( SELECT 1 UNION SELECT 2 UNION SELECT 3 )
+
+statement error 42000!SELECT: subquery must return only one column
+SELECT NOT ( ( 1 , 2 , 3 ) = ( 1 , 2 , 3 ) )
+
+statement error 42000!SELECT: subquery must return only one column
+SELECT ( SELECT 1 AS x , 2 AS x , 3 AS x ) = ( SELECT 1 AS x , 2 AS x , 3 AS x )
+
+statement error 42000!SELECT: subquery must return only one column
+SELECT ( 1 , 0 , 3 ) = ( 1 , 2 , 3 )
+
+statement error 42000!SELECT: subquery must return only one column
+SELECT ( 1 , 0 , 3 ) != ( 1 , 2 , 3 )
+
+statement error 42000!SELECT: identifier 'x' unknown
+SELECT coalesce ( NULL , 2 , 'b' , COUNT ( - 14 - - CASE - - 1 WHEN - - 82 THEN - - 23 END / 46 - - not_like ( 'ab#c' , '_b_' , '#' , FALSE ) ^ 52 ) = 0 ) GROUP BY cube ( x , x , x ) UNION SELECT 2 AS x UNION SELECT 3 AS x
+
+query T nosort
+SELECT COUNT ( * ) = 0 AS x
+  FROM ( SELECT 1 AS x UNION SELECT 0 AS x UNION SELECT 3 AS x )
+----
+False
+
+query T nosort
+SELECT COUNT ( * ) = 0 AS x
+  FROM ( SELECT 1 AS x UNION SELECT 0 AS x UNION SELECT 3 AS x )
+ WHERE x NOT IN ( SELECT coalesce ( NULL , 2 , 'b' , COUNT ( - 14 - - CASE - - 1 WHEN - - 82 THEN - - 23 END / 46 - - not_like ( 'ab#c' , '_b_' , '#' , FALSE ) ^ 52 ) = 0 )
+                   GROUP BY cube ( x , x , x ) UNION SELECT 2 AS x UNION SELECT 3 AS x )
+----
+False
+

@@ -44,8 +44,6 @@ extern int mayhaveSideEffects(Client cntxt, MalBlkPtr mb, InstrPtr p,
 	__attribute__((__visibility__("hidden")));
 extern int isSideEffectFree(MalBlkPtr mb)
 	__attribute__((__visibility__("hidden")));
-extern int isBlocking(InstrPtr p)
-	__attribute__((__visibility__("hidden")));
 extern int isFragmentGroup(InstrPtr q)
 	__attribute__((__visibility__("hidden")));
 extern int isFragmentGroup2(InstrPtr q)
@@ -81,5 +79,5 @@ extern int isUnion(InstrPtr q)
 extern int isOptimizerEnabled(MalBlkPtr mb, const char *opt)
 	__attribute__((__visibility__("hidden")));
 
-#define MB_LARGE(mb) (mb->vtop > 204800)
+#define MB_LARGE(mb) (mb->vtop > 2048000)
 #endif /* _OPT_SUPPORT_H */

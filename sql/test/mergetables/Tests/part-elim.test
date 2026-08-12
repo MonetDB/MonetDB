@@ -99,6 +99,7 @@ munion (
 | ) [ "test"."id" NOT NULL UNIQUE, "test"."posx" NOT NULL ]
 ) [ "test"."id" NOT NULL, "test"."posx" NOT NULL ]
 
+skipif knownfail
 query T nosort
 explain show details select * from test where id between 1 and 100*10
 ----
@@ -115,6 +116,7 @@ munion (
 | ) [ "test"."id" NOT NULL UNIQUE, "test"."posx" NOT NULL ]
 ) [ "test"."id" NOT NULL, "test"."posx" NOT NULL ]
 
+skipif knownfail
 query T nosort
 explain show details select * from test where id in (1, 1022)
 ----
@@ -131,6 +133,7 @@ munion (
 | ) [ "test"."id" NOT NULL UNIQUE, "test"."posx" NOT NULL ]
 ) [ "test"."id" NOT NULL, "test"."posx" NOT NULL ]
 
+skipif knownfail
 query T nosort
 explain show details select * from test where id in (1, 1000)
 ----

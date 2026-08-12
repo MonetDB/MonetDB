@@ -20,6 +20,9 @@
 #define LOG_ERR		(-1)
 #define LOG_CONFLICT	(-2)
 
+#define DEFAULT_PARTSIZE 100000
+#define MED_PARTSIZE 1000
+#define MIN_PARTSIZE 1
 
 struct sqlstore;
 
@@ -121,8 +124,8 @@ typedef struct table_functions {
 -- binds for column,idx (rdonly, inserts, updates) and deletes
 */
 typedef void *(*bind_col_fptr) (sql_trans *tr, sql_column *c, int access);
-typedef int (*bind_updates_fptr) (sql_trans *tr, sql_column *c, BAT **ui, BAT **uv);
-typedef int (*bind_updates_idx_fptr) (sql_trans *tr, sql_idx *c, BAT **ui, BAT **uv);
+typedef int (*bind_updates_fptr) (sql_trans *tr, sql_column *c, BUN l, BUN h, BAT **ui, BAT **uv);
+typedef int (*bind_updates_idx_fptr) (sql_trans *tr, sql_idx *c, BUN l, BUN h, BAT **ui, BAT **uv);
 typedef void *(*bind_idx_fptr) (sql_trans *tr, sql_idx *i, int access);
 typedef void *(*bind_cands_fptr) (sql_trans *tr, sql_table *t, int nr_of_parts, int part_nr);
 
@@ -140,10 +143,6 @@ typedef int (*tab_validate_fptr) (sql_trans *tr, sql_table *t, int uncommitted);
 -- count number of rows in column (excluding the deletes)
 -- check for sortedness
  */
-#define CNT_RDONLY 4
-#define CNT_ACTIVE 10
-#define CNT_SEGS 20
-
 typedef size_t (*count_del_fptr) (sql_trans *tr, sql_table *t, int access);
 typedef size_t (*count_col_fptr) (sql_trans *tr, sql_column *c, int access);
 typedef size_t (*count_idx_fptr) (sql_trans *tr, sql_idx *i, int access);
@@ -151,6 +150,7 @@ typedef size_t (*dcount_col_fptr) (sql_trans *tr, sql_column *c);
 typedef int (*min_max_col_fptr) (sql_trans *tr, sql_column *c);
 typedef int (*set_stats_col_fptr) (sql_trans *tr, sql_column *c, double *unique_est, char *min, char *max);
 typedef int (*prop_col_fptr) (sql_trans *tr, sql_column *c);
+typedef int (*prop_idx_fptr) (sql_trans *tr, sql_idx *i);
 typedef int (*proprec_col_fptr) (sql_trans *tr, sql_column *c, bool *nonil, bool *unique, double *unique_est, ValPtr min, ValPtr max);
 typedef int (*col_set_range_fptr) (sql_trans *tr, sql_column *c, sql_part *pt, bool add_range);
 typedef int (*col_not_null_fptr) (sql_trans *tr, sql_column *c, bool not_null);
@@ -181,6 +181,10 @@ typedef int (*upgrade_del_fptr) (sql_trans *tr, sql_table *t);
 typedef int (*vacuum_col_fptr) (sql_trans *tr, sql_column *c, bool force);
 typedef int (*vacuum_tab_fptr) (sql_trans *tr, sql_table *t, bool force);
 
+typedef int (*create_ustr_fptr) (sql_trans *tr, sql_ustr *u);
+typedef int (*drop_ustr_fptr) (sql_trans *tr, sql_ustr *u);
+typedef int (*destroy_ustr_fptr) (struct sqlstore *store, sql_ustr *u);
+
 /*
 -- free the storage resources for columns, indices and tables
 -- returns LOG_OK, LOG_ERR
@@ -203,6 +207,7 @@ typedef enum storage_type {
 	ST_DEFAULT = 0,
 	ST_DICT,
 	ST_FOR,
+	ST_USTR,
 } storage_type;
 
 typedef int (*col_compress_fptr) (sql_trans *tr, sql_column *c, storage_type st, BAT *offsets, BAT *vals);
@@ -240,6 +245,7 @@ typedef struct store_functions {
 	min_max_col_fptr min_max_col;
 	set_stats_col_fptr set_stats_col;
 	prop_col_fptr sorted_col;
+	prop_idx_fptr sorted_idx;
 	prop_col_fptr unique_col;
 	prop_col_fptr double_elim_col; /* varsize col with double elimination */
 	proprec_col_fptr col_stats;
@@ -271,6 +277,10 @@ typedef struct store_functions {
 	upgrade_del_fptr upgrade_del;
 	vacuum_col_fptr vacuum_col;
 	vacuum_tab_fptr vacuum_tab;
+
+	create_ustr_fptr create_ustr;
+	drop_ustr_fptr drop_ustr;
+	destroy_ustr_fptr destroy_ustr;
 } store_functions;
 
 typedef int (*log_create_fptr) (struct sqlstore *store, int debug, const char *logdir, int catalog_version);
@@ -406,7 +416,8 @@ extern int sql_trans_alter_default(sql_trans *tr, sql_column *col, char *val);
 extern int sql_trans_alter_storage(sql_trans *tr, sql_column *col, char *storage);
 extern int sql_trans_alter_type(sql_trans *tr, sql_column *col, sql_subtype *t);
 extern int sql_trans_alter_check(sql_trans *tr, sql_column *col, char *check);
-extern int sql_trans_is_sorted(sql_trans *tr, sql_column *col);
+extern int sql_trans_is_sorted_col(sql_trans *tr, sql_column *col);
+extern int sql_trans_is_sorted_idx(sql_trans *tr, sql_idx *idx);
 extern int sql_trans_is_unique(sql_trans *tr, sql_column *col);
 extern int sql_trans_is_duplicate_eliminated(sql_trans *tr, sql_column *col);
 extern int sql_trans_col_stats(sql_trans *tr, sql_column *col, bool *nonil, bool *unique, double *unique_est, ValPtr min, ValPtr max);
@@ -416,6 +427,7 @@ extern int sql_trans_ranges(sql_trans *tr, sql_column *col, void **min, void **m
 extern void column_destroy(struct sqlstore *store, sql_column *c);
 extern void idx_destroy(struct sqlstore *store, sql_idx * i);
 extern void table_destroy(struct sqlstore *store, sql_table *t);
+extern void ustr_destroy(struct sqlstore *store, sql_ustr *u);
 
 extern int sql_trans_create_ukey(sql_key **res, sql_trans *tr, sql_table *t, const char *name, key_type kt, const char* check);
 extern int sql_trans_key_done(sql_trans *tr, sql_key *k);
@@ -465,6 +477,9 @@ extern sql_idx *create_sql_ic(struct sqlstore *store, allocator *sa, sql_idx *i,
 extern sql_idx *create_sql_idx_done(sql_trans *tr, sql_idx *i);
 extern sql_func *create_sql_func(struct sqlstore *store, allocator *sa, const char *func, list *args, list *res, sql_ftype type, sql_flang lang, const char *mod,
 								 const char *impl, const char *query, bit varres, bit vararg, bit system, bit side_effect, bit order_required, bit opt_order);
+
+extern int sql_trans_create_ustr(sql_trans *tr, sql_schema *s, const char *uname);
+extern int sql_trans_drop_ustr(sql_trans *tr, sql_schema *s, sql_ustr *u, int drop_action);
 
 /* for alter we need to duplicate a table */
 extern sql_table *dup_sql_table(allocator *sa, sql_table *t);
@@ -543,7 +558,7 @@ typedef struct sql_change {
 } sql_change;
 
 extern sql_base *dup_base(sql_base *b);
-extern void trans_add(sql_trans *tr, sql_base *b, void *data, tc_cleanup_fptr cleanup, tc_commit_fptr commit, tc_log_fptr log);
+extern void trans_add(sql_trans *tr, sql_base *b, void *data, tc_cleanup_fptr cleanup, tc_commit_fptr commit, tc_log_fptr log, bool locked);
 extern void trans_del(sql_trans *tr, sql_base *b);
 extern int tr_version_of_parent(sql_trans *tr, ulng ts);
 

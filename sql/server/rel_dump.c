@@ -416,7 +416,7 @@ exp_print(mvc *sql, stream *fout, sql_exp *e, int depth, list *refs, int comma, 
 		/* don't show properties on value lists */
 		if (decorate && e->p && e->type != e_atom && !exp_is_atom(e)) {
 			for (prop *p = e->p; p; p = p->p) {
-				if (p->kind != PROP_MIN && p->kind != PROP_MAX && p->kind != PROP_NUNIQUES) {
+				if (p->kind != PROP_MIN && p->kind != PROP_MAX && p->kind != PROP_NUNIQUES && p->kind != PROP_SELECTIVITY) {
 					char *pv = propvalue2string(ta, p);
 					mnstr_printf(fout, " %s %s", propkind2string(p), pv);
 				}
@@ -563,6 +563,10 @@ rel_print_rel(mvc *sql, stream  *fout, sql_rel *rel, int depth, list *refs, int 
 
 	if (mvc_debug_on(sql, 4) && rel->opt)
 		mnstr_printf(fout, "opt %d ", rel->opt);
+	if ((ATOMIC_GET(&GDKdebug) & TESTINGMASK) == 0 && rel->spb)
+			mnstr_printf(fout, " start ");
+	if ((ATOMIC_GET(&GDKdebug) & TESTINGMASK) == 0 && rel->parallel)
+			mnstr_printf(fout, " parallel ");
 
 	if (is_single(rel))
 		mnstr_printf(fout, "single ");
@@ -778,12 +782,34 @@ rel_print_rel(mvc *sql, stream  *fout, sql_rel *rel, int depth, list *refs, int 
 		if (rel->op == op_update && rel->attr)
 			exps_print(sql, fout, rel->attr, depth, refs, 1, 0, decorate, 0);
 	} 	break;
+	case op_buildhash:
+    case op_probehash:
+    case op_partition:
+		if (rel->op == op_buildhash)
+			mnstr_printf(fout, "buildhash(");
+		else if (rel->op == op_probehash)
+			mnstr_printf(fout, "probe(");
+		else
+			mnstr_printf(fout, "partition(");
+		if (rel_is_ref(rel->l)) {
+			int nr = find_ref(refs, rel->l);
+			print_indent(sql, fout, depth+1, decorate);
+			mnstr_printf(fout, "& REF %d ", nr);
+		} else
+			rel_print_rel(sql, fout, rel->l, depth+1, refs, decorate);
+		print_indent(sql, fout, depth, decorate);
+		mnstr_printf(fout, ")");
+		exps_print(sql, fout, rel->attr, depth, refs, 1, 0, decorate, 0);
+		exps_print(sql, fout, rel->exps, depth, refs, 1, 0, decorate, 0);
+		break;
 	default:
 		assert(0);
 	}
 	if (sql->show_details && decorate && rel->p) {
+		if ((ATOMIC_GET(&GDKdebug) & TESTINGMASK) == 0 && rel->partition)
+				mnstr_printf(fout, " %c PARTITION", rel->partition==1?'L':rel->partition == 2?'R':' ');
 		for (prop *p = rel->p; p; p = p->p) {
-			if ((p->kind != PROP_COUNT && p->kind != PROP_UKEY && p->kind != PROP_UNNESTING) || (ATOMIC_GET(&GDKdebug) & TESTINGMASK) == 0) {
+			if ((p->kind != PROP_COUNT && p->kind != PROP_UKEY && p->kind != PROP_UNNESTING && p->kind != PROP_SELECTIVITY) || (ATOMIC_GET(&GDKdebug) & TESTINGMASK) == 0) {
 				char *pv = propvalue2string(ta, p);
 				mnstr_printf(fout, " %s %s", propkind2string(p), pv);
 			}
@@ -849,6 +875,9 @@ rel_print_refs(mvc *sql, stream* fout, sql_rel *rel, int depth, list *refs, int 
 		break;
 	case op_project:
 	case op_select:
+    case op_buildhash:
+    case op_probehash:
+    case op_partition:
 	case op_groupby:
 	case op_topn:
 	case op_sample:
@@ -1112,7 +1141,7 @@ read_exps(mvc *sql, sql_rel *lrel, sql_rel *rrel, list *top_exps, char *r, int *
 }
 
 static sql_exp*
-exp_read_min_or_max(mvc *sql, sql_exp *exp, char *r, int *pos, const char *prop_str, rel_prop kind)
+exp_read_min_or_max(mvc *sql, sql_exp *exp, char *r, int *pos, const char *prop_str, prop_kind kind)
 {
 	atom *a;
 	sql_subtype *tpe = exp_subtype(exp);
@@ -1978,17 +2007,20 @@ sql_rel*
 rel_read(mvc *sql, char *r, int *pos, list *refs)
 {
 	sql_rel *rel = NULL, *nrel, *lrel, *rrel = NULL;
-	list *exps, *gexps, *rels = NULL;
+	list *exps, *attr, *gexps, *rels = NULL;
 	int distinct = 0, dependent = 0, single = 0, recursive = 0;
 	operator_type j = op_basetable;
 	bool groupjoin = false;
+	bool start = 0, parallel = 0;
 
 	skipWS(r,pos);
-	if (r[*pos] == 'R') {
+	while (r[*pos] == 'R') {
 		*pos += (int) strlen("REF");
 
 		skipWS(r, pos);
-		(void)readInt(r,pos);
+		int nr = readInt(r,pos);
+		if (list_length(refs) != (nr-1))
+			return NULL;
 		skipWS(r, pos);
 		(*pos)++; /* ( */
 		int cnt = readInt(r,pos);
@@ -2007,6 +2039,20 @@ rel_read(mvc *sql, char *r, int *pos, list *refs)
 		skipWS(r, pos);
 		nr = readInt(r,pos); /* skip nr refs */
 		return list_fetch(refs, nr-1);
+	}
+
+	/* start */
+	if (r[*pos] == 's' && r[*pos+1] == 't' && r[*pos+2] == 'a' && r[*pos+3] == 'r' && r[*pos+4] == 't') {
+		start = true;
+		*pos += 5;
+		skipWS(r, pos);
+	}
+	/* parallel */
+	if (r[*pos] == 'p' && r[*pos+1] == 'a' && r[*pos+2] == 'r' && r[*pos+3] == 'a' &&
+		r[*pos+4] == 'l' && r[*pos+5] == 'l' && r[*pos+6] == 'e' && r[*pos+7] == 'l') {
+		parallel = true;
+		*pos += 8;
+		skipWS(r, pos);
 	}
 
 	if (r[*pos] == 'i' && r[*pos+1] == 'n' && r[*pos+2] == 's') {
@@ -2029,6 +2075,8 @@ rel_read(mvc *sql, char *r, int *pos, list *refs)
 
 		if (!(rel = rel_insert(sql, lrel, rrel)) || !(rel = read_rel_properties(sql, rel, r, pos)))
 			return NULL;
+		rel->spb = start;
+		rel->parallel = parallel;
 		return rel;
 	}
 
@@ -2053,6 +2101,8 @@ rel_read(mvc *sql, char *r, int *pos, list *refs)
 		if (!(rel = rel_delete(sql->sa, lrel, rrel)) || !(rel = read_rel_properties(sql, rel, r, pos)))
 			return NULL;
 
+		rel->spb = start;
+		rel->parallel = parallel;
 		return rel;
 	}
 
@@ -2129,6 +2179,8 @@ rel_read(mvc *sql, char *r, int *pos, list *refs)
 		if (!(rel = rel_update(sql, lrel, rrel, NULL, nexps)) || !(rel = read_rel_properties(sql, rel, r, pos)))
 			return NULL;
 
+		rel->spb = start;
+		rel->parallel = parallel;
 		return rel;
 	}
 
@@ -2160,6 +2212,7 @@ rel_read(mvc *sql, char *r, int *pos, list *refs)
 		recursive = 1;
 	}
 
+	bool probe = false;
 	switch(r[*pos]) {
 	case 't':
 		if (r[*pos+1] == 'a') {
@@ -2337,6 +2390,8 @@ rel_read(mvc *sql, char *r, int *pos, list *refs)
 					rel_base_use_all(sql, rel);
 					rel = rewrite_basetable(sql, rel, true);
 				}
+				rel->spb = start;
+				rel->parallel = parallel;
 
 				if (!r[*pos])
 					return rel;
@@ -2361,12 +2416,17 @@ rel_read(mvc *sql, char *r, int *pos, list *refs)
 			skipWS(r, pos);
 			if (!(exps = read_exps(sql, nrel, NULL, NULL, r, pos, '[', 0, 1)))
 				return NULL;
-			rel = rel_topn(sql->sa, nrel, exps);
-			set_processed(rel);
+			rel = rel_topn(sql->sa, nrel, exps); set_processed(rel);
 		}
 		break;
 	case 'p':
-		*pos += (int) strlen("project");
+		/* partition missing */
+		if (strncmp(r+*pos, "project", 7) == 0) {
+			*pos += (int) strlen("project");
+		} else if (strncmp(r+*pos, "probe", 5) == 0) {
+			*pos += (int) strlen("probe");
+			probe = true;
+		}
 		skipWS(r, pos);
 
 		if (r[*pos] != '(')
@@ -2385,11 +2445,44 @@ rel_read(mvc *sql, char *r, int *pos, list *refs)
 		if (!(exps = read_exps(sql, is_modify?nrel->l : nrel, NULL, NULL, r, pos, '[', 0, 1)))
 			return NULL;
 		rel = rel_project(sql->sa, nrel, exps);
+		if (probe)
+			rel->op = op_probehash;
 		set_processed(rel);
 		/* order by ? */
 		/* first projected expressions, then left relation projections */
-		if (r[*pos] == '[' && !(rel->r = read_exps(sql, rel, nrel, NULL, r, pos, '[', 0, 1)))
+		if (r[*pos] == '[' && !(rel->r = read_exps(sql, probe?rel->l:rel, probe?NULL:nrel, NULL, r, pos, '[', 0, 1)))
 			return NULL;
+		if (probe) {
+			rel->attr = rel->exps;
+			rel->exps = rel->r;
+			rel->r = NULL;
+		}
+		break;
+	case 'b':
+		if (strncmp(r+*pos, "buildhash", 9) == 0)
+			*pos += (int) strlen("buildhash");
+		skipWS(r, pos);
+
+		if (r[*pos] != '(')
+			return sql_error(sql, -1, SQLSTATE(42000) "Project: missing '('\n");
+		(*pos)++;
+		skipWS(r, pos);
+		if (!(nrel = rel_read(sql, r, pos, refs)))
+			return NULL;
+		skipWS(r, pos);
+		if (r[*pos] != ')')
+			return sql_error(sql, -1, SQLSTATE(42000) "Project: missing ')'\n");
+		(*pos)++;
+		skipWS(r, pos);
+
+		if (!(attr = read_exps(sql, nrel, NULL, NULL, r, pos, '[', 0, 1)))
+			return NULL;
+		if (!(exps = read_exps(sql, nrel, NULL, NULL, r, pos, '[', 0, 1)))
+			return NULL;
+		rel = rel_project(sql->sa, nrel, exps);
+		rel->op = op_buildhash;
+		rel->attr = attr;
+		set_processed(rel);
 		break;
 	case 's':
 	case 'a':
@@ -2564,6 +2657,8 @@ rel_read(mvc *sql, char *r, int *pos, list *refs)
 		if (!(exps = read_exps(sql, lrel, rrel, NULL, r, pos, '[', 0, 1)))
 			return NULL;
 		rel = rel_crossproduct(sql->sa, lrel, rrel, j);
+		if (lrel->op == op_probehash || lrel->op == op_buildhash)
+			rel->oahash = lrel->op == op_probehash ? 2 : 1;
 		rel->exps = exps;
 		if (groupjoin) {
 			list *attr = NULL;
@@ -2673,6 +2768,10 @@ rel_read(mvc *sql, char *r, int *pos, list *refs)
 		set_dependent(rel);
 	if (recursive)
 		set_recursive(rel);
+	if (start)
+		rel->spb = true;
+	if (parallel)
+		rel->parallel = true;
 
 	/* sometimes, properties are sent */
 	if (!(rel = read_rel_properties(sql, rel, r, pos)))

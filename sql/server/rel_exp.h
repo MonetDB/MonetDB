@@ -153,6 +153,7 @@ extern int exp_match( sql_exp *e1, sql_exp *e2);
 extern sql_exp* exps_find_exp( list *l, sql_exp *e);
 extern int exp_match_exp( sql_exp *e1, sql_exp *e2);
 extern int exp_match_exp_semantics( sql_exp *e1, sql_exp *e2, bool semantics);
+extern int exp_match_exp_cmp( sql_exp *e1, sql_exp *e2 ); /* return 0 on match else !0 */
 extern sql_exp* exps_any_match(list *l, sql_exp *e);
 /* match just the column (cmp equality) expressions */
 extern int exp_match_col_exps( sql_exp *e, list *l);
@@ -162,6 +163,7 @@ extern int exp_match_list( list *l, list *r);
 extern int exp_is_join(sql_exp *e, list *rels);
 extern int exp_is_eqjoin(sql_exp *e, void *dummy);
 extern int exp_is_join_exp(sql_exp *e);
+extern int exp_is_scalar(sql_exp *e); /* single value */
 extern int exp_is_atom(sql_exp *e);
 /* exp_is_true/false etc return true if the expression is true, on unknown etc false is returned */
 extern int exp_is_true(sql_exp *e);
@@ -191,7 +193,7 @@ extern bool exp_is_fallible(sql_exp *e); /* exp could result in an error, ie pus
 extern bool exps_have_fallible(list *l);
 extern bool exps_have_selfref(list *l);
 
-extern sql_exp *exps_find_prop(list *exps, rel_prop kind);
+extern sql_exp *exps_find_prop(list *exps, prop_kind kind);
 
 /* returns 0 when the relation contain the passed expression (or sub expressions if subexp is set) else < 0 */
 extern int rel_has_exp(sql_rel *rel, sql_exp *e, bool subexp);
@@ -208,6 +210,9 @@ extern sql_exp *exps_uses_nid(list *exps, int nid); /* get first expression whic
 extern sql_exp *exps_bind_column(list *exps, const char *cname, int *ambiguous, int *multiple, int no_tname /* set if expressions should be without a tname */);
 extern sql_exp *exps_bind_column2(list *exps, sql_alias *rname, const char *cname, int *multiple);
 extern sql_exp * list_find_exp(const list *exps, sql_exp *e);
+extern sql_exp *predicates_find_nid(const list *exps, int nid);
+
+extern dbl exp_estimate_selectivity(mvc *sql, sql_exp *e);
 
 sql_export sql_alias *a_create(allocator *sa, const char *name);
 extern sql_alias *schema_alias(allocator *sa, sql_schema *s);
@@ -239,6 +244,7 @@ extern void exps_inout(sql_subfunc *f, list *exps);
 extern void exps_largest_int(sql_subfunc *f, list *exps, lng cnt);
 
 extern int exp_aggr_is_count(sql_exp *e);
+extern int exp_aggr_is_countstar(sql_exp *e);
 extern list *check_distinct_exp_names(mvc *sql, list *exps);
 
 extern sql_exp *exp_check_type(mvc *sql, sql_subtype *t, sql_rel *rel, sql_exp *exp, check_type tpe);
@@ -251,6 +257,10 @@ extern sql_exp *exp_check_vector(mvc *sql, sql_exp *exp);
 extern void free_exp(allocator *sa, sql_exp *e);
 extern void free_exps(allocator *sa, list *exps);
 extern bool exps_has_group_filter(list *exps);
+
+extern sql_subtype* first_arg_subtype(sql_exp *e);
+
+extern sql_exp* topn_limit(sql_rel *rel);
 
 extern int exp_is_rename(sql_exp *e);
 extern int exp_is_useless_rename(sql_exp *e);

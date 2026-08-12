@@ -32,7 +32,7 @@ project1_##TYPE(BAT *restrict bn, BATiter *restrict li,			\
 	TYPE *restrict bt;						\
 	oid r1seq, r1end;						\
 									\
-	MT_thread_setalgorithm(__func__);				\
+	MT_thread_setalgorithm(__func__, NULL);				\
 	r1t = (const TYPE *) r1i->base;					\
 	bt = (TYPE *) Tloc(bn, 0);					\
 	r1seq = r1i->b->hseqbase;					\
@@ -92,7 +92,7 @@ project_##TYPE(BAT *restrict bn, BATiter *restrict li,			\
 	    (ci == NULL || (ci->tpe == cand_dense && BATtdensebi(li))) && \
 	    li->nonil && r1i->type && !BATtdensebi(r1i))		\
 		return project1_##TYPE(bn, li, r1i, qry_ctx);		\
-	MT_thread_setalgorithm(__func__);				\
+	MT_thread_setalgorithm(__func__, NULL);				\
 	r1t = (const TYPE *) r1i->base;					\
 	bt = (TYPE *) Tloc(bn, 0);					\
 	r1seq = r1i->b->hseqbase;					\
@@ -184,7 +184,7 @@ project_oid(BAT *restrict bn, BATiter *restrict li,
 		else
 			return project1_int(bn, li, r1i, qry_ctx);
 	}
-	MT_thread_setalgorithm(__func__);
+	MT_thread_setalgorithm(__func__, NULL);
 	if (complex_cand(r1i->b))
 		canditer_init(&r1ci, NULL, r1i->b);
 	else if (!BATtdensebi(r1i))
@@ -292,7 +292,7 @@ project_any(BAT *restrict bn, BATiter *restrict li,
 	oid r1seq, r1end;
 	oid r2seq, r2end;
 
-	MT_thread_setalgorithm(__func__);
+	MT_thread_setalgorithm(__func__, NULL);
 	r1seq = r1i->b->hseqbase;
 	r1end = r1seq + r1i->count;
 	if (r2i) {
@@ -396,6 +396,7 @@ BATproject2(BAT *restrict l, BAT *restrict r1, BAT *restrict r2)
 		lo = l->tseqbase;
 		hi = l->tseqbase + lcount;
 		if (lo >= r1->hseqbase && hi <= r1->hseqbase + r1i.count) {
+			MT_thread_setalgorithm("using slice", __func__);
 			bn = BATslice(r1, lo - r1->hseqbase, hi - r1->hseqbase);
 			BAThseqbase(bn, l->hseqbase);
 			msg = " (slice)";
@@ -409,6 +410,7 @@ BATproject2(BAT *restrict l, BAT *restrict r1, BAT *restrict r2)
 			return NULL;
 		}
 		if (lo >= r2->hseqbase) {
+			MT_thread_setalgorithm("using slice", __func__);
 			bn = BATslice(r2, lo - r2->hseqbase, hi - r2->hseqbase);
 			BAThseqbase(bn, l->hseqbase);
 			msg = " (slice2)";
@@ -439,6 +441,7 @@ BATproject2(BAT *restrict l, BAT *restrict r1, BAT *restrict r2)
 		/* trivial: all values are nil (includes no entries at all) */
 		const void *nil = r1i.type == TYPE_msk ? &oid_nil : ATOMnilptr(r1i.type);
 
+		MT_thread_setalgorithm("constant result", __func__);
 		bn = BATconstant(l->hseqbase, r1i.type == TYPE_oid || r1i.type == TYPE_msk ? TYPE_void : r1i.type,
 				 nil, lcount, TRANSIENT);
 		if (bn != NULL &&
@@ -451,7 +454,7 @@ BATproject2(BAT *restrict l, BAT *restrict r1, BAT *restrict r2)
 	}
 
 	if (ATOMvarsized(tpe)) {
-		if (li.nonil && (r2 == NULL || r1i.vh == r2i.vh)) {
+		if (li.nonil && r1i.b->tvheap->storage != STORE_NOWN && (r2 == NULL || r1i.vh == r2i.vh)) {
 			/* insert strings as ints, we need to share the
 			 * string heap; we can't do this if there are
 			 * nils in the left column or if there are two
@@ -459,6 +462,7 @@ BATproject2(BAT *restrict l, BAT *restrict r1, BAT *restrict r2)
 			 * heaps */
 			tpe = r1i.width == 1 ? TYPE_bte : (r1i.width == 2 ? TYPE_sht : (r1i.width == 4 ? TYPE_int : TYPE_lng));
 			vheaptrick = true;
+			MT_thread_setalgorithm("using vheaptrick", __func__);
 		}
 	} else if (tpe == TYPE_msk || mask_cand(r1)) {
 		r1 = BATunmask(r1);
@@ -559,6 +563,10 @@ BATproject2(BAT *restrict l, BAT *restrict r1, BAT *restrict r2)
 		bn->twidth = r1i.width;
 		bn->tshift = r1i.shift;
 		bn->tascii = r1i.ascii;
+		bn->tvkey = r1i.vkey;
+		bn->ustr = r1i.ustr;
+		if (bn->ustr)
+			BBPfix(bn->ustr);
 	}
 
 	bn->tunique_est =
@@ -821,6 +829,7 @@ BATprojectchain(BAT **bats)
 			bn->tnonil = bi.nonil;
 			bn->tkey = false;
 			bn->tascii = bi.ascii;
+			bn->tvkey = bi.vkey;
 			assert(bn->tvheap == NULL);
 			bn->tvheap = bi.vh;
 			HEAPincref(bi.vh);

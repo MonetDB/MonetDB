@@ -10,7 +10,7 @@
 
 #ifndef _SQL_USER_H_
 #define _SQL_USER_H_
-#include "sql.h"		/* includes sql_backend.h */
+#include "sql_monet_backend.h"		/* includes sql_monet_backend.h */
 
 extern oid getUserOIDByName(mvc *m, const char *user);
 extern str getUserPassword(mvc *m, oid rid);

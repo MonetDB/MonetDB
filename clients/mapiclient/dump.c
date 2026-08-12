@@ -760,12 +760,9 @@ toUpper(const char *s)
 	size_t len = strlen(s);
 
 	if (len >= sizeof(toupperbuf))
-		return NULL;	/* too long */
-	for (i = 0; i < len; i++) {
-		if (s[i] & 0x80 || isupper(s[i]))
-			return NULL;		/* not all ASCII lower case */
-		toupperbuf[i] = toupper(((unsigned char *) s)[i]);
-	}
+		return s;	/* too long: it's not *that* important */
+	for (i = 0; i < len; i++)
+		toupperbuf[i] = toupper((int)s[i]);
 	toupperbuf[i] = '\0';
 	return toupperbuf;
 }
@@ -909,26 +906,20 @@ dump_type(Mapi mid, stream *sqlf, const char *c_type, const char *c_type_digits,
 		} else {
 			mnstr_printf(sqlf, "GEOMETRY");
 		}
+	} else if (strcmp(c_type_digits, "0") == 0) {
+		space += mnstr_printf(sqlf, "%s", toUpper(c_type));
+	} else if (strcmp(c_type_scale, "0") == 0) {
+		space += mnstr_printf(sqlf, "%s(%s)",
+				toUpper(c_type), c_type_digits);
 	} else {
-		const char *s = toUpper(c_type);
-		if (s)
-			space += mnstr_printf(sqlf, "%s", s);
-		else
-			space += dquoted_print(sqlf, c_type, NULL);
-		if (strcmp(c_type_digits, "0") != 0) {
-			if (strcmp(c_type_scale, "0") == 0) {
-				space += mnstr_printf(sqlf, "(%s)", c_type_digits);
-			} else {
-				if (strcmp(c_type, "decimal") == 0) {
-					if (strcmp(c_type_digits, "39") == 0)
-						c_type_digits = "38";
-					else if (!hashge && strcmp(c_type_digits, "19") == 0)
-						c_type_digits = "18";
-				}
-				space += mnstr_printf(sqlf, "(%s,%s)",
-									  c_type_digits, c_type_scale);
-			}
+		if (strcmp(c_type, "decimal") == 0) {
+			if (strcmp(c_type_digits, "39") == 0)
+				c_type_digits = "38";
+			else if (!hashge && strcmp(c_type_digits, "19") == 0)
+				c_type_digits = "18";
 		}
+		space += mnstr_printf(sqlf, "%s(%s,%s)",
+				toUpper(c_type), c_type_digits, c_type_scale);
 	}
 	if (c_multiset == 2)
 		space += mnstr_printf(sqlf, "[]");
@@ -976,8 +967,13 @@ dump_column_definition(Mapi mid, stream *sqlf, const char *schema,
 				"c.type_scale, "	/* 3 */
 				"c.\"null\", "		/* 4 */
 				"%s,"				/* 5 */
-				"c.number "			/* 6 */
+				"c.number, "		/* 6 */
+				"us.name, "			/* 7 */
+				"uo.name "			/* 8 */
 			 "FROM sys._columns c "
+				 "LEFT OUTER JOIN sys.dependencies d ON c.id = d.depend_id "
+				 "LEFT OUTER JOIN sys.objects uo ON d.id = uo.id "
+				 "LEFT OUTER JOIN sys.schemas us ON uo.nr = us.id "
 			 "WHERE c.table_id = %s "
 				 "%s"
 			 "ORDER BY c.number",
@@ -992,8 +988,13 @@ dump_column_definition(Mapi mid, stream *sqlf, const char *schema,
 				"c.type_scale, "	/* 3 */
 				"c.\"null\", "		/* 4 */
 				"%s,"				/* 5 */
-				"c.number "			/* 6 */
-			 "FROM sys._columns c, "
+				"c.number, "		/* 6 */
+				"us.name, "			/* 7 */
+				"uo.name "			/* 8 */
+			 "FROM sys._columns c "
+				 "LEFT OUTER JOIN sys.dependencies d ON c.id = d.depend_id "
+				 "LEFT OUTER JOIN sys.objects uo ON d.id = uo.id "
+				 "LEFT OUTER JOIN sys.schemas us ON uo.nr = us.id, "
 			      "sys._tables t, "
 			      "sys.schemas s "
 			 "WHERE c.table_id = t.id "
@@ -1017,12 +1018,23 @@ dump_column_definition(Mapi mid, stream *sqlf, const char *schema,
 		char *c_type_scale = strdup(mapi_fetch_field(hdl, 3));
 		const char *c_null = mapi_fetch_field(hdl, 4);
 		int c_multiset = atoi(mapi_fetch_field(hdl, 5));
+		char *s_name = mapi_fetch_field(hdl, 7);
+		char *o_name = mapi_fetch_field(hdl, 8);
 		int space;
 
 		if (mapi_error(mid) || !c_type || !c_type_digits || !c_type_scale) {
 			free(c_type);
 			free(c_type_digits);
 			free(c_type_scale);
+			goto bailout;
+		}
+		if ((s_name && (s_name = strdup(s_name)) == NULL) ||
+			(o_name && (o_name = strdup(o_name)) == NULL)) {
+			free(c_type);
+			free(c_type_digits);
+			free(c_type_scale);
+			free(s_name);
+			free(o_name);
 			goto bailout;
 		}
 
@@ -1062,8 +1074,14 @@ dump_column_definition(Mapi mid, stream *sqlf, const char *schema,
 		}
 		space = dump_type(mid, sqlf, c_type, c_type_digits, c_type_scale, c_multiset, hashge);
 		if (strcmp(c_null, "false") == 0) {
-			mnstr_printf(sqlf, "%*s NOT NULL",
-						 CAP(13 - space), "");
+			mnstr_printf(sqlf, "%*s NOT NULL", CAP(13 - space), "");
+			space = 13;
+		}
+		if (s_name && o_name) {
+			mnstr_printf(sqlf, "%*s DISTINCT STRING COLUMN ",
+								 CAP(13 - space), "");
+			dquoted_print(sqlf, s_name, ".");
+			dquoted_print(sqlf, o_name, NULL);
 			space = 13;
 		}
 
@@ -1071,6 +1089,8 @@ dump_column_definition(Mapi mid, stream *sqlf, const char *schema,
 		free(c_type);
 		free(c_type_digits);
 		free(c_type_scale);
+		free(s_name);
+		free(o_name);
 		if (mnstr_errnr(sqlf) != MNSTR_NO__ERROR)
 			goto bailout;
 	}
@@ -2020,7 +2040,7 @@ dump_table_storage(Mapi mid, const char *schema, const char *tname, stream *sqlf
 
 	snprintf(query, maxquerylen,
 			 "SELECT name, storage FROM sys._columns "
-			 "WHERE storage IS NOT NULL "
+			 "WHERE storage NOT LIKE 'USTR%%' "
 			 "AND storage NOT LIKE '!%%ms!_%%' ESCAPE '!' "
 			 "AND table_id = (SELECT id FROM sys._tables WHERE name = '%s' "
 			 "AND schema_id = (SELECT id FROM sys.schemas WHERE name = '%s'))",
@@ -2069,27 +2089,30 @@ dump_table_access(Mapi mid, const char *schema, const char *tname, stream *sqlf)
 
 	snprintf(query, maxquerylen,
 			 "SELECT t.access FROM sys._tables t, sys.schemas s "
-			 "WHERE s.name = '%s' AND t.schema_id = s.id AND t.name = '%s'",
+			 "WHERE s.name = '%s' AND t.schema_id = s.id AND t.name = '%s' AND t.access in (1, 2)",
 			 s, t);
 	if ((hdl = mapi_query(mid, query)) == NULL || mapi_error(mid))
 		goto bailout;
-	if (mapi_rows_affected(hdl) != 1) {
-		if (mapi_rows_affected(hdl) == 0)
-			fprintf(stderr, "table %s.%s does not exist\n", schema, tname);
-		else
-			fprintf(stderr, "table %s.%s is not unique\n", schema, tname);
+	switch (mapi_rows_affected(hdl)) {
+	case 0:
+		rc = 0;
+		break;
+	case 1:
+		while ((mapi_fetch_row(hdl)) != 0) {
+			const char *access = mapi_fetch_field(hdl, 0);
+			if (access && (*access == '1' || *access == '2')) {
+				mnstr_printf(sqlf, "ALTER TABLE ");
+				dquoted_print(sqlf, schema, ".");
+				dquoted_print(sqlf, tname, " ");
+				mnstr_printf(sqlf, "SET %s ONLY;\n", *access == '1' ? "READ" : "INSERT");
+			}
+		}
+		rc = 0;						/* success */
+		break;
+	default:
+		fprintf(stderr, "table %s.%s is not unique\n", schema, tname);
 		goto bailout;
 	}
-	while ((mapi_fetch_row(hdl)) != 0) {
-		const char *access = mapi_fetch_field(hdl, 0);
-		if (access && (*access == '1' || *access == '2')) {
-			mnstr_printf(sqlf, "ALTER TABLE ");
-			dquoted_print(sqlf, schema, ".");
-			dquoted_print(sqlf, tname, " ");
-			mnstr_printf(sqlf, "SET %s ONLY;\n", *access == '1' ? "READ" : "INSERT");
-		}
-	}
-	rc = 0;						/* success */
   bailout:
 	free(query);
 	free(s);
@@ -2274,12 +2297,12 @@ dump_table(Mapi mid, const char *schema, const char *tname, stream *sqlf,
 	}
 
 	rc = describe_table(mid, schema, tname, sqlf, foreign, databaseDump);
-	if (rc == 0)
-		rc = dump_table_storage(mid, schema, tname, sqlf);
 	if (rc == 0 && !describe)
 		rc = dump_table_data(mid, schema, tname, sqlf, ddir, ext, useInserts, noescape);
 	if (rc == 0)
 		rc = dump_table_access(mid, schema, tname, sqlf);
+	if (rc == 0)
+		rc = dump_table_storage(mid, schema, tname, sqlf);
 	if (rc == 0 && !databaseDump)
 		rc = dump_table_defaults(mid, schema, tname, sqlf);
   doreturn:
@@ -2935,6 +2958,8 @@ dump_database(Mapi mid, stream *sqlf, const char *ddir, const char *ext, bool de
 		"ORDER BY sch.name, seq.name";
 	static const char sequences2[] =
 		"SELECT * FROM sys.describe_sequences WHERE seq NOT LIKE '!%ms!_%' ESCAPE '!' ORDER BY sch, seq";
+	static const char ustrs[] =
+		"SELECT s.name, o.name FROM sys.objects o, sys.schemas s WHERE o.nr = s.id ORDER BY s.name, o.name";
 	static const char tables[] =
 		"SELECT t.id AS id, "
 			   "s.name AS sname, "
@@ -3249,6 +3274,21 @@ dump_database(Mapi mid, stream *sqlf, const char *ddir, const char *ext, bool de
 	}
 	if (mapi_error(mid))
 		goto bailout;
+	mapi_close_handle(hdl);
+	hdl = NULL;
+
+	if ((hdl = mapi_query(mid, ustrs)) == NULL || mapi_error(mid))
+		goto bailout;
+
+	while (rc == 0 &&
+		   mnstr_errnr(sqlf) == MNSTR_NO__ERROR &&
+	       mapi_fetch_row(hdl) != 0) {
+		const char *sname = mapi_fetch_field(hdl, 0);
+		const char *uname = mapi_fetch_field(hdl, 1);
+		mnstr_printf(sqlf, "CREATE DISTINCT STRING COLUMN ");
+		dquoted_print(sqlf, sname, ".");
+		dquoted_print(sqlf, uname, ";\n");
+	}
 	mapi_close_handle(hdl);
 	hdl = NULL;
 

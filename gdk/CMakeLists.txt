@@ -42,7 +42,6 @@ target_sources(bat
   PRIVATE
   gdk_select.c
   gdk_calc_compare_eq.c gdk_calc_compare_ne.c
-  gdk_calc.c gdk_calc.h
   gdk_calc_addsub.c gdk_calc_mul.c gdk_calc_div.c gdk_calc_mod.c gdk_calc_convert.c
   gdk_calc_compare_lt.c gdk_calc_compare_gt.c
   gdk_calc_compare_le.c gdk_calc_compare_ge.c
@@ -91,6 +90,7 @@ target_sources(bat
   gdk_tracer.c gdk_tracer.h
   gdk_rtree.c
   gdk_strimps.c
+  gdk_sketch.c
   PUBLIC
   ${gdk_public_headers})
 
@@ -103,7 +103,8 @@ target_include_directories(bat
   $<$<BOOL:${VALGRIND_FOUND}>:${VALGRIND_INCLUDE_DIR}>
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
   $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/monetdb>
-  $<$<BOOL:${OPENSSL_FOUND}>:${OPENSSL_INCLUDE_DIR}>)
+  $<$<BOOL:${OPENSSL_FOUND}>:${OPENSSL_INCLUDE_DIR}>
+  ${XXHASH_INCLUDE_DIRS})
 
 target_link_libraries(bat
   PRIVATE
@@ -113,6 +114,7 @@ target_link_libraries(bat
   monetdb_config_header
   moptions
   mutils
+  ${XXHASH_LDFLAGS}
   $<$<BOOL:${OPENSSL_FOUND}>:OpenSSL::SSL>
   $<$<BOOL:${RTREE_FOUND}>:rtree::rtree>
   $<$<NOT:$<PLATFORM_ID:Windows>>:m>

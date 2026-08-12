@@ -8,6 +8,9 @@
  * For copyright information, see the file debian/copyright.
  */
 
+#ifndef _GDK_PRIVATE_H_
+#define _GDK_PRIVATE_H_
+
 /* This file should not be included in any file outside of this directory */
 
 #ifndef LIBGDK
@@ -45,6 +48,8 @@ void ATOMunknown_clean(void)
 	__attribute__((__visibility__("hidden")));
 bool BATcheckhash(BAT *b)
 	__attribute__((__visibility__("hidden")));
+bool BATcheckhash_locked(BAT *b)
+	__attribute__((__visibility__("hidden")));
 gdk_return BATcheckmodes(BAT *b, bool persistent)
 	__attribute__((__warn_unused_result__))
 	__attribute__((__visibility__("hidden")));
@@ -59,7 +64,7 @@ void BATfree(BAT *b)
 gdk_return BATgroup_internal(BAT **groups, BAT **extents, BAT **histo, BAT *b, BAT *s, BAT *g, BAT *e, BAT *h, bool subsorted)
 	__attribute__((__warn_unused_result__))
 	__attribute__((__visibility__("hidden")));
-Hash *BAThash_impl(BAT *restrict b, struct canditer *restrict ci, const char *restrict ext)
+Hash *BAThash_impl(BATiter *restrict bi, struct canditer *restrict ci, bool offsets, const char *restrict ext, uint8_t width)
 	__attribute__((__visibility__("hidden")));
 void BAThashsave(BAT *b, bool dosync)
 	__attribute__((__visibility__("hidden")));
@@ -172,6 +177,8 @@ BUN HASHappend(BAT *b, BUN i, const void *v)
 	__attribute__((__visibility__("hidden")));
 void HASHappend_locked(BATiter *bi, BUN i, const void *v)
 	__attribute__((__visibility__("hidden")));
+void HASHappend_locked_hashval(BATiter *bi, BUN i, const void *v, BUN hsh)
+	__attribute__((__visibility__("hidden")));
 void HASHfree(BAT *b)
 	__attribute__((__visibility__("hidden")));
 BUN HASHdelete(BATiter *bi, BUN p, const void *v)
@@ -193,9 +200,6 @@ HASHmask(BUN cnt)
 }
 gdk_return HASHnew(Hash *h, int tpe, BUN size, BUN mask, BUN count, bool bcktonly)
 	__attribute__((__visibility__("hidden")));
-gdk_return HEAPalloc(Heap *h, size_t nitems, size_t itemsize)
-	__attribute__((__warn_unused_result__))
-	__attribute__((__visibility__("hidden")));
 gdk_return HEAPcopy(Heap *dst, Heap *src, size_t offset)
 	__attribute__((__warn_unused_result__))
 	__attribute__((__visibility__("hidden")));
@@ -211,7 +215,7 @@ void HEAP_recover(Heap *, const var_t *, BUN)
 gdk_return HEAPsave(Heap *h, const char *nme, const char *ext, bool dosync, BUN free, MT_Lock *lock)
 	__attribute__((__warn_unused_result__))
 	__attribute__((__visibility__("hidden")));
-double joincost(BAT *r, BUN lcount, struct canditer *rci, bool *hash, bool *phash, bool *cand)
+double joincost(BAT *r, bat lustr, BUN lcount, struct canditer *rci, bool *hash, bool *phash, bool *cand)
 	__attribute__((__visibility__("hidden")));
 void STRMPincref(Strimps *strimps)
 	__attribute__((__visibility__("hidden")));
@@ -231,6 +235,10 @@ int MT_munmap(void *p, size_t len)
 	__attribute__((__visibility__("hidden")));
 void OIDXfree(BAT *b)
 	__attribute__((__visibility__("hidden")));
+#ifdef GDKLIBRARY_USTR
+var_t oldstrnilLocate(Heap *h)
+	__attribute__((__visibility__("hidden")));
+#endif
 void persistOIDX(BAT *b)
 	__attribute__((__visibility__("hidden")));
 void PROPdestroy(BAT *b)
@@ -247,6 +255,8 @@ var_t strLocate(Heap *h, const char *v)
 	__attribute__((__visibility__("hidden")));
 var_t strPut(BAT *b, var_t *dst, const void *v)
 	__attribute__((__visibility__("hidden")));
+var_t fstrPut(BAT *b, var_t *dst, const void *v)
+	__attribute__((__visibility__("hidden")));
 char *strRead(allocator *, str a, size_t *dstlen, stream *s, size_t cnt)
 	__attribute__((__visibility__("hidden")));
 ssize_t strToStr(allocator *, char **restrict dst, size_t *restrict len, const char *restrict src, bool external)
@@ -254,9 +264,6 @@ ssize_t strToStr(allocator *, char **restrict dst, size_t *restrict len, const c
 gdk_return strWrite(const char *a, stream *s, size_t cnt)
 	__attribute__((__visibility__("hidden")));
 gdk_return TMcommit(void)
-	__attribute__((__visibility__("hidden")));
-gdk_return unshare_varsized_heap(BAT *b)
-	__attribute__((__warn_unused_result__))
 	__attribute__((__visibility__("hidden")));
 BAT *virtualize(BAT *bn)
 	__attribute__((__visibility__("hidden")));
@@ -330,24 +337,26 @@ ilog2(BUN x)
 }
 
 /* some macros to help print info about BATs when using ALGODEBUG */
-#define ALGOBATFMT	"%s#" BUNFMT "@" OIDFMT "[%s%s]%s%s%s%s%s%s%s%s%s"
+#define ALGOBATFMT	"%s#" BUNFMT "@" OIDFMT "[%s%s]%s%s%s%s%s%s%s%s%s%s%s"
 #define ALGOBATPAR(b)							\
 	BATgetId(b),							\
 	BATcount(b),							\
 	b->hseqbase,							\
 	ATOMname(b->ttype),						\
 	b->ttype==TYPE_str?b->twidth==1?"1":b->twidth==2?"2":b->twidth==4?"4":"8":"", \
+	b->ttype == TYPE_str && b->ustr ? "U" : "",			\
 	!b->batTransient ? "P" : b->theap && b->theap->parentid != b->batCacheid ? "V" : b->tvheap && b->tvheap->parentid != b->batCacheid ? "v" : "T", \
 	BATtdense(b) ? "D" : b->ttype == TYPE_void && b->tvheap ? "X" : ATOMstorage(b->ttype) == TYPE_str && b->tvheap && GDK_ELIMDOUBLES(b->tvheap) ? "E" : "", \
 	b->tsorted ? "S" : b->tnosorted ? "!s" : "",			\
 	b->trevsorted ? "R" : b->tnorevsorted ? "!r" : "",		\
 	b->tkey ? "K" : b->tnokey[1] ? "!k" : "",			\
+	b->tvkey ? "k" : "",						\
 	b->tnonil ? "N" : "",						\
 	b->thash ? "H" : "",						\
 	b->torderidx ? "O" : "",					\
 	b->tstrimps ? "I" : b->theap && b->theap->parentid && BBP_desc(b->theap->parentid) && BBP_desc(b->theap->parentid)->tstrimps ? "(I)" : ""
 /* use ALGOOPTBAT* when BAT is optional (can be NULL) */
-#define ALGOOPTBATFMT	"%s%s" BUNFMT "%s" OIDFMT "%s%s%s%s%s%s%s%s%s%s%s%s%s"
+#define ALGOOPTBATFMT	"%s%s" BUNFMT "%s" OIDFMT "%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s"
 #define ALGOOPTBATPAR(b)						\
 	b ? BATgetId(b) : "",						\
 	b ? "#" : "",							\
@@ -358,11 +367,13 @@ ilog2(BUN x)
 	b ? ATOMname(b->ttype) : "",					\
 	b ? b->ttype==TYPE_str?b->twidth==1?"1":b->twidth==2?"2":b->twidth==4?"4":"8":"" : "", \
 	b ? "]" : "",							\
+	b && b->ttype == TYPE_str && b->ustr ? "U" : "",		\
 	b ? !b->batTransient ? "P" : b->theap && b->theap->parentid != b->batCacheid ? "V" : b->tvheap && b->tvheap->parentid != b->batCacheid ? "v" : "T" : "", \
 	b ? BATtdense(b) ? "D" : b->ttype == TYPE_void && b->tvheap ? "X" : ATOMstorage(b->ttype) == TYPE_str && b->tvheap && GDK_ELIMDOUBLES(b->tvheap) ? "E" : "" : "", \
 	b ? b->tsorted ? "S" : b->tnosorted ? "!s" : "" : "",		\
 	b ? b->trevsorted ? "R" : b->tnorevsorted ? "!r" : "" : "",	\
 	b ? b->tkey ? "K" : b->tnokey[1] ? "!k" : "" : "",		\
+	b && b->tvkey ? "k" : "",					       \
 	b && b->tnonil ? "N" : "",					\
 	b && b->thash ? "H" : "",					\
 	b && b->torderidx ? "O" : "",					\
@@ -490,3 +501,5 @@ GDKmremap_debug(const char *path, int mode, void *old_address, size_t old_size, 
 
 #endif
 #endif
+
+#endif	/* _GDK_PRIVATE_H_ */

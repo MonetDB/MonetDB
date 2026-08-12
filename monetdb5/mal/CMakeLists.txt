@@ -46,6 +46,7 @@ target_sources(mal
   mal_resource.c mal_resource.h
   mal_interpreter.c mal_interpreter.h
   mal_dataflow.c mal_dataflow.h
+  mal_pipelines.c
   mal_linker.c  mal_linker.h
   mal_listing.c mal_listing.h
   mal_module.c
@@ -82,6 +83,7 @@ target_link_libraries(mal
   stream
   mapi
   bat
+  ${XXHASH_LDFLAGS}
   $<$<BOOL:${MALLOC_FOUND}>:Malloc::Malloc>)
 
 set_target_properties(mal

@@ -82,9 +82,9 @@ do_batstr_int(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 	bool nils = false;
 	struct canditer ci1 = { 0 };
 	oid off1;
-	bat *res = getArgReference_bat(stk, pci, 0),
-		bid = *getArgReference_bat(stk, pci, 1),
-		*sid1 = pci->argc == 3 ? getArgReference_bat(stk, pci, 2) : NULL;
+	bat *res = getArgReference_bat(stk, pci, 0);
+	bat bid = *getArgReference_bat(stk, pci, 1);
+	bat sid = pci->argc == 3 ? *getArgReference_bat(stk, pci, 2) : 0;
 
 	(void) cntxt;
 	(void) mb;
@@ -93,7 +93,7 @@ do_batstr_int(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 							  SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		goto bailout;
 	}
-	if (sid1 && !is_bat_nil(*sid1) && !(bs = BATdescriptor(*sid1))) {
+	if (!is_bat_nil(sid) && !(bs = BATdescriptor(sid))) {
 		msg = createException(MAL, name,
 							  SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		goto bailout;
@@ -5908,10 +5908,10 @@ static mel_func batstr_init_funcs[] = {
 	pattern("batstr", "contains", BATSTRcontains_strcst, false, "Check if string haystack contains bat string needle + icase flag.", args(1,4, batarg("",bit),arg("s",str),batarg("prefix",str),arg("icase",bit))),
 	pattern("batstr", "contains", BATSTRcontains_strcst, false, "Check if string haystack contains bat string needle (with CL).", args(1,4, batarg("",bit),arg("s",str),batarg("prefix",str),batarg("s",oid))),
 	pattern("batstr", "contains", BATSTRcontains_strcst, false, "Check if string haystack contains bat string needle (with CL) + icase flag.", args(1,5, batarg("",bit),arg("s",str),batarg("prefix",str),arg("icase",bit),batarg("s",oid))),
-	pattern("batstr", "splitpart", STRbatsplitpart, false, "Split string on delimiter. Returns\ngiven field (counting from one.)", args(1,4, batarg("",str),batarg("s",str),batarg("needle",str),batarg("field",int))),
-	pattern("batstr", "splitpart", STRbatsplitpartcst, false, "Split string on delimiter. Returns\ngiven field (counting from one.)", args(1,4, batarg("",str),batarg("s",str),arg("needle",str),arg("field",int))),
-	pattern("batstr", "splitpart", STRbatsplitpart_needlecst, false, "Split string on delimiter. Returns\ngiven field (counting from one.)", args(1,4, batarg("",str),batarg("s",str),arg("needle",str),batarg("field",int))),
-	pattern("batstr", "splitpart", STRbatsplitpart_fieldcst, false, "Split string on delimiter. Returns\ngiven field (counting from one.)", args(1,4, batarg("",str),batarg("s",str),batarg("needle",str),arg("field",int))),
+	pattern("batstr", "splitpart", STRbatsplitpart, false, "Split string on delimiter. Returns given field (counting from one.)", args(1,4, batarg("",str),batarg("s",str),batarg("needle",str),batarg("field",int))),
+	pattern("batstr", "splitpart", STRbatsplitpartcst, false, "Split string on delimiter. Returns given field (counting from one.)", args(1,4, batarg("",str),batarg("s",str),arg("needle",str),arg("field",int))),
+	pattern("batstr", "splitpart", STRbatsplitpart_needlecst, false, "Split string on delimiter. Returns given field (counting from one.)", args(1,4, batarg("",str),batarg("s",str),arg("needle",str),batarg("field",int))),
+	pattern("batstr", "splitpart", STRbatsplitpart_fieldcst, false, "Split string on delimiter. Returns given field (counting from one.)", args(1,4, batarg("",str),batarg("s",str),batarg("needle",str),arg("field",int))),
 	pattern("batstr", "search", BATSTRstr_search, false, "Search for a substring. Returns position, -1 if not found.", args(1,3, batarg("",int),batarg("s",str),batarg("c",str))),
 	pattern("batstr", "search", BATSTRstr_search, false, "Search for a substring. Returns position, -1 if not found, icase flag.", args(1,4, batarg("",int),batarg("s",str),batarg("c",str),arg("icase",bit))),
 	pattern("batstr", "search", BATSTRstr_search, false, "Search for a substring. Returns position, -1 if not found.", args(1,5, batarg("",int),batarg("s",str),batarg("c",str),batarg("s1",oid),batarg("s2",oid))),
@@ -5972,8 +5972,8 @@ static mel_func batstr_init_funcs[] = {
 	pattern("batstr", "unicodeAt", STRbatWChrAtcst, false, "get a unicode character (as an int) from a string position.", args(1,4, batarg("",int),batarg("s",str),arg("index",int),batarg("s",oid))),
 	pattern("batstr", "unicodeAt", STRbatWChrAt_strcst, false, "get a unicode character (as an int) from a string position.", args(1,3, batarg("",int),arg("s",str),batarg("index",int))),
 	pattern("batstr", "unicodeAt", STRbatWChrAt_strcst, false, "get a unicode character (as an int) from a string position.", args(1,4, batarg("",int),arg("s",str),batarg("index",int),batarg("s",oid))),
-	pattern("batstr", "substitute", STRbatSubstitute, false, "Substitute first occurrence of 'src' by\n'dst'. Iff repeated = true this is\nrepeated while 'src' can be found in the\nresult string. In order to prevent\nrecursion and result strings of unlimited\nsize, repeating is only done iff src is\nnot a substring of dst.", args(1,5, batarg("",str),batarg("s",str),batarg("src",str),batarg("dst",str),batarg("rep",bit))),
-	pattern("batstr", "substitute", STRbatSubstitutecst, false, "Substitute first occurrence of 'src' by\n'dst'. Iff repeated = true this is\nrepeated while 'src' can be found in the\nresult string. In order to prevent\nrecursion and result strings of unlimited\nsize, repeating is only done iff src is\nnot a substring of dst.", args(1,5, batarg("",str),batarg("s",str),arg("src",str),arg("dst",str),arg("rep",bit))),
+	pattern("batstr", "substitute", STRbatSubstitute, false, "Substitute first occurrence of 'src' by 'dst'. Iff repeated = true this is repeated while 'src' can be found in the result string. In order to prevent recursion and result strings of unlimited size, repeating is only done iff src is not a substring of dst.", args(1,5, batarg("",str),batarg("s",str),batarg("src",str),batarg("dst",str),batarg("rep",bit))),
+	pattern("batstr", "substitute", STRbatSubstitutecst, false, "Substitute first occurrence of 'src' by 'dst'. Iff repeated = true this is repeated while 'src' can be found in the result string. In order to prevent recursion and result strings of unlimited size, repeating is only done iff src is not a substring of dst.", args(1,5, batarg("",str),batarg("s",str),arg("src",str),arg("dst",str),arg("rep",bit))),
 	pattern("batstr", "stringleft", STRbatprefix, false, "", args(1,3, batarg("",str),batarg("s",str),batarg("l",int))),
 	pattern("batstr", "stringleft", STRbatprefix, false, "", args(1,5, batarg("",str),batarg("s",str),batarg("l",int),batarg("s1",oid),batarg("s2",oid))),
 	pattern("batstr", "stringleft", STRbatprefixcst, false, "", args(1,3, batarg("",str),batarg("s",str),arg("l",int))),

@@ -3137,7 +3137,7 @@ nan 18
 0.001 16
 
 query IR nosort
-select gid, sum(val) from t where gid in (0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 15, 16, 17, 18, 19, 22, 23, 31, 33, 35, 37, 39, 40, 41) group by gid order by gid
+select gid, fsum(val) from t where gid in (0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 15, 16, 17, 18, 19, 22, 23, 31, 33, 35, 37, 39, 40, 41) group by gid order by gid
 ----
 1
 0.000
@@ -3195,46 +3195,46 @@ select gid, sum(val) from t where gid in (0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 
 10000000000000002.000
 
 statement error
-select sum(val) from t where gid = 14
+select fsum(val) from t where gid = 14
 
 statement error
-select sum(val) from t where gid = 20
+select fsum(val) from t where gid = 20
 
 statement error
-select sum(val) from t where gid = 21
+select fsum(val) from t where gid = 21
 
 statement error
-select sum(val) from t where gid = 24
+select fsum(val) from t where gid = 24
 
 statement error
-select sum(val) from t where gid = 25
+select fsum(val) from t where gid = 25
 
 statement error
-select sum(val) from t where gid = 26
+select fsum(val) from t where gid = 26
 
 statement error
-select sum(val) from t where gid = 27
+select fsum(val) from t where gid = 27
 
 statement error
-select sum(val) from t where gid = 28
+select fsum(val) from t where gid = 28
 
 statement error
-select sum(val) from t where gid = 29
+select fsum(val) from t where gid = 29
 
 statement error
-select sum(val) from t where gid = 30
+select fsum(val) from t where gid = 30
 
 statement error
-select sum(val) from t where gid = 32
+select fsum(val) from t where gid = 32
 
 statement error
-select sum(val) from t where gid = 34
+select fsum(val) from t where gid = 34
 
 statement error
-select sum(val) from t where gid = 36
+select fsum(val) from t where gid = 36
 
 statement error
-select sum(val) from t where gid = 38
+select fsum(val) from t where gid = 38
 
 statement ok
 drop table t

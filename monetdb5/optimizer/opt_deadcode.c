@@ -48,7 +48,7 @@ OPTdeadcodeImplementation(Client ctx, MalBlkPtr mb, MalStkPtr stk,
 	// Variables can be used multiple times in an instruction.
 	for (i = 1; i < limit; i++) {
 		p = old[i];
-		for (k = p->retc; k < p->argc; k++)
+		for (k = p->inout >= 0 ? p->inout : p->retc; k < p->argc; k++)
 			varused[getArg(p, k)]++;
 		if (blockCntrl(p))
 			for (k = 0; k < p->retc; k++)

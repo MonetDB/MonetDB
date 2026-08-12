@@ -36,12 +36,14 @@
 #include "sql_user.h"
 
 #define initcontext()													\
-	if ((msg = getSQLContext(cntxt, mb, &sql, NULL)) != NULL)			\
-		return msg;														\
-	if ((msg = checkSQLContext(cntxt)) != NULL)							\
-		return msg;														\
-	if (store_readonly(sql->session->tr->store))						\
-		throw(SQL,"sql.cat",SQLSTATE(25006) "Schema statements cannot be executed on a readonly database.");
+	do {																\
+		if ((msg = getSQLContext(cntxt, mb, &sql, NULL)) != NULL)		\
+			return msg;													\
+		if ((msg = checkSQLContext(cntxt)) != NULL)						\
+			return msg;													\
+		if (store_readonly(sql->session->tr->store))					\
+			throw(SQL,"sql.cat",SQLSTATE(25006) "Schema statements cannot be executed on a readonly database."); \
+	} while (0)
 
 static char *
 SaveArgReference(MalStkPtr stk, InstrPtr pci, int arg)
@@ -1254,14 +1256,18 @@ alter_table(Client cntxt, mvc *sql, char *sname, sql_table *t)
 		if ((c->storage_type || nc->storage_type) && (!c->storage_type || !nc->storage_type || strcmp(c->storage_type, nc->storage_type) != 0)) {
 			if (c->t->access == TABLE_WRITABLE)
 				throw(SQL,"sql.alter_table", SQLSTATE(40002) "ALTER TABLE: SET STORAGE for column %s.%s only allowed on READ or INSERT ONLY tables", c->t->base.name, c->base.name);
+			if (c->storage_type && strncmp(c->storage_type, "USTR", 4) == 0)
+				throw(SQL, "sql.alter_table", SQLSTATE(42000) "ALTER TABLE: SET STORAGE 'USTR' not allowed for column %s.%s", c->t->base.name, c->base.name);
 			switch (mvc_storage(sql, nc, c->storage_type)) {
-				case -1:
-					throw(SQL,"sql.alter_table", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-				case -2:
-				case -3:
-					throw(SQL,"sql.alter_table", SQLSTATE(42000) "ALTER TABLE: SET STORAGE transaction conflict detected");
-				default:
-					break;
+			case -1:
+				throw(SQL,"sql.alter_table", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+			case -2:
+			case -3:
+				throw(SQL,"sql.alter_table", SQLSTATE(42000) "ALTER TABLE: SET STORAGE transaction conflict detected");
+			case -4:
+				throw(SQL, "sql.alter_table", SQLSTATE(42000) "ALTER TABLE: SET STORAGE error converting column");
+			default:
+				break;
 			}
 		}
 		if (subtype_cmp(&c->type, &nc->type) != 0) {
@@ -2353,4 +2359,83 @@ SQLrename_column(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			break;
 	}
 	return msg;
+}
+
+str
+SQLcreate_ustr(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	mvc *sql = NULL;
+	str msg = MAL_SUCCEED;
+	const char *schema_name = *getArgReference_str(stk, pci, 1);
+	const char *ustr_name = *getArgReference_str(stk, pci, 2);
+	int ifnotexists = *getArgReference_int(stk, pci, 3);
+	sql_schema *s;
+	static const char query[] = "CREATE DISTINCT STRING COLUMN";
+	static const char mcmd[] = "sql.create_ustr";
+
+	initcontext();
+	if ((s = mvc_bind_schema(sql, schema_name)) == NULL)
+		throw(SQL, mcmd, SQLSTATE(42S02) "%s: no such schema '%s'",
+			  query, schema_name);
+	if (!mvc_schema_privs(sql, s))
+		throw(SQL, mcmd, SQLSTATE(42000) "%s: access denied for %s to schema '%s'",
+			  query, get_string_global_var(sql, "current_user"), schema_name);
+	sql_trans *tr = sql->session->tr;
+	if (find_sql_ustr(tr, s, ustr_name)) {
+		if (ifnotexists)
+			return NULL;
+		throw(SQL,mcmd, SQLSTATE(42000) "%s: name '%s' already in use",
+			  query, ustr_name);
+	}
+	switch (sql_trans_create_ustr(tr, s, ustr_name)) {
+	case -1:
+		throw(SQL, mcmd, SQLSTATE(HY013) MAL_MALLOC_FAIL);
+	case -2:
+	case -3:
+		throw(SQL, mcmd, SQLSTATE(42000) "%s: transaction conflict detected",
+			  query);
+	default:
+		break;
+	}
+	return NULL;
+}
+
+str
+SQLdrop_ustr(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	mvc *sql = NULL;
+	str msg = MAL_SUCCEED;
+	const char *schema_name = *getArgReference_str(stk, pci, 1);
+	const char *ustr_name = *getArgReference_str(stk, pci, 2);
+	int drop_action = *getArgReference_int(stk, pci, 3);
+	int ifexists = *getArgReference_int(stk, pci, 4);
+	sql_schema *s;
+	static const char query[] = "DROP DISTINCT STRING COLUMN";
+	static const char mcmd[] = "sql.drop_ustr";
+
+	initcontext();
+	if ((s = mvc_bind_schema(sql, schema_name)) == NULL)
+		throw(SQL, mcmd, SQLSTATE(42S02) "%s: no such schema '%s'", query, schema_name);
+	if (!mvc_schema_privs(sql, s))
+		throw(SQL, mcmd, SQLSTATE(42000) "%s: access denied for %s to schema '%s'", query, get_string_global_var(sql, "current_user"), schema_name);
+	sql_trans *tr = sql->session->tr;
+	sql_ustr *u;
+	if ((u = find_sql_ustr(tr, s, ustr_name)) == NULL) {
+		if (ifexists)
+			return NULL;
+		throw(SQL, mcmd, SQLSTATE(42S32) "%s: column %s not found", query, ustr_name);
+	}
+	if (!drop_action && mvc_check_dependency(sql, u->base.id, USTR_DEPENDENCY, NULL))
+		throw(SQL, mcmd, SQLSTATE(2B000) "%s: unable to drop distinct string column %s (there are database objects which depend on it)\n", query, ustr_name);
+
+	switch (sql_trans_drop_ustr(tr, s, u, drop_action)) {
+	case -1:
+		throw(SQL, mcmd, SQLSTATE(HY013) MAL_MALLOC_FAIL);
+	case -2:
+	case -3:
+		throw(SQL, mcmd, SQLSTATE(42000) "%s: transaction conflict detected", query);
+	default:
+		break;
+	}
+	return NULL;
 }

@@ -535,7 +535,7 @@ select 'null in fkeys.delete_action', delete_action, * from sys.fkeys where dele
 [ "sys._tables",	"sys",	"function_types",	NULL,	"TABLE",	true,	"COMMIT",	"READONLY",	NULL	]
 [ "sys._tables",	"sys",	"functions",	NULL,	"TABLE",	true,	"COMMIT",	"WRITABLE",	NULL	]
 [ "sys._tables",	"sys",	"geometry_columns",	"create view sys.geometry_columns as select cast(null as varchar(1)) as f_table_catalog, s.name as f_table_schema, t.name as f_table_name, c.name as f_geometry_column, cast(has_z(c.type_digits) + has_m(c.type_digits) +2 as integer) as coord_dimension, c.type_scale as srid, get_type(c.type_digits, 0) as geometry_type from sys.columns c, sys.tables t, sys.schemas s where c.table_id = t.id and t.schema_id = s.id and c.type in (select sqlname from sys.types where systemname = 'wkb');",	"VIEW",	true,	"COMMIT",	"WRITABLE",	NULL	]
-[ "sys._tables",	"sys",	"ids",	"create view sys.ids (id, name, schema_id, table_id, table_name, obj_type, sys_table, system) as select id, name, cast(null as int) as schema_id, cast(null as int) as table_id, cast(null as varchar(124)) as table_name, 'author' as obj_type, 'sys.auths' as sys_table, (name in ('public','sysadmin','monetdb','.snapshot')) as system from sys.auths union all select id, name, cast(null as int) as schema_id, cast(null as int) as table_id, cast(null as varchar(124)) as table_name, ifthenelse(system, 'system schema', 'schema'), 'sys.schemas', system from sys.schemas union all select t.id, name, t.schema_id, t.id as table_id, t.name as table_name, cast(lower(tt.table_type_name) as varchar(40)), 'sys.tables', t.system from sys.tables t left outer join sys.table_types tt on t.type = tt.table_type_id union all select c.id, c.name, t.schema_id, c.table_id, t.name as table_name, ifthenelse(t.system, 'system column', 'column'), 'sys._columns', t.system from sys._columns c join sys._tables t on c.table_id = t.id union all select c.id, c.name, t.schema_id, c.table_id, t.name as table_name, 'column', 'tmp._columns', t.system from tmp._columns c join tmp._tables t on c.table_id = t.id union all select k.id, k.name, t.schema_id, k.table_id, t.name as table_name, ifthenelse(t.system, 'system key', 'key'), 'sys.keys', t.system from sys.keys k join sys._tables t on k.table_id = t.id union all select k.id, k.name, t.schema_id, k.table_id, t.name as table_name, 'key', 'tmp.keys', t.system from tmp.keys k join tmp._tables t on k.table_id = t.id union all select i.id, i.name, t.schema_id, i.table_id, t.name as table_name, ifthenelse(t.system, 'system index', 'index'), 'sys.idxs', t.system from sys.idxs i join sys._tables t on i.table_id = t.id union all select i.id, i.name, t.schema_id, i.table_id, t.name as table_name, 'index' , 'tmp.idxs', t.system from tmp.idxs i join tmp._tables t on i.table_id = t.id union all select g.id, g.name, t.schema_id, g.table_id, t.name as table_name, ifthenelse(t.system, 'system trigger', 'trigger'), 'sys.triggers', t.system from sys.triggers g join sys._tables t on g.table_id = t.id union all select g.id, g.name, t.schema_id, g.table_id, t.name as table_name, 'trigger', 'tmp.triggers', t.system from tmp.triggers g join tmp._tables t on g.table_id = t.id union all select f.id, f.name, f.schema_id, cast(null as int) as table_id, cast(null as varchar(124)) as table_name, cast(ifthenelse(f.system, 'system ', '') || lower(ft.function_type_keyword) as varchar(40)), 'sys.functions', f.system from sys.functions f left outer join sys.function_types ft on f.type = ft.function_type_id union all select a.id, a.name, f.schema_id, a.func_id as table_id, f.name as table_name, cast(ifthenelse(f.system, 'system ', '') || lower(ft.function_type_keyword) || ' arg' as varchar(44)), 'sys.args', f.system from sys.args a join sys.functions f on a.func_id = f.id left outer join sys.function_types ft on f.type = ft.function_type_id union all select id, name, schema_id, cast(null as int) as table_id, cast(null as varchar(124)) as table_name, 'sequence', 'sys.sequences', false from sys.sequences union all select o.id, o.name, pt.schema_id, pt.id, pt.name, 'partition of merge table', 'sys.objects', false from sys.objects o join sys._tables pt on o.sub = pt.id join sys._tables mt on o.nr = mt.id where mt.type = 3 union all select id, sqlname, schema_id, cast(null as int) as table_id, cast(null as varchar(124)) as table_name, 'type', 'sys.types', (sqlname in ('inet','json','url','uuid','inet4','inet6')) from sys.types order by id;",	"VIEW",	true,	"COMMIT",	"WRITABLE",	NULL	]
+[ "sys._tables",	"sys",	"ids",	"create view sys.ids (id, name, schema_id, table_id, table_name, obj_type, sys_table, system) as select id, name, cast(null as int) as schema_id, cast(null as int) as table_id, cast(null as varchar(124)) as table_name, 'author' as obj_type, 'sys.auths' as sys_table, (name in ('public','sysadmin','monetdb','.snapshot')) as system from sys.auths union all select id, name, cast(null as int) as schema_id, cast(null as int) as table_id, cast(null as varchar(124)) as table_name, ifthenelse(system, 'system schema', 'schema'), 'sys.schemas', system from sys.schemas union all select t.id, name, t.schema_id, t.id as table_id, t.name as table_name, cast(lower(tt.table_type_name) as varchar(40)), 'sys.tables', t.system from sys.tables t left outer join sys.table_types tt on t.type = tt.table_type_id union all select c.id, c.name, t.schema_id, c.table_id, t.name as table_name, ifthenelse(t.system, 'system column', 'column'), 'sys._columns', t.system from sys._columns c join sys._tables t on c.table_id = t.id union all select c.id, c.name, t.schema_id, c.table_id, t.name as table_name, 'column', 'tmp._columns', t.system from tmp._columns c join tmp._tables t on c.table_id = t.id union all select k.id, k.name, t.schema_id, k.table_id, t.name as table_name, ifthenelse(t.system, 'system key', 'key'), 'sys.keys', t.system from sys.keys k join sys._tables t on k.table_id = t.id union all select k.id, k.name, t.schema_id, k.table_id, t.name as table_name, 'key', 'tmp.keys', t.system from tmp.keys k join tmp._tables t on k.table_id = t.id union all select i.id, i.name, t.schema_id, i.table_id, t.name as table_name, ifthenelse(t.system, 'system index', 'index'), 'sys.idxs', t.system from sys.idxs i join sys._tables t on i.table_id = t.id union all select i.id, i.name, t.schema_id, i.table_id, t.name as table_name, 'index' , 'tmp.idxs', t.system from tmp.idxs i join tmp._tables t on i.table_id = t.id union all select g.id, g.name, t.schema_id, g.table_id, t.name as table_name, ifthenelse(t.system, 'system trigger', 'trigger'), 'sys.triggers', t.system from sys.triggers g join sys._tables t on g.table_id = t.id union all select g.id, g.name, t.schema_id, g.table_id, t.name as table_name, 'trigger', 'tmp.triggers', t.system from tmp.triggers g join tmp._tables t on g.table_id = t.id union all select f.id, f.name, f.schema_id, cast(null as int) as table_id, cast(null as varchar(124)) as table_name, cast(ifthenelse(f.system, 'system ', '') || lower(ft.function_type_keyword) as varchar(40)), 'sys.functions', f.system from sys.functions f left outer join sys.function_types ft on f.type = ft.function_type_id union all select a.id, a.name, f.schema_id, a.func_id as table_id, f.name as table_name, cast(ifthenelse(f.system, 'system ', '') || lower(ft.function_type_keyword) || ' arg' as varchar(44)), 'sys.args', f.system from sys.args a join sys.functions f on a.func_id = f.id left outer join sys.function_types ft on f.type = ft.function_type_id union all select id, name, schema_id, cast(null as int) as table_id, cast(null as varchar(124)) as table_name, 'sequence', 'sys.sequences', false from sys.sequences union all select o.id, o.name, pt.schema_id, pt.id, pt.name, 'partition of merge table', 'sys.objects', false from sys.objects o join sys._tables pt on o.sub = pt.id join sys._tables mt on o.nr = mt.id where mt.type = 3 union all select id, sqlname, schema_id, cast(null as int) as table_id, cast(null as varchar(124)) as table_name, 'type', 'sys.types', (sqlname in ('inet','json','url','uuid','inet4','inet6')) from sys.types union all select o.id, o.name, s.id, cast(null as int), cast(null as varchar(124)), 'distinct string column', 'sys.objects', false from sys.objects o, sys.schemas s where o.nr = s.id order by id;",	"VIEW",	true,	"COMMIT",	"WRITABLE",	NULL	]
 [ "sys._tables",	"sys",	"idxs",	NULL,	"TABLE",	true,	"COMMIT",	"WRITABLE",	NULL	]
 [ "sys._tables",	"sys",	"index_types",	NULL,	"TABLE",	true,	"COMMIT",	"READONLY",	NULL	]
 [ "sys._tables",	"sys",	"key_types",	NULL,	"TABLE",	true,	"COMMIT",	"READONLY",	NULL	]
@@ -1871,6 +1871,8 @@ select 'null in fkeys.delete_action', delete_action, * from sys.fkeys where dele
 [ "sys.functions",	"sys",	"containsorequal",	"SYSTEM",	"create function containsorequal(ip1 inet6, netmask1 smallint, ip2 inet6, netmask2 smallint) returns bool external name \"inet46\".\"inet6containsorequalinet6\";",	"inet46",	"MAL",	"Scalar function",	false,	false,	false,	true,	NULL,	"result",	"boolean",	1,	0,	"out",	"ip1",	"inet6",	0,	0,	"in",	"netmask1",	"smallint",	15,	0,	"in",	"ip2",	"inet6",	0,	0,	"in",	"netmask2",	"smallint",	15,	0,	"in",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
 [ "sys.functions",	"sys",	"containssymmetric",	"SYSTEM",	"create function containssymmetric(ip1 inet4, netmask1 tinyint, ip2 inet4, netmask2 tinyint) returns bool external name \"inet46\".\"inet4containssymmetricinet4\";",	"inet46",	"MAL",	"Scalar function",	false,	false,	false,	true,	NULL,	"result",	"boolean",	1,	0,	"out",	"ip1",	"inet4",	0,	0,	"in",	"netmask1",	"tinyint",	7,	0,	"in",	"ip2",	"inet4",	0,	0,	"in",	"netmask2",	"tinyint",	7,	0,	"in",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
 [ "sys.functions",	"sys",	"containssymmetric",	"SYSTEM",	"create function containssymmetric(ip1 inet6, netmask1 smallint, ip2 inet6, netmask2 smallint) returns bool external name \"inet46\".\"inet6containssymmetricinet6\";",	"inet46",	"MAL",	"Scalar function",	false,	false,	false,	true,	NULL,	"result",	"boolean",	1,	0,	"out",	"ip1",	"inet6",	0,	0,	"in",	"netmask1",	"smallint",	15,	0,	"in",	"ip2",	"inet6",	0,	0,	"in",	"netmask2",	"smallint",	15,	0,	"in",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
+[ "sys.functions",	"sys",	"copy_blocksize",	"SYSTEM",	"create function sys.copy_blocksize() returns int external name \"copy\".get_blocksize;",	"copy",	"MAL",	"Scalar function",	false,	false,	false,	true,	NULL,	"result",	"int",	31,	0,	"out",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
+[ "sys.functions",	"sys",	"copy_blocksize",	"SYSTEM",	"create procedure sys.copy_blocksize(size int) external name \"copy\".set_blocksize;",	"copy",	"MAL",	"Procedure",	false,	false,	false,	true,	NULL,	"size",	"int",	31,	0,	"in",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
 [ "sys.functions",	"sys",	"corr",	"SYSTEM",	"create aggregate corr(e1 bigint, e2 bigint) returns double external name \"aggr\".\"corr\";",	"aggr",	"MAL",	"Aggregate function",	false,	false,	false,	true,	NULL,	"result",	"double",	53,	0,	"out",	"e1",	"bigint",	63,	0,	"in",	"e2",	"bigint",	63,	0,	"in",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
 [ "sys.functions",	"sys",	"corr",	"SYSTEM",	"create aggregate corr(e1 double, e2 double) returns double external name \"aggr\".\"corr\";",	"aggr",	"MAL",	"Aggregate function",	false,	false,	false,	true,	NULL,	"result",	"double",	53,	0,	"out",	"e1",	"double",	53,	0,	"in",	"e2",	"double",	53,	0,	"in",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
 [ "sys.functions",	"sys",	"corr",	"SYSTEM",	"create aggregate corr(e1 integer, e2 integer) returns double external name \"aggr\".\"corr\";",	"aggr",	"MAL",	"Aggregate function",	false,	false,	false,	true,	NULL,	"result",	"double",	53,	0,	"out",	"e1",	"int",	31,	0,	"in",	"e2",	"int",	31,	0,	"in",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
@@ -2220,6 +2222,9 @@ select 'null in fkeys.delete_action', delete_action, * from sys.fkeys where dele
 [ "sys.functions",	"sys",	"ntile",	"SYSTEM",	"ntile",	"sql",	"Internal C",	"Analytic function",	false,	false,	false,	true,	NULL,	"res_0",	"int",	31,	0,	"out",	"arg_1",	"any",	0,	0,	"in",	"arg_2",	"int",	31,	0,	"in",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
 [ "sys.functions",	"sys",	"ntile",	"SYSTEM",	"ntile",	"sql",	"Internal C",	"Analytic function",	false,	false,	false,	true,	NULL,	"res_0",	"smallint",	15,	0,	"out",	"arg_1",	"any",	0,	0,	"in",	"arg_2",	"smallint",	15,	0,	"in",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
 [ "sys.functions",	"sys",	"ntile",	"SYSTEM",	"ntile",	"sql",	"Internal C",	"Analytic function",	false,	false,	false,	true,	NULL,	"res_0",	"tinyint",	7,	0,	"out",	"arg_1",	"any",	0,	0,	"in",	"arg_2",	"tinyint",	7,	0,	"in",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
+[ "sys.functions",	"sys",	"num_div",	"SYSTEM",	"num_div",	"calc",	"Internal C",	"Scalar function",	false,	false,	false,	false,	NULL,	"res_0",	"decimal",	4,	0,	"out",	"arg_1",	"decimal",	4,	0,	"in",	"arg_2",	"bigint",	63,	0,	"in",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
+[ "sys.functions",	"sys",	"num_div",	"SYSTEM",	"num_div",	"calc",	"Internal C",	"Scalar function",	false,	false,	false,	false,	NULL,	"res_0",	"decimal",	9,	0,	"out",	"arg_1",	"decimal",	9,	0,	"in",	"arg_2",	"bigint",	63,	0,	"in",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
+[ "sys.functions",	"sys",	"num_div",	"SYSTEM",	"num_div",	"calc",	"Internal C",	"Scalar function",	false,	false,	false,	false,	NULL,	"res_0",	"decimal",	18,	0,	"out",	"arg_1",	"decimal",	18,	0,	"in",	"arg_2",	"bigint",	63,	0,	"in",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
 [ "sys.functions",	"sys",	"octet_length",	"SYSTEM",	"nbytes",	"str",	"Internal C",	"Scalar function",	false,	false,	false,	false,	NULL,	"res_0",	"int",	31,	0,	"out",	"arg_1",	"varchar",	0,	0,	"in",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
 [ "sys.functions",	"sys",	"octet_length",	"SYSTEM",	"nitems",	"blob",	"Internal C",	"Scalar function",	false,	false,	false,	false,	NULL,	"res_0",	"int",	31,	0,	"out",	"arg_1",	"blob",	0,	0,	"in",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
 [ "sys.functions",	"sys",	"optimizers",	"SYSTEM",	"create function sys.optimizers () returns table (name string, def string, status string) external name sql.optimizers;",	"sql",	"MAL",	"Function returning a table",	false,	false,	false,	true,	NULL,	"name",	"varchar",	0,	0,	"out",	"def",	"varchar",	0,	0,	"out",	"status",	"varchar",	0,	0,	"out",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
@@ -2847,6 +2852,9 @@ select 'null in fkeys.delete_action', delete_action, * from sys.fkeys where dele
 [ "sys.functions",	"sys",	"truncate",	"SYSTEM",	"stringleft",	"str",	"Internal C",	"Scalar function",	false,	false,	false,	false,	NULL,	"res_0",	"varchar",	0,	0,	"out",	"arg_1",	"varchar",	0,	0,	"in",	"arg_2",	"int",	31,	0,	"in",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
 [ "sys.functions",	"sys",	"ucase",	"SYSTEM",	"toUpper",	"str",	"Internal C",	"Scalar function",	false,	false,	false,	false,	NULL,	"res_0",	"varchar",	0,	0,	"out",	"arg_1",	"varchar",	0,	0,	"in",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
 [ "sys.functions",	"sys",	"unclosed_result_sets",	"SYSTEM",	"create function sys.unclosed_result_sets() returns table(\"query_id\" oid, \"res_id\" int) external name sql.unclosed_result_sets;",	"sql",	"MAL",	"Function returning a table",	false,	false,	false,	true,	NULL,	"query_id",	"oid",	31,	0,	"out",	"res_id",	"int",	31,	0,	"out",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
+[ "sys.functions",	"sys",	"uniques_guess",	"SYSTEM",	"create aggregate uniques_guess(c bigint) returns bigint external name aggr.uniques_guess;",	"aggr",	"MAL",	"Aggregate function",	false,	false,	false,	true,	NULL,	"result",	"bigint",	63,	0,	"out",	"c",	"bigint",	63,	0,	"in",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
+[ "sys.functions",	"sys",	"uniques_guess",	"SYSTEM",	"create aggregate uniques_guess(c integer) returns bigint external name aggr.uniques_guess;",	"aggr",	"MAL",	"Aggregate function",	false,	false,	false,	true,	NULL,	"result",	"bigint",	63,	0,	"out",	"c",	"int",	31,	0,	"in",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
+[ "sys.functions",	"sys",	"uniques_guess",	"SYSTEM",	"create aggregate uniques_guess(c varchar) returns bigint external name aggr.uniques_guess;",	"aggr",	"MAL",	"Aggregate function",	false,	false,	false,	true,	NULL,	"result",	"bigint",	63,	0,	"out",	"c",	"varchar",	0,	0,	"in",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
 [ "sys.functions",	"sys",	"upper",	"SYSTEM",	"toUpper",	"str",	"Internal C",	"Scalar function",	false,	false,	false,	false,	NULL,	"res_0",	"varchar",	0,	0,	"out",	"arg_1",	"varchar",	0,	0,	"in",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
 [ "sys.functions",	"sys",	"url_extract_host",	"SYSTEM",	"create function sys.url_extract_host(url string, no_www bool) returns string external name url.\"extractURLHost\";",	"url",	"MAL",	"Scalar function",	false,	false,	false,	true,	NULL,	"result",	"varchar",	0,	0,	"out",	"url",	"varchar",	0,	0,	"in",	"no_www",	"boolean",	1,	0,	"in",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
 [ "sys.functions",	"sys",	"user_statistics",	"SYSTEM",	"create function sys.user_statistics() returns table(username string, querycount bigint, totalticks bigint, started timestamp, finished timestamp, maxticks bigint, maxquery string) external name sysmon.user_statistics;",	"sysmon",	"MAL",	"Function returning a table",	false,	false,	false,	true,	NULL,	"username",	"varchar",	0,	0,	"out",	"querycount",	"bigint",	63,	0,	"out",	"totalticks",	"bigint",	63,	0,	"out",	"started",	"timestamp",	7,	0,	"out",	"finished",	"timestamp",	7,	0,	"out",	"maxticks",	"bigint",	63,	0,	"out",	"maxquery",	"varchar",	0,	0,	"out",	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL,	NULL	]
@@ -4786,6 +4794,8 @@ select 'null in fkeys.delete_action', delete_action, * from sys.fkeys where dele
 [ "grant on function",	"sys",	"corr",	"public",	"EXECUTE",	"monetdb",	0	]
 [ "grant on function",	"sys",	"corr",	"public",	"EXECUTE",	"monetdb",	0	]
 [ "grant on function",	"sys",	"corr",	"public",	"EXECUTE",	"monetdb",	0	]
+[ "grant on function",	"sys",	"corr",	"public",	"EXECUTE",	"monetdb",	0	]
+[ "grant on function",	"sys",	"corr",	"public",	"EXECUTE",	"monetdb",	0	]
 [ "grant on function",	"sys",	"covar_pop",	"public",	"EXECUTE",	"monetdb",	0	]
 [ "grant on function",	"sys",	"covar_pop",	"public",	"EXECUTE",	"monetdb",	0	]
 [ "grant on function",	"sys",	"covar_pop",	"public",	"EXECUTE",	"monetdb",	0	]
@@ -4798,6 +4808,10 @@ select 'null in fkeys.delete_action', delete_action, * from sys.fkeys where dele
 [ "grant on function",	"sys",	"covar_pop",	"public",	"EXECUTE",	"monetdb",	0	]
 [ "grant on function",	"sys",	"covar_pop",	"public",	"EXECUTE",	"monetdb",	0	]
 [ "grant on function",	"sys",	"covar_pop",	"public",	"EXECUTE",	"monetdb",	0	]
+[ "grant on function",	"sys",	"covar_pop",	"public",	"EXECUTE",	"monetdb",	0	]
+[ "grant on function",	"sys",	"covar_pop",	"public",	"EXECUTE",	"monetdb",	0	]
+[ "grant on function",	"sys",	"covar_samp",	"public",	"EXECUTE",	"monetdb",	0	]
+[ "grant on function",	"sys",	"covar_samp",	"public",	"EXECUTE",	"monetdb",	0	]
 [ "grant on function",	"sys",	"covar_samp",	"public",	"EXECUTE",	"monetdb",	0	]
 [ "grant on function",	"sys",	"covar_samp",	"public",	"EXECUTE",	"monetdb",	0	]
 [ "grant on function",	"sys",	"covar_samp",	"public",	"EXECUTE",	"monetdb",	0	]
@@ -4829,6 +4843,8 @@ select 'null in fkeys.delete_action', delete_action, * from sys.fkeys where dele
 [ "grant on function",	"sys",	"epoch",	"public",	"EXECUTE",	"monetdb",	0	]
 [ "grant on function",	"sys",	"epoch",	"public",	"EXECUTE",	"monetdb",	0	]
 [ "grant on function",	"sys",	"epoch",	"public",	"EXECUTE",	"monetdb",	0	]
+[ "grant on function",	"sys",	"generate_series",	"public",	"EXECUTE",	"monetdb",	0	]
+[ "grant on function",	"sys",	"generate_series",	"public",	"EXECUTE",	"monetdb",	0	]
 [ "grant on function",	"sys",	"generate_series",	"public",	"EXECUTE",	"monetdb",	0	]
 [ "grant on function",	"sys",	"generate_series",	"public",	"EXECUTE",	"monetdb",	0	]
 [ "grant on function",	"sys",	"generate_series",	"public",	"EXECUTE",	"monetdb",	0	]
@@ -4899,6 +4915,10 @@ select 'null in fkeys.delete_action', delete_action, * from sys.fkeys where dele
 [ "grant on function",	"sys",	"median",	"public",	"EXECUTE",	"monetdb",	0	]
 [ "grant on function",	"sys",	"median",	"public",	"EXECUTE",	"monetdb",	0	]
 [ "grant on function",	"sys",	"median",	"public",	"EXECUTE",	"monetdb",	0	]
+[ "grant on function",	"sys",	"median",	"public",	"EXECUTE",	"monetdb",	0	]
+[ "grant on function",	"sys",	"median",	"public",	"EXECUTE",	"monetdb",	0	]
+[ "grant on function",	"sys",	"median_avg",	"public",	"EXECUTE",	"monetdb",	0	]
+[ "grant on function",	"sys",	"median_avg",	"public",	"EXECUTE",	"monetdb",	0	]
 [ "grant on function",	"sys",	"median_avg",	"public",	"EXECUTE",	"monetdb",	0	]
 [ "grant on function",	"sys",	"median_avg",	"public",	"EXECUTE",	"monetdb",	0	]
 [ "grant on function",	"sys",	"median_avg",	"public",	"EXECUTE",	"monetdb",	0	]
@@ -4943,6 +4963,10 @@ select 'null in fkeys.delete_action', delete_action, * from sys.fkeys where dele
 [ "grant on function",	"sys",	"quantile",	"public",	"EXECUTE",	"monetdb",	0	]
 [ "grant on function",	"sys",	"quantile",	"public",	"EXECUTE",	"monetdb",	0	]
 [ "grant on function",	"sys",	"quantile",	"public",	"EXECUTE",	"monetdb",	0	]
+[ "grant on function",	"sys",	"quantile",	"public",	"EXECUTE",	"monetdb",	0	]
+[ "grant on function",	"sys",	"quantile",	"public",	"EXECUTE",	"monetdb",	0	]
+[ "grant on function",	"sys",	"quantile_avg",	"public",	"EXECUTE",	"monetdb",	0	]
+[ "grant on function",	"sys",	"quantile_avg",	"public",	"EXECUTE",	"monetdb",	0	]
 [ "grant on function",	"sys",	"quantile_avg",	"public",	"EXECUTE",	"monetdb",	0	]
 [ "grant on function",	"sys",	"quantile_avg",	"public",	"EXECUTE",	"monetdb",	0	]
 [ "grant on function",	"sys",	"quantile_avg",	"public",	"EXECUTE",	"monetdb",	0	]
@@ -5116,6 +5140,10 @@ select 'null in fkeys.delete_action', delete_action, * from sys.fkeys where dele
 [ "grant on function",	"sys",	"stddev_pop",	"public",	"EXECUTE",	"monetdb",	0	]
 [ "grant on function",	"sys",	"stddev_pop",	"public",	"EXECUTE",	"monetdb",	0	]
 [ "grant on function",	"sys",	"stddev_pop",	"public",	"EXECUTE",	"monetdb",	0	]
+[ "grant on function",	"sys",	"stddev_pop",	"public",	"EXECUTE",	"monetdb",	0	]
+[ "grant on function",	"sys",	"stddev_pop",	"public",	"EXECUTE",	"monetdb",	0	]
+[ "grant on function",	"sys",	"stddev_samp",	"public",	"EXECUTE",	"monetdb",	0	]
+[ "grant on function",	"sys",	"stddev_samp",	"public",	"EXECUTE",	"monetdb",	0	]
 [ "grant on function",	"sys",	"stddev_samp",	"public",	"EXECUTE",	"monetdb",	0	]
 [ "grant on function",	"sys",	"stddev_samp",	"public",	"EXECUTE",	"monetdb",	0	]
 [ "grant on function",	"sys",	"stddev_samp",	"public",	"EXECUTE",	"monetdb",	0	]
@@ -5141,6 +5169,9 @@ select 'null in fkeys.delete_action', delete_action, * from sys.fkeys where dele
 [ "grant on function",	"sys",	"to_hex",	"public",	"EXECUTE",	"monetdb",	0	]
 [ "grant on function",	"sys",	"tracelog",	"public",	"EXECUTE",	"monetdb",	0	]
 [ "grant on function",	"sys",	"unclosed_result_sets",	"public",	"EXECUTE",	"monetdb",	0	]
+[ "grant on function",	"sys",	"uniques_guess",	"public",	"EXECUTE",	"monetdb",	0	]
+[ "grant on function",	"sys",	"uniques_guess",	"public",	"EXECUTE",	"monetdb",	0	]
+[ "grant on function",	"sys",	"uniques_guess",	"public",	"EXECUTE",	"monetdb",	0	]
 [ "grant on function",	"sys",	"url_extract_host",	"public",	"EXECUTE",	"monetdb",	0	]
 [ "grant on function",	"sys",	"uuid",	"public",	"EXECUTE",	"monetdb",	0	]
 [ "grant on function",	"sys",	"uuid",	"public",	"EXECUTE",	"monetdb",	0	]
@@ -5157,6 +5188,10 @@ select 'null in fkeys.delete_action', delete_action, * from sys.fkeys where dele
 [ "grant on function",	"sys",	"var_pop",	"public",	"EXECUTE",	"monetdb",	0	]
 [ "grant on function",	"sys",	"var_pop",	"public",	"EXECUTE",	"monetdb",	0	]
 [ "grant on function",	"sys",	"var_pop",	"public",	"EXECUTE",	"monetdb",	0	]
+[ "grant on function",	"sys",	"var_pop",	"public",	"EXECUTE",	"monetdb",	0	]
+[ "grant on function",	"sys",	"var_pop",	"public",	"EXECUTE",	"monetdb",	0	]
+[ "grant on function",	"sys",	"var_samp",	"public",	"EXECUTE",	"monetdb",	0	]
+[ "grant on function",	"sys",	"var_samp",	"public",	"EXECUTE",	"monetdb",	0	]
 [ "grant on function",	"sys",	"var_samp",	"public",	"EXECUTE",	"monetdb",	0	]
 [ "grant on function",	"sys",	"var_samp",	"public",	"EXECUTE",	"monetdb",	0	]
 [ "grant on function",	"sys",	"var_samp",	"public",	"EXECUTE",	"monetdb",	0	]
@@ -5648,6 +5683,7 @@ select 'null in fkeys.delete_action', delete_action, * from sys.fkeys where dele
 [ "sys.dependency_types",	13,	"PROCEDURE"	]
 [ "sys.dependency_types",	14,	"BE_DROPPED"	]
 [ "sys.dependency_types",	15,	"TYPE"	]
+[ "sys.dependency_types",	16,	"USTR"	]
 % .%2,	sys.%1,	sys.schemas # table_name
 % %2,	%1,	id # name
 % varchar,	bigint,	int # type
@@ -5796,8 +5832,8 @@ select 'null in fkeys.delete_action', delete_action, * from sys.fkeys where dele
 % %2,	%1,	id # name
 % varchar,	bigint,	int # type
 % 0,	1,	1 # length
-% .%50,	.%47,	.ids # table_name
-% %50,	%47,	id # name
+% .%56,	.%55,	.ids # table_name
+% %56,	%55,	id # name
 % varchar,	bigint,	int # type
 % 0,	1,	1 # length
 % .%35,	.%34,	.var_values # table_name
@@ -6024,12 +6060,12 @@ select 'null in fkeys.delete_action', delete_action, * from sys.fkeys where dele
 % %4,	schema_id,	id,	systemname,	sqlname,	digits,	scale,	radix,	eclass,	schema_id # name
 % varchar,	int,	int,	varchar,	varchar,	int,	int,	int,	int,	int # type
 % 0,	1,	1,	0,	0,	1,	1,	1,	1,	1 # length
-% .%52,	sys.objects,	sys.objects,	sys.objects,	sys.objects,	sys.objects # table_name
-% %52,	id,	id,	name,	nr,	sub # name
+% .%60,	sys.objects,	sys.objects,	sys.objects,	sys.objects,	sys.objects # table_name
+% %60,	id,	id,	name,	nr,	sub # name
 % varchar,	int,	int,	varchar,	int,	int # type
 % 0,	1,	1,	0,	1,	1 # length
-% .%53,	.ids,	.ids,	sys.ids,	sys.ids,	.ids,	.ids,	.ids,	.ids,	sys.ids # table_name
-% %53,	id,	id,	name,	schema_id,	table_id,	table_name,	obj_type,	sys_table,	system # name
+% .%61,	.ids,	.ids,	sys.ids,	sys.ids,	.ids,	.ids,	.ids,	.ids,	sys.ids # table_name
+% %61,	id,	id,	name,	schema_id,	table_id,	table_name,	obj_type,	sys_table,	system # name
 % varchar,	int,	int,	varchar,	int,	int,	varchar,	varchar,	varchar,	boolean # type
 % 0,	1,	1,	0,	1,	1,	0,	0,	0,	5 # length
 % .%4,	sys.keys,	sys.keys,	sys.keys,	sys.keys,	sys.keys,	sys.keys,	sys.keys,	sys.keys # table_name
@@ -6080,24 +6116,24 @@ select 'null in fkeys.delete_action', delete_action, * from sys.fkeys where dele
 % %5,	table_id,	id,	name,	table_id,	time,	orientation,	event,	old_name,	new_name,	condition,	statement # name
 % varchar,	int,	int,	varchar,	int,	smallint,	smallint,	smallint,	varchar,	varchar,	varchar,	varchar # type
 % 0,	1,	1,	0,	1,	1,	1,	1,	0,	0,	0,	0 # length
-% .%52,	sys.comments,	sys.comments,	sys.comments # table_name
-% %52,	id,	id,	remark # name
+% .%60,	sys.comments,	sys.comments,	sys.comments # table_name
+% %60,	id,	id,	remark # name
 % varchar,	int,	int,	varchar # type
 % 0,	1,	1,	0 # length
-% .%52,	sys.dependencies,	sys.dependencies,	sys.dependencies,	sys.dependencies # table_name
-% %52,	id,	id,	depend_id,	depend_type # name
+% .%60,	sys.dependencies,	sys.dependencies,	sys.dependencies,	sys.dependencies # table_name
+% %60,	id,	id,	depend_id,	depend_type # name
 % varchar,	int,	int,	int,	smallint # type
 % 0,	1,	1,	1,	1 # length
-% .%52,	sys.dependencies,	sys.dependencies,	sys.dependencies,	sys.dependencies # table_name
-% %52,	depend_id,	id,	depend_id,	depend_type # name
+% .%60,	sys.dependencies,	sys.dependencies,	sys.dependencies,	sys.dependencies # table_name
+% %60,	depend_id,	id,	depend_id,	depend_type # name
 % varchar,	int,	int,	int,	smallint # type
 % 0,	1,	1,	1,	1 # length
 % .%4,	sys.dependencies,	sys.dependencies,	sys.dependencies,	sys.dependencies # table_name
 % %4,	depend_type,	id,	depend_id,	depend_type # name
 % varchar,	smallint,	int,	int,	smallint # type
 % 0,	1,	1,	1,	1 # length
-% .%127,	sys.dependencies,	sys.dependencies,	sys.dependencies,	sys.dependencies,	sys.dependencies,	sys.dependencies # table_name
-% %127,	id,	depend_id,	depend_type,	id,	depend_id,	depend_type # name
+% .%143,	sys.dependencies,	sys.dependencies,	sys.dependencies,	sys.dependencies,	sys.dependencies,	sys.dependencies # table_name
+% %143,	id,	depend_id,	depend_type,	id,	depend_id,	depend_type # name
 % varchar,	int,	int,	smallint,	int,	int,	smallint # type
 % 0,	1,	1,	1,	1,	1,	1 # length
 % .%4,	sys.auths,	sys.auths,	sys.auths,	sys.auths # table_name

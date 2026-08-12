@@ -420,12 +420,21 @@ vheapinit(BAT *b, const char *buf, unsigned bbpversion, const char *filename, in
 		TRC_CRITICAL(GDK, "invalid format for BBP.dir on line %d", lineno);
 		return -1;
 	}
+	if (b->ustr) {
+		assert(bbpversion > GDKLIBRARY_USTR);
+		if (free == 0 || free >= N_BBPINIT * BBPINIT) {
+			TRC_CRITICAL(GDK, "ustr ID (%" PRIu64 ") out of allowed range, on line %d", free, lineno);
+			return -1;
+		}
+		b->ustr = (bat) free;
+		return n;
+	}
 	if (b->batCount == 0)
 		free = 0;
 	if (b->ttype >= 0 &&
 	    ATOMstorage(b->ttype) == TYPE_str &&
-	    free < GDK_STRHASHTABLE * sizeof(stridx_t) + BATTINY * GDK_VARALIGN)
-		size = GDK_STRHASHTABLE * sizeof(stridx_t) + BATTINY * GDK_VARALIGN;
+	    free < GDK_STRHASHSIZE + BATTINY * GDK_VARALIGN)
+		size = GDK_STRHASHSIZE + BATTINY * GDK_VARALIGN;
 	else if (free < 512)
 		size = 512;
 	else
@@ -519,7 +528,7 @@ heapinit(BAT *b, const char *buf,
 #endif
 #endif
 
-	if (properties & ~0x1F81) {
+	if (properties & (bbpversion <= GDKLIBRARY_USTR ? ~0x1F81 : ~0x7F81)) {
 		TRC_CRITICAL(GDK, "unknown properties are set: incompatible database on line %d of BBP.dir\n", lineno);
 		return -1;
 	}
@@ -532,7 +541,8 @@ heapinit(BAT *b, const char *buf,
 			TRC_CRITICAL(GDK, "no space for atom %s", type);
 			return -1;
 		}
-	} else if (var != (t == TYPE_void || BATatoms[t].atomPut != NULL)) {
+	} else if (var != (t == TYPE_void || BATatoms[t].atomPut != NULL) &&
+		(properties & 0x2000) == 0) {
 		TRC_CRITICAL(GDK, "inconsistent entry in BBP.dir: tvarsized mismatch for BAT %d on line %d\n", (int) b->batCacheid, lineno);
 		return -1;
 	} else if (var && t != 0 ?
@@ -558,6 +568,8 @@ heapinit(BAT *b, const char *buf,
 	b->tnonil = (properties & 0x0400) != 0;
 	b->tnil = (properties & 0x0800) != 0;
 	b->tascii = (properties & 0x1000) != 0;
+	b->ustr = (bbpversion <= GDKLIBRARY_USTR) ? 0 : (properties & 0x2000) != 0;
+	b->tvkey = (bbpversion <= GDKLIBRARY_USTR) ? false : (properties & 0x4000) != 0;
 	b->tnosorted = (BUN) nosorted;
 	b->tnorevsorted = (BUN) norevsorted;
 	b->tunique_est = 0.0;
@@ -999,7 +1011,8 @@ BBPheader(FILE *fp, int *lineno, bat *bbpsize, lng *logno, bool allow_hge_upgrad
 	    bbpversion != GDKLIBRARY_STATUS &&
 	    bbpversion != GDKLIBRARY_JSON &&
 	    bbpversion != GDKLIBRARY_HSIZE &&
-	    bbpversion != GDKLIBRARY_HASHASH) {
+	    bbpversion != GDKLIBRARY_HASHASH &&
+	    bbpversion != GDKLIBRARY_USTR) {
 		TRC_CRITICAL(GDK, "incompatible BBP version: expected 0%o, got 0%o. "
 			     "This database was probably created by a %s version of MonetDB.",
 			     GDKLIBRARY, bbpversion,
@@ -1210,6 +1223,7 @@ fixhashashbat(BAT *b)
 	PROPdestroy(b);
 	STRMPdestroy(b);
 	RTREEdestroy(b);
+	TSKdestroy(b);
 
 	/* make backup of heaps */
 	const char *t;
@@ -1307,10 +1321,14 @@ fixhashashbat(BAT *b)
 		var_t o;
 		switch (b->twidth) {
 		case 1:
-			o = (var_t) ((uint8_t *) h1.base)[i] + GDK_VAROFFSET;
+			o = (var_t) ((uint8_t *) h1.base)[i];
+			if (o != 0)
+				o += GDK_VAROFFSET;
 			break;
 		case 2:
-			o = (var_t) ((uint16_t *) h1.base)[i] + GDK_VAROFFSET;
+			o = (var_t) ((uint16_t *) h1.base)[i];
+			if (o != 0)
+				o += GDK_VAROFFSET;
 			break;
 #if SIZEOF_VAR_T == 8
 		case 4:
@@ -1321,7 +1339,7 @@ fixhashashbat(BAT *b)
 			o = ((var_t *) h1.base)[i];
 			break;
 		}
-		const char *s = vh1.base + o;
+		const char *s = o == 0 ? str_nil : vh1.base + o;
 		var_t no = strPut(b, &o, s);
 		if (no == (var_t) -1) {
 			HEAPfree(&h1, false);
@@ -1333,15 +1351,17 @@ fixhashashbat(BAT *b)
 				     "for BAT %d failed\n", b->batCacheid);
 			return GDK_FAIL;
 		}
-		assert(no >= GDK_VAROFFSET);
+		assert(no == 0 || no >= GDK_VAROFFSET);
 		switch (b->twidth) {
 		case 1:
-			no -= GDK_VAROFFSET;
+			if (no != 0)
+				no -= GDK_VAROFFSET;
 			assert(no <= 0xFF);
 			((uint8_t *) h2->base)[i] = (uint8_t) no;
 			break;
 		case 2:
-			no -= GDK_VAROFFSET;
+			if (no != 0)
+				no -= GDK_VAROFFSET;
 			assert(no <= 0xFFFF);
 			((uint16_t *) h2->base)[i] = (uint16_t) no;
 			break;
@@ -1513,7 +1533,7 @@ jsonupgradebat(BAT *b, json_storage_conversion fixJSONStorage)
 	allocator *ta = MT_thread_getallocator();
 	for (BUN i = 0; i < b->batCount; i++) {
 		var_t o = ((var_t *) h1.base)[i];
-		const char *s = vh1.base + o;
+		const char *s = o == 0 ? str_nil : vh1.base + o;
 		char *ns;
 		allocator_state ta_state = ma_open(ta);
 		if (fixJSONStorage(&ns, &s) != GDK_SUCCEED) {
@@ -1626,6 +1646,316 @@ BBPjson_upgrade(json_storage_conversion fixJSONStorage)
 		return GDK_FAIL;
 	}
 	ma_close(&ta_state);
+	return GDK_SUCCEED;
+}
+#endif
+
+#ifdef GDKLIBRARY_USTR
+static bool file_exists(int farmid, const char *dir, const char *name, const char *ext);
+
+static gdk_return
+fixstrnilbat(BAT *b)
+{
+	lng t0 = GDKusec();
+	const char *nme = BBP_physical(b->batCacheid);
+	char srcdir[MAXPATH];
+	var_t niloff = 0;
+
+	if (GDKfilepath(srcdir, sizeof(srcdir), NOFARM, BATDIR, nme, NULL) != GDK_SUCCEED) {
+		return GDK_FAIL;
+	}
+	char *s;
+	if ((s = strrchr(srcdir, DIR_SEP)) != NULL)
+		*s = 0;
+	const char *bnme;
+	if ((bnme = strrchr(nme, DIR_SEP)) != NULL)
+		bnme++;
+	else
+		bnme = nme;
+	long_str filename;
+	strtconcat(filename, sizeof(filename), "BACKUP", DIR_SEP_STR, bnme, NULL);
+	const char *t = BATtailname(b);
+
+	if (file_exists(0, BAKDIR, bnme, t)) {
+		/* already done by another upgrade */
+		TRC_DEBUG(ALGO, ALGOBATFMT " already done\n", ALGOBATPAR(b));
+		return GDK_SUCCEED;
+	}
+
+	if (HEAPload(b->tvheap, nme, "theap", false) != GDK_SUCCEED) {
+		TRC_CRITICAL(GDK, "loading string heap "
+			     "for BAT %d failed\n", b->batCacheid);
+		return GDK_FAIL;
+	}
+	strCleanHash(b->tvheap, false);
+	b->tvheap->cleanhash = true;
+	b->tvheap->dirty = false;
+	if (GDK_ELIMDOUBLES(b->tvheap)) {
+		niloff = oldstrnilLocate(b->tvheap);
+		if (niloff == (var_t) -2) {
+			/* fully double eliminated, and str_nil does not
+			 * occur: nothing to do */
+			HEAPfree(b->tvheap, false);
+			TRC_DEBUG(ALGO, ALGOBATFMT " elimdoubles, no nils\n",
+				  ALGOBATPAR(b));
+			return GDK_SUCCEED;
+		}
+		assert(niloff >= 8192);
+	}
+
+	if (GDKmove(b->theap->farmid, srcdir, bnme, t,
+		    BAKDIR, bnme, t, false) != GDK_SUCCEED) {
+		HEAPfree(b->tvheap, false);
+		TRC_CRITICAL(GDK, "cannot make backup of %s.%s\n", nme, t);
+		return GDK_FAIL;
+	}
+
+	Heap h1 = *b->theap;	/* old heap */
+	h1.base = NULL;
+	h1.dirty = false;
+	strtconcat(h1.filename, sizeof(h1.filename), filename, ".", t, NULL);
+	if (HEAPload(&h1, filename, t, false) != GDK_SUCCEED) {
+		HEAPfree(b->tvheap, false);
+		TRC_CRITICAL(GDK, "loading old tail heap "
+			     "for BAT %d failed\n", b->batCacheid);
+		return GDK_FAIL;
+	}
+
+	/* create new heap */
+	Heap *h2 = GDKmalloc(sizeof(Heap));
+	if (h2 == NULL) {
+		HEAPfree(&h1, false);
+		HEAPfree(b->tvheap, false);
+		TRC_CRITICAL(GDK, "allocating new heaps "
+			     "for BAT %d failed\n", b->batCacheid);
+		return GDK_FAIL;
+	}
+	*h2 = *b->theap;
+	h2->base = NULL;
+	if (HEAPalloc(h2, b->batCapacity, b->twidth) != GDK_SUCCEED) {
+		GDKfree(h2);
+		HEAPfree(&h1, false);
+		HEAPfree(b->tvheap, false);
+		TRC_CRITICAL(GDK, "allocating new tail heap "
+			     "for BAT %d failed\n", b->batCacheid);
+		return GDK_FAIL;
+	}
+	h2->dirty = true;
+	h2->free = h1.free;
+	ATOMIC_INIT(&h2->refs, 1);
+
+	const char *vbase = b->tvheap->base;
+	size_t vfree = b->tvheap->free;
+	switch (b->twidth) {
+	case 1: {
+		const uint8_t *p1 = (const uint8_t *) h1.base;
+		uint8_t *p2 = (uint8_t *) h2->base;
+		vfree -= 8192;
+		niloff -= 8192;
+		for (BUN i = 0; i < b->batCount; i++) {
+			uint8_t v = p1[i];
+			if (v == niloff)
+				p2[i] = 0;
+			else if (v >= vfree || vbase[v + 8192] == '\200')
+				p2[i] = 0;
+			else
+				p2[i] = v;
+		}
+		break;
+	}
+	case 2: {
+		const uint16_t *p1 = (const uint16_t *) h1.base;
+		uint16_t *p2 = (uint16_t *) h2->base;
+		vfree -= 8192;
+		niloff -= 8192;
+		for (BUN i = 0; i < b->batCount; i++) {
+			uint16_t v = p1[i];
+			if (v == niloff)
+				p2[i] = 0;
+			else if (v >= vfree || vbase[v + 8192] == '\200')
+				p2[i] = 0;
+			else
+				p2[i] = v;
+		}
+		break;
+	}
+	case 4: {
+		const uint32_t *p1 = (const uint32_t *) h1.base;
+		uint32_t *p2 = (uint32_t *) h2->base;
+		for (BUN i = 0; i < b->batCount; i++) {
+			uint32_t v = p1[i];
+			if (v == niloff)
+				p2[i] = 0;
+			else if (v >= vfree || vbase[v] == '\200')
+				p2[i] = 0;
+			else
+				p2[i] = v;
+		}
+		break;
+	}
+#if SIZEOF_VAR_T == 8
+	case 8: {
+		const uint64_t *p1 = (const uint64_t *) h1.base;
+		uint64_t *p2 = (uint64_t *) h2->base;
+		for (BUN i = 0; i < b->batCount; i++) {
+			uint64_t v = p1[i];
+			if (v == niloff)
+				p2[i] = 0;
+			else if (v >= vfree || vbase[v] == '\200')
+				p2[i] = 0;
+			else
+				p2[i] = v;
+		}
+		break;
+	}
+#endif
+	default:
+		MT_UNREACHABLE();
+	}
+	HEAPfree(&h1, false);
+	HEAPfree(b->tvheap, false);
+	if (HEAPsave(h2, nme, t, true, h2->free, NULL) != GDK_SUCCEED) {
+		HEAPdecref(h2, true);
+		TRC_CRITICAL(GDK, "saving heap failed\n");
+		return GDK_FAIL;
+	}
+	HEAPdecref(b->theap, false);
+	b->theap = h2;
+	HEAPfree(h2, false);
+
+	TRC_DEBUG(ALGO, ALGOBATFMT " " LLFMT " usec\n", ALGOBATPAR(b),
+		  GDKusec() - t0);
+
+	return GDK_SUCCEED;
+}
+
+static gdk_return
+fixblobnilbat(BAT *b)
+{
+	lng t0 = GDKusec();
+	const char *nme = BBP_physical(b->batCacheid);
+	char srcdir[MAXPATH];
+
+	if (GDKfilepath(srcdir, sizeof(srcdir), NOFARM, BATDIR, nme, NULL) != GDK_SUCCEED) {
+		return GDK_FAIL;
+	}
+	char *s;
+	if ((s = strrchr(srcdir, DIR_SEP)) != NULL)
+		*s = 0;
+	const char *bnme;
+	if ((bnme = strrchr(nme, DIR_SEP)) != NULL)
+		bnme++;
+	else
+		bnme = nme;
+	long_str filename;
+	strtconcat(filename, sizeof(filename), "BACKUP", DIR_SEP_STR, bnme, NULL);
+
+	if (file_exists(0, BAKDIR, bnme, "tail")) {
+		/* already done by another upgrade */
+		TRC_DEBUG(ALGO, ALGOBATFMT " already done\n", ALGOBATPAR(b));
+		return GDK_SUCCEED;
+	}
+
+	if (HEAPload(b->tvheap, nme, "theap", false) != GDK_SUCCEED) {
+		TRC_CRITICAL(GDK, "loading string heap "
+			     "for BAT %d failed\n", b->batCacheid);
+		return GDK_FAIL;
+	}
+
+	if (GDKmove(b->theap->farmid, srcdir, bnme, "tail",
+		    BAKDIR, bnme, "tail", false) != GDK_SUCCEED) {
+		HEAPfree(b->tvheap, false);
+		TRC_CRITICAL(GDK, "cannot make backup of %s.tail\n", nme);
+		return GDK_FAIL;
+	}
+
+	Heap h1 = *b->theap;	/* old heap */
+	h1.base = NULL;
+	h1.dirty = false;
+	strtconcat(h1.filename, sizeof(h1.filename), filename, ".tail", NULL);
+	if (HEAPload(&h1, filename, "tail", false) != GDK_SUCCEED) {
+		HEAPfree(b->tvheap, false);
+		TRC_CRITICAL(GDK, "loading old tail heap "
+			     "for BAT %d failed\n", b->batCacheid);
+		return GDK_FAIL;
+	}
+
+	/* create new heap */
+	Heap *h2 = GDKmalloc(sizeof(Heap));
+	if (h2 == NULL) {
+		HEAPfree(&h1, false);
+		HEAPfree(b->tvheap, false);
+		TRC_CRITICAL(GDK, "allocating new heaps "
+			     "for BAT %d failed\n", b->batCacheid);
+		return GDK_FAIL;
+	}
+	*h2 = *b->theap;
+	h2->base = NULL;
+	if (HEAPalloc(h2, b->batCapacity, b->twidth) != GDK_SUCCEED) {
+		GDKfree(h2);
+		HEAPfree(&h1, false);
+		HEAPfree(b->tvheap, false);
+		TRC_CRITICAL(GDK, "allocating new tail heap "
+			     "for BAT %d failed\n", b->batCacheid);
+		return GDK_FAIL;
+	}
+	h2->dirty = true;
+	h2->free = h1.free;
+	ATOMIC_INIT(&h2->refs, 1);
+	bool (*atomeq) (const void *, const void *) = ATOMequal(b->ttype);
+	const void *nil = ATOMnilptr(b->ttype);
+
+	const char *vbase = b->tvheap->base;
+	size_t vfree = b->tvheap->free;
+	const var_t *p1 = (const var_t *) h1.base;
+	var_t *p2 = (var_t *) h2->base;
+	for (BUN i = 0; i < b->batCount; i++) {
+		var_t v = p1[i];
+		if (v >= vfree || atomeq(vbase + v, nil))
+			p2[i] = 0;
+		else
+			p2[i] = v;
+	}
+	HEAPfree(&h1, false);
+	HEAPfree(b->tvheap, false);
+	if (HEAPsave(h2, nme, "tail", true, h2->free, NULL) != GDK_SUCCEED) {
+		HEAPdecref(h2, true);
+		TRC_CRITICAL(GDK, "saving heap failed\n");
+		return GDK_FAIL;
+	}
+	HEAPdecref(b->theap, false);
+	b->theap = h2;
+	HEAPfree(h2, false);
+
+	TRC_DEBUG(ALGO, ALGOBATFMT " " LLFMT " usec\n", ALGOBATPAR(b),
+		  GDKusec() - t0);
+
+	return GDK_SUCCEED;
+}
+
+static gdk_return
+BBPvarnil_upgrade(void)
+{
+	lng t0 = GDKusec();
+	for (bat bid = 1, nbat = getBBPsize(); bid < nbat; bid++) {
+		BAT *b = BBP_desc(bid);
+		if (b->batCount == 0 || b->tnonil)
+			continue;
+		if (b->ttype < 0) {
+			if ((strcmp(ATOMunknown_name(b->ttype), "xml") == 0 ||
+			     strcmp(ATOMunknown_name(b->ttype), "url") == 0 ||
+			     strcmp(ATOMunknown_name(b->ttype), "json") == 0) &&
+			    fixstrnilbat(b) != GDK_SUCCEED)
+				return GDK_FAIL;
+		} else if (ATOMstorage(b->ttype) == TYPE_str) {
+			if (fixstrnilbat(b) != GDK_SUCCEED)
+				return GDK_FAIL;
+		} else if (ATOMstorage(b->ttype) == TYPE_blob) {
+			if (fixblobnilbat(b) != GDK_SUCCEED)
+				return GDK_FAIL;
+		}
+	}
+	TRC_DEBUG(ALGO, "total time: " LLFMT " usec\n", GDKusec() - t0);
 	return GDK_SUCCEED;
 }
 #endif
@@ -1884,12 +2214,24 @@ BBPinit(bool allow_hge_upgrade, bool no_manager)
 	ATOMIC_SET(&BBPsize, bbpsize);
 
 	/* add free bats to free list in such a way that low numbered
-	 * ones are at the head of the list */
+	 * ones are at the head of the list; also record whether we have
+	 * a ustr bat */
 	for (bat i = (bat) ATOMIC_GET(&BBPsize) - 1; i > 0; i--) {
-		if (BBP_desc(i)->batCacheid == 0) {
+		BAT *b = BBP_desc(i);
+		if (b->batCacheid == 0) {
 			BBP_next(i) = BBP_free;
 			BBP_free = i;
 			BBP_nfree++;
+		} else if (b->ustr) {
+			BAT *u = BBP_desc(b->ustr);
+			if (u->batCacheid == 0 ||
+			    u->ttype != TYPE_str ||
+			    u->ustr != 0 ||
+			    !u->tvkey) {
+				TRC_CRITICAL(GDK, "incorrect reference to ustr bat from " ALGOBATFMT, ALGOBATPAR(b));
+				ATOMIC_SET(&GDKdebug, dbg);
+				return GDK_FAIL;
+			}
 		}
 	}
 
@@ -1947,6 +2289,11 @@ BBPinit(bool allow_hge_upgrade, bool no_manager)
 
 		close(fd);
 	}
+#endif
+
+#ifdef GDKLIBRARY_USTR
+	if (bbpversion <= GDKLIBRARY_USTR && BBPvarnil_upgrade() != GDK_SUCCEED)
+		return GDK_FAIL;
 #endif
 
 	if (bbpversion < GDKLIBRARY && TMcommit() != GDK_SUCCEED) {
@@ -2026,6 +2373,13 @@ BBPexit(void)
 						HEAPdecref(b->theap, false);
 						b->theap = NULL;
 					}
+					if (b->ustr) {
+						--BBP_lrefs(b->ustr);
+						if (b->tvheap)
+							HEAPdecref(b->tvheap,
+								   false);
+						b->tvheap = NULL;
+					}
 					tp = VIEWvtparent(b);
 					if (tp != 0) {
 						--BBP_lrefs(tp);
@@ -2035,8 +2389,10 @@ BBPexit(void)
 					if (b->oldtail) {
 						Heap *h = b->oldtail;
 						b->oldtail = NULL;
-						ATOMIC_AND(&h->refs, ~DELAYEDREMOVE);
-						HEAPdecref(h, false);
+						if (h != (Heap *) 1) {
+							ATOMIC_AND(&h->refs, ~DELAYEDREMOVE);
+							HEAPdecref(h, false);
+						}
 					}
 					PROPdestroy_nolock(b);
 					MT_lock_unset(&b->theaplock);
@@ -2082,13 +2438,15 @@ heap_entry(FILE *fp, BATiter *bi, BUN size)
 		       BUNFMT " " OIDFMT " %zu %" PRIu64" %" PRIu64,
 		       bi->type >= 0 ? BATatoms[bi->type].name : ATOMunknown_name(bi->type),
 		       bi->width,
-		       bi->type == TYPE_void || bi->vh != NULL,
-		       (unsigned short) bi->sorted |
-			   ((unsigned short) bi->revsorted << 7) |
-			   ((unsigned short) bi->key << 8) |
-			   ((unsigned short) bi->nonil << 10) |
-			   ((unsigned short) bi->nil << 11) |
-			   ((unsigned short) bi->ascii << 12),
+		       bi->type == TYPE_void || bi->vh != NULL || bi->ustr,
+		       (((uint16_t) bi->sorted << 0) |
+			((uint16_t) bi->revsorted << 7) |
+			((uint16_t) bi->key << 8) |
+			((uint16_t) bi->nonil << 10) |
+			((uint16_t) bi->nil << 11) |
+			((uint16_t) bi->ascii << 12) |
+			((uint16_t) (bi->ustr != 0) << 13) |
+			((uint16_t) bi->vkey << 14)),
 		       bi->nokey[0] >= size || bi->nokey[1] >= size ? 0 : bi->nokey[0],
 		       bi->nokey[0] >= size || bi->nokey[1] >= size ? 0 : bi->nokey[1],
 		       bi->nosorted >= size ? 0 : bi->nosorted,
@@ -2102,10 +2460,11 @@ heap_entry(FILE *fp, BATiter *bi, BUN size)
 static inline int
 vheap_entry(FILE *fp, BATiter *bi, BUN size)
 {
-	(void) size;
-	if (bi->vh == NULL)
-		return 0;
-	return fprintf(fp, " %zu", size == 0 ? 0 : bi->vhfree);
+	if (bi->ustr)
+		return fprintf(fp, " %d", bi->ustr);
+	if (bi->vh != NULL)
+		return fprintf(fp, " %zu", size == 0 ? 0 : bi->vhfree);
+	return 0;
 }
 
 static gdk_return
@@ -3006,7 +3365,7 @@ decref(bat i, bool logical, bool lock, const char *func)
 			if (b && refs == 0) {
 				MT_lock_set(&b->theaplock);
 				locked = true;
-				if (VIEWtparent(b) || VIEWvtparent(b))
+				if (isVIEW(b))
 					BBP_status_on(i, BBPHOT);
 			}
 		}
@@ -3022,44 +3381,49 @@ decref(bat i, bool logical, bool lock, const char *func)
 
 	/* we destroy transients asap and unload persistent bats only
 	 * if they have been made cold or are not dirty */
-	unsigned chkflag = BBPSYNCING;
-	bool swapdirty = false;
-	if (b) {
-		size_t cursize;
-		if ((cursize = GDKvm_cursize()) < (size_t) (GDK_vm_maxsize * 0.75)) {
-			if (!locked) {
-				MT_lock_set(&b->theaplock);
-				locked = true;
+	if (BBP_refs(i) == 0) {
+		/* only consider unloading if refs is 0 */
+		unsigned chkflag = BBPSYNCING;
+		bool swapdirty = false;
+		if (b) {
+			size_t cursize;
+			if ((cursize = GDKvm_cursize()) < (size_t) (GDK_vm_maxsize * 0.75)) {
+				if (!locked) {
+					MT_lock_set(&b->theaplock);
+					locked = true;
+				}
+				if (((b->theap ? b->theap->size : 0) + (b->tvheap ? b->tvheap->size : 0)) < (GDK_vm_maxsize - cursize) / 32)
+					chkflag |= BBPHOT;
+			} else if (cursize > (size_t) (GDK_vm_maxsize * 0.85))
+				swapdirty = true;
+			if (b->ustr && b->tvheap) {
+				HEAPdecref(b->tvheap, false);
+				b->tvheap = NULL;
 			}
-			if (((b->theap ? b->theap->size : 0) + (b->tvheap ? b->tvheap->size : 0)) < (GDK_vm_maxsize - cursize) / 32)
-				chkflag |= BBPHOT;
-		} else if (cursize > (size_t) (GDK_vm_maxsize * 0.85))
-			swapdirty = true;
+		}
+		/* if lrefs is 0, we can definitely unload, else only if
+		 * some more conditions are met */
+		if (BBP_lrefs(i) == 0 ||
+		    (b != NULL && b->theap != NULL
+		     ? ((swapdirty || !BATdirty(b)) &&
+			!(BBP_status(i) & chkflag) &&
+			(BBP_status(i) & BBPPERSISTENT) &&
+			/* cannot unload in-memory data */
+			!GDKinmemory(farmid) &&
+			/* do not unload views or parents of views */
+			!BATshared(b) &&
+			b->batCacheid == b->theap->parentid &&
+			(b->tvheap == NULL || b->batCacheid == b->tvheap->parentid))
+		     : (BBP_status(i) & BBPTMP))) {
+			/* bat will be unloaded now. set the UNLOADING bit
+			 * while locked so no other thread thinks it's
+			 * available anymore */
+			assert((BBP_status(i) & BBPUNLOADING) == 0);
+			TRC_DEBUG(BAT, "%s set to unloading BAT %d (status %u, lrefs %d)\n", func, i, BBP_status(i), BBP_lrefs(i));
+			BBP_status_on(i, BBPUNLOADING);
+			swap = true;
+		} /* else: bat cannot be swapped out */
 	}
-	/* only consider unloading if refs is 0; if, in addition, lrefs
-	 * is 0, we can definitely unload, else only if some more
-	 * conditions are met */
-	if (BBP_refs(i) == 0 &&
-	    (BBP_lrefs(i) == 0 ||
-	     (b != NULL && b->theap != NULL
-	      ? ((swapdirty || !BATdirty(b)) &&
-		 !(BBP_status(i) & chkflag) &&
-		 (BBP_status(i) & BBPPERSISTENT) &&
-		 /* cannot unload in-memory data */
-		 !GDKinmemory(farmid) &&
-		 /* do not unload views or parents of views */
-		 !BATshared(b) &&
-		 b->batCacheid == b->theap->parentid &&
-		 (b->tvheap == NULL || b->batCacheid == b->tvheap->parentid))
-	      : (BBP_status(i) & BBPTMP)))) {
-		/* bat will be unloaded now. set the UNLOADING bit
-		 * while locked so no other thread thinks it's
-		 * available anymore */
-		assert((BBP_status(i) & BBPUNLOADING) == 0);
-		TRC_DEBUG(BAT, "%s set to unloading BAT %d (status %u, lrefs %d)\n", func, i, BBP_status(i), BBP_lrefs(i));
-		BBP_status_on(i, BBPUNLOADING);
-		swap = true;
-	} /* else: bat cannot be swapped out */
 	lrefs = BBP_lrefs(i);
 	if (locked)
 		MT_lock_unset(&b->theaplock);
@@ -3099,6 +3463,9 @@ decref(bat i, bool logical, bool lock, const char *func)
 int
 BBPunfix(bat i)
 {
+	bat u;
+	if (BBPcheck(i) != 0 && (u = BBP_desc(i)->ustr) != 0)
+		decref(u, false, true, __func__);
 	return decref(i, false, true, __func__);
 }
 
@@ -3125,6 +3492,8 @@ BBPkeepref(BAT *b)
 	if (BATsetaccess(b, BAT_READ) == NULL)
 		return;		/* already decreffed */
 
+	if (b->ustr)
+		decref(b->ustr, false, lock, __func__);
 	refs = decref(i, false, lock, __func__);
 	(void) refs;
 	assert(refs >= 0);
@@ -3136,7 +3505,12 @@ BATdescriptor(bat i)
 	BAT *b = NULL;
 
 	if (BBPcheck(i)) {
+		BAT *u = NULL;
 		bool lock = locked_by == 0 || locked_by != MT_getpid();
+		b = BBP_desc(i);
+		if (b->ustr)
+			u = BATdescriptor(b->ustr);
+		b = NULL;
 		if (lock) {
 			MT_lock_set(&GDKswapLock(i));
 			while (BBP_status(i) & (BBPUNSTABLE|BBPLOADING)) {
@@ -3145,7 +3519,9 @@ BATdescriptor(bat i)
 			}
 		}
 		if (incref(i, false, false) > 0) {
+			bool loading = false;
 			if ((BBP_status(i) & BBPLOADED) == 0) {
+				loading = true;
 				b = getBBPdescriptor(i);
 				if (b == NULL) {
 					/* if loading failed, we need to
@@ -3155,9 +3531,25 @@ BATdescriptor(bat i)
 			} else {
 				b = BBP_desc(i);
 			}
+			if (b != NULL && u != NULL) {
+				MT_lock_set(&b->theaplock);
+				MT_lock_set(&u->theaplock);
+				if (b->tvheap != u->tvheap) {
+					if (b->tvheap != NULL)
+						HEAPdecref(b->tvheap, false);
+					HEAPincref(u->tvheap);
+					b->tvheap = u->tvheap;
+				}
+				MT_lock_unset(&u->theaplock);
+				MT_lock_unset(&b->theaplock);
+			}
+			CHECKDEBUG if (loading && b != NULL)
+				BATassertProps(b);
 		}
 		if (lock)
 			MT_lock_unset(&GDKswapLock(i));
+		if (b == NULL && u != NULL)
+			BBPreclaim(u);
 	}
 	return b;
 }
@@ -3199,8 +3591,6 @@ getBBPdescriptor(bat i)
 		b = BATload_intern(i, false);
 
 		BBP_status_off(i, BBPLOADING);
-		CHECKDEBUG if (b != NULL)
-			BATassertProps(b);
 		MT_cond_broadcast(&GDKswapCond(i));
 	}
 	return b;
@@ -3287,6 +3677,7 @@ BBPdestroy(BAT *b)
 	bat tp = VIEWtparent(b);
 	bat vtp = VIEWvtparent(b);
 
+	TRC_DEBUG(ALGO, ALGOBATFMT "\n", ALGOBATPAR(b));
 	if (b->theap) {
 		HEAPdecref(b->theap, tp == 0);
 		b->theap = NULL;
@@ -3681,7 +4072,7 @@ BBPbackup(BAT *b, bool subcommit)
 	/* determine location dir and physical suffix */
 	if (bi.type != TYPE_void) {
 		rc = do_backup(bi.h, bi.hdirty, subcommit);
-		if (rc == GDK_SUCCEED && bi.vh != NULL)
+		if (rc == GDK_SUCCEED && bi.vh != NULL && !bi.ustr)
 			rc = do_backup(bi.vh, bi.vhdirty, subcommit);
 	}
 	bat_iterator_end(&bi);
@@ -3887,6 +4278,7 @@ BBPsync(int cnt, const bat *restrict subcommit, const BUN *restrict sizes, lng l
 						  fname, BAKDIR, SUBDIR);
 #endif
 				if (ATOMvarsized(b->ttype) &&
+				    !b->ustr &&
 				    GDKmove(0, BAKDIR, fname, "theap", SUBDIR, fname, "theap", false) == GDK_SUCCEED)
 					TRC_DEBUG(IO, "moved %s.theap from %s to %s\n",
 						  fname, BAKDIR, SUBDIR);
@@ -4692,9 +5084,7 @@ BBPprintinfo(void)
 			BAT *b = BBP_desc(i);
 			if (!MT_lock_trytime(&b->theaplock, 1000)) {
 				nskip++;
-				b = NULL;
-			}
-			if (b != NULL) {
+			} else {
 				nbats++;
 				ATOMIC_BASE_TYPE status = BBP_status(i);
 				struct counters *bt = &bats[r > 0][BATdirty(b)][(status & BBPPERSISTENT) != 0][(status & BBPLOADED) != 0][(status & BBPHOT) != 0];

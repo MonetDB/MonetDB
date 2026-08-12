@@ -576,6 +576,9 @@ rel_change_base_table(mvc* sql, sql_rel* rel, sql_table* oldt, sql_table* newt)
 		case op_groupby:
 		case op_project:
 		case op_select:
+		case op_buildhash:
+		case op_probehash:
+		case op_partition:
 		case op_topn:
 		case op_sample:
 		case op_truncate:
@@ -1092,7 +1095,7 @@ rel_find_propagate( sql_rel *rel)
 }
 
 sql_rel *
-rel_propagate(visitor *v, sql_rel *rel)
+rel_propagate_updates(visitor *v, sql_rel *rel)
 {
 	mvc *sql = v->sql;
 	bool isSubtable = false;

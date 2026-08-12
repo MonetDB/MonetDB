@@ -170,6 +170,11 @@ rel_find_table_columns(mvc* sql, sql_rel* rel, sql_table *t, list *cols)
 					rel_find_table_columns(sql, rel->r, t, cols);
 			}
 			break;
+		case op_buildhash:
+		case op_probehash:
+		case op_partition:
+			(void) sql_error(sql, 10, SQLSTATE(42000) "physical operator unexpected");
+			break;
 	}
 }
 

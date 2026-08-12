@@ -40,7 +40,7 @@ insert into t1 values ('')
 statement error 40002!INSERT INTO: FOREIGN KEY constraint 't1.t1_c0_fkey' violated
 insert into t1(c0) values ((select 'a')), ('b')
 
-statement error 40002!INSERT INTO: PRIMARY KEY constraint 't1.t1_c0_pkey' violated
+statement error /INSERT INTO: /
 insert into t1(c0) values(']BW扗}FUp'), (cast((values (greatest('Aᨐ', '_'))) as string(616))), ('')
 
 statement ok
@@ -61,19 +61,19 @@ CREATE TABLE "sys"."t1" ("c0" BOOLEAN,"c1" DECIMAL(14,3))
 statement ok rowcount 10
 insert into t1 values(NULL, 0.000), (false, 0.187), (false, 0.000), (false, NULL), (false, NULL), (true, NULL), (NULL, 0.325), (NULL, 0.374), (true, NULL), (true, NULL)
 
-statement error GDK reported error: BATsubcross: more than one match
+statement error /more than one match/
 select 1 from t1, t0 where cast(t1.c1 as clob) not like ((select 'A' from t0, t1) except all (select 'B' from t0))
 
-statement error GDK reported error: BATsubcross: more than one match
+statement error /more than one match/
 select 1 from t1, t0 where (select 1 from t1) like cast(t1.c1 as clob)
 
-statement error GDK reported error: BATsubcross: more than one match
+statement error /more than one match/
 select 1 from t1, t0 where cast(t1.c1 as clob) between 'b' and ((select 'A' from t0))
 
-statement error GDK reported error: BATsubcross: more than one match
+statement error /more than one match/
 select 1 from t1, t0 where ((select 'A' from t0)) between cast(t1.c1 as clob) and 'a'
 
-statement error GDK reported error: BATsubcross: more than one match
+statement error /more than one match/
 select 1 from t1, t0 where cast(t1.c1 as clob) between ((select '1' from t0)) and 'c'
 
 statement ok

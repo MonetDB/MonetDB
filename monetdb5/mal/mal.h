@@ -155,10 +155,12 @@ typedef struct INSTR {
 	struct MALBLK *blk;			/* resolved MAL function address */
 	/* inline statistics */
 	lng wbytes;					/* number of bytes produced in last instruction */
+	lng ticks;					/* number of clock ticks this instruction has run */
 	/* the core admin */
 	const char *modname;		/* module context, reference into namespace */
 	const char *fcnname;		/* function name, reference into namespace */
 	int argc, retc, maxarg;		/* total and result argument count */
+	int inout;			/* starting index of the inout result arguments in argv, -1 if none*/
 	int argv[] __attribute__((__counted_by__(maxarg)));	/* at least a few entries */
 } *InstrPtr, InstrRecord;
 

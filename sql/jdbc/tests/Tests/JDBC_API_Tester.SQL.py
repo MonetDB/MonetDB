@@ -12,7 +12,7 @@ JDBC_EXTRA_ARGS=os.getenv('JDBC_EXTRA_ARGS', default='')
 
 URL=f"jdbc:monetdb://{HOST}:{MAPIPORT}/{TSTDB}?user={USER}&password={PASSWORD}{JDBC_EXTRA_ARGS}"
 
-JDBC_API_TESTER_ARGS=''
+# JDBC_API_TESTER_ARGS=''
 # JDBC_API_TESTER_ARGS='-skipMALoutput'
 JDBC_API_TESTER_ARGS='-supportsNestedTypes'
 

@@ -63,7 +63,8 @@ typedef enum sql_dependency {
 	SEQ_DEPENDENCY = 12,
 	PROC_DEPENDENCY = 13,
 	BEDROPPED_DEPENDENCY = 14, /*The object must be dropped when the dependent object is dropped independently of the DROP type.*/
-	TYPE_DEPENDENCY = 15
+	TYPE_DEPENDENCY = 15,
+	USTR_DEPENDENCY = 16,
 } sql_dependency;
 
 #define NO_DEPENDENCY 0
@@ -309,6 +310,7 @@ typedef struct sql_schema {
 	struct objectset *idxs;		/* global, but these objects are only */
 	struct objectset *triggers;	/* useful within a table */
 	struct objectset *parts;
+	struct objectset *ustrs;
 
 	char *internal; 	/* optional internal module name */
 	sql_store store;
@@ -326,6 +328,7 @@ typedef struct sql_trans {
 
 	ulng ts;			/* transaction start timestamp */
 	ulng tid;			/* transaction id */
+	ulng cnr;			/* counter, changes with a lower number are visible, equal and up are newer */
 
 	sql_store store;	/* keep link into the global store */
 	MT_Lock lock;		/* lock protecting concurrent writes to the changes list */
@@ -522,8 +525,9 @@ typedef struct sql_func {
 	instantiated:1,	/* if the function is instantiated */
 	private:1,	/* certain functions cannot be bound from user queries */
 	order_required:1,	/* some aggregate functions require an order */
-	opt_order:1,
-	group:1;	/* some filter functions behave like group join */
+	opt_order:1,	/* some aggregate functions could have the inputs sorted */
+	group:1,		/* some filter functions behave like group join */
+	pipeline:1;		/* table returning function can be pipelined */
 
 	short fix_scale;
 			/*
@@ -543,6 +547,8 @@ typedef struct sql_func {
 
 typedef struct sql_subfunc {
 	sql_func *func;
+	unsigned int
+		pipeline:1;	/* run with pipeline */
 	list *res;
 	list *coltypes; /* we need this for copy into from loader */
 	list *colnames; /* we need this for copy into from loader */
@@ -761,6 +767,12 @@ typedef struct sql_table {
 	} part;
 } sql_table;
 
+typedef struct sql_ustr {
+	sql_base base;
+	bat batid;
+	sql_schema *s;
+} sql_ustr;
+
 typedef struct res_col {
 	char *tn;
 	char *name;
@@ -836,6 +848,9 @@ extern sql_table *find_sql_table_id(sql_trans *tr, sql_schema *s, sqlid id);
 extern sql_table *sql_trans_find_table(sql_trans *tr, sqlid id);
 
 extern sql_sequence *find_sql_sequence(sql_trans *tr, sql_schema *s, const char *sname);
+
+extern sql_ustr *find_sql_ustr(sql_trans *tr, sql_schema *s, const char *uname);
+extern sql_ustr *find_sql_ustr_id(sql_trans *tr, sql_schema *s, sqlid id);
 
 extern sql_schema *find_sql_schema(sql_trans *t, const char *sname);
 extern sql_schema *find_sql_schema_id(sql_trans *t, sqlid id);

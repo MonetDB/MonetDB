@@ -66,6 +66,7 @@
 	FUNC(create_trigger); \
 	FUNC(create_type); \
 	FUNC(create_user); \
+	FUNC(create_ustr); \
 	FUNC(create_view); \
 	FUNC(crossproduct); \
 	FUNC(cume_dist); \
@@ -94,6 +95,7 @@
 	FUNC(drop_trigger); \
 	FUNC(drop_type); \
 	FUNC(drop_user); \
+	FUNC(drop_ustr); \
 	FUNC(drop_view); \
 	FUNC(emptybind); \
 	FUNC(emptybindidx); \
@@ -120,11 +122,15 @@
 	FUNC(groupedfirstn); \
 	FUNC(grow); \
 	FUNC(hge); \
+	FUNC(iaggr); \
+	FUNC(ialgebra); \
 	FUNC(identity); \
 	FUNC(ifthenelse); \
+	FUNC(igroup); \
 	FUNC(importColumn); \
 	FUNC(importNulTerminated); \
 	FUNC(importRaw); \
+	FUNC(ilockedaggr); \
 	FUNC(int); \
 	FUNC(intersect); \
 	FUNC(intersectcand); \
@@ -143,6 +149,7 @@
 	FUNC(likeuselect); \
 	FUNC(lng); \
 	FUNC(lock); \
+	FUNC(lockedaggr); \
 	FUNC(lookup); \
 	FUNC(main); \
 	FUNC(mal); \
@@ -168,9 +175,11 @@
 	FUNC(mvc); \
 	FUNC(new); \
 	FUNC(next); \
+	FUNC(no_slices); \
 	FUNC(not); \
 	FUNC(not_like); \
 	FUNC(not_unique); \
+	FUNC(nth_slice); \
 	FUNC(nth_value); \
 	FUNC(ntile); \
 	FUNC(optimizer); \
@@ -182,6 +191,7 @@
 	FUNC(parameters); \
 	FUNC(pass); \
 	FUNC(percent_rank); \
+	FUNC(pipelines); \
 	FUNC(predicate); \
 	FUNC(print); \
 	FUNC(prod); \
@@ -225,6 +235,7 @@
 	FUNC(setVariable); \
 	FUNC(single); \
 	FUNC(slice); \
+	FUNC(slicer); \
 	FUNC(sort); \
 	FUNC(sortReverse); \
 	FUNC(sql); \
@@ -238,7 +249,6 @@
 	FUNC(subcount); \
 	FUNC(subdelta); \
 	FUNC(subdiff); \
-	FUNC(subeval_aggr); \
 	FUNC(subgroup); \
 	FUNC(subgroupdone); \
 	FUNC(submax); \

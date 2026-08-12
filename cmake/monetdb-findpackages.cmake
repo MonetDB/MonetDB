@@ -12,13 +12,15 @@
 find_package(BISON 3.0 REQUIRED)
 find_package(Iconv)
 find_package(Threads)
-
-if(${CMAKE_VERSION} VERSION_LESS "3.14.0")
-  find_package(Python3 COMPONENTS Interpreter Development)
-  find_package(NumPy)
-else()
-  find_package(Python3 COMPONENTS Interpreter Development NumPy)
+find_package(PkgConfig REQUIRED)
+pkg_check_modules(XXHASH REQUIRED libxxhash)
+if(${XXHASH_VERSION} VERSION_GREATER_EQUAL "0.8.0")
+  # with version at least 0.8.0 we inline all xxhash functions so we
+  # don't need the library
+  set(XXHASH_LDFLAGS "")
 endif()
+
+find_package(Python3 COMPONENTS Interpreter Development)
 
 if(WITH_RTREE)
   find_package(RTree)
@@ -57,6 +59,18 @@ endif()
 
 if(WITH_LZ4)
   find_package(LZ4 1.8.0)
+endif()
+
+if(WITH_SNAPPY)
+  find_package(Snappy)
+endif()
+
+if(WITH_ZSTD)
+  find_package(ZSTD)
+endif()
+
+if(WITH_BROTLI)
+  find_package(BROTLI)
 endif()
 
 if(WITH_PROJ)

@@ -17,6 +17,7 @@
 #include "mutils.h"	/* utf8toutf16(), utf16toutf8() */
 #include "rel_proto_loader.h"
 #include "rel_exp.h"
+#include "sql_monet_backend.h"
 // #include "sql_decimal.h"	/* decimal_from_str() */
 
 #ifdef _MSC_VER
@@ -27,7 +28,7 @@
 #include <wchar.h>
 
 /**** Define the ODBC Version our ODBC application complies with ****/
-#define ODBCVER 0x0352		/* Important: this must be defined before include of sql.h and sqlext.h */
+#define ODBCVER 0x0352		/* Important: this must be defined before include of sql_monet_backend.h and sqlext.h */
 #include <sql.h>
 #include <sqlext.h>
 

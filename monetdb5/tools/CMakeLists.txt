@@ -26,6 +26,7 @@ target_link_libraries(monetdb5
   stream
   mapi
   mutils
+  ${XXHASH_LDFLAGS}
   ${SOCKET_LIBRARIES}
   $<$<BOOL:${LibXml2_FOUND}>:LibXml2::LibXml2>
   $<$<BOOL:${PCRE_FOUND}>:PCRE::PCRE>

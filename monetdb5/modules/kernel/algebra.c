@@ -160,9 +160,9 @@ ALGminany_skipnil(Client ctx, ptr result, const bat *bid, const bit *skipnil)
 							  ATOMname(b->ttype));
 	} else {
 		if (ATOMextern(b->ttype)) {
-			*(ptr *) result = p = BATmin_skipnil(ma, b, NULL, *skipnil);
+			*(ptr *) result = p = BATmin_skipnil(ma, b, NULL, *skipnil, false);
 		} else {
-			p = BATmin_skipnil(ma, b, result, *skipnil);
+			p = BATmin_skipnil(ma, b, result, *skipnil, false);
 			if (p != result)
 				msg = createException(MAL, "algebra.min",
 									  SQLSTATE(HY002) "INTERNAL ERROR");
@@ -199,9 +199,9 @@ ALGmaxany_skipnil(Client ctx, ptr result, const bat *bid, const bit *skipnil)
 							  ATOMname(b->ttype));
 	} else {
 		if (ATOMextern(b->ttype)) {
-			*(ptr *) result = p = BATmax_skipnil(ma, b, NULL, *skipnil);
+			*(ptr *) result = p = BATmax_skipnil(ma, b, NULL, *skipnil, false);
 		} else {
-			p = BATmax_skipnil(ma, b, result, *skipnil);
+			p = BATmax_skipnil(ma, b, result, *skipnil, false);
 			if (p != result)
 				msg = createException(MAL, "algebra.max",
 									  SQLSTATE(HY002) "INTERNAL ERROR");
@@ -478,14 +478,41 @@ ALGmarkselect(Client ctx, bat *r1, bat *r2, const bat *gid, const bat *mid, cons
 }
 
 static str
-ALGouterselect(Client ctx, bat *r1, bat *r2, const bat *gid, const bat *mid, const bat *pid, const bit *Any)
+ALGsingle(Client ctx, bat *r, bat *cands, bat *ids)
+{
+	(void)ctx;
+	BAT *i = BATdescriptor(*ids); /* bit */
+
+	if (!i)
+		throw(MAL, "algebra.single", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+	BUN nr = BATcount(i);
+	if (i->ttype == TYPE_oid && nr > 0) {
+		oid *ii = Tloc(i, 0);
+		oid cur = ii[0];
+
+		for (BUN n = 1; n < nr; n++) {
+			if (cur == ii[n]) {
+				BBPreclaim(i);
+				throw(MAL, "algebra.single", SQLSTATE(HY002) "more than one match");
+			}
+			cur = ii[n];
+		}
+	}
+	BBPreclaim(i);
+	*r = *cands;
+	BBPretain(*r);
+	return MAL_SUCCEED;
+}
+
+static str
+ALGouterselect(Client ctx, bat *r1, bat *r2, const bat *gid, const bat *mid, const bat *pid, const bit *Any, const bit *Single)
 {
 	(void) ctx;
 	BAT *g = BATdescriptor(*gid); /* oid */
 	BAT *m = BATdescriptor(*mid); /* bit, true: match, false: empty set, nil: nil on left */
 	BAT *p = BATdescriptor(*pid); /* bit */
 	BAT *res1 = NULL, *res2 = NULL;
-	bit any = *Any; /* any or normal comparison semantics */
+	bit any = *Any, single = *Single; /* any or normal comparison semantics */
 
 	if (!g || !m || !p) {
 		if (g) BBPreclaim(g);
@@ -535,16 +562,22 @@ ALGouterselect(Client ctx, bat *r1, bat *r2, const bat *gid, const bat *mid, con
 			if (mi[n] == TRUE && pi[n] == TRUE) {
 				ri1[q] = c;
 				ri2[q] = TRUE;
+				if (used && single)
+					goto error;
 				used = true;
 				q++;
 			} else if (mi[n] == FALSE) { /* empty */
 				ri1[q] = c;
 				ri2[q] = FALSE;
+				if (used && single)
+					goto error;
 				used = true;
 				q++;
 			} else if (any && (mi[n] == bit_nil /* ie has nil */ || pi[n] == bit_nil)) {
 				ri1[q] = c;
 				ri2[q] = bit_nil;
+				if (used && single)
+					goto error;
 				used = true;
 				q++;
 			}
@@ -576,6 +609,13 @@ ALGouterselect(Client ctx, bat *r1, bat *r2, const bat *gid, const bat *mid, con
 	*r1 = res1->batCacheid;
 	*r2 = res2->batCacheid;
 	return MAL_SUCCEED;
+error:
+	BBPreclaim(g);
+	BBPreclaim(m);
+	BBPreclaim(p);
+	BBPreclaim(res1);
+	BBPreclaim(res2);
+	throw(MAL, "algebra.outerselect", SQLSTATE(HY002) "more than one match");
 }
 
 
@@ -966,6 +1006,10 @@ ALGintersect(Client ctx, bat *r1, const bat *lid, const bat *rid, const bat *sli
  *                nilslast:bit,
  *                distinct:bit)
  * returns :bat[:oid] [ , :bat[:oid] ]
+ *
+ * if asc is nil, there is no sorting and a second return value is not
+ * allowed; the result is a dense sequence starting at offset (default
+ * 0) + hseqbase of length n.
  */
 static str
 ALGfirstn(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
@@ -1006,7 +1050,9 @@ ALGfirstn(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			  SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	}
 	n = *getArgReference_lng(stk, pci, pci->retc + 3);
-	if (n < 0) {
+	if (is_lng_nil(n)) {
+		n = BUN_MAX;
+	} else if (n < 0) {
 		BBPreclaim(b);
 		BBPreclaim(s);
 		BBPreclaim(g);
@@ -1037,7 +1083,21 @@ ALGfirstn(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	nilslast = *getArgReference_bit(stk, pci, pci->argc - 2);
 	distinct = *getArgReference_bit(stk, pci, pci->argc - 1);
 
-	if (o > 0) {
+	if (is_bit_nil(asc)) {
+		if (ret2) {
+			BBPreclaim(b);
+			BBPreclaim(s);
+			BBPreclaim(g);
+			throw(MAL, "algebra.firstn", ILLEGAL_ARGUMENT);
+		}
+		if (o > (lng) BATcount(b))
+			o = (lng) BATcount(b);
+		if ((BUN) o + (BUN) n > BATcount(b))
+			n = (lng) BATcount(b) - o;
+		bn = BATdense(0, b->hseqbase + (oid) o, (BUN) n);
+		if (bn == NULL)
+			rc = GDK_FAIL;
+	} else if (o > 0) {
 		bn = BATfirstn_offset(b, s, g, (BUN) n, (BUN) o, asc, nilslast,
 							  distinct);
 		if (bn == NULL)
@@ -1474,7 +1534,7 @@ ALGcountCND_nil(Client ctx, lng *result, const bat *bid, const bat *cnd,
 		throw(MAL, "aggr.count", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	}
 	if (b->ttype == TYPE_msk || mask_cand(b)) {
-		BATsum(result, TYPE_lng, b, s, *ignore_nils, false);
+		BATsum(result, TYPE_lng, b, s, *ignore_nils, false, false);
 	} else if (*ignore_nils) {
 		*result = (lng) BATcount_no_nil(b, s);
 	} else {
@@ -1947,7 +2007,8 @@ static mel_func algebra_init_funcs[] = {
  command("algebra", "select", ALGselect2nil, false, "With unknown set, each nil != nil", args(1,9, batarg("",oid),batargany("b",1),batarg("s",oid),argany("low",1),argany("high",1),arg("li",bit),arg("hi",bit),arg("anti",bit),arg("unknown",bit))),
  command("algebra", "thetaselect", ALGthetaselect2, false, "Select all head values of the first input BAT for which the tail value obeys the relation value OP VAL and for which the head value occurs in the tail of the second input BAT. Input is a dense-headed BAT, output is a dense-headed BAT with in the tail the head value of the input BAT for which the relationship holds.  The output BAT is sorted on the tail value.", args(1,5, batarg("",oid),batargany("b",1),batarg("s",oid),argany("val",1),arg("op",str))),
  command("algebra", "markselect", ALGmarkselect, false, "Group on group-ids, return aggregated anyequal or allnotequal", args(2,6, batarg("",oid), batarg("", bit), batarg("gid",oid), batarg("m", bit), batarg("p", bit), arg("any", bit))),
- command("algebra", "outerselect", ALGouterselect, false, "Per input lid return at least one row, if none of the predicates (p) hold, return a nil, else 'all' true cases.", args(2,6, batarg("",oid), batarg("", bit), batarg("lid", oid), batarg("rid", bit), batarg("predicate", bit), arg("any", bit))),
+ command("algebra", "single", ALGsingle, false, "Check for single result ids.", args(1,3, batarg("r",oid), batarg("cands", oid), batarg("i", oid))),
+ command("algebra", "outerselect", ALGouterselect, false, "Per input lid return at least one row, if none of the predicates (p) hold, return a nil, else 'all' true cases.", args(2,7, batarg("",oid), batarg("", bit), batarg("lid", oid), batarg("rid", bit), batarg("predicate", bit), arg("any", bit), arg("single", bit))),
  command("algebra", "selectNotNil", ALGselectNotNil, false, "Select all not-nil values", args(1,2, batargany("",1),batargany("b",1))),
  command("algebra", "sort", ALGsort11, false, "Returns a copy of the BAT sorted on tail values. The order is descending if the reverse bit is set. This is a stable sort if the stable bit is set.", args(1,5, batargany("",1),batargany("b",1),arg("reverse",bit),arg("nilslast",bit),arg("stable",bit))),
  command("algebra", "sort", ALGsort12, false, "Returns a copy of the BAT sorted on tail values and a BAT that specifies how the input was reordered. The order is descending if the reverse bit is set. This is a stable sort if the stable bit is set.", args(2,6, batargany("",1),batarg("",oid),batargany("b",1),arg("reverse",bit),arg("nilslast",bit),arg("stable",bit))),

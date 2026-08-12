@@ -400,11 +400,12 @@ SQLhelp sqlhelp1[] = {
 	 "See also https://www.monetdb.org/documentation/user-guide/sql-manual/data-manipulation/prepare-statement/"},
 	{"EXPLAIN",
 	 "Display logical or physical execution plan for an SQL statement.",
-	 "EXPLAIN [ [BEFORE|AFTER] {LOGICAL UNNEST | LOGICAL REWRITE [posint] [posint] | PHYSICAL} ]\n"
+	 "EXPLAIN [BEFORE|AFTER] [step] [SHOW DETAILS] statement\n"
+	 "EXPLAIN [ [BEFORE|AFTER] {LOGICAL UNNEST | LOGICAL REWRITE [posint] [posint] | LOGICAL PHYSICAL | PHYSICAL} ]\n"
 	 "        [SHOW DETAILS] sql-statement",
 	 NULL,
 	 "Plain EXPLAIN sql-statement returns the logical plan.\n"
-	 "Use LOGICAL UNNEST or LOGICAL REWRITE or PHYSICAL to specify the compilation step to show.\n"
+	 "Use LOGICAL UNNEST or LOGICAL REWRITE or LOGICAL PHYSICAL or PHYSICAL to specify the compilation step to show.\n"
 	 "Optionally add BEFORE or AFTER to specify moment of compilation step to output. The default is AFTER.\n"
 	 "Two positive numbers can be passed to LOGICAL REWRITE to stop at specific\n"
 	 "rewriter index or rewrite loop cycle, respectively.\n"

@@ -305,13 +305,13 @@ OPTpushselectImplementation(Client ctx, MalBlkPtr mb, MalStkPtr stk,
 				int var = getArg(p, 1);
 				InstrPtr q = mb->stmt[vars[var]];	/* BEWARE: the optimizer may not add or remove statements ! */
 
-				if (q && isLikeOp(q) && !isaBatType(getArgType(mb, q, 2)) && isVarConstant(mb, getArg(q, 2)) &&	/* pattern is a value */
+				if (q && isLikeOp(q) && !isaBatType(getArgType(mb, q, 2)) &&
+					isVarConstant(mb, getArg(q, 2)) &&	/* pattern is a value */
 					isVarConstant(mb, getArg(q, 3)) &&	/* escape is a value */
 					isVarConstant(mb, getArg(q, 4)) &&	/* isensitive flag is a value */
-					getArg(q, 0) == getArg(p,
-										   1)
+					getArg(q, 0) == getArg(p, 1)
 					/* the output variable from batalgebra.like is the input one for [theta]select */
-					) {
+				   ) {
 					int has_cand = (getArgType(mb, p, 2) == newBatType(TYPE_oid)),
 						offset = 0, anti = (getFunctionId(q)[0] == 'n');
 					bit ignore_case = *(bit *) getVarValue(mb, getArg(q, 4)),

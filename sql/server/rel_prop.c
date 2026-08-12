@@ -17,7 +17,7 @@
 #include "sql_atom.h"
 
 prop *
-prop_create( allocator *sa, rel_prop kind, prop *pre )
+prop_create( allocator *sa, prop_kind kind, prop *pre )
 {
 	prop *p = SA_NEW(sa, prop);
 
@@ -72,7 +72,7 @@ prop_remove(allocator *sa, prop *plist, prop *p)
 }
 
 prop *
-find_prop(prop *p, rel_prop kind)
+find_prop(prop *p, prop_kind kind)
 {
 	while(p) {
 		if (p->kind == kind)
@@ -83,7 +83,7 @@ find_prop(prop *p, rel_prop kind)
 }
 
 void *
-find_prop_and_get(prop *p, rel_prop kind)
+find_prop_and_get(prop *p, prop_kind kind)
 {
 	prop *found = find_prop(p, kind);
 
@@ -119,6 +119,8 @@ propkind2string( prop *p)
 		PT(NESTED);
 		PT(UNNEST);
 		PT(UNNESTING);
+		PT(SELECTIVITY);
+		PT(HASH);
 	}
 	return "UNKNOWN";
 }
@@ -129,6 +131,7 @@ propvalue2string(allocator *sa, prop *p)
 	char buf [BUFSIZ];
 
 	switch(p->kind) {
+	case PROP_HASH:
 	case PROP_COUNT: {
 		snprintf(buf, sizeof(buf), BUNFMT, p->value.lval);
 		return ma_strdup(sa, buf);
@@ -172,6 +175,10 @@ propvalue2string(allocator *sa, prop *p)
 			return ma_strdup(sa, buf);
 		}
 	} break;
+	case PROP_SELECTIVITY: {
+		snprintf(buf, sizeof(buf), "%f", p->value.dval);
+		return ma_strdup(sa, buf);
+	}
 	case PROP_MIN:
 	case PROP_MAX: {
 		atom *a = p->value.pval;

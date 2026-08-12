@@ -302,97 +302,6 @@ INETinet42inet4_bulk(Client ctx, bat *ret, const bat *bid, const bat *sid)
 }
 
 static str
-INETinet42str_bulk(Client ctx, bat *ret, const bat *bid, const bat *sid)
-{
-	allocator *ma = ctx->curprg->def->ma;
-	BAT *b = NULL, *s = NULL, *dst = NULL;
-	str msg = NULL;
-	inet4 *restrict vals;
-	struct canditer ci;
-	oid off;
-	bool nils = false, btkey = false;
-	char buf[16], *pbuf = buf;
-	size_t l = sizeof(buf);
-	ssize_t (*conv)(allocator *, char **, size_t *, const void *, bool) = BATatoms[TYPE_inet4].atomToStr;
-	BATiter bi;
-
-	if ((b = BATdescriptor(*bid)) == NULL) {
-		msg = createException(SQL, "batcalc.str",
-							  SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
-		goto bailout;
-	}
-	if (sid && !is_bat_nil(*sid) && (s = BATdescriptor(*sid)) == NULL) {
-		msg = createException(SQL, "batcalc.str",
-							  SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
-		goto bailout;
-	}
-	off = b->hseqbase;
-	canditer_init(&ci, b, s);
-	if (!(dst = COLnew(ci.hseq, TYPE_str, ci.ncand, TRANSIENT))) {
-		msg = createException(SQL, "batcalc.str",
-							  SQLSTATE(HY013) MAL_MALLOC_FAIL);
-		goto bailout;
-	}
-
-	bi = bat_iterator(b);
-	vals = bi.base;
-	if (ci.tpe == cand_dense) {
-		for (BUN i = 0; i < ci.ncand; i++) {
-			oid p = (canditer_next_dense(&ci) - off);
-			inet4 v = vals[p];
-
-			if (conv(ma, &pbuf, &l, &v, false) < 0) {	/* it should never be reallocated */
-				msg = createException(MAL, "batcalc.str",
-									  GDK_EXCEPTION);
-				goto bailout1;
-			}
-			if (tfastins_nocheckVAR(dst, i, buf) != GDK_SUCCEED) {
-				msg = createException(SQL, "batcalc.str",
-									  SQLSTATE(HY013) MAL_MALLOC_FAIL);
-				goto bailout1;
-			}
-			nils |= strNil(buf);
-		}
-	} else {
-		for (BUN i = 0; i < ci.ncand; i++) {
-			oid p = (canditer_next(&ci) - off);
-			inet4 v = vals[p];
-
-			if (conv(ma, &pbuf, &l, &v, false) < 0) {	/* it should never be reallocated */
-				msg = createException(MAL, "batcalc.str",
-									  GDK_EXCEPTION);
-				goto bailout1;
-			}
-			if (tfastins_nocheckVAR(dst, i, buf) != GDK_SUCCEED) {
-				msg = createException(SQL, "batcalc.str",
-									  SQLSTATE(HY013) MAL_MALLOC_FAIL);
-				goto bailout1;
-			}
-			nils |= strNil(buf);
-		}
-	}
-	btkey = bi.key;
-  bailout1:
-	bat_iterator_end(&bi);
-
-  bailout:
-	BBPreclaim(b);
-	BBPreclaim(s);
-	if (dst && !msg) {
-		BATsetcount(dst, ci.ncand);
-		dst->tnil = nils;
-		dst->tnonil = !nils;
-		dst->tkey = btkey;
-		dst->tsorted = BATcount(dst) <= 1;
-		dst->trevsorted = BATcount(dst) <= 1;
-		*ret = dst->batCacheid;
-		BBPkeepref(dst);
-	} else if (dst)
-		BBPreclaim(dst);
-	return msg;
-}
-
-static str
 inet4containsinet4_bulk(bat *ret, const bat *bip1, const bat *bmsk1, const bat *sid1,
 						const bat *bip2, const bat *bmsk2, const bat *sid2,
 						bool strict, bool symmetric)
@@ -945,97 +854,6 @@ INETinet62inet6_bulk(Client ctx, bat *ret, const bat *bid, const bat *sid)
 }
 
 static str
-INETinet62str_bulk(Client ctx, bat *ret, const bat *bid, const bat *sid)
-{
-	allocator *ma = ctx->curprg->def->ma;
-	BAT *b = NULL, *s = NULL, *dst = NULL;
-	str msg = NULL;
-	inet6 *restrict vals;
-	struct canditer ci;
-	oid off;
-	bool nils = false, btkey = false;
-	char buf[16], *pbuf = buf;
-	size_t l = sizeof(buf);
-	ssize_t (*conv)(allocator *, char **, size_t *, const void *, bool) = BATatoms[TYPE_inet6].atomToStr;
-	BATiter bi;
-
-	if ((b = BATdescriptor(*bid)) == NULL) {
-		msg = createException(SQL, "batcalc.str",
-							  SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
-		goto bailout;
-	}
-	if (sid && !is_bat_nil(*sid) && (s = BATdescriptor(*sid)) == NULL) {
-		msg = createException(SQL, "batcalc.str",
-							  SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
-		goto bailout;
-	}
-	off = b->hseqbase;
-	canditer_init(&ci, b, s);
-	if (!(dst = COLnew(ci.hseq, TYPE_str, ci.ncand, TRANSIENT))) {
-		msg = createException(SQL, "batcalc.str",
-							  SQLSTATE(HY013) MAL_MALLOC_FAIL);
-		goto bailout;
-	}
-
-	bi = bat_iterator(b);
-	vals = bi.base;
-	if (ci.tpe == cand_dense) {
-		for (BUN i = 0; i < ci.ncand; i++) {
-			oid p = (canditer_next_dense(&ci) - off);
-			inet6 v = vals[p];
-
-			if (conv(ma, &pbuf, &l, &v, false) < 0) {	/* it should never be reallocated */
-				msg = createException(MAL, "batcalc.str",
-									  GDK_EXCEPTION);
-				goto bailout1;
-			}
-			if (tfastins_nocheckVAR(dst, i, buf) != GDK_SUCCEED) {
-				msg = createException(SQL, "batcalc.str",
-									  SQLSTATE(HY013) MAL_MALLOC_FAIL);
-				goto bailout1;
-			}
-			nils |= strNil(buf);
-		}
-	} else {
-		for (BUN i = 0; i < ci.ncand; i++) {
-			oid p = (canditer_next(&ci) - off);
-			inet6 v = vals[p];
-
-			if (conv(ma, &pbuf, &l, &v, false) < 0) {	/* it should never be reallocated */
-				msg = createException(MAL, "batcalc.str",
-									  GDK_EXCEPTION);
-				goto bailout1;
-			}
-			if (tfastins_nocheckVAR(dst, i, buf) != GDK_SUCCEED) {
-				msg = createException(SQL, "batcalc.str",
-									  SQLSTATE(HY013) MAL_MALLOC_FAIL);
-				goto bailout1;
-			}
-			nils |= strNil(buf);
-		}
-	}
-	btkey = bi.key;
-  bailout1:
-	bat_iterator_end(&bi);
-
-  bailout:
-	BBPreclaim(b);
-	BBPreclaim(s);
-	if (dst && !msg) {
-		BATsetcount(dst, ci.ncand);
-		dst->tnil = nils;
-		dst->tnonil = !nils;
-		dst->tkey = btkey;
-		dst->tsorted = BATcount(dst) <= 1;
-		dst->trevsorted = BATcount(dst) <= 1;
-		*ret = dst->batCacheid;
-		BBPkeepref(dst);
-	} else if (dst)
-		BBPreclaim(dst);
-	return msg;
-}
-
-static str
 inet6containsinet6_bulk(bat *ret, const bat *bip1, const bat *bmsk1, const bat *sid1,
 						const bat *bip2, const bat *bmsk2, const bat *sid2,
 						bool strict, bool symmetric)
@@ -1208,10 +1026,6 @@ static mel_func inet46_init_funcs[] = {
  command("batcalc", "inet6", INETstr2inet6_bulk, false, "Coerce a string to an inet6, validating its format", args(1,3, batarg("",inet6),batarg("s",str),batarg("c",oid))),
  command("batcalc", "inet6", INETinet42inet6_bulk, false, "Coerce an inet4 to an inet6", args(1,3, batarg("",inet6),batarg("s",inet4),batarg("c",oid))),
  command("batcalc", "inet4", INETinet62inet4_bulk, false, "Coerce an inet6 to an inet4", args(1,3, batarg("",inet4),batarg("s",inet6),batarg("c",oid))),
- command("calc", "str", INETinet42str, false, "Coerce an inet4 to a string type", args(1,2, arg("",str),arg("s",inet4))),
- command("calc", "str", INETinet62str, false, "Coerce an inet6 to a string type", args(1,2, arg("",str),arg("s",inet6))),
- command("batcalc", "str", INETinet42str_bulk, false, "Coerce an inet4 to a string type", args(1,3, batarg("",str),batarg("s",inet4),batarg("c",oid))),
- command("batcalc", "str", INETinet62str_bulk, false, "Coerce an inet6 to a string type", args(1,3, batarg("",str),batarg("s",inet6),batarg("c",oid))),
  command("inet46", "inet4", INETstr2inet4, false, "Coerce a string to an inet4, validating its format", args(1,2, arg("",inet4),arg("s",str))),
  command("inet46", "inet6", INETstr2inet6, false, "Coerce a string to an inet6, validating its format", args(1,2, arg("",inet6),arg("s",str))),
  command("inet46", "str", INETinet42str, false, "Coerce an inet4 to its string type", args(1,2, arg("",str),arg("u",inet4))),

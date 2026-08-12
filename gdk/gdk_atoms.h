@@ -382,10 +382,10 @@ ATOMreplaceVAR(BAT *b, var_t *dst, const void *src)
  */
 #define GDK_STRHASHTABLE	(1<<10)	/* 1024 */
 #define GDK_STRHASHMASK		(GDK_STRHASHTABLE-1)
-#define GDK_STRHASHSIZE		(GDK_STRHASHTABLE * sizeof(stridx_t))
+#define GDK_STRHASHSIZE		(GDK_STRHASHTABLE * sizeof(var_t))
 #define GDK_ELIMPOWER		16	/* 64KiB is the threshold */
-#define GDK_ELIMDOUBLES(h)	((h)->free < GDK_ELIMLIMIT)
 #define GDK_ELIMLIMIT		(1<<GDK_ELIMPOWER)	/* equivalently: ELIMBASE == 0 */
+#define GDK_ELIMDOUBLES(h)	((h)->free < GDK_ELIMLIMIT)
 #define GDK_ELIMBASE(x)		(((x) >> GDK_ELIMPOWER) << GDK_ELIMPOWER)
 #define GDK_VAROFFSET		((var_t) GDK_STRHASHSIZE)
 
@@ -449,14 +449,17 @@ strEq(const char *l, const char *r)
 }
 
 __attribute__((__pure__))
-static inline size_t
+static inline var_t
 VarHeapVal(const void *b, BUN p, uint32_t w)
 {
+	size_t off;
 	switch (w) {
 	case 1:
-		return (size_t) ((const uint8_t *) b)[p] + GDK_VAROFFSET;
+		off = (size_t) ((const uint8_t *) b)[p];
+		return off == 0 ? 0 : off + GDK_VAROFFSET;
 	case 2:
-		return (size_t) ((const uint16_t *) b)[p] + GDK_VAROFFSET;
+		off = (size_t) ((const uint16_t *) b)[p];
+		return off == 0 ? 0 : off + GDK_VAROFFSET;
 	case 4:
 		return (size_t) ((const uint32_t *) b)[p];
 #if SIZEOF_VAR_T == 8
@@ -466,23 +469,6 @@ VarHeapVal(const void *b, BUN p, uint32_t w)
 	default:
 		MT_UNREACHABLE();
 	}
-}
-
-__attribute__((__pure__))
-static inline BUN
-strHash(const char *key)
-{
-	BUN y = 0;
-
-	for (BUN i = 0; key[i]; i++) {
-		y += key[i];
-		y += (y << 10);
-		y ^= (y >> 6);
-	}
-	y += (y << 3);
-	y ^= (y >> 11);
-	y += (y << 15);
-	return y;
 }
 
 #endif /* _GDK_ATOMS_H_ */

@@ -20,7 +20,7 @@ typedef struct column_storage {
 	int ebid;		/* extra bid */
 	int uibid;		/* bat with positions of updates */
 	int uvbid;		/* bat with values of updates */
-	storage_type st; /* ST_DEFAULT, ST_DICT, ST_FOR */
+	storage_type st; /* ST_DEFAULT, ST_DICT, ST_FOR, ST_USTR */
 	bool cleared;
 	bool merged;	/* only merge changes once */
 	size_t ucnt;	/* number of updates */
@@ -36,10 +36,12 @@ typedef struct sql_delta {
 typedef struct segment {
 	BUN start;
 	BUN end;
+	bool changed;	/* changed in this transaction */
 	bool deleted;	/* we need to keep a dense segment set, 0 - end of last segment,
 					   some segments maybe deleted */
 	ulng ts;		/* timestamp on this segment, ie tid of some active transaction or commit time of append/delete or
 					   rollback time, ie ready for reuse */
+	ulng cnr;
 	ulng oldts;		/* keep previous ts, for rollbacks */
 	ATOMIC_PTR_TYPE next;	/* usually one should be enough */
 	struct segment *prev;	/* used in destruction list */
