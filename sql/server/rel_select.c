@@ -6038,7 +6038,7 @@ rel_select_exp(sql_query *query, sql_rel *rel, SelectNode *sn, exp_kind ek)
 		 * obtained so far with the table expression, ie
 		 * t1.* or a subquery.
 		 */
-		pexps = list_merge(pexps, exps_copy(sql, te), (fdup)NULL);
+		pexps = list_join(pexps, te);
 	}
 	int card = inner->card;
 	if (rel && is_groupby(rel->op) && rel->flag) {
