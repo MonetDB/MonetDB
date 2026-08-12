@@ -434,18 +434,19 @@ GDKextend(const char *fn, size_t size)
  * The primary concern here is to handle STORE_MMAP and STORE_MEM.
  */
 gdk_return
-GDKsave(int farmid, const char *nme, const char *ext, void *buf, size_t size, storage_t mode, bool dosync)
+GDKsave(int farmid, const char *nme, const char *ext, void *buf, size_t size,
+	storage_t mode, bool dosync)
 {
 	int err = 0;
 
-	TRC_DEBUG(IO, "GDKsave: name=%s, ext=%s, mode %d, dosync=%d\n", nme, ext ? ext : "", (int) mode, dosync);
+	TRC_DEBUG(IO, "name=%s, ext=%s, mode %d, dosync=%d\n", nme, ext ? ext : "", (int) mode, dosync);
 
 	assert(!GDKinmemory(farmid));
 	if (mode == STORE_MMAP) {
 		if (dosync && size && !(ATOMIC_GET(&GDKdebug) & NOSYNCMASK))
 			err = MT_msync(buf, size);
 		if (err)
-			GDKerror("error on: name=%s, ext=%s, mode=%d\n",
+			GDKerror("msync failed: name=%s, ext=%s, mode=%d\n",
 				 nme, ext ? ext : "", (int) mode);
 		TRC_DEBUG(IO, "MT_msync(buf %p, size %zu) = %d\n",
 			  buf, size, err);
@@ -466,7 +467,7 @@ GDKsave(int farmid, const char *nme, const char *ext, void *buf, size_t size, st
 					    (unsigned) MIN(1 << 30, size));
 				if (ret < 0) {
 					err = -1;
-					GDKsyserror("GDKsave: error %zd"
+					GDKsyserror("write: error %zd"
 						    " on: name=%s, ext=%s, "
 						    "mode=%d\n", ret, nme,
 						    ext ? ext : "", (int) mode);
@@ -480,7 +481,8 @@ GDKsave(int farmid, const char *nme, const char *ext, void *buf, size_t size, st
 					  (unsigned) MIN(1 << 30, size),
 					  ret);
 			}
-			if (dosync && !(ATOMIC_GET(&GDKdebug) & NOSYNCMASK)
+			if (!err && dosync
+			    && !(ATOMIC_GET(&GDKdebug) & NOSYNCMASK)
 #if defined(NATIVE_WIN32)
 			    && _commit(fd) < 0
 #elif defined(HAVE_FDATASYNC)
@@ -489,7 +491,7 @@ GDKsave(int farmid, const char *nme, const char *ext, void *buf, size_t size, st
 			    && fsync(fd) < 0
 #endif
 				) {
-				GDKsyserror("GDKsave: error on: name=%s, "
+				GDKsyserror("sync failed: name=%s, "
 					    "ext=%s, mode=%d\n", nme,
 					    ext ? ext : "", (int) mode);
 				err = -1;
@@ -499,10 +501,9 @@ GDKsave(int farmid, const char *nme, const char *ext, void *buf, size_t size, st
 				/* do not tolerate corrupt heap images
 				 * (BBPrecover on restart will kill
 				 * them) */
-				GDKerror("could not remove: name=%s, "
-					 "ext=%s, mode %d\n", nme,
-					 ext ? ext : "", (int) mode);
-				return GDK_FAIL;
+				GDKerror("could not remove after error: "
+					 "name=%s, ext=%s, mode %d\n",
+					 nme, ext ? ext : "", (int) mode);
 			}
 		} else {
 			err = -1;
