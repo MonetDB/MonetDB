@@ -1,0 +1,27 @@
+query TTTTTT rowsort
+WITH t(s) AS (
+  VALUES ('a'), ('b')
+)
+SELECT GROUP_CONCAT(s, CAST(NULL AS VARCHAR(1))) OVER () =
+       (SELECT GROUP_CONCAT(r.s, CAST(NULL AS VARCHAR(1))) FROM t AS r)
+       AS actual_equal,
+       TRUE AS expected_equal
+       ,GROUP_CONCAT(s, CAST(NULL AS VARCHAR(1))) OVER () as gcn1
+       ,(SELECT GROUP_CONCAT(r.s, CAST(NULL AS VARCHAR(1))) FROM t AS r) as gcn2
+       ,GROUP_CONCAT(s, '') OVER () as gce1
+       ,(SELECT GROUP_CONCAT(r.s,'') FROM t AS r) as gce2
+FROM t
+----
+True
+True
+ab
+ab
+ab
+ab
+True
+True
+ab
+ab
+ab
+ab
+
