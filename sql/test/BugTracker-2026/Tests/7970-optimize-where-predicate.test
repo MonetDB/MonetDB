@@ -130,6 +130,35 @@ JOIN mre_b AS b
 LEFT JOIN mre_c AS c ON TRUE
 ----
 
+-- check plan when using correct date literals, so use WHERE b.d BETWEEN date '2023-01-01' and date '2023-12-31'
+query T nosort
+EXPLAIN
+SELECT c.x
+FROM mre_a AS a
+JOIN mre_b AS b ON TRUE
+LEFT JOIN mre_c AS c ON TRUE
+WHERE b.d BETWEEN date '2023-01-01' and date '2023-12-31';
+----
+project (
+| left outer join (
+| | crossproduct (
+| | | table("sys"."mre_a") [ "mre_a"."%TID%" as "a"."%TID%" ],
+| | | select (
+| | | | table("sys"."mre_b") [ "mre_b"."d" as "b"."d" ]
+| | | ) [ (date "2023-01-01") <= ("b"."d") <= (date "2023-12-31") ]
+| | ) [  ],
+| | table("sys"."mre_c") [ "mre_c"."x" as "c"."x" ]
+| ) [  ]
+) [ "c"."x" ]
+
+query I nosort
+SELECT c.x
+FROM mre_a AS a
+JOIN mre_b AS b ON TRUE
+LEFT JOIN mre_c AS c ON TRUE
+WHERE b.d BETWEEN date '2023-01-01' and date '2023-12-31';
+----
+
 statement ok
 DROP TABLE IF EXISTS mre_c
 

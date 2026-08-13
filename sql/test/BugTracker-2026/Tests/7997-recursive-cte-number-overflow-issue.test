@@ -1,0 +1,20 @@
+-- MonetDB:    22003!overflow in calculation 127+1.
+-- PostgreSQL & DuckDB & SQLite all return: 200
+query I nosort
+WITH RECURSIVE r(n) AS (SELECT 1 UNION ALL SELECT n+1 FROM r WHERE n < 200) SELECT MAX(n) FROM r
+----
+200
+
+-- Casting the SEED to INTEGER fixes it (confirms the root cause is seed-type inference):
+-- MonetDB:    200   (correct)
+query I nosort
+WITH RECURSIVE r(n) AS (SELECT CAST(1 AS INTEGER) UNION ALL SELECT n+1 FROM r WHERE n < 200) SELECT MAX(n) FROM r
+----
+200
+
+-- extra check to test what happens when we start from 128, so type tinyint is not possible.
+query I nosort
+WITH RECURSIVE r(n) AS (SELECT 128 UNION ALL SELECT n+1 FROM r WHERE n < 200) SELECT MAX(n) FROM r
+----
+200
+
