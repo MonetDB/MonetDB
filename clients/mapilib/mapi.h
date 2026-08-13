@@ -72,6 +72,10 @@ extern "C" {
 #ifndef __attribute__
 #define __attribute__(...)
 #endif
+#else
+#if !__has_attribute(__nonnull__)
+#define __nonnull__(...)
+#endif
 #endif
 
 /* connection-oriented functions */

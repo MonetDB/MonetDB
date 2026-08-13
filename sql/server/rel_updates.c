@@ -1287,7 +1287,7 @@ delete_table(sql_query *query, dlist *qname, str alias, symbol *opt_where, dlist
 			e->nid = rel_base_nid(bt, NULL);
 			e->alias.label = e->nid;
 			r = rel_project(sql->sa, r, list_append(new_exp_list(sql->sa), e));
-			r = rel_delete(sql->sa, /*rel_basetable(sql, t, alias ? alias : tname)*/rel_dup(bt), r);
+			r = rel_delete(sql->sa, rel_dup(bt), r);
 		} else {	/* delete all */
 			r = rel_delete(sql->sa, r, NULL);
 		}

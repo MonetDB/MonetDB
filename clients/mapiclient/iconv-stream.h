@@ -9,6 +9,7 @@
  */
 
 #include <iconv.h>
+#include "stream.h"
 
 struct ic_priv_t {
 	stream *s;

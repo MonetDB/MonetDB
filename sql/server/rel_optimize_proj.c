@@ -2324,8 +2324,8 @@ rel_reduce_groupby_exps(visitor *v, sql_rel *rel)
 		node *n, *m;
 		int k, j, i, ngbe = list_length(gbe);
 		sql_column *c;
-		sql_table **tbls = SA_NEW_ARRAY(ta, sql_table*, ngbe);
-		sql_rel **bts = SA_NEW_ARRAY(ta, sql_rel*, ngbe), *bt = NULL;
+		sql_table **tbls = SA_ZNEW_ARRAY(ta, sql_table*, ngbe);
+		sql_rel **bts = SA_ZNEW_ARRAY(ta, sql_rel*, ngbe), *bt = NULL;
 
 		gbe = rel->r;
 		for (k = 0, i = 0, n = gbe->h; n; n = n->next, k++) {
@@ -2355,11 +2355,26 @@ rel_reduce_groupby_exps(visitor *v, sql_rel *rel)
 				memset(scores, 0, list_length(gbe));
 				if (tbls[j]->pkey) {
 					for (l = 0, n = gbe->h; l < k && n; l++, n = n->next) {
+						sql_fkey *fk = NULL;
+						if (tbls[j] != tbls[l] && tbls[l]){
+							for(node *n = ol_first_node(tbls[l]->keys); n && !fk; n = n->next) {
+								sql_key *k = n->data;
+								if (k->type == fkey) {
+									sql_fkey *f = (sql_fkey*)k;
+									if (f->rkey == tbls[j]->pkey->k.base.id)
+										fk = f;
+								}
+							}
+						}
 						fcmp cmp = (fcmp)&kc_column_cmp;
 						sql_exp *e = n->data;
 
 						c = exp_find_column_(rel, e, -2, &bt);
-						if (c && c->t == tbls[j] && bts[j] == bt &&
+						if (c && fk &&
+						    list_find(fk->k.columns, c, cmp) != NULL) {
+							scores[l] = 1;
+							nr ++;
+						} else if (c && c->t == tbls[j] && bts[j] == bt &&
 						    list_find(tbls[j]->pkey->k.columns, c, cmp) != NULL) {
 							scores[l] = 1;
 							nr ++;

@@ -9,6 +9,7 @@
  */
 
 #include <curl/curl.h>
+#include "stream.h"
 
 #ifndef CURL_WRITEFUNC_ERROR
 #define CURL_WRITEFUNC_ERROR 0

@@ -3476,7 +3476,7 @@ static stmt *
 rel2bin_join(backend *be, sql_rel *rel, list *refs)
 {
 	mvc *sql = be->mvc;
-	list *l, *sexps = NULL, *l2 = NULL;
+	list *l, *sexps = NULL;
 	node *en = NULL, *n;
 	stmt *left = NULL, *right = NULL, *join = NULL, *jl, *jr, *ld = NULL, *rd = NULL, *res;
 
@@ -3674,15 +3674,6 @@ rel2bin_join(backend *be, sql_rel *rel, list *refs)
 		rd = stmt_tdiff(be, rd, jr, NULL);
 	}
 
-	if (rel->op == op_left) { /* used for merge statements, this will be cleaned out on the pushcands branch :) */
-		l2 = sa_list(sql->sa);
-		list_append(l2, left);
-		list_append(l2, right);
-		list_append(l2, jl);
-		list_append(l2, jr);
-		list_append(l2, ld);
-	}
-
 	for (n = left->op4.lval->h; n; n = n->next) {
 		stmt *c = n->data;
 		const char *rnme = table_name(sql->sa, c);
@@ -3737,7 +3728,6 @@ rel2bin_join(backend *be, sql_rel *rel, list *refs)
 	}
 
 	res = stmt_list(be, l);
-	res->extra = l2; /* used for merge statements, this will be cleaned out on the pushcands branch :) */
 
 	if (neededpp && !rel->partition)
 		res = rel2bin_slicer_pp(be, res);

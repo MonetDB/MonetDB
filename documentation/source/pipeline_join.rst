@@ -1,0 +1,101 @@
+.. SPDX-License-Identifier: MPL-2.0
+..
+.. This Source Code Form is subject to the terms of the Mozilla Public
+.. License, v. 2.0.  If a copy of the MPL was not distributed with this
+.. file, You can obtain one at https://mozilla.org/MPL/2.0/.
+..
+.. For copyright information, see the file debian/copyright.
+
+*****************************
+Pipelined JOIN implementation
+*****************************
+
+In this document we describe how various types of JOIN are implemented in the
+new Pipeline engine.
+
+Players
+=======
+
+  list_length(rel->attr) == 1:     group mark join
+    |-> atom(TRUE):   IN, EXISTS
+    |-> atom(FALSE):  NOT IN, NOT EXISTS
+  rel->exps:          join and select exps
+  rel->{l,r}->exps:   projections exps, from rel->l to rel->r
+  rel->single:
+  rel->any:
+  rel->sematics:
+
+  prb_mrk:            mark matched for marked group join, TRUE/FALSE/NIL
+  hsh_mrk:            mark matched for right outer and full outer, TRUE/FALSE/NIL
+
+  stmt *stmts_ht:     an st_list containing all components of a hash table
+    |-> l             a list of build_table stmts for every hash column
+    |->op1            a list of projection stmts for every payload column
+                      (optional: only when projection columns from the hash side are needed)
+    |->op2            a stmt containing the GIDs of the payload column
+                      (optional: only when frequencies are needed)
+    |->op3            a stmt containing the frequencies of the GIDs
+                      (optional: only needed for single joins)
+    |->op4            ???
+
+Implementation
+==============
+
+* Cross join
+  * any JOIN with list_empty(jexps)
+  * expand_cart(prb_side, rowrepeat)
+  * explode_cart(hsh_side, setrepeat)
+
+* Inner join
+  * Hash smaller table, 
+  * Inner-probe larger table
+  * ``oahash.probe1``(?)
+
+* Left outer join
+  * Hash RHS
+  * Left-outer-probe LHS (i.e. probe-res includes LHS NULLs)
+  * ``oahash.oprobe``(?)
+
+* Right outer join
+  * Hash RHS,
+  * First pipeline:
+    * Inner-probe LHS with hsh_mrk.
+    * hsh_mrk: marks hash-side matched, true|false|nil
+  * Second Pipeline:
+    * output (LHS NULL, RHS unmatched).
+
+* Full outer join
+  * Hash smaller table,
+  * First pipeline:
+    * Left-outer-probe larger table with hsh_mrk, LHS NULLs included
+    * hsh_mrk: marks hash-side matched, true|false|nil
+  * Second Pipeline:
+    * output (LHS NULL, RHS unmatched).
+
+* Semi join
+  * ``IN``, ``EXISTS`` (?)
+  * Hash RHS
+  * Inner-probe
+  * Output matched LHS
+
+* Anti join
+  * ``NOT IN``, ``NOT EXISTS`` (?)
+  * Hash RHS
+  * Output unmatched LHS (i.e. excl. NILs)
+  * ``oahash.nprobe``: single column antijoin
+  * multicolumn antijoin:
+    * with prb-side NULLs: single-column hash-table, multicolumn probe
+    * without NULLs: inner-probe + select FALSE
+
+* Single join
+  * TODO: which queries use single join?
+  * Use ht->freq to check if a match is single
+  * TODO: MAL implementation
+  * TODO: C implementation
+
+* Groupjoin
+
+* Mark groupjoin
+  * list_length(rel->attr) == 1
+  * prb_mrk: marks matched, true|false|nil
+
