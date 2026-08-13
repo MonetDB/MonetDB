@@ -1493,6 +1493,7 @@ BATappend_or_update(BAT *b, BAT *p, const oid *positions, BAT *n,
 							bat_iterator_end(&ni);
 							return rc;
 						}
+						bi = bat_iterator_nolock(b);
 						i += j - 1;
 						continue;
 					}
@@ -1914,6 +1915,7 @@ BATappend_or_update(BAT *b, BAT *p, const oid *positions, BAT *n,
 							bat_iterator_end(&ni);
 							return rc;
 						}
+						bi = bat_iterator_nolock(b);
 						i += j - 1;
 						continue;
 					}
