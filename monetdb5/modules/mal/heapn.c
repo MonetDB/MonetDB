@@ -1329,7 +1329,7 @@ HEAPproject(Client ctx, bat *rid, bat *pos, bat *sel, bat *in)
 	bool private = (!r || r->tprivate_bat), local_storage = false;
 
 	if (!private) {
-		while(r->unused != P->unused && !ATOMIC_PTR_GET(&p->p->error)) MT_sleep_ms(10);
+		while(r->unused != P->unused && !ATOMIC_PTR_GET(&p->p->error)) MT_sleep_ms(1);
 	}
 
 	BUN size = P->tmaxval;
@@ -1534,7 +1534,7 @@ HEAPtopn(Client cntxt, MalBlkPtr m, MalStkPtr s, InstrPtr pci)
 	int nxt = (int)ATOMIC_INC(&hp->counter);
 
 	if (!private) {
-		while(hps->unused != nxt && !ATOMIC_PTR_GET(&pp->p->error)) MT_sleep_ms(10);
+		while(hps->unused != nxt && !ATOMIC_PTR_GET(&pp->p->error)) MT_sleep_ms(1);
 	}
 
 	if (!private)
