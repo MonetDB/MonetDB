@@ -2660,7 +2660,7 @@ log_load(const char *fn, logger *lg, char filename[FILENAME_MAX])
 	}
 	ATOMIC_SET(&GDKdebug, dbg);
 
-	bool earlyexit = GDKgetenv_isyes("process-wal-and-exit");
+	bool earlyexit = GDKgetenv_istrue("process-wal-and-exit");
 	if (readlogs) {
 		ulng log_id = lg->saved_id + 1;
 		if (log_readlogs(lg, filename) != GDK_SUCCEED) {
@@ -2712,7 +2712,7 @@ log_load(const char *fn, logger *lg, char filename[FILENAME_MAX])
 	if (log_json_upgrade_finalize() == GDK_FAIL)
 		goto error;
 #endif
-	if (GDKgetenv_isyes("clean-BBP"))
+	if (GDKgetenv_istrue("clean-BBP"))
 		clean_bbp(lg);
 	return GDK_SUCCEED;
   error:
