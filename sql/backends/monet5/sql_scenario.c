@@ -654,8 +654,8 @@ SQLinit(Client c, const char *initpasswd)
 {
 	const char *debug_str = GDKgetenv("sql_debug");
 	char *msg = MAL_SUCCEED, *other = MAL_SUCCEED;
-	bool readonly = GDKgetenv_isyes("gdk_readonly");
-	bool single_user = GDKgetenv_isyes("gdk_single_user");
+	bool readonly = GDKgetenv_istrue("gdk_readonly");
+	bool single_user = GDKgetenv_istrue("gdk_single_user");
 	static int maybeupgrade = 1;
 	backend *be = NULL;
 	mvc *m = NULL;

@@ -134,7 +134,7 @@ leading_zeroes(uint64_t x)
 				break;					\
 			}						\
 			uint64_t rng = rng_buf[rng_i];			\
-			rng_i = rng_i > 31 ? 0 : rng_i + 1;		\
+			rng_i = rng_i >= 31 ? 0 : rng_i + 1;		\
 			uint8_t k = CNTING_SKETCH[bucket][clz] - 128;	\
 			if ((rng & ((1ULL << k) - 1)) == 0)		\
 				CNTING_SKETCH[bucket][clz]++;		\
