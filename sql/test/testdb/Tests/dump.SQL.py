@@ -36,3 +36,6 @@ if len(sys.argv) == 2 and sys.argv[1] in ('dump', 'dump-nogeom'):
         sys.stderr.write(line)
 else:
     sys.stdout.writelines(out)
+
+if err:
+    sys.stderr.write(err)
