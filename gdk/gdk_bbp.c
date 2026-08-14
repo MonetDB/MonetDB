@@ -514,13 +514,13 @@ heapinit(BAT *b, const char *buf,
 		TRC_CRITICAL(GDK, "type pcre has been removed\n");
 		return -1;
 	}
-#ifdef HAVE_GEOM
-#if GDKLIBRARY <= 061050U
+#if defined(HAVE_GEOM) && defined(GDKLIBRARY_USTR)
+#if GDKLIBRARY <= GDKLIBRARY_USTR
 	if (strcmp(type, "wkb") == 0) {
 		/* don't trust properties having to do with ordering of
 		 * type wkb because of a bug in the wkbCOMP
 		 * implementation; this was fixed during the lifetime of
-		 * BBP version 061050 */
+		 * BBP version 061050 (GDKLIBRARY_USTR) */
 		minpos = maxpos = oid_nil;
 		nosorted = norevsorted = 0;
 		properties &= ~0x0081;
