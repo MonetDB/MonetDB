@@ -3817,21 +3817,31 @@ rel_distinct_project2groupby_(visitor *v, sql_rel *rel)
 		v->changes++;
 	}
 
+	list *gbe = l?l->r:NULL;
+	if (rel->op == op_project && rel->l && !rel->r /* no order by */ && need_distinct(rel) &&
+	    (is_groupby(l->op) && l->l && gbe) && exp_match_list(rel->exps, gbe)) {
+		set_nodistinct(rel); /* distinct is needed only once */
+		v->changes++;
+		return rel;
+	}
+	if (rel->op == op_project && rel->l && !rel->r /* no order by */ && need_distinct(rel) &&
+	    (is_project(l->op) && l->l && (l->op != op_project || !l->r) && need_distinct(l)) &&
+		exp_match_list(rel->exps, l->exps)) {
+		set_nodistinct(rel); /* distinct is needed only once */
+		v->changes++;
+		return rel;
+	}
+
 	/* rewrite distinct project [ pk ] ( select ( table ) [ e op val ])
 	 * into project [ pk ] ( select/semijoin ( table )  */
-	sql_rel *orel = rel;
-	if (rel->op == op_project && rel->l && !rel->r /* no order by */ && need_distinct(rel) &&
-	    (l->op == op_project && l->l && !l->r) && list_check_prop_all(rel->exps, (prop_check_func)&exp_is_useless_rename))
-		rel = l;
-
 	if (rel->op == op_project && rel->l && !rel->r /* no order by */ && need_distinct(rel) &&
 	    (l->op == op_select || l->op == op_semi) && exps_unique(v->sql, rel, rel->exps, true) &&
 		(!have_semantics(l->exps) || !have_nil(rel->exps))) {
-		set_nodistinct(orel);
+		set_nodistinct(rel);
 		v->changes++;
+		return rel;
 	}
 
-	rel = orel;
 	/* rewrite distinct project ( join(p,f) [ p.pk = f.fk ] ) [ p.pk ]
 	 * 	into project( (semi)join(p,f) [ p.pk = f.fk ] ) [ p.pk ] */
 	if (rel->op == op_project && rel->l && !rel->r /* no order by */ && need_distinct(rel) &&

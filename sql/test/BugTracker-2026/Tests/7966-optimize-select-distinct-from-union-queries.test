@@ -50,7 +50,7 @@ FROM (
   WHERE a >= 200
 ) AS u
 ----
-group by (
+project (
 | group by (
 | | munion (
 | | | project (
@@ -65,7 +65,7 @@ group by (
 | | | ) [ "outer_distinct_union_t"."a" ]
 | | ) [ "outer_distinct_union_t"."a" as "u"."a" ]
 | ) [ "u"."a" ] [ "u"."a" ]
-) [ "u"."a" ] [ "u"."a" ]
+) [ "u"."a" ]
 
 statement ok
 DROP TABLE IF EXISTS outer_distinct_union_t

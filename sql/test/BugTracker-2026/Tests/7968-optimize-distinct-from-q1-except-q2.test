@@ -51,7 +51,7 @@ SELECT COUNT(*) as c FROM rhs
 query T nosort
 EXPLAIN SELECT DISTINCT s.v FROM ((SELECT v FROM lhs) EXCEPT (SELECT v FROM rhs)) s
 ----
-group by (
+project (
 | distinct except (
 | | project (
 | | | table("sys"."lhs") [ "lhs"."v" ]
@@ -60,7 +60,7 @@ group by (
 | | | table("sys"."rhs") [ "rhs"."v" ]
 | | ) [ "rhs"."v" ]
 | ) [ "lhs"."v" as "s"."v" ]
-) [ "s"."v" ] [ "s"."v" ]
+) [ "s"."v" ]
 
 query T nosort
 EXPLAIN SELECT          s.v FROM ((SELECT v FROM lhs) EXCEPT (SELECT v FROM rhs)) s
