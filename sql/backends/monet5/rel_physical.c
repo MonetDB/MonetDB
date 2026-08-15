@@ -1122,6 +1122,7 @@ rel_pipeline(visitor *v, sql_rel *rel, bool materialize, int pb)
 				rel->spb = 1;
 			res = SPB;
 		} else if (pb && side) { /* handle fetch join */
+			rel->partition = side;
 			if (side == 1)
 				res = rel_pipeline(v, rel->l, false, pb);
 			else

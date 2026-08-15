@@ -347,8 +347,12 @@ rel_bind_column( mvc *sql, sql_rel *rel, const char *cname, int f, int no_tname)
 					e = exps_refers(e, rel->r);
 					if (ambiguous || multi)
 						return sql_error(sql, ERR_AMBIGUOUS, SQLSTATE(42000) "SELECT: identifier '%s' ambiguous", cname);
-					if (e)
-						return exp_ref(sql, e);
+					if (e) {
+						sql_exp *ne = exp_ref(sql, e);
+						if (find_prop(rel->p, PROP_GROUPINGS))
+							set_has_nil(ne);
+						return ne;
+					}
 					return e;
 				}
 			}
@@ -359,6 +363,8 @@ rel_bind_column( mvc *sql, sql_rel *rel, const char *cname, int f, int no_tname)
 				return sql_error(sql, ERR_AMBIGUOUS, SQLSTATE(42000) "SELECT: identifier '%s' ambiguous", cname);
 			if (e) {
 				e = exp_ref(sql, e);
+				if (find_prop(rel->p, PROP_GROUPINGS))
+					set_has_nil(e);
 				e->card = rel->card;
 				return e;
 			}
@@ -448,8 +454,12 @@ rel_bind_column2( mvc *sql, sql_rel *rel, const char *tname, const char *cname, 
 					if (ambiguous || multi)
 						return sql_error(sql, ERR_AMBIGUOUS, SQLSTATE(42000) "SELECT: identifier '%s%s%s' ambiguous",
 										 tname ? tname : "", tname ? "." : "", cname);
-					if (e)
-						return exp_ref(sql, e);
+					if (e) {
+						sql_exp *ne = exp_ref(sql, e);
+						if (find_prop(rel->p, PROP_GROUPINGS))
+							set_has_nil(ne);
+						return ne;
+					}
 				}
 			}
 		}
@@ -460,6 +470,8 @@ rel_bind_column2( mvc *sql, sql_rel *rel, const char *tname, const char *cname, 
 								 tname, cname);
 			if (e) {
 				e = exp_ref(sql, e);
+				if (find_prop(rel->p, PROP_GROUPINGS))
+					set_has_nil(e);
 				e->card = rel->card;
 				return e;
 			}
@@ -1291,7 +1303,7 @@ rel_table_func(allocator *sa, sql_rel *l, sql_exp *f, list *exps, int kind)
 }
 
 static void
-exps_reset_props(list *exps, bool setnil)
+exps_reset_props(list *exps, bool setnil, bool keepunique)
 {
 	if (!list_empty(exps)) {
 		for (node *m = exps->h; m; m = m->next) {
@@ -1299,9 +1311,41 @@ exps_reset_props(list *exps, bool setnil)
 
 			if (setnil)
 				set_has_nil(e);
-			set_not_unique(e);
+			if (!keepunique)
+				set_not_unique(e);
 		}
 	}
+}
+
+static int
+is_fk_join(sql_rel *rel)
+{
+	assert(is_join(rel->op));
+	if (list_empty(rel->exps))
+		return 0;
+	for(node *n = rel->exps->h; n; n = n->next) {
+		sql_exp *e = n->data;
+		prop *p = find_prop(e->p, PROP_JOINIDX);
+		if (p) {
+			sql_idx *ji = p->value.pval;
+			sql_rel *l = rel->l, *r = rel->r;
+			if (is_basetable(l->op)) {
+				sql_table *t = l->l;
+			   	if (t == ji->t) {
+					return 1; /* foreign side doesn't change (only reduces), ie can keep uniques */
+				}
+				return 2;
+			}
+			if (is_basetable(r->op)) {
+				sql_table *t = r->l;
+			   	if (t == ji->t) {
+					return 2; /* foreign side doesn't change (only reduces), ie can keep uniques */
+				}
+				return 1;
+			}
+		}
+	}
+	return 0;
 }
 
 /* Return a list with all the projection expressions, that optionally
@@ -1311,6 +1355,7 @@ list *
 _rel_projections(mvc *sql, sql_rel *rel, const char *tname, int settname, int intern, int basecol /* basecol only */,
 		bool bound )
 {
+	int fkjoin = 0;
 	list *lexps, *rexps = NULL, *exps = NULL, *rels;
 
 	if (mvc_highwater(sql))
@@ -1327,11 +1372,12 @@ _rel_projections(mvc *sql, sql_rel *rel, const char *tname, int settname, int in
 	case op_left:
 	case op_right:
 	case op_full:
+		fkjoin = is_fk_join(rel);
 		lexps = _rel_projections(sql, rel->l, tname, settname, intern, basecol, bound);
-		exps_reset_props(lexps, is_right(rel->op) || is_full(rel->op));
+		exps_reset_props(lexps, is_right(rel->op) || is_full(rel->op), (!fkjoin || fkjoin == 2) ? false : true);
 		if (!rel->attr)
 			rexps = _rel_projections(sql, rel->r, tname, settname, intern, basecol, bound);
-		exps_reset_props(rexps, is_left(rel->op) || is_full(rel->op));
+		exps_reset_props(rexps, is_left(rel->op) || is_full(rel->op), (!fkjoin || fkjoin == 1) ? false : true);
 		if (rexps)
 			lexps = list_join(lexps, rexps);
 		if (rel->attr)

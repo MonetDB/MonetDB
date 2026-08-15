@@ -75,7 +75,7 @@ bufferstream_read( bufferstream *bs, int cur)
 	int ocur = bs->cur_buf;
 	assert(bs->eof || !bs->buf[0] || cur == (ocur+1)%bs->nr_bufs);
 	if (bs->eof || mnstr_eof(bs->s)) {
-	    if (bs->pos[ocur] == bs->len[ocur])
+	    if (bs->pos[ocur] >= bs->len[ocur])
 			bs->eof = 1;
 		return 0;
 	}
@@ -639,12 +639,14 @@ COPYsplitlines(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		return_indices[i] = Tloc(b, 0);
 	}
 
-	if (r->col_sep_len > 1)
-		msg = scan_fieldsN(&errors, &state, r->null_repr, r->null_repr_len, ncols, line_count, return_indices);
-	else if (r->can_jump)
-		msg = scan_fields1(&errors, &state, r->null_repr, r->null_repr_len, ncols, line_count, return_indices);
-	else
-		msg = scan_fields(&errors, &state, r->null_repr, r->null_repr_len, ncols, line_count, return_indices);
+	if (line_count) {
+		if (r->col_sep_len > 1)
+			msg = scan_fieldsN(&errors, &state, r->null_repr, r->null_repr_len, ncols, line_count, return_indices);
+		else if (r->can_jump)
+			msg = scan_fields1(&errors, &state, r->null_repr, r->null_repr_len, ncols, line_count, return_indices);
+		else
+			msg = scan_fields(&errors, &state, r->null_repr, r->null_repr_len, ncols, line_count, return_indices);
+	}
 
 end:
 	copy_destroy_error_handling(&errors);

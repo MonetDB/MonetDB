@@ -295,7 +295,7 @@ rel2bin_oahash_build(backend *be, sql_rel *rel, list *refs)
 	bool need_freq = (rel->flag != (int)op_semi || rel->ref.refcnt > 2 || !list_empty(exps_prj_hsh));
 	if (need_freq && list_length(exps_cmp_hsh) == 1 && !is_single(rel)) {
 		sql_exp *e = exps_cmp_hsh->h->data;
-		if (0 && e->unique)
+		if (e->unique)
 			need_freq = false;
 	}
 	lng bld_sz = _estimate(be->mvc, rel); /* TODO: change into dynamic where possible ?? */

@@ -8492,10 +8492,7 @@ deduplicate_refs(mvc *sql, allocator *ta, list *refs, sql_rel *rel)
 			for(node *m = prefs->h; m; m = m->next->next) {
 				sql_rel *ir = m->data;
 				prop *ip = find_prop(ir->p, PROP_HASH);
-				bool needs_project = false;
 				if (ip && h == ip->value.lval && rel_remap(sql, ta, or, ir, sa_list(ta)) == 0) {
-					/* todo match subtrees */
-					printf("#found %d\n", (int)needs_project);
 					nr = ir;
 					break;
 				}

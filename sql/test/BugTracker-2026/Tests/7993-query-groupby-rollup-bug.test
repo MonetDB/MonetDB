@@ -17,19 +17,14 @@ SELECT COUNT(*) FROM n3a
    AND EXISTS (SELECT 1 FROM n3b WHERE n3b.c0 = n3a.c0)
  GROUP BY ROLLUP(n3a.c1)
 ----
-REF 1 (2)
-semijoin (
-| select (
-| |  [  ]
-| ) [ boolean(1) "false" ],
-| project (
-| | table("sys"."n3b") [ "n3b"."c0", "n3b"."%TID%" ]
-| ) [ tinyint(1) "1" as "%3"."%3", "n3b"."c0" ]
-) [ ("n3b"."c0") = ("n3a"."c0") ]
 project (
 | project (
 | | group by (
-| | | & REF 1 
+| | | project (
+| | | | select (
+| | | | |  [ int(5) NULL as "n3a"."c0", int(2) NULL as "n3a"."c1" ]
+| | | | ) [ boolean(1) "false" ]
+| | | ) [ "n3a"."c1" ]
 | | ) [  ] [ "sys"."count"() as "%2"."%2" ]
 | ) [ "%2"."%2" ]
 ) [ "%2"."%2" ]

@@ -157,7 +157,7 @@ PIPELINE?7966-optimize-select-distinct-from-union-queries
 7970-optimize-where-predicate
 7971-prepare-decimal-parameter-crash
 7972-orderby-limit-subquery-bug
-KNOWNFAIL?7973-groupby-list-null-row-bug
+7973-groupby-list-null-row-bug
 KNOWNFAIL?7974-muli-column-not-in-subquery-bug
 7975-cleanup-join-exps
 KNOWNFAIL?7976-dump_database-composite-key-order-bug
@@ -175,7 +175,7 @@ KNOWNFAIL?7989-window-avg-bug
 KNOWNFAIL?7990-rank-filter-bug
 7991-group_concat-null-separator-bug
 KNOWNFAIL?7992-window-date-range-interval-bug
-KNOWNFAIL?7993-query-groupby-rollup-bug
+7993-query-groupby-rollup-bug
 KNOWNFAIL?7994-exists-groupby-rollup-bug
 KNOWNFAIL?7995-left-join-lateral-subquery-bug
 KNOWNFAIL?7996-delete-not-exists-correlated-query-bug
