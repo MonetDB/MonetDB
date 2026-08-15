@@ -579,6 +579,7 @@ scan_fields1(
 {
 	int row = 0;
 	int col = 0;
+	assert(state->pos < state->end);
 	while (state->pos < state->end && row < nrows) {
 		unsigned char sep = 0;
 		int field_offset;
