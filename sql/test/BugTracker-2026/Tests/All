@@ -175,7 +175,7 @@ KNOWNFAIL?7989-window-avg-bug
 KNOWNFAIL?7990-rank-filter-bug
 7991-group_concat-null-separator-bug
 KNOWNFAIL?7992-window-date-range-interval-bug
-KNOWNFAIL?7993-query-groupby-rollup-bug
+7993-query-groupby-rollup-bug
 KNOWNFAIL?7994-exists-groupby-rollup-bug
 KNOWNFAIL?7995-left-join-lateral-subquery-bug
 KNOWNFAIL?7996-delete-not-exists-correlated-query-bug
