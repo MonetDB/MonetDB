@@ -832,10 +832,8 @@ exp_ref_by_label(allocator *sa, sql_exp *o)
 		set_has_no_nil(e);
 	if (has_nil(o))
 		set_has_nil(e);
-	/*
 	if (is_unique(o))
 		set_unique(e);
-		*/
 	if (is_intern(o))
 		set_intern(e);
 	if (is_freevar(o) && o->alias.label == o->nid /* only original IU */)
@@ -4446,6 +4444,8 @@ exp_estimate_selectivity(mvc *sql, sql_exp *e)
 			}
 			case cmp_filter:
 				  sel = 0.01;
+				  if (is_anti(e))
+					  sel = 0.95;
 				  break;
 			default:
 				  sel = 0.1;

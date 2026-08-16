@@ -1469,6 +1469,7 @@ _rel_projections(mvc *sql, sql_rel *rel, const char *tname, int settname, int in
 					e->card = rel->card;
 					if (!settname) /* noname use alias */
 						exp_setname(sql, e, exp_relname(e), exp_name(e));
+					set_not_unique(e);
 				}
 				if (!settname)
 					list_hash_clear(rel->l);

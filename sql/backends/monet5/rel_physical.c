@@ -520,12 +520,20 @@ find_cmp_exps(list **exps_hsh, list **exps_prb, const list *exps, sql_rel *rel_h
 		if (exp_is_atom(e->l) || e->flag != cmp_equal || exp_is_atom(e->r)) {
 			assert(0);
 		} else {
-			if (rel_find_exp(rel_hsh, e->r)) {
-				append(*exps_hsh, e->r);
+			sql_exp *ne = NULL;
+			if ((ne = rel_find_exp(rel_hsh, e->r)) != NULL) {
+				sql_exp *er = e->r;
+				if (is_unique(ne))
+					set_unique(er);
+				append(*exps_hsh, er);
 				append(*exps_prb, e->l);
 			} else {
-				assert(rel_find_exp(rel_prb, e->r));
-				append(*exps_hsh, e->l);
+			    ne = rel_find_exp(rel_hsh, e->l);
+				assert(ne);
+				sql_exp *el = e->l;
+				if (is_unique(ne))
+					set_unique(el);
+				append(*exps_hsh, el);
 				append(*exps_prb, e->r);
 			}
 		}
