@@ -5769,6 +5769,7 @@ rel_where_groupby_nodes(sql_query *query, sql_rel *rel, SelectNode *sn, int *gro
 			for(node *n = gbe->h; n; n = n->next) {
 				sql_exp *e = n->data;
 				set_has_nil(e);
+				set_not_unique(e);
 			}
 		}
 		rel = rel_groupby(sql, rel, gbe);
