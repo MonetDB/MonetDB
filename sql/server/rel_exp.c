@@ -4444,6 +4444,8 @@ exp_estimate_selectivity(mvc *sql, sql_exp *e)
 			}
 			case cmp_filter:
 				  sel = 0.01;
+				  if (is_anti(e))
+					  sel = 0.95;
 				  break;
 			default:
 				  sel = 0.1;
