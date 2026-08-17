@@ -1329,14 +1329,18 @@ is_fk_join(sql_rel *rel)
 		if (p) {
 			sql_idx *ji = p->value.pval;
 			sql_rel *l = rel->l, *r = rel->r;
-			if (is_basetable(l->op)) {
+			while(l && (is_simple_project(l->op) || is_select(l->op)))
+				l = l->l;
+			if (l && is_basetable(l->op)) {
 				sql_table *t = l->l;
 			   	if (t == ji->t) {
 					return 1; /* foreign side doesn't change (only reduces), ie can keep uniques */
 				}
 				return 2;
 			}
-			if (is_basetable(r->op)) {
+			while(r && (is_simple_project(r->op) || is_select(r->op)))
+				r = r->l;
+			if (r && is_basetable(r->op)) {
 				sql_table *t = r->l;
 			   	if (t == ji->t) {
 					return 2; /* foreign side doesn't change (only reduces), ie can keep uniques */
