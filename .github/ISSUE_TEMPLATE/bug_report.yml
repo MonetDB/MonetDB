@@ -80,6 +80,9 @@ body:
       options:
         - label: Yes, fully LLM generated
         - label: Yes, LLM assisted
+        - label: Fully manual
+    validations:
+      required: true
   - type: markdown
     attributes:
       value: |
