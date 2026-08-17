@@ -851,8 +851,8 @@ pqc_binary2string(pqc_schema_element *pse, char *bindata, char *buf, size_t sz)
 			if (pse->size == 64)
 				return snprintf(buf, sz, LLFMT, *(int64_t*)bindata);
 			if (pse->size == 96) {
-				uint64_t nanoseconds = pqc_lng(*(uint64_t*)bindata);
-				uint32_t julian_day = pqc_int(*(uint32_t*)(bindata+8));
+				uint64_t nanoseconds = pqc_lng(get_uint64((unsigned char*)bindata));
+				uint32_t julian_day = pqc_int(get_uint32((unsigned char*)bindata+8));
 
 				nanoseconds /= LL_CONSTANT(1000);
 				julian_day -= 2440588;
