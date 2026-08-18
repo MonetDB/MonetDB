@@ -78,9 +78,9 @@ body:
     attributes:
       label: Please indicate if any LLM tools were used in preparing this report.
       options:
-        - label: Yes, fully LLM generated
-        - label: Yes, LLM assisted
-        - label: Fully manual
+        - label: LLM generated
+        - label: LLM assisted
+        - label: None
     validations:
       required: true
   - type: markdown
