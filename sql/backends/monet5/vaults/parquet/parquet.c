@@ -723,7 +723,7 @@ PARQUETread_large(BAT **R, pqc_creader *r, int colno, Pipeline *p, int wnr)
 			dict = rb->twidth;
 			if (plain && (dict > 2 || !is_string))
 				offset = h->free;
-			if ((rsz = pqc_read_chunk(r->c[pse->ccnr], wnr, ((char*)rb->theap->base)+(tsz*dict), ((char*)h->base)+(!plain?varoff:h->free), sz-tsz, &offset, &dict)) < 0) {
+			if ((rsz = pqc_read_chunk(r->c[pse->ccnr], wnr, ((char*)rb->theap->base)+(tsz*dict), ((char*)h->base)+(!plain?varoff+8:h->free), sz-tsz, &offset, &dict)) < 0) {
 				BBPreclaim(rb);
 				const char *err = pqc_get_error(r->c[pse->ccnr]);
 				if (err)
