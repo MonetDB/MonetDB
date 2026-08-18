@@ -780,7 +780,7 @@ pqc_page_header( pqc_reader_t *r, pqc_creader_t *pr, int64_t pos)
 		}
 #ifdef WORDS_BIGENDIAN
 		if (num_values && (r->pse->type == inttype || r->pse->type == floattype)) {
-			char *s = pr->dict;
+			unsigned char *s = (unsigned char*)pr->dict;
 			if (r->pse->size == 16)
 				for(uint32_t i = 0; i < num_values; i++, s+=sizeof(uint16_t))
 					*(uint16_t*)s = pqc_sht(get_uint16(s));
