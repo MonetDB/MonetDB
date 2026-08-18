@@ -467,7 +467,7 @@ pqc_relation(mvc *sql, sql_subfunc *f, char *filename, list *res_exps, char *tna
 			if (e->type == LT_UNKNOWN || e->type == listtype)
 				set_intern(ne);
 			list_append(res_exps, ne);
-			if (e->precision && *est > ((lng) 1 << e->precision)) {
+			if (e->precision && e->precision < 64 && *est > ((lng) 1 << e->precision)) {
 				prop *p = ne->p = prop_create(sql->sa, PROP_NUNIQUES, ne->p);
 				p->value.dval = 1L << e->precision;
 			}
@@ -678,11 +678,11 @@ PARQUETread_large(BAT **R, pqc_creader *r, int colno, Pipeline *p, int wnr)
 		memset(h->base, 0, h->size);
 #endif
 		rb->tascii = false; /* tobe fixed */
-		size_t offset = 0;
+		size_t offset = 8;
 		if (dict >= 4 && is_string)
-			offset = h->free;
+			offset = h->free+8;
 		int64_t rsz = 0, tsz = 0;
-		if ((rsz = pqc_read_chunk(r->c[pse->ccnr], wnr, rb->theap->base, ((char*)h->base)+h->free, sz, &offset, &dict)) < 0) {
+		if ((rsz = pqc_read_chunk(r->c[pse->ccnr], wnr, rb->theap->base, ((char*)h->base)+h->free+8, sz, &offset, &dict)) < 0) {
 			BBPreclaim(rb);
 			const char *err = pqc_get_error(r->c[pse->ccnr]);
 			if (err)
@@ -723,7 +723,7 @@ PARQUETread_large(BAT **R, pqc_creader *r, int colno, Pipeline *p, int wnr)
 			dict = rb->twidth;
 			if (plain && (dict > 2 || !is_string))
 				offset = h->free;
-			if ((rsz = pqc_read_chunk(r->c[pse->ccnr], wnr, ((char*)rb->theap->base)+(tsz*dict), ((char*)h->base)+(!plain?varoff:h->free), sz-tsz, &offset, &dict)) < 0) {
+			if ((rsz = pqc_read_chunk(r->c[pse->ccnr], wnr, ((char*)rb->theap->base)+(tsz*dict), ((char*)h->base)+(!plain?varoff+8:h->free), sz-tsz, &offset, &dict)) < 0) {
 				BBPreclaim(rb);
 				const char *err = pqc_get_error(r->c[pse->ccnr]);
 				if (err)

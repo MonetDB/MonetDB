@@ -19,8 +19,9 @@ Players
   list_length(rel->attr) == 1:     group mark join
     |-> atom(TRUE):   IN, EXISTS
     |-> atom(FALSE):  NOT IN, NOT EXISTS
-  rel->exps:          join and select exps
-  rel->{l,r}->exps:   projections exps, from rel->l to rel->r
+  rel->exps:          join and selection exps
+  rel->{l,r}->exps:   projections exps of {left, right}-hand side
+  rel->{l,r}->attr:   join exps of {left, right}-hand side
   rel->single:
   rel->any:
   rel->sematics:
@@ -84,8 +85,8 @@ Implementation
   * Output unmatched LHS (i.e. excl. NILs)
   * ``oahash.nprobe``: single column antijoin
   * multicolumn antijoin:
-    * with prb-side NULLs: single-column hash-table, multicolumn probe
-    * without NULLs: inner-probe + select FALSE
+    * without NULLs: inner-probe + diff
+    * with NULLs: first-column hash-table, probe payloads
 
 * Single join
   * TODO: which queries use single join?

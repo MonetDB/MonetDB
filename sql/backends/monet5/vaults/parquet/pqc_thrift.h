@@ -39,7 +39,20 @@ typedef enum {
 /* get windows defa */
 #define pqc_export extern
 
-pqc_export uint32_t get_uint32(unsigned char *c);
+#if 0
+#define get_uint16(c) READ_UNALIGNED(16, c)
+#define get_uint32(c) READ_UNALIGNED(32, c)
+#define get_uint64(c) READ_UNALIGNED(64, c)
+#else
+#define get_uint16(c) get_uint16_slow(c)
+#define get_uint32(c) get_uint32_slow(c)
+#define get_uint64(c) get_uint64_slow(c)
+#endif
+
+pqc_export uint16_t get_uint16_slow(unsigned char *c);
+pqc_export uint32_t get_uint32_slow(unsigned char *c);
+pqc_export uint64_t get_uint64_slow(unsigned char *c);
+
 pqc_export uint32_t get_le_uint32(unsigned char *c);
 
 pqc_export int pqc_get_zint32( char *in, uint32_t *v); /* returns number of read bytes, or error -1 */

@@ -16,11 +16,28 @@
 #define int64_t uint64_t
 #define int32_t uint32_t
 
+uint16_t
+get_uint16_slow(unsigned char *c)
+{
+	uint16_t r = 0;
+	r = (uint16_t)c[0] | ((uint16_t)c[1]<<8);
+	return r;
+}
+
 uint32_t
-get_uint32(unsigned char *c)
+get_uint32_slow(unsigned char *c)
 {
 	uint32_t r = 0;
 	r = (uint32_t)c[0] | ((uint32_t)c[1]<<8) | ((uint32_t)c[2]<<16) | ((uint32_t)c[3]<<24);
+	return r;
+}
+
+uint64_t
+get_uint64_slow(unsigned char *c)
+{
+	uint64_t r = 0;
+	r = (uint64_t)c[0] | ((uint64_t)c[1]<<8) | ((uint64_t)c[2]<<16) | ((uint64_t)c[3]<<24) |
+	    ((uint64_t)c[4]<<32) | ((uint64_t)c[5]<<40) | ((uint64_t)c[6]<<48) | ((uint64_t)c[7]<<56);
 	return r;
 }
 
