@@ -1,0 +1,40 @@
+statement ok
+CREATE TABLE t4 (
+  c1 INT,
+  c10 INT
+)
+
+statement ok rowcount 2
+INSERT INTO t4 VALUES
+  (10, NULL),
+  (20, NULL)
+
+-- Direct query over the empty filtered input.
+query I nosort
+SELECT COUNT(*) AS cnt
+FROM t4
+WHERE c10 IS NOT NULL
+HAVING AVG(c1) <> 0.03
+----
+0
+
+-- CTAS form.
+statement ok rowcount 0
+CREATE TABLE tt AS
+SELECT *
+FROM t4
+WHERE c10 IS NOT NULL
+
+query I nosort
+SELECT COUNT(*) AS cnt
+FROM tt
+HAVING AVG(c1) <> 0.03
+----
+0
+
+statement ok
+DROP TABLE IF EXISTS tt
+
+statement ok
+DROP TABLE IF EXISTS t4
+
