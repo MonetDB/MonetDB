@@ -354,7 +354,7 @@ rel_groupby_prepare_pp(list **aggrresults, list **serializedresults, backend *be
 			sql_subtype *t = exp_subtype(e);
 			/* ext */
 			lng ncard = exp_getcard(be->mvc, rel, e);
-			card *= ncard * corr_weight;
+			card = (lng) (card * ncard * corr_weight);
 			corr_weight *= 0.85;
 			if (card > estimate || ncard >= estimate)
 				card = estimate;
@@ -856,7 +856,7 @@ rel_groupby_partition(mvc *sql, sql_rel *rel)
 		for( node *n = l->h; n; n = n->next ) {
 			sql_exp *e = n->data;
 			lng ncard = exp_getcard(sql, rel, e);
-			card *= ncard * corr_weight; /* TODO check for overflow */
+			card = (lng) (card * ncard * corr_weight); /* TODO check for overflow */
 			corr_weight *= 0.85;
 			if (card > estimate || ncard >= estimate) {
 				card = estimate;
