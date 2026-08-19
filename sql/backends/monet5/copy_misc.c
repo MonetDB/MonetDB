@@ -253,7 +253,7 @@ copy_report_error(struct error_handling *restrict admin, lng rel_row, int column
 			uint32_t *r = (uint32_t*)(admin->rows->tvheap->base + sizeof(ccand_t));
 			int w = (int)(rel_row%32);
 			/* unset rel_row bit */
-			r[rel_row/32] &= ~(1<<w);
+			r[rel_row/32] &= ~(1U<<w);
 		}
 	}
 

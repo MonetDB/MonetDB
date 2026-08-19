@@ -118,7 +118,7 @@ With the
 .B \-m
 flag, instead of creating a database, a multiplex-funnel is created.
 See section
-.I MULTIPLEX-FUNNEL
+.I MULTIPLEX-FUNNELS
 in
 .IR monetdbd (1).
 The pattern argument is not fully the same as a pattern for connecting
@@ -440,9 +440,10 @@ optimizations that can lead to improved performance.
 \fBnclients=\fP\fInumber\fP
 Sets the maximum amount of clients that can connect to this database at
 the same time.  Setting this to a high value is discouraged.  A
-multiplex-funnel may be more performant, see
-.I MULTIPLEX-FUNNEL
-below.
+multiplex-funnel may be more performant, see section
+.I MULTIPLEX-FUNNELS
+in
+.IR monetdbd (1).
 .TP
 .BR raw_strings= < yes | no >
 Defines how the server interprets literal strings. See the

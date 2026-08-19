@@ -2567,6 +2567,8 @@ wkbFromBinaryWithBuffer(allocator *ma, wkb **geomWKB, size_t *len, const char **
 	}
 
 	//compute the value for s
+	w->len = (int) wkbLength;
+	w->srid = 0;
 	for (i = 0; i < strLength; i += 2) {
 		int firstHalf = decit((*inStr)[i]);
 		int secondHalf = decit((*inStr)[i + 1]);
@@ -2576,8 +2578,6 @@ wkbFromBinaryWithBuffer(allocator *ma, wkb **geomWKB, size_t *len, const char **
 		w->data[i / 2] = (firstHalf << 4) | secondHalf;
 	}
 
-	w->len = (int) wkbLength;
-	w->srid = 0;
 	return MAL_SUCCEED;
 }
 
