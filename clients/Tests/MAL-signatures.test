@@ -38640,12 +38640,12 @@ NCDFtest
 Returns number of variables in a given NetCDF dataset (file)
 oahash
 build_combined_table
-command oahash.build_combined_table(X_0:bat[:any_1], X_1:bat[:oid]) (X_2:bat[:oid], X_3:bat[:any_1])
+command oahash.build_combined_table(X_0:bat[:any_1], X_1:bat[:oid], X_2:bit) (X_3:bat[:oid], X_4:bat[:any_1])
 OAHASHbuild_tbl_cmbd
 Add the `key`-s with a `parent_slotid` to the hash table. Returns the `slot_id` per `key` and the updated `ht_sink`
 oahash
 build_table
-command oahash.build_table(X_0:bat[:any_1]) (X_1:bat[:oid], X_2:bat[:any_1])
+command oahash.build_table(X_0:bat[:any_1], X_1:bit) (X_2:bat[:oid], X_3:bat[:any_1])
 OAHASHbuild_tbl
 Add the `key`-s to the hash table. Returns the `slot_id` per `key` and the updated `ht_sink`
 oahash

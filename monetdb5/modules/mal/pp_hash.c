@@ -106,6 +106,7 @@ _ht_create( int type, size_t size, hash_table *p, int vkey)
 	h->width = ATOMsize(type);
 	h->last = 0;
 	h->empty = true;
+	h->has_nil = 0;
 	h->p = p;
 	h->pinned = NULL;
 	h->pinned_nr = 0; /* no more than 1024 */
@@ -619,6 +620,8 @@ UHASHext(Client cntxt, MalBlkPtr m, MalStkPtr s, InstrPtr p)
 		Type *vals = h->vals; \
 		\
 		TIMEOUT_LOOP_IDX_DECL(i, cnt, qry_ctx) { \
+			if (*upd_has_nil) \
+				(void)ATOMIC_OR(&h->has_nil, is_##Type##_nil(bp[i])); \
 			bool fnd = 0; \
 			gid g = 0; \
 			while (!fnd) { \
@@ -706,6 +709,8 @@ UHASHext(Client cntxt, MalBlkPtr m, MalStkPtr s, InstrPtr p)
 		Type *vals = h->vals; \
 		\
 		TIMEOUT_LOOP_IDX_DECL(i, cnt, qry_ctx) { \
+			if (*upd_has_nil) \
+				(void)ATOMIC_OR(&h->has_nil, is_##Type##_nil(bp[i])); \
 			bool fnd = 0; \
 			gid g = 0; \
 			while (!fnd) { \
@@ -751,6 +756,8 @@ UHASHext(Client cntxt, MalBlkPtr m, MalStkPtr s, InstrPtr p)
 			bool fnd = 0; \
 			var_t voff = VarHeapVal(bi.base,i,bi.width);				\
 			void *bpi = voff == 0 ? (void*) ATOMnilptr((bi).type) : (void *) ((bi).vh->base+voff); \
+			if (*upd_has_nil) \
+				(void)ATOMIC_OR(&h->has_nil, (voff == 0)); \
 			gid g = 0; \
 			while (!fnd) { \
 				gid k = (gid)h->hsh(bpi)&h->mask; \
@@ -797,6 +804,8 @@ UHASHext(Client cntxt, MalBlkPtr m, MalStkPtr s, InstrPtr p)
 				bool fnd = 0; \
 				var_t voff = VarHeapVal(bi.base,i,bi.width);				\
 				void *bpi = voff == 0 ? (void*) ATOMnilptr((bi).type) : (void *) ((bi).vh->base+voff); \
+				if (*upd_has_nil) \
+					(void)ATOMIC_OR(&h->has_nil, (voff == 0)); \
 				gid g = 0; \
 				while (!fnd) { \
 					gid k = (gid)str_hsh(bpi)&h->mask; \
@@ -835,6 +844,8 @@ UHASHext(Client cntxt, MalBlkPtr m, MalStkPtr s, InstrPtr p)
 				bool fnd = 0; \
 				var_t voff = VarHeapVal(bi.base,i,bi.width);				\
 				void *bpi = voff == 0 ? (void*) ATOMnilptr((bi).type) : (void *) ((bi).vh->base+voff); \
+				if (*upd_has_nil) \
+					(void)ATOMIC_OR(&h->has_nil, (voff == 0)); \
 				gid g = 0; \
 				while (!fnd) { \
 					gid k = (gid)h->hsh(bpi)&h->mask; \
@@ -872,7 +883,7 @@ UHASHext(Client cntxt, MalBlkPtr m, MalStkPtr s, InstrPtr p)
 	} while (0)
 
 static str
-OAHASHbuild_tbl(Client ctx, bat *slot_id, bat *ht_sink, const bat *key)
+OAHASHbuild_tbl(Client ctx, bat *slot_id, bat *ht_sink, const bat *key, const bit *upd_has_nil)
 {
 	(void)ctx;
 	Pipeline *p = pipeline_get_thread_private_pipeline();
@@ -1007,6 +1018,8 @@ error:
 		Type *vals = h->vals; \
 		\
 		TIMEOUT_LOOP_IDX_DECL(i, cnt, qry_ctx) { \
+			if (*upd_has_nil) \
+				(void)ATOMIC_OR(&h->has_nil, is_##Type##_nil(bp[i])); \
 			bool fnd = 0; \
 			gid g = 0; \
 			while (!fnd) { \
@@ -1099,6 +1112,8 @@ error:
 		Type *vals = h->vals; \
 		\
 		TIMEOUT_LOOP_IDX_DECL(i, cnt, qry_ctx) { \
+			if (*upd_has_nil) \
+				(void)ATOMIC_OR(&h->has_nil, is_##Type##_nil(bp[i])); \
 			bool fnd = 0; \
 			gid g = 0; \
 			while (!fnd) { \
@@ -1146,6 +1161,8 @@ error:
 			bool fnd = 0; \
 			var_t voff = VarHeapVal(bi.base,i,bi.width);				\
 			void *bpi = voff == 0 ? (void*) ATOMnilptr((bi).type) : (void *) ((bi).vh->base+voff); \
+			if (*upd_has_nil) \
+				(void)ATOMIC_OR(&h->has_nil, (voff == 0)); \
 			gid g = 0; \
 			while (!fnd) { \
 				gid k = (gid)combine(gi[i], h->hsh(bpi), prime)&h->mask; \
@@ -1195,6 +1212,8 @@ error:
 				bool fnd = 0; \
 				var_t voff = VarHeapVal(bi.base,i,bi.width);				\
 				void *bpi = voff == 0 ? (void*) ATOMnilptr((bi).type) : (void *) ((bi).vh->base+voff); \
+				if (*upd_has_nil) \
+					(void)ATOMIC_OR(&h->has_nil, (voff == 0)); \
 				gid g = 0; \
 				while (!fnd) { \
 					gid k = (gid)combine(gi[i], str_hsh(bpi), prime)&h->mask; \
@@ -1237,6 +1256,8 @@ error:
 				bool fnd = 0; \
 				var_t voff = VarHeapVal(bi.base,i,bi.width);				\
 				void *bpi = voff == 0 ? (void*) ATOMnilptr((bi).type) : (void *) ((bi).vh->base+voff); \
+				if (*upd_has_nil) \
+					(void)ATOMIC_OR(&h->has_nil, (voff == 0)); \
 				gid g = 0; \
 				while (!fnd) { \
 					gid k = (gid)combine(gi[i], h->hsh(bpi), prime)&h->mask; \
@@ -1276,7 +1297,7 @@ error:
 	} while (0)
 
 static str
-OAHASHbuild_tbl_cmbd(Client ctx, bat *slot_id, bat *ht_sink, const bat *key, const bat *parent_slotid)
+OAHASHbuild_tbl_cmbd(Client ctx, bat *slot_id, bat *ht_sink, const bat *key, const bat *parent_slotid, const bit *upd_has_nil)
 {
 	(void)ctx;
 	Pipeline *p = pipeline_get_thread_private_pipeline();
@@ -1845,17 +1866,6 @@ OAHASHnprobe(Client ctx, bat *PRB_oid, bat *HSH_slotid, const bat *PRB_key, cons
 		keycnt = ci.ncand; \
 		oid *vals = ht->vals; \
 		\
-		if (any) { \
-			gid k = (gid)_hash_oid(oid_nil)&ht->mask; \
-			hash_key_t slot = ht->gids[k]; \
-			while (slot && vals[slot] != oid_nil) { \
-				k++; \
-				k &= ht->mask; \
-				slot = ht->gids[k]; \
-			} \
-			if (slot) \
-				has_nil = bit_nil; \
-		} \
 		TIMEOUT_LOOP_IDX_DECL(i, keycnt, qry_ctx) { \
 			oid ky = canditer_next(&ci); \
 			assert(ky != oid_nil); \
@@ -1883,7 +1893,7 @@ OAHASHnprobe(Client ctx, bat *PRB_oid, bat *HSH_slotid, const bat *PRB_key, cons
 				} \
 			} else { \
 				slt[mtdcnt] = oid_nil; \
-				mark[i] = (any)?has_nil:false; \
+				mark[i] = (any && ht->has_nil)?bit_nil:false; \
 			} \
 			mtdcnt++; \
 		} \
@@ -1894,17 +1904,6 @@ OAHASHnprobe(Client ctx, bat *PRB_oid, bat *HSH_slotid, const bat *PRB_key, cons
 		Type *ky = Tloc(k, 0); \
 		Type *vals = ht->vals; \
 		\
-		if (any) { \
-			gid k = (gid)_hash_##Type(Type##_nil)&ht->mask; \
-			hash_key_t slot = ht->gids[k]; \
-			while (slot && !is_##Type##_nil(vals[slot])) { \
-				k++; \
-				k &= ht->mask; \
-				slot = ht->gids[k]; \
-			} \
-			if (slot) \
-				has_nil = bit_nil; \
-		} \
 		TIMEOUT_LOOP_IDX_DECL(i, keycnt, qry_ctx) { \
 			if (!(*semantics) && is_##Type##_nil(ky[i])) { \
 				oid_mtd[mtdcnt] = off+i; \
@@ -1930,7 +1929,7 @@ OAHASHnprobe(Client ctx, bat *PRB_oid, bat *HSH_slotid, const bat *PRB_key, cons
 				} \
 			} else { \
 				slt[mtdcnt] = oid_nil; \
-				mark[i] = (any)?has_nil:false; \
+				mark[i] = (any && ht->has_nil)?bit_nil:false; \
 			} \
 			mtdcnt++; \
 		} \
@@ -1947,17 +1946,6 @@ OAHASHnprobe(Client ctx, bat *PRB_oid, bat *HSH_slotid, const bat *PRB_key, cons
 		Type *ky = Tloc(k, 0); \
 		Type *vals = ht->vals; \
 		\
-		if (any) { \
-			gid k = (gid)_hash_##Type((BaseType)Type##_nil)&ht->mask; \
-			hash_key_t slot = ht->gids[k]; \
-			while (slot && !is_##Type##_nil(vals[slot])) { \
-				k++; \
-				k &= ht->mask; \
-				slot = ht->gids[k]; \
-			} \
-			if (slot) \
-				has_nil = bit_nil; \
-		} \
 		TIMEOUT_LOOP_IDX_DECL(i, keycnt, qry_ctx) { \
 			if (!(*semantics) && is_##Type##_nil(ky[i])) { \
 				oid_mtd[mtdcnt] = off+i; \
@@ -1983,7 +1971,7 @@ OAHASHnprobe(Client ctx, bat *PRB_oid, bat *HSH_slotid, const bat *PRB_key, cons
 				} \
 			} else { \
 				slt[mtdcnt] = oid_nil; \
-				mark[i] = (any)?has_nil:false; \
+				mark[i] = (any && ht->has_nil)?bit_nil:false; \
 			} \
 			mtdcnt++; \
 		} \
@@ -1996,17 +1984,6 @@ OAHASHnprobe(Client ctx, bat *PRB_oid, bat *HSH_slotid, const bat *PRB_key, cons
 		int (*atomcmp)(const void *, const void *) = ATOMstorage(tt) == TYPE_str? (int (*)(const void *, const void *)) str_cmp : ATOMcompare(tt); \
 		const void *nil = ATOMnilptr(tt); \
 		\
-		if (any) { \
-			gid k = (gid)ht->hsh((void*)nil)&ht->mask; \
-			hash_key_t slot = ht->gids[k]; \
-			while (slot && atomcmp(vals[slot], nil) != 0) { \
-				k++; \
-				k &= ht->mask; \
-				slot = ht->gids[k]; \
-			} \
-			if (slot) \
-				has_nil = bit_nil; \
-		} \
 		TIMEOUT_LOOP_IDX_DECL(i, keycnt, qry_ctx) { \
 			var_t voff = VarHeapVal(bi.base,i,bi.width);				\
 			char *val = voff == 0 ? (char*) ATOMnilptr((bi).type) : (char *) ((bi).vh->base+voff); \
@@ -2035,7 +2012,7 @@ OAHASHnprobe(Client ctx, bat *PRB_oid, bat *HSH_slotid, const bat *PRB_key, cons
 				} \
 			} else { \
 				slt[mtdcnt] = oid_nil; \
-				mark[i] = (any)?has_nil:false; \
+				mark[i] = (any && ht->has_nil)?bit_nil:false; \
 			} \
 			mtdcnt++; \
 		} \
@@ -2092,8 +2069,6 @@ OAHASHomprobe(Client ctx, bat *PRB_oid, bat *HSH_slotid, bat *PRB_mark, const ba
 		oid *oid_mtd = Tloc(o, 0);
 		oid *slt = Tloc(s, 0);
 		bit *mark = Tloc(m, 0);
-		/* if the hash table contains a NULL, has_nil will actually carry the bit_nil */
-		bit has_nil = false;
 		/* probing an empty hash table always yields FALSE; otherwise, bit_nil for unknown */
 		bit empty = ht->empty?false:bit_nil;
 
@@ -2531,7 +2506,7 @@ OAHASHprobe_cmbd(Client ctx, bat *PRB_oid, bat *HSH_slotid, const bat *PRB_key, 
 				oid_mtd[mtdcnt2] = sltd[i]; \
 				slt[mtdcnt2] = oid_nil; \
 				bit has_nil = false; \
-				if (any) { \
+				if (any && ht->has_nil) { \
 					gid hsh = (gid)combine(gi[i], _hash_oid(oid_nil), prime)&ht->mask; \
 					slot = ATOMIC_GET_GID(ht->gids+hsh); \
 					while (slot && (pgids[slot] != gi[i] || vals[slot] != oid_nil)) { \
@@ -2582,7 +2557,7 @@ OAHASHprobe_cmbd(Client ctx, bat *PRB_oid, bat *HSH_slotid, const bat *PRB_key, 
 				oid_mtd[mtdcnt2] = sltd[i]; \
 				slt[mtdcnt2] = oid_nil; \
 				bit has_nil = false; \
-				if (any) { \
+				if (any && ht->has_nil) { \
 					gid hsh = (gid)combine(gi[i], _hash_##Type(Type##_nil), prime)&ht->mask; \
 					slot = ATOMIC_GET_GID(ht->gids+hsh); \
 					while (slot && (pgids[slot] != gi[i] || !is_##Type##_nil(vals[slot]))) { \
@@ -2641,7 +2616,7 @@ OAHASHprobe_cmbd(Client ctx, bat *PRB_oid, bat *HSH_slotid, const bat *PRB_key, 
 				oid_mtd[mtdcnt2] = sltd[i]; \
 				slt[mtdcnt2] = oid_nil; \
 				bit has_nil = false; \
-				if (any) { \
+				if (any && ht->has_nil) { \
 					gid hsh = (gid)combine(gi[i], _hash_##Type((BaseType)Type##_nil), prime)&ht->mask; \
 					slot = ATOMIC_GET_GID(ht->gids+hsh); \
 					while (slot && (pgids[slot] != gi[i] || !is_##Type##_nil(vals[slot]))) { \
@@ -2696,7 +2671,7 @@ OAHASHprobe_cmbd(Client ctx, bat *PRB_oid, bat *HSH_slotid, const bat *PRB_key, 
 				oid_mtd[mtdcnt2] = sltd[i]; \
 				slt[mtdcnt2] = oid_nil; \
 				bit has_nil = false; \
-				if (any) { \
+				if (any && ht->has_nil) { \
 					gid hsh = (gid)combine(gi[i], ht->hsh((void*)nil), prime)&ht->mask; \
 					slot = ATOMIC_GET_GID(ht->gids+hsh); \
 					while (slot && (pgids[slot] != gi[i] || atomcmp(vals[slot], nil) != 0)) { \
@@ -3457,9 +3432,9 @@ static mel_func oa_hash_init_funcs[] = {
  command("oahash", "hashmark_init", OAHASHhashmark_init, false, "", args(1,3, batarg("hashmark",bit),batargany("ht_sink",1),batargany("payload",2))),
  pattern("hash", "ext", UHASHext, false, "", args(1,2, batarg("ext",oid),batargany("in",1))),
 
- command("oahash", "build_table", OAHASHbuild_tbl, false, "Add the `key`-s to the hash table. Returns the `slot_id` per `key` and the updated `ht_sink`", args(2,3, batarg("slot_id",oid),batargany("ht_sink",1),batargany("key",1))),
+ command("oahash", "build_table", OAHASHbuild_tbl, false, "Add the `key`-s to the hash table. Returns the `slot_id` per `key` and the updated `ht_sink`", args(2,4, batarg("slot_id",oid),batargany("ht_sink",1),batargany("key",1),arg("upd_has_nil",bit))),
 
- command("oahash", "build_combined_table", OAHASHbuild_tbl_cmbd, false, "Add the `key`-s with a `parent_slotid` to the hash table. Returns the `slot_id` per `key` and the updated `ht_sink`", args(2,4, batarg("slot_id",oid),batargany("ht_sink",1),batargany("key",1),batarg("parent_slotid",oid))),
+ command("oahash", "build_combined_table", OAHASHbuild_tbl_cmbd, false, "Add the `key`-s with a `parent_slotid` to the hash table. Returns the `slot_id` per `key` and the updated `ht_sink`", args(2,5, batarg("slot_id",oid),batargany("ht_sink",1),batargany("key",1),batarg("parent_slotid",oid),arg("upd_has_nil",bit))),
 
  pattern("oahash", "frequency", OAHASHadd_freq, false, "Add `slot_id` to the shared `frequencies` BAT. Returns the updated `frequencies`", args(1,2, batarg("frequencies",lng),batarg("slot_id",oid))),
  pattern("oahash", "frequency", OAHASHadd_freq, false, "Add `slot_id` to the shared `frequencies` BAT. Returns the occurrence index for each `slot_id` (i.e. it is the n-th time the `slot_id` is seen so far) and the updated `frequencies`", args(2,3, batarg("occrrence_idx",oid),batarg("frequencies",lng),batarg("slot_id",oid))),

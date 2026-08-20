@@ -422,7 +422,7 @@ stmt_oahash_hshmrk_init(backend *be, stmt *stmts_ht, bool moveup)
 }
 
 stmt *
-stmt_oahash_build_ht(backend *be, stmt *ht, stmt *key, stmt *prnt)
+stmt_oahash_build_ht(backend *be, stmt *ht, stmt *key, stmt *prnt, bit any)
 {
 	InstrPtr q = newStmt(be->mb, putName("oahash"), prnt?putName("build_combined_table"):putName("build_table"));
 	if (q == NULL) return NULL;
@@ -432,6 +432,7 @@ stmt_oahash_build_ht(backend *be, stmt *ht, stmt *key, stmt *prnt)
 	q = pushArgument(be->mb, q, key->nr);
 	if (prnt)
 		q = pushArgument(be->mb, q, prnt->nr);
+	q = pushBit(be->mb, q, any);
 	q->inout = 1;
 	pushInstruction(be->mb, q);
 

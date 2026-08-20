@@ -326,7 +326,7 @@ rel2bin_oahash_build(backend *be, sql_rel *rel, list *refs)
 		assert(key); /* must find */
 		key = column(be, key);
 
-		prnt = stmt_oahash_build_ht(be, ht, key, prnt);
+		prnt = stmt_oahash_build_ht(be, ht, key, prnt, is_any(e));
 		if (prnt == NULL) return NULL;
 
 		if (e->alias.label)
@@ -339,7 +339,7 @@ rel2bin_oahash_build(backend *be, sql_rel *rel, list *refs)
 		stmt *s = stmt_oahash_frequency(be, freq, prnt, (hp_gid != NULL));
 
 		if (hp_gid) {
-			prnt = stmt_oahash_build_ht(be, hp_gid, s, prnt);
+			prnt = stmt_oahash_build_ht(be, hp_gid, s, prnt, false);
 			if (prnt == NULL) return NULL;
 		}
 	}

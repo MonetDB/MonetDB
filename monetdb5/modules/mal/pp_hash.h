@@ -11,6 +11,7 @@
 #ifndef _PP_HASH_H_
 #define _PP_HASH_H_
 
+#include "matomic.h"
 #define GIDBITS 63
 
 //#define HT_MIN_SIZE 1024*64*8
@@ -132,6 +133,7 @@ typedef struct hash_table {
 	fhsh hsh;
 	flen len;
 	bool empty;
+	ATOMIC_TYPE has_nil; /* whether the hashed column contain a NULL, defaul: 0, i.e. false */
 	int vkey;	/* vheap is unique, ie hashing on offsets */
 
 	void *vals;			/* hash(ed) values */
