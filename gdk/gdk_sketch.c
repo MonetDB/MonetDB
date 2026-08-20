@@ -250,7 +250,11 @@ bat_guess_uniques(BAT *b, BATiter *bi, struct canditer *bci)
 	uint8_t cnting_sketch[BUCKETS][CLZ_BUCKETS] = {0};
 	double unique_guess = 0;
 
-	if (sketch_populate(b, bi, bci, cnting_sketch) == GDK_SUCCEED)
+	if (b->tsorted && b->trevsorted) /* all values are the same */
+		unique_guess = (double) (b->batCount > 0);
+	else if (b->tkey)	/* all values are distinct */
+		unique_guess = (double) b->batCount;
+	else if (sketch_populate(b, bi, bci, cnting_sketch) == GDK_SUCCEED)
 		unique_guess = sketch_estimate(cnting_sketch);
 
 	b->tunique_est = unique_guess;

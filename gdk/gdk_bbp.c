@@ -1700,7 +1700,7 @@ fixstrnilbat(BAT *b)
 				  ALGOBATPAR(b));
 			return GDK_SUCCEED;
 		}
-		assert(niloff >= 8192);
+		assert(niloff >= GDK_STRHASHSIZE);
 	}
 
 	if (GDKmove(b->theap->farmid, srcdir, bnme, t,
@@ -1750,13 +1750,13 @@ fixstrnilbat(BAT *b)
 	case 1: {
 		const uint8_t *p1 = (const uint8_t *) h1.base;
 		uint8_t *p2 = (uint8_t *) h2->base;
-		vfree -= 8192;
-		niloff -= 8192;
+		vfree -= GDK_STRHASHSIZE;
+		niloff -= GDK_STRHASHSIZE;
 		for (BUN i = 0; i < b->batCount; i++) {
 			uint8_t v = p1[i];
 			if (v == niloff)
 				p2[i] = 0;
-			else if (v >= vfree || vbase[v + 8192] == '\200')
+			else if (v >= vfree || vbase[v + GDK_STRHASHSIZE] == '\200')
 				p2[i] = 0;
 			else
 				p2[i] = v;
@@ -1766,13 +1766,13 @@ fixstrnilbat(BAT *b)
 	case 2: {
 		const uint16_t *p1 = (const uint16_t *) h1.base;
 		uint16_t *p2 = (uint16_t *) h2->base;
-		vfree -= 8192;
-		niloff -= 8192;
+		vfree -= GDK_STRHASHSIZE;
+		niloff -= GDK_STRHASHSIZE;
 		for (BUN i = 0; i < b->batCount; i++) {
 			uint16_t v = p1[i];
 			if (v == niloff)
 				p2[i] = 0;
-			else if (v >= vfree || vbase[v + 8192] == '\200')
+			else if (v >= vfree || vbase[v + GDK_STRHASHSIZE] == '\200')
 				p2[i] = 0;
 			else
 				p2[i] = v;
