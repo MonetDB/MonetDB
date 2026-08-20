@@ -751,7 +751,7 @@ rel_calc_nuniques(mvc *sql, sql_rel *l, list *exps)
 				if ((sub = atom_sub(sql->sa, max, min)) && (sub = atom_inc(sql->sa, sub)) && (sub = atom_cast(sql->sa, sub, sql_fetch_localtype(TYPE_oid))))
 					euniques = MIN(euniques, (BUN) sub->data.val.oval);
 			}
-			if (euniques != BUN_NONE)
+			if (euniques != BUN_NONE && (euniques == 0 || nuniques < BUN_MAX/euniques))
 				nuniques = nuniques * euniques; /* the highest cardinality sets the estimation */
 			else
 				nuniques = BUN_NONE;

@@ -3987,12 +3987,17 @@ guess_uniques(BAT *b, struct canditer *ci)
 BUN
 BATguess_uniques(BAT *b, struct canditer *ci)
 {
-	MT_lock_set(&b->theaplock);
 	BUN n = BUN_NONE;
+
+	MT_lock_set(&b->theaplock);
 	if (b->batCount == 0 || (ci && ci->ncand == 0))
 		n = 0;
 	else if (b->batCount == 1 || (ci && ci->ncand == 1))
 		n = 1;
+	else if (b->tsorted && b->trevsorted)
+		n = 1;
+	else if (b->tkey)
+		n = ci ? ci->ncand : b->batCount;
 	MT_lock_unset(&b->theaplock);
 	if (n != BUN_NONE)
 		return n;
