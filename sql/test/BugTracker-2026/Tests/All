@@ -185,3 +185,4 @@ KNOWNFAIL?8001-select-count-where-having-bug
 KNOWNFAIL?8002-schema-renaming-makes-seq-invalid-bug
 KNOWNFAIL?8003-windowed-group_concat-ignores-orderby-bug
 KNOWNFAIL?8004-nth_value-windowfunction-bug
+KNOWNFAIL?8005-prod-aggr-function-bug
