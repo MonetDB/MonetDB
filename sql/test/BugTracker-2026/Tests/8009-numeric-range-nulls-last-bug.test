@@ -1,0 +1,25 @@
+query IIII rowsort
+WITH t(id, k, v) AS (VALUES (1, NULL, 10), (2, 1, 20), (3, 2, 30), (4, 3, 40))
+SELECT id, k,
+  SUM(v) OVER (ORDER BY k ASC NULLS LAST RANGE BETWEEN 1 PRECEDING AND CURRENT ROW) AS actual,
+  CASE WHEN k IS NULL THEN (SELECT SUM(r.v) FROM t AS r WHERE r.k IS NULL)
+       ELSE (SELECT SUM(r.v) FROM t AS r WHERE r.k BETWEEN t.k - 1 AND t.k) END AS expected
+FROM t ORDER BY id
+----
+1
+NULL
+10
+10
+2
+1
+20
+20
+3
+2
+50
+50
+4
+3
+70
+70
+

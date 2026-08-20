@@ -189,3 +189,4 @@ KNOWNFAIL?8005-prod-aggr-function-bug
 KNOWNFAIL?8006-field-function-bug
 KNOWNFAIL?8007-lag-lead-window-functions-bug
 KNOWNFAIL?8008-numeric-range-frame-bug
+KNOWNFAIL?8009-numeric-range-nulls-last-bug
