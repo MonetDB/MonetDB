@@ -187,3 +187,4 @@ KNOWNFAIL?8003-windowed-group_concat-ignores-orderby-bug
 KNOWNFAIL?8004-nth_value-windowfunction-bug
 KNOWNFAIL?8005-prod-aggr-function-bug
 KNOWNFAIL?8006-field-function-bug
+KNOWNFAIL?8007-lag-lead-window-functions-bug
