@@ -756,7 +756,7 @@ pqc_page_header( pqc_reader_t *r, pqc_creader_t *pr, int64_t pos)
 		} else {
 			pr->dict_allocated = false;
 			pr->dict = pr->buffer+pos;
-			if((((ulng)pr->dict) & 15) != 0) { /* copy for alignment issues */
+			if((((size_t)pr->dict) & 15) != 0) { /* copy for alignment issues */
 				char *buf = pr->dict;
 				pr->dict = NEW_ARRAY(char, uncompressed_size);
 				if (!pr->dict)
