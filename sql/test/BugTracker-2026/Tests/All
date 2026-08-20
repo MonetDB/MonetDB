@@ -183,3 +183,4 @@ KNOWNFAIL?7998-scalar-subquery-error-msg-improvement
 KNOWNFAIL?8000-select-count-distinct-assert-failure
 KNOWNFAIL?8001-select-count-where-having-bug
 KNOWNFAIL?8002-schema-renaming-makes-seq-invalid-bug
+KNOWNFAIL?8003-windowed-group_concat-ignores-orderby-bug
