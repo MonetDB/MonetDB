@@ -11,6 +11,7 @@
 #include "monetdb_config.h"
 #include "gdk.h"
 #include "gdk_time.h"
+#include "mal_arguments.h"
 #include "mal_interpreter.h"
 #include "mal_instruction.h"
 #include "mal_exception.h"
@@ -560,7 +561,7 @@ UHASHext(Client cntxt, MalBlkPtr m, MalStkPtr s, InstrPtr p)
 
 /* ***** HASH OPERATORS ***** */
 
-#define BATaprep_heap(BT, SB, SK, FName) \
+#define aprep_heap(BT, SB, SK) \
 	do { \
 		MT_lock_set(&SB->theaplock); \
 		MT_lock_set(&BT->theaplock); \
@@ -568,32 +569,32 @@ UHASHext(Client cntxt, MalBlkPtr m, MalStkPtr s, InstrPtr p)
 			MT_lock_unset(&BT->theaplock); \
 			MT_lock_unset(&SB->theaplock); \
 			local_storage = true; \
-			pipeline_lock(p); \
+			pipeline_lock(pl); \
 			if (!SK->allocators) { \
-				SK->allocators = (allocator**)GDKzalloc(p->p->nr_workers*sizeof(allocator*)); \
+				SK->allocators = (allocator**)GDKzalloc(pl->p->nr_workers*sizeof(allocator*)); \
 				if (!SK->allocators) { \
-					pipeline_unlock(p); \
-					err = createException(MAL, FName, SQLSTATE(HY013) MAL_MALLOC_FAIL); \
+					pipeline_unlock(pl); \
+					err = createException(MAL, "oahash.build", SQLSTATE(HY013) MAL_MALLOC_FAIL); \
 					goto error; \
 				} else { \
-					SK->nr_allocators = p->p->nr_workers; \
+					SK->nr_allocators = pl->p->nr_workers; \
 				} \
 			} \
-			pipeline_unlock(p); \
-			assert(p->wid < p->p->nr_workers); \
-			if (!SK->allocators[p->wid]) { \
+			pipeline_unlock(pl); \
+			assert(pl->wid < pl->p->nr_workers); \
+			if (!SK->allocators[pl->wid]) { \
 				char name[MT_NAME_LEN]; \
-				snprintf(name, sizeof(name), "pp%d", p->wid); \
-				SK->allocators[p->wid] = create_allocator(name, false); \
-				if (!SK->allocators[p->wid]) { \
-					err = createException(MAL, FName, SQLSTATE(HY013) MAL_MALLOC_FAIL); \
+				snprintf(name, sizeof(name), "pp%d", pl->wid); \
+				SK->allocators[pl->wid] = create_allocator(name, false); \
+				if (!SK->allocators[pl->wid]) { \
+					err = createException(MAL, "oahash.build", SQLSTATE(HY013) MAL_MALLOC_FAIL); \
 					goto error; \
 				} \
 			} \
 		} else if (BATcount(BT) && BATcount(SB) == 0 && SB->tvheap->parentid == SB->batCacheid) { \
 			MT_lock_unset(&BT->theaplock); \
 			MT_lock_unset(&SB->theaplock); \
-			BATswap_heaps(SB, BT, p); \
+			BATswap_heaps(SB, BT, pl); \
 		} else if (SB->tvheap->parentid != BT->tvheap->parentid) { \
 			int i = 0; \
 			for(i = 0; i < SK->pinned_nr; i++) { \
@@ -614,13 +615,13 @@ UHASHext(Client cntxt, MalBlkPtr m, MalStkPtr s, InstrPtr p)
 		} \
 	} while(0)
 
-#define BATgroup(Type) \
+#define group(Type) \
 	do { \
 		Type *bp = Tloc(b, 0); \
 		Type *vals = h->vals; \
 		\
 		TIMEOUT_LOOP_IDX_DECL(i, cnt, qry_ctx) { \
-			if (*upd_has_nil) \
+			if (need_has_nil) \
 				(void)ATOMIC_OR(&h->has_nil, is_##Type##_nil(bp[i])); \
 			bool fnd = 0; \
 			gid g = 0; \
@@ -638,7 +639,7 @@ UHASHext(Client cntxt, MalBlkPtr m, MalStkPtr s, InstrPtr p)
 						slots = ht_preclaim(private); \
 						slot = ATOMIC_ADD_GID(&h->last, slots); \
 						if (((slot*100)/70) >= (gid)h->size) { \
-							hash_rehash(h, p, err); \
+							hash_rehash(h, pl, err); \
 							vals = h->vals; \
 							continue; \
 						} \
@@ -658,7 +659,7 @@ UHASHext(Client cntxt, MalBlkPtr m, MalStkPtr s, InstrPtr p)
 		} \
 	} while (0)
 
-#define BATvgroup() \
+#define vgroup() \
 	do { \
 		oid *vals = h->vals; \
 		struct canditer ci; \
@@ -683,7 +684,7 @@ UHASHext(Client cntxt, MalBlkPtr m, MalStkPtr s, InstrPtr p)
 						slots = ht_preclaim(private); \
 						slot = ATOMIC_ADD_GID(&h->last, slots); \
 						if (((slot*100)/70) >= (gid)h->size) { \
-							hash_rehash(h, p, err); \
+							hash_rehash(h, pl, err); \
 							vals = h->vals; \
 							continue; \
 						} \
@@ -703,13 +704,13 @@ UHASHext(Client cntxt, MalBlkPtr m, MalStkPtr s, InstrPtr p)
 		} \
 	} while (0)
 
-#define BATfgroup(Type, BaseType) \
+#define fgroup(Type, BaseType) \
 	do { \
 		Type *bp = Tloc(b, 0); \
 		Type *vals = h->vals; \
 		\
 		TIMEOUT_LOOP_IDX_DECL(i, cnt, qry_ctx) { \
-			if (*upd_has_nil) \
+			if (need_has_nil) \
 				(void)ATOMIC_OR(&h->has_nil, is_##Type##_nil(bp[i])); \
 			bool fnd = 0; \
 			gid g = 0; \
@@ -727,7 +728,7 @@ UHASHext(Client cntxt, MalBlkPtr m, MalStkPtr s, InstrPtr p)
 						slots = ht_preclaim(private); \
 						slot = ATOMIC_ADD_GID(&h->last, slots); \
 						if (((slot*100)/70) >= (gid)h->size) { \
-							hash_rehash(h, p, err); \
+							hash_rehash(h, pl, err); \
 							vals = h->vals; \
 							continue; \
 						} \
@@ -747,7 +748,7 @@ UHASHext(Client cntxt, MalBlkPtr m, MalStkPtr s, InstrPtr p)
 		} \
 	} while (0)
 
-#define BATagroup() \
+#define agroup() \
 	do { \
 		BATiter bi = bat_iterator(b); \
 		char **vals = h->vals; \
@@ -756,7 +757,7 @@ UHASHext(Client cntxt, MalBlkPtr m, MalStkPtr s, InstrPtr p)
 			bool fnd = 0; \
 			var_t voff = VarHeapVal(bi.base,i,bi.width);				\
 			void *bpi = voff == 0 ? (void*) ATOMnilptr((bi).type) : (void *) ((bi).vh->base+voff); \
-			if (*upd_has_nil) \
+			if (need_has_nil) \
 				(void)ATOMIC_OR(&h->has_nil, (voff == 0)); \
 			gid g = 0; \
 			while (!fnd) { \
@@ -772,7 +773,7 @@ UHASHext(Client cntxt, MalBlkPtr m, MalStkPtr s, InstrPtr p)
 						slots = ht_preclaim(private); \
 						slot = ATOMIC_ADD_GID(&h->last, slots); \
 						if (((slot*100)/70) >= (gid)h->size) { \
-							hash_rehash(h, p, err); \
+							hash_rehash(h, pl, err); \
 							vals = h->vals; \
 							continue; \
 						} \
@@ -793,7 +794,7 @@ UHASHext(Client cntxt, MalBlkPtr m, MalStkPtr s, InstrPtr p)
 		bat_iterator_end(&bi); \
 	} while (0)
 
-#define BATagroup_(P) \
+#define agroup_(P) \
 	do { \
 		BATiter bi = bat_iterator(b); \
 		char **vals = h->vals; \
@@ -804,7 +805,7 @@ UHASHext(Client cntxt, MalBlkPtr m, MalStkPtr s, InstrPtr p)
 				bool fnd = 0; \
 				var_t voff = VarHeapVal(bi.base,i,bi.width);				\
 				void *bpi = voff == 0 ? (void*) ATOMnilptr((bi).type) : (void *) ((bi).vh->base+voff); \
-				if (*upd_has_nil) \
+				if (need_has_nil) \
 					(void)ATOMIC_OR(&h->has_nil, (voff == 0)); \
 				gid g = 0; \
 				while (!fnd) { \
@@ -820,7 +821,7 @@ UHASHext(Client cntxt, MalBlkPtr m, MalStkPtr s, InstrPtr p)
 							slots = ht_preclaim(private); \
 							slot = ATOMIC_ADD_GID(&h->last, slots); \
 							if (((slot*100)/70) >= (gid)h->size) { \
-								hash_rehash(h, p, err); \
+								hash_rehash(h, pl, err); \
 								vals = h->vals; \
 								continue; \
 							} \
@@ -844,7 +845,7 @@ UHASHext(Client cntxt, MalBlkPtr m, MalStkPtr s, InstrPtr p)
 				bool fnd = 0; \
 				var_t voff = VarHeapVal(bi.base,i,bi.width);				\
 				void *bpi = voff == 0 ? (void*) ATOMnilptr((bi).type) : (void *) ((bi).vh->base+voff); \
-				if (*upd_has_nil) \
+				if (need_has_nil) \
 					(void)ATOMIC_OR(&h->has_nil, (voff == 0)); \
 				gid g = 0; \
 				while (!fnd) { \
@@ -860,7 +861,7 @@ UHASHext(Client cntxt, MalBlkPtr m, MalStkPtr s, InstrPtr p)
 							slots = ht_preclaim(private); \
 							slot = ATOMIC_ADD_GID(&h->last, slots); \
 							if (((slot*100)/70) >= (gid)h->size) { \
-								hash_rehash(h, p, err); \
+								hash_rehash(h, pl, err); \
 								vals = h->vals; \
 								continue; \
 							} \
@@ -882,143 +883,13 @@ UHASHext(Client cntxt, MalBlkPtr m, MalStkPtr s, InstrPtr p)
 		bat_iterator_end(&bi); \
 	} while (0)
 
-static str
-OAHASHbuild_tbl(Client ctx, bat *slot_id, bat *ht_sink, const bat *key, const bit *upd_has_nil)
-{
-	(void)ctx;
-	Pipeline *p = pipeline_get_thread_private_pipeline();
-	bool private = 0, local_storage = false;
-	str err = NULL;
-	BAT *g = NULL, *u = NULL, *b = NULL;
-
-	/* for now we only work with shared ht_sink in the build phase */
-	assert(*ht_sink && !is_bat_nil(*ht_sink));
-
-   	b = BATdescriptor(*key);
-	u = BATdescriptor(*ht_sink);
-	if (!b || !u) {
-		err = createException(SQL, "oahash.build_table", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
-		goto error;
-	}
-	hash_table *h = (hash_table*)u->pl_io;
-	assert(h && h->pl_io.type == PIPELINE_IO_HASH_TABLE);
-
-	BUN cnt = BATcount(b);
-	g = COLnew(b->hseqbase, TYPE_oid, cnt, TRANSIENT);
-	if (g == NULL) {
-		err = createException(MAL, "oahash.build_table", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-		goto error;
-	}
-
-	if (cnt) {
-		ATOMIC_BASE_TYPE expected = 0;
-		int tt = b->ttype;
-		gid *gp = Tloc(g, 0);
-
-		h->empty = false;
-		int slots = 0;
-		gid slot = 0;
-		QryCtx *qry_ctx = MT_thread_get_qry_ctx();
-		qry_ctx = qry_ctx ? qry_ctx : &(QryCtx) {.endtime = 0};
-
-		ht_activate(h);
-		switch(tt) {
-			case TYPE_void:
-				BATvgroup();
-				break;
-			case TYPE_bit:
-				BATgroup(bit);
-				break;
-			case TYPE_bte:
-				BATgroup(bte);
-				break;
-			case TYPE_sht:
-				BATgroup(sht);
-				break;
-			case TYPE_int:
-			case TYPE_inet4:
-				BATgroup(int);
-				break;
-			case TYPE_date:
-				BATgroup(date);
-				break;
-			case TYPE_lng:
-				BATgroup(lng);
-				break;
-			case TYPE_oid:
-				if (BATtdense(b))
-					BATvgroup();
-				else
-					BATgroup(oid);
-				break;
-			case TYPE_daytime:
-				BATgroup(daytime);
-				break;
-			case TYPE_timestamp:
-				BATgroup(timestamp);
-				break;
-#ifdef HAVE_HGE
-			case TYPE_hge:
-			case TYPE_uuid:
-				BATgroup(hge);
-				break;
-#endif
-			case TYPE_flt:
-				BATfgroup(flt, int);
-				break;
-			case TYPE_dbl:
-				BATfgroup(dbl, lng);
-				break;
-			default:
-				if (ATOMvarsized(tt)) {
-					BATaprep_heap(b, u, h, "oahash.build_table");
-					if (local_storage) {
-						BATagroup_(p);
-					} else {
-						BATagroup();
-					}
-				} else {
-					err = createException(MAL, "oahash.build_table", SQLSTATE(HY000) TYPE_NOT_SUPPORTED);
-				}
-		}
-		ht_deactivate(h);
-		if (!err)
-			TIMEOUT_CHECK(qry_ctx, throw(MAL, "oahash.build_table", RUNTIME_QRY_TIMEOUT));
-		h->processed += cnt;
-	}
-	if (err || p->p->status) {
-		if (!err)
-			err = createException(MAL, "oahash.build_table", "pipeline execution error");
-		goto error;
-	}
-	BBPunfix(b->batCacheid);
-	BATsetcount(g, cnt);
-	BATnegateprops(g);
-	gid last = ATOMIC_GET_GID(&h->last);
-	g->tmaxval = (oid) last;
-	g->tkey = FALSE;
-	*slot_id = g->batCacheid;
-	//skip propcheck
-	//BBPkeepref(u);
-	BBPretain(u->batCacheid);
-	BBPunfix(u->batCacheid);
-	BBPkeepref(g);
-	(void)private;
-	return MAL_SUCCEED;
-error:
-	BBPreclaim(b);
-	BBPreclaim(u);
-	BBPreclaim(g);
-	return err;
-}
-
 #define derive(Type) \
 	do { \
 		Type *bp = Tloc(b, 0); \
 		Type *vals = h->vals; \
 		\
 		TIMEOUT_LOOP_IDX_DECL(i, cnt, qry_ctx) { \
-			if (*upd_has_nil) \
+			if (need_has_nil) \
 				(void)ATOMIC_OR(&h->has_nil, is_##Type##_nil(bp[i])); \
 			bool fnd = 0; \
 			gid g = 0; \
@@ -1035,7 +906,7 @@ error:
 						slots = ht_preclaim(private); \
 						slot = ATOMIC_ADD_GID(&h->last, slots); \
 						if (((slot*100)/70) >= (gid)h->size) { \
-							hash_rehash(h, p, err); \
+							hash_rehash(h, pl, err); \
 							vals = h->vals; \
 							pgids = h->pgids; \
 							prime = hash_prime_nr[h->bits-5]; \
@@ -1083,7 +954,7 @@ error:
 						slots = ht_preclaim(private); \
 						slot = ATOMIC_ADD_GID(&h->last, slots); \
 						if (((slot*100)/70) >= (gid)h->size) { \
-							hash_rehash(h, p, err); \
+							hash_rehash(h, pl, err); \
 							vals = h->vals; \
 							pgids = h->pgids; \
 							prime = hash_prime_nr[h->bits-5]; \
@@ -1112,7 +983,7 @@ error:
 		Type *vals = h->vals; \
 		\
 		TIMEOUT_LOOP_IDX_DECL(i, cnt, qry_ctx) { \
-			if (*upd_has_nil) \
+			if (need_has_nil) \
 				(void)ATOMIC_OR(&h->has_nil, is_##Type##_nil(bp[i])); \
 			bool fnd = 0; \
 			gid g = 0; \
@@ -1129,7 +1000,7 @@ error:
 						slots = ht_preclaim(private); \
 						slot = ATOMIC_ADD_GID(&h->last, slots); \
 						if (((slot*100)/70) >= (gid)h->size) { \
-							hash_rehash(h, p, err); \
+							hash_rehash(h, pl, err); \
 							vals = h->vals; \
 							pgids = h->pgids; \
 							prime = hash_prime_nr[h->bits-5]; \
@@ -1161,7 +1032,7 @@ error:
 			bool fnd = 0; \
 			var_t voff = VarHeapVal(bi.base,i,bi.width);				\
 			void *bpi = voff == 0 ? (void*) ATOMnilptr((bi).type) : (void *) ((bi).vh->base+voff); \
-			if (*upd_has_nil) \
+			if (need_has_nil) \
 				(void)ATOMIC_OR(&h->has_nil, (voff == 0)); \
 			gid g = 0; \
 			while (!fnd) { \
@@ -1177,7 +1048,7 @@ error:
 						slots = ht_preclaim(private); \
 						slot = ATOMIC_ADD_GID(&h->last, slots); \
 						if (((slot*100)/70) >= (gid)h->size) { \
-							hash_rehash(h, p, err); \
+							hash_rehash(h, pl, err); \
 							vals = h->vals; \
 							pgids = h->pgids; \
 							prime = hash_prime_nr[h->bits-5]; \
@@ -1212,7 +1083,7 @@ error:
 				bool fnd = 0; \
 				var_t voff = VarHeapVal(bi.base,i,bi.width);				\
 				void *bpi = voff == 0 ? (void*) ATOMnilptr((bi).type) : (void *) ((bi).vh->base+voff); \
-				if (*upd_has_nil) \
+				if (need_has_nil) \
 					(void)ATOMIC_OR(&h->has_nil, (voff == 0)); \
 				gid g = 0; \
 				while (!fnd) { \
@@ -1228,7 +1099,7 @@ error:
 							slots = ht_preclaim(private); \
 							slot = ATOMIC_ADD_GID(&h->last, slots); \
 							if (((slot*100)/70) >= (gid)h->size) { \
-								hash_rehash(h, p, err); \
+								hash_rehash(h, pl, err); \
 								vals = h->vals; \
 								pgids = h->pgids; \
 								prime = hash_prime_nr[h->bits-5]; \
@@ -1256,7 +1127,7 @@ error:
 				bool fnd = 0; \
 				var_t voff = VarHeapVal(bi.base,i,bi.width);				\
 				void *bpi = voff == 0 ? (void*) ATOMnilptr((bi).type) : (void *) ((bi).vh->base+voff); \
-				if (*upd_has_nil) \
+				if (need_has_nil) \
 					(void)ATOMIC_OR(&h->has_nil, (voff == 0)); \
 				gid g = 0; \
 				while (!fnd) { \
@@ -1272,7 +1143,7 @@ error:
 							slots = ht_preclaim(private); \
 							slot = ATOMIC_ADD_GID(&h->last, slots); \
 							if (((slot*100)/70) >= (gid)h->size) \
-								hash_rehash(h, p, err); \
+								hash_rehash(h, pl, err); \
 								vals = h->vals; \
 								pgids = h->pgids; \
 								prime = hash_prime_nr[h->bits-5]; \
@@ -1297,22 +1168,31 @@ error:
 	} while (0)
 
 static str
-OAHASHbuild_tbl_cmbd(Client ctx, bat *slot_id, bat *ht_sink, const bat *key, const bat *parent_slotid, const bit *upd_has_nil)
+OAHASHbuild(Client ctx, MalBlkPtr m, MalStkPtr s, InstrPtr p)
 {
 	(void)ctx;
-	Pipeline *p = pipeline_get_thread_private_pipeline();
+	(void)m;
+
+	bat *gids      = getArgReference_bat(s, p, 0);
+	bat *hashtable = getArgReference_bat(s, p, 1);
+	bat *keys      = getArgReference_bat(s, p, 2);
+	bat *parents   = NULL;
+	if (p->argc > 4)
+		parents= getArgReference_bat(s, p, 3);
+	bit need_has_nil = *getArgReference_bit(s, p, p->argc-1);
+
+	Pipeline *pl = pipeline_get_thread_private_pipeline();
 	bool private = 0, local_storage = false;
 	str err = NULL;
 	BAT *u = NULL, *b = NULL, *G = NULL, *g = NULL;
 
-	/* for now we only work with shared ht_sink in the build phase */
-	assert(*ht_sink && !is_bat_nil(*ht_sink));
+	/* we only work with shared hashtable in the build phase */
+	assert(*hashtable && !is_bat_nil(*hashtable));
 
-	u = BATdescriptor(*ht_sink);
-	b = BATdescriptor(*key);
-	G = BATdescriptor(*parent_slotid);
-	if (!b || !G || !u) {
-		err = createException(MAL, "oahash.build_combined_table", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+	b = BATdescriptor(*keys);
+	u = BATdescriptor(*hashtable);
+	if (!b || !u) {
+		err = createException(MAL, "oahash.build", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		goto error;
 	}
 	hash_table *h = (hash_table*)u->pl_io;
@@ -1321,18 +1201,14 @@ OAHASHbuild_tbl_cmbd(Client ctx, bat *slot_id, bat *ht_sink, const bat *key, con
 	BUN cnt = BATcount(b);
 	g = COLnew(b->hseqbase, TYPE_oid, cnt, TRANSIENT);
 	if (g == NULL) {
-		err = createException(MAL, "oahash.build_combined_table", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		err = createException(MAL, "oahash.build", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto error;
 	}
 
 	if (cnt) {
-		ht_activate(h);
 		ATOMIC_BASE_TYPE expected = 0;
 		int tt = b->ttype;
 		gid *gp = Tloc(g, 0);
-		gid *gi = Tloc(G, 0);
-		gid *pgids = h->pgids;
-		int prime = hash_prime_nr[h->bits-5];
 
 		h->empty = false;
 		int slots = 0;
@@ -1340,72 +1216,145 @@ OAHASHbuild_tbl_cmbd(Client ctx, bat *slot_id, bat *ht_sink, const bat *key, con
 		QryCtx *qry_ctx = MT_thread_get_qry_ctx();
 		qry_ctx = qry_ctx ? qry_ctx : &(QryCtx) {.endtime = 0};
 
-		switch(tt) {
-			case TYPE_void:
-				vderive();
-				break;
-			case TYPE_bit:
-				derive(bit);
-				break;
-			case TYPE_bte:
-				derive(bte);
-				break;
-			case TYPE_sht:
-				derive(sht);
-				break;
-			case TYPE_int:
-			case TYPE_inet4:
-				derive(int);
-				break;
-			case TYPE_date:
-				derive(date);
-				break;
-			case TYPE_lng:
-				derive(lng);
-				break;
-			case TYPE_oid:
-				if (BATtdense(b))
-					vderive();
-				else
-					derive(oid);
-				break;
-			case TYPE_daytime:
-				derive(daytime);
-				break;
-			case TYPE_timestamp:
-				derive(timestamp);
-				break;
+		ht_activate(h);
+		if (!parents) {
+			switch(tt) {
+				case TYPE_void:
+					vgroup();
+					break;
+				case TYPE_bit:
+					group(bit);
+					break;
+				case TYPE_bte:
+					group(bte);
+					break;
+				case TYPE_sht:
+					group(sht);
+					break;
+				case TYPE_int:
+				case TYPE_inet4:
+					group(int);
+					break;
+				case TYPE_date:
+					group(date);
+					break;
+				case TYPE_lng:
+					group(lng);
+					break;
+				case TYPE_oid:
+					if (BATtdense(b))
+						vgroup();
+					else
+						group(oid);
+					break;
+				case TYPE_daytime:
+					group(daytime);
+					break;
+				case TYPE_timestamp:
+					group(timestamp);
+					break;
 #ifdef HAVE_HGE
-			case TYPE_hge:
-			case TYPE_uuid:
-				derive(hge);
-				break;
+				case TYPE_hge:
+				case TYPE_uuid:
+					group(hge);
+					break;
 #endif
-			case TYPE_flt:
-				fderive(flt, int);
-				break;
-			case TYPE_dbl:
-				fderive(dbl, lng);
-				break;
-			default:
-				if (ATOMvarsized(tt)) {
-					BATaprep_heap(b, u, h, "oahash.build_combined_table");
-					if (local_storage) {
-						aderive_(p);
+				case TYPE_flt:
+					fgroup(flt, int);
+					break;
+				case TYPE_dbl:
+					fgroup(dbl, lng);
+					break;
+				default:
+					if (ATOMvarsized(tt)) {
+						aprep_heap(b, u, h);
+						if (local_storage) {
+							agroup_(pl);
+						} else {
+							agroup();
+						}
 					} else {
-						aderive();
+						err = createException(MAL, "oahash.build", SQLSTATE(HY000) TYPE_NOT_SUPPORTED);
 					}
-				} else {
-					err = createException(MAL, "oahash.build_combined_table", SQLSTATE(HY000) TYPE_NOT_SUPPORTED);
-				}
+			}
+		} else {
+			G = BATdescriptor(*parents);
+			if (!G) {
+				err = createException(MAL, "oahash.build", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+				goto error;
+			}
+
+			gid *gi = Tloc(G, 0);
+			gid *pgids = h->pgids;
+			int prime = hash_prime_nr[h->bits-5];
+
+			switch(tt) {
+				case TYPE_void:
+					vderive();
+					break;
+				case TYPE_bit:
+					derive(bit);
+					break;
+				case TYPE_bte:
+					derive(bte);
+					break;
+				case TYPE_sht:
+					derive(sht);
+					break;
+				case TYPE_int:
+				case TYPE_inet4:
+					derive(int);
+					break;
+				case TYPE_date:
+					derive(date);
+					break;
+				case TYPE_lng:
+					derive(lng);
+					break;
+				case TYPE_oid:
+					if (BATtdense(b))
+						vderive();
+					else
+						derive(oid);
+					break;
+				case TYPE_daytime:
+					derive(daytime);
+					break;
+				case TYPE_timestamp:
+					derive(timestamp);
+					break;
+#ifdef HAVE_HGE
+				case TYPE_hge:
+				case TYPE_uuid:
+					derive(hge);
+					break;
+#endif
+				case TYPE_flt:
+					fderive(flt, int);
+					break;
+				case TYPE_dbl:
+					fderive(dbl, lng);
+					break;
+				default:
+					if (ATOMvarsized(tt)) {
+						aprep_heap(b, u, h);
+						if (local_storage) {
+							aderive_(pl);
+						} else {
+							aderive();
+						}
+					} else {
+						err = createException(MAL, "oahash.build", SQLSTATE(HY000) TYPE_NOT_SUPPORTED);
+					}
+			}
 		}
 		ht_deactivate(h);
 		if (!err)
-			TIMEOUT_CHECK(qry_ctx, err = createException(SQL, "oahash.build_combined_table", RUNTIME_QRY_TIMEOUT));
+			TIMEOUT_CHECK(qry_ctx, err = createException(SQL, "oahash.build", RUNTIME_QRY_TIMEOUT));
 	}
-	if (err || p->p->status) {
+	if (err || pl->p->status) {
 		if (!err)
-			err = createException(MAL, "oahash.build_combined_table", "pipeline execution error");
+			err = createException(MAL, "oahash.build", "pipeline execution error");
 		goto error;
 	}
 	BATsetcount(g, cnt);
@@ -1415,7 +1364,7 @@ OAHASHbuild_tbl_cmbd(Client ctx, bat *slot_id, bat *ht_sink, const bat *key, con
 	gid last = ATOMIC_GET_GID(&h->last);
 	g->tmaxval = last;
 	g->tkey = FALSE;
-	*slot_id = g->batCacheid;
+	*gids = g->batCacheid;
 	//skip propcheck
 	//BBPkeepref(u);
 	BBPretain(u->batCacheid);
@@ -1424,13 +1373,14 @@ OAHASHbuild_tbl_cmbd(Client ctx, bat *slot_id, bat *ht_sink, const bat *key, con
 	(void)private;
 
 	BBPunfix(b->batCacheid);
-	BBPunfix(G->batCacheid);
+	BBPreclaim(G);
 	return MAL_SUCCEED;
 error:
 	BBPreclaim(u);
 	BBPreclaim(b);
-	BBPreclaim(G);
 	BBPreclaim(g);
+
+	BBPreclaim(G);
 	return err;
 }
 
@@ -3432,9 +3382,9 @@ static mel_func oa_hash_init_funcs[] = {
  command("oahash", "hashmark_init", OAHASHhashmark_init, false, "", args(1,3, batarg("hashmark",bit),batargany("ht_sink",1),batargany("payload",2))),
  pattern("hash", "ext", UHASHext, false, "", args(1,2, batarg("ext",oid),batargany("in",1))),
 
- command("oahash", "build_table", OAHASHbuild_tbl, false, "Add the `key`-s to the hash table. Returns the `slot_id` per `key` and the updated `ht_sink`", args(2,4, batarg("slot_id",oid),batargany("ht_sink",1),batargany("key",1),arg("upd_has_nil",bit))),
+ pattern("oahash", "build", OAHASHbuild, false, "Add `keys` to the `hashtable`. If `need_has_nil`, denote if `keys` contains NULL. Returns corresponding `gids` of the `keys` and the updated `hashtable`", args(2,4, batarg("gids",oid),batargany("hashtable",1),batargany("keys",1),arg("need_has_nil",bit))),
 
- command("oahash", "build_combined_table", OAHASHbuild_tbl_cmbd, false, "Add the `key`-s with a `parent_slotid` to the hash table. Returns the `slot_id` per `key` and the updated `ht_sink`", args(2,5, batarg("slot_id",oid),batargany("ht_sink",1),batargany("key",1),batarg("parent_slotid",oid),arg("upd_has_nil",bit))),
+ pattern("oahash", "build", OAHASHbuild, false, "Add `keys` with `parents` to the `hashtable`. If `need_has_nil`, denote if `keys` contains NULL. Returns corresponding `gids` of the `keys` and the updated `hashtable`", args(2,5, batarg("gids",oid),batargany("hashtable",1),batargany("keys",1),batarg("parents",oid),arg("need_has_nil",bit))),
 
  pattern("oahash", "frequency", OAHASHadd_freq, false, "Add `slot_id` to the shared `frequencies` BAT. Returns the updated `frequencies`", args(1,2, batarg("frequencies",lng),batarg("slot_id",oid))),
  pattern("oahash", "frequency", OAHASHadd_freq, false, "Add `slot_id` to the shared `frequencies` BAT. Returns the occurrence index for each `slot_id` (i.e. it is the n-th time the `slot_id` is seen so far) and the updated `frequencies`", args(2,3, batarg("occrrence_idx",oid),batarg("frequencies",lng),batarg("slot_id",oid))),

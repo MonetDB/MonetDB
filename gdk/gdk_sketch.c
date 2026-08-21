@@ -9,6 +9,7 @@
  */
 
 #include "gdk.h"
+#include "gdk_private.h"
 #if defined(HAVE_GETENTROPY) && defined(HAVE_SYS_RANDOM_H)
 #include <sys/random.h>
 #endif
@@ -180,6 +181,7 @@ int
 sketch_populate(BAT *b, BATiter *bi, struct canditer *bci,
 		uint8_t cnting_sketch[BUCKETS][CLZ_BUCKETS])
 {
+	lng t0 = GDKusec();
 	gdk_return rc = GDK_SUCCEED;
 	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
 
@@ -229,6 +231,8 @@ sketch_populate(BAT *b, BATiter *bi, struct canditer *bci,
 	if (bi == NULL)
 		bat_iterator_end(&n_bi);
 
+	TRC_DEBUG(ALGO, ALGOBATFMT " " LLFMT " usec\n", ALGOBATPAR(b),
+		  GDKusec() - t0);
 	return rc;
 }
 
@@ -247,6 +251,7 @@ sketch_populate(BAT *b, BATiter *bi, struct canditer *bci,
 double
 bat_guess_uniques(BAT *b, BATiter *bi, struct canditer *bci)
 {
+	lng t0 = GDKusec();
 	uint8_t cnting_sketch[BUCKETS][CLZ_BUCKETS] = {0};
 	double unique_guess = 0;
 
@@ -258,5 +263,7 @@ bat_guess_uniques(BAT *b, BATiter *bi, struct canditer *bci)
 		unique_guess = sketch_estimate(cnting_sketch);
 
 	b->tunique_est = unique_guess;
+	TRC_DEBUG(ALGO, ALGOBATFMT " " LLFMT " usec\n", ALGOBATPAR(b),
+		  GDKusec() - t0);
 	return unique_guess;
 }

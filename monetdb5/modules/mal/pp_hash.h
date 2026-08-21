@@ -32,10 +32,10 @@
 #define nextk linear_probing
 //#define nextk quadratic_probing
 
-#define hash_rehash(ht, p, err)		\
+#define hash_rehash(ht, pl, err)		\
 	{ 								\
 		if (ht_rehash(ht)) {		\
-			p->p->status = 1; 		\
+			pl->p->status = 1; 		\
 			err = createException(MAL, "oahash.rehash", MAL_MALLOC_FAIL); 	\
 			break;					\
 		}							\
