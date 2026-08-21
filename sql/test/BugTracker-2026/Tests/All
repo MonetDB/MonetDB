@@ -181,3 +181,15 @@ KNOWNFAIL?7995-left-join-lateral-subquery-bug
 KNOWNFAIL?7996-delete-not-exists-correlated-query-bug
 KNOWNFAIL?7997-recursive-cte-number-overflow-issue
 KNOWNFAIL?7998-scalar-subquery-error-msg-improvement
+7999-not-not-expr-bug
+KNOWNFAIL?8000-select-count-distinct-assert-failure
+KNOWNFAIL?8001-select-count-where-having-bug
+KNOWNFAIL?8002-schema-renaming-makes-seq-invalid-bug
+KNOWNFAIL?8003-windowed-group_concat-ignores-orderby-bug
+KNOWNFAIL?8004-nth_value-windowfunction-bug
+KNOWNFAIL?8005-prod-aggr-function-bug
+KNOWNFAIL?8006-field-function-bug
+KNOWNFAIL?8007-lag-lead-window-functions-bug
+KNOWNFAIL?8008-numeric-range-frame-bug
+KNOWNFAIL?8009-numeric-range-nulls-last-bug
+KNOWNFAIL?8010-first_value-last_value-partition-range-bug

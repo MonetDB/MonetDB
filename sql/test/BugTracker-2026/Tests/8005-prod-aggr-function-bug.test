@@ -1,0 +1,117 @@
+query ITTTT nosort
+WITH
+  one_null(i) AS (VALUES (CAST(NULL AS INT))),
+  empty(i) AS (SELECT CAST(NULL AS INT) WHERE FALSE)
+SELECT
+  (SELECT prod(i) FROM one_null) AS actual,
+  (SELECT prod(i) FROM one_null) IS NULL AS actual_is_null,
+  (SELECT prod(i) FROM empty) IS NULL AS expected_is_null,
+  (SELECT sum(i) IS NULL FROM one_null) AS sum_null_control,
+  (SELECT sum(i) IS NULL FROM empty) AS empty_sum_null_control
+----
+NULL
+True
+True
+True
+True
+
+-- additional query for testing count(*), count(i) and count(distinct i) on empty and one_null tables
+query IITITIITIT nosort
+WITH
+  one_null(i) AS (VALUES (CAST(NULL AS INT))),
+  empty(i) AS (SELECT CAST(NULL AS INT) WHERE FALSE)
+SELECT
+  (SELECT count(*) FROM empty) AS count0s,
+  (SELECT count(i) FROM empty) AS count0i,
+  (SELECT count(i) IS NULL FROM empty) AS count0in,
+  (SELECT count(distinct i) FROM empty) AS count0di,
+  (SELECT count(distinct i) IS NULL FROM empty) AS count0din,
+  (SELECT count(*) FROM one_null) AS count1s,
+  (SELECT count(i) FROM one_null) AS count1i,
+  (SELECT count(i) IS NULL FROM one_null) AS count1in,
+  (SELECT count(distinct i) FROM one_null) AS count1di,
+  (SELECT count(distinct i) IS NULL FROM one_null) AS count1din
+----
+0
+0
+False
+0
+False
+1
+0
+False
+0
+False
+
+-- additional query for testing sum(i) and sum(distinct i) on empty and one_null tables
+query ITITITIT nosort
+WITH
+  one_null(i) AS (VALUES (CAST(NULL AS INT))),
+  empty(i) AS (SELECT CAST(NULL AS INT) WHERE FALSE)
+SELECT
+  (SELECT sum(i) FROM empty) AS sum0i,
+  (SELECT sum(i) IS NULL FROM empty) AS sum0in,
+  (SELECT sum(distinct i) FROM empty) AS sum0di,
+  (SELECT sum(distinct i) IS NULL FROM empty) AS sum0din,
+  (SELECT sum(i) FROM one_null) AS sum1i,
+  (SELECT sum(i) IS NULL FROM one_null) AS sum1in,
+  (SELECT sum(distinct i) FROM one_null) AS sum1di,
+  (SELECT sum(distinct i) IS NULL FROM one_null) AS sum1din
+----
+NULL
+True
+NULL
+True
+NULL
+True
+NULL
+True
+
+-- additional query for testing avg(i) and avg(distinct i) on empty and one_null tables
+query ITITITIT nosort
+WITH
+  one_null(i) AS (VALUES (CAST(NULL AS INT))),
+  empty(i) AS (SELECT CAST(NULL AS INT) WHERE FALSE)
+SELECT
+  (SELECT avg(i) FROM empty) AS avg0i,
+  (SELECT avg(i) IS NULL FROM empty) AS avg0in,
+  (SELECT avg(distinct i) FROM empty) AS avg0di,
+  (SELECT avg(distinct i) IS NULL FROM empty) AS avg0din,
+  (SELECT avg(i) FROM one_null) AS avg1i,
+  (SELECT avg(i) IS NULL FROM one_null) AS avg1in,
+  (SELECT avg(distinct i) FROM one_null) AS avg1di,
+  (SELECT avg(distinct i) IS NULL FROM one_null) AS avg1din
+----
+NULL
+True
+NULL
+True
+NULL
+True
+NULL
+True
+
+-- additional query for testing max(i) and max(distinct i) on empty and one_null tables
+query ITITITIT nosort
+WITH
+  one_null(i) AS (VALUES (CAST(NULL AS INT))),
+  empty(i) AS (SELECT CAST(NULL AS INT) WHERE FALSE)
+SELECT
+  (SELECT max(i) FROM empty) AS max0i,
+  (SELECT max(i) IS NULL FROM empty) AS max0in,
+  (SELECT max(distinct i) FROM empty) AS max0di,
+  (SELECT max(distinct i) IS NULL FROM empty) AS max0din,
+  (SELECT max(i) FROM one_null) AS max1i,
+  (SELECT max(i) IS NULL FROM one_null) AS max1in,
+  (SELECT max(distinct i) FROM one_null) AS max1di,
+  (SELECT max(distinct i) IS NULL FROM one_null) AS max1din
+----
+NULL
+True
+NULL
+True
+NULL
+True
+NULL
+True
+

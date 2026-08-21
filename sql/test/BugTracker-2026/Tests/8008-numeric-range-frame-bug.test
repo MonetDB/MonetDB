@@ -1,0 +1,28 @@
+query IIIIII rowsort
+WITH t(id, p, k, v) AS (
+  VALUES (1, 0, 0, 1), (2, 1, 1, 0), (3, 0, 2, 3)
+)
+SELECT id, p, k, v,
+  SUM(v) OVER (PARTITION BY p ORDER BY k ASC NULLS LAST RANGE BETWEEN 0 PRECEDING AND 1 FOLLOWING) AS actual,
+  (SELECT SUM(r.v) FROM t AS r WHERE (r.p = t.p OR (r.p IS NULL AND t.p IS NULL)) AND r.k BETWEEN t.k AND t.k + 1) AS expected
+FROM t ORDER BY id
+----
+1
+0
+0
+1
+1
+1
+2
+1
+1
+0
+0
+0
+3
+0
+2
+3
+3
+3
+

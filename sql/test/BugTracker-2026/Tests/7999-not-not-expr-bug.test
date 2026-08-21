@@ -1,0 +1,30 @@
+statement ok
+CREATE TABLE t4 (
+  c2 SMALLINT,
+  c4 TIME
+)
+
+statement ok rowcount 2
+INSERT INTO t4 VALUES
+  (26, NULL),
+  (35, NULL)
+
+query I rowsort
+SELECT c2
+FROM t4
+WHERE c2 > 26
+ORDER BY c2
+----
+35
+
+query I rowsort
+SELECT c2
+FROM t4
+WHERE NOT (NOT (c2 > 26))
+ORDER BY c2
+----
+35
+
+statement ok
+DROP TABLE IF EXISTS t4
+
