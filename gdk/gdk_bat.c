@@ -789,7 +789,7 @@ COLcopy2(BAT *b, int tt, bool writable, bool mayshare, role_t role)
 			bn->batCapacity = (BUN) (bn->theap->size >> bn->tshift);
 		else
 			bn->batCapacity = 0;
-	} else if (tt != TYPE_void || ATOMextern(tt)) {
+	} else if (ATOMextern(tt)) {
 		/* case (4): one-by-one BUN insert (really slow) */
 		QryCtx *qry_ctx = MT_thread_get_qry_ctx();
 
@@ -802,7 +802,7 @@ COLcopy2(BAT *b, int tt, bool writable, bool mayshare, role_t role)
 		}
 		TIMEOUT_CHECK(qry_ctx, GOTO_LABEL_TIMEOUT_HANDLER(bunins_failed, qry_ctx));
 		bn->theap->dirty |= bi.count > 0;
-	} else if (tt != TYPE_void && bi.type == TYPE_void) {
+	} else if (bi.type == TYPE_void) {
 		/* case (4): optimized for unary void
 		 * materialization */
 		oid cur = bi.tseq, *dst = (oid *) Tloc(bn, 0);
