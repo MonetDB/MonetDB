@@ -512,6 +512,7 @@ find_cmp_exps(list **exps_hsh, list **exps_prb, const list *exps, sql_rel *rel_h
 	(void)rel_prb;
 	for (node *n = exps->h; n; n = n->next) {
 		sql_exp *e = n->data;
+		bit any = is_any(e);
 
 		assert(e->type == e_cmp);
 
@@ -525,6 +526,8 @@ find_cmp_exps(list **exps_hsh, list **exps_prb, const list *exps, sql_rel *rel_h
 				sql_exp *er = e->r;
 				if (is_unique(ne))
 					set_unique(er);
+				if (any)
+					set_any(er);
 				append(*exps_hsh, er);
 				append(*exps_prb, e->l);
 			} else {
@@ -533,6 +536,8 @@ find_cmp_exps(list **exps_hsh, list **exps_prb, const list *exps, sql_rel *rel_h
 				sql_exp *el = e->l;
 				if (is_unique(ne))
 					set_unique(el);
+				if (any)
+					set_any(el);
 				append(*exps_hsh, el);
 				append(*exps_prb, e->r);
 			}
