@@ -173,6 +173,7 @@ class SQLLogic:
     def connect(self, username='monetdb', password='monetdb',
                 hostname='localhost', port=None, database=None, usock=None,
                 language='sql', data_dir: Optional[Path]=None,
+                threshold: Optional[int]=100,
                 timeout: Optional[int]=0, alltests=False,
                 server=None):
         self.starttime = time.time()
@@ -189,6 +190,8 @@ class SQLLogic:
         self.database = database or 'demo'
         self.timeout = timeout
         self.alltests = alltests
+        if threshold:
+            self.threshold = threshold
         if language == 'sql':
             transfer_handler = UnsafeDirectoryHandler(self.srcdir,
                                                       data_dir=data_dir)
@@ -1122,6 +1125,9 @@ if __name__ == '__main__':
                         type=argparse.FileType('w'),
                         help='file in which to produce a new .test file '
                         'with updated results')
+    parser.add_argument('--hash-threshold', action='store',
+                        type=int, default=100,
+                        help='default hash-threshold value')
     parser.add_argument('--define', action='append',
                         help='define substitution for $var as var=replacement'
                         ' (can be repeated)')
@@ -1141,7 +1147,7 @@ if __name__ == '__main__':
     sql.connect(hostname=opts.host, port=opts.port, database=opts.database,
                 language=opts.language, username=opts.user,
                 password=opts.password, data_dir=opts.data_dir,
-                alltests=opts.alltests,
+                alltests=opts.alltests, threshold=opts.hash_threshold,
                 timeout=opts.timeout if opts.timeout > 0 else 0)
     for test in args:
         try:
