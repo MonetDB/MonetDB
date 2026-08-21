@@ -859,7 +859,7 @@ rel_groupby_partition(mvc *sql, sql_rel *rel)
 			card = (lng) (card * ncard * corr_weight); /* TODO check for overflow */
 			corr_weight *= 0.85;
 			if (card > estimate || ncard >= estimate) {
-				card = estimate;
+				card = (lng) (estimate * 0.85);
 				break;
 			}
 		}
