@@ -3489,6 +3489,7 @@ rel_nop(sql_query *query, sql_rel **rel, symbol *se, int fs, exp_kind ek)
 			exp_label(sql->sa, re, ++sql->label);
 			r = rel_project(sql->sa, NULL, append(sa_list(sql->sa), re));
 		}
+		set_distinct(r);
 		r = rel_add_identity(sql, r, &id);
 		re = exp_ref(sql, re);
 		id = exp_ref(sql, id);

@@ -1,0 +1,18 @@
+-- according to https://www.monetdb.org/documentation-Dec2025/user-guide/sql-functions/string-functions/
+-- scalar function field(s, s1 [, s2 ...]) function should return one integer value or null, not multiple rows
+query II nosort
+SELECT
+  field('foo', 'foo', 'bar', 'foo') AS actual,
+  0 AS expected
+----
+0
+0
+
+
+-- note that function field does NOT exist in the sys.functions table
+-- it seems to be implemented in sql/server/rel_select.c from line 3473 onwards
+query TTTTTT rowsort
+select name, mod, type, varres, vararg, system from sys.functions where name = 'field'
+----
+
+

@@ -517,14 +517,14 @@ static inline uint32_t
 READ_UNALIGNED32(const void *ptr)
 {
 	uint32_t v;
-	memcpy(&v, ptr, 2);
+	memcpy(&v, ptr, 4);
 	return v;
 }
 static inline uint64_t
 READ_UNALIGNED64(const void *ptr)
 {
 	uint64_t v;
-	memcpy(&v, ptr, 2);
+	memcpy(&v, ptr, 8);
 	return v;
 }
 #define READ_UNALIGNED(bits, ptr)	READ_UNALIGNED##bits(ptr)

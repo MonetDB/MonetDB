@@ -2816,47 +2816,43 @@ OAHASHmprobe_cmbd(Client ctx, bat *PRB_oid, bat *HSH_slotid, bat *PRB_mark, cons
 }
 
 static str
-OAHASHexpand(Client ctx, bat *expanded, const bat *selected, const bat *slotid, const bat *frequency, const bit *left_outer)
+OAHASHexpand(Client ctx, MalBlkPtr m, MalStkPtr s, InstrPtr p)
 {
 	(void)ctx;
-	BAT *e = NULL, *s = NULL, *l = NULL, *f = NULL;
+	(void)m;
+
+	bat *expanded  = getArgReference_bat(s, p, 0);
+	bat *prb_oids  = getArgReference_bat(s, p, 1);
+	bat *hsh_gids  = getArgReference_bat(s, p, 2);
+	bat *frequency = getArgReference_bat(s, p, 3);
+	bit  leftouter =*getArgReference_bit(s, p, 4);
+
+	BAT *e = NULL, *o = NULL, *l = NULL, *f = NULL;
 	BUN selcnt, ttlcnt = 0, xpdcnt = 0;
-	lng *freq = NULL;
 	str err = NULL;
 
-	s = BATdescriptor(*selected);
-	l = BATdescriptor(*slotid);
-	if (!s || !l) {
+	o = BATdescriptor(*prb_oids);
+	l = BATdescriptor(*hsh_gids);
+	f = BATdescriptor(*frequency);
+	if (!o || !l || !f) {
 		err = createException(SQL, "oahash.expand", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		goto error;
 	}
-	if (frequency && !is_bat_nil(*frequency)) {
-		f = BATdescriptor(*frequency);
-		if (!f) {
-			err = createException(SQL, "oahash.expand", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
-			goto error;
-		}
-		freq = Tloc(f, 0);
-	}
+	assert(BATcount(o) == BATcount(l));
 
-	assert(BATcount(s) == BATcount(l));
-
-	gid *sid = Tloc(l, 0);
+	gid *gids = Tloc(l, 0);
+	lng *freq = Tloc(f, 0);
 	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
 	qry_ctx = qry_ctx ? qry_ctx : &(QryCtx) {.endtime = 0};
-	selcnt = BATcount(s);
+	selcnt = BATcount(o);
 	if (selcnt) {
-		if (freq) {
-			TIMEOUT_LOOP_IDX_DECL(i, selcnt, qry_ctx) {
-				if (sid[i] != oid_nil && freq[sid[i]])
-					xpdcnt += (oid)freq[sid[i]];
-				else
-					xpdcnt++;
-			}
-			TIMEOUT_CHECK(qry_ctx, err = createException(SQL, "oahash.expand", RUNTIME_QRY_TIMEOUT));
-		} else {
-			xpdcnt = selcnt;
+		TIMEOUT_LOOP_IDX_DECL(i, selcnt, qry_ctx) {
+			if (gids[i] != oid_nil && freq[gids[i]])
+				xpdcnt += (oid)freq[gids[i]];
+			else
+				xpdcnt++;
 		}
+		TIMEOUT_CHECK(qry_ctx, err = createException(SQL, "oahash.expand", RUNTIME_QRY_TIMEOUT));
 		if (err)
 			goto error;
 	}
@@ -2869,15 +2865,15 @@ OAHASHexpand(Client ctx, bat *expanded, const bat *selected, const bat *slotid, 
 	}
 
 	BUN idx = 0;
-	oid *sel = Tloc(s, 0);
+	oid *sel = Tloc(o, 0);
 	oid *res = Tloc(e, 0);
 
-	if (*left_outer && freq) {
+	if (leftouter) {
 		TIMEOUT_LOOP_IDX_DECL(i, selcnt, qry_ctx) {
-			oid s = sid[i];
-			if (s != oid_nil) {
-				gid frq = (gid)freq[s];
-				frq = frq?frq:1;
+			oid slt = gids[i];
+			if (slt != oid_nil) {
+				gid frq = (gid)freq[slt];
+				assert(frq);
 				TIMEOUT_LOOP(frq, qry_ctx) {
 					res[idx++] = sel[i];
 				}
@@ -2885,17 +2881,13 @@ OAHASHexpand(Client ctx, bat *expanded, const bat *selected, const bat *slotid, 
 				res[idx++] = sel[i];
 			}
 		}
-	} else if (freq) {
+	} else {
 		TIMEOUT_LOOP_IDX_DECL(i, selcnt, qry_ctx) {
-			gid frq = (gid)freq[sid[i]];
-			frq = frq?frq:1;
+			gid frq = (gid)freq[gids[i]];
+			assert(frq);
 			TIMEOUT_LOOP(frq, qry_ctx) {
 				res[idx++] = sel[i];
 			}
-		}
-	} else {
-		TIMEOUT_LOOP_IDX_DECL(i, selcnt, qry_ctx) {
-			res[idx++] = sel[i];
 		}
 	}
 	TIMEOUT_CHECK(qry_ctx, err = createException(SQL, "oahash.expand", RUNTIME_QRY_TIMEOUT));
@@ -2906,17 +2898,17 @@ OAHASHexpand(Client ctx, bat *expanded, const bat *selected, const bat *slotid, 
 
 	BATsetcount(e, ttlcnt);
 	BATnegateprops(e);
-	e->tsorted = s->tsorted;
-	e->trevsorted = s->trevsorted;
+	e->tsorted = o->tsorted;
+	e->trevsorted = o->trevsorted;
 	*expanded = e->batCacheid;
 	BBPkeepref(e);
-	BBPunfix(s->batCacheid);
+	BBPunfix(o->batCacheid);
 	BBPunfix(l->batCacheid);
 	BBPreclaim(f);
 	return MAL_SUCCEED;
 error:
 	BBPreclaim(e);
-	BBPreclaim(s);
+	BBPreclaim(o);
 	BBPreclaim(l);
 	BBPreclaim(f);
 	return err;
@@ -3383,7 +3375,6 @@ static mel_func oa_hash_init_funcs[] = {
  pattern("hash", "ext", UHASHext, false, "", args(1,2, batarg("ext",oid),batargany("in",1))),
 
  pattern("oahash", "build", OAHASHbuild, false, "Add `keys` to the `hashtable`. If `need_has_nil`, denote if `keys` contains NULL. Returns corresponding `gids` of the `keys` and the updated `hashtable`", args(2,4, batarg("gids",oid),batargany("hashtable",1),batargany("keys",1),arg("need_has_nil",bit))),
-
  pattern("oahash", "build", OAHASHbuild, false, "Add `keys` with `parents` to the `hashtable`. If `need_has_nil`, denote if `keys` contains NULL. Returns corresponding `gids` of the `keys` and the updated `hashtable`", args(2,5, batarg("gids",oid),batargany("hashtable",1),batargany("keys",1),batarg("parents",oid),arg("need_has_nil",bit))),
 
  pattern("oahash", "frequency", OAHASHadd_freq, false, "Add `slot_id` to the shared `frequencies` BAT. Returns the updated `frequencies`", args(1,2, batarg("frequencies",lng),batarg("slot_id",oid))),
@@ -3410,7 +3401,7 @@ static mel_func oa_hash_init_funcs[] = {
  command("oahash", "combined_mprobe", OAHASHmprobe_cmbd_single, false, "Probe the selected `key`-s pairs in the hash table. For a matched item, return its OID in the 'key' column and the slot ID in the hash table", args(3,10, batarg("PRB_oid",oid),batarg("HSH_slotid",oid),batarg("PRB_matched",bit),batargany("PRB_key",1),batarg("PRB_selected",oid),batarg("HSH_pgids",oid),batargany("HSH_ht",1),batarg("frequency",lng),arg("single",bit),arg("semantics",bit))),
  command("oahash", "combined_mprobe", OAHASHmprobe_cmbd, false, "Probe the selected `key`-s in the hash table. For a matched item, return its OID in the 'key' column and the slot ID in the hash table", args(3,9, batarg("PRB_oid",oid),batarg("HSH_slotid",oid),batarg("PRB_matched",bit),batargany("PRB_key",1),batarg("PRB_selected",oid),batarg("HSH_pgids",oid),batargany("HSH_ht",1),arg("single",bit),arg("semantics",bit))),
 
- command("oahash", "expand", OAHASHexpand, false, "Expand the selected keys according to their frequencies in the hash table. If 'left_outer' is true, append the not 'selected' keys", args(1,5,batarg("expanded",oid),batarg("selected",oid),batarg("slotid",oid),batarg("frequency",lng),arg("left_outer",bit))),
+ pattern("oahash", "expand", OAHASHexpand, false, "Expand the probe-side OIDs according to their matching hash-side GIDs and frequencies. If 'leftouter' is true, append the not matched OIDs", args(1,5,batarg("expanded",oid),batarg("prb_oids",oid),batarg("hsh_gids",oid),batarg("frequency",lng),arg("leftouter",bit))),
 
  command("oahash", "expand_cartesian", OAHASHexpand_cart, false, "Duplicate each value in 'col' the number of times as the count of 'rowrepeat'. For a left/right-outer join, if 'rowrepeat' is empty, output the values in 'col' once.", args(1,4, batarg("expanded",oid),batargany("col",1),batargany("rowrepeat",2),arg("left_outer",bit))),
 
