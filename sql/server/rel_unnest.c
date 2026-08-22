@@ -2982,6 +2982,7 @@ rewrite_groupings(visitor *v, sql_rel *rel)
 						ne = exp_atom(v->sql->sa, atom_general(v->sql->sa, exp_subtype(e), NULL, 0));
 						if (exp_name(e))
 							exp_prop_alias(v->sql->sa, ne, e);
+						set_has_nil(ne);
 					} else {
 						sql_exp *ec = exp_copy(v->sql, e);
 						ne = exp_ref(v->sql, ec);

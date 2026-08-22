@@ -188,7 +188,7 @@ KNOWNFAIL?8002-schema-renaming-makes-seq-invalid-bug
 KNOWNFAIL?8003-windowed-group_concat-ignores-orderby-bug
 KNOWNFAIL?8004-nth_value-windowfunction-bug
 KNOWNFAIL?8005-prod-aggr-function-bug
-KNOWNFAIL?8006-field-function-bug
+8006-field-function-bug
 KNOWNFAIL?8007-lag-lead-window-functions-bug
 KNOWNFAIL?8008-numeric-range-frame-bug
 KNOWNFAIL?8009-numeric-range-nulls-last-bug
