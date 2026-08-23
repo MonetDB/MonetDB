@@ -39800,6 +39800,36 @@ SQLavginteger
 return the average of groups
 sql
 bind
+pattern sql.bind(X_0:int, X_1:str, X_2:str, X_3:int, X_4:int) (X_5:bat[:oid], X_6:bat[:any_1])
+mvc_bind_wrap
+Bind the 'schema.table.column' BAT with access kind:@0 - base table@1 - inserts@2 - updates
+sql
+bind
+pattern sql.bind(X_0:int, X_1:str, X_2:str, X_3:int, X_4:int):bat[:any_1]
+mvc_bind_wrap
+Bind the 'schema.table.column' BAT with access kind:@0 - base table@1 - inserts@2 - updates
+sql
+bind
+pattern sql.bind(X_0:int, X_1:str, X_2:str, X_3:int, X_4:int, X_5:int) (X_6:bat[:oid], X_7:bat[:any_1])
+mvc_bind_wrap
+Bind the 'schema.table.column' BAT with access kind:@0 - base table@1 - inserts@2 - updates
+sql
+bind
+pattern sql.bind(X_0:int, X_1:str, X_2:str, X_3:int, X_4:int, X_5:int):bat[:any_1]
+mvc_bind_wrap
+Bind the 'schema.table.column' BAT partition with access kind:@0 - base table@1 - inserts@2 - updates
+sql
+bind
+pattern sql.bind(X_0:int, X_1:str, X_2:str, X_3:int, X_4:int, X_5:int, X_6:int) (X_7:bat[:oid], X_8:bat[:any_1])
+mvc_bind_wrap
+Bind the 'schema.table.column' BAT with access kind:@0 - base table@1 - inserts@2 - updates
+sql
+bind
+pattern sql.bind(X_0:int, X_1:str, X_2:str, X_3:int, X_4:int, X_5:int, X_6:int):bat[:any_1]
+mvc_bind_wrap
+Bind the 'schema.table.column' BAT partition with access kind:@0 - base table@1 - inserts@2 - updates
+sql
+bind
 pattern sql.bind(X_0:int, X_1:str, X_2:str, X_3:str, X_4:int) (X_5:bat[:oid], X_6:bat[:any_1])
 mvc_bind_wrap
 Bind the 'schema.table.column' BAT with access kind: 0 - base table 1 - inserts 2 - updates
@@ -40103,6 +40133,36 @@ dump_trace
 pattern sql.dump_trace() (X_0:bat[:lng], X_1:bat[:str], X_2:bat[:str])
 dump_trace
 dump the trace statistics
+sql
+emptybind
+pattern sql.emptybind(X_0:int, X_1:str, X_2:str, X_3:int, X_4:int) (X_5:bat[:oid], X_6:bat[:any_1])
+mvc_bind_wrap
+(empty)
+sql
+emptybind
+pattern sql.emptybind(X_0:int, X_1:str, X_2:str, X_3:int, X_4:int):bat[:any_1]
+mvc_bind_wrap
+(empty)
+sql
+emptybind
+pattern sql.emptybind(X_0:int, X_1:str, X_2:str, X_3:int, X_4:int, X_5:int) (X_6:bat[:oid], X_7:bat[:any_1])
+mvc_bind_wrap
+(empty)
+sql
+emptybind
+pattern sql.emptybind(X_0:int, X_1:str, X_2:str, X_3:int, X_4:int, X_5:int):bat[:any_1]
+mvc_bind_wrap
+(empty)
+sql
+emptybind
+pattern sql.emptybind(X_0:int, X_1:str, X_2:str, X_3:int, X_4:int, X_5:int, X_6:int) (X_7:bat[:oid], X_8:bat[:any_1])
+mvc_bind_wrap
+(empty)
+sql
+emptybind
+pattern sql.emptybind(X_0:int, X_1:str, X_2:str, X_3:int, X_4:int, X_5:int, X_6:int):bat[:any_1]
+mvc_bind_wrap
+(empty)
 sql
 emptybind
 pattern sql.emptybind(X_0:int, X_1:str, X_2:str, X_3:str, X_4:int) (X_5:bat[:oid], X_6:bat[:any_1])
