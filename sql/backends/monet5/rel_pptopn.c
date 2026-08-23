@@ -343,7 +343,7 @@ rel2bin_ordered_topn(backend *be, sql_rel *rel, list *refs, sql_rel *topn, stmt 
 				stmt *key = exp_bin(be, gbe, sub, psub, NULL, NULL, NULL, NULL, 0, 0, 0);
 				key = column(be, key);
 
-				s = stmt_oahash_build_ht(be, ht, key, s);
+				s = stmt_oahash_build_ht(be, ht, key, s, false);
 				if (s == NULL) return NULL;
 				gids = s->nr;
 			}

@@ -1,0 +1,61 @@
+statement ok
+CREATE SCHEMA test_schema
+
+statement ok
+CREATE SEQUENCE test_schema.myseq AS INTEGER
+
+query T nosort
+SELECT name FROM sys.schemas
+ WHERE name = 'test_schema'
+----
+test_schema
+
+query T nosort
+SELECT name FROM sys.sequences
+ WHERE name = 'myseq'
+   AND schema_id IN (SELECT id FROM sys.schemas WHERE name = 'test_schema')
+----
+myseq
+
+query I nosort
+SELECT next_value_for('test_schema', 'myseq')
+----
+1
+
+statement ok
+ALTER SCHEMA "test_schema" RENAME TO "new_schema"
+
+query T nosort
+SELECT name FROM sys.schemas
+ WHERE name IN ('test_schema', 'new_schema')
+----
+new_schema
+
+query T nosort
+SELECT name FROM sys.sequences
+ WHERE name = 'myseq'
+   AND schema_id IN (SELECT id FROM sys.schemas WHERE name = 'new_schema')
+----
+myseq
+
+-- next query incorrectly fails with error HY050!Cannot find the sequence new_schema.myseq
+query I nosort
+SELECT next_value_for('new_schema', 'myseq')
+----
+2
+
+statement error 3F000!Cannot find the schema test_schema
+SELECT next_value_for('test_schema', 'myseq')
+
+statement ok
+DROP SEQUENCE new_schema.myseq
+
+statement ok
+DROP SEQUENCE IF EXISTS test_schema.myseq
+
+statement ok
+DROP SCHEMA new_schema
+
+statement ok
+DROP SCHEMA IF EXISTS test_schema
+

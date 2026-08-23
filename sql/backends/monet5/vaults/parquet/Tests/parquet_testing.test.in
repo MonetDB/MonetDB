@@ -150,7 +150,7 @@ SELECT * FROM '$QTSTDATAPATH/parquet/parquet_testing/alltypes_tiny_pages.parquet
 query IIIIIIRRTTTII nosort
 SELECT * FROM '$QTSTDATAPATH/parquet/parquet_testing/alltypes_tiny_pages_plain.parquet'
 ----
-94900 values hashing to 4f704b5e65931cf827ad4717a2a5126e
+94900 values hashing to a86908b7477f45e5624672538107ef4e
 
 query T nosort
 SELECT * FROM '$QTSTDATAPATH/parquet/parquet_testing/binary.parquet'

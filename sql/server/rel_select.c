@@ -3802,6 +3802,7 @@ rel_nop(sql_query *query, sql_rel **rel, symbol *se, int fs, exp_kind ek)
 			exp_label(sql->sa, re, ++sql->label);
 			r = rel_project(sql->sa, NULL, append(sa_list(sql->sa), re));
 		}
+		set_distinct(r);
 		r = rel_add_identity(sql, r, &id);
 		re = exp_ref(sql, re);
 		id = exp_ref(sql, id);
@@ -4794,7 +4795,7 @@ lists_cartesian_product_and_distinct(allocator *sa, list *l1, list *l2)
 }
 
 static list*
-rel_groupings(sql_query *query, sql_rel **rel, symbol *groupby, dlist *selection, int f, bool grouping_sets, list **sets)
+rel_groupings(sql_query *query, sql_rel **rel, symbol *groupby, dlist *selection, int f, bool grouping_sets, list **sets, bool *has_nil)
 {
 	mvc *sql = query->sql;
 	list *exps = new_exp_list(sql->sa);
@@ -4807,7 +4808,7 @@ rel_groupings(sql_query *query, sql_rel **rel, symbol *groupby, dlist *selection
 		list *next_set = NULL;
 
 		if (grouping->token == SQL_GROUPING_SETS) { /* call recursively, and merge the generated sets */
-			list *other = rel_groupings(query, rel, grouping, selection, f, true, &next_set);
+			list *other = rel_groupings(query, rel, grouping, selection, f, true, &next_set, has_nil);
 			if (!other)
 				return NULL;
 			exps = list_distinct(list_merge(exps, other, (fdup) NULL), (fcmp) exp_equal, (fdup) NULL);
@@ -4847,15 +4848,20 @@ rel_groupings(sql_query *query, sql_rel **rel, symbol *groupby, dlist *selection
 					list_append(set_cols, next_tuple);
 				}
 				if (is_sql_group_totals(f)) {
-					if (grouping->token == SQL_ROLLUP)
+					if (grouping->token == SQL_ROLLUP) {
 						next_set = list_rollup(sql, set_cols);
-					else if (grouping->token == SQL_CUBE)
+						*has_nil = true;
+					} else if (grouping->token == SQL_CUBE) {
 						next_set = list_power_set(sql->sa, set_cols);
-					else /* the list of sets is not used in the "GROUP BY a, b, ..." case */
+						*has_nil = true;
+					} else { /* the list of sets is not used in the "GROUP BY a, b, ..." case */
 						next_set = list_append(new_exp_list(sql->sa), set_cols);
+					}
 				}
-			} else if (is_sql_group_totals(f) && grouping_sets) /* The GROUP BY () case is the global aggregate which is always added by ROLLUP and CUBE */
+			} else if (is_sql_group_totals(f) && grouping_sets) { /* The GROUP BY () case is the global aggregate which is always added by ROLLUP and CUBE */
 				next_set = list_append(new_exp_list(sql->sa), new_exp_list(sql->sa));
+				*has_nil = true;
+			}
 		}
 		if (is_sql_group_totals(f)) { /* if there are no sets, set the found one, otherwise calculate cartesian product and merge the distinct ones */
 			if (!next_set)
@@ -6086,9 +6092,15 @@ rel_where_groupby_nodes(sql_query *query, sql_rel *rel, SelectNode *sn, int *gro
 					break;
 				}
 			}
-			gbe = rel_groupings(query, &rel, sn->groupby, sn->selection, sql_sel | sql_groupby | *group_totals, false, &sets);
+			bool has_nil = false;
+			gbe = rel_groupings(query, &rel, sn->groupby, sn->selection, sql_sel | sql_groupby | *group_totals, false, &sets, &has_nil);
 			if (!gbe)
 				return NULL;
+			for(node *n = gbe->h; n; n = n->next) {
+				sql_exp *e = n->data;
+				set_has_nil(e);
+				set_not_unique(e);
+			}
 		}
 		rel = rel_groupby(sql, rel, gbe);
 		if (rel && all)
@@ -6368,7 +6380,7 @@ rel_select_exp(sql_query *query, sql_rel *rel, SelectNode *sn, exp_kind ek)
 		 * obtained so far with the table expression, ie
 		 * t1.* or a subquery.
 		 */
-		pexps = list_merge(pexps, exps_copy(sql, te), (fdup)NULL);
+		pexps = list_join(pexps, te);
 	}
 	int card = inner->card;
 	if (rel && is_groupby(rel->op) && rel->flag) {

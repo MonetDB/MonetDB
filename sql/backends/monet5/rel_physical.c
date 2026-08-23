@@ -513,6 +513,7 @@ find_cmp_exps(list **exps_hsh, list **exps_prb, const list *exps, sql_rel *rel_h
 	(void)rel_prb;
 	for (node *n = exps->h; n; n = n->next) {
 		sql_exp *e = n->data;
+		bit any = is_any(e);
 
 		assert(e->type == e_cmp);
 
@@ -521,12 +522,24 @@ find_cmp_exps(list **exps_hsh, list **exps_prb, const list *exps, sql_rel *rel_h
 		if (exp_is_atom(e->l) || e->flag != cmp_equal || exp_is_atom(e->r)) {
 			assert(0);
 		} else {
-			if (rel_find_exp(rel_hsh, e->r)) {
-				append(*exps_hsh, e->r);
+			sql_exp *ne = NULL;
+			if ((ne = rel_find_exp(rel_hsh, e->r)) != NULL) {
+				sql_exp *er = e->r;
+				if (is_unique(ne))
+					set_unique(er);
+				if (any)
+					set_any(er);
+				append(*exps_hsh, er);
 				append(*exps_prb, e->l);
 			} else {
-				assert(rel_find_exp(rel_prb, e->r));
-				append(*exps_hsh, e->l);
+			    ne = rel_find_exp(rel_hsh, e->l);
+				assert(ne);
+				sql_exp *el = e->l;
+				if (is_unique(ne))
+					set_unique(el);
+				if (any)
+					set_any(el);
+				append(*exps_hsh, el);
 				append(*exps_prb, e->r);
 			}
 		}
@@ -1123,6 +1136,7 @@ rel_pipeline(visitor *v, sql_rel *rel, bool materialize, int pb)
 				rel->spb = 1;
 			res = SPB;
 		} else if (pb && side) { /* handle fetch join */
+			rel->partition = side;
 			if (side == 1)
 				res = rel_pipeline(v, rel->l, false, pb);
 			else

@@ -142,23 +142,11 @@ GDKgetenv(const char *name)
 }
 
 bool
-GDKgetenv_istext(const char *name, const char *text)
+GDKgetenv_istrue(const char *name)
 {
 	const char *val = GDKgetenv(name);
 
-	return val && strcasecmp(val, text) == 0;
-}
-
-bool
-GDKgetenv_isyes(const char *name)
-{
-	return GDKgetenv_istext(name, "yes");
-}
-
-bool
-GDKgetenv_istrue(const char *name)
-{
-	return GDKgetenv_istext(name, "true");
+	return val && (strcasecmp(val, "yes") == 0 || strcasecmp(val, "true") == 0);
 }
 
 int
@@ -1175,7 +1163,11 @@ GDKinit(opt *set, int setlen, bool embedded, const char *caller_revision)
 	}
 	if (GDKnr_threads > THREADS)
 		GDKnr_threads = THREADS;
+#if defined(HAVE_SYSCONF) && defined(_SC_LEVEL3_CACHE_SIZE)
+	GDKL3_size = (size_t)sysconf(_SC_LEVEL3_CACHE_SIZE);
+#else
 	GDKL3_size = 16*1024*1024;
+#endif
 	if ((p = GDKgetenv("gdk_l3_size")) != NULL)
 		GDKL3_size = (BUN) strtoll(p, NULL, 10);
 

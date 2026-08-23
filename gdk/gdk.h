@@ -3818,8 +3818,6 @@ gdk_export void GDKprintinfo(void);
 
 gdk_export const char *GDKgetenv(const char *name);
 
-gdk_export bool GDKgetenv_istext(const char *name, const char* text);
-gdk_export bool GDKgetenv_isyes(const char *name);
 gdk_export bool GDKgetenv_istrue(const char *name);
 
 gdk_export int GDKgetenv_int(const char *name, int def);

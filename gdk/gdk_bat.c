@@ -695,10 +695,12 @@ wrongtype(int t1, int t2)
 BAT *
 COLcopy2(BAT *b, int tt, bool writable, bool mayshare, role_t role)
 {
+	lng t0 = GDKusec();
 	bool slowcopy = false;
 	BAT *bn = NULL;
 	BATiter bi;
 	char strhash[GDK_STRHASHSIZE];
+	const char *algo = NULL;
 
 	BATcheck(b, NULL);
 
@@ -832,6 +834,7 @@ COLcopy2(BAT *b, int tt, bool writable, bool mayshare, role_t role)
 		/* case (2): a void,void result => nothing to
 		 * copy! */
 		bn->theap->free = 0;
+		algo = "void";
 	} else if (!slowcopy) {
 		/* case (3): just copy the heaps */
 		if (bn->tvheap) {
@@ -843,6 +846,7 @@ COLcopy2(BAT *b, int tt, bool writable, bool mayshare, role_t role)
 					bn->tvheap = bi.vh;
 					bn->tvkey = bi.vkey;
 					bn->tascii = bi.ascii;
+					algo = "share vheap, memcpy heap";
 				}
 			} else {
 				if (HEAPextend(bn->tvheap, bi.vhfree, true) != GDK_SUCCEED)
@@ -854,6 +858,7 @@ COLcopy2(BAT *b, int tt, bool writable, bool mayshare, role_t role)
 				bn->tascii = bi.ascii;
 				if (ATOMstorage(b->ttype) == TYPE_str && bi.vhfree >= GDK_STRHASHSIZE)
 					memcpy(bn->tvheap->base, strhash, GDK_STRHASHSIZE);
+				algo = "memcpy vheap and heap";
 			}
 		}
 		memcpy(bn->theap->base, bi.base, bi.hfree);
@@ -867,7 +872,7 @@ COLcopy2(BAT *b, int tt, bool writable, bool mayshare, role_t role)
 			bn->batCapacity = (BUN) (bn->theap->size >> bn->tshift);
 		else
 			bn->batCapacity = 0;
-	} else if (tt != TYPE_void || ATOMextern(tt)) {
+	} else if (ATOMextern(tt)) {
 		/* case (4): one-by-one BUN insert (really slow) */
 		QryCtx *qry_ctx = MT_thread_get_qry_ctx();
 
@@ -880,7 +885,8 @@ COLcopy2(BAT *b, int tt, bool writable, bool mayshare, role_t role)
 		}
 		TIMEOUT_CHECK(qry_ctx, GOTO_LABEL_TIMEOUT_HANDLER(bunins_failed, qry_ctx));
 		bn->theap->dirty |= bi.count > 0;
-	} else if (tt != TYPE_void && bi.type == TYPE_void) {
+		algo = "insert values";
+	} else if (bi.type == TYPE_void) {
 		/* case (4): optimized for unary void
 		 * materialization */
 		oid cur = bi.tseq, *dst = (oid *) Tloc(bn, 0);
@@ -892,6 +898,7 @@ COLcopy2(BAT *b, int tt, bool writable, bool mayshare, role_t role)
 		}
 		bn->theap->free = bi.count * sizeof(oid);
 		bn->theap->dirty |= bi.count > 0;
+		algo = "materialize void";
 	} else if (ATOMstorage(bi.type) == TYPE_msk) {
 		/* convert number of bits to number of bytes,
 		 * and round the latter up to a multiple of
@@ -899,11 +906,13 @@ COLcopy2(BAT *b, int tt, bool writable, bool mayshare, role_t role)
 		bn->theap->free = ((bi.count + 31) / 32) * 4;
 		memcpy(Tloc(bn, 0), bi.base, bn->theap->free);
 		bn->theap->dirty |= bi.count > 0;
+		algo = "memcpy msk";
 	} else {
 		/* case (4): optimized for simple array copy */
 		bn->theap->free = bi.count << bn->tshift;
 		memcpy(Tloc(bn, 0), bi.base, bn->theap->free);
 		bn->theap->dirty |= bi.count > 0;
+		algo = "memcpy heap";
 	}
 	/* copy all properties (size+other) from the source bat */
 	BATsetcount(bn, bi.count);
@@ -976,8 +985,8 @@ COLcopy2(BAT *b, int tt, bool writable, bool mayshare, role_t role)
 	bat_iterator_end(&bi);
 	if (!writable)
 		bn->batRestricted = BAT_READ;
-	TRC_DEBUG(ALGO, ALGOBATFMT " -> " ALGOBATFMT "\n",
-		  ALGOBATPAR(b), ALGOBATPAR(bn));
+	TRC_DEBUG(ALGO, ALGOBATFMT " -> " ALGOBATFMT " (%s) " LLFMT " usec\n",
+		  ALGOBATPAR(b), ALGOBATPAR(bn), algo, GDKusec() - t0);
 	return bn;
   bunins_failed:
 	bat_iterator_end(&bi);

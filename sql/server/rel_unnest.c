@@ -2983,6 +2983,7 @@ rewrite_groupings(visitor *v, sql_rel *rel)
 						ne = exp_atom(v->sql->sa, atom_general(v->sql->sa, exp_subtype(e), NULL, 0));
 						if (exp_name(e))
 							exp_prop_alias(v->sql->sa, ne, e);
+						set_has_nil(ne);
 					} else {
 						sql_exp *ec = exp_copy(v->sql, e);
 						ne = exp_ref(v->sql, ec);
@@ -3678,13 +3679,15 @@ rewrite_columns_for_join(visitor *v, list *exps, struct unnesting *linfo, struct
 }
 
 static list *
-add_outers(visitor *v, list *exps, struct unnesting *info, bool partition)
+add_outers(visitor *v, list *exps, struct unnesting *info, bool partition, bool reset_unique)
 {
 	list *outers = sa_list(v->sql->sa);
 	for (node *n = info->info->outer_refs->h; n; n = n->next) {
 		sql_exp *exp = repr_find(v, info->repr, n->data);
 		if (partition)
 			set_partitioning(exp);
+		if (reset_unique)
+			set_not_unique(exp);
 		append(outers, exp);
 	}
 	return list_join(outers, exps);
@@ -3699,7 +3702,7 @@ rewrite_columns_groupings(visitor *v, sql_rel *rel, struct unnesting *info)
 		list *sets = (list*) found->value.pval;
 		for(node *n = sets->h; n; n = n->next) {
 			list *l = n->data;
-			list *outers = add_outers(v, sa_list(v->sql->sa), info, false);
+			list *outers = add_outers(v, sa_list(v->sql->sa), info, false, true);
 			l = list_prepend(l, outers);
 			for (node *m = l->h->next; m; m = m ->next) {
 				m->data = rewrite_columns(v, m->data, info);
@@ -3838,7 +3841,7 @@ unnest(visitor *v, sql_rel *parent, sql_rel * rel, struct unnesting *info, list 
 		}
 		sql_rel *d = rel->l = rel_project(v->sql->sa, rel_dup(info->info->d), rel_projections(v->sql, info->info->d, NULL, 1, 1));
 		add_outers_repr(v, d, info, true);
-		rel->exps = add_outers(v, rel->exps, info, false);
+		rel->exps = add_outers(v, rel->exps, info, false, false);
 		rel->nr_outers = list_length(info->info->outer_refs);
 		rel->exps = rewrite_columns(v, rel->exps, info);
 		return;
@@ -3857,11 +3860,11 @@ unnest(visitor *v, sql_rel *parent, sql_rel * rel, struct unnesting *info, list 
 			sql_exp *aexp = n->data;
 			n->data = aexp = exp_rewrite(v->sql, rel, aexp, info->info->outer_refs);
 		}
-		rel->exps = add_outers(v, rel->exps, info, false);
+		rel->exps = add_outers(v, rel->exps, info, false, false);
 		rel->nr_outers = list_length(info->info->outer_refs);
 		rel->exps = rewrite_columns(v, rel->exps, info);
 		if (rel->r) {
-			rel->r = add_outers(v, rel->r, info, true);
+			rel->r = add_outers(v, rel->r, info, true, false);
 			rel->r = rewrite_columns(v, rel->r, info);
 		}
 	} else if (is_topn(rel->op) || is_sample(rel->op)) {
@@ -3870,7 +3873,7 @@ unnest(visitor *v, sql_rel *parent, sql_rel * rel, struct unnesting *info, list 
 			sql_rel *or = rel->l;
 			assert(is_simple_project(or->op));
 			if (!or->r)
-				or->r = add_outers(v, or->r, info, true);
+				or->r = add_outers(v, or->r, info, true, false);
 		}
 		rel->grouped = 1;
 	} else if (is_munion(rel->op) && is_recursive(rel)) {
@@ -3887,7 +3890,7 @@ unnest(visitor *v, sql_rel *parent, sql_rel * rel, struct unnesting *info, list 
 		if (add_base) /* make sure we unnest up till the base */
 			append(iter_acc, base);
 		unnest(v, rel, iter, info, iter_acc);
-		rel->exps = add_outers(v, rel->exps, info, false);
+		rel->exps = add_outers(v, rel->exps, info, false, true);
 		rel->nr_outers = list_length(info->info->outer_refs);
 		rel->exps = rewrite_columns(v, rel->exps, info);
 	} else if (is_munion(rel->op)) {
@@ -3903,7 +3906,7 @@ unnest(visitor *v, sql_rel *parent, sql_rel * rel, struct unnesting *info, list 
 				rel_update_subrel(rel, inner, ninner);
 			}
 		}
-		rel->exps = add_outers(v, rel->exps, info, false);
+		rel->exps = add_outers(v, rel->exps, info, false, true);
 		rel->nr_outers = list_length(info->info->outer_refs);
 		rel->exps = rewrite_columns(v, rel->exps, info);
 	} else if (is_set(rel->op)) {
@@ -3912,15 +3915,15 @@ unnest(visitor *v, sql_rel *parent, sql_rel * rel, struct unnesting *info, list 
 			info->repr = NULL;
 		list *racc = accessing(v, rel->r, acc);
 		unnest(v, rel, rel->r, info, racc);
-		rel->exps = add_outers(v, rel->exps, info, false);
+		rel->exps = add_outers(v, rel->exps, info, false, true);
 		rel->nr_outers = list_length(info->info->outer_refs);
 		rel->exps = rewrite_columns(v, rel->exps, info);
 	} else if (is_groupby(rel->op)) {
 		bool no_groups = !rel->r; /* or for cubes if groupingsets has empty case */
 		unnest(v, rel, rel->l, info, acc);
-		list *gexps = rel->r = add_outers(v, rel->r, info, false);
+		list *gexps = rel->r = add_outers(v, rel->r, info, false, false);
 		gexps = rel->r = rewrite_columns(v, rel->r, info);
-		rel->exps = add_outers(v, rel->exps, info, false);
+		rel->exps = add_outers(v, rel->exps, info, false, false);
 		rel->nr_outers = list_length(info->info->outer_refs);
 		rel->exps = rewrite_columns(v, rel->exps, info);
 		if (rel->p)
@@ -3979,9 +3982,9 @@ unnest(visitor *v, sql_rel *parent, sql_rel * rel, struct unnesting *info, list 
 		unnest(v, rel, rel->l, info, acc);
 		sql_exp *tfe = rel->r;
 		list *ops = tfe->l;
-		ops = add_outers(v, ops, info, false);
+		ops = add_outers(v, ops, info, false, false);
 		tfe->l = ops = rewrite_columns(v, ops, info);
-		rel->exps = add_outers(v, rel->exps, info, false);
+		rel->exps = add_outers(v, rel->exps, info, false, false);
 		rel->nr_outers = list_length(info->info->outer_refs);
 		rel->exps = rewrite_columns(v, rel->exps, info);
 	}
@@ -4092,7 +4095,7 @@ rel_djoin_elim(visitor *v, sql_rel *prel, sql_rel *rel, struct unnesting *parent
 	if (changed_maps && parent) {
 		sql_rel *p = changed_maps;
 		while(p && p->op == op_project) {
-			p->exps = add_outers(v, p->exps, parent, false);
+			p->exps = add_outers(v, p->exps, parent, false, false);
 			p->nr_outers = list_length(parent->info->outer_refs);
 			p->exps = rewrite_columns(v, p->exps, parent);
 			assert(!p->r);

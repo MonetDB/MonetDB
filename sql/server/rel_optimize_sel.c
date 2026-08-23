@@ -1609,6 +1609,7 @@ find_fk( mvc *sql, list *rels, list *exps)
 				prop *p;
 				node *n;
 				sql_exp *t = NULL, *i = NULL;
+				list *jexps = sa_list(sql->sa);
 
 				if (list_length(lcols) > 1 || !mvc_debug_on(sql, 512)) {
 
@@ -1636,20 +1637,25 @@ find_fk( mvc *sql, list *rels, list *exps)
 					}
 
 					/* Remove all join expressions */
-					for (n = eje->h; n; n = n->next)
+					for (n = eje->h; n; n = n->next) {
 						list_remove_data(exps, NULL, n->data);
+						append(jexps, n->data);
+					}
 					append(exps, je);
 					djn->data = je;
 				} else if (swapped) { /* else keep je for single column expressions */
 					je = exp_compare(sql->sa, je->r, je->l, cmp_equal);
 					/* Remove all join expressions */
-					for (n = eje->h; n; n = n->next)
+					for (n = eje->h; n; n = n->next) {
 						list_remove_data(exps, NULL, n->data);
+						append(jexps, n->data);
+					}
 					append(exps, je);
 					djn->data = je;
 				}
 				je->p = p = prop_create(sql->sa, PROP_JOINIDX, je->p);
 				p->value.pval = idx;
+				p->exps = jexps;
 			}
 		}
 	}
@@ -3115,21 +3121,13 @@ struct jo_pair {
 	list *exps;
 };
 
-static sql_rel *
-order_joins_bushy( visitor *v, list *rels, list *exps)
-{
-	unsigned int rsingle;
 
-	/* split joins into n_m joins and filters (ie others with 1 side unique's (pkey/ukey etc) */
-	//for (node *n = exps->h; n; n = n->next) {
-		//sql_exp *je = n->data;
-		//if (find_prop(je->p, PROP_JOINIDX)) {
-			//printf("join\n");
-		//}
-	//}
-	/* loop of finding join pairs */
-	allocator *ta = MT_thread_getallocator();
+static void
+mark_join_sides(allocator *ta, list *rels, list *exps,
+		ulng *Max, sql_rel ***Rels_a, uint16_t **R1, uint16_t **R2, int **R3)
+{
 	int nr_exps = list_length(exps), nr_rels = list_length(rels), ci = 1;
+
 	sql_rel **rels_a = SA_NEW_ARRAY(ta, sql_rel*, nr_rels+1); /* don't use slot 0 */
 	rels_a[0] = NULL;
 	ulng max = 0;
@@ -3144,7 +3142,6 @@ order_joins_bushy( visitor *v, list *rels, list *exps)
 	uint16_t *r2 = SA_NEW_ARRAY(ta, uint16_t, nr_exps);
 	/* change r3 into rest list's */
 	int *r3 = SA_NEW_ARRAY(ta, int, nr_exps);
-	int *useda = SA_ZNEW_ARRAY(ta, int, nr_exps);
 
 	ci = 0;
 	for (node *n = exps->h; n; n = n->next, ci++) {
@@ -3166,7 +3163,31 @@ order_joins_bushy( visitor *v, list *rels, list *exps)
 			}
 		}
 	}
+	*Max = max;
+	*Rels_a = rels_a;
+	*R1 = r1;
+	*R2 = r2;
+	*R3 = r3;
+}
+
+static sql_rel *
+order_joins_bushy( visitor *v, list *rels, list *exps)
+{
+	unsigned int rsingle;
+
+	/* loop of finding join pairs */
+	allocator *ta = MT_thread_getallocator();
+	int nr_exps = list_length(exps), nr_rels = list_length(rels);
+	ulng max = 0;
+	sql_rel **rels_a = NULL;
+	uint16_t *r1, *r2;
+	int *r3;
+
+	mark_join_sides(ta, rels, exps, &max, &rels_a, &r1, &r2, &r3);
+
+
 	/* find number of unique pairs */
+	int *useda = SA_ZNEW_ARRAY(ta, int, nr_exps);
 	int nr_pairs = unique_pairs(r1, r2, nr_exps, useda);
 	struct jo_pair *pairs = SA_ZNEW_ARRAY(ta, struct jo_pair, nr_pairs);
 	int used = 0, i = 0;
@@ -3355,6 +3376,195 @@ order_joins_bushy( visitor *v, list *rels, list *exps)
 		top = rel_get_statistics_(v, top); /* we need stats */
 	v->data = data;
 	return top;
+}
+
+static bool
+exp_allready_checked(sql_rel *r, sql_exp *e, list *exps)
+	/* r is join tree,
+	 * e is equality join expression, which may overlap with earlier join expressions in some transitive way
+	 * exps list of all join expressions in the tree r
+	 */
+{
+	(void)r;
+	sql_exp *el = e->l, *er = e->r;
+	if (e->type != e_cmp || e->flag != cmp_equal || is_anti(e) || is_semantics(e) ||
+		el->type != e_column || er->type != e_column ||
+		list_length(exps) < 2)
+		return false;
+	for (node *n = exps->h; n; n = n->next) {
+		sql_exp *je1 = n->data, *je1l = je1->l, *je1r = je1->r;
+		if (je1->type != e_cmp || je1->flag != cmp_equal || is_anti(je1) || is_semantics(je1) ||
+			je1l->type != e_column || je1r->type != e_column)
+			continue;
+
+		bool c1 = el->nid == je1l->nid, c2 = el->nid == je1r->nid, c3 = er->nid == je1l->nid, c4 = er->nid == je1r->nid;
+		if (c1 || c2 || c3 || c4) {
+			for (node *m = n->next; m; m = m->next) {
+				sql_exp *je2 = n->data, *je2l = je2->l, *je2r = je2->r;
+				if (je2->type != e_cmp || je2->flag != cmp_equal || is_anti(je2) || is_semantics(je2) ||
+					je2l->type != e_column || je2r->type != e_column)
+					continue;
+				bool c1 = el->nid == je2l->nid, c2 = el->nid == je2r->nid, c3 = er->nid == je2l->nid, c4 = er->nid == je2r->nid;
+				if (c1 || c2 || c3 || c4) {
+					/* todo  check if we have some order of el == je1l, je1r == je2l, je2r == er */
+					return true;
+				}
+			}
+		}
+	}
+	return false;
+}
+
+static void
+je_append(list *exps, sql_exp *je)
+{
+	prop *p = find_prop(je->p, PROP_JOINIDX);
+	if (p && p->exps) {
+		list_merge(exps, p->exps, NULL);
+	} else {
+		append(exps, je);
+	}
+}
+
+extern void _rel_print(mvc *sql, sql_rel *rel);
+
+static sql_rel *
+order_joins_bushy2( visitor *v, list *rels, list *exps)
+{
+	/* rels is set of filters relations
+	 * exps is set of join expressions
+	 * returns join tree
+	 */
+
+	int nr_exps = list_length(exps), nr_rels = list_length(rels);
+	/* split joins into n_m joins and filters (ie others with 1 side unique's (pkey/ukey etc) */
+	//sql_rel *T = NULL;
+	//for( node *n = rels->h; n; n = n->next) {
+		//_rel_print(v->sql, n->data);
+	//}
+	int nr = 0;
+	for (node *n = exps->h; n; n = n->next) {
+		sql_exp *je = n->data;
+		if (find_prop(je->p, PROP_JOINIDX)) {
+			//printf("joinidx ");
+			nr++;
+		}
+		if (je->type == e_cmp && je->flag == cmp_equal) {
+			sql_exp *le = je->l;
+			sql_exp *re = je->r;
+			if (find_prop(le->p, PROP_HASHCOL)) {
+				//printf("hashcol ");
+				nr++;
+			} else if (find_prop(re->p, PROP_HASHCOL)) {
+				//printf("hashcol ");
+				nr++;
+			}
+		}
+		//_exp_print(v->sql, je);
+	}
+	if (nr == list_length(exps)) { /* all pk-fk */
+		allocator *ta = MT_thread_getallocator();
+		ulng max = 0;
+		sql_rel **rels_a = NULL;
+		uint16_t *r1, *r2;
+		int *r3, ci = 1, cur_nr = 1;
+
+		mark_join_sides(ta, rels, exps, &max, &rels_a, &r1, &r2, &r3);
+
+		//printf("all pk fk\n");
+		BUN min = get_rel_count(rels->h->data);
+		sql_rel *cur = rels->h->data;
+		for(node *n = rels->h; n; n = n->next, ci++) {
+			BUN cnt = get_rel_count(n->data);
+			if (cnt < min) {
+				cur = n->data;
+				min = cnt;
+				cur_nr = ci;
+			}
+		}
+		//printf("min %lu ", min);
+		//_rel_print(v->sql, cur);
+		list_remove_data(rels, NULL, cur);
+		list *used_exps = sa_list(ta);
+		while(!list_empty(rels)) {
+			min = BUN_MAX;
+			sql_exp *cje = NULL;
+			for(node *n = exps->h; n; n = n->next) { /* find join expr */
+				sql_exp *je = n->data;
+				if (r1[je->tmp] == cur_nr || r2[je->tmp] == cur_nr) {
+					int oside = (r1[je->tmp] == cur_nr) ? r2[je->tmp] : r1[je->tmp];
+					sql_rel *r = rels_a[oside];
+					BUN cnt = get_rel_count(r);
+					if (cnt < min) {
+						cje = je;
+						min = cnt;
+					}
+				}
+			}
+			if (cje) {
+				int oside = (r1[cje->tmp] == cur_nr) ? r2[cje->tmp] : r1[cje->tmp];
+				sql_rel *r = rels_a[oside], *l = cur;
+				cur = rel_crossproduct(v->sql->sa, l, r, op_join);
+				rel_join_add_exp(v->sql->sa, cur, cje);
+				je_append(used_exps, cje);
+				for(int i = 0; i<nr_rels+1; i++) {
+					if (rels_a[i] == l || rels_a[i] == r)
+						rels_a[i] = cur;
+				}
+				for(int i = 0; i<nr_exps; i++) {
+					if (r1[i] == oside)
+						r1[i] = cur_nr;
+					if (r2[i] == oside)
+						r2[i] = cur_nr;
+					if (r1[i] == r2[i] && r1[i] == cur_nr) {
+						sql_exp *je = NULL;
+						for (node *n = exps->h; n && !je; n = n->next) {
+							sql_exp *e = n->data;
+							if (e->tmp == i)
+								je = e;
+						}
+						if (je && je != cje) {
+							if (!exp_allready_checked(cur, je, used_exps))
+								rel_join_add_exp(v->sql->sa, cur, je);
+							je_append(used_exps, je);
+							list_remove_data(exps, NULL, je);
+						}
+					}
+				}
+				list_remove_data(rels, NULL, r);
+				list_remove_data(exps, NULL, cje);
+				cur = rel_get_statistics_(v, cur); /* we need stats */
+			} else {
+				if (!list_empty(exps)) {
+					if(!list_empty(rels)) {
+						sql_rel *r = rels->h->data;
+						list_remove_data(rels, NULL, r);
+						cur = rel_crossproduct(v->sql->sa, cur, r, op_join);
+						cur = rel_get_statistics_(v, cur); /* we need stats */
+					}
+				}
+			}
+			if (list_empty(exps)) {
+				while(!list_empty(rels)) {
+					sql_rel *r = rels->h->data;
+					list_remove_data(rels, NULL, r);
+					cur = rel_crossproduct(v->sql->sa, cur, r, op_join);
+					cur = rel_get_statistics_(v, cur); /* we need stats */
+				}
+			}
+		}
+		while (!list_empty(exps)) {
+			sql_exp *je = exps->h->data;
+			if (!exp_allready_checked(cur, je, used_exps))
+				rel_join_add_exp(v->sql->sa, cur, je);
+			list_remove_data(exps, NULL, je);
+		}
+		assert(list_empty(rels) && list_empty(exps));
+		return cur;
+	}
+	//n_m_rels = /* those relations from rels which are part of a n:m join */
+	//pk_fk_rels = rels / n_m_rels;
+	return order_joins_bushy( v, rels, exps);
 }
 
 static sql_rel *
@@ -3771,7 +3981,7 @@ reorder_join(visitor *v, sql_rel *rel)
 		if (list_length(rels) > 1) {
 			rels = push_in_join_down(v->sql, rels, exps);
 			if (oahash_enabled)
-				rel = order_joins_bushy(v, rels, exps);
+				rel = order_joins_bushy2(v, rels, exps);
 			else
 				rel = order_joins(v, rels, exps);
 		} else {
@@ -5450,9 +5660,6 @@ rel_collect_ref_parents(visitor *v, sql_rel *rel)
 	}
 	return rel;
 }
-
-extern void _rel_print(mvc *sql, sql_rel *rel);
-extern void _exps_print(mvc *sql, list *exps);
 
 static sql_rel *
 rel_push_func_and_select_down(visitor *v, global_props *gp, sql_rel *rel)

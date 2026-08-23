@@ -695,11 +695,16 @@ runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 									  "address of pattern %s.%s missing",
 									  pci->modname, pci->fcnname);
 			} else {
+				lng t0 = GDKusec();
 				TRC_INFO(ALGO, "calling %s.%s\n",
 						 pci->modname ? pci->modname : "<null>",
 						 pci->fcnname ? pci->fcnname : "<null>");
 				ret = (*(str (*) (Client, MalBlkPtr, MalStkPtr, InstrPtr)) pci->
 					   fcn) (cntxt, mb, stk, pci);
+				TRC_DEBUG(ALGO, "done calling %s.%s " LLFMT " usec\n",
+						  pci->modname ? pci->modname : "<null>",
+						  pci->fcnname ? pci->fcnname : "<null>",
+						  GDKusec() - t0);
 #ifndef NDEBUG
 				if (ret == MAL_SUCCEED) {
 					/* check that the types of actual results match
@@ -725,11 +730,16 @@ runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 #endif
 			}
 			break;
-		case CMDcall:
+		case CMDcall: {
+			lng t0 = GDKusec();
 			TRC_DEBUG(ALGO, "calling %s.%s\n",
 					  pci->modname ? pci->modname : "<null>",
 					  pci->fcnname ? pci->fcnname : "<null>");
 			ret = malCommandCall(cntxt, stk, pci);
+				TRC_DEBUG(ALGO, "done calling %s.%s " LLFMT " usec\n",
+						  pci->modname ? pci->modname : "<null>",
+						  pci->fcnname ? pci->fcnname : "<null>",
+						  GDKusec() - t0);
 #ifndef NDEBUG
 			if (ret == MAL_SUCCEED) {
 				/* check that the types of actual results match
@@ -752,6 +762,7 @@ runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 			}
 #endif
 			break;
+		}
 		case FCNcall: {
 			/*
 			 * MAL function calls are relatively expensive,

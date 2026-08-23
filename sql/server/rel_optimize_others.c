@@ -1148,14 +1148,15 @@ rel_add_projects(visitor *v, sql_rel *rel)
 }
 
 static sql_rel *
-rel_dce_(visitor *v, sql_rel *rel, bool partial)
+rel_dce_(visitor *v, sql_rel *rel, bool partial, bool has_sets)
 {
 	list *refs = sa_list(v->sql->sa);
 
 	if (v->opt >= 0 && rel)
 		v->opt = rel->opt+1;
 	rel_dce_refs(v->sql, rel, refs);
-	rel = rel_add_projects(v, rel);
+	if(has_sets)
+		rel = rel_add_projects(v, rel);
 	if (v->opt >= 0 && rel)
 		v->opt = rel->opt+1;
 	rel_used(rel);
@@ -1177,7 +1178,7 @@ sql_rel *
 rel_dce(visitor *v, global_props *gp, sql_rel *rel)
 {
 	(void) gp;
-	return rel_dce_(v, rel, false);
+	return rel_dce_(v, rel, false, gp && (gp->cnt[op_munion] || gp->cnt[op_except] || gp->cnt[op_inter]));
 }
 
 /* keep export for other projects */
@@ -1185,7 +1186,7 @@ sql_rel *
 rel_deadcode_elimination(mvc *sql, sql_rel *rel)
 {
 	visitor v = {.sql = sql, .opt = rel->opt };
-	return rel_dce_(&v, rel, true);
+	return rel_dce_(&v, rel, true, true);
 }
 
 run_optimizer

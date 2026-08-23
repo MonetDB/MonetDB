@@ -136,7 +136,6 @@ typedef struct stmt {
 	const char *cname;
 	sql_subtype subtype;
 	InstrPtr q;
-	list *extra;	/* used for merge statements, this will be cleaned out on the pushcands branch :) */
 } stmt;
 
 /* which MAL modules can push candidates */

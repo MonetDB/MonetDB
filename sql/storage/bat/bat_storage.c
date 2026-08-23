@@ -3036,7 +3036,7 @@ col_stats(sql_trans *tr, sql_column *c, bool *nonil, bool *unique, double *uniqu
 			*nonil = bi.nonil && !bi.nil;
 
 			if ((EC_NUMBER(eclass) || EC_VARCHAR(eclass) || EC_TEMP_NOFRAC(eclass) || eclass == EC_DATE) &&
-				d->cs.ucnt == 0 && (bi.minpos != BUN_NONE || bi.maxpos != BUN_NONE)) {
+				d->cs.ucnt == 0) {
 				if (c->min && VALinit(NULL, min, bi.type, c->min))
 					ok |= 1;
 				else if (bi.minpos != BUN_NONE && VALinit(NULL, min, bi.type, BUNtail(&bi, bi.minpos)))

@@ -40,6 +40,7 @@ typedef struct prop {
 		dbl dval; /* property with estimate */
 		void *pval; /* property value */
 	} value;
+	list *exps;
 	struct prop *p; /* some relations may have many properties, which are kept in a chain list */
 } prop;
 

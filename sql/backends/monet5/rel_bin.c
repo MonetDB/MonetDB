@@ -3955,18 +3955,6 @@ rel2bin_join(backend *be, sql_rel *rel, list *refs)
 		rd = stmt_tdiff(be, rd, jr, NULL);
 	}
 
-#if 0
-	list *l2 = NULL;
-	if (rel->op == op_left) { /* used for merge statements, this will be cleaned out on the pushcands branch :) */
-		l2 = sa_list(sql->sa);
-		list_append(l2, left);
-		list_append(l2, right);
-		list_append(l2, jl);
-		list_append(l2, jr);
-		list_append(l2, ld);
-	}
-#endif
-
 	int op = rel->op;
 	for (n = left->op4.lval->h; n; n = n->next) {
 		stmt *c = n->data;
@@ -4025,7 +4013,6 @@ rel2bin_join(backend *be, sql_rel *rel, list *refs)
 	}
 
 	res = stmt_list(be, l);
-	//res->extra = l2; /* used for merge statements, this will be cleaned out on the pushcands branch :) */
 
 	if (neededpp && !rel->partition)
 		res = rel2bin_slicer_pp(be, res);
@@ -9254,10 +9241,7 @@ deduplicate_refs(mvc *sql, allocator *ta, list *refs, sql_rel *rel)
 			for(node *m = prefs->h; m; m = m->next->next) {
 				sql_rel *ir = m->data;
 				prop *ip = find_prop(ir->p, PROP_HASH);
-				bool needs_project = false;
 				if (ip && h == ip->value.lval && rel_remap(sql, ta, or, ir, sa_list(ta)) == 0) {
-					/* todo match subtrees */
-					printf("#found %d\n", (int)needs_project);
 					nr = ir;
 					break;
 				}

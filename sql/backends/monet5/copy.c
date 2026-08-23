@@ -75,7 +75,7 @@ bufferstream_read( bufferstream *bs, int cur)
 	int ocur = bs->cur_buf;
 	assert(bs->eof || !bs->buf[0] || cur == (ocur+1)%bs->nr_bufs);
 	if (bs->eof || mnstr_eof(bs->s)) {
-	    if (bs->pos[ocur] == bs->len[ocur])
+	    if (bs->pos[ocur] >= bs->len[ocur])
 			bs->eof = 1;
 		return 0;
 	}
@@ -100,7 +100,7 @@ bufferstream_read( bufferstream *bs, int cur)
 		memcpy(bs->buf[cur] + 2, bs->buf[ocur]+p, bs->len[ocur] - p + 1);
 		bs->len[cur] = 2 + bs->len[ocur] - p;
 		if (ocur != cur)
-			bs->len[ocur] = bs->pos[ocur];
+			bs->len[ocur] = p;
 	}
 	bs->pos[cur] = 2;
 	bs->jmp[cur] = 0;
@@ -312,7 +312,7 @@ find_end_of_lines1nn(struct scan_state *st, BUN *newlines_count, BUN maxcount )
 				*pos++ = 0;
 				newline_count++;
 				latest_pos = pos;
-				if (newline_count == maxcount)
+				if (pos == end || newline_count == maxcount)
 					break;
 			}
 		}
@@ -586,7 +586,7 @@ COPYsplitlines(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (!r->error && !r->done) {
 		state.start = r->bs->buf[p->wid];
 		state.pos = state.start + r->bs->pos[p->wid];
-		state.end = state.start + r->bs->len[p->wid];
+		state.end = state.start + (r->bs->jmp[p->wid] ? r->bs->jmp[p->wid] : r->bs->len[p->wid]);
 
 		BUN e = 0;
 		r->line_count[p->wid] = r->linecount;
@@ -639,12 +639,14 @@ COPYsplitlines(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		return_indices[i] = Tloc(b, 0);
 	}
 
-	if (r->col_sep_len > 1)
-		msg = scan_fieldsN(&errors, &state, r->null_repr, r->null_repr_len, ncols, line_count, return_indices);
-	else if (r->can_jump)
-		msg = scan_fields1(&errors, &state, r->null_repr, r->null_repr_len, ncols, line_count, return_indices);
-	else
-		msg = scan_fields(&errors, &state, r->null_repr, r->null_repr_len, ncols, line_count, return_indices);
+	if (line_count) {
+		if (r->col_sep_len > 1)
+			msg = scan_fieldsN(&errors, &state, r->null_repr, r->null_repr_len, ncols, line_count, return_indices);
+		else if (r->can_jump)
+			msg = scan_fields1(&errors, &state, r->null_repr, r->null_repr_len, ncols, line_count, return_indices);
+		else
+			msg = scan_fields(&errors, &state, r->null_repr, r->null_repr_len, ncols, line_count, return_indices);
+	}
 
 end:
 	copy_destroy_error_handling(&errors);

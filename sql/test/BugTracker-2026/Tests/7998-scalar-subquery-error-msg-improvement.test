@@ -1,0 +1,26 @@
+statement ok
+CREATE TABLE ga(id INT, a INT)
+
+statement ok
+INSERT INTO ga VALUES (1,10)
+
+statement ok
+CREATE TABLE gb(a INT, b INT)
+
+statement ok
+INSERT INTO gb VALUES (10,100),(10,101)
+
+-- MonetDB: !GDK reported error: selectjoin: more than one match
+-- PostgreSQL: ERROR: more than one row returned by a subquery used as an expression
+-- DuckDB:     Invalid Input Error: More than one row returned by a subquery used as an expression
+-- MySQL:      ERROR 1242: Subquery returns more than 1 row
+
+statement error More than one row returned by a subquery used as an expression
+SELECT ga.id, (SELECT gb.b FROM gb WHERE gb.a = ga.a) FROM ga
+
+statement ok
+DROP TABLE IF EXISTS ga
+
+statement ok
+DROP TABLE IF EXISTS gb
+

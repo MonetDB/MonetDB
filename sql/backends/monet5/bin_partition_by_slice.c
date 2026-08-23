@@ -348,12 +348,14 @@ rel_groupby_prepare_pp(list **aggrresults, list **serializedresults, backend *be
 				return NULL;
 			append(*serializedresults, s);
 		}
+		dbl corr_weight= 0.85;
 		for(node *n = gbexps->h; n; n = n->next ) {
 			sql_exp *e = n->data;
 			sql_subtype *t = exp_subtype(e);
 			/* ext */
 			lng ncard = exp_getcard(be->mvc, rel, e);
-			card *= ncard;
+			card = (lng) (card * ncard * corr_weight);
+			corr_weight *= 0.85;
 			if (card > estimate || ncard >= estimate)
 				card = estimate;
 
@@ -840,6 +842,7 @@ rel_groupby_partition(mvc *sql, sql_rel *rel)
 	BUN est = get_rel_count(rel->l);
 
 	lng estimate, card = 1;
+	dbl corr_weight= 0.85;
 	if (est == BUN_NONE
 #if SIZEOF_BUN == SIZEOF_LNG
 		|| (ulng) est > (ulng) GDK_lng_max
@@ -853,9 +856,10 @@ rel_groupby_partition(mvc *sql, sql_rel *rel)
 		for( node *n = l->h; n; n = n->next ) {
 			sql_exp *e = n->data;
 			lng ncard = exp_getcard(sql, rel, e);
-			card *= ncard; /* TODO check for overflow */
+			card = (lng) (card * ncard * corr_weight); /* TODO check for overflow */
+			corr_weight *= 0.85;
 			if (card > estimate || ncard >= estimate) {
-				card = estimate;
+				card = (lng) (estimate * 0.85);
 				break;
 			}
 		}

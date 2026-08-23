@@ -514,13 +514,13 @@ heapinit(BAT *b, const char *buf,
 		TRC_CRITICAL(GDK, "type pcre has been removed\n");
 		return -1;
 	}
-#ifdef HAVE_GEOM
-#if GDKLIBRARY <= 061050U
+#if defined(HAVE_GEOM) && defined(GDKLIBRARY_USTR)
+#if GDKLIBRARY <= GDKLIBRARY_USTR
 	if (strcmp(type, "wkb") == 0) {
 		/* don't trust properties having to do with ordering of
 		 * type wkb because of a bug in the wkbCOMP
 		 * implementation; this was fixed during the lifetime of
-		 * BBP version 061050 */
+		 * BBP version 061050 (GDKLIBRARY_USTR) */
 		minpos = maxpos = oid_nil;
 		nosorted = norevsorted = 0;
 		properties &= ~0x0081;
@@ -1700,7 +1700,7 @@ fixstrnilbat(BAT *b)
 				  ALGOBATPAR(b));
 			return GDK_SUCCEED;
 		}
-		assert(niloff >= 8192);
+		assert(niloff >= GDK_STRHASHSIZE);
 	}
 
 	if (GDKmove(b->theap->farmid, srcdir, bnme, t,
@@ -1750,13 +1750,13 @@ fixstrnilbat(BAT *b)
 	case 1: {
 		const uint8_t *p1 = (const uint8_t *) h1.base;
 		uint8_t *p2 = (uint8_t *) h2->base;
-		vfree -= 8192;
-		niloff -= 8192;
+		vfree -= GDK_STRHASHSIZE;
+		niloff -= GDK_STRHASHSIZE;
 		for (BUN i = 0; i < b->batCount; i++) {
 			uint8_t v = p1[i];
 			if (v == niloff)
 				p2[i] = 0;
-			else if (v >= vfree || vbase[v + 8192] == '\200')
+			else if (v >= vfree || vbase[v + GDK_STRHASHSIZE] == '\200')
 				p2[i] = 0;
 			else
 				p2[i] = v;
@@ -1766,13 +1766,13 @@ fixstrnilbat(BAT *b)
 	case 2: {
 		const uint16_t *p1 = (const uint16_t *) h1.base;
 		uint16_t *p2 = (uint16_t *) h2->base;
-		vfree -= 8192;
-		niloff -= 8192;
+		vfree -= GDK_STRHASHSIZE;
+		niloff -= GDK_STRHASHSIZE;
 		for (BUN i = 0; i < b->batCount; i++) {
 			uint16_t v = p1[i];
 			if (v == niloff)
 				p2[i] = 0;
-			else if (v >= vfree || vbase[v + 8192] == '\200')
+			else if (v >= vfree || vbase[v + GDK_STRHASHSIZE] == '\200')
 				p2[i] = 0;
 			else
 				p2[i] = v;

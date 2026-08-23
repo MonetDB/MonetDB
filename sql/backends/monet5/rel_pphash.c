@@ -130,10 +130,8 @@ oahash_slicer(backend *be, stmt *sub)
 /* Generates the parallel block to probe the hash table
  */
 static stmt *
-oahash_probe(backend *be, sql_rel *rel, list *jexps, list *exps_cmp_prb, const stmt *stmts_ht, stmt *sub, bool anti, bool outer, bool groupjoin, bool has_outerselect, stmt **nulls, stmt **prb_mrk)
+oahash_probe(backend *be, sql_rel *rel, list *jexps, list *exps_cmp_prb, const stmt *stmts_ht, stmt *sub, bool anti, bool groupjoin, bool has_outerselect, stmt **nulls, stmt **prb_mrk)
 {
-	(void) outer;
-
 	stmt *prb_res = NULL, *outerm = NULL;
 	bool has_leftouter = (rel->op == op_left || rel->op == op_full /*|| (rel->op == op_right && rel->oahash == 1)*/);
 
@@ -151,7 +149,6 @@ oahash_probe(backend *be, sql_rel *rel, list *jexps, list *exps_cmp_prb, const s
 		prb_res = stmt_oahash_probe(be, key, prb_res, m->data, stmts_ht->op3, outerm, single, e2->semantics, eq, has_leftouter, grpjoin);
 		if (prb_res == NULL) return NULL;
 
-		//if (outer || grpjoin) {
 		if (has_leftouter || grpjoin) {
 			assert (prb_res->q->retc >= 2);
 			outerm = stmt_blackbox_result(be, prb_res->q, 2, sql_fetch_localtype(TYPE_bit));
@@ -160,7 +157,6 @@ oahash_probe(backend *be, sql_rel *rel, list *jexps, list *exps_cmp_prb, const s
 		if (nulls && stmt_has_null(key) && is_any(e2))
 			*nulls = stmt_selectnil(be, key, *nulls);
 	}
-	//if ((outer || groupjoin) && outerm)
 	if ((has_leftouter || groupjoin) && outerm)
 		*prb_mrk = outerm;
 	/* probe of last column is the final res */
@@ -295,7 +291,7 @@ rel2bin_oahash_build(backend *be, sql_rel *rel, list *refs)
 	bool need_freq = (rel->flag != (int)op_semi || rel->ref.refcnt > 2 || !list_empty(exps_prj_hsh));
 	if (need_freq && list_length(exps_cmp_hsh) == 1 && !is_single(rel)) {
 		sql_exp *e = exps_cmp_hsh->h->data;
-		if (0 && e->unique)
+		if (e->unique)
 			need_freq = false;
 	}
 	lng bld_sz = _estimate(be->mvc, rel); /* TODO: change into dynamic where possible ?? */
@@ -330,7 +326,7 @@ rel2bin_oahash_build(backend *be, sql_rel *rel, list *refs)
 		assert(key); /* must find */
 		key = column(be, key);
 
-		prnt = stmt_oahash_build_ht(be, ht, key, prnt);
+		prnt = stmt_oahash_build_ht(be, ht, key, prnt, is_any(e));
 		if (prnt == NULL) return NULL;
 
 		if (e->alias.label)
@@ -343,7 +339,7 @@ rel2bin_oahash_build(backend *be, sql_rel *rel, list *refs)
 		stmt *s = stmt_oahash_frequency(be, freq, prnt, (hp_gid != NULL));
 
 		if (hp_gid) {
-			prnt = stmt_oahash_build_ht(be, hp_gid, s, prnt);
+			prnt = stmt_oahash_build_ht(be, hp_gid, s, prnt, false);
 			if (prnt == NULL) return NULL;
 		}
 	}
@@ -416,8 +412,7 @@ rel2bin_oahash_equi_join(backend *be, sql_rel *rel, list *refs, list *jexps, stm
 	if (probe_sub)
 		*probe_sub = sub;
 
-	bit outer = is_outerjoin(rel->op);
-	stmt *prb_res = oahash_probe(be, rel, jexps, exps_cmp_prb, stmts_ht, sub, false, outer, mark, has_outerselect, nulls, prb_mrk);
+	stmt *prb_res = oahash_probe(be, rel, jexps, exps_cmp_prb, stmts_ht, sub, false /*anti*/, mark/*groupjoin*/, has_outerselect, nulls, prb_mrk);
 	if (prb_res == NULL) return NULL;
 
 	/*** PROJECT RESULT PHASE ***/
@@ -425,6 +420,7 @@ rel2bin_oahash_equi_join(backend *be, sql_rel *rel, list *refs, list *jexps, stm
 	list *lp = oahash_project_prb(be, exps_prj_prb, prb_res, stmts_ht->op3, leftouter, sub, probed_rowids);
 	list *lh = oahash_project_hsh(be, exps_prj_hsh, stmts_ht, prb_res, leftouter, hsh_mrk);
 
+	bit outer = is_outerjoin(rel->op);
 	/* !exps_prj_hsh => !shared_hp => mark the last hash-column instead of a payload column */
 	if (outer && hsh_mrk && !*hsh_mrk) {
 		assert(list_empty(exps_prj_hsh));
@@ -1340,7 +1336,7 @@ rel2bin_oahash_semi(backend *be, sql_rel *rel, list *refs)
 		probe_sub = sub = _start_pp(be, rel_prb->l, false, refs, NULL);
 		if (!sub) return NULL;
 
-		stmt *prb_res = oahash_probe(be, rel, rel->exps, exps_cmp_prb, stmts_ht, sub, anti, false, false, !list_empty(sexps), &nulls, NULL);
+		stmt *prb_res = oahash_probe(be, rel, rel->exps, exps_cmp_prb, stmts_ht, sub, anti, false/*groupjoin*/, !list_empty(sexps)/*has_outerselect*/, &nulls, NULL);
 		if (prb_res == NULL) return NULL;
 
 		/*** PROJECT RESULT PHASE ***/

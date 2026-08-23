@@ -2325,8 +2325,8 @@ rel_reduce_groupby_exps(visitor *v, sql_rel *rel)
 		node *n, *m;
 		int k, j, i, ngbe = list_length(gbe);
 		sql_column *c;
-		sql_table **tbls = SA_NEW_ARRAY(ta, sql_table*, ngbe);
-		sql_rel **bts = SA_NEW_ARRAY(ta, sql_rel*, ngbe), *bt = NULL;
+		sql_table **tbls = SA_ZNEW_ARRAY(ta, sql_table*, ngbe);
+		sql_rel **bts = SA_ZNEW_ARRAY(ta, sql_rel*, ngbe), *bt = NULL;
 
 		gbe = rel->r;
 		for (k = 0, i = 0, n = gbe->h; n; n = n->next, k++) {
@@ -2356,11 +2356,26 @@ rel_reduce_groupby_exps(visitor *v, sql_rel *rel)
 				memset(scores, 0, list_length(gbe));
 				if (tbls[j]->pkey) {
 					for (l = 0, n = gbe->h; l < k && n; l++, n = n->next) {
+						sql_fkey *fk = NULL;
+						if (tbls[j] != tbls[l] && tbls[l]){
+							for(node *n = ol_first_node(tbls[l]->keys); n && !fk; n = n->next) {
+								sql_key *k = n->data;
+								if (k->type == fkey) {
+									sql_fkey *f = (sql_fkey*)k;
+									if (f->rkey == tbls[j]->pkey->k.base.id)
+										fk = f;
+								}
+							}
+						}
 						fcmp cmp = (fcmp)&kc_column_cmp;
 						sql_exp *e = n->data;
 
 						c = exp_find_column_(rel, e, -2, &bt);
-						if (c && c->t == tbls[j] && bts[j] == bt &&
+						if (c && fk &&
+						    list_find(fk->k.columns, c, cmp) != NULL) {
+							scores[l] = 1;
+							nr ++;
+						} else if (c && c->t == tbls[j] && bts[j] == bt &&
 						    list_find(tbls[j]->pkey->k.columns, c, cmp) != NULL) {
 							scores[l] = 1;
 							nr ++;
@@ -3803,21 +3818,31 @@ rel_distinct_project2groupby_(visitor *v, sql_rel *rel)
 		v->changes++;
 	}
 
+	list *gbe = l?l->r:NULL;
+	if (rel->op == op_project && rel->l && !rel->r /* no order by */ && need_distinct(rel) &&
+	    (is_groupby(l->op) && l->l && gbe) && exp_match_list(rel->exps, gbe)) {
+		set_nodistinct(rel); /* distinct is needed only once */
+		v->changes++;
+		return rel;
+	}
+	if (rel->op == op_project && rel->l && !rel->r /* no order by */ && need_distinct(rel) &&
+	    (is_project(l->op) && l->l && (l->op != op_project || !l->r) && need_distinct(l)) &&
+		exp_match_list(rel->exps, l->exps)) {
+		set_nodistinct(rel); /* distinct is needed only once */
+		v->changes++;
+		return rel;
+	}
+
 	/* rewrite distinct project [ pk ] ( select ( table ) [ e op val ])
 	 * into project [ pk ] ( select/semijoin ( table )  */
-	sql_rel *orel = rel;
-	if (rel->op == op_project && rel->l && !rel->r /* no order by */ && need_distinct(rel) &&
-	    (l->op == op_project && l->l && !l->r) && list_check_prop_all(rel->exps, (prop_check_func)&exp_is_useless_rename))
-		rel = l;
-
 	if (rel->op == op_project && rel->l && !rel->r /* no order by */ && need_distinct(rel) &&
 	    (l->op == op_select || l->op == op_semi) && exps_unique(v->sql, rel, rel->exps, true) &&
 		(!have_semantics(l->exps) || !have_nil(rel->exps))) {
-		set_nodistinct(orel);
+		set_nodistinct(rel);
 		v->changes++;
+		return rel;
 	}
 
-	rel = orel;
 	/* rewrite distinct project ( join(p,f) [ p.pk = f.fk ] ) [ p.pk ]
 	 * 	into project( (semi)join(p,f) [ p.pk = f.fk ] ) [ p.pk ] */
 	if (rel->op == op_project && rel->l && !rel->r /* no order by */ && need_distinct(rel) &&

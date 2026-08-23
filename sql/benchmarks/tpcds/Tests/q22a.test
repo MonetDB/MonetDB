@@ -9,10 +9,8 @@ with results as
        from inventory
            ,date_dim
            ,item
-           ,warehouse
        where  inv_date_sk=d_date_sk
               and inv_item_sk=i_item_sk
-              and inv_warehouse_sk = w_warehouse_sk
               and d_month_seq between 1200 and 1200 + 11),
 results_rollup as
 (select i_product_name, i_brand, i_class, i_category,avg(qoh) qoh
@@ -38,5 +36,504 @@ from results)
       order by qoh, i_product_name, i_brand, i_class, i_category
 limit 100
 ----
-500 values hashing to e1068d9b6bd311e171034af47cfa9e0e
+ableationprieing
+NULL
+NULL
+NULL
+445.996
+ableationprieing
+amalgamalg #1
+NULL
+NULL
+445.996
+ableationprieing
+amalgamalg #1
+dresses
+NULL
+445.996
+ableationprieing
+amalgamalg #1
+dresses
+Women
+445.996
+antibareingantiought
+NULL
+NULL
+NULL
+445.407
+antibareingantiought
+importoimporto #2
+NULL
+NULL
+445.407
+antibareingantiought
+importoimporto #2
+shirts
+Men
+445.407
+antibareingantiought
+importoimporto #2
+shirts
+NULL
+445.407
+ationantibarationought
+NULL
+NULL
+NULL
+445.419
+ationantibarationought
+univmaxi #8
+NULL
+NULL
+445.419
+ationantibarationought
+univmaxi #8
+pools
+NULL
+445.419
+ationantibarationought
+univmaxi #8
+pools
+Sports
+445.419
+ationationprin st
+NULL
+NULL
+NULL
+435.510
+ationationprin st
+amalgexporti #2
+NULL
+NULL
+435.510
+ationationprin st
+amalgexporti #2
+newborn
+Children
+435.510
+ationationprin st
+amalgexporti #2
+newborn
+NULL
+435.510
+ationbarn stableought
+NULL
+NULL
+NULL
+444.093
+ationbarn stableought
+corpbrand #8
+NULL
+NULL
+444.093
+ationbarn stableought
+corpbrand #8
+rugs
+Home
+444.093
+ationbarn stableought
+corpbrand #8
+rugs
+NULL
+444.093
+ationbarn station
+NULL
+NULL
+NULL
+430.358
+ationbarn station
+amalgbrand #8
+NULL
+NULL
+430.358
+ationbarn station
+amalgbrand #8
+bathroom
+Home
+430.358
+ationbarn station
+amalgbrand #8
+bathroom
+NULL
+430.358
+ationeingation
+NULL
+NULL
+NULL
+443.782
+ationeingation
+amalgexporti #2
+NULL
+NULL
+443.782
+ationeingation
+amalgexporti #2
+newborn
+Children
+443.782
+ationeingation
+amalgexporti #2
+newborn
+NULL
+443.782
+ationoughtn stn st
+NULL
+NULL
+NULL
+435.265
+ationoughtn stn st
+edu packimporto #2
+NULL
+NULL
+435.265
+ationoughtn stn st
+edu packimporto #2
+sports-apparel
+Men
+435.265
+ationoughtn stn st
+edu packimporto #2
+sports-apparel
+NULL
+435.265
+callyesebaration
+NULL
+NULL
+NULL
+437.394
+callyesebaration
+namelesscorp #7
+NULL
+NULL
+437.394
+callyesebaration
+namelesscorp #7
+mens watch
+Jewelry
+437.394
+callyesebaration
+namelesscorp #7
+mens watch
+NULL
+437.394
+eingableableationought
+NULL
+NULL
+NULL
+444.714
+eingableableationought
+amalgimporto #1
+NULL
+NULL
+444.714
+eingableableationought
+amalgimporto #1
+accessories
+Men
+444.714
+eingableableationought
+amalgimporto #1
+accessories
+NULL
+444.714
+eseationcallyableought
+NULL
+NULL
+NULL
+444.544
+eseationcallyableought
+importoexporti #1
+NULL
+NULL
+444.544
+eseationcallyableought
+importoexporti #1
+infants
+Children
+444.544
+eseationcallyableought
+importoexporti #1
+infants
+NULL
+444.544
+n stbarought
+NULL
+NULL
+NULL
+440.315
+n stbarought
+corpbrand #10
+NULL
+NULL
+440.315
+n stbarought
+corpbrand #10
+rugs
+Home
+440.315
+n stbarought
+corpbrand #10
+rugs
+NULL
+440.315
+n stcallyableoughtought
+NULL
+NULL
+NULL
+439.718
+n stcallyableoughtought
+amalgimporto #2
+NULL
+NULL
+439.718
+n stcallyableoughtought
+amalgimporto #2
+accessories
+Men
+439.718
+n stcallyableoughtought
+amalgimporto #2
+accessories
+NULL
+439.718
+n stcallyesepriought
+NULL
+NULL
+NULL
+441.542
+n stcallyesepriought
+edu packscholar #2
+NULL
+NULL
+441.542
+n stcallyesepriought
+edu packscholar #2
+classical
+Music
+441.542
+n stcallyesepriought
+edu packscholar #2
+classical
+NULL
+441.542
+n steseantiation
+NULL
+NULL
+NULL
+445.332
+n steseantiation
+univmaxi #10
+NULL
+NULL
+445.332
+n steseantiation
+univmaxi #10
+pools
+NULL
+445.332
+n steseantiation
+univmaxi #10
+pools
+Sports
+445.332
+n stn stantioughtought
+NULL
+NULL
+NULL
+440.929
+n stn stantioughtought
+exportimaxi #8
+NULL
+NULL
+440.929
+n stn stantioughtought
+exportimaxi #8
+computers
+Books
+440.929
+n stn stantioughtought
+exportimaxi #8
+computers
+NULL
+440.929
+n stprieingationought
+NULL
+NULL
+NULL
+439.065
+n stprieingationought
+namelesscorp #8
+NULL
+NULL
+439.065
+n stprieingationought
+namelesscorp #8
+mens watch
+Jewelry
+439.065
+n stprieingationought
+namelesscorp #8
+mens watch
+NULL
+439.065
+oughtbarantiese
+NULL
+NULL
+NULL
+441.746
+oughtbarantiese
+exportiedu pack #2
+NULL
+NULL
+441.746
+oughtbarantiese
+exportiedu pack #2
+kids
+NULL
+441.746
+oughtbarantiese
+exportiedu pack #2
+kids
+Shoes
+441.746
+oughtbarprin st
+NULL
+NULL
+NULL
+442.073
+oughtbarprin st
+edu packscholar #2
+NULL
+NULL
+442.073
+oughtbarprin st
+edu packscholar #2
+classical
+Music
+442.073
+oughtbarprin st
+edu packscholar #2
+classical
+NULL
+442.073
+oughtcallyn stantiought
+NULL
+NULL
+NULL
+436.494
+oughtcallyn stantiought
+corpcorp #2
+NULL
+NULL
+436.494
+oughtcallyn stantiought
+corpcorp #2
+rings
+Jewelry
+436.494
+oughtcallyn stantiought
+corpcorp #2
+rings
+NULL
+436.494
+oughtn stprin st
+NULL
+NULL
+NULL
+447.267
+oughtn stprin st
+exportiamalgamalg #8
+NULL
+NULL
+447.267
+oughtn stprin st
+exportiamalgamalg #8
+stereo
+Electronics
+447.267
+oughtn stprin st
+exportiamalgamalg #8
+stereo
+NULL
+447.267
+oughtpricallybarought
+NULL
+NULL
+NULL
+445.486
+oughtpricallybarought
+edu packexporti #2
+NULL
+NULL
+445.486
+oughtpricallybarought
+edu packexporti #2
+school-uniforms
+Children
+445.486
+oughtpricallybarought
+edu packexporti #2
+school-uniforms
+NULL
+445.486
+priantiationation
+NULL
+NULL
+NULL
+441.671
+priantiationation
+importoimporto #2
+NULL
+NULL
+441.671
+priantiationation
+importoimporto #2
+shirts
+Men
+441.671
+priantiationation
+importoimporto #2
+shirts
+NULL
+441.671
+priationn stn st
+NULL
+NULL
+NULL
+439.096
+priationn stn st
+importoscholar #2
+NULL
+NULL
+439.096
+priationn stn st
+importoscholar #2
+country
+Music
+439.096
+priationn stn st
+importoscholar #2
+country
+NULL
+439.096
+pribarpribarought
+NULL
+NULL
+NULL
+446.041
+pribarpribarought
+edu packimporto #2
+NULL
+NULL
+446.041
+pribarpribarought
+edu packimporto #2
+sports-apparel
+Men
+446.041
+pribarpribarought
+edu packimporto #2
+sports-apparel
+NULL
+446.041
 
