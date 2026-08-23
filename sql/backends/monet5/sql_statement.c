@@ -759,7 +759,10 @@ stmt_bat(backend *be, sql_column *c, sql_alias *tname, int access, int partition
 	q = pushArgument(mb, q, be->mvc_var);
 	q = pushSchema(mb, q, c->t);
 	q = pushArgument(mb, q, getStrConstant(mb,c->t->base.name));
-	q = pushArgument(mb, q, getStrConstant(mb,c->base.name));
+	if (c->t->multiset || c->t->composite)
+		q = pushArgument(mb, q, getIntConstant(mb,c->base.id));
+	else
+		q = pushArgument(mb, q, getStrConstant(mb,c->base.name));
 	q = pushArgument(mb, q, getIntConstant(mb,access));
 	if (partition && be->pp) {
 		q = pushArgument(mb, q, be->pp);
@@ -909,7 +912,7 @@ stmt_append_col(backend *be, sql_column *c, stmt *offset, stmt *b, int *mvc_var_
 			*mvc_var_update = tmpvar;
 		q = pushSchema(mb, q, c->t);
 		q = pushStr(mb, q, c->t->base.name);
-		if (c->column_type != column_plain)
+		if (c->type.multiset || c->column_type != column_plain)
 			q = pushInt(mb, q, c->base.id);
 		else
 			q = pushStr(mb, q, c->base.name);

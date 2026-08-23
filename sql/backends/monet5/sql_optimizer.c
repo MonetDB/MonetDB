@@ -19,6 +19,7 @@
 #include "sql_optimizer.h"
 #include "sql_scenario.h"
 #include "sql_gencode.h"
+#include "sql_catalog.h"
 #include "opt_pipes.h"
 
 /* calculate the footprint for optimizer pipe line choices
@@ -65,7 +66,7 @@ SQLgetSpace(mvc *m, MalBlkPtr mb, int prepare)
 		if (getModuleId(p) == sqlRef && getFunctionId(p) == bindRef  && p->retc <= 2){
 			char *sname = getVarConstant(mb, getArg(p, 1 + p->retc)).val.sval;
 			char *tname = getVarConstant(mb, getArg(p, 2 + p->retc)).val.sval;
-			char *cname = getVarConstant(mb, getArg(p, 3 + p->retc)).val.sval;
+			int ctype = getArgType(mb, p, 3 + p->retc);
 			int access = getVarConstant(mb, getArg(p, 4 + p->retc)).val.ival;
 			sql_schema *s = mvc_bind_schema(m, sname);
 			sql_table *t = 0;
@@ -76,7 +77,13 @@ SQLgetSpace(mvc *m, MalBlkPtr mb, int prepare)
 			t = mvc_bind_table(m, s, tname);
 			if (!t || isDeclaredTable(t))
 				continue;
-			c = mvc_bind_column(m, t, cname);
+			if (ctype == TYPE_int) {
+				int colid = getVarConstant(mb, getArg(p, 3 + p->retc)).val.ival;
+				c = find_sql_column_id(t, colid);
+			} else {
+				char *cname = getVarConstant(mb, getArg(p, 3 + p->retc)).val.sval;
+				c = mvc_bind_column(m, t, cname);
+			}
 			if (!c)
 				continue;
 

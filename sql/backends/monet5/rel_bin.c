@@ -3746,6 +3746,14 @@ get_equi_joins_first(mvc *sql, list *exps, int *equality_only)
 }
 
 static stmt *
+stmt_append_nil(backend *be, stmt *s, stmt *rows)
+{
+	if (s->nested)
+		return stmt_nest(be, s, rows, &stmt_append_nil);
+	return stmt_append(be, s, stmt_const(be, rows, (s->flag&OUTER_ZERO)?stmt_atom_lng(be, 0):stmt_atom(be, atom_general(be->mvc->sa, tail_type(s), NULL, 0))));
+}
+
+static stmt *
 rel2bin_join(backend *be, sql_rel *rel, list *refs)
 {
 	mvc *sql = be->mvc;
@@ -3959,6 +3967,7 @@ rel2bin_join(backend *be, sql_rel *rel, list *refs)
 	}
 #endif
 
+	int op = rel->op;
 	for (n = left->op4.lval->h; n; n = n->next) {
 		stmt *c = n->data;
 		sql_alias *rnme = table_name(sql->sa, c);
@@ -3966,13 +3975,14 @@ rel2bin_join(backend *be, sql_rel *rel, list *refs)
 		stmt *s = stmt_project(be, jl, column(be, c));
 
 		/* as append isn't save, we append to a new copy */
-		if (rel->op == op_left || rel->op == op_full || rel->op == op_right)
+		if (op == op_left || op == op_full || op == op_right)
 			s = create_const_column(be, s, NULL);
-		if (rel->op == op_left || rel->op == op_full)
+		if (op == op_left || op == op_full)
 			s = stmt_append(be, s, stmt_project(be, ld, c));
-		if (rel->op == op_right || rel->op == op_full)
-			s = stmt_append(be, s, stmt_const(be, rd, (c->flag&OUTER_ZERO)?stmt_atom_lng(be, 0):stmt_atom(be, atom_general(sql->sa, tail_type(c), NULL, 0))));
-
+		if (op == op_right || op == op_full) {
+			s->flag = c->flag; /* push OUTER_ZERO */
+			s = stmt_append_nil(be, s, rd);
+		}
 		s = stmt_alias(be, s, c->label, rnme, nme);
 		list_append(l, s);
 	}
@@ -3983,11 +3993,13 @@ rel2bin_join(backend *be, sql_rel *rel, list *refs)
 		stmt *s = stmt_project(be, jr, column(be, c));
 
 		/* as append isn't save, we append to a new copy */
-		if (rel->op == op_left || rel->op == op_full || rel->op == op_right)
+		if (op == op_left || op == op_full || op == op_right)
 			s = create_const_column(be, s, NULL);
-		if (rel->op == op_left || rel->op == op_full)
-			s = stmt_append(be, s, stmt_const(be, ld, (c->flag&OUTER_ZERO)?stmt_atom_lng(be, 0):stmt_atom(be, atom_general(sql->sa, tail_type(c), NULL, 0))));
-		if (rel->op == op_right || rel->op == op_full)
+		if (op == op_left || op == op_full) {
+			s->flag = c->flag; /* push OUTER_ZERO */
+			s = stmt_append_nil(be, s, ld);
+		}
+		if (op == op_right || op == op_full)
 			s = stmt_append(be, s, stmt_project(be, rd, c));
 
 		s = stmt_alias(be, s, c->label, rnme, nme);

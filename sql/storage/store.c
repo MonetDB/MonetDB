@@ -4309,7 +4309,7 @@ sql_trans_copy_column( sql_trans *tr, sql_table *t, sql_column *c, sql_column **
 				return -2;
 			needs_data = true;	/* column its self is reference id */
 		}
-		if (c->type.multiset == MS_ARRAY) { /* array need order */
+		if (c->type.multiset == MS_ARRAY) { /* array needs order */
 			char *name = MSNR_NAME;
 			sql_subtype tp = *sql_fetch_localtype(MSNR_TYPE);
 			sql_column *ic = NULL;

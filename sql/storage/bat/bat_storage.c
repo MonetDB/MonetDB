@@ -4215,7 +4215,7 @@ log_table_append(sql_trans *tr, sql_table *t, segments *segs)
 		sql_column *c = n->data;
 		column_storage *cs = ATOMIC_PTR_GET(&c->data);
 
-		if (c->type.type->composite || c->type.multiset == MS_VECTOR)
+		if ((c->type.type->composite && !c->type.multiset) || c->type.multiset == MS_VECTOR)
 			continue;
 		if (cs->cleared) {
 			ok = (tr_log_cs(tr, t, cs, NULL, c->base.id) == LOG_OK)? GDK_SUCCEED : GDK_FAIL;
