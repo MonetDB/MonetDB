@@ -249,13 +249,8 @@ gdk_return BUNreplacemultiincr(BAT *b, oid position, const void *values, BUN cou
 const void *BUNtpos(BATiter *bi, BUN p);
 BAT *COLcopy(BAT *b, int tt, bool writable, role_t role);
 BAT *COLcopy2(BAT *b, int tt, bool writable, bool mayshare, role_t role);
-<<<<<<< working copy
-BAT *COLnew(oid hseq, int tltype, BUN capacity, role_t role) __attribute__((__warn_unused_result__));
-BAT *COLnew2(oid hseq, int tt, BUN cap, role_t role, uint32_t width) __attribute__((__warn_unused_result__));
-=======
 BAT *COLnew(oid hseq, int tltype, BUN capacity, role_t role);
-BAT *COLnew2(oid hseq, int tt, BUN cap, role_t role, uint16_t width);
->>>>>>> merge rev
+BAT *COLnew2(oid hseq, int tt, BUN cap, role_t role, uint32_t width);
 BUN GDKL3_size;
 size_t GDK_mem_maxsize;
 size_t GDK_vm_maxsize;
@@ -322,13 +317,8 @@ int GDKnr_threads;
 void GDKprepareExit(void);
 void GDKprintinfo(void);
 void GDKprintinforegister(void (*func)(void));
-<<<<<<< working copy
 void GDKqsort(void *restrict h, void *restrict t, const void *restrict base, size_t n, size_t hs, size_t ts, int tpe, bool reverse, bool nilslast);
-void *GDKrealloc(void *pold, size_t size) __attribute__((__alloc_size__(2))) __attribute__((__warn_unused_result__));
-=======
-void GDKqsort(void *restrict h, void *restrict t, const void *restrict base, size_t n, int hs, int ts, int tpe, bool reverse, bool nilslast);
 void *GDKrealloc(void *pold, size_t size);
->>>>>>> merge rev
 gdk_return GDKrebuild_segment_tree(oid ncount, oid data_size, Heap *st, void **segment_tree, oid **levels_offset, oid *nlevels);
 void GDKreset(int status);
 void GDKsetdebug(unsigned debug);
