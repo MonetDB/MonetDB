@@ -52,7 +52,7 @@ returning
   tmp.objects.name as c15
 
 -- next statement has removed the duplicate asignment: name = tmp.objects.name,  This statment does not crash but gives an error.
-statement error 42S22!SELECT: no such column 'objects.id'
+statement error 42000!SELECT: subquery not allowed
 update tmp.objects set
   name = tmp.objects.name,
   nr = tmp.objects.id,
