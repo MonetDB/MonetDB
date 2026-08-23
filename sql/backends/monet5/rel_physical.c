@@ -819,10 +819,9 @@ rel_pipeline(visitor *v, sql_rel *rel, bool materialize, int pb)
 		}
 	} else if (is_topn(rel->op)) {
 		/* e.g. pp is not useful for "SELECT 42 LIMIT 2" */
-		bool pp_useful = (get_rel_count(rel->l) > 1) && topn_limit(rel) /*&& !(list_length(rel->exps) > 1)*/ /* no offset */;
-		//pp_useful &= !rel->grouped; /* grouped topn isn't pipelined yet */
+		bool pp_useful = (get_rel_count(rel->l) > 1) && topn_limit(rel) /* no offset */;
 		/* op_topn always has rel->l */
-		res = rel_pipeline(v, rel->l, pp_useful, pp_useful?SPB/*:rel->grouped?0*/:0);
+		res = rel_pipeline(v, rel->l, pp_useful, pp_useful?SPB:0);
 		if (pp_useful && res) { /* topn is blocking */
 			rel->parallel = 1;
 			if (pb) { /* nested */
@@ -1596,7 +1595,6 @@ rel_push_down_topn(visitor *v, sql_rel *rel)
 					nexps = append_func_argument(v, oe, nexps);
 					append(pexps, oe);
 				} else {
-				//	assert (exp_is_useless_rename(oe) || (exp_is_rename(oe) && oe->nid != oe->alias.label));
 					append(nexps, oe);
 					append(pexps, exp_ref(v->sql, oe));
 				}
