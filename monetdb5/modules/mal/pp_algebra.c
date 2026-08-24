@@ -1220,20 +1220,6 @@ LALGunique_keepnil(Client ctx, bat *rid, bat *uid, bat *bid, bat *sid)
 			 nextk								\
 		)
 
-#define gcunique(Type, BaseType)										\
-	gunique_(Type,														\
-			 BaseType,													\
-			 ,															\
-			 Type *bp = Tloc(b, 0),										\
-			 is_##Type##_nil(bp[i]),									\
-			 ,															\
-			 (gid)Type##Hash(bp + i),							\
-			 (!(is_##Type##_nil(bp[i]) && is_##Type##_nil(vals[g])) && h->cmp(vals+g, bp+i) != 0), \
-			 vals[g] = bp[i],											\
-			 ,															\
-			 nextk														\
-		)
-
 #define gaunique_(Type,CType)						\
 	gunique_(Type,									\
 			 Type,									\
@@ -1360,7 +1346,7 @@ LALGgroup_unique(Client ctx, bat *rid, bat *uid, bat *bid, bat *sid, bat *Gid, b
 			gunique(sht);
 			gunique(int);
 			gunique(date);
-			gcunique(inet4, int);
+			gunique(inet4);
 			gunique(lng);
 			gunique(daytime);
 			gunique(timestamp);
@@ -1369,9 +1355,7 @@ LALGgroup_unique(Client ctx, bat *rid, bat *uid, bat *bid, bat *sid, bat *Gid, b
 #endif
 			gunique(flt);
 			gunique(dbl);
-#ifdef HAVE_HGE
-			gcunique(uuid, hge);
-#endif
+			gunique(uuid);
 			if (local_storage) {
 				gaunique_(str,const char *);
 			} else {
