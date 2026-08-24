@@ -11,7 +11,8 @@ Build-Depends: debhelper-compat (= 12), cmake (>= 3.12), bison,
  libxml2-dev, pkg-config, libxxhash-dev,
  python3,
  unixodbc-dev, zlib1g-dev,
- libcfitsio-dev, libssl-dev (>= 1.1.1)
+ libcfitsio-dev, libssl-dev (>= 1.1.1),
+ libsnappy-dev, libzstd-dev, libbrotli-dev
 Standards-Version: 4.6.2
 
 Package: libmonetdb31
