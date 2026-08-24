@@ -116,7 +116,7 @@ _ht_create( int type, size_t size, hash_table *p, int vkey)
 		h->cmp = (fcmp)str_cmp;
 		h->hsh = (fhsh)str_hsh;
 	} else {
-		type = !vkey ? type : vkey == 1 ? TYPE_bte : vkey == 2 ? TYPE_sht : vkey == 4 ? TYPE_int : TYPE_lng; 
+		type = !vkey ? type : vkey == 1 ? TYPE_bte : vkey == 2 ? TYPE_sht : vkey == 4 ? TYPE_int : TYPE_lng;
 		h->cmp = (fcmp)ATOMcompare(type);
 		h->hsh = (fhsh)BATatoms[type].atomHash;
 		h->len = (flen)BATatoms[type].atomLen;
@@ -161,7 +161,7 @@ ht_deactivate(hash_table *ht)
 			Type *vals = ht->vals;					\
 			hash_key_t og = ogids[i];				\
 			if (og) {								\
-				gid hv = (gid)_hash_##Type(vals[og])&ht->mask, k = hv; \
+				gid hv = (gid)Type##Hash(vals + og)&ht->mask, k = hv; \
 				hash_key_t g = ngids[k];			\
 				for (gid l=1; g; l++) {				\
 					nextk;							\
@@ -173,12 +173,12 @@ ht_deactivate(hash_table *ht)
 			}										\
 		}											\
 
-#define REHASH_f(Type,Type2) \
+#define REHASH_f(Type)								\
 		for(size_t i = 0; i < oldsize; i++) {		\
 			Type *vals = ht->vals;					\
 			hash_key_t og = ogids[i];				\
 			if (og) {								\
-				gid hv = (gid)_hash_##Type(*(Type2*)(vals+og))&ht->mask, k = hv; \
+				gid hv = (gid)Type##Hash(vals + og)&ht->mask, k = hv; \
 				hash_key_t g = ngids[k];			\
 				for (gid l=1; g; l++) {				\
 					nextk;							\
@@ -212,7 +212,7 @@ ht_deactivate(hash_table *ht)
 			Type *vals = ht->vals;					\
 			hash_key_t og = ogids[i];				\
 			if (og) {								\
-				gid hv = (gid)combine(pgids[og], _hash_##Type(vals[og]), prime)&ht->mask, k = hv; \
+				gid hv = (gid)combine(pgids[og], Type##Hash(vals + og), prime)&ht->mask, k = hv; \
 				hash_key_t g = ngids[k];			\
 				for (gid l=1; g; l++) {				\
 					nextk;							\
@@ -224,12 +224,12 @@ ht_deactivate(hash_table *ht)
 			}										\
 		}											\
 
-#define CREHASH_f(Type, Type2) \
+#define CREHASH_f(Type)								\
 		for(size_t i = 0; i < oldsize; i++) {		\
 			Type *vals = ht->vals;					\
 			hash_key_t og = ogids[i];				\
 			if (og) {								\
-				gid hv = (gid)combine(pgids[og], _hash_##Type(*(Type2*)(vals+og)), prime)&ht->mask, k = hv; \
+				gid hv = (gid)combine(pgids[og], Type##Hash(vals + og), prime)&ht->mask, k = hv; \
 				hash_key_t g = ngids[k];			\
 				for (gid l=1; g; l++) {				\
 					nextk;							\
@@ -325,10 +325,10 @@ ht_rehash(hash_table *ht)
 				break;
 #endif
 			case TYPE_flt:
-				REHASH_f(flt, int);
+				REHASH_f(flt);
 				break;
 			case TYPE_dbl:
-				REHASH_f(dbl, lng);
+				REHASH_f(dbl);
 				break;
 			default:
 				if (ATOMvarsized(ht->type)) {
@@ -373,10 +373,10 @@ ht_rehash(hash_table *ht)
 				break;
 #endif
 			case TYPE_flt:
-				CREHASH_f(flt, int);
+				CREHASH_f(flt);
 				break;
 			case TYPE_dbl:
-				CREHASH_f(dbl, lng);
+				CREHASH_f(dbl);
 				break;
 			default:
 				if (ATOMvarsized(ht->type)) {
@@ -626,7 +626,7 @@ UHASHext(Client cntxt, MalBlkPtr m, MalStkPtr s, InstrPtr p)
 			bool fnd = 0; \
 			gid g = 0; \
 			while (!fnd) { \
-				gid k = (gid)_hash_##Type(bp[i])&h->mask; \
+				gid k = (gid)Type##Hash(bp + i)&h->mask; \
 				g = ATOMIC_GET_GID(h->gids+k); \
 				assert(g<(gid)h->size); \
 				while (g && vals[g] != bp[i]) { \
@@ -672,7 +672,7 @@ UHASHext(Client cntxt, MalBlkPtr m, MalStkPtr s, InstrPtr p)
 			assert(bpi != oid_nil); \
 			gid g = 0; \
 			while (!fnd) { \
-				gid k = (gid)_hash_oid(bpi)&h->mask; \
+				gid k = (gid)oidHash(&bpi)&h->mask; \
 				g = ATOMIC_GET_GID(h->gids+k); \
 				while (g && vals[g] != bpi) { \
 					k++; \
@@ -704,7 +704,7 @@ UHASHext(Client cntxt, MalBlkPtr m, MalStkPtr s, InstrPtr p)
 		} \
 	} while (0)
 
-#define fgroup(Type, BaseType) \
+#define fgroup(Type) \
 	do { \
 		Type *bp = Tloc(b, 0); \
 		Type *vals = h->vals; \
@@ -715,7 +715,7 @@ UHASHext(Client cntxt, MalBlkPtr m, MalStkPtr s, InstrPtr p)
 			bool fnd = 0; \
 			gid g = 0; \
 			while (!fnd) { \
-				gid k = (gid)_hash_##Type(*(((BaseType*)bp)+i))&h->mask; \
+				gid k = (gid)Type##Hash(bp + i)&h->mask; \
 				g = ATOMIC_GET_GID(h->gids+k); \
 				while (g && (!(is_##Type##_nil(bp[i]) && is_##Type##_nil(vals[g])) && \
 						vals[g] != bp[i])) { \
@@ -894,7 +894,7 @@ UHASHext(Client cntxt, MalBlkPtr m, MalStkPtr s, InstrPtr p)
 			bool fnd = 0; \
 			gid g = 0; \
 			while (!fnd) { \
-				gid k = (gid)combine(gi[i], _hash_##Type(bp[i]), prime)&h->mask; \
+				gid k = (gid)combine(gi[i], Type##Hash(bp + i), prime)&h->mask; \
 				g = ATOMIC_GET_GID(h->gids+k); \
 				while (g && (pgids[g] != gi[i] || vals[g] != bp[i])) { \
 					k++; \
@@ -942,7 +942,7 @@ UHASHext(Client cntxt, MalBlkPtr m, MalStkPtr s, InstrPtr p)
 			assert(bpi != oid_nil); \
 			gid g = 0; \
 			while (!fnd) { \
-				gid k = (gid)combine(gi[i], _hash_oid(bpi), prime)&h->mask; \
+				gid k = (gid)combine(gi[i], oidHash(&bpi), prime)&h->mask; \
 				g = ATOMIC_GET_GID(h->gids+k); \
 				while (g && (pgids[g] != gi[i] || vals[g] != bpi)) { \
 					k++; \
@@ -977,7 +977,7 @@ UHASHext(Client cntxt, MalBlkPtr m, MalStkPtr s, InstrPtr p)
 		} \
 	} while (0)
 
-#define fderive(Type, BaseType) \
+#define fderive(Type) \
 	do { \
 		Type *bp = Tloc(b, 0); \
 		Type *vals = h->vals; \
@@ -988,7 +988,7 @@ UHASHext(Client cntxt, MalBlkPtr m, MalStkPtr s, InstrPtr p)
 			bool fnd = 0; \
 			gid g = 0; \
 			while (!fnd) { \
-				gid k = (gid)combine(gi[i], _hash_##Type(*(((BaseType*)bp)+i)), prime)&h->mask; \
+				gid k = (gid)combine(gi[i], Type##Hash(bp + i), prime)&h->mask; \
 				g = ATOMIC_GET_GID(h->gids+k); \
 				while (g && (pgids[g] != gi[i] || (!(is_##Type##_nil(bp[i]) && is_##Type##_nil(vals[g])) && vals[g] != bp[i]))) { \
 					k++; \
@@ -1260,10 +1260,10 @@ OAHASHbuild(Client ctx, MalBlkPtr m, MalStkPtr s, InstrPtr p)
 					break;
 #endif
 				case TYPE_flt:
-					fgroup(flt, int);
+					fgroup(flt);
 					break;
 				case TYPE_dbl:
-					fgroup(dbl, lng);
+					fgroup(dbl);
 					break;
 				default:
 					if (ATOMvarsized(tt)) {
@@ -1330,10 +1330,10 @@ OAHASHbuild(Client ctx, MalBlkPtr m, MalStkPtr s, InstrPtr p)
 					break;
 #endif
 				case TYPE_flt:
-					fderive(flt, int);
+					fderive(flt);
 					break;
 				case TYPE_dbl:
-					fderive(dbl, lng);
+					fderive(dbl);
 					break;
 				default:
 					if (ATOMvarsized(tt)) {
@@ -1509,7 +1509,7 @@ error:
 				}\
 				continue; \
 			} \
-			gid k = (gid)_hash_oid(ky)&ht->mask; \
+			gid k = (gid)oidHash(&ky)&ht->mask; \
 			hash_key_t slot = ht->gids[k]; \
 			while (slot && vals[slot] != ky) { \
 				k++; \
@@ -1534,7 +1534,7 @@ error:
 		Type *vals = ht->vals; \
 		\
 		if (!match) { \
-			gid k = (gid)_hash_##Type(Type##_nil)&ht->mask; \
+			gid k = (gid)Type##Hash(&Type##_nil)&ht->mask; \
 			hash_key_t slot = ht->gids[k]; \
 			while (slot && !is_##Type##_nil(vals[slot])) { \
 				k++; \
@@ -1553,7 +1553,7 @@ error:
 				}\
 				continue; \
 			} \
-			gid k = (gid)_hash_##Type(ky[i])&ht->mask; \
+			gid k = (gid)Type##Hash(ky + i)&ht->mask; \
 			hash_key_t slot = ht->gids[k]; \
 			while (slot && (!(is_##Type##_nil(ky[i]) && is_##Type##_nil(vals[slot])) && (ne))) { \
 				k++; \
@@ -1578,7 +1578,7 @@ error:
 #define BATcprobe(Type) \
 	_BATprobe(Type, memcmp(vals+slot, ky+i, sizeof(Type))!=0)
 
-#define BATfprobe(Type, BaseType) \
+#define BATfprobe(Type) \
 	do { \
 		Type *ky = Tloc(k, 0); \
 		Type *vals = ht->vals; \
@@ -1592,7 +1592,7 @@ error:
 				}\
 				continue; \
 			} \
-			gid k = (gid)_hash_##Type(*(((BaseType*)ky)+i))&ht->mask; \
+			gid k = (gid)Type##Hash(ky + i)&ht->mask; \
 			hash_key_t slot = ht->gids[k]; \
 			while (slot && (!(is_##Type##_nil(ky[i]) && is_##Type##_nil(vals[slot])) && vals[slot] != ky[i])) { \
 				k++; \
@@ -1742,10 +1742,10 @@ OAHASHprobe1(Client ctx, bat *PRB_oid, bat *HSH_slotid, const bat *PRB_key, cons
 				break;
 #endif
 			case TYPE_flt:
-				BATfprobe(flt, int);
+				BATfprobe(flt);
 				break;
 			case TYPE_dbl:
-				BATfprobe(dbl, lng);
+				BATfprobe(dbl);
 				break;
 			default:
 				if (ATOMvarsized(tt)) {
@@ -1826,7 +1826,7 @@ OAHASHnprobe(Client ctx, bat *PRB_oid, bat *HSH_slotid, const bat *PRB_key, cons
 				mtdcnt++; \
 				continue; \
 			} \
-			gid k = (gid)_hash_oid(ky)&ht->mask; \
+			gid k = (gid)oidHash(&ky)&ht->mask; \
 			hash_key_t slot = ht->gids[k]; \
 			while (slot && vals[slot] != ky) { \
 				k++; \
@@ -1862,7 +1862,7 @@ OAHASHnprobe(Client ctx, bat *PRB_oid, bat *HSH_slotid, const bat *PRB_key, cons
 				mtdcnt++; \
 				continue; \
 			} \
-			gid k = (gid)_hash_##Type(ky[i])&ht->mask; \
+			gid k = (gid)Type##Hash(ky + i)&ht->mask; \
 			hash_key_t slot = ht->gids[k]; \
 			while (slot && (!(is_##Type##_nil(ky[i]) && is_##Type##_nil(vals[slot])) && (ne))) { \
 				k++; \
@@ -1891,7 +1891,7 @@ OAHASHnprobe(Client ctx, bat *PRB_oid, bat *HSH_slotid, const bat *PRB_key, cons
 #define BATcoprobe(Type) \
 	_BAToprobe(Type, memcmp(vals+slot, ky+i, sizeof(Type))!=0)
 
-#define BATfoprobe(Type, BaseType) \
+#define BATfoprobe(Type) \
 	do { \
 		Type *ky = Tloc(k, 0); \
 		Type *vals = ht->vals; \
@@ -1904,7 +1904,7 @@ OAHASHnprobe(Client ctx, bat *PRB_oid, bat *HSH_slotid, const bat *PRB_key, cons
 				mtdcnt++; \
 				continue; \
 			} \
-			gid k = (gid)_hash_##Type(*(((BaseType*)ky)+i))&ht->mask; \
+			gid k = (gid)Type##Hash(ky + i)&ht->mask; \
 			hash_key_t slot = ht->gids[k]; \
 			while (slot && (!(is_##Type##_nil(ky[i]) && is_##Type##_nil(vals[slot])) && vals[slot] != ky[i])) { \
 				k++; \
@@ -2064,10 +2064,10 @@ OAHASHomprobe(Client ctx, bat *PRB_oid, bat *HSH_slotid, bat *PRB_mark, const ba
 				break;
 #endif
 			case TYPE_flt:
-				BATfoprobe(flt, int);
+				BATfoprobe(flt);
 				break;
 			case TYPE_dbl:
-				BATfoprobe(dbl, lng);
+				BATfoprobe(dbl);
 				break;
 			default:
 				if (ATOMvarsized(tt)) {
@@ -2148,7 +2148,7 @@ OAHASHmprobe(Client ctx, bat *PRB_oid, bat *HSH_slotid, bat *PRB_mark, const bat
 			if (!(*semantics) && ky == oid_nil) \
 				continue; \
 			\
-			gid hsh = (gid)combine(gi[i], _hash_oid(ky), prime)&ht->mask; \
+			gid hsh = (gid)combine(gi[i], oidHash(&ky), prime)&ht->mask; \
 			gid slot = ATOMIC_GET_GID(ht->gids+hsh); \
 			while (slot && (pgids[slot] != gi[i] || vals[slot] != ky)) { \
 				hsh++; \
@@ -2177,7 +2177,7 @@ OAHASHmprobe(Client ctx, bat *PRB_oid, bat *HSH_slotid, bat *PRB_mark, const bat
 			if (!(*semantics) && is_##Type##_nil(val)) \
 				continue; \
 			\
-			gid hsh = (gid)combine(gi[i], _hash_##Type(val), prime)&ht->mask; \
+			gid hsh = (gid)combine(gi[i], Type##Hash(&val), prime)&ht->mask; \
 			gid slot = ATOMIC_GET_GID(ht->gids+hsh); \
 			while (slot && (pgids[slot] != gi[i] || (is_##Type##_nil(vals[slot]) != is_##Type##_nil(val)) || (ne))) { \
 				hsh++; \
@@ -2202,7 +2202,7 @@ OAHASHmprobe(Client ctx, bat *PRB_oid, bat *HSH_slotid, bat *PRB_mark, const bat
 #define BATcprobe_cmbd(Type) \
 	_BATprobe_cmbd(Type, memcmp(vals+slot, &val, sizeof(Type))!=0)
 
-#define BATfprobe_cmbd(Type, BaseType) \
+#define BATfprobe_cmbd(Type) \
 	do { \
 		Type *ky = Tloc(k, 0); \
 		Type *vals = ht->vals; \
@@ -2212,7 +2212,7 @@ OAHASHmprobe(Client ctx, bat *PRB_oid, bat *HSH_slotid, bat *PRB_mark, const bat
 			if (!(*semantics) && is_##Type##_nil(val)) \
 				continue; \
 			\
-			gid hsh = (gid)combine(gi[i], _hash_##Type(*(((BaseType*)ky)+sltd[i]-off)), prime)&ht->mask; \
+			gid hsh = (gid)combine(gi[i], Type##Hash(ky+sltd[i]-off), prime)&ht->mask; \
 			gid slot = ATOMIC_GET_GID(ht->gids+hsh); \
 			while (slot && (pgids[slot] != gi[i] || \
 						((*semantics) && is_##Type##_nil(val) && !is_##Type##_nil(vals[slot])) || \
@@ -2367,10 +2367,10 @@ OAHASHprobe_cmbd_single(Client ctx, bat *PRB_oid, bat *HSH_slotid, const bat *PR
 				break;
 #endif
 			case TYPE_flt:
-				BATfprobe_cmbd(flt, int);
+				BATfprobe_cmbd(flt);
 				break;
 			case TYPE_dbl:
-				BATfprobe_cmbd(dbl, lng);
+				BATfprobe_cmbd(dbl);
 				break;
 			default:
 				if (ATOMvarsized(tt)) {
@@ -2436,7 +2436,7 @@ OAHASHprobe_cmbd(Client ctx, bat *PRB_oid, bat *HSH_slotid, const bat *PRB_key, 
 				mtdcnt2++; \
 				continue; \
 			} \
-			gid hsh = (gid)combine(gi[i], _hash_oid(ky), prime)&ht->mask; \
+			gid hsh = (gid)combine(gi[i], oidHash(&ky), prime)&ht->mask; \
 			gid slot = ATOMIC_GET_GID(ht->gids+hsh); \
 			while (slot && (pgids[slot] != gi[i] || vals[slot] != ky)) { \
 				hsh++; \
@@ -2457,7 +2457,7 @@ OAHASHprobe_cmbd(Client ctx, bat *PRB_oid, bat *HSH_slotid, const bat *PRB_key, 
 				slt[mtdcnt2] = oid_nil; \
 				bit has_nil = false; \
 				if (any && ht->has_nil) { \
-					gid hsh = (gid)combine(gi[i], _hash_oid(oid_nil), prime)&ht->mask; \
+					gid hsh = (gid)combine(gi[i], oidHash(&oid_nil), prime)&ht->mask; \
 					slot = ATOMIC_GET_GID(ht->gids+hsh); \
 					while (slot && (pgids[slot] != gi[i] || vals[slot] != oid_nil)) { \
 						hsh++; \
@@ -2487,7 +2487,7 @@ OAHASHprobe_cmbd(Client ctx, bat *PRB_oid, bat *HSH_slotid, const bat *PRB_key, 
 				mtdcnt2++; \
 				continue; \
 			} \
-			gid hsh = (gid)combine(gi[i], _hash_##Type(val), prime)&ht->mask; \
+			gid hsh = (gid)combine(gi[i], Type##Hash(&val), prime)&ht->mask; \
 			gid slot = ATOMIC_GET_GID(ht->gids+hsh); \
 			while (slot && (pgids[slot] != gi[i] || (is_##Type##_nil(vals[slot]) != is_##Type##_nil(val)) || (ne))) { \
 				hsh++; \
@@ -2508,7 +2508,7 @@ OAHASHprobe_cmbd(Client ctx, bat *PRB_oid, bat *HSH_slotid, const bat *PRB_key, 
 				slt[mtdcnt2] = oid_nil; \
 				bit has_nil = false; \
 				if (any && ht->has_nil) { \
-					gid hsh = (gid)combine(gi[i], _hash_##Type(Type##_nil), prime)&ht->mask; \
+					gid hsh = (gid)combine(gi[i], Type##Hash(&Type##_nil), prime)&ht->mask; \
 					slot = ATOMIC_GET_GID(ht->gids+hsh); \
 					while (slot && (pgids[slot] != gi[i] || !is_##Type##_nil(vals[slot]))) { \
 						hsh++; \
@@ -2530,7 +2530,7 @@ OAHASHprobe_cmbd(Client ctx, bat *PRB_oid, bat *HSH_slotid, const bat *PRB_key, 
 #define BATcoprobe_cmbd(Type) \
 	_BAToprobe_cmbd(Type, memcmp(vals+slot, &val, sizeof(Type))!=0);
 
-#define BATfoprobe_cmbd(Type, BaseType) \
+#define BATfoprobe_cmbd(Type) \
 	do { \
 		Type *ky = Tloc(k, 0); \
 		Type *vals = ht->vals; \
@@ -2544,7 +2544,7 @@ OAHASHprobe_cmbd(Client ctx, bat *PRB_oid, bat *HSH_slotid, const bat *PRB_key, 
 				mtdcnt2++; \
 				continue; \
 			} \
-			gid hsh = (gid)combine(gi[i], _hash_##Type(*(((BaseType*)ky)+sltd[i]-off)), prime)&ht->mask; \
+			gid hsh = (gid)combine(gi[i], Type##Hash(ky+sltd[i]-off), prime)&ht->mask; \
 			gid slot = ATOMIC_GET_GID(ht->gids+hsh); \
 			while (slot && (pgids[slot] != gi[i] || \
 						((*semantics) && is_##Type##_nil(val) && !is_##Type##_nil(vals[slot])) || \
@@ -2567,7 +2567,7 @@ OAHASHprobe_cmbd(Client ctx, bat *PRB_oid, bat *HSH_slotid, const bat *PRB_key, 
 				slt[mtdcnt2] = oid_nil; \
 				bit has_nil = false; \
 				if (any && ht->has_nil) { \
-					gid hsh = (gid)combine(gi[i], _hash_##Type((BaseType)Type##_nil), prime)&ht->mask; \
+					gid hsh = (gid)combine(gi[i], Type##Hash(&Type##_nil), prime)&ht->mask; \
 					slot = ATOMIC_GET_GID(ht->gids+hsh); \
 					while (slot && (pgids[slot] != gi[i] || !is_##Type##_nil(vals[slot]))) { \
 						hsh++; \
@@ -2740,10 +2740,10 @@ OAHASHomprobe_cmbd(Client ctx, bat *PRB_oid, bat *HSH_slotid, bat *PRB_mark, con
 				break;
 #endif
 			case TYPE_flt:
-				BATfoprobe_cmbd(flt, int);
+				BATfoprobe_cmbd(flt);
 				break;
 			case TYPE_dbl:
-				BATfoprobe_cmbd(dbl, lng);
+				BATfoprobe_cmbd(dbl);
 				break;
 			default:
 				if (ATOMvarsized(tt)) {
@@ -3032,7 +3032,7 @@ OAHASHexplode(Client ctx, bat *fetched, const bat *slotid, const bat *frequency,
 				if (s != oid_nil) {
 					gid frq = (gid)freq[s];
 					TIMEOUT_LOOP_IDX_DECL(j, frq, qry_ctx) {
-						oid k = (gid)combine(s, _hash_oid(j), prime)&ht->mask;
+						oid k = (gid)combine(s, oidHash(&j), prime)&ht->mask;
 						hash_key_t g = ht->gids[k];
 						while (g && (pgids[g] != s || vals[g] != j)) {
 							k++;
@@ -3051,7 +3051,7 @@ OAHASHexplode(Client ctx, bat *fetched, const bat *slotid, const bat *frequency,
 				oid s = sid[i];
 				gid frq = (gid)freq[s];
 				TIMEOUT_LOOP_IDX_DECL(j, frq, qry_ctx) {
-					oid k = (gid)combine(s, _hash_oid(j), prime)&ht->mask;
+					oid k = (gid)combine(s, oidHash(&j), prime)&ht->mask;
 					hash_key_t g = ht->gids[k];
 					while (g && (pgids[g] != s || vals[g] != j)) {
 						k++;
@@ -3285,14 +3285,14 @@ OAHASHnth_slice(Client ctx, bat *slice, bat *ht_sink, int *slice_nr)
 	do { \
 		T *v = Tloc(i, 0); \
 		for (BUN j = 0; j<cnt; j++) \
-			h[j] = _hash_##T((T)v[j]); \
+			h[j] = T##Hash(v + j); \
 	} while (0)
 
 #define hashloopf(T, BT) \
 	do { \
 		T *v = Tloc(i, 0); \
 		for (BUN j = 0; j<cnt; j++) \
-			h[j] = _hash_##T(*(BT*)(v+j)); \
+			h[j] = T##Hash(v + j); \
 	} while (0)
 
 static str

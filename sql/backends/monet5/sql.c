@@ -1805,14 +1805,6 @@ mvc_append_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		ins = *(ptr *) ins;
 	if (isbat) {
 		b =  (BAT*) ins;
-		if (isVIEW(b)) {
-			/* note, b == (BAT*)ins */
-			b = COLcopy(b, b->ttype, true, TRANSIENT);
-			BBPreclaim(ins);
-			ins = b;
-			if (b == NULL)
-				throw(SQL, "sql.append", GDK_EXCEPTION);
-		}
 	}
 	s = mvc_bind_schema(m, sname);
 	if (s == NULL) {

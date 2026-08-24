@@ -41,51 +41,15 @@
 		}							\
 	}
 
-#define _hash_bit(X)  ((unsigned int)X)
-#define _hash_bte(X)  ((unsigned int)X)
-#define _hash_sht(X)  ((unsigned int)X)
-#define _hash_int_(X) ((((unsigned int)X)>>7)^(((unsigned int)X)>>13)^(((unsigned int)X)>>21)^((unsigned int)X))
-//#define _hash_int(X)  (_hash_int_((X)*98317))
-#define _hash_int(X)  (_hash_int_(((int)(X))*25165843))
-//#define _hash_int(X)  (_hash_int_((X)*hash_prime_nr[21]))
+#define bitHash(x)			bteHash(x)
+#define dateHash(x)			intHash(x)
+#define daytimeHash(x)		lngHash(x)
+#define timestampHash(x)	lngHash(x)
+#define gidHash(x)			oidHash(x)
 
-#if 0
-  static inline ulng _hash_int(unsigned int x) { /* murmur finishing */
-      x ^= x >> 16;
-      x *= 0x85ebca6bU;
-      x ^= x >> 13;
-      x *= 0xc2b2ae35U;
-      x ^= x >> 16;
-      return (ulng)x;
-  }
-#endif
-
-  static inline ulng _hash_lng(ulng x) { /* splitmix64; see https://nullprogram.com/blog/2018/07/31/ for inversion */
-      x ^= x >> 30;
-      x *= 0xbf58476d1ce4e5b9ULL;
-      x ^= x >> 27;
-      x *= 0x94d049bb133111ebULL;
-      x ^= x >> 31;
-      return x;
-  }
-
-#define _hash_date(X) _hash_int(X)
-#define _hash_inet4(X) _hash_int((*(int*)&X))
-#define _hash_oid(X)  _hash_lng(X)
-#define _hash_daytime(X) _hash_lng(X)
-#define _hash_timestamp(X) _hash_lng(X)
-
-#ifdef HAVE_HGE
-#define _hash_uuid(X) _hash_hge(X)
-#define _hash_hge(X)  (_hash_lng(((lng)X) ^ _hash_lng((lng)(X>>64))))
-#endif
-
-#define _hash_flt(X)  (_hash_int(X))
-#define _hash_dbl(X)  (_hash_lng(X))
-#define _hash_gid(X)  (_hash_lng(X))
 //#define combine(X,Y)  (_hash_lng((X*5671432987))^(ulng)Y)
 //#define combine(X,Y)  (_hash_lng((X*(hash_prime_nr[h->bits-5])))^(ulng)Y)
-#define combine(X,Y,pr)  (_hash_lng((X*(pr)))^(ulng)Y)
+#define combine(X,Y,pr)  (oidHash(&(oid){(X)*(pr)})^(BUN)(Y))
 static const int
 hash_prime_nr[32] = {
 	53,
@@ -116,7 +80,7 @@ hash_prime_nr[32] = {
 	1610612741 };
 
 
-typedef oid gid;
+typedef oid		gid;
 typedef ATOMIC_TYPE hash_key_t;
 #define ATOMIC_GET_GID(a) ((gid)ATOMIC_GET(a))
 #define ATOMIC_ADD_GID(a,i) ((gid)ATOMIC_ADD(a,i))

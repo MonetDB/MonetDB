@@ -783,21 +783,21 @@ pqc_page_header( pqc_reader_t *r, pqc_creader_t *pr, int64_t pos)
 			unsigned char *s = (unsigned char*)pr->dict;
 			if (r->pse->size == 16)
 				for(uint32_t i = 0; i < num_values; i++, s+=sizeof(uint16_t))
-					*(uint16_t*)s = pqc_sht(get_uint16(s));
+					*(uint16_t*)s = get_uint16(s);
 			if (r->pse->size == 32)
 				for(uint32_t i = 0; i < num_values; i++, s+=sizeof(uint32_t))
-					*(uint32_t*)s = pqc_int(get_uint32(s));
+					*(uint32_t*)s = get_uint32(s);
 			if (r->pse->size == 64)
 				for(uint32_t i = 0; i < num_values; i++, s+=sizeof(uint64_t))
-					*(uint64_t*)s = pqc_lng(get_uint64(s));
+					*(uint64_t*)s = get_uint64(s);
 		}
 #endif
 		if (num_values && r->pse->type == inttype && r->pse->precision == 96) { /* remove the 32 useless bits */
 			ulng *d = (ulng*)pr->dict;
 			unsigned char *s = (unsigned char*)pr->dict;
 			for(uint32_t i = 0; i < num_values; i++, s += 12) {
-				uint64_t nanoseconds = pqc_lng(get_uint64(s));
-				uint32_t julian_day = pqc_int(get_uint32(s+8));
+				uint64_t nanoseconds = get_uint64(s);
+				uint32_t julian_day = get_uint32(s+8);
 
 				nanoseconds /= LL_CONSTANT(1000);
 				julian_day -= 2440588;
@@ -1298,13 +1298,13 @@ pqc_dict_lookup( pqc_reader_t *r, pqc_creader_t *cr, void *output, void *voutput
 				} else if (nr_bits < 16) {
 					int m = len*8;
 					for (int64_t j = 0; i < nrows && j < m; j++, i++) {
-						uint16_t v = pqc_sht(get_uint16(data+pos));
+						uint16_t v = get_uint16(data+pos);
 						uint32_t idx = (v >> sh)&mask;
 						sh += nr_bits;
 						if (sh >= 16) {
 							pos+=2;
 							sh -= 16;
-							uint16_t v = pqc_sht(get_uint16(data+pos));
+							uint16_t v = get_uint16(data+pos);
 							idx |= (v << (nr_bits-sh))&mask;
 							if (j==(m-1) && sh >= 8)
 								pos++;
@@ -1317,13 +1317,13 @@ pqc_dict_lookup( pqc_reader_t *r, pqc_creader_t *cr, void *output, void *voutput
 				} else if (nr_bits < 32) {
 					int m = len*8;
 					for (int64_t j = 0; i < nrows && j < m; j++, i++) {
-						uint32_t v = pqc_int(get_uint32(data+pos));
+						uint32_t v = get_uint32(data+pos);
 						uint32_t idx = (v >> sh)&mask;
 						sh += nr_bits;
 						if (sh >= 32) {
 							pos+=2;
 							sh -= 32;
-							uint32_t v = pqc_int(get_uint32(data+pos));
+							uint32_t v = get_uint32(data+pos);
 							idx |= (v << (nr_bits-sh))&mask;
 							if (j==(m-1) && sh >= 8)
 								pos++;
@@ -1357,7 +1357,7 @@ pqc_dict_lookup( pqc_reader_t *r, pqc_creader_t *cr, void *output, void *voutput
 				}
 			} else if (nr_bits <= 16) { /* rle */
 				len>>=1;
-				uint16_t idx = pqc_sht(get_uint16(data+pos));
+				uint16_t idx = get_uint16(data+pos);
 				uint32_t j = 0;
 				pos += 2;
 				for(; i < nrows && j < len; j++, i++)
@@ -1369,7 +1369,7 @@ pqc_dict_lookup( pqc_reader_t *r, pqc_creader_t *cr, void *output, void *voutput
 				}
 			} else if (nr_bits <= 32) { /* rle */
 				len>>=1;
-				uint32_t idx = pqc_int(get_uint32(data+pos));
+				uint32_t idx = get_uint32(data+pos);
 				uint32_t j = 0;
 				pos += 4;
 				for(; i < nrows && j < len; j++, i++)
@@ -1995,7 +1995,7 @@ pqc_read_page_chunk( pqc_reader_t *r, pqc_creader_t *cr, void *output /*fixed si
 							if (!voutput) {
 								size_t blobsizes = 0;
 								for (uint32_t i = 0; i < nrows; i++) {
-									int len = pqc_int(get_uint32(src));
+									int len = get_uint32(src);
 									src += sizeof(int) + len;
 									blobsizes += (sizeof(size_t) + len +15)&(~15);
 								}
@@ -2007,7 +2007,7 @@ pqc_read_page_chunk( pqc_reader_t *r, pqc_creader_t *cr, void *output /*fixed si
 								char *dst = voutput, *fdst = voutput;
 								for (uint32_t i = 0; i < nrows; i++) {
 									p[i] = offset + (dst - fdst);
-									int len = pqc_int(get_uint32(src));
+									int len = get_uint32(src);
 									src += sizeof(int);
 									size_t *n = (size_t*)dst;
 									*n = len;
@@ -2023,7 +2023,7 @@ pqc_read_page_chunk( pqc_reader_t *r, pqc_creader_t *cr, void *output /*fixed si
 							int width = pse_get_width(r->pse);
 							/* FIXED ARRAY little endian len followed by big endian data,  what where they smoking */
 							for (uint32_t i = 0; i < nrows; i++, dst += width) {
-								int len = pqc_int(get_uint32(((unsigned char*)cr->data)+pos));
+								int len = get_uint32(((unsigned char*)cr->data)+pos);
 								pos += 4;
 								*(uint16_t*)dst = 0;
 								int offset = width - len;
@@ -2058,8 +2058,8 @@ pqc_read_page_chunk( pqc_reader_t *r, pqc_creader_t *cr, void *output /*fixed si
 						ulng *d = output;
 						unsigned char *s = ((unsigned char*)cr->data)+pos;
 						for(uint64_t i = 0; i < nrows; i++, s += 12) {
-							uint64_t nanoseconds = pqc_lng(get_uint64(s));
-							uint32_t julian_day = pqc_int(get_uint32(s+8));
+							uint64_t nanoseconds = get_uint64(s);
+							uint32_t julian_day = get_uint32(s+8);
 
 							nanoseconds /= LL_CONSTANT(1000);
 							julian_day -= 2440588;
@@ -2069,17 +2069,17 @@ pqc_read_page_chunk( pqc_reader_t *r, pqc_creader_t *cr, void *output /*fixed si
 						memcpy(output, ((char*)cr->data)+pos, (size_t)(nrows*(r->pse->size/8)));
 						pos += (r->pse->size/8)*nrows;
 #ifdef WORDS_BIGENDIAN
-						if (nrows && (r->pse->type == inttype || r->pse->type == floattype)) {
+						if (nrows && (r->pse->type == inttype || r->pse->type == floattype || r->pse->type == decimaltype)) {
 							unsigned char *s = output;
 							if (r->pse->size == 16)
 								for(uint32_t i = 0; i < nrows; i++, s+=sizeof(uint16_t))
-									*(uint16_t*)s = pqc_sht(get_uint16(s));
+									*(uint16_t*)s = get_uint16(s);
 							if (r->pse->size == 32)
 								for(uint32_t i = 0; i < nrows; i++, s+=sizeof(uint32_t))
-									*(uint32_t*)s = pqc_int(get_uint32(s));
+									*(uint32_t*)s = get_uint32(s);
 							if (r->pse->size == 64)
 								for(uint32_t i = 0; i < nrows; i++, s+=sizeof(uint64_t))
-									*(uint64_t*)s = pqc_lng(get_uint64(s));
+									*(uint64_t*)s = get_uint64(s);
 						}
 #endif
 					}
