@@ -1501,14 +1501,6 @@ error:
 		TIMEOUT_LOOP_IDX_DECL(i, keycnt, qry_ctx) { \
 			oid ky = canditer_next(&ci); \
 			assert(ky != oid_nil); \
-			if (!(*semantics) && ky == oid_nil) { \
-				if (!match && empty) { \
-					oid_mtd[mtdcnt] = off+i; \
-					slt[mtdcnt] = oid_nil; \
-					mtdcnt++; \
-				}\
-				continue; \
-			} \
 			gid k = (gid)oidHash(&ky)&ht->mask; \
 			hash_key_t slot = ht->gids[k]; \
 			while (slot && vals[slot] != ky) { \
@@ -1819,13 +1811,6 @@ OAHASHnprobe(Client ctx, bat *PRB_oid, bat *HSH_slotid, const bat *PRB_key, cons
 		TIMEOUT_LOOP_IDX_DECL(i, keycnt, qry_ctx) { \
 			oid ky = canditer_next(&ci); \
 			assert(ky != oid_nil); \
-			if (!(*semantics) && ky == oid_nil) { \
-				oid_mtd[mtdcnt] = off+i; \
-				slt[mtdcnt] = oid_nil; \
-				mark[i] = any?empty:false; \
-				mtdcnt++; \
-				continue; \
-			} \
 			gid k = (gid)oidHash(&ky)&ht->mask; \
 			hash_key_t slot = ht->gids[k]; \
 			while (slot && vals[slot] != ky) { \
@@ -2145,9 +2130,6 @@ OAHASHmprobe(Client ctx, bat *PRB_oid, bat *HSH_slotid, bat *PRB_mark, const bat
 		TIMEOUT_LOOP_IDX_DECL(i, mtdcnt, qry_ctx) { \
 			oid ky = canditer_idx(&ci, sltd[i]-off); \
 			assert(ky != oid_nil); \
-			if (!(*semantics) && ky == oid_nil) \
-				continue; \
-			\
 			gid hsh = (gid)combine(gi[i], oidHash(&ky), prime)&ht->mask; \
 			gid slot = ATOMIC_GET_GID(ht->gids+hsh); \
 			while (slot && (pgids[slot] != gi[i] || vals[slot] != ky)) { \
@@ -2429,13 +2411,6 @@ OAHASHprobe_cmbd(Client ctx, bat *PRB_oid, bat *HSH_slotid, const bat *PRB_key, 
 		TIMEOUT_LOOP_IDX_DECL(i, mtdcnt, qry_ctx) { \
 			oid ky = canditer_idx(&ci, sltd[i]-off); \
 			assert(ky != oid_nil); \
-			if (!mark[i] || (!(*semantics) && ky == oid_nil)) { \
-				oid_mtd[mtdcnt2] = sltd[i]; \
-				slt[mtdcnt2] = oid_nil; \
-				mark[i] = (any && mark[i])?bit_nil:false; \
-				mtdcnt2++; \
-				continue; \
-			} \
 			gid hsh = (gid)combine(gi[i], oidHash(&ky), prime)&ht->mask; \
 			gid slot = ATOMIC_GET_GID(ht->gids+hsh); \
 			while (slot && (pgids[slot] != gi[i] || vals[slot] != ky)) { \
@@ -3401,7 +3376,7 @@ static mel_func oa_hash_init_funcs[] = {
  command("oahash", "combined_mprobe", OAHASHmprobe_cmbd_single, false, "Probe the selected `key`-s pairs in the hash table. For a matched item, return its OID in the 'key' column and the slot ID in the hash table", args(3,10, batarg("PRB_oid",oid),batarg("HSH_slotid",oid),batarg("PRB_matched",bit),batargany("PRB_key",1),batarg("PRB_selected",oid),batarg("HSH_pgids",oid),batargany("HSH_ht",1),batarg("frequency",lng),arg("single",bit),arg("semantics",bit))),
  command("oahash", "combined_mprobe", OAHASHmprobe_cmbd, false, "Probe the selected `key`-s in the hash table. For a matched item, return its OID in the 'key' column and the slot ID in the hash table", args(3,9, batarg("PRB_oid",oid),batarg("HSH_slotid",oid),batarg("PRB_matched",bit),batargany("PRB_key",1),batarg("PRB_selected",oid),batarg("HSH_pgids",oid),batargany("HSH_ht",1),arg("single",bit),arg("semantics",bit))),
 
- pattern("oahash", "expand", OAHASHexpand, false, "Expand the probe-side OIDs according to their matching hash-side GIDs and frequencies. If 'leftouter' is true, append the not matched OIDs", args(1,5,batarg("expanded",oid),batarg("prb_oids",oid),batarg("hsh_gids",oid),batarg("frequency",lng),arg("leftouter",bit))),
+ pattern("oahash", "expand", OAHASHexpand, false, "Expand the probe-side OIDs according to their matching hash-side GIDs and frequencies. If 'leftouter' is true, include the not matched OIDs", args(1,5,batarg("expanded",oid),batarg("prb_oids",oid),batarg("hsh_gids",oid),batarg("frequency",lng),arg("leftouter",bit))),
 
  command("oahash", "expand_cartesian", OAHASHexpand_cart, false, "Duplicate each value in 'col' the number of times as the count of 'rowrepeat'. For a left/right-outer join, if 'rowrepeat' is empty, output the values in 'col' once.", args(1,4, batarg("expanded",oid),batargany("col",1),batargany("rowrepeat",2),arg("left_outer",bit))),
 
