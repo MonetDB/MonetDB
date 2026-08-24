@@ -16,14 +16,17 @@
 typedef int date;			/* we use 26 bits out of 32 */
 #define date_nil			((date) {int_nil})
 #define is_date_nil(x)			((x) == date_nil)
+#define is_date_eq(x, y)		((x) == (y))
 
 typedef lng daytime;			/* we use 37 bits out of 64 */
 #define daytime_nil			((daytime) {lng_nil})
 #define is_daytime_nil(x)		((x) == daytime_nil)
+#define is_daytime_eq(x, y)		((x) == (y))
 
 typedef lng timestamp;			/* we use 26+37=63 bits out of 64 */
 #define timestamp_nil			((timestamp) {lng_nil})
 #define is_timestamp_nil(x)		((x) == timestamp_nil)
+#define is_timestamp_eq(x, y)		((x) == (y))
 
 /* functions to manipulate date, daytime, and timestamp values */
 #define HOUR_USEC	(60*60*LL_CONSTANT(1000000)) /* usec in an hour */

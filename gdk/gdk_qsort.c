@@ -37,7 +37,7 @@ struct qsort_t {
 #define fixgtf(i, j, TPE)	(!fixnil(j, TPE) && (fixnil(i, TPE) || ((TPE *) h)[i] > ((TPE *) h)[j]))
 #define fixgef(i, j, TPE)	(fixnil(i, TPE) || (!fixnil(j, TPE) && ((TPE *) h)[i] >= ((TPE *) h)[j]))
 
-#define fixeq(i, j, TPE)	(((TPE *) h)[i] == ((TPE *) h)[j])
+#define fixeq(i, j, TPE)	is_##TPE##_eq(((TPE *) h)[i], ((TPE *) h)[j])
 #define fixnil(i, TPE)		is_##TPE##_nil(((TPE *) h)[i])
 #define fixswap(i, j, TPE)						\
 	do {								\
@@ -116,7 +116,7 @@ struct qsort_t {
 #define fltlel_rev(i, j)	(fltnil(j) || (!fltnil(i) && fixgel(i, j, flt)))
 #define fltltf_rev(i, j)	fixgtf(i, j, flt)
 #define fltlef_rev(i, j)	fixgef(i, j, flt)
-#define flteq(i, j)		(fltnil(i) ? fltnil(j) : !fltnil(j) && fixeq(i, j, flt))
+#define flteq(i, j)		fixeq(i, j, flt)
 #define fltnil(i)		fixnil(i, flt)
 #define fltswap(i, j)		fixswap(i, j, flt)
 
@@ -128,7 +128,7 @@ struct qsort_t {
 #define dbllel_rev(i, j)	(dblnil(j) || (!dblnil(i) && fixgel(i, j, dbl)))
 #define dblltf_rev(i, j)	fixgtf(i, j, dbl)
 #define dbllef_rev(i, j)	fixgef(i, j, dbl)
-#define dbleq(i, j)		(dblnil(i) ? dblnil(j) : !dblnil(j) && fixeq(i, j, dbl))
+#define dbleq(i, j)		fixeq(i, j, dbl)
 #define dblnil(i)		fixnil(i, dbl)
 #define dblswap(i, j)		fixswap(i, j, dbl)
 

@@ -1919,10 +1919,16 @@ gdk_export const inet4 inet4_nil;
 gdk_export const inet6 inet6_nil;
 
 /* derived NIL values - OIDDEPEND */
-#define bit_nil	((bit) bte_nil)
+#define bit_nil	((const bit) {bte_nil})
 #define bat_nil	((bat) int_nil)
 
 #define void_nil	oid_nil
+
+#if defined(_MSC_VER) && !defined(__INTEL_COMPILER) && _MSC_VER < 1800
+#define isnan(x)	_isnan(x)
+#define isinf(x)	(_fpclass(x) & (_FPCLASS_NINF | _FPCLASS_PINF))
+#define isfinite(x)	_finite(x)
+#endif
 
 #define is_bit_nil(v)	((v) == GDK_bte_min-1)
 #define is_bte_nil(v)	((v) == GDK_bte_min-1)
@@ -1931,28 +1937,38 @@ gdk_export const inet6 inet6_nil;
 #define is_lng_nil(v)	((v) == GDK_lng_min-1)
 #ifdef HAVE_HGE
 #define is_hge_nil(v)	((v) == GDK_hge_min-1)
-#endif
-#define is_oid_nil(v)	((v) == ((oid) 1 << ((8 * SIZEOF_OID) - 1)))
-#define is_flt_nil(v)	isnan(v)
-#define is_dbl_nil(v)	isnan(v)
-#define is_bat_nil(v)	(((v) & 0x7FFFFFFF) == 0) /* v == bat_nil || v == 0 */
-
-#if defined(_MSC_VER) && !defined(__INTEL_COMPILER) && _MSC_VER < 1800
-#define isnan(x)	_isnan(x)
-#define isinf(x)	(_fpclass(x) & (_FPCLASS_NINF | _FPCLASS_PINF))
-#define isfinite(x)	_finite(x)
-#endif
-
-#ifdef HAVE_HGE
 #define is_uuid_nil(x)	((x).h == 0)
 #define is_inet6_nil(x)	((x).align == 0)
 #else
 #define is_uuid_nil(x)	(memcmp((x).u, uuid_nil.u, UUID_SIZE) == 0)
 #define is_inet6_nil(x)	(memcmp((x).hex, inet6_nil.hex, 16) == 0)
 #endif
+#define is_oid_nil(v)	((v) == ((oid) 1 << ((8 * SIZEOF_OID) - 1)))
+#define is_flt_nil(v)	isnan(v)
+#define is_dbl_nil(v)	isnan(v)
+#define is_bat_nil(v)	(((v) & 0x7FFFFFFF) == 0) /* v == bat_nil || v == 0 */
+
 #define is_inet4_nil(x)	((x).align == 0)
 
 #define is_blob_nil(x)	((x)->nitems == ~(size_t)0)
+
+#define is_bit_eq(x, y)	((x) == (y))
+#define is_bte_eq(x, y)	((x) == (y))
+#define is_sht_eq(x, y)	((x) == (y))
+#define is_int_eq(x, y)	((x) == (y))
+#define is_lng_eq(x, y)	((x) == (y))
+#ifdef HAVE_HGE
+#define is_hge_eq(x, y)	((x) == (y))
+#define is_uuid_eq(x, y)	((x).h == (y).h)
+#define is_inet6_eq(x, y)	((x).align == (y).align)
+#else
+#define is_uuid_eq(x, y)	((x).l[0] == (y).l[0] && (x).l[1] == (y).l[1])
+#define is_inet6_eq(x, y)	((x).align[0] == (y).align[0] && (x).align[1] == (y).align[1])
+#endif
+#define is_oid_eq(x, y)	((x) == (y))
+#define is_flt_eq(x, y)	((is_flt_nil(x) && is_flt_nil(y)) || (x) == (y))
+#define is_dbl_eq(x, y)	((is_dbl_nil(x) && is_dbl_nil(y)) || (x) == (y))
+#define is_inet4_eq(x, y)	((x).align == (y).align)
 
 /*
  * @- Derived types
@@ -3508,6 +3524,12 @@ lngHash(const void *x)
 {
 	return (BUN) XXHASHFUNC(x, sizeof(lng), 0);
 }
+
+#if SIZEOF_OID == SIZEOF_INT
+#define oidHash(x)	intHash(x)
+#else
+#define oidHash(x)	lngHash(x)
+#endif
 
 #ifdef HAVE_HGE
 __attribute__((__pure__))

@@ -971,43 +971,15 @@ LOCKEDAGGRnull(Client ctx, bat *result, const bit *hadnull)
 #define unique(Type)							\
 	unique_(Type,								\
 			Type,								\
-			,									\
+			(void) 0,							\
 			Type *bp = Tloc(b, 0),				\
 			is_##Type##_nil(bp[i]),				\
-			,									\
-			(gid)_hash_##Type(bp[i]),			\
-			vals[g] != bp[i],					\
+			(void) 0,							\
+			(gid)Type##Hash(bp + i),			\
+			!is_##Type##_eq(vals[g], bp[i]),	\
 			vals[g] = bp[i],					\
-			,									\
+			(void) 0,							\
 			nextk								\
-		)
-
-#define funique(Type, BaseType)											\
-	unique_(Type,														\
-			BaseType,													\
-			,															\
-			Type *bp = Tloc(b, 0),										\
-			is_##Type##_nil(bp[i]),										\
-			,															\
-			(gid)_hash_##Type(*(((BaseType*)bp)+i)),					\
-			(!(is_##Type##_nil(bp[i]) && is_##Type##_nil(vals[g])) && vals[g] != bp[i]), \
-			vals[g] = bp[i],											\
-			,															\
-			nextk														\
-		)
-
-#define cunique(Type, BaseType)											\
-	unique_(Type,														\
-			BaseType,													\
-			,															\
-			Type *bp = Tloc(b, 0),										\
-			is_##Type##_nil(bp[i]),										\
-			,															\
-			(gid)_hash_##Type(*(((BaseType*)bp)+i)),					\
-			(!(is_##Type##_nil(bp[i]) && is_##Type##_nil(vals[g])) && h->cmp(vals+g, bp+i) != 0), \
-			vals[g] = bp[i],											\
-			,															\
-			nextk														\
 		)
 
 #define aunique_(Type,CType)						\
@@ -1134,18 +1106,16 @@ LALGunique(Client ctx, bat *rid, bat *uid, bat *bid, bat *sid, bit *Skip_nil)
 			unique(sht);
 			unique(int);
 			unique(date);
-			cunique(inet4, int);
+			unique(inet4);
 			unique(lng);
 			unique(daytime);
 			unique(timestamp);
 #ifdef HAVE_HGE
 			unique(hge);
 #endif
-			funique(flt, int);
-			funique(dbl, lng);
-#ifdef HAVE_HGE
-			cunique(uuid, hge);
-#endif
+			unique(flt);
+			unique(dbl);
+			unique(uuid);
 			if (local_storage) {
 				aunique_(str,const char *);
 			} else {
@@ -1243,25 +1213,11 @@ LALGunique_keepnil(Client ctx, bat *rid, bat *uid, bat *bid, bat *sid)
 			 Type *bp = Tloc(b, 0),				\
 			is_##Type##_nil(bp[i]),				\
 			 ,									\
-			 (gid)_hash_##Type(bp[i]),			\
-			 vals[g] != bp[i],					\
+			 (gid)Type##Hash(bp + i),			\
+			 !is_##Type##_eq(vals[g], bp[i]),	\
 			 vals[g] = bp[i],					\
 			 ,									\
 			 nextk								\
-		)
-
-#define gfunique(Type, BaseType)										\
-	gunique_(Type,														\
-			 BaseType,													\
-			 ,															\
-			 Type *bp = Tloc(b, 0),										\
-			is_##Type##_nil(bp[i]),										\
-			 ,															\
-			 (gid)_hash_##Type(*(((BaseType*)bp)+i)),					\
-			 (!(is_##Type##_nil(bp[i]) && is_##Type##_nil(vals[g])) && vals[g] != bp[i]), \
-			 vals[g] = bp[i],											\
-			 ,															\
-			 nextk														\
 		)
 
 #define gcunique(Type, BaseType)										\
@@ -1271,7 +1227,7 @@ LALGunique_keepnil(Client ctx, bat *rid, bat *uid, bat *bid, bat *sid)
 			 Type *bp = Tloc(b, 0),										\
 			 is_##Type##_nil(bp[i]),									\
 			 ,															\
-			 (gid)_hash_##Type(*(((BaseType*)bp)+i)),					\
+			 (gid)Type##Hash(bp + i),							\
 			 (!(is_##Type##_nil(bp[i]) && is_##Type##_nil(vals[g])) && h->cmp(vals+g, bp+i) != 0), \
 			 vals[g] = bp[i],											\
 			 ,															\
@@ -1411,8 +1367,8 @@ LALGgroup_unique(Client ctx, bat *rid, bat *uid, bat *bid, bat *sid, bat *Gid, b
 #ifdef HAVE_HGE
 			gunique(hge);
 #endif
-			gfunique(flt, int);
-			gfunique(dbl, lng);
+			gunique(flt);
+			gunique(dbl);
 #ifdef HAVE_HGE
 			gcunique(uuid, hge);
 #endif
@@ -1505,7 +1461,7 @@ LALGgroup_unique_keepnil(Client ctx, bat *rid, bat *uid, bat *bid, bat *sid, bat
 			   ,								\
 			   Type *bp = Tloc(b, 0),			\
 			   ,								\
-			   (gid)_hash_##Type(bp[i]),		\
+			   (gid)Type##Hash(bp + i),			\
 			   vals[g] != bp[i],				\
 			   vals[g] = bp[i],					\
 			   ,								\
@@ -1525,7 +1481,7 @@ LALGgroup_unique_keepnil(Client ctx, bat *rid, bat *uid, bat *bid, bat *sid, bat
 			bool fnd = 0;										\
 			gid g = 0;											\
 			for(; !fnd; ) {										\
-				gid k = (gid)_hash_oid(oid_nil)&h->mask;		\
+				gid k = (gid)oidHash(&oid_nil)&h->mask;			\
 				g = ATOMIC_GET_GID(h->gids+k);					\
 				for(;g && vals[g] != bpi;) {					\
 					k++;										\
@@ -1563,7 +1519,7 @@ LALGgroup_unique_keepnil(Client ctx, bat *rid, bat *uid, bat *bid, bat *sid, bat
 				   ,											\
 				   oid bp = b->tseqbase,						\
 				   oid bpi = bp+i,								\
-				   (gid)_hash_oid(bpi),							\
+				   (gid)oidHash(&bpi),							\
 				   vals[g] != bpi,								\
 				   vals[g] = bpi,								\
 				   ,											\
@@ -1579,7 +1535,7 @@ LALGgroup_unique_keepnil(Client ctx, bat *rid, bat *uid, bat *bid, bat *sid, bat
 			   ,														\
 			   Type *bp = Tloc(b, 0),									\
 			   ,														\
-			   (gid)_hash_##Type(*(((BaseType*)bp)+i)),					\
+			   (gid)Type##Hash(bp + i),									\
 			   (!(is_##Type##_nil(bp[i]) && is_##Type##_nil(vals[g])) && vals[g] != bp[i]), \
 			   vals[g] = bp[i],											\
 			   ,														\
@@ -1847,7 +1803,7 @@ error:
 				,								\
 				Type *bp = Tloc(b, 0),			\
 				,								\
-				(gid)_hash_##Type(bp[i]),		\
+				(gid)Type##Hash(bp + i),		\
 				vals[g] != bp[i],				\
 				vals[g] = bp[i],				\
 				,								\
@@ -1863,7 +1819,7 @@ error:
 				,								\
 				oid bp = b->tseqbase,			\
 				oid bpi = bp+i,					\
-				(gid)_hash_oid(bpi),			\
+				(gid)oidHash(&bpi),				\
 				vals[g] != bpi,					\
 				vals[g] = bpi,					\
 				,								\
@@ -1878,7 +1834,7 @@ error:
 				,														\
 				Type *bp = Tloc(b, 0),									\
 				,														\
-				(gid)_hash_##Type(*(((BaseType*)bp)+i)),				\
+				(gid)Type##Hash(bp + i),								\
 				(!(is_##Type##_nil(bp[i]) && is_##Type##_nil(vals[g])) && vals[g] != bp[i]), \
 				vals[g] = bp[i],										\
 				,														\
