@@ -2345,7 +2345,10 @@ BATsetaccess(BAT *b, restrict_t newmode)
 			b3 = b->tvheap->newstorage;
 			m3 = HEAPchangeaccess(b->tvheap, ACCESSMODE(wr && ta, rd && ta), existing);
 		}
-		if (m1 == STORE_INVALID || m3 == STORE_INVALID) {
+		if ((b->theap->base && m1 == STORE_INVALID) ||
+		    m3 == STORE_INVALID) {
+			GDKerror("invalid storage " ALGOBATFMT "\n",
+				 ALGOBATPAR(b));
 			MT_lock_unset(&b->theaplock);
 			BBPunfix(b->batCacheid);
 			return NULL;
