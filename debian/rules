@@ -29,19 +29,23 @@ override_dh_auto_configure:
 	-DSHP=OFF \
 	-DSTRICT=OFF \
 	-DTESTING=ON \
+	-DWITH_BROTLI=ON \
 	-DWITH_BZ2=ON \
 	-DWITH_CMOCKA=OFF \
 	-DWITH_CURL=ON \
 	-DWITH_LZ4=ON \
 	-DWITH_LZMA=ON \
+	-DWITH_OPENSSL=ON \
 	-DWITH_PCRE=ON \
 	-DWITH_PROJ=OFF \
 	-DWITH_READLINE=ON \
 	-DWITH_RTREE=OFF \
+	-DWITH_SNAPPY=ON \
 	-DWITH_SQLPARSE=OFF \
 	-DWITH_VALGRIND=OFF \
 	-DWITH_XML2=ON \
-	-DWITH_ZLIB=ON
+	-DWITH_ZLIB=ON \
+	-DWITH_ZSTD=-ON
 
 # currently the test suite fails
 override_dh_auto_test:

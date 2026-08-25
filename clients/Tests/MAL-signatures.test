@@ -38682,7 +38682,7 @@ oahash
 expand
 pattern oahash.expand(X_0:bat[:oid], X_1:bat[:oid], X_2:bat[:lng], X_3:bit):bat[:oid]
 OAHASHexpand
-Expand the probe-side OIDs according to their matching hash-side GIDs and frequencies. If 'leftouter' is true, append the not matched OIDs
+Expand the probe-side OIDs according to their matching hash-side GIDs and frequencies. If 'leftouter' is true, include the not matched OIDs
 oahash
 expand_cartesian
 command oahash.expand_cartesian(X_0:bat[:any_1], X_1:bat[:any_2], X_2:bit):bat[:oid]

@@ -113,12 +113,14 @@ BuildRequires: pkgconfig(libcurl)
 BuildRequires: pkgconfig(liblzma)
 BuildRequires: pkgconfig(libxml-2.0)
 BuildRequires: pkgconfig(openssl) >= 1.1.1
-%global with_openssl 1
+BuildRequires: pkgconfig(snappy)
 %if %{with pcre}
 BuildRequires: pkgconfig(libpcre2-8)
 %endif
 BuildRequires: pkgconfig(zlib)
+BuildRequires: pkgconfig(libzstd)
 BuildRequires: pkgconfig(liblz4) >= 1.8
+BuildRequires: pkgconfig(libbrotlidec)
 BuildRequires: pkgconfig(libxxhash)
 # optional packages:
 # BuildRequires: pkgconfig(cmocka)      # -DWITH_CMOCKA=ON
@@ -893,20 +895,23 @@ fi
         -DSHP=OFF \
         -DSTRICT=OFF \
         -DTESTING=ON \
+        -DWITH_BROTLI=ON \
         -DWITH_BZ2=ON \
         -DWITH_CMOCKA=OFF \
         -DWITH_CURL=ON \
         -DWITH_LZ4=ON \
         -DWITH_LZMA=ON \
-        -DWITH_OPENSSL=%{?with_openssl:ON}%{!?with_openssl:OFF} \
+        -DWITH_OPENSSL=ON \
         -DWITH_PCRE=ON \
         -DWITH_PROJ=OFF \
         -DWITH_READLINE=ON \
         -DWITH_RTREE=OFF \
+        -DWITH_SNAPPY=ON \
         -DWITH_SQLPARSE=OFF \
         -DWITH_VALGRIND=OFF \
         -DWITH_XML2=ON \
-        -DWITH_ZLIB=ON
+        -DWITH_ZLIB=ON \
+        -DWITH_ZSTD=ON
 
 %cmake_build
 
