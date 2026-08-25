@@ -3820,10 +3820,10 @@ def main(argv):
     global replace
     global threshold
     approve = opts.approve or opts.approve_replace
-    if approve:
-        os.environ['MTEST_APPROVE'] = 'TRUE'
     if opts.approve_replace:
         replace = True
+    if approve:
+        os.environ['MTEST_APPROVE'] = 'REPLACE' if replace else 'TRUE'
     if opts.threshold:
         threshold = opts.threshold
     global stop_crash
