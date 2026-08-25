@@ -172,6 +172,7 @@ SLICERnth_slice(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	BAT *b = BATdescriptor(*bid);
 	if (!b)
 		return createException(SQL, "slicer.nth_slice",	SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+	b = BATsetaccess(b, BAT_READ);
 
 	BAT *r = NULL;
 	if (BATcount(b) < s) {
