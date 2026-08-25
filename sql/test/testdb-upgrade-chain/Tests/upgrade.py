@@ -85,6 +85,14 @@ if len(sys.argv) == 2 and sys.argv[1] == 'upgrade':
                                      fromfile='expected', tofile='received'):
         sys.stderr.write(line)
         xit = 1
+    approve = os.getenv('MTEST_APPROVE')
+    if approve:
+        if approve == 'REPLACE':
+            fn = os.path.join(os.getenv('TSTSRCDIR'), f)
+        else:
+            fn = os.path.join(os.getenv('TSTTRGDIR'), f'{f}.new')
+        with open(fn, 'w') as fil:
+            fil.writelines(srvout)
 else:
     sys.stdout.writelines(srvout)
 

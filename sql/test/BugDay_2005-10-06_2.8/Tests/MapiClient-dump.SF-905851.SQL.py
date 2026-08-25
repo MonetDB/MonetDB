@@ -31,5 +31,15 @@ def main():
     for line in difflib.unified_diff(stable, output,
                                      fromfile='expected', tofile='received'):
         sys.stderr.write(line)
+    approve = os.getenv('MTEST_APPROVE')
+    if approve:
+        if approve == 'REPLACE':
+            fn = os.path.join(os.getenv('TSTSRCDIR'),
+                              'MapiClient-dump.SF-905851.stable.out')
+        else:
+            fn = os.path.join(os.getenv('TSTTRGDIR'),
+                              'MapiClient-dump.SF-905851.stable.out.new')
+        with open(fn, 'w') as f:
+            f.write(out)
 
 main()
