@@ -48,12 +48,15 @@ if __name__ == '__main__':
     if opts.stableout is not None:
         stableout = opts.stableout
         check = True
-    if not approve and os.getenv('MTEST_APPROVE'):
+    if not approve and \
+       os.getenv('MTEST_APPROVE') and \
+       not os.path.exists(os.path.join(os.getenv('TSTSRCDIR'),
+                                       f'{stableout}.src')):
         if os.getenv('MTEST_APPROVE') == 'REPLACE':
-            approve = os.path.join(os.getenv('TSTSRCDIR'),
-                                   f'check.stable.out{".32bit" if os.getenv("TSTBITS") == "32" else ""}{".int128" if os.getenv("HAVE_HGE") else ""}')
+            approve = os.path.join(os.getenv('TSTSRCDIR'), stableout)
         else:
-            approve = os.path.join(os.getenv('TSTTRGDIR'), 'check.stable.out.new')
+            approve = os.path.join(os.getenv('TSTTRGDIR'),
+                                   'check.stable.out.new')
 
 xit = 0
 output = []
