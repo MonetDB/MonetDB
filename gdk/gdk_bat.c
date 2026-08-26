@@ -2459,7 +2459,8 @@ BATsetaccess(BAT *b, restrict_t newmode)
 	}
 	MT_lock_set(&b->theaplock);
 	bakmode = b->batRestricted;
-	if (bakmode != newmode) {
+	if (bakmode != newmode &&
+	    (b->tvheap == NULL || b->tvheap->storage != STORE_NOWN)) {
 		bool existing = (BBP_status(b->batCacheid) & BBPEXISTING) != 0;
 		bool wr = (newmode == BAT_WRITE);
 		bool rd = (bakmode == BAT_WRITE);
