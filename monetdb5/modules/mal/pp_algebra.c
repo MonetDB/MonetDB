@@ -919,7 +919,7 @@ LOCKEDAGGRnull(Client ctx, bat *result, const bit *hadnull)
 	return err;
 }
 
-#define unique_(Type, BaseType, INIT_ALLOCATOR, INIT_ITER, IS_NIL, NEW_VAL, HASH_VAL, VAL_NOT_EQUAL, VAL_ASSIGN, ITER_DONE, NEXTK) \
+#define unique_(Type, INIT_ALLOCATOR, INIT_ITER, IS_NIL, NEW_VAL, HASH_VAL, VAL_NOT_EQUAL, VAL_ASSIGN, ITER_DONE, NEXTK) \
 	if (tt == TYPE_##Type) {											\
 		int slots = 0;													\
 		gid slot = 0;													\
@@ -970,7 +970,6 @@ LOCKEDAGGRnull(Client ctx, bat *result, const bit *hadnull)
 
 #define unique(Type)							\
 	unique_(Type,								\
-			Type,								\
 			(void) 0,							\
 			Type *bp = Tloc(b, 0),				\
 			is_##Type##_nil(bp[i]),				\
@@ -984,7 +983,6 @@ LOCKEDAGGRnull(Client ctx, bat *result, const bit *hadnull)
 
 #define aunique_(Type,CType)						\
 	unique_(Type,									\
-			Type,									\
 			allocator *ma = h->allocators[p->wid],	\
 			BATiter bi = bat_iterator(b),			\
 			VarHeapVal(bi.base,i,bi.width) == 0,	\
@@ -998,7 +996,6 @@ LOCKEDAGGRnull(Client ctx, bat *result, const bit *hadnull)
 
 #define aunique(Type,CType)						\
 	unique_(Type,								\
-			Type,								\
 			,									\
 			BATiter bi = bat_iterator(b),		\
 			VarHeapVal(bi.base,i,bi.width) == 0,\
@@ -1154,7 +1151,7 @@ LALGunique_keepnil(Client ctx, bat *rid, bat *uid, bat *bid, bat *sid)
 	return LALGunique(ctx, rid, uid, bid, sid, &f);
 }
 
-#define gunique_(Type, BaseType, INIT_ALLOCATOR, INIT_ITER, IS_NIL, NEW_VAL, HASH_VAL, VAL_NOT_EQUAL, VAL_ASSIGN, ITER_DONE, NEXTK) \
+#define gunique_(Type, INIT_ALLOCATOR, INIT_ITER, IS_NIL, NEW_VAL, HASH_VAL, VAL_NOT_EQUAL, VAL_ASSIGN, ITER_DONE, NEXTK) \
 	if (tt == TYPE_##Type) {											\
 		int slots = 0;													\
 		gid slot = 0;													\
@@ -1208,7 +1205,6 @@ LALGunique_keepnil(Client ctx, bat *rid, bat *uid, bat *bid, bat *sid)
 
 #define gunique(Type)							\
 	gunique_(Type,								\
-			 Type,								\
 			 ,									\
 			 Type *bp = Tloc(b, 0),				\
 			is_##Type##_nil(bp[i]),				\
@@ -1222,7 +1218,6 @@ LALGunique_keepnil(Client ctx, bat *rid, bat *uid, bat *bid, bat *sid)
 
 #define gaunique_(Type,CType)						\
 	gunique_(Type,									\
-			 Type,									\
 			 allocator *ma = h->allocators[p->wid], \
 			 BATiter bi = bat_iterator(b),			\
 			 VarHeapVal(bi.base,i,bi.width) == 0,	\
@@ -1236,7 +1231,6 @@ LALGunique_keepnil(Client ctx, bat *rid, bat *uid, bat *bid, bat *sid)
 
 #define gaunique(Type,CType)						\
 	gunique_(Type,									\
-			 Type,									\
 			 ,										\
 			 BATiter bi = bat_iterator(b),			\
 			 VarHeapVal(bi.base,i,bi.width) == 0,	\
@@ -1395,7 +1389,7 @@ LALGgroup_unique_keepnil(Client ctx, bat *rid, bat *uid, bat *bid, bat *sid, bat
 	return LALGgroup_unique(ctx, rid, uid, bid, sid, Gid, &f);
 }
 
-#define group_(Type, BaseType, INIT_ALLOCATOR, INIT_ITER, NEW_VAL, HASH_VAL, VAL_NOT_EQUAL, VAL_ASSIGN, ITER_NEXT, NEXTK) \
+#define group_(Type, INIT_ALLOCATOR, INIT_ITER, NEW_VAL, HASH_VAL, VAL_NOT_EQUAL, VAL_ASSIGN, ITER_NEXT, NEXTK) \
 	int slots = 0;														\
 	gid slot = 0;														\
 	INIT_ITER;															\
@@ -1441,12 +1435,11 @@ LALGgroup_unique_keepnil(Client ctx, bat *rid, bat *uid, bat *bid, bat *sid, bat
 #define group(Type)								\
 	if (tt == TYPE_##Type) {					\
 		group_(Type,							\
-			   Type,							\
 			   ,								\
 			   Type *bp = Tloc(b, 0),			\
 			   ,								\
 			   (gid)Type##Hash(bp + i),			\
-			   vals[g] != bp[i],				\
+			   !is_##Type##_eq(vals[g], bp[i]),	\
 			   vals[g] = bp[i],					\
 			   ,								\
 			   nextk							\
@@ -1499,7 +1492,6 @@ LALGgroup_unique_keepnil(Client ctx, bat *rid, bat *uid, bat *bid, bat *sid, bat
 		} else {												\
 			assert(BATtdense(b));								\
 			group_(oid,											\
-				   oid,											\
 				   ,											\
 				   oid bp = b->tseqbase,						\
 				   oid bpi = bp+i,								\
@@ -1512,25 +1504,9 @@ LALGgroup_unique_keepnil(Client ctx, bat *rid, bat *uid, bat *bid, bat *sid, bat
 				}												\
 	}
 
-#define fgroup(Type, BaseType)											\
-	if (tt == TYPE_##Type) {											\
-		group_(Type,													\
-			   BaseType,												\
-			   ,														\
-			   Type *bp = Tloc(b, 0),									\
-			   ,														\
-			   (gid)Type##Hash(bp + i),									\
-			   (!(is_##Type##_nil(bp[i]) && is_##Type##_nil(vals[g])) && vals[g] != bp[i]), \
-			   vals[g] = bp[i],											\
-			   ,														\
-			   nextk													\
-			)															\
-			}
-
 #define agroup_(Type,P)													\
 	if (ATOMstorage(tt) == TYPE_str) {									\
 		group_(Type,													\
-			   Type,													\
 			   allocator *ma = h->allocators[p->wid],					\
 			   BATiter bi = bat_iterator(b),							\
 			   var_t off = VarHeapVal(bi.base,i,bi.width);				\
@@ -1543,7 +1519,6 @@ LALGgroup_unique_keepnil(Client ctx, bat *rid, bat *uid, bat *bid, bat *sid, bat
 			)															\
 			} else {													\
 		group_(Type,													\
-			   Type,													\
 			   allocator *ma = h->allocators[p->wid],					\
 			   BATiter bi = bat_iterator(b),							\
 			   var_t off = VarHeapVal(bi.base,i,bi.width);				\
@@ -1559,7 +1534,6 @@ LALGgroup_unique_keepnil(Client ctx, bat *rid, bat *uid, bat *bid, bat *sid, bat
 #define agroup(Type)													\
 	if (ATOMvarsized(tt)) {												\
 		group_(Type,													\
-			   Type,													\
 			   ,														\
 			   BATiter bi = bat_iterator(b),							\
 			   var_t off = VarHeapVal(bi.base,i,bi.width);				\
@@ -1576,7 +1550,6 @@ LALGgroup_unique_keepnil(Client ctx, bat *rid, bat *uid, bat *bid, bat *sid, bat
 	assert(h->hsh && h->cmp);						\
 	int w = b->twidth;								\
 	group_(char,									\
-		   char,									\
 		   ,										\
 		   char *ivals = Tloc(b, 0),				\
 		   ,										\
@@ -1690,8 +1663,8 @@ LALGgroup(Client ctx, bat *rid, bat *uid, bat *bid)
 #ifdef HAVE_HGE
 			else group(hge)
 #endif
-			else fgroup(flt, int)
-			else fgroup(dbl, lng)
+			else group(flt)
+			else group(dbl)
 			else if (ATOMvarsized(tt)) {
 				if (local_storage) {
 					agroup_(str, p)
@@ -1734,7 +1707,7 @@ error:
 	return err;
 }
 
-#define derive_(Type, BaseType, INIT_ALLOCATOR, INIT_ITER, NEW_VAL, HASH_VAL, VAL_NOT_EQUAL, VAL_ASSIGN, ITER_NEXT, NEXTK) \
+#define derive_(Type, INIT_ALLOCATOR, INIT_ITER, NEW_VAL, HASH_VAL, VAL_NOT_EQUAL, VAL_ASSIGN, ITER_NEXT, NEXTK) \
 	int slots = 0;														\
 	gid slot = 0;														\
 	INIT_ITER;															\
@@ -1780,26 +1753,24 @@ error:
 	}																	\
 	ITER_NEXT;
 
-#define derive(Type)							\
-	if (tt == TYPE_##Type) {					\
-		derive_(Type,							\
-				Type,							\
-				,								\
-				Type *bp = Tloc(b, 0),			\
-				,								\
-				(gid)Type##Hash(bp + i),		\
-				vals[g] != bp[i],				\
-				vals[g] = bp[i],				\
-				,								\
-				nextk							\
-			)									\
+#define derive(Type)								\
+	if (tt == TYPE_##Type) {						\
+		derive_(Type,								\
+				,									\
+				Type *bp = Tloc(b, 0),				\
+				,									\
+				(gid)Type##Hash(bp + i),			\
+				!is_##Type##_eq(vals[g], bp[i]),	\
+				vals[g] = bp[i],					\
+				,									\
+				nextk								\
+			)										\
 			}
 
 #define vderive()								\
 	if (tt == TYPE_void) {						\
 		assert(BATtdense(b));					\
 		derive_(oid,							\
-				oid,							\
 				,								\
 				oid bp = b->tseqbase,			\
 				oid bpi = bp+i,					\
@@ -1811,25 +1782,9 @@ error:
 			)									\
 			}
 
-#define fderive(Type, BaseType)											\
-	if (tt == TYPE_##Type) {											\
-		derive_(Type,													\
-				BaseType,												\
-				,														\
-				Type *bp = Tloc(b, 0),									\
-				,														\
-				(gid)Type##Hash(bp + i),								\
-				(!(is_##Type##_nil(bp[i]) && is_##Type##_nil(vals[g])) && vals[g] != bp[i]), \
-				vals[g] = bp[i],										\
-				,														\
-				nextk													\
-			)															\
-			}
-
 #define aderive_(Type, P)												\
 	if (ATOMstorage(tt) == TYPE_str) {									\
 		derive_(Type,													\
-				Type,													\
 				allocator *ma = h->allocators[P->wid],					\
 				BATiter bi = bat_iterator(b),							\
 				var_t off = VarHeapVal(bi.base,i,bi.width);				\
@@ -1842,7 +1797,6 @@ error:
 			)															\
 			} else {													\
 		derive_(Type,													\
-				Type,													\
 				allocator *ma = h->allocators[P->wid],					\
 				BATiter bi = bat_iterator(b),							\
 				var_t off = VarHeapVal(bi.base,i,bi.width);				\
@@ -1858,7 +1812,6 @@ error:
 #define aderive(Type)													\
 	if (ATOMvarsized(tt)) {												\
 		derive_(Type,													\
-				Type,													\
 				,														\
 				BATiter bi = bat_iterator(b),							\
 				var_t off = VarHeapVal(bi.base,i,bi.width);				\
@@ -1989,8 +1942,8 @@ LALGderive(Client ctx, bat *rid, bat *uid, bat *Gid, bat *Ph, bat *bid)
 #ifdef HAVE_HGE
 			else derive(hge)
 #endif
-			else fderive(flt, int)
-			else fderive(dbl, lng)
+			else derive(flt)
+			else derive(dbl)
 			else if (ATOMvarsized(tt)) {
 				if (local_storage) {
 					aderive_(str,p)

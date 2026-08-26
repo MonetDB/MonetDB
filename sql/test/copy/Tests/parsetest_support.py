@@ -7,7 +7,9 @@ import sys
 import tempfile
 import textwrap
 from io import StringIO
-from typing import Any, Optional, Tuple
+# typing.List and typing.Tuple are deprecated since 3.9, modern way is
+# to use plain list and tuple
+from typing import Any, Optional, Tuple, List
 
 import pymonetdb
 
@@ -21,7 +23,7 @@ class TestCase:
     sub: Optional[str]
     fieldspec: str
     raw_testdata: Optional[bytes]
-    testdata: list[str]
+    testdata: List[str]
     escape: Optional[bool]
     null: Optional[str]
     besteffort: bool
@@ -29,8 +31,8 @@ class TestCase:
     offsetk: Optional[int]
     nrecords: Optional[int]
     affected: Optional[int]
-    expectations: list[Tuple[int, int, Any]]
-    rejects: list[Tuple[int, int, str]]
+    expectations: List[Tuple[int, int, Any]]
+    rejects: List[Tuple[int, int, str]]
     error: str
 
     DEFAULT_BLOCKSIZE = 1000

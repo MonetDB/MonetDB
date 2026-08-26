@@ -502,8 +502,8 @@ BUN
 mbrHASH(const void *ATOM)
 {
 	const mbr *atom = ATOM;
-	return ATOMhash(TYPE_flt, &atom->xmin) ^ ATOMhash(TYPE_flt, &atom->ymin) ^
-		ATOMhash(TYPE_flt, &atom->xmax) ^ ATOMhash(TYPE_flt, &atom->ymax);
+	return fltHash(&atom->xmin) ^ fltHash(&atom->ymin) ^
+		fltHash(&atom->xmax) ^ fltHash(&atom->ymax);
 }
 
 const void *
