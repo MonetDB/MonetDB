@@ -1,0 +1,67 @@
+statement ok
+CREATE TABLE t8013(t1 timestamp, t2 timestamp)
+
+statement ok rowcount 1
+INSERT INTO t8013 VALUES('2026-01-01 00:00:00', '2026-01-02 00:00:00')
+
+query TT nosort
+SELECT * FROM t8013
+----
+2026-01-01 00:00:00
+2026-01-02 00:00:00
+
+-- next query works ok
+query TT nosort
+SELECT * FROM t8013 WHERE t2 > t1
+----
+2026-01-01 00:00:00
+2026-01-02 00:00:00
+
+-- next query works ok
+query TT nosort
+SELECT * FROM t8013 WHERE t2 > t1 AND t2 > t1
+----
+2026-01-01 00:00:00
+2026-01-02 00:00:00
+
+-- next query (3 same predicates) returns no rows
+query TT nosort
+SELECT * FROM t8013 WHERE t2 > t1 AND t2 > t1 AND t2 > t1
+----
+2026-01-01 00:00:00
+2026-01-02 00:00:00
+
+-- next query (4 same predicates) returns no rows
+query TT nosort
+SELECT * FROM t8013 WHERE t2 > t1 AND t2 > t1 AND t2 > t1 AND t2 > t1
+----
+2026-01-01 00:00:00
+2026-01-02 00:00:00
+
+-- next query (5 same predicates) returns no rows
+query TT nosort
+SELECT * FROM t8013 WHERE (t2 > t1 AND t2 > t1) AND (t2 > t1 AND t2 > t1 AND t2 > t1)
+----
+2026-01-01 00:00:00
+2026-01-02 00:00:00
+
+
+query T nosort
+EXPLAIN SELECT * FROM t8013 WHERE t2 > t1 AND t2 > t1
+----
+project (
+| table("sys"."t8013") [ "t8013"."t1", "t8013"."t2" ]
+) [ "t8013"."t1", "t8013"."t2" ]
+
+
+query T nosort
+EXPLAIN SELECT * FROM t8013 WHERE t2 > t1 AND t2 > t1 AND t2 > t1
+----
+project (
+| table("sys"."t8013") [ "t8013"."t1", "t8013"."t2" ]
+) [ "t8013"."t1", "t8013"."t2" ]
+
+
+statement ok
+DROP TABLE t8013
+
