@@ -3545,7 +3545,7 @@ static inline BUN
 fltHash(const void *x)
 {
 	if (is_flt_nil(*(const flt *)x)) /* any NaN */
-		return intHash(&(uint32_t){UINT32_C(0x7FC00000)});
+		return intHash(&flt_nil);
 	if (*(const flt *)x == 0) /* +0 or -0 */
 		return (BUN) intHash(&(uint32_t){0});
 	return intHash(x);
@@ -3556,7 +3556,7 @@ static inline BUN
 dblHash(const void *x)
 {
 	if (is_dbl_nil(*(const dbl *)x)) /* any NaN */
-		return lngHash(&(uint64_t){UINT64_C(0x7FF8000000000000)});
+		return lngHash(&dbl_nil);
 	if (*(const dbl *)x == 0) /* +0 or -0 */
 		return lngHash(&(uint64_t){0});
 	return lngHash(x);
