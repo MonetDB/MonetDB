@@ -8,21 +8,28 @@
 
 %global version 11.55.8
 
+# Use bcond_with to add a --with option; i.e., "without" is default.
+# Use bcond_without to add a --without option; i.e., "with" is default.
+# The --with OPTION and --without OPTION arguments can be passed on
+# the commandline of both rpmbuild and mock.
+
+# Use `--with compat` to build a set of RPMs that can be installed next
+# to (at the same time as) the non-compat release version.
 %bcond_with compat
 
 %global name MonetDB%{?with_compat:%version}
 
 %{!?buildno: %global buildno %(date +%Y%m%d)}
 
-# Use bcond_with to add a --with option; i.e., "without" is default.
-# Use bcond_without to add a --without option; i.e., "with" is default.
-# The --with OPTION and --without OPTION arguments can be passed on
-# the commandline of both rpmbuild and mock.
-
-# On 64 bit architectures compile with 128 bit integer support.
+# On 64 bit architectures use `--without hugeint` to compile without 128
+# bit integer support.
 %if "%{?_lib}" == "lib64"
 %bcond_without hugeint
 %endif
+
+# Use `--without selinux` to not build the MonetDB-selinux RPM.  This
+# then also does not require the selinux development packages to build.
+%bcond_without selinux
 
 %global release %{buildno}%{?dist}
 
@@ -95,15 +102,11 @@ URL: https://www.monetdb.org/
 BugURL: https://github.com/MonetDB/MonetDB/issues
 Source: https://www.monetdb.org/downloads/sources/Dec2025-SP3/MonetDB-%{version}.tar.bz2
 
-# We need checkpolicy and selinux-policy-devel for the SELinux policy.
 BuildRequires: systemd-rpm-macros
-BuildRequires: checkpolicy
-BuildRequires: selinux-policy-devel
-BuildRequires: hardlink
 BuildRequires: cmake >= 3.12
 BuildRequires: gcc
 BuildRequires: bison
-BuildRequires: python3-devel
+BuildRequires: python3-rpm-macros
 %if %{?rhel:1}%{!?rhel:0}
 # RH 7 (and for readline also 8)
 BuildRequires: bzip2-devel
@@ -114,29 +117,15 @@ BuildRequires: pkgconfig(bzip2)
 BuildRequires: pkgconfig(odbc)
 BuildRequires: pkgconfig(readline)
 %endif
-%if %{with fits}
-BuildRequires: pkgconfig(cfitsio)
-%endif
-%if %{with geos}
-BuildRequires: geos-devel >= 3.10.0
-%endif
 BuildRequires: pkgconfig(libcurl)
 BuildRequires: pkgconfig(liblzma)
 BuildRequires: pkgconfig(libxml-2.0)
 BuildRequires: pkgconfig(openssl) >= 1.1.1
-%global with_openssl 1
 %if %{with pcre}
 BuildRequires: pkgconfig(libpcre2-8)
 %endif
 BuildRequires: pkgconfig(zlib)
 BuildRequires: pkgconfig(liblz4) >= 1.8
-%if %{with py3integration}
-BuildRequires: pkgconfig(python3) >= 3.5
-BuildRequires: python3dist(numpy)
-%endif
-%if %{with rintegration}
-BuildRequires: pkgconfig(libR)
-%endif
 # optional packages:
 # BuildRequires: pkgconfig(cmocka)      # -DWITH_CMOCKA=ON
 # BuildRequires: pkgconfig(gdal)        # -DSHP=ON
@@ -470,6 +459,7 @@ Requires: %{name}-server%{?_isa} = %{version}-%{release}
 Obsoletes: MonetDB-geom-MonetDB5 < 11.50.0
 Provides: %{name}-geom-MonetDB5 = %{version}-%{release}
 Provides: %{name}-geom-MonetDB5%{?_isa} = %{version}-%{release}
+BuildRequires: geos-devel >= 3.10.0
 
 %description geom
 MonetDB is a database management system that is developed from a
@@ -490,6 +480,7 @@ extensions for %{name}-server.
 Summary: Integration of MonetDB and R, allowing use of R from within SQL
 Group: Applications/Databases
 Requires: %{name}-server%{?_isa} = %{version}-%{release}
+BuildRequires: pkgconfig(libR)
 
 %description R
 MonetDB is a database management system that is developed from a
@@ -516,6 +507,9 @@ Summary: Integration of MonetDB and Python, allowing use of Python from within S
 Group: Applications/Databases
 Requires: %{name}-server%{?_isa} = %{version}-%{release}
 Requires: python3-numpy
+BuildRequires: python3-devel
+BuildRequires: pkgconfig(python3) >= 3.5
+BuildRequires: python3dist(numpy)
 
 %description python3
 MonetDB is a database management system that is developed from a
@@ -540,6 +534,7 @@ install it.
 Summary: MonetDB: Add on module that provides support for FITS files
 Group: Applications/Databases
 Requires: %{name}-server%{?_isa} = %{version}-%{release}
+BuildRequires: pkgconfig(cfitsio)
 
 %description cfitsio
 MonetDB is a database management system that is developed from a
@@ -874,7 +869,7 @@ developer, but if you do want to test, this is the package you need.
 %{python3_sitelib}/MonetDBtesting/*
 %endif
 
-%if %{without compat}
+%if %{with selinux} && %{without compat}
 %package selinux
 Summary: SELinux policy files for MonetDB
 Group: Applications/Databases
@@ -890,6 +885,9 @@ Requires(postun): %{name}-SQL%{?_isa} = %{version}-%{release}
 Requires(post):   policycoreutils
 Requires(postun): policycoreutils
 BuildArch: noarch
+BuildRequires: checkpolicy
+BuildRequires: selinux-policy-devel
+BuildRequires: hardlink
 
 %global selinux_types %(awk '/^#[[:space:]]*SELINUXTYPE=/,/^[^#]/ { if ($3 == "-") printf "%s ", $2 }' /etc/selinux/config 2>/dev/null)
 %global selinux_variants %([ -z "%{selinux_types}" ] && echo mls targeted || echo %{selinux_types})
@@ -970,7 +968,7 @@ fi
         -DWITH_CURL=ON \
         -DWITH_LZ4=ON \
         -DWITH_LZMA=ON \
-        -DWITH_OPENSSL=%{?with_openssl:ON}%{!?with_openssl:OFF} \
+        -DWITH_OPENSSL=ON \
         -DWITH_PCRE=ON \
         -DWITH_PROJ=OFF \
         -DWITH_READLINE=ON \
@@ -1010,12 +1008,14 @@ rm -f "${RPM_BUILD_ROOT}"%{_libdir}/monetdb5*/lib_microbenchmark*.so
 rm -f "${RPM_BUILD_ROOT}"%{_libdir}/monetdb5*/lib_udf*.so
 rm -f "${RPM_BUILD_ROOT}"%{_bindir}/monetdb_mtest.sh
 
+%if %{without compat} && %{with selinux}
 if [ -x /usr/bin/hardlink ]; then
     # post unification of /bin and /sbin
     /usr/bin/hardlink -cv "${RPM_BUILD_ROOT}"%{_datadir}/selinux
 else
     /usr/sbin/hardlink -cv "${RPM_BUILD_ROOT}"%{_datadir}/selinux
 fi
+%endif
 
 # update shebang lines for Python scripts
 %if %{?py3_shebang_fix:1}%{!?py3_shebang_fix:0}
@@ -1074,7 +1074,6 @@ rm "${RPM_BUILD_ROOT}"%{_bindir}/sqlsample.py
 rm "${RPM_BUILD_ROOT}"%{_bindir}/streamcat
 rm "${RPM_BUILD_ROOT}"%{_bindir}/testcondvar
 rm -r "${RPM_BUILD_ROOT}"%{_datadir}/doc/MonetDB*
-rm "${RPM_BUILD_ROOT}"%{_datadir}/selinux/*/monetdb.pp
 rm -r "${RPM_BUILD_ROOT}"%{_datadir}/monetdb
 rm -r "${RPM_BUILD_ROOT}"%{_includedir}/monetdb
 rm "${RPM_BUILD_ROOT}"%{_libdir}/*.so
