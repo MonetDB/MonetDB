@@ -44,16 +44,13 @@
 # If the EPEL repository is available, or if building for Fedora, most
 # optional sub packages can be built.  We indicate that here by
 # setting the macro fedpkgs to 1.  If the EPEL repository is not
-# available and we are not building for Fedora, we set fedpkgs to 0.
-%if %{?rhel:1}%{!?rhel:0}
+# available and we are not building for Fedora, we don't set fedpkgs.
+%if 0%{?rhel}
 # RedHat Enterprise Linux (or CentOS or Scientific Linux)
 %bcond_without epel
 %if %{with epel}
 # EPEL is enabled through the command line
 %global fedpkgs 1
-%else
-# EPEL is not enabled
-%global fedpkgs 0
 %endif
 %else
 # Not RHEL (so presumably Fedora)
@@ -65,7 +62,7 @@
 # derivatives (CentOS, Scientific Linux), the geos library is not
 # available.  However, the geos library is available in the Extra
 # Packages for Enterprise Linux (EPEL).
-%if %{fedpkgs} && (0%{?rhel} != 8)
+%if 0%{?fedpkgs} && (0%{?rhel} > 8)
 # By default create the MonetDB-geom package on Fedora
 %bcond_without geos
 %endif
@@ -77,7 +74,7 @@
 # By default, include C integration
 %bcond_without cintegration
 
-%if %{fedpkgs}
+%if 0%{?fedpkgs}
 # By default, create the MonetDB-R package.
 %bcond_without rintegration
 %endif
@@ -85,7 +82,7 @@
 # By default, include Python 3 integration.
 %bcond_without py3integration
 
-%if %{fedpkgs}
+%if 0%{?fedpkgs}
 # By default, create the MonetDB-cfitsio package.
 %bcond_without fits
 %endif
@@ -107,7 +104,7 @@ BuildRequires: cmake >= 3.12
 BuildRequires: gcc
 BuildRequires: bison
 BuildRequires: python3-rpm-macros
-%if %{?rhel:1}%{!?rhel:0}
+%if 0%{?rhel}
 # RH 7 (and for readline also 8)
 BuildRequires: bzip2-devel
 BuildRequires: unixODBC-devel
