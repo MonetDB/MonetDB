@@ -104,7 +104,7 @@ BuildRequires: cmake >= 3.12
 BuildRequires: gcc
 BuildRequires: bison
 BuildRequires: python3-rpm-macros
-%if 0%{?rhel}
+%if 0%{?rhel} <= 8
 # RH 7 (and for readline also 8)
 BuildRequires: bzip2-devel
 BuildRequires: unixODBC-devel
