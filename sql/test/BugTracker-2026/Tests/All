@@ -141,7 +141,7 @@ KNOWNFAIL?7951-exp_visitor-crash
 KNOWNFAIL?7952-rel_find_exp_and_corresponding_rel_-assert-failure
 KNOWNFAIL?7953-list_append_node-crash
 KNOWNFAIL?7954-exp_visitor-crash
-KNOWNFAIL?7955-rel_setop_get_statistics-crash
+7955-rel_setop_get_statistics-crash
 KNOWNFAIL?7956-rel_remove_const_aggr-crash
 KNOWNFAIL?7957-tail_type-crash
 7959-double-function-destroy
@@ -194,4 +194,4 @@ KNOWNFAIL?8008-numeric-range-frame-bug
 KNOWNFAIL?8009-numeric-range-nulls-last-bug
 KNOWNFAIL?8010-first_value-last_value-partition-range-bug
 KNOWNFAIL?8013-triple-same-predicate-bug
-KNOWNFAIL?8014-rel_bin-exp_bin-assert-failure
+8014-rel_bin-exp_bin-assert-failure
