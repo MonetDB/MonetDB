@@ -139,7 +139,7 @@ KNOWNFAIL?7948-exp_bin-first_value-crash
 KNOWNFAIL?7950-exp_set_type-crash
 KNOWNFAIL?7951-exp_visitor-crash
 KNOWNFAIL?7952-rel_find_exp_and_corresponding_rel_-assert-failure
-KNOWNFAIL?7953-list_append_node-crash
+7953-list_append_node-crash
 KNOWNFAIL?7954-exp_visitor-crash
 7955-rel_setop_get_statistics-crash
 KNOWNFAIL?7956-rel_remove_const_aggr-crash
