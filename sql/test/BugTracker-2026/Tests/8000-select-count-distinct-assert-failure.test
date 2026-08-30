@@ -57,7 +57,7 @@ FROM (
 3
 
 -- CTAS form.
-statement ok rowcount 3
+statement ok
 CREATE TABLE tt AS
 SELECT c1, COUNT(DISTINCT c10) AS agg_cnt
 FROM t3

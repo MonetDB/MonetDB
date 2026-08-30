@@ -710,6 +710,7 @@ exp_bin_conjunctive(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp,
 	node *n;
 	stmt *sel1 = NULL, *s = NULL;
 	int anti = is_anti(e);
+	bool first = true;
 
 	sel1 = sel;
 	for (n = l->h; n; n = n->next) {
@@ -754,9 +755,10 @@ exp_bin_conjunctive(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp,
 				predicate = stmt_const(be, predicate, stmt_bool(be, 1));
 				s = stmt_uselect(be, predicate, s, cmp_equal, sel1, anti, is_semantics(c));
 			}
-		} else if (reduce && anti && sel1) {
+		} else if (!first && reduce && anti && sel1) {
 			s = stmt_tunion(be, s, sel1);
 		}
+		first = false;
 		sel1 = s;
 	}
 	if (sel1 && sel1->nrcols == 0 && left) {

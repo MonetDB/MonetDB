@@ -2341,9 +2341,8 @@ rel_reduce_groupby_exps(visitor *v, sql_rel *rel)
 				i += (j == i);
 			}
 		}
-		if (i) { /* forall tables find pkey and
-				remove useless other columns */
-			/* TODO also remove group by columns which are related to
+		if (i) { /* forall tables find pkey and remove useless other columns */
+			/* This also removes group by columns which are related to
 			 * the other columns using a foreign-key join (n->1), ie 1
 			 * on the to be removed side.
 			 */
@@ -2426,8 +2425,7 @@ rel_reduce_groupby_exps(visitor *v, sql_rel *rel)
 							append(ngbe, e);
 					}
 					rel->r = ngbe;
-					/* rewrite gbe and aggr, in the aggr list */
-					if (0)
+					/* rewrite gbe and aggr, in the aggr list, as they may refer to the removed expressions */
 					for (m = rel->exps->h; m; m = m->next ){
 						sql_exp *e = m->data;
 						int fnd = 0;
@@ -2435,13 +2433,11 @@ rel_reduce_groupby_exps(visitor *v, sql_rel *rel)
 						for (l = 0, n = gbe->h; l < k && n && !fnd; l++, n = n->next) {
 							sql_exp *gb = n->data;
 
-							if (scores[l] == -1 && exp_refers(gb, e)) {
-								/*
+							if (scores[l] == -1 && exp_refers(gb, e) && gb->alias.label != gb->nid) {
 								sql_exp *rs = exp_column(v->sql->sa, gb->l?gb->l:exp_relname(gb), gb->r?gb->r:exp_name(gb), exp_subtype(gb), rel->card, has_nil(gb), is_unique(gb), is_intern(gb));
 								exp_setalias(rs, e->alias.label, exp_find_rel_name(e), exp_name(e));
+								rs->nid = gb->nid;
 								e = rs;
-								*/
-								assert(e->alias.label == e->nid);
 								fnd = 1;
 							}
 						}
