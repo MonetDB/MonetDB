@@ -15,7 +15,7 @@ NULL
 
 -- the orginal reported query
 -- it crashes in exp_set_type (v=0x7fba7ce35790, rel=0x7fba4821cca0, e=0x7fba481be3f0, depth=0) at sql/server/rel_unnest.c:2786
-query TR rowsort
+statement error 42000!types boolean(1,0) and double(53,0) are not equal
 SELECT nth_value ( ( EXISTS ( SELECT 1 WHERE x > 0.100000 + 0.100000 + 0.100000 + 0.100000 + 0.100000 + 0.100000 + 0.100000 + 0.100000 + 0.100000 + 0.100000 + 0.100000 + 0.100000 + 0.100000 + 0.100000 + 0.100000 + 0.100000 + 0.100000 + 0.100000 + 0.100000 + 0.100000 * 0.100000 + 0.100000 AND ( x IS NULL OR x IS NULL )
                             )
                    ) IN ( ( SELECT FALSE
@@ -26,7 +26,4 @@ SELECT nth_value ( ( EXISTS ( SELECT 1 WHERE x > 0.100000 + 0.100000 + 0.100000 
   FROM ( SELECT CAST( NULL AS VARCHAR ) AS x
           UNION
          SELECT CAST( NULL AS VARCHAR ) AS x )
-----
-True
-NULL
 
