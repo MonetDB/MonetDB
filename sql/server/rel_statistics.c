@@ -465,7 +465,6 @@ rel_propagate_statistics(visitor *v, sql_rel *rel, sql_exp *e, int depth)
 	}
 	case e_aggr:
 	case e_func: {
-		BUN lv;
 		sql_subfunc *f = e->f;
 
 		if (!f->func->s) {
@@ -482,10 +481,6 @@ rel_propagate_statistics(visitor *v, sql_rel *rel, sql_exp *e, int depth)
 			if (look)
 				look(sql, e);
 		}
-		/* for global aggregates with no semantics, if the left relation has values, then the output won't be NULL */
-		if (!is_semantics(e) && e->l && !have_nil(e->l) &&
-			(e->type != e_aggr || (is_groupby(rel->op) && list_length(rel->r)) || ((lv = get_rel_count(rel->l)) != BUN_NONE && lv > 0)))
-			set_has_no_nil(e);
 		/* set properties for global aggregates */
 		if (e->type == e_aggr && is_groupby(rel->op) && list_empty(rel->r)) {
 			if (!find_prop(e->p, PROP_NUNIQUES)) {

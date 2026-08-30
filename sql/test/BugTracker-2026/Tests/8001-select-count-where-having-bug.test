@@ -9,17 +9,16 @@ INSERT INTO t4 VALUES
   (10, NULL),
   (20, NULL)
 
--- Direct query over the empty filtered input.
+-- Direct query over the empty filtered input, avg(c1)==NULL and NULL <> 0.03 => NULL.
 query I nosort
 SELECT COUNT(*) AS cnt
 FROM t4
 WHERE c10 IS NOT NULL
 HAVING AVG(c1) <> 0.03
 ----
-0
 
 -- CTAS form.
-statement ok rowcount 0
+statement ok
 CREATE TABLE tt AS
 SELECT *
 FROM t4
@@ -30,7 +29,6 @@ SELECT COUNT(*) AS cnt
 FROM tt
 HAVING AVG(c1) <> 0.03
 ----
-0
 
 statement ok
 DROP TABLE IF EXISTS tt

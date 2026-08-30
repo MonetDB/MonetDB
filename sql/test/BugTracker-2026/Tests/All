@@ -183,7 +183,7 @@ KNOWNFAIL?7997-recursive-cte-number-overflow-issue
 KNOWNFAIL?7998-scalar-subquery-error-msg-improvement
 7999-not-not-expr-bug
 KNOWNFAIL?8000-select-count-distinct-assert-failure
-KNOWNFAIL?8001-select-count-where-having-bug
+8001-select-count-where-having-bug
 KNOWNFAIL?8002-schema-renaming-makes-seq-invalid-bug
 KNOWNFAIL?8003-windowed-group_concat-ignores-orderby-bug
 KNOWNFAIL?8004-nth_value-windowfunction-bug
