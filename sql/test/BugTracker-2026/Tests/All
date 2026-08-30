@@ -170,7 +170,7 @@ KNOWNFAIL?7982-range-current-row-bug
 7984-exists-select-count-bug
 KNOWNFAIL?7985-qualify-row_number-over-bug
 KNOWNFAIL?7986-right-function-bug
-KNOWNFAIL?7987-where-null-bug
+7987-where-null-bug
 KNOWNFAIL?7989-window-avg-bug
 KNOWNFAIL?7990-rank-filter-bug
 7991-group_concat-null-separator-bug
