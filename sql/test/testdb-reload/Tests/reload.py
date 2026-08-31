@@ -83,7 +83,8 @@ if len(sys.argv) == 2 and sys.argv[1] == 'reload':
     output = ''.join(d2out).splitlines(keepends=True)
     while len(output) > 0 and output[0].startswith('--'):
         del output[0]
-    stableout = os.path.join(tstsrcdir, '..', '..', 'testdb', 'Tests', 'dump-nogeom.stable.out')
+    stableout = os.path.join(tstsrcdir, os.pardir, os.pardir,
+                             'testdb', 'Tests', 'dump-nogeom.stable.out')
     with open(stableout, encoding='utf-8') as fil:
         stable = fil.readlines()
     import difflib
