@@ -98,8 +98,8 @@ class Member:
             field = self.raw_size.rstrip(b'\x00').rstrip(b' ')
             return int(field, 8)
         else:
-            num = struct.unpack('>Q', m.raw_size[-8:])[0]
-            return num ^ 0x8000_0000_0000_0000  # strip high bit
+            num = struct.unpack('>Q', self.raw_size[-8:])[0]
+            return num
 
 
 def parse_tar_file(f):
@@ -161,4 +161,3 @@ if __name__ == "__main__":
         assert huge_member_count == 1, f"expected 1 huge member file, not {huge_member_count}"
 
     logging.info('goodbye')
-
