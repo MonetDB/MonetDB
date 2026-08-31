@@ -53,7 +53,9 @@ def _delfiles():
         except OSError:
             pass
 
+
 atexit.register(_delfiles)
+
 
 def _remainingtime(endtime):
     if endtime is None:
@@ -62,6 +64,7 @@ def _remainingtime(endtime):
     if curtime >= endtime:
         raise queue.Empty
     return endtime - curtime
+
 
 class _BufferedPipe:
     def __init__(self, fd):
@@ -79,8 +82,6 @@ class _BufferedPipe:
         self._thread.start()
 
     def _readerthread(self, fh, q):
-        s = 0
-        w = 0
         first = True
         while self._continue:
             if verbose:
@@ -180,6 +181,7 @@ class _BufferedPipe:
                 break
         return self._empty.join(ret)
 
+
 # signals that by default produce a core dump, i.e. bad
 # this of course doesn't work on Windows
 _coresigs = set()
@@ -228,6 +230,7 @@ try:
 except AttributeError:
     pass
 
+
 class Popen(subprocess.Popen):
     def __init__(self, *args, **kwargs):
         self.dotmonetdbfile = None
@@ -246,8 +249,11 @@ class Popen(subprocess.Popen):
             self.wait()
         self._clean_dotmonetdbfile()
         super().__exit__(exc_type, value, traceback)
-        if self.returncode and self.returncode < 0 and -self.returncode in _coresigs:
-            raise RuntimeError(f'process exited with coredump generating signal {signal.Signals(-self.returncode)}')
+        if self.returncode and \
+           self.returncode < 0 and \
+           -self.returncode in _coresigs:
+            raise RuntimeError('process exited with coredump generating signal'
+                               f' {signal.Signals(-self.returncode)}')
 
     def __del__(self):
         if self._child_created and self.returncode is None:
@@ -279,7 +285,8 @@ class Popen(subprocess.Popen):
 
     def communicate(self, input=None, timeout=None):
         # since we always use threads for stdout/stderr, we can just read()
-        if not isinstance(self.stdout, _BufferedPipe) and not isinstance(self.stderr, _BufferedPipe):
+        if not isinstance(self.stdout, _BufferedPipe) and \
+           not isinstance(self.stderr, _BufferedPipe):
             if verbose:
                 print('relegating communicate to super()', flush=True)
             return super().communicate(input=input, timeout=timeout)
@@ -316,6 +323,7 @@ class Popen(subprocess.Popen):
             print('communicate: waiting', flush=True)
         self.wait()
         return stdout, stderr
+
 
 class client(Popen):
     def __init__(self, lang, args=[], stdin=None, stdout=None, stderr=None,
@@ -377,7 +385,10 @@ class client(Popen):
         # if server instance is specified, it provides defaults for
         # database name and port
         if server is not None:
-            if port is None and dbname is None and hasattr(server, 'usock') and server.usock is not None:
+            if port is None and dbname is None and host is None and server.urls:
+                dbname = server.urls[0]
+            elif port is None and dbname is None and \
+                 hasattr(server, 'usock') and server.usock is not None:
                 dbname = server.usock
             else:
                 if port is None:
@@ -422,7 +433,7 @@ class client(Popen):
             if host:
                 cmd.append(f'--host={host}')
         if verbose:
-            print('Executing: ' + ' '.join(cmd +  args), flush=True)
+            print('Executing: ' + ' '.join(cmd + args), flush=True)
         if stdin is None:
             # if no input provided, use /dev/null as input
             stdin = DEVNULL
@@ -457,6 +468,7 @@ class client(Popen):
         if verbose:
             print('client created', flush=True)
 
+
 class server(Popen):
     def __init__(self, args=[], stdin=None, stdout=None, stderr=None,
                  mapiport=None, dbname=os.getenv('TSTDB'), dbfarm=None,
@@ -471,7 +483,7 @@ class server(Popen):
         if os.getenv('NOWAL'):
             cmd.extend(['--set', 'sql_debug=128'])
         if verbose:
-            print('Default server: ' + ' '.join(cmd +  args))
+            print('Default server: ' + ' '.join(cmd + args))
         if notrace and '--trace' in cmd:
             cmd.remove('--trace')
         if mapiport is not None:
@@ -554,7 +566,8 @@ class server(Popen):
             if args[i] == '--set' and i+1 < len(args):
                 s = args[i+1].partition('=')[0]
                 for j in range(len(cmd)):
-                    if cmd[j] == '--set' and j+1 < len(cmd) and cmd[j+1].startswith(s + '='):
+                    if cmd[j] == '--set' and \
+                       j + 1 < len(cmd) and cmd[j+1].startswith(s + '='):
                         del cmd[j:j+2]
                         break
         started = dbpath / '.started'
@@ -586,6 +599,7 @@ class server(Popen):
         self.dbname = dbname
         self.dbport = mapiport
         self.usock = None
+        self.urls = None
         while True:
             self.poll()
             if self.returncode is not None:
@@ -597,13 +611,14 @@ class server(Popen):
                 try:
                     with connfile.open() as fil:
                         conn = fil.read()
-                except:
+                except Exception:
                     if verbose:
                         print(f'failed to open {connfile}')
                     pass
                 else:
                     # retrieve mapi port if available
-                    for c in conn.splitlines():
+                    self.urls = conn.splitlines()
+                    for c in self.urls:
                         if c.startswith('mapi:monetdb:///') or \
                            (c.startswith('monetdb://') and 'sock=' in c):
                             if no_unix_sockets:

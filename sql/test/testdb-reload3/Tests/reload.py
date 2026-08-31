@@ -1,9 +1,9 @@
-'''\
-Load the "dump" from the sql/test/testdb test and dump it.  Load that
-dump into a fresh database and check the result of dumping that.
+'''
+Load the "dump" from the sql/test/testdb test and snapshot it.  Load that
+snapshot into a fresh database and check the result of dumping that.
 '''
 
-import os, sys, shutil
+import os, sys, shutil, tempfile, tarfile
 try:
     from MonetDBtesting import process
 except ImportError:
@@ -12,10 +12,15 @@ try:
     from MonetDBtesting import sqllogictest
 except ImportError:
     import sqllogictest
+try:
+    from MonetDBtesting import tpymonetdb
+except ImportError:
+    import tpymonetdb
 
 dbfarm = os.getenv('GDK_DBFARM')
 tstdb = os.getenv('TSTDB')
 tstsrcdir = os.getenv('TSTSRCDIR')
+SCRATCH_PREFIX = os.getenv('TSTTRGDIR', None)
 
 if not tstdb or not dbfarm:
     print('No TSTDB or GDK_DBFARM in environment')
@@ -25,48 +30,41 @@ tstdb2 = tstdb + '-clone'
 if os.path.exists(os.path.join(dbfarm, tstdb2)):
     shutil.rmtree(os.path.join(dbfarm, tstdb2))
 
-# start the first server
-with process.server(stdin=process.PIPE,
-                    stdout=process.PIPE,
-                    stderr=process.PIPE,
-                    mapiport='0') as s1:
-    # load data into the first server's database
-    with sqllogictest.SQLLogic(out=None) as sql:
-        sql.connect(hostname='localhost',
-                    port=s1.dbport,
-                    database=s1.dbname)
-        sql.parse(os.path.join(tstsrcdir, os.pardir, os.pardir,
-                               'testdb', 'Tests', 'load.test'))
+
+def tar_filter(member, path):
+    # remove database name from file name
+    member.name = member.name.partition('/')[2]
+    return member
+
+
+with tempfile.TemporaryDirectory(dir=SCRATCH_PREFIX) as tmpdir:
+    tar_file = os.path.join(tmpdir, 'dump.tar.xz')
+    # start the first server
+    with process.server(dbfarm=dbfarm,
+                        dbname=tstdb,
+                        mapiport='0',
+                        stdin=process.PIPE,
+                        stdout=process.PIPE,
+                        stderr=process.PIPE) as s1:
+        # load data into the first server's database
+        with sqllogictest.SQLLogic(out=None) as sql:
+            sql.connect(server=s1)
+            sql.parse(os.path.join(tstsrcdir, os.pardir, os.pardir,
+                                   'testdb', 'Tests', 'load.test'))
+        # dump the first server's database into tar_file
+        with tpymonetdb.connect(database=s1.urls[0]) as con:
+            with con.cursor() as c:
+                c.execute('call sys.hot_snapshot(%s, 1)', [tar_file])
+    os.mkdir(tstdb2)
+    with tarfile.open(name=tar_file) as tar:
+        tar.extractall(os.path.join(dbfarm, tstdb2), filter=tar_filter)
     # start the second server
-    with process.server(dbname=tstdb2,
+    with process.server(dbfarm=dbfarm,
+                        dbname=tstdb2,
                         mapiport='0',
                         stdin=process.PIPE,
                         stdout=process.PIPE,
                         stderr=process.PIPE) as s2:
-        # dump the first server's database
-        # and pipe it straight into the second server
-        with process.client(lang='sqldump',
-                            server=s1,
-                            stdin=process.PIPE,
-                            stdout='PIPE',
-                            stderr=process.PIPE) as d1, \
-             process.client(lang='sql',
-                            format='trash',
-                            echo=False,
-                            server=s2,
-                            stdin=d1.stdout,
-                            stdout=process.PIPE,
-                            stderr=process.PIPE) as c2:
-            d1.stdout.close()
-            d1.stdout = None
-            c2out, c2err = c2.communicate()
-            d1out, d1err = d1.communicate()
-            sys.stderr.write(c2err)
-            sys.stderr.write(d1err)
-        s1out, s1err = s1.communicate()
-        sys.stdout.writelines([line for line in s1out.splitlines(keepends=True) if not line.startswith('#')])
-        sys.stderr.writelines([line for line in s1err.splitlines(keepends=True) if not line.startswith('#')])
-
         # dump the second server's database
         with process.client(lang='sqldump',
                             server=s2,

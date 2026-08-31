@@ -184,12 +184,15 @@ class SQLLogic:
         self.language = language
         self.hostname = hostname
         if server is not None:
-            if port is None:
-                port = server.dbport
-            if database is None:
-                database = server.dbname
-            if usock is None:
-                usock = server.usock
+            if port is None and database is None and usock is None and server.urls:
+                database = server.urls[0]
+            else:
+                if port is None:
+                    port = server.dbport
+                if database is None:
+                    database = server.dbname
+                if usock is None:
+                    usock = server.usock
         self.port = port
         self.database = database or 'demo'
         self.timeout = timeout
