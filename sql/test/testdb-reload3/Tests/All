@@ -1,1 +1,1 @@
-reload
+!NOWAL&PYTHON_VERSION>=3.12?reload
