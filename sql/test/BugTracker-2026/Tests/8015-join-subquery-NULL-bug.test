@@ -1,0 +1,71 @@
+statement ok
+CREATE TABLE t8015 (x INT)
+
+statement ok rowcount 2
+INSERT INTO t8015 VALUES (1), (2)
+
+query I nosort
+SELECT SUM(x) AS a
+  FROM t8015
+ GROUP BY x
+HAVING SUM(x) < 0
+----
+
+-- The grouped input is empty, so SUM(a) is NULL.
+query I nosort
+SELECT SUM(a) AS s
+  FROM (
+    SELECT SUM(x) AS a
+      FROM t8015
+     GROUP BY x
+    HAVING SUM(x) < 0
+       ) AS grouped_rows
+----
+NULL
+
+-- The grouped input is empty, so SUM(a) is NULL and the join must match no rows.
+query I nosort
+SELECT COUNT(*) AS original_count
+FROM t8015 AS o
+JOIN (
+    SELECT SUM(a) AS s
+    FROM (
+        SELECT SUM(x) AS a
+          FROM t8015
+         GROUP BY x
+        HAVING SUM(x) < 0
+    ) AS grouped_rows
+) AS q ON q.s IS NOT NULL
+----
+0
+
+statement ok
+CREATE TEMPORARY TABLE t8015_tmp AS
+SELECT SUM(x) AS a
+  FROM t8015
+ GROUP BY x
+HAVING SUM(x) < 0
+ON COMMIT PRESERVE ROWS
+
+query I nosort
+SELECT COUNT(*) AS cut_count
+FROM t8015_tmp
+----
+0
+
+query I nosort
+SELECT COUNT(*) AS residual_count
+FROM t8015 AS o
+JOIN (
+    SELECT SUM(a) AS s
+    FROM t8015_tmp
+) AS q ON q.s IS NOT NULL
+----
+0
+
+statement ok
+DROP TABLE t8015_tmp
+
+statement ok
+DROP TABLE t8015
+
