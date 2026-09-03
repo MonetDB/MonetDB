@@ -1,0 +1,55 @@
+statement ok
+CREATE TABLE t8019 (
+    k INT PRIMARY KEY,
+    v INT
+)
+
+statement ok rowcount 1
+INSERT INTO t8019 VALUES (1, 5)
+
+query II nosort
+SELECT k, SUM(DISTINCT v)
+FROM t8019
+GROUP BY k
+----
+1
+5
+
+-- next query logs server msgs:
+--    exp_bin: CRITICAL: Could not find %2.%2
+--    exp_bin: ERROR: Query: 'select input.k, sum(distinct input.v)
+-- and triggers assert failure: sql/backends/monet5/rel_bin.c:1914: exp_bin: Assertion `s' failed.
+-- An identity derived table must not remove the grouped result.
+query II nosort
+SELECT input.k, SUM(DISTINCT input.v)
+FROM (
+    SELECT k, v
+    FROM t8019
+) AS input
+GROUP BY input.k
+----
+1
+5
+
+-- next statement triggers assert failure: sql/backends/monet5/rel_bin.c:1914: exp_bin: Assertion `s' failed.
+statement ok
+CREATE TABLE t8019_ctas AS
+SELECT input.k, SUM(DISTINCT input.v) AS s
+FROM (
+    SELECT k, v
+    FROM t8019
+) AS input
+GROUP BY input.k
+
+query II nosort
+SELECT k, s FROM t8019_ctas
+----
+1
+5
+
+statement ok
+DROP TABLE IF EXISTS t8019_ctas
+
+statement ok
+DROP TABLE IF EXISTS t8019
+

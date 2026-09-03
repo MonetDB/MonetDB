@@ -196,3 +196,4 @@ KNOWNFAIL?8014-rel_bin-exp_bin-assert-failure
 KNOWNFAIL?8015-join-subquery-NULL-bug
 KNOWNFAIL?8017-create-where-exists-select-acos-bug
 KNOWNFAIL?8018-rel2bin_select-assert-failure
+KNOWNFAIL?8019-rel_bin-exp_bin-assert-failure
