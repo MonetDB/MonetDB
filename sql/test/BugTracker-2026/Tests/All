@@ -194,3 +194,4 @@ KNOWNFAIL?8010-first_value-last_value-partition-range-bug
 KNOWNFAIL?8013-triple-same-predicate-bug
 KNOWNFAIL?8014-rel_bin-exp_bin-assert-failure
 KNOWNFAIL?8015-join-subquery-NULL-bug
+KNOWNFAIL?8017-create-where-exists-select-acos-bug
