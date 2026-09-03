@@ -287,6 +287,7 @@ runMALpipelines(Client cntxt, MalBlkPtr mb, int startpc, int stoppc, int maxpart
 	Pipelines *s = GDKmalloc(sizeof(Pipelines));
 	if (!s)
 		throw(MAL, "pipelines", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+	MT_lock_set(&pipelineLock);
 	bool profiler = cntxt->sqlprofiler;
 	*s = (Pipelines) {
 		.mb = mb,
@@ -320,11 +321,13 @@ runMALpipelines(Client cntxt, MalBlkPtr mb, int startpc, int stoppc, int maxpart
 	for (int i = 0; i < s->nr_workers; i++)
 		q_enqueue(workers[i].q, s);
 
+	MT_lock_unset(&pipelineLock);
 	/* wait for result */
 	for (int i = 0; i < s->nr_workers; i++)
 		MT_sema_down(&s->s);
 	MT_sema_destroy(&s->s);
 	MT_lock_destroy(&s->l);
+	MT_lock_set(&pipelineLock);
 	bool has_sink = (s->sink != 0);
 	str err = s->error;
 	if (err) {
@@ -357,6 +360,7 @@ runMALpipelines(Client cntxt, MalBlkPtr mb, int startpc, int stoppc, int maxpart
 	}
 	GDKfree(s);
 	cntxt->sqlprofiler = profiler;
+	MT_lock_unset(&pipelineLock);
 	if (restart) /* TODO move into new loop around pipeline */
 		return runMALpipelines(cntxt, mb, startpc, stoppc, maxparts, sink, stk);
 	return has_sink ? NULL : err;
