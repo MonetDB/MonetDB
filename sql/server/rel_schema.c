@@ -828,6 +828,9 @@ column_options(sql_query *query, dlist *opt_list, sql_schema *ss, sql_table *t, 
 				case -5:
 					(void) sql_error(sql, 02, SQLSTATE(42000) "DISTINCT STRING COLUMN option: column is not a (var)char column");
 					return SQL_ERR;
+				case -6:
+					(void) sql_error(sql, 02, SQLSTATE(42000) "DISTINCT STRING COLUMN option: no such distinct string column '%s.%s'", qname_schema(s->data.lval) ? qname_schema(s->data.lval) : ss->base.name, qname_schema_object(s->data.lval));
+					return SQL_ERR;
 				default:
 					break;
 				}
