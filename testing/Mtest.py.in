@@ -4172,6 +4172,8 @@ def main(argv):
             exe['mserver5'] = ['mserver5', f'--debug={env["GDK_DEBUG"]}', '--debug=256', '--set', f'gdk_nr_threads={env["GDK_NR_THREADS"]}'] + shlex.split(env['setMONETDB_MOD_PATH']) + ['--set', 'mapi_listenaddr=all', '--set', 'mapi_port=0'] + shlex.split(SOCK)
             if not nomito:
                 exe['mserver5'].append('--forcemito')
+            else:
+                exe['mserver5'].append(f'-d{1 << 24}')  # NOSYNCMASK
         else:
             ErrXit('cannot find mserver5 executable')
         if CheckExec('ruby'):
