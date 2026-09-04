@@ -123,7 +123,7 @@ static inline lng
 str_hsh( str v )
 {
     // Source: https://github.com/aappleby/smhasher/blob/master/src/Hashes.cpp
-    oid h = 2166136261UL;
+    ulng h = 2166136261UL;
     const uint8_t* data = (const uint8_t*)v;
     for (int i = 0; data[i]; i++) {
         h ^= data[i];
