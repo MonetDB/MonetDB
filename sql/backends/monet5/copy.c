@@ -551,7 +551,10 @@ COPYsplitlines(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		p->p->master_counter = (p->p->nr_workers*-2);
 
 	if (!r->done && !r->error)
-		(void)pipeline_get_token(p, 0, p->wid, &r->done);
+		if (pipeline_get_token(p, 0, p->wid, &r->done) < 0) {
+			r->error = true;
+			goto end;
+		}
 
 	if (!r->done)
 		p->seqnr = (int)r->bs->seq[p->wid];
@@ -597,7 +600,10 @@ COPYsplitlines(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			goto end;
 		}
 		if (r->can_jump)
-			(void)pipeline_get_token(p, 1, p->wid, &r->done);
+			if (pipeline_get_token(p, 1, p->wid, &r->done) < 0) {
+				r->error = true;
+				goto end;
+			}
 		r->linecount += line_count;
 		state.end = state.start + e;
 		if (e)
