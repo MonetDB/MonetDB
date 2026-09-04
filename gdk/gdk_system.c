@@ -1214,7 +1214,9 @@ MT_check_nr_cores(void)
 
 #ifndef WIN32
 	/* get the number of allocated cpus from the cgroup settings */
-	FILE *f = fopen("/sys/fs/cgroup/cpuset/cpuset.cpus", "r");
+	FILE *f = fopen("/sys/fs/cgroup/cpuset/cpuset.cpus", "r"); /* v1 */
+	if (f == NULL)
+		f = fopen("/sys/fs/cgroup/cpuset.cpus.effective", "r"); /* v2 */
 	if (f != NULL) {
 		char buf[512];
 		char *p = fgets(buf, 512, f);
