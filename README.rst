@@ -109,7 +109,7 @@ The following packages are optional:
 
 On Ubuntu and Debian the following packages are required:
 ``bison``, ``cmake``, ``gcc``, ``pkg-config``, ``python3``,
-``libxxash-dev``.
+``libxxhash-dev``.
 
 The following packages are optional but recommended:
 ``libbz2-dev``, ``liblz4-dev``, ``liblzma-dev``, ``libpcre2-dev``,

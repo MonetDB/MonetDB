@@ -104,12 +104,9 @@ q_dequeue(Queue *q)
 		return NULL;
 	MT_lock_set(&q->l);
 	{
-		int i = q->last - 1;
-
-		r = q->data[i];
-		assert (i >= 0);
+		r = q->data[0];
 		q->last--;
-		memmove(q->data + i, q->data + i + 1, (q->last - i) * sizeof(q->data[0]));
+		memmove(q->data, q->data + 1, (q->last) * sizeof(q->data[0]));
 	}
 	MT_lock_unset(&q->l);
 	return r;
