@@ -1249,6 +1249,21 @@ MT_check_nr_cores(void)
 			if (ncpu < ncpus)
 				return ncpu;
 		}
+	} else {
+		f = fopen("/sys/fs/cgroup/cpu.max", "r");
+		if (f != NULL) {
+			int32_t quota, period;
+			/* there should either be two numbers, or the
+			 * word "max" followed by a number; the latter
+			 * case is ignored by the fscanf not returning
+			 * 2 */
+			if (fscanf(f, SCNi32 " " SCNi32, &quota, &period) == 2 && period > 0) {
+				int ncpu = quota / period;
+				if (ncpu < ncpus)
+					ncpus = ncpu;
+			}
+			fclose(f);
+		}
 	}
 #endif
 
