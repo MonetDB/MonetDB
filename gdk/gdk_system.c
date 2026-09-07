@@ -1257,7 +1257,7 @@ MT_check_nr_cores(void)
 			 * word "max" followed by a number; the latter
 			 * case is ignored by the fscanf not returning
 			 * 2 */
-			if (fscanf(f, SCNi32 " " SCNi32, &quota, &period) == 2 && period > 0) {
+			if (fscanf(f, "%" SCNi32 " %" SCNi32, &quota, &period) == 2 && period > 0) {
 				int ncpu = quota / period;
 				if (ncpu < ncpus)
 					ncpus = ncpu;
