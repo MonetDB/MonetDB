@@ -213,7 +213,7 @@ OPTmitosisImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 		pieces = (int) ((rowcnt * row_size) / (mito_size * 1024));
 	mito_size = GDKgetenv_int("min_mito_rows", 0);
 	if (mito_size > 0 && pieces > 1 && rowcnt / pieces < (BUN) mito_size)
-		pieces = rowcnt / mito_size;
+		pieces = (int) (rowcnt / mito_size);
 	mito_parts = GDKgetenv_int("max_mito_parts", 0);
 	if (mito_parts > 0 && pieces > mito_parts)
 		pieces = mito_parts;
