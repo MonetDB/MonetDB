@@ -462,6 +462,8 @@ size_t _MT_npages = 0;		/* variable holding memory size in pages */
 
 static lng programepoch;
 
+int GDKnr_threads = 0;
+
 void
 MT_init(void)
 {
@@ -709,6 +711,27 @@ MT_init(void)
 					fclose(f);
 				}
 #endif
+				strcpy(q, "cpu.max");
+				f = fopen(pth, "r");
+				if (f != NULL) {
+					uint64_t quota, period;
+					if (fscanf(f, "%" SCNu64 " %" SCNu64,
+						   &quota, &period) == 2) {
+						GDKnr_threads = quota / period;
+					}
+					fclose(f);
+				}
+				strcpy(q, "cpuset.cpus.effective");
+				f = fopen(pth, "r");
+				if (f != NULL) {
+					int ncpu = parse_cpuset(f);
+					fclose(f);
+					if (ncpu > 0 &&
+					    (GDKnr_threads == 0 ||
+					     ncpu < GDKnr_threads)) {
+						GDKnr_threads = ncpu;
+					}
+				}
 			} else {
 				/* cgroup v1 entry */
 				p = strchr(buf, ':');
@@ -1164,9 +1187,11 @@ GDKinit(opt *set, int setlen, bool embedded, const char *caller_revision)
 		}
 	free(n);
 
-	GDKnr_threads = GDKgetenv_int("gdk_nr_threads", 0);
-	if (GDKnr_threads == 0) {
-		GDKnr_threads = MT_check_nr_cores();
+	if (GDKgetenv_int("gdk_nr_threads", 0) != 0) {
+		GDKnr_threads = GDKgetenv_int("gdk_nr_threads", 0);
+	} else {
+		if (GDKnr_threads == 0)
+			GDKnr_threads = MT_check_nr_cores();
 		snprintf(buf, sizeof(buf), "%d", GDKnr_threads);
 		if (GDKsetenv("gdk_nr_threads", buf) != GDK_SUCCEED) {
 			TRC_CRITICAL(GDK, "GDKsetenv gdk_nr_threads failed");
@@ -1268,9 +1293,6 @@ GDKinit(opt *set, int setlen, bool embedded, const char *caller_revision)
 	return GDK_SUCCEED;
 }
 
-int GDKnr_threads = 0;
-static ATOMIC_TYPE GDKnrofthreads = ATOMIC_VAR_INIT(0);
-
 bool
 GDKexiting(void)
 {
@@ -1364,7 +1386,6 @@ GDKreset(int status)
 		}
 
 		GDKnr_threads = 0;
-		ATOMIC_SET(&GDKnrofthreads, 0);
 		close_stream(GDKstdout);
 		close_stream(GDKstdin);
 		GDKstdout = NULL;
