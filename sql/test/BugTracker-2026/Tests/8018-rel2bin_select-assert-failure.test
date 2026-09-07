@@ -1,0 +1,74 @@
+statement ok
+CREATE TABLE t8018 (x INT)
+
+statement ok rowcount 1
+INSERT INTO t8018 VALUES (1)
+
+query TI nosort
+SELECT flagged.b, flagged.x
+FROM (
+    SELECT (ranked.x IN (SELECT 1)) AS b,
+           ranked.x
+    FROM (
+        SELECT x, ROW_NUMBER() OVER () AS rn
+        FROM t8018
+    ) AS ranked
+    WHERE ranked.rn > 1
+) AS flagged
+WHERE flagged.b = TRUE
+----
+
+statement ok
+CREATE VIEW v8018 AS
+SELECT flagged.b, flagged.x
+FROM (
+    SELECT (ranked.x IN (SELECT 1)) AS b,
+           ranked.x
+    FROM (
+        SELECT x, ROW_NUMBER() OVER () AS rn
+        FROM t8018
+    ) AS ranked
+    WHERE ranked.rn > 1
+) AS flagged
+WHERE flagged.b = TRUE
+
+query TI nosort
+SELECT * FROM v8018
+----
+
+query I nosort
+SELECT COUNT(*) FROM v8018
+----
+0
+
+-- Repeating the boolean predicate must still return one aggregate row.
+-- next query triggers assert failure: sql/backends/monet5/rel_bin.c:4994: rel2bin_select: Assertion `sql->session->status == -10' failed.
+query I nosort
+SELECT COUNT(*) FROM v8018
+WHERE b = TRUE
+----
+0
+
+-- next statement triggers assert failure: sql/backends/monet5/rel_bin.c:4994: rel2bin_select: Assertion `sql->session->status == -10' failed.
+statement ok
+CREATE TABLE t8018_count AS
+SELECT COUNT(*) AS row_count
+FROM v8018
+WHERE b = TRUE
+
+query II nosort
+SELECT COUNT(*), COALESCE(MAX(row_count), -1)
+FROM t8018_count
+----
+1
+0
+
+statement ok
+DROP TABLE IF EXISTS t8018_count
+
+statement ok
+DROP VIEW IF EXISTS v8018
+
+statement ok
+DROP TABLE t8018
+

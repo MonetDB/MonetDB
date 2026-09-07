@@ -1,0 +1,30 @@
+statement ok
+create table t8020 (id int, fk int)
+
+statement ok rowcount 3
+insert into t8020 values (100,1),(101,1),(101,2)
+
+query I rowsort
+select (select a.id from t8020 a
+        where a.fk = 1
+          and a.id < (select b.id from t8020 b
+                      where b.fk = c.id and b.id = 101))
+from (values (1)) as c(id)
+----
+100
+
+
+-- next query fails with: GDK reported error: BATsubcross: more than one match
+-- where we expected it to succeed
+query I rowsort
+select (select a.id from t8020 a
+        where a.fk = c.id
+          and a.id < (select b.id from t8020 b
+                      where b.fk = c.id and b.id = 101))
+from (values (1)) as c(id)
+----
+100
+
+statement ok
+drop table t8020
+
