@@ -1177,6 +1177,40 @@ MT_kill_threads(void)
 }
 
 int
+parse_cpuset(FILE *f)
+{
+	int ncpu = 0;
+	char buf[512];
+	char *p = fgets(buf, 512, f);
+	if (p != NULL) {
+		/* syntax is: ranges of CPU numbers separated by comma;
+		 * a range is either a single CPU id, or two IDs
+		 * separated by a minus; any deviation causes the file
+		 * to be ignored */
+		for (;;) {
+			char *q;
+			unsigned fst = strtoul(p, &q, 10);
+			if (q == p)
+				return 0;
+			ncpu++;
+			if (*q == '-') {
+				p = q + 1;
+				unsigned lst = strtoul(p, &q, 10);
+				if (q == p || lst <= fst)
+					return 0;
+				ncpu += lst - fst;
+			}
+			if (*q == '\n')
+				break;
+			if (*q != ',')
+				return 0;
+			p = q + 1;
+		}
+	}
+	return ncpu;
+}
+
+int
 MT_check_nr_cores(void)
 {
 	int ncpus = -1;
@@ -1224,36 +1258,24 @@ MT_check_nr_cores(void)
 	if (f == NULL)
 		f = fopen("/sys/fs/cgroup/cpuset.cpus.effective", "r"); /* v2 */
 	if (f != NULL) {
-		char buf[512];
-		char *p = fgets(buf, 512, f);
+		int ncpu = parse_cpuset(f);
 		fclose(f);
-		if (p != NULL) {
-			/* syntax is: ranges of CPU numbers separated
-			 * by comma; a range is either a single CPU
-			 * id, or two IDs separated by a minus; any
-			 * deviation causes the file to be ignored */
-			int ncpu = 0;
-			for (;;) {
-				char *q;
-				unsigned fst = strtoul(p, &q, 10);
-				if (q == p)
-					return ncpus;
-				ncpu++;
-				if (*q == '-') {
-					p = q + 1;
-					unsigned lst = strtoul(p, &q, 10);
-					if (q == p || lst <= fst)
-						return ncpus;
-					ncpu += lst - fst;
-				}
-				if (*q == '\n')
-					break;
-				if (*q != ',')
-					return ncpus;
-				p = q + 1;
+		if (ncpu > 0 && ncpu < ncpus)
+			ncpus = ncpu;
+	} else {
+		f = fopen("/sys/fs/cgroup/cpu.max", "r");
+		if (f != NULL) {
+			uint64_t quota, period;
+			/* there should either be two numbers, or the
+			 * word "max" followed by a number; the latter
+			 * case is ignored by the fscanf not returning
+			 * 2 */
+			if (fscanf(f, "%" SCNu64 " %" SCNu64, &quota, &period) == 2 && period > 0) {
+				int ncpu = quota / period;
+				if (ncpu < ncpus)
+					ncpus = ncpu;
 			}
-			if (ncpu < ncpus)
-				return ncpu;
+			fclose(f);
 		}
 	}
 #endif
