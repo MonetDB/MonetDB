@@ -9,6 +9,7 @@
  */
 
 #include "monetdb_config.h"
+#include "gdk.h"
 #include "mal.h"
 #include "monet_version.h"
 #include "mutils.h"
@@ -42,7 +43,8 @@ monet_version(void)
 
 	MT_init();  /* for MT_pagesize */
 	sz_mem_gb = (dbl)(MT_npages() * MT_pagesize()) / (1024.0 * 1024.0 * 1024.0);
-	cores = MT_check_nr_cores();
+	if ((cores = GDKnr_threads) == 0)
+		cores = MT_check_nr_cores();
 
 	printf("MonetDB 5 server %s", GDKversion(false));
 #ifdef MONETDB_RELEASE
