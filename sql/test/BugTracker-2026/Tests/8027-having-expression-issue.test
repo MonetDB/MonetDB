@@ -1,0 +1,41 @@
+statement ok
+CREATE TABLE t8027(c0 INTEGER)
+
+statement ok rowscount 1
+INSERT INTO t8027 VALUES (8)
+
+query IT nosort
+SELECT c0, (c0 IS NULL) OR NOT (COUNT(c0) <= COUNT(c0)) AS b
+ FROM t8027
+GROUP BY c0
+----
+8
+False
+
+-- Q1  base: HAVING keeps the group, but should not
+query I nosort
+SELECT c0
+ FROM t8027
+GROUP BY c0
+HAVING (c0 IS NULL) OR NOT (COUNT(c0) <= COUNT(c0))
+----
+
+query I nosort
+SELECT c0
+ FROM t8027
+GROUP BY c0
+HAVING NOT (COUNT(c0) <= COUNT(c0))
+----
+
+-- Q2  moved: WHERE on the alias drops the row
+query IT nosort
+SELECT r, b FROM (
+  SELECT c0 AS r,
+         (c0 IS NULL) OR NOT (COUNT(c0) <= COUNT(c0)) AS b
+  FROM t8027
+  GROUP BY c0
+) AS s WHERE b
+----
+
+statement ok
+DROP TABLE t8027
