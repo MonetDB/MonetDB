@@ -1,0 +1,44 @@
+statement ok
+CREATE TABLE t8026(c0 INTEGER)
+
+statement ok rowcount 1
+INSERT INTO t8026 VALUES (100)
+
+query I nosort
+SELECT c0
+ FROM t8026
+GROUP BY c0
+----
+100
+
+query I nosort
+SELECT c0
+ FROM t8026
+GROUP BY c0
+HAVING NOT (c0 = 1 AND c0 IS NOT NULL)
+----
+100
+
+query I nosort
+SELECT c0
+ FROM t8026
+GROUP BY c0
+HAVING (c0 = 0) OR NOT (c0 = 1 AND c0 IS NOT NULL)
+----
+100
+
+-- projection path (correct)
+query I nosort
+SELECT ref0 FROM (
+  SELECT c0 AS ref0,
+         (c0 = 0) OR NOT (c0 = 1 AND c0 IS NOT NULL) AS ref1
+  FROM t8026
+  GROUP BY c0
+) AS s WHERE ref1
+----
+100
+
+
+statement ok
+DROP TABLE t8026
+

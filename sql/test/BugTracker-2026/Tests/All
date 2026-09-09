@@ -200,3 +200,4 @@ KNOWNFAIL?8019-rel_bin-exp_bin-assert-failure
 KNOWNFAIL?8020-correlated-subquery-bug
 KNOWNFAIL?8024-MALoptimizer-bug
 KNOWNFAIL?8025-having-count-bug
+KNOWNFAIL?8026-having-expression-bug
