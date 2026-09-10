@@ -202,3 +202,4 @@ KNOWNFAIL?8024-MALoptimizer-bug
 KNOWNFAIL?8025-having-count-bug
 KNOWNFAIL?8026-having-expression-bug
 8027-having-expression-issue
+KNOWNFAIL?8028-coalesce-groupby-rollup-having-bug
