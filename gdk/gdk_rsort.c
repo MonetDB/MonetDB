@@ -18,7 +18,8 @@
 /* bigendian means value is in big-endian byte order, but also that it
  * is unsigned */
 gdk_return
-GDKrsort(void *restrict h, void *restrict t, size_t n, size_t hs, size_t ts, bool reverse, bool bigendian)
+GDKrsort(void *restrict h, void *restrict t, size_t n, size_t hs, size_t ts,
+	 bool reverse, bool bigendian, bool isfloat)
 {
 	allocator *ta = MT_thread_getallocator();
 	allocator_state ta_state = ma_open(ta);
@@ -30,6 +31,7 @@ GDKrsort(void *restrict h, void *restrict t, size_t n, size_t hs, size_t ts, boo
 	uint8_t *t2 = NULL;
 	Heap tmph, tmpt;
 
+	assert(!isfloat || !bigendian); /* not both */
 	if (counts == NULL) {
 		ma_close(&ta_state);
 		return GDK_FAIL;
@@ -61,6 +63,31 @@ GDKrsort(void *restrict h, void *restrict t, size_t n, size_t hs, size_t ts, boo
 		ts = 0;
 	}
 
+	if (isfloat) {
+		/* for floating point numbers, we can sort using the bit
+		 * pattern, but negative numbers are then sorted in the
+		 * reverse order; we therefore temporarily flip all bits
+		 * for negative numbers and set the sign bit for
+		 * positive ones; then sorting produces the correct
+		 * order; at the end we undo the temporary change */
+		for (size_t i = 0, o = 0; i < n; i++, o += hs) {
+#ifndef WORDS_BIGENDIAN
+			if (h1[o + hs - 1] & 0x80)
+				for (size_t j = 0; j < hs; j++)
+					h1[o + j] = ~h1[o + j];
+			else
+				h1[o + hs - 1] |= 0x80;
+#else
+			if (h1[o] & 0x80)
+				for (size_t j = 0; j < hs; j++)
+					h1[o + j] = ~h1[o + j];
+			else
+				h1[o] |= 0x80;
+#endif
+		}
+	}
+
+	/* produce a histogram for each iteration */
 #ifndef WORDS_BIGENDIAN
 	if (bigendian /* treat like big-endian */) {
 #endif
@@ -80,11 +107,21 @@ GDKrsort(void *restrict h, void *restrict t, size_t n, size_t hs, size_t ts, boo
 		}
 	}
 #endif
-	/* When sorting in ascending order, the negative numbers occupy
-	 * the second half of the buckets in the last iteration; when
-	 * sorting in descending order, the negative numbers occupy the
-	 * first half.  In either case, at the end we need to put the
-	 * second half first and the first half after. */
+
+	/* sort from least significant byte to most significant byte;
+	 * each step is stable, so later reshuffles preserve the
+	 * relative order established by previous iterations */
+
+	/* When sorting signed integers in ascending order, the negative
+	 * numbers occupy the second half of the buckets in the last
+	 * iteration; when sorting in descending order, the negative
+	 * numbers occupy the first half.  In either case, at the end we
+	 * need to put the second half first and the first half
+	 * after.
+	 * When sorting floating point numbers, negative numbers are
+	 * dealt with, but nils are in the wrong place, similar to
+	 * negative numbers in signed integers.  We use the same
+	 * technique, but the details are slightly different. */
 	size_t negpos = 0;
 	for (size_t j = 0, k = hs - 1; j < hs; j++, k--) {
 		size_t nb = counts[j][0] > 0;
@@ -102,8 +139,12 @@ GDKrsort(void *restrict h, void *restrict t, size_t n, size_t hs, size_t ts, boo
 			}
 		}
 		/* we're only interested in the position in the last
-		 * iteration */
-		negpos = pos[NBUCKETS / 2 - reverse];
+		 * iteration; for floating point, we're looking for nil
+		 * which is encoded as sign bit (temporarily set to 1)
+		 * followed by a size-dependent number of 1 bits (8 for
+		 * float, 11 for double but in any case more than 7), so
+		 * we're just looking at the last position */
+		negpos = isfloat ? pos[NBUCKETS - 1 - reverse] : pos[NBUCKETS / 2 - reverse];
 		if (nb == 1) {
 			/* no need to reshuffle data for this iteration:
 			 * everything is in the same bucket */
@@ -137,15 +178,86 @@ GDKrsort(void *restrict h, void *restrict t, size_t n, size_t hs, size_t ts, boo
 	}
 	ma_close(&ta_state);
 
+
+	if (isfloat) {
+		/* undo the temporary change (see above) */
+		for (size_t i = 0, o = 0; i < n; i++, o += hs) {
+#ifndef WORDS_BIGENDIAN
+			if ((h1[o + hs - 1] & 0x80) == 0)
+				for (size_t j = 0; j < hs; j++)
+					h1[o + j] = ~h1[o + j];
+			else
+				h1[o + hs - 1] &= 0x7F;
+#else
+			if ((h1[o] & 0x80) == 0)
+				for (size_t j = 0; j < hs; j++)
+					h1[o + j] = ~h1[o + j];
+			else
+				h1[o] &= 0x7F;
+#endif
+		}
+		/* Deal with nils, we need to find the correct starting
+		 * position (which depends on more than just the most
+		 * significant byte.
+		 * A nil is represented by a NaN, and a NaN is encoded
+		 * by any sign bit (you can have positive and negative
+		 * NaN), all bits of exponent set, and significand
+		 * non-zero (zero represents infinity) */
+		if (reverse) {
+			if (hs == 4) {
+				/* float */
+				while (negpos > 0) {
+					uint32_t v = ((uint32_t *) h1)[negpos - 1];
+					if ((v & UINT32_C(0x7F800000)) == UINT32_C(0x7F800000) &&
+					    (v & UINT32_C(0x7FFFFF)) != 0)
+						break;
+					negpos--;
+				}
+			} else {
+				assert(hs == 8);
+				/* double */
+				while (negpos > 0) {
+					uint64_t v = ((uint64_t *) h1)[negpos - 1];
+					if ((v & UINT64_C(0x7FF0000000000000)) == UINT64_C(0x7FF0000000000000) &&
+					    (v & UINT64_C(0xFFFFFFFFFFFFF)) != 0)
+						break;
+					negpos--;
+				}
+			}
+		} else {
+			if (hs == 4) {
+				/* float */
+				while (negpos < n) {
+					uint32_t v = ((uint32_t *) h1)[negpos];
+					if ((v & UINT32_C(0x7F800000)) == UINT32_C(0x7F800000) &&
+					    (v & UINT32_C(0x7FFFFF)) != 0)
+						break;
+					negpos++;
+				}
+			} else {
+				assert(hs == 8);
+				/* double */
+				while (negpos < n) {
+					uint64_t v = ((uint64_t *) h1)[negpos];
+					if ((v & UINT64_C(0x7FF0000000000000)) == UINT64_C(0x7FF0000000000000) &&
+					    (v & UINT64_C(0xFFFFFFFFFFFFF)) != 0)
+						break;
+					negpos++;
+				}
+			}
+		}
+	}
 	if (h1 != (uint8_t *) h) {
 		/* we need to copy the data back to the correct heap */
 		if (bigendian) {
-			/* no negative values in bigendian, so no shuffling */
+			/* no negative values in bigendian, so no
+			 * shuffling */
 			memcpy(h2, h1, n * hs);
 			if (t)
 				memcpy(t2, t1, n * ts);
 		} else {
-			/* copy the negative integers to the start, copy positive after */
+			/* copy the negative integers to the start, copy
+			 * positive after */
 			if (negpos < n) {
 				memcpy(h2, h1 + hs * negpos, (n - negpos) * hs);
 				if (t)
@@ -158,7 +270,8 @@ GDKrsort(void *restrict h, void *restrict t, size_t n, size_t hs, size_t ts, boo
 			}
 		}
 	} else if (negpos > 0 && negpos < n && !bigendian) {
-		/* copy the negative integers to the start, copy positive after */
+		/* copy the negative integers to the start, copy
+		 * positive after */
 		memcpy(h2, h1 + hs * negpos, (n - negpos) * hs);
 		memcpy(h2 + hs * (n - negpos), h1, negpos * hs);
 		memcpy(h, h2, n * hs);
@@ -168,6 +281,7 @@ GDKrsort(void *restrict h, void *restrict t, size_t n, size_t hs, size_t ts, boo
 			memcpy(t, t2, n * ts);
 		}
 	} /* else, everything is already in the correct place */
+
 	HEAPfree(&tmph, true);
 	if (t)
 		HEAPfree(&tmpt, true);
