@@ -111,22 +111,9 @@
 # include <sys/mman.h>
 #endif
 
-/* the compiler on the Mac can't deal with including xxhash.h twice
- * because of identical redefinitions of types and we happen to know
- * that the xxhash version is high enough, so just define the magic
- * inline token and include the file only once */
-#ifndef __APPLE__
+/* we've defined XXH_INLINE_ALL in monetdb_config.h if the xxhash
+ * library is new enough */
 #include <xxhash.h>
-#endif
-
-#if defined(__APPLE__) || XXH_VERSION_NUMBER >= 0*100*100 + 8*100 + 0   /* at least 0.8.0 */
-/* in newer versions, we can define XXH_INLINE_ALL to inline all hash
- * functions before including xxhash.h again (we didn't need the first
- * include, except we need the version number to make the
- * distinction) */
-#define XXH_INLINE_ALL
-#include <xxhash.h>
-#endif
 
 #include "matomic.h"
 #include "mstring.h"
@@ -1888,25 +1875,8 @@ gdk_export size_t escapedStr(char *restrict dst, const char *restrict src, size_
 gdk_export const bte bte_nil;
 gdk_export const sht sht_nil;
 gdk_export const int int_nil;
-#ifdef NAN_CANNOT_BE_USED_AS_INITIALIZER
-/* Definition of NAN is seriously broken on Intel compiler (at least
- * in some versions), so we work around it. */
-union _flt_nil_t {
-	uint32_t l;
-	flt f;
-};
-gdk_export const union _flt_nil_t _flt_nil_;
-#define flt_nil (_flt_nil_.f)
-union _dbl_nil_t {
-	uint64_t l;
-	dbl d;
-};
-gdk_export const union _dbl_nil_t _dbl_nil_;
-#define dbl_nil (_dbl_nil_.d)
-#else
 gdk_export const flt flt_nil;
 gdk_export const dbl dbl_nil;
-#endif
 gdk_export const lng lng_nil;
 #ifdef HAVE_HGE
 gdk_export const hge hge_nil;
