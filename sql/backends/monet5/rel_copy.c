@@ -271,7 +271,7 @@ exp2bin_copyparpipe(backend *be, sql_exp *copyfrom)
 				q = pushStr(mb, q, dec_skip);
 				pushInstruction(mb, q);
 
-		} else if (type->eclass == EC_STRING) {
+		} else if (type->eclass == EC_STRING || type->eclass == EC_CHAR) {
 				q = newStmt(mb, "copy", "parse_string");
 				q = pushArgument(mb, q, our_block);
 				q = pushArgument(mb, q, var_indices);

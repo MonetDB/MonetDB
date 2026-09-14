@@ -582,7 +582,6 @@ COPYsplitlines(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (!r->error && !r->done && r->offset) {
 		lng skipped = COPYskiplines(r, p->wid);
 		r->offset -= (BUN)skipped;
-		//r->linecount += skipped; ??
 	}
 
 	lng line_count = 0;

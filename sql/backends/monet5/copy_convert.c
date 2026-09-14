@@ -76,9 +76,6 @@ COPYparse_generic(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 		if (is_int_nil(offset)) {
 			to_insert = nil_ptr;
-		} else if (!checkUTF8(src, NULL)) {
-			ok = copy_report_error(&errors, (lng) i, -1, "incorrectly encoded UTF-8");
-			to_insert = nil_ptr;
 		} else {
 			ssize_t len = BATatoms[tpe].atomFromStr(ma, src, &buffer_len, &buffer, false);
 			if (len >= 0) {
@@ -328,10 +325,7 @@ COPYparse_string(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	errors.r = r;
 
 	const char *start = (char*)r->bs->buf[p->wid];
-	size_t nil_offset = 0;//r->bs->sz[p->wid]+2;
-	/*
-	parsed_bat = COLnew(0, TYPE_str, BATcount(offsets_bat), TRANSIENT);
-		*/
+	size_t nil_offset = 0;
 	parsed_bat = string_sharing_bat(BATcount(offsets_bat), start);
 	if (!parsed_bat)
 		bailout(fname, SQLSTATE(HY013) MAL_MALLOC_FAIL);
@@ -343,7 +337,6 @@ COPYparse_string(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	for (BUN i = 0; i < n; i++) {
 		gdk_return ok;
 		int offset = offsetp[i];
-		//const void *to_insert = str_nil;
 
 		if (is_int_nil(offset)) {
 			ok = GDK_SUCCEED;
@@ -360,7 +353,6 @@ COPYparse_string(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				ok = copy_report_error(&errors, (lng) i, -1, "field too long, max length is %d", colwidth);
 			} else {
 				ok = GDK_SUCCEED;
-				//to_insert = src;
 			}
 		}
 		if (ok != GDK_SUCCEED) {
@@ -370,8 +362,6 @@ COPYparse_string(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			else
 				ok = GDK_SUCCEED;
 		}
-		//if (bunfastapp_nocheck(parsed_bat, to_insert) != GDK_SUCCEED)
-		//	bailout("copy.parse_generic", GDK_EXCEPTION);
 		offsetr[i] = offset;
 	}
 
