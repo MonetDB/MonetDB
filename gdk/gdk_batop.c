@@ -2569,13 +2569,20 @@ do_sort(void *restrict h, void *restrict t, const void *restrict base,
 	case TYPE_timestamp:
 		assert(base == NULL);
 		if (nilslast == reverse && (stable || n > 100))
-			return GDKrsort(h, t, n, hs, ts, reverse, false);
+			return GDKrsort(h, t, n, hs, ts, reverse, false, false);
 		break;
 	case TYPE_uuid:
 	case TYPE_inet4:
+	case TYPE_inet6:
 		assert(base == NULL);
 		if (nilslast == reverse && (stable || n > 100))
-			return GDKrsort(h, t, n, hs, ts, reverse, true);
+			return GDKrsort(h, t, n, hs, ts, reverse, true, false);
+		break;
+	case TYPE_flt:
+	case TYPE_dbl:
+		assert(base == NULL);
+		if (nilslast == reverse && (stable || n > 100))
+			return GDKrsort(h, t, n, hs, ts, reverse, false, true);
 		break;
 	default:
 		break;
