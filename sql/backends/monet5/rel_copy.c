@@ -111,7 +111,7 @@ emit_pipelined_loop(
 	q = pushArgument(mb, q, var_line_sep);
 	q = pushArgument(mb, q, var_quote_char);
 	q = pushStr(mb, q, null_representation);
-	q = pushBit(mb, q, escape);
+	q = pushBit(mb, q, escape || onclient );
 	if (fixed_width == NULL)
 		fixed_width = (str)str_nil;
 	q = pushStr(mb, q, fixed_width);

@@ -48,6 +48,7 @@ COPYparse_generic(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	size_t buffer_len;
 	const void *nil_ptr;
 	struct error_handling errors;
+	bool has_nil = false;
 
 	errors.init = 0;
 
@@ -76,6 +77,7 @@ COPYparse_generic(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 		if (is_int_nil(offset)) {
 			to_insert = nil_ptr;
+			has_nil = true;
 		} else {
 			ssize_t len = BATatoms[tpe].atomFromStr(ma, src, &buffer_len, &buffer, false);
 			if (len >= 0) {
@@ -84,6 +86,7 @@ COPYparse_generic(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				ok = copy_report_error(&errors, (lng) i, -1, "invalid %s: %s", ATOMname(tpe), src);
 				GDKclrerr();
 				to_insert = nil_ptr;
+				has_nil = true;
 			}
 		}
 		if (ok != GDK_SUCCEED) {
@@ -99,8 +102,8 @@ COPYparse_generic(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	BATsetcount(ret, n);
 	// we don't know anything about the data we just parsed
 	ret->tkey = false;
-	ret->tnil = false;
-	ret->tnonil = false;
+	ret->tnil = has_nil?true:false;
+	ret->tnonil = has_nil?false:true;
 	ret->tsorted = false;
 	ret->trevsorted = false;
 end:
