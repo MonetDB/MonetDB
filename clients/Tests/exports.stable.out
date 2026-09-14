@@ -461,8 +461,6 @@ void VIEWbounds(BAT *b, BAT *view, BUN l, BUN h);
 BAT *VIEWcreate(oid seq, BAT *b, BUN l, BUN h);
 size_t _MT_npages;
 size_t _MT_pagesize;
-const union _dbl_nil_t _dbl_nil_;
-const union _flt_nil_t _flt_nil_;
 char *asctime_r(const struct tm *restrict, char *restrict);
 double bat_guess_uniques(BAT *b, BATiter *bi, struct canditer *bci);
 ssize_t bitFromStr(allocator *ma, const char *src, size_t *len, bit **dst, bool external);
