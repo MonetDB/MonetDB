@@ -208,6 +208,9 @@
 #cmakedefine WITH_TCMALLOC 1
 #cmakedefine WITH_MALLOC "@WITH_MALLOC@"
 
+// with new enough xxhash library we can inline everything
+#cmakedefine XXH_INLINE_ALL 1
+
 #cmakedefine SANITIZER 1		/* address sanitizer */
 #cmakedefine UNDEFINED 1		/* undefined behavior sanitizer */
 

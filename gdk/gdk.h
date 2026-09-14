@@ -111,22 +111,9 @@
 # include <sys/mman.h>
 #endif
 
-/* the compiler on the Mac can't deal with including xxhash.h twice
- * because of identical redefinitions of types and we happen to know
- * that the xxhash version is high enough, so just define the magic
- * inline token and include the file only once */
-#ifndef __APPLE__
+/* we've defined XXH_INLINE_ALL in monetdb_config.h if the xxhash
+ * library is new enough */
 #include <xxhash.h>
-#endif
-
-#if defined(__APPLE__) || XXH_VERSION_NUMBER >= 0*100*100 + 8*100 + 0   /* at least 0.8.0 */
-/* in newer versions, we can define XXH_INLINE_ALL to inline all hash
- * functions before including xxhash.h again (we didn't need the first
- * include, except we need the version number to make the
- * distinction) */
-#define XXH_INLINE_ALL
-#include <xxhash.h>
-#endif
 
 #include "matomic.h"
 #include "mstring.h"
