@@ -101,8 +101,8 @@ typedef struct hash_table {
 	int vkey;	/* vheap is unique, ie hashing on offsets */
 
 	void *vals;			/* hash(ed) values */
-	hash_key_t *gids;   /* chain of gids (k, ie mark used/-k mark used and value filled) */
-	gid *pgids;			/* id of the parent hash */
+	hash_key_t *gids;   /* chain of gids (k, ie mark used/-k mark used and value filled). For external use: gids-1 */
+	gid *pgids;			/* (actual) gid of the parent hash */
 
 	struct hash_table *p;	/* parent hash */
 	int bits;
@@ -134,6 +134,7 @@ str_hsh( str v )
 
 extern hash_table *ht_create(int type, size_t size, hash_table *p, int vkey);
 extern int ht_rehash(hash_table *ht);
+extern void ht_print(stream *fdout, BAT *b);
 
 extern void ht_activate(hash_table *ht);
 extern void ht_deactivate(hash_table *ht);

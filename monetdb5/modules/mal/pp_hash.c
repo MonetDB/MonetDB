@@ -17,6 +17,7 @@
 #include "mal_exception.h"
 #include "mal_pipelines.h"
 #include "pipeline.h"
+#include "stream.h"
 #include "pp_hash.h"
 
 static int
@@ -142,6 +143,92 @@ ht_create(int type, size_t size, hash_table *p, int vkey)
 	if (size > HT_MAX_SIZE)
 		size = HT_MAX_SIZE;
 	return _ht_create(type, size, p, vkey);
+}
+
+#define prnt(Type) \
+	do { \
+		Type *vals = ht->vals; \
+		for (gid i = 0; i < ht->size; i++) \
+		{ \
+			gid g = ht->gids[i]; \
+			if (g) { \
+				mnstr_printf(fdout, "#| %7lld ", (long long) i); \
+				if (ht->pgids) \
+					mnstr_printf(fdout,  "| %7lld ", (long long) ht->pgids[g]); \
+				mnstr_printf(fdout,  "| %7lld ", (long long) (g-1)); \
+				if (is_##Type##_nil(vals[g])) \
+					mnstr_printf(fdout, "| NIL\n"); \
+				else \
+					mnstr_printf(fdout, "| %lld\n", (long long) vals[g]); \
+			} \
+		} \
+	} while (0)
+void 
+ht_print(stream *fdout, BAT *b)
+{
+	hash_table *ht = (hash_table*)b->pl_io;
+	if (!ht) {
+		mnstr_printf(fdout, "ht_print: BAT contains no pipeline_io hash_table\n");
+	} else if (ht->pl_io.type != PIPELINE_IO_HASH_TABLE) {
+		mnstr_printf(fdout, "ht_print: wrong pipeline_io type: expected %d, got %d\n", PIPELINE_IO_HASH_TABLE, ht->pl_io.type);
+	} else {
+		if (ht->pgids) {
+			mnstr_printf(fdout, "#------------------------------------\n");
+			mnstr_printf(fdout, "#|   HSH   |   PGID   |   GID   | VAL\n");
+		} else {
+			mnstr_printf(fdout, "#--------------------------\n");
+			mnstr_printf(fdout, "#|   HSH   |   GID   | VAL\n");
+		}
+		switch(ht->type) {
+			case TYPE_bit: 
+				prnt(bit);
+				break;
+			case TYPE_bte: 
+				prnt(bte);
+				break;
+			case TYPE_sht:
+				prnt(sht);
+				break;
+			case TYPE_int:
+			case TYPE_inet4:
+				prnt(int);
+				break;
+			case TYPE_date:
+				prnt(date);
+				break;
+			case TYPE_lng:
+				prnt(lng);
+				break;
+			case TYPE_oid:
+				prnt(oid);
+				break;
+			case TYPE_daytime:
+				prnt(daytime);
+				break;
+			case TYPE_timestamp:
+				prnt(timestamp);
+				break;
+#ifdef HAVE_HGE
+			case TYPE_hge:
+			case TYPE_uuid:
+				prnt(hge);
+				break;
+#endif
+			case TYPE_flt:
+				prnt(flt);
+				break;
+			case TYPE_dbl:
+				prnt(dbl);
+				break;
+			default:
+				mnstr_printf(fdout, "ht_print: unsupported type %d\n", ht->type);
+		}
+		if (ht->pgids) {
+			mnstr_printf(fdout, "#------------------------------------\n");
+		} else {
+			mnstr_printf(fdout, "#--------------------------\n");
+		}
+	}
 }
 
 void
