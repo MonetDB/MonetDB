@@ -375,10 +375,13 @@ GDKextendf(int fd, size_t size, const char *fn)
 #ifdef HAVE_POSIX_FALLOCATE
 		/* posix_fallocate returns error number on failure,
 		 * not -1 :-( */
-		if ((rt = posix_fallocate(fd, stb.st_size, (off_t) size - stb.st_size)) == EINVAL)
-			/* on Solaris/OpenIndiana, this may mean that
-			 * the underlying file system doesn't support
-			 * the operation, so just resize the file */
+		rt = posix_fallocate(fd, stb.st_size, (off_t) size - stb.st_size);
+		if (rt != 0)
+			errno = rt;
+		if (rt == EINVAL || rt == EOPNOTSUPP)
+			/* some systems seem to return EINVAL and others
+			 * EOPNOTSUPP if the file system doesn't support
+			 * this operation */
 #endif
 #endif
 			/* we get here when (posix_)fallocate fails
