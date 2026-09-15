@@ -1,0 +1,99 @@
+statement ok
+CREATE TABLE t0(c0 INTEGER)
+
+statement ok
+CREATE TABLE t2(c0 INTEGER)
+
+statement ok rowcount 1
+INSERT INTO t0 VALUES (1)
+
+statement ok rowcount 1
+INSERT INTO t2 VALUES (2)
+
+-- INNER JOIN: all next INNER JOIN queries should return no rows
+
+query I rowsort
+SELECT t2.c0
+FROM t0 INNER JOIN t2 ON t0.c0 = t2.c0
+----
+
+query I rowsort
+SELECT t2.c0
+FROM t0 INNER JOIN t2 ON t0.c0 = t2.c0
+GROUP BY t2.c0
+----
+
+-- Q1  DQR base: issue: HAVING keeps the phantom NULL group
+query I rowsort
+SELECT t2.c0
+FROM t0 INNER JOIN t2 ON t0.c0 = t2.c0
+GROUP BY t2.c0
+HAVING MIN(t2.c0) IS NOT NULL
+----
+
+-- Q2  DQR moved: same boolean as ref1
+query I rowsort
+SELECT ref0 FROM (
+  SELECT t2.c0 AS ref0, (MIN(t2.c0) IS NOT NULL) AS ref1
+  FROM t0 INNER JOIN t2 ON t0.c0 = t2.c0
+  GROUP BY t2.c0
+) AS s WHERE ref1
+----
+
+statement ok
+DROP TABLE t0
+
+statement ok
+DROP TABLE t2
+
+-- LEFT JOIN variant:
+
+statement ok
+CREATE TABLE t0(c0 INTEGER)
+
+statement ok
+CREATE TABLE t3(c0 INTEGER)
+
+statement ok rowcount 1
+INSERT INTO t0 VALUES (1)
+
+query I rowsort
+SELECT t3.c0
+FROM t0 LEFT JOIN t3 ON t0.c0 = t3.c0
+WHERE t3.c0 IS NULL
+----
+NULL
+
+query I rowsort
+SELECT t3.c0
+FROM t0 LEFT JOIN t3 ON t0.c0 = t3.c0
+WHERE t3.c0 IS NULL
+GROUP BY t3.c0
+----
+NULL
+
+-- next 2 queries should return no rows
+-- Q1  DQR base
+query I rowsort
+SELECT t3.c0
+FROM t0 LEFT JOIN t3 ON t0.c0 = t3.c0
+WHERE t3.c0 IS NULL
+GROUP BY t3.c0
+HAVING t3.c0 IS NOT NULL
+----
+
+-- Q2  DQR moved
+query I rowsort
+SELECT ref0 FROM (
+  SELECT t3.c0 AS ref0, (t3.c0 IS NOT NULL) AS ref1
+  FROM t0 LEFT JOIN t3 ON t0.c0 = t3.c0
+  WHERE t3.c0 IS NULL
+  GROUP BY t3.c0
+) AS s WHERE ref1
+----
+
+statement ok
+DROP TABLE t0
+
+statement ok
+DROP TABLE t3

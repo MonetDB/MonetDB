@@ -1,0 +1,66 @@
+statement ok
+CREATE TABLE b2(c0 BOOLEAN, c1 BOOLEAN)
+
+statement ok rowcount 2
+INSERT INTO b2 VALUES (true,false),(false,true)
+
+query I nosort
+SELECT count(*) FROM b2 WHERE (c0 LIKE c0)
+----
+2
+
+query I nosort
+SELECT count(*) FROM b2 WHERE (NOT (c0 AND c1))
+----
+2
+
+-- next query fails with: 42000!Error in optimizer defaultpipe: TypeException:user.main[17]:'calc.or' undefined in:     X_111:any := calc.or(X_107:bit, X_109:oid);
+-- createExceptionInternal: ERROR: MALException:defaultpipe:42000!Error in optimizer defaultpipe: TypeException:user.main[17]:'calc.or' undefined in:     X_111:any := calc.or(X_107:bit, X_109:oid);
+query I nosort
+SELECT count(*) FROM b2 WHERE (c0 LIKE c0) = (NOT (c0 AND c1))
+----
+2
+
+query T nosort
+EXPLAIN SELECT count(*) FROM b2 WHERE (c0 LIKE c0) = (NOT (c0 AND c1))
+----
+project (
+| group by (
+| | select (
+| | | table("sys"."b2") [ "b2"."c0", "b2"."c1" ]
+| | ) [ ((varchar["b2"."c0"]) FILTER "sys"."like"(varchar["b2"."c0"], varchar "", boolean(1) "false")) = ( !.AND("b2"."c0", "b2"."c1")) ]
+| ) [  ] [ "sys"."count"() as "%1"."%1" ]
+) [ "%1"."%1" ]
+
+-- next query fails with: 42000!Error in optimizer defaultpipe: TypeException:user.main[17]:'calc.or' undefined in:     X_111:any := calc.or(X_107:bit, X_109:oid);
+query T nosort
+EXPLAIN PHYSICAL SELECT count(*) FROM b2 WHERE (c0 LIKE c0) = (NOT (c0 AND c1))
+----
+
+
+query I nosort
+SELECT count(*) FROM b2 WHERE (c0 = c0)
+----
+2
+
+-- next query fails with: 42000!Error in optimizer defaultpipe: TypeException:user.main[14]:'calc.or' undefined in:     X_100:any := calc.or(X_96:bit, X_98:oid);
+-- createExceptionInternal: ERROR: MALException:defaultpipe:42000!Error in optimizer defaultpipe: TypeException:user.main[14]:'calc.or' undefined in:     X_100:any := calc.or(X_96:bit, X_98:oid);
+query I nosort
+SELECT count(*) FROM b2 WHERE (c0 = c0) = (NOT (c0 AND c1))
+----
+2
+
+query T nosort
+EXPLAIN SELECT count(*) FROM b2 WHERE (c0 = c0) = (NOT (c0 AND c1))
+----
+project (
+| group by (
+| | select (
+| | | table("sys"."b2") [ "b2"."c0", "b2"."c1" ]
+| | ) [ (("b2"."c0") = ("b2"."c0")) = ( !.AND("b2"."c0", "b2"."c1")) ]
+| ) [  ] [ "sys"."count"() as "%1"."%1" ]
+) [ "%1"."%1" ]
+
+statement ok
+DROP TABLE b2
+
