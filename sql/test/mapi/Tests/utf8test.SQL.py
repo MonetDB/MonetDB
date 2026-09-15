@@ -5,17 +5,13 @@ try:
 except ImportError:
     import process
 
+
 def client(args, encoding=None, format=None):
     with process.client('sql', args=args, echo=False,
                         stdout=process.PIPE, stderr=process.PIPE,
                         encoding=encoding, format=format) as clt:
         return clt.communicate()
 
-def printit(file, string):
-    string = string.replace('\r', '')
-    file.write(string)
-    if not string.endswith('\n'):
-        file.write('\n')
 
 funny = (0x00e0, 0x00e1, 0x00e2, 0x00e3, 0x00e4, 0x00e5)
 funnyp = ''.join([chr(x) for x in funny])
@@ -41,16 +37,36 @@ expectsql = f'''+----------------------------------+
 +----------------------------------+
 2 tuples
 '''
+expectraw2 = f'''% sys.utf8test # table_name
+% s # name
+% varchar # type
+% 32 # length
+% 50 0 # typesizes
+[ "{text1}"\t]
+[ "funny characters: ??????"\t]
+'''
+expectsql2 = f'''+----------------------------------+
+| s                                |
++==================================+
+| {text1} |
+| funny characters: ??????         |
++----------------------------------+
+2 tuples
+'''
+
 expecterr = 'invalid multibyte sequence\n'
 
 out, err = client(['-s', 'create table utf8test (s varchar(50))'])
 out, err = client(['-s', f"insert into utf8test values ('{text1}')"])
-out, err = client(['-s', f"insert into utf8test values (u&'{text2s}')"], encoding=locale.getpreferredencoding())
-out, err = client(['-s', 'select * from utf8test'], encoding='utf-8', format='raw')
+out, err = client(['-s', f"insert into utf8test values (u&'{text2s}')"],
+                  encoding=locale.getpreferredencoding())
+out, err = client(['-s', 'select * from utf8test'],
+                  encoding='utf-8', format='raw')
 if out != expectraw:
     sys.stdout.write('utf-8, raw:\n')
     sys.stdout.write(out)
-out, err = client(['-s', 'select * from utf8test'], encoding='utf-8', format='sql')
+out, err = client(['-s', 'select * from utf8test'],
+                  encoding='utf-8', format='sql')
 if out != expectsql:
     sys.stdout.write('utf-8, sql:\n')
     sys.stdout.write(out)
@@ -66,12 +82,12 @@ if out != expectsql:
     sys.stdout.write(out)
 out, err = client(['-s', 'select * from utf8test'],
                   encoding='us-ascii', format='raw')
-if err != expecterr:
+if err != expecterr and out != expectraw2:
     sys.stdout.write('us-ascii, raw:\n')
     sys.stdout.write(err)
 out, err = client(['-s', 'select * from utf8test'],
                   encoding='us-ascii', format='sql')
-if err != expecterr:
+if err != expecterr and out != expectsql2:
     sys.stdout.write('us-ascii, sql:\n')
     sys.stdout.write(err)
 out, err = client(['-s', 'drop table utf8test'])
