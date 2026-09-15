@@ -83,6 +83,7 @@ KNOWNFAIL?7774-insert-into-renamed-table-assertion-failure
 7880-exp_bin_conjunctive-crash
 7882-later-distinct
 7883-right-join-crash
+7885-right-join-where-true-crash
 7886-local-view-in-with
 7887-closed-connection-bug
 7888-or-false-write
@@ -200,3 +201,9 @@ KNOWNFAIL?8017-create-where-exists-select-acos-bug
 KNOWNFAIL?8018-rel2bin_select-assert-failure
 KNOWNFAIL?8019-rel_bin-exp_bin-assert-failure
 KNOWNFAIL?8020-correlated-subquery-bug
+KNOWNFAIL?8024-MALoptimizer-bug
+KNOWNFAIL?8025-having-count-bug
+KNOWNFAIL?8026-having-expression-bug
+8027-having-expression-issue
+KNOWNFAIL?8028-coalesce-groupby-rollup-having-bug
+KNOWNFAIL?8030-inner-join-group-by-bug
