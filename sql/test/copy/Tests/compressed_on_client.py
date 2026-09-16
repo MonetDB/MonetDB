@@ -4,7 +4,7 @@
 import os
 import struct
 import sys
-import pymonetdb
+from MonetDBtesting import tpymonetdb as pymonetdb
 
 TSTDB = database = os.getenv("TSTDB", 'tmpdb')
 MAPIPORT = int(os.getenv("MAPIPORT", '50000'))

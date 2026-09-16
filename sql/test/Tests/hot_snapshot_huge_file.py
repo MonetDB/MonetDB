@@ -15,7 +15,7 @@ import sys
 import tempfile
 
 import lz4.frame
-import pymonetdb
+from MonetDBtesting import tpymonetdb as pymonetdb
 
 log_level = logging.DEBUG
 log_format = '%(levelname)s:t=%(relativeCreated)d:func=%(funcName)s:line=%(lineno)d:%(message)s'
