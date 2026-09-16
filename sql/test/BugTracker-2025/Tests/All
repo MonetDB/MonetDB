@@ -91,7 +91,7 @@ KNOWNFAIL?7750-dependency-not-removed-bug
 7753-like-in-projection
 !HAVE_HGE?7754-overflow-in-conversion-to-decimal
 7756-anti-join-null
-7759-replace-wrong-error
+HAVE_LIBPCRE?7759-replace-wrong-error
 7761-semijoin-string-comparison
 7763-exits-with-null
 7760-groupby_posarg_CP

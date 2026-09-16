@@ -7,15 +7,30 @@
 # For copyright information, see the file debian/copyright.
 
 from pymonetdb import *
+from pymonetdb import __version__
+from pymonetdb import __all__
+
+import os
+import time
+_timeout = int(os.getenv('TIMEOUT', '0'))
+_starttime = time.time() if _timeout > 0 else 0
+_endtime = _starttime + _timeout
+
 connect_orig = connect
+
+
 def connect(*args, **kwargs):
-    import os
-    timeout = int(os.environ.get('TIMEOUT', '0'))
-    if timeout > 0:
+    if _timeout > 0:
+        curtime = time.time()
+        if curtime >= _endtime:
+            raise TimeoutError('Timed out')
         kwargs = kwargs.copy()
         kwargs['connect_timeout'] = 20
+        timeout = _endtime - curtime  # time remaining
+    else:
+        timeout = 0
     h = connect_orig(*args, **kwargs)
-    if timeout > 0:
+    if _timeout > 0:
         h.settimeout(timeout)
         with h.cursor() as c:
             c.execute(f'call sys.setsessiontimeout({timeout})')
