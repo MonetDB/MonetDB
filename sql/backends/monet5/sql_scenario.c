@@ -969,9 +969,7 @@ shouldStop(void *data)
 			((backend *) c->sqlcontext)->mvc->session->tr->active &&
 			time(NULL)- c->idle > c->idletimeout)
 			return true;
-		if (c->sessiontimeout &&
-			c->session &&
-			(GDKusec() - c->session) > c->sessiontimeout)
+		if (c->sessiontimeout && GDKusec() >= c->sessiontimeout)
 			return true;
 	}
 	return false;
@@ -1237,7 +1235,7 @@ SQLreader(Client c, backend *be)
 			}
 		}
 	}
-	if ( (c->sessiontimeout && (GDKusec() - c->session) > c->sessiontimeout) || !go || (strncmp(CURRENT(c), "\\q", 2) == 0)) {
+	if ( (c->sessiontimeout && GDKusec() >= c->sessiontimeout) || !go || (strncmp(CURRENT(c), "\\q", 2) == 0)) {
 		in->pos = in->len;	/* skip rest of the input */
 		MT_lock_set(&mal_contextLock);
 		c->mode = FINISHCLIENT;
@@ -1728,6 +1726,8 @@ SQLparser(Client c, backend *be)
 
 	c->qryctx.starttime = GDKusec();
 	c->qryctx.endtime = c->querytimeout ? c->qryctx.starttime + c->querytimeout : 0;
+	if (c->qryctx.endtime == 0 || c->sessiontimeout < c->qryctx.endtime)
+		c->qryctx.endtime = c->sessiontimeout;
 
 	if ((msg = SQLtrans(m)) != MAL_SUCCEED) {
 		c->mode = FINISHCLIENT;
