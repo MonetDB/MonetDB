@@ -77,7 +77,7 @@ typedef struct CLIENT {
 	int memorylimit;			/* maximum memory currently allowed in MB */
 	lng maxmem;					/* max_memory from db_user_info table */
 	lng sessiontimeout;			/* session abort after x usec, 0 = no limit */
-	lng logical_sessiontimeout;	/* logical session timeout, client defined */
+	int logical_sessiontimeout;	/* logical session timeout, client defined */
 	lng idletimeout;			/* idle in active transaction timeout */
 	lng querytimeout;			/* timeout per query in usec, 0 = no limit */
 	QryCtx qryctx;				/* per query limitations */

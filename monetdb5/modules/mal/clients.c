@@ -545,7 +545,7 @@ CLTsessionTimeout(Client ctx, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 							  "Session not active anymore");
 	else {
 		mal_clients[idx].sessiontimeout = sto > 0 ? (lng) sto *1000000 + (GDKusec() - mal_clients[idx].session) : 0;
-		mal_clients[idx].logical_sessiontimeout = (lng) sto;
+		mal_clients[idx].logical_sessiontimeout = sto;
 	}
 	MT_lock_unset(&mal_contextLock);
 	return msg;
