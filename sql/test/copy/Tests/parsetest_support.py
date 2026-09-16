@@ -11,7 +11,7 @@ from io import StringIO
 # to use plain list and tuple
 from typing import Any, Optional, Tuple, List
 
-import pymonetdb
+from MonetDBtesting import tpymonetdb as pymonetdb
 
 ######
 # Infrastructure
