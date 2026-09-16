@@ -362,9 +362,8 @@ mvc_bin_import_column_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p
 }
 
 static str
-import_nul_terminated(backend *be, bat *ret, BUN *retcnt, str method, int width, bat bytes, BUN nrows)
+import_nul_terminated(bat *ret, BUN *retcnt, str method, int width, bat bytes, BUN nrows)
 {
-	(void)be;
 	const str mal_operator = "sql.importNulTerminated";
 	str msg = MAL_SUCCEED;
 	BAT *input = NULL;
@@ -439,6 +438,7 @@ str
 mvc_bin_import_nul_terminated_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	(void)mb;
+	(void)cntxt;
 
 	assert(pci->retc == 2);
 	bat *ret = getArgReference_bat(stk, pci, 0);
@@ -450,9 +450,7 @@ mvc_bin_import_nul_terminated_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, In
 	bat bytes = *getArgReference_bat(stk, pci, 4);
 	BUN nrows = *getArgReference_oid(stk, pci, 5);
 
-	backend *be = cntxt->sqlcontext;
-
-	return import_nul_terminated(be, ret, retcnt, method, width, bytes, nrows);
+	return import_nul_terminated(ret, retcnt, method, width, bytes, nrows);
 }
 
 
