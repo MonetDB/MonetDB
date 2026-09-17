@@ -842,6 +842,7 @@ const char alter_seqRef[];
 const char alter_set_tableRef[];
 const char alter_tableRef[];
 const char alter_userRef[];
+const char andRef[];
 const char appendBulkRef[];
 const char appendRef[];
 const char assertRef[];
