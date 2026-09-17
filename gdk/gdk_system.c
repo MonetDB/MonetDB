@@ -139,14 +139,16 @@ lock_isset(MT_Lock *l)
 
 /* function used for debugging */
 void
-GDKlockstatistics(int what)
+GDKlockstatistics(FILE *outf, int what)
 {
 	MT_Lock *l;
 	int n = 0;
 
-	printf("Locks:\n");
+	if (outf == NULL)
+		outf = stdout;
+	fprintf(outf, "Locks:\n");
 	if (ATOMIC_TAS(&GDKlocklistlock) != 0) {
-		printf("GDKlocklistlock is set, so cannot access lock list\n");
+		fprintf(outf, "GDKlocklistlock is set, so cannot access lock list\n");
 		return;
 	}
 	if (what == -1) {
@@ -159,28 +161,28 @@ GDKlockstatistics(int what)
 		return;
 	}
 	GDKlocklist = sortlocklist(GDKlocklist);
-	printf("%-18s\t%s\t%s\t%s\t%s\t%s\t%s\n",
-	       "lock name", "count", "content", "sleep",
-	       "locked", "locker", "thread");
+	fprintf(outf, "%-18s\t%s\t%s\t%s\t%s\t%s\t%s\n",
+		"lock name", "count", "content", "sleep",
+		"locked", "locker", "thread");
 	for (l = GDKlocklist; l; l = l->next) {
 		n++;
 		if (what == 0 ||
 		    (what == 1 && l->count) ||
 		    (what == 2 && ATOMIC_GET(&l->contention)) ||
 		    (what == 3 && lock_isset(l)))
-			printf("%-18s\t%zu\t%zu\t%zu\t%s\t%s\t%s\n",
-			       l->name, l->count,
-			       (size_t) ATOMIC_GET(&l->contention),
-			       (size_t) ATOMIC_GET(&l->sleep),
-			       lock_isset(l) ? "locked" : "",
-			       l->locker ? l->locker : "",
-			       l->thread ? l->thread : "");
+			fprintf(outf, "%-18s\t%zu\t%zu\t%zu\t%s\t%s\t%s\n",
+				l->name, l->count,
+				(size_t) ATOMIC_GET(&l->contention),
+				(size_t) ATOMIC_GET(&l->sleep),
+				lock_isset(l) ? "locked" : "",
+				l->locker ? l->locker : "",
+				l->thread ? l->thread : "");
 	}
-	printf("Number of locks: %d\n", n);
-	printf("Total lock count: %zu\n", (size_t) ATOMIC_GET(&GDKlockcnt));
-	printf("Lock contention:  %zu\n", (size_t) ATOMIC_GET(&GDKlockcontentioncnt));
-	printf("Lock sleep count: %zu\n", (size_t) ATOMIC_GET(&GDKlocksleepcnt));
-	fflush(stdout);
+	fprintf(outf, "Number of locks: %d\n", n);
+	fprintf(outf, "Total lock count: %zu\n", (size_t) ATOMIC_GET(&GDKlockcnt));
+	fprintf(outf, "Lock contention:  %zu\n", (size_t) ATOMIC_GET(&GDKlockcontentioncnt));
+	fprintf(outf, "Lock sleep count: %zu\n", (size_t) ATOMIC_GET(&GDKlocksleepcnt));
+	fflush(outf);
 	ATOMIC_CLEAR(&GDKlocklistlock);
 }
 
@@ -293,28 +295,36 @@ THRhighwater(void)
 }
 
 void
-dump_threads(void)
+dump_threads(FILE *outf)
 {
 	char buf[1024];
+
+	if (outf == NULL)
+		outf = stdout;
+
 #if defined(HAVE_PTHREAD_MUTEX_TIMEDLOCK) && defined(HAVE_CLOCK_GETTIME)
 	struct timespec ts;
 	clock_gettime(CLOCK_REALTIME, &ts);
 	ts.tv_sec++;		/* give it a second */
 	if (pthread_mutex_timedlock(&posthread_lock, &ts) != 0) {
-		printf("Threads are currently locked, so no thread information\n");
+		fprintf(outf,
+			"Threads are currently locked, "
+			"so no thread information\n");
 		return;
 	}
 #else
 	if (!thread_lock_try()) {
 		MT_sleep_ms(1000);
 		if (!thread_lock_try()) {
-		printf("Threads are currently locked, so no thread information\n");
+			fprintf(outf,
+				"Threads are currently locked, "
+				"so no thread information\n");
 			return;
 		}
 	}
 #endif
 	if (!GDK_TRACER_TEST(M_DEBUG, THRD))
-		printf("Threads:\n");
+		fprintf(outf, "Threads:\n");
 	for (struct mtthread *t = mtthreads; t; t = t->next) {
 		MT_Lock *lk = ATOMIC_PTR_GET(&t->lockwait);
 		MT_Sema *sm = ATOMIC_PTR_GET(&t->semawait);
@@ -332,7 +342,8 @@ dump_threads(void)
 #ifdef HAVE_GETTID
 				   "LWP %ld, "
 #endif
-				   "%"PRIu32" free bats, waiting for %s%s%s, working on %.200s",
+				   "%" PRIu32 " free bats, waiting for %s%s%s, "
+				   "working on %.200s",
 				   t->threadname,
 				   t->tid,
 #ifdef HAVE_PTHREAD_H
@@ -356,9 +367,11 @@ dump_threads(void)
 		}
 #endif
 		TRC_DEBUG_IF(THRD)
-			TRC_DEBUG_ENDIF(THRD, "%s%s\n", buf, pos >= (int) sizeof(buf) ? "..." : "");
+			TRC_DEBUG_ENDIF(THRD, "%s%s\n", buf,
+					pos >= (int) sizeof(buf) ? "..." : "");
 		else
-			printf("%s%s\n", buf, pos >= (int) sizeof(buf) ? "..." : "");
+			fprintf(outf, "%s%s\n", buf,
+				pos >= (int) sizeof(buf) ? "..." : "");
 	}
 	thread_unlock();
 }

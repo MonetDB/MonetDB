@@ -19,7 +19,7 @@
 
 #include "gdk.h"
 
-void dump_threads(void)
+void dump_threads(FILE *outf)
 	__attribute__((__visibility__("hidden")));
 void join_detached_threads(void)
 	__attribute__((__visibility__("hidden")));
