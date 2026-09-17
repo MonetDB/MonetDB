@@ -505,6 +505,8 @@ CLTqueryTimeoutMicro(Client ctx, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		QryCtx *qry_ctx = MT_thread_get_qry_ctx();
 		if (qry_ctx) {
 			qry_ctx->endtime = qry_ctx->starttime && qto ? qry_ctx->starttime + qto : 0;
+			if (qry_ctx->endtime == 0 || ctx->sessiontimeout < qry_ctx->endtime)
+				qry_ctx->endtime = ctx->sessiontimeout;
 		}
 	}
 	MT_lock_unset(&mal_contextLock);
@@ -544,8 +546,8 @@ CLTsessionTimeout(Client ctx, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		msg = createException(MAL, "clients.setsessiontimeout",
 							  "Session not active anymore");
 	else {
-		mal_clients[idx].sessiontimeout = sto > 0 ? (lng) sto *1000000 + (GDKusec() - mal_clients[idx].session) : 0;
-		mal_clients[idx].logical_sessiontimeout = (lng) sto;
+		mal_clients[idx].sessiontimeout = sto > 0 ? sto * LL_CONSTANT(1000000) + GDKusec() : 0;
+		mal_clients[idx].logical_sessiontimeout = sto;
 	}
 	MT_lock_unset(&mal_contextLock);
 	return msg;
@@ -564,7 +566,7 @@ CLTgetProfile(Client ctx, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (!(*opt = ma_strdup(mb->ma, ctx->optimizer)))
 		throw(MAL, "clients.getProfile", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	*qto = (int) (ctx->querytimeout / 1000000);
-	*sto = (int) (ctx->sessiontimeout / 1000000);
+	*sto = ctx->logical_sessiontimeout;
 	*wlim = ctx->workerlimit;
 	*mlim = ctx->memorylimit;
 	return MAL_SUCCEED;

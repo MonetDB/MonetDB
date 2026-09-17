@@ -101,8 +101,14 @@ malEmbeddedBoot(int workerlimit, int memorylimit, int querytimeout,
 	c->workerlimit = workerlimit;
 	c->memorylimit = memorylimit;
 	c->querytimeout = querytimeout * 1000000;	// from sec to usec
-	c->qryctx.endtime = c->qryctx.starttime && c->querytimeout ? c->qryctx.starttime + c->querytimeout : 0;
-	c->sessiontimeout = sessiontimeout * 1000000;
+	if (c->qryctx.starttime && c->querytimeout)
+		c->qryctx.endtime = c->qryctx.starttime + c->querytimeout;
+	if (sessiontimeout > 0) {
+		c->logical_sessiontimeout = sessiontimeout;
+		c->sessiontimeout = GDKusec() + sessiontimeout * LL_CONSTANT(1000000);
+		if (c->qryctx.endtime == 0 || c->sessiontimeout < c->qryctx.endtime)
+			c->qryctx.endtime = c->sessiontimeout;
+	}
 	c->curmodule = c->usermodule = userModule();
 	if (c->usermodule == NULL) {
 		MCcloseClient(c);

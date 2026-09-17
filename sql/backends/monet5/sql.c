@@ -3776,8 +3776,7 @@ sql_sessions_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				goto bailout;
 		if (BUNappend(login, &ts, false) != GDK_SUCCEED)
 			goto bailout;
-		timeout = (int) (c->logical_sessiontimeout);
-		if (BUNappend(sessiontimeout, &timeout, false) != GDK_SUCCEED)
+		if (BUNappend(sessiontimeout, &c->logical_sessiontimeout, false) != GDK_SUCCEED)
 			goto bailout;
 		timeout = (int) (c->querytimeout / 1000000);
 		if (BUNappend(querytimeout, &timeout, false) != GDK_SUCCEED)
