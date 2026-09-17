@@ -10,7 +10,9 @@
 
 #include "monetdb_config.h"
 
+#include "mal_backend.h"
 #include "mal_instruction.h"
+#include "mal_namespace.h"
 #include "rel_bin.h"
 #include "rel_exp.h"
 #include "rel_pphash.h"
@@ -127,6 +129,19 @@ oahash_slicer(backend *be, stmt *sub)
 	return sub;
 }
 
+static stmt *
+InstrPtr2stmt(backend *be, const stmt *s, int nr, sql_subtype *tpe)
+{
+	stmt *ss = stmt_none(be);
+	if (!ss) return NULL;
+
+	ss->nr = getArg(s->q, nr);
+	ss->nrcols = s->nrcols;
+	ss->q = s->q;
+	ss->op4.typeval = *tpe;
+	return ss;
+}
+
 /* Generates the parallel block to probe the hash table
  */
 static stmt *
@@ -136,7 +151,8 @@ oahash_probe(backend *be, sql_rel *rel, list *jexps, list *exps_cmp_prb, const s
 	bool has_leftouter = (rel->op == op_left || rel->op == op_full /*|| (rel->op == op_right && rel->oahash == 1)*/);
 
 	/* stmts_ht is in the same order as the join columns */
-	for (node *n = exps_cmp_prb->h, *m = stmts_ht->op4.lval->h, *o = jexps->h; n && m && o; n = n->next, m = m->next, o = o->next) {
+	node *n = exps_cmp_prb->h, *m = stmts_ht->op4.lval->h, *o = jexps->h;
+	for (; n && m && o; n = n->next, m = m->next, o = o->next) {
 		sql_exp *e = n->data;
 		sql_exp *e2 = o->data;
 		stmt *key = exp_bin(be, e, sub, NULL, NULL, NULL, NULL, NULL, 0, 0, 0);
@@ -146,7 +162,7 @@ oahash_probe(backend *be, sql_rel *rel, list *jexps, list *exps_cmp_prb, const s
 		bool eq = (e2->flag == cmp_equal) && !anti;
 		bool grpjoin = groupjoin && is_any(e2);
 
-		prb_res = stmt_oahash_probe(be, key, prb_res, m->data, stmts_ht->op3, outerm, single, e2->semantics, eq, has_leftouter, grpjoin);
+		prb_res = stmt_oahash_probe(be, key, prb_res, m->data, stmts_ht->op3, outerm, single, e2->semantics, eq, has_leftouter, grpjoin, anti&&grpjoin);
 		if (prb_res == NULL) return NULL;
 
 		if (has_leftouter || grpjoin) {
@@ -157,6 +173,76 @@ oahash_probe(backend *be, sql_rel *rel, list *jexps, list *exps_cmp_prb, const s
 		if (nulls && stmt_has_null(key) && is_any(e2))
 			*nulls = stmt_selectnil(be, key, *nulls);
 	}
+	if (anti && groupjoin) {
+		assert(n && o && !m); // for grouped-anti-join we expect more exps to process
+		sql_subtype *tpe_oid = sql_fetch_localtype(TYPE_oid);
+		sql_subtype *tpe_bit = sql_fetch_localtype(TYPE_bit);
+		stmt *hp_pos = stmts_ht->op2, *freq = stmts_ht->op3;
+		stmt *prb_oid = NULL, *hsh_gid = NULL, *mrk = NULL;
+
+		prb_oid = InstrPtr2stmt(be, prb_res, 0, tpe_oid);
+		hsh_gid = InstrPtr2stmt(be, prb_res, 1, tpe_oid);
+		mrk     = InstrPtr2stmt(be, prb_res, 2, tpe_bit);
+		/* Get only the rows that are !FALSE */
+		stmt *sel = stmt_thetaselect(be, mrk, NULL, stmt_bool(be, 0), "ne", tpe_oid);
+		prb_oid = stmt_project(be, sel, prb_oid);
+		hsh_gid = stmt_project(be, sel, hsh_gid);
+		mrk     = stmt_project(be, sel, mrk);
+
+		/* compute the prb_oid and hsh_gid (actually hp_pos) to process the "payload" columns */
+		stmt *expd = stmt_oahash_expand3(be, prb_oid, hsh_gid, mrk, freq, hp_pos);
+		prb_oid = InstrPtr2stmt(be, expd, 0, tpe_oid);
+		hsh_gid = InstrPtr2stmt(be, expd, 1, tpe_oid);
+		mrk     = InstrPtr2stmt(be, expd, 2, tpe_bit);
+
+		for (node *p = stmts_ht->op1->op4.lval->h; n && o && p; n = n->next, o = o->next, p = p->next) {
+			sql_exp *prb_e = n->data;
+			stmt *prb_col = exp_bin(be, prb_e, sub, NULL, NULL, NULL, NULL, NULL, 0, 0, 0);
+			assert(prb_col); /* must find */
+			prb_col = column(be, prb_col);
+			stmt *hsh_col = p->data; // TODO check that it is the correct payload column
+
+			prb_col = stmt_project(be, prb_oid, prb_col);
+			hsh_col = stmt_project(be, hsh_gid, hsh_col);
+			
+			/* compute prb_col == hsh_col */
+			InstrPtr q = newStmt(be->mb, batcalcRef, eqRef);
+			if (q == NULL) return NULL;
+			setVarType(be->mb, getArg(q, 0), newBatType(TYPE_bit));
+			q = pushArgument(be->mb, q, prb_col->nr);
+			q = pushArgument(be->mb, q, hsh_col->nr);
+			pushInstruction(be->mb, q);
+			//stmt *mrk2 = stmt_none(be);
+			//if (mrk2 == NULL) return NULL;
+			//mrk2->op4.typeval = *tpe_bit;
+			//mrk2->nr = getArg(q, 0);
+			//mrk2->nrcols = prb_oid->nrcols;
+			//mrk2->q = q;
+			
+			/* merge the two mrks */
+			InstrPtr qq = newStmt(be->mb, batcalcRef, andRef);
+			if (qq == NULL) return NULL;
+			setVarType(be->mb, getArg(qq, 0), newBatType(TYPE_bit));
+			q = pushArgument(be->mb, qq, mrk->nr);
+			q = pushArgument(be->mb, qq, getArg(q,0));
+			pushInstruction(be->mb, qq);
+			stmt *s = stmt_none(be);
+			if (s == NULL) return NULL;
+			s->op4.typeval = *tpe_bit;
+			s->nr = getArg(q, 0);
+			s->nrcols = prb_oid->nrcols;
+			s->q = q;
+			mrk = s;
+
+			/* Get only the rows that are !FALSE */
+			sel = stmt_thetaselect(be, mrk, NULL, stmt_bool(be, 0), "ne", tpe_oid);
+			prb_oid = stmt_project(be, sel, prb_oid);
+			hsh_gid = stmt_project(be, sel, hsh_gid);
+			mrk     = stmt_project(be, sel, mrk);
+		}
+	}
+	assert(!n && !m && !o); // just make sure that all exps have been processed
+
 	if ((has_leftouter || groupjoin) && outerm)
 		*prb_mrk = outerm;
 	/* probe of last column is the final res */
@@ -371,6 +457,7 @@ rel2bin_oahash_build(backend *be, sql_rel *rel, list *refs)
 	return stmts_ht;
 }
 
+#if 0
 static bool
 groupjoin_mark( list *attr )
 {
@@ -382,6 +469,7 @@ groupjoin_mark( list *attr )
 	}
 	return mark;
 }
+#endif
 
 static stmt *
 rel2bin_oahash_equi_join(backend *be, sql_rel *rel, list *refs, list *jexps, stmt **probed_rowids, stmt **probe_sub, stmt **nulls, stmt **prb_mrk, stmt **hsh_mrk, list **probe_side, list **hash_side, bool has_outerselect)
@@ -396,15 +484,10 @@ rel2bin_oahash_equi_join(backend *be, sql_rel *rel, list *refs, list *jexps, stm
 		rel_hsh = rel->r;
 		rel_prb = rel->l;
 	}
-	list *exps_cmp_prb = rel_prb->attr;
-	list *exps_prj_prb = rel_prb->exps;
-	list *exps_prj_hsh = rel_hsh->exps;
 
-	assert(list_length(jexps) == list_length(exps_cmp_prb));
 	/* build-phase res: hash-table and hash-payload stmts */
 	stmt *stmts_ht = refs_find_rel(refs, rel_hsh);
 	if (!stmts_ht) return NULL;
-	bool groupedjoin = (!list_empty(rel->attr)), mark = groupjoin_mark(rel->attr);
 
 	/*** PROBE PHASE ***/
 	stmt *sub = _start_pp(be, rel_prb->l, false, refs, NULL);
@@ -412,13 +495,32 @@ rel2bin_oahash_equi_join(backend *be, sql_rel *rel, list *refs, list *jexps, stm
 	if (probe_sub)
 		*probe_sub = sub;
 
-	stmt *prb_res = oahash_probe(be, rel, jexps, exps_cmp_prb, stmts_ht, sub, false /*anti*/, mark/*groupjoin*/, has_outerselect, nulls, prb_mrk);
+	list *exps_cmp_prb = rel_prb->attr;
+	list *exps_prj_prb = rel_prb->exps;
+	list *exps_prj_hsh = rel_hsh->exps;
+
+	bool groupedjoin = false, mark = false, antiwithnull = false;
+	if (!list_empty(rel->attr)) {
+		groupedjoin = true;
+		if (list_length(rel->attr) == 1) {
+        	sql_exp *e = rel->attr->h->data;
+        	if (exp_is_atom(e)) {
+            	mark = true;
+				if (!exp_is_true(rel->attr->h->data)) {
+					antiwithnull = true;
+				}
+			}
+		}
+	}
+	assert((list_length(jexps) == list_length(exps_cmp_prb)));// || (antiwithnull && list_length(jexps) >= list_length(exps_cmp_prb)));
+
+	stmt *prb_res = oahash_probe(be, rel, jexps, exps_cmp_prb, stmts_ht, sub, antiwithnull, mark/*groupjoin*/, has_outerselect, nulls, prb_mrk);
 	if (prb_res == NULL) return NULL;
 
 	/*** PROJECT RESULT PHASE ***/
-	bit leftouter = (rel->op == op_left || rel->op == op_full /*|| (rel->op == op_right && rel->oahash == 1)*/);
-	list *lp = oahash_project_prb(be, exps_prj_prb, prb_res, stmts_ht->op3, leftouter, sub, probed_rowids);
-	list *lh = oahash_project_hsh(be, exps_prj_hsh, stmts_ht, prb_res, leftouter, hsh_mrk);
+	bit hasleftouter = (rel->op == op_left || rel->op == op_full /*|| (rel->op == op_right && rel->oahash == 1)*/);
+	list *lp = oahash_project_prb(be, exps_prj_prb, prb_res, stmts_ht->op3, hasleftouter, sub, probed_rowids);
+	list *lh = oahash_project_hsh(be, exps_prj_hsh, stmts_ht, prb_res, hasleftouter, hsh_mrk);
 
 	bit outer = is_outerjoin(rel->op);
 	/* !exps_prj_hsh => !shared_hp => mark the last hash-column instead of a payload column */
@@ -1346,7 +1448,7 @@ rel2bin_oahash_semi(backend *be, sql_rel *rel, list *refs)
 	if (!sub)
 		return NULL;
 	if (list_empty(jexps) && list_empty(sexps) && rel->op == op_anti) {
-		/* outer cross product, ie only return rows if tid is nil (ie were hash side does not exist)*/
+		/* outer cross product, ie only return rows if tid is nil (ie where hash side does not exist)*/
 		assert(hash_side->h);
 		nulls = stmt_selectnil(be, hash_side->h->data, NULL);
 

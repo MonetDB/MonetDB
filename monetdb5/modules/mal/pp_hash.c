@@ -109,6 +109,7 @@ _ht_create( int type, size_t size, hash_table *p, int vkey)
 	h->last = 0;
 	h->empty = true;
 	h->has_nil = 0;
+	h->gid_NULL = oid_nil;
 	h->p = p;
 	h->pinned = NULL;
 	h->pinned_nr = 0; /* no more than 1024 */
@@ -708,8 +709,6 @@ UHASHext(Client cntxt, MalBlkPtr m, MalStkPtr s, InstrPtr p)
 		Type *vals = h->vals; \
 		\
 		TIMEOUT_LOOP_IDX_DECL(i, cnt, qry_ctx) { \
-			if (need_has_nil) \
-				(void)ATOMIC_OR(&h->has_nil, is_##Type##_nil(bp[i])); \
 			bool fnd = 0; \
 			gid g = 0; \
 			while (!fnd) { \
@@ -743,6 +742,14 @@ UHASHext(Client cntxt, MalBlkPtr m, MalStkPtr s, InstrPtr p)
 				fnd = 1; \
 			} \
 			gp[i] = g-1; \
+			bit is_nil = is_##Type##_nil(bp[i]); \
+			if (need_has_nil && !h->has_nil && is_nil) {\
+				bit old_has_nil = (bit) ATOMIC_OR(&h->has_nil, is_nil); \
+				if (old_has_nil != (bit) h->has_nil) {\
+					assert(!old_has_nil && h->has_nil && is_oid_nil(h->gid_NULL)); \
+					ATOMIC_SET(&h->gid_NULL, gp[i]); \
+				} \
+			} \
 		} \
 	} while (0)
 
@@ -797,8 +804,6 @@ UHASHext(Client cntxt, MalBlkPtr m, MalStkPtr s, InstrPtr p)
 		Type *vals = h->vals; \
 		\
 		TIMEOUT_LOOP_IDX_DECL(i, cnt, qry_ctx) { \
-			if (need_has_nil) \
-				(void)ATOMIC_OR(&h->has_nil, is_##Type##_nil(bp[i])); \
 			bool fnd = 0; \
 			gid g = 0; \
 			while (!fnd) { \
@@ -832,6 +837,14 @@ UHASHext(Client cntxt, MalBlkPtr m, MalStkPtr s, InstrPtr p)
 				fnd = 1; \
 			} \
 			gp[i] = g-1; \
+			bit is_nil = is_##Type##_nil(bp[i]); \
+			if (need_has_nil && !h->has_nil && is_nil) {\
+				bit old_has_nil = (bit) ATOMIC_OR(&h->has_nil, is_nil); \
+				if (old_has_nil != (bit) h->has_nil) {\
+					assert(!old_has_nil && h->has_nil && is_oid_nil(h->gid_NULL)); \
+					ATOMIC_SET(&h->gid_NULL, gp[i]); \
+				} \
+			} \
 		} \
 	} while (0)
 
@@ -844,8 +857,6 @@ UHASHext(Client cntxt, MalBlkPtr m, MalStkPtr s, InstrPtr p)
 			bool fnd = 0; \
 			var_t voff = VarHeapVal(bi.base,i,bi.width);				\
 			void *bpi = voff == 0 ? (void*) ATOMnilptr((bi).type) : (void *) ((bi).vh->base+voff); \
-			if (need_has_nil) \
-				(void)ATOMIC_OR(&h->has_nil, (voff == 0)); \
 			gid g = 0; \
 			while (!fnd) { \
 				gid k = (gid)h->hsh(bpi)&h->mask; \
@@ -877,6 +888,14 @@ UHASHext(Client cntxt, MalBlkPtr m, MalStkPtr s, InstrPtr p)
 				fnd = 1; \
 			} \
 			gp[i] = g-1; \
+			bit is_nil = (voff == 0); \
+			if (need_has_nil && !h->has_nil && is_nil) {\
+				bit old_has_nil = (bit) ATOMIC_OR(&h->has_nil, is_nil); \
+				if (old_has_nil != (bit) h->has_nil) {\
+					assert(!old_has_nil && h->has_nil && is_oid_nil(h->gid_NULL)); \
+					ATOMIC_SET(&h->gid_NULL, gp[i]); \
+				} \
+			} \
 		} \
 		bat_iterator_end(&bi); \
 	} while (0)
@@ -892,8 +911,6 @@ UHASHext(Client cntxt, MalBlkPtr m, MalStkPtr s, InstrPtr p)
 				bool fnd = 0; \
 				var_t voff = VarHeapVal(bi.base,i,bi.width);				\
 				void *bpi = voff == 0 ? (void*) ATOMnilptr((bi).type) : (void *) ((bi).vh->base+voff); \
-				if (need_has_nil) \
-					(void)ATOMIC_OR(&h->has_nil, (voff == 0)); \
 				gid g = 0; \
 				while (!fnd) { \
 					gid k = (gid)str_hsh(bpi)&h->mask; \
@@ -925,6 +942,14 @@ UHASHext(Client cntxt, MalBlkPtr m, MalStkPtr s, InstrPtr p)
 					fnd = 1; \
 				} \
 				gp[i] = g-1; \
+				bit is_nil = (voff == 0); \
+				if (need_has_nil && !h->has_nil && is_nil) {\
+					bit old_has_nil = (bit) ATOMIC_OR(&h->has_nil, is_nil); \
+					if (old_has_nil != (bit) h->has_nil) {\
+						assert(!old_has_nil && h->has_nil && is_oid_nil(h->gid_NULL)); \
+						ATOMIC_SET(&h->gid_NULL, gp[i]); \
+					} \
+				} \
 			} \
 		} else { /* other ATOMvarsized, e.g. BLOB */ \
 			int (*atomcmp)(const void *, const void *) = ATOMcompare(tt); \
@@ -932,8 +957,6 @@ UHASHext(Client cntxt, MalBlkPtr m, MalStkPtr s, InstrPtr p)
 				bool fnd = 0; \
 				var_t voff = VarHeapVal(bi.base,i,bi.width);				\
 				void *bpi = voff == 0 ? (void*) ATOMnilptr((bi).type) : (void *) ((bi).vh->base+voff); \
-				if (need_has_nil) \
-					(void)ATOMIC_OR(&h->has_nil, (voff == 0)); \
 				gid g = 0; \
 				while (!fnd) { \
 					gid k = (gid)h->hsh(bpi)&h->mask; \
@@ -965,6 +988,14 @@ UHASHext(Client cntxt, MalBlkPtr m, MalStkPtr s, InstrPtr p)
 					fnd = 1; \
 				} \
 				gp[i] = g-1; \
+				bit is_nil = (voff == 0); \
+				if (need_has_nil && !h->has_nil && is_nil) {\
+					bit old_has_nil = (bit) ATOMIC_OR(&h->has_nil, is_nil); \
+					if (old_has_nil != (bit) h->has_nil) {\
+						assert(!old_has_nil && h->has_nil && is_oid_nil(h->gid_NULL)); \
+						ATOMIC_SET(&h->gid_NULL, gp[i]); \
+					} \
+				} \
 			} \
 		} \
 		bat_iterator_end(&bi); \
@@ -976,8 +1007,6 @@ UHASHext(Client cntxt, MalBlkPtr m, MalStkPtr s, InstrPtr p)
 		Type *vals = h->vals; \
 		\
 		TIMEOUT_LOOP_IDX_DECL(i, cnt, qry_ctx) { \
-			if (need_has_nil) \
-				(void)ATOMIC_OR(&h->has_nil, is_##Type##_nil(bp[i])); \
 			bool fnd = 0; \
 			gid g = 0; \
 			while (!fnd) { \
@@ -1013,6 +1042,9 @@ UHASHext(Client cntxt, MalBlkPtr m, MalStkPtr s, InstrPtr p)
 				fnd = 1; \
 			} \
 			gp[i] = g-1; \
+			bit is_nil = is_##Type##_nil(bp[i]); \
+			if (need_has_nil && !h->has_nil && is_nil) \
+				(void)ATOMIC_OR(&h->has_nil, is_nil); \
 		} \
 	} while (0)
 
@@ -1070,8 +1102,6 @@ UHASHext(Client cntxt, MalBlkPtr m, MalStkPtr s, InstrPtr p)
 		Type *vals = h->vals; \
 		\
 		TIMEOUT_LOOP_IDX_DECL(i, cnt, qry_ctx) { \
-			if (need_has_nil) \
-				(void)ATOMIC_OR(&h->has_nil, is_##Type##_nil(bp[i])); \
 			bool fnd = 0; \
 			gid g = 0; \
 			while (!fnd) { \
@@ -1107,6 +1137,9 @@ UHASHext(Client cntxt, MalBlkPtr m, MalStkPtr s, InstrPtr p)
 				fnd = 1; \
 			} \
 			gp[i] = g-1; \
+			bit is_nil = is_##Type##_nil(bp[i]); \
+			if (need_has_nil && !h->has_nil && is_nil) \
+				(void)ATOMIC_OR(&h->has_nil, is_nil); \
 		} \
 	} while (0)
 
@@ -1119,8 +1152,6 @@ UHASHext(Client cntxt, MalBlkPtr m, MalStkPtr s, InstrPtr p)
 			bool fnd = 0; \
 			var_t voff = VarHeapVal(bi.base,i,bi.width);				\
 			void *bpi = voff == 0 ? (void*) ATOMnilptr((bi).type) : (void *) ((bi).vh->base+voff); \
-			if (need_has_nil) \
-				(void)ATOMIC_OR(&h->has_nil, (voff == 0)); \
 			gid g = 0; \
 			while (!fnd) { \
 				gid k = (gid)combine(gi[i], h->hsh(bpi), prime)&h->mask; \
@@ -1155,6 +1186,9 @@ UHASHext(Client cntxt, MalBlkPtr m, MalStkPtr s, InstrPtr p)
 				fnd = 1; \
 			} \
 			gp[i] = g-1; \
+			bit is_nil = (voff == 0); \
+			if (need_has_nil && !h->has_nil && is_nil) \
+				(void)ATOMIC_OR(&h->has_nil, is_nil); \
 		} \
 		bat_iterator_end(&bi); \
 	} while (0)
@@ -1170,8 +1204,6 @@ UHASHext(Client cntxt, MalBlkPtr m, MalStkPtr s, InstrPtr p)
 				bool fnd = 0; \
 				var_t voff = VarHeapVal(bi.base,i,bi.width);				\
 				void *bpi = voff == 0 ? (void*) ATOMnilptr((bi).type) : (void *) ((bi).vh->base+voff); \
-				if (need_has_nil) \
-					(void)ATOMIC_OR(&h->has_nil, (voff == 0)); \
 				gid g = 0; \
 				while (!fnd) { \
 					gid k = (gid)combine(gi[i], str_hsh(bpi), prime)&h->mask; \
@@ -1206,6 +1238,9 @@ UHASHext(Client cntxt, MalBlkPtr m, MalStkPtr s, InstrPtr p)
 					fnd = 1; \
 				} \
 				gp[i] = g-1; \
+				bit is_nil = (voff == 0); \
+				if (need_has_nil && !h->has_nil && is_nil) \
+					(void)ATOMIC_OR(&h->has_nil, is_nil); \
 			} \
 			bat_iterator_end(&bi); \
 		} else { /* other ATOMvarsized, e.g. BLOB */ \
@@ -1214,8 +1249,6 @@ UHASHext(Client cntxt, MalBlkPtr m, MalStkPtr s, InstrPtr p)
 				bool fnd = 0; \
 				var_t voff = VarHeapVal(bi.base,i,bi.width);				\
 				void *bpi = voff == 0 ? (void*) ATOMnilptr((bi).type) : (void *) ((bi).vh->base+voff); \
-				if (need_has_nil) \
-					(void)ATOMIC_OR(&h->has_nil, (voff == 0)); \
 				gid g = 0; \
 				while (!fnd) { \
 					gid k = (gid)combine(gi[i], h->hsh(bpi), prime)&h->mask; \
@@ -1249,6 +1282,9 @@ UHASHext(Client cntxt, MalBlkPtr m, MalStkPtr s, InstrPtr p)
 					fnd = 1; \
 				} \
 				gp[i] = g-1; \
+				bit is_nil = (voff == 0); \
+				if (need_has_nil && !h->has_nil && is_nil) \
+					(void)ATOMIC_OR(&h->has_nil, is_nil); \
 			} \
 			bat_iterator_end(&bi); \
 		} \
@@ -1908,14 +1944,22 @@ OAHASHnprobe(Client ctx, bat *PRB_oid, bat *HSH_slotid, const bat *PRB_key, cons
 			oid_mtd[mtdcnt] = off+i; \
 			if (slot) { \
 				slt[mtdcnt] = (oid)(slot - 1); \
-				mark[i] = true; \
+				mark[mtdcnt] = true; \
 				if (*single && freq[slot - 1] > 1) { \
 					err = createException(SQL, "oahash.probe", "more than one match"); \
 					goto error; \
 				} \
+				\
+				if (match_nulls && ht->has_nil) { \
+					assert(ht->gid_NULL != oid_nil); \
+					mtdcnt++; \
+					oid_mtd[mtdcnt] = off+i; \
+					slt[mtdcnt] = ht->gid_NULL; \
+					mark[mtdcnt] = bit_nil; \
+				}\
 			} else { \
-				slt[mtdcnt] = oid_nil; \
-				mark[i] = (any && ht->has_nil)?bit_nil:false; \
+				slt[mtdcnt] = (match_nulls)?ht->gid_NULL:oid_nil; \
+				mark[mtdcnt] = (any && ht->has_nil)?bit_nil:false; \
 			} \
 			mtdcnt++; \
 		} \
@@ -1930,7 +1974,7 @@ OAHASHnprobe(Client ctx, bat *PRB_oid, bat *HSH_slotid, const bat *PRB_key, cons
 			if (!(*semantics) && is_##Type##_nil(ky[i])) { \
 				oid_mtd[mtdcnt] = off+i; \
 				slt[mtdcnt] = oid_nil; \
-				mark[i] = any?empty:false; \
+				mark[mtdcnt] = any?empty:false; \
 				mtdcnt++; \
 				continue; \
 			} \
@@ -1944,14 +1988,22 @@ OAHASHnprobe(Client ctx, bat *PRB_oid, bat *HSH_slotid, const bat *PRB_key, cons
 			oid_mtd[mtdcnt] = off+i; \
 			if (slot) { \
 				slt[mtdcnt] = (oid)(slot - 1); \
-				mark[i] = true; \
+				mark[mtdcnt] = true; \
 				if (*single && freq[slot - 1] > 1) { \
 					err = createException(SQL, "oahash.probe", "more than one match"); \
 					goto error; \
 				} \
+				\
+				if (match_nulls && ht->has_nil) { \
+					assert(ht->gid_NULL != oid_nil); \
+					mtdcnt++; \
+					oid_mtd[mtdcnt] = off+i; \
+					slt[mtdcnt] = ht->gid_NULL; \
+					mark[mtdcnt] = bit_nil; \
+				}\
 			} else { \
-				slt[mtdcnt] = oid_nil; \
-				mark[i] = (any && ht->has_nil)?bit_nil:false; \
+				slt[mtdcnt] = (match_nulls)?ht->gid_NULL:oid_nil; \
+				mark[mtdcnt] = (any && ht->has_nil)?bit_nil:false; \
 			} \
 			mtdcnt++; \
 		} \
@@ -1972,7 +2024,7 @@ OAHASHnprobe(Client ctx, bat *PRB_oid, bat *HSH_slotid, const bat *PRB_key, cons
 			if (!(*semantics) && is_##Type##_nil(ky[i])) { \
 				oid_mtd[mtdcnt] = off+i; \
 				slt[mtdcnt] = oid_nil; \
-				mark[i] = any?empty:false; \
+				mark[mtdcnt] = any?empty:false; \
 				mtdcnt++; \
 				continue; \
 			} \
@@ -1986,14 +2038,22 @@ OAHASHnprobe(Client ctx, bat *PRB_oid, bat *HSH_slotid, const bat *PRB_key, cons
 			oid_mtd[mtdcnt] = off+i; \
 			if (slot) { \
 				slt[mtdcnt] = (oid)(slot - 1); \
-				mark[i] = true; \
+				mark[mtdcnt] = true; \
 				if (*single && freq[slot - 1] > 1) { \
 					err = createException(SQL, "oahash.probe", "more than one match"); \
 					goto error; \
 				} \
+				\
+				if (match_nulls && ht->has_nil) { \
+					assert(ht->gid_NULL != oid_nil); \
+					mtdcnt++; \
+					oid_mtd[mtdcnt] = off+i; \
+					slt[mtdcnt] = ht->gid_NULL; \
+					mark[mtdcnt] = bit_nil; \
+				}\
 			} else { \
-				slt[mtdcnt] = oid_nil; \
-				mark[i] = (any && ht->has_nil)?bit_nil:false; \
+				slt[mtdcnt] = (match_nulls)?ht->gid_NULL:oid_nil; \
+				mark[mtdcnt] = (any && ht->has_nil)?bit_nil:false; \
 			} \
 			mtdcnt++; \
 		} \
@@ -2012,7 +2072,7 @@ OAHASHnprobe(Client ctx, bat *PRB_oid, bat *HSH_slotid, const bat *PRB_key, cons
 			if (!(*semantics) && atomcmp(val, nil) == 0) { \
 				oid_mtd[mtdcnt] = off+i; \
 				slt[mtdcnt] = oid_nil; \
-				mark[i] = any?empty:false; \
+				mark[mtdcnt] = any?empty:false; \
 				mtdcnt++; \
 				continue; \
 			} \
@@ -2026,15 +2086,23 @@ OAHASHnprobe(Client ctx, bat *PRB_oid, bat *HSH_slotid, const bat *PRB_key, cons
 			oid_mtd[mtdcnt] = off+i; \
 			if (slot) { \
 				slt[mtdcnt] = (oid)(slot - 1); \
-				mark[i] = true; \
+				mark[mtdcnt] = true; \
 				if (*single && freq[slot - 1] > 1) { \
 					err = createException(SQL, "oahash.oprobe", "more than one match"); \
 					bat_iterator_end(&bi); \
 					goto error; \
 				} \
+				\
+				if (match_nulls && ht->has_nil) { \
+					assert(ht->gid_NULL != oid_nil); \
+					mtdcnt++; \
+					oid_mtd[mtdcnt] = off+i; \
+					slt[mtdcnt] = ht->gid_NULL; \
+					mark[mtdcnt] = bit_nil; \
+				}\
 			} else { \
-				slt[mtdcnt] = oid_nil; \
-				mark[i] = (any && ht->has_nil)?bit_nil:false; \
+				slt[mtdcnt] = (match_nulls)?ht->gid_NULL:oid_nil; \
+				mark[mtdcnt] = (any && ht->has_nil)?bit_nil:false; \
 			} \
 			mtdcnt++; \
 		} \
@@ -2042,15 +2110,16 @@ OAHASHnprobe(Client ctx, bat *PRB_oid, bat *HSH_slotid, const bat *PRB_key, cons
 	} while (0)
 
 static str
-OAHASHomprobe(Client ctx, bat *PRB_oid, bat *HSH_slotid, bat *PRB_mark, const bat *PRB_key, const bat *HSH_ht, const bat *frequency, const bit *single, const bit *semantics, bool any)
+OAHASHomprobe(Client ctx, bat *PRB_oid, bat *HSH_slotid, bat *PRB_mark, const bat *PRB_key, const bat *HSH_ht, const bat *frequency, const bit *single, const bit *semantics, bool any, bool match_nulls)
 {
 	(void)ctx;
 	BAT *o = NULL, *s = NULL, *m = NULL, *k = NULL, *t = NULL, *f = NULL;
-	BUN keycnt, mtdcnt = 0;
+	BUN keycnt, rescnt, mtdcnt = 0;
 	lng *freq = NULL;
 	str err = NULL;
 
 	assert(((*single) && frequency) || !(*single));
+	if (match_nulls) assert(any);
 
 	k = BATdescriptor(*PRB_key);
 	t = BATdescriptor(*HSH_ht);
@@ -2068,10 +2137,14 @@ OAHASHomprobe(Client ctx, bat *PRB_oid, bat *HSH_slotid, bat *PRB_mark, const ba
 		freq = Tloc(f, 0);
 	}
 
-	keycnt = BATcount(k);
-	o = COLnew(0, TYPE_oid, keycnt, TRANSIENT);
-	s = COLnew(0, TYPE_oid, keycnt, TRANSIENT);
-	m = COLnew(k->hseqbase, TYPE_bit, keycnt, TRANSIENT);
+	hash_table *ht = (hash_table*)t->pl_io;
+	rescnt = keycnt = BATcount(k);
+	if (match_nulls && ht->has_nil)
+		rescnt *= 2;
+
+	o = COLnew(0, TYPE_oid, rescnt, TRANSIENT);
+	s = COLnew(0, TYPE_oid, rescnt, TRANSIENT);
+	m = COLnew(k->hseqbase, TYPE_bit, rescnt, TRANSIENT);
 	if (!o || !s || !m) {
 		err = createException(SQL, "oahash.probe", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto error;
@@ -2083,7 +2156,6 @@ OAHASHomprobe(Client ctx, bat *PRB_oid, bat *HSH_slotid, bat *PRB_mark, const ba
 			goto error;
 		}
 
-		hash_table *ht = (hash_table*)t->pl_io;
 		int tt = k->ttype;
 		QryCtx *qry_ctx = MT_thread_get_qry_ctx();
 		qry_ctx = qry_ctx ? qry_ctx : &(QryCtx) {.endtime = 0};
@@ -2159,14 +2231,15 @@ OAHASHomprobe(Client ctx, bat *PRB_oid, bat *HSH_slotid, bat *PRB_mark, const ba
 	BBPreclaim(f);
 	BATsetcount(o, mtdcnt);
 	BATsetcount(s, mtdcnt);
-	BATsetcount(m, keycnt); /* aligned with input key */
+	BATsetcount(m, mtdcnt);
 	BATnegateprops(o);
 	BATnegateprops(s);
 	BATnegateprops(m);
 	o->tnonil = true;
 	s->tnonil = false;
 	o->tsorted = true;
-	BATkey(o, true);
+	if (keycnt == mtdcnt)
+		BATkey(o, true);
 	*PRB_oid = o->batCacheid;
 	*HSH_slotid = s->batCacheid;
 	*PRB_mark = m->batCacheid;
@@ -2187,25 +2260,25 @@ error:
 static str
 OAHASHoprobe_single(Client ctx, bat *PRB_oid, bat *HSH_slotid, bat *PRB_mark, const bat *PRB_key, const bat *HSH_ht, const bat *frequency, const bit *single, const bit *semantics)
 {
-	return OAHASHomprobe(ctx, PRB_oid, HSH_slotid, PRB_mark, PRB_key, HSH_ht, frequency, single, semantics, false);
+	return OAHASHomprobe(ctx, PRB_oid, HSH_slotid, PRB_mark, PRB_key, HSH_ht, frequency, single, semantics, false /*any*/, false /*match_nulls*/);
 }
 
 static str
 OAHASHoprobe(Client ctx, bat *PRB_oid, bat *HSH_slotid, bat *PRB_mark, const bat *PRB_key, const bat *HSH_ht, const bit *single, const bit *semantics)
 {
-	return OAHASHomprobe(ctx, PRB_oid, HSH_slotid, PRB_mark, PRB_key, HSH_ht, NULL, single, semantics, false);
+	return OAHASHomprobe(ctx, PRB_oid, HSH_slotid, PRB_mark, PRB_key, HSH_ht, NULL, single, semantics, false /*any*/, false /*match_nulls*/);
 }
 
 static str
-OAHASHmprobe_single(Client ctx, bat *PRB_oid, bat *HSH_slotid, bat *PRB_mark, const bat *PRB_key, const bat *HSH_ht, const bat *frequency, const bit *single, const bit *semantics)
+OAHASHmprobe_single(Client ctx, bat *PRB_oid, bat *HSH_slotid, bat *PRB_mark, const bat *PRB_key, const bat *HSH_ht, const bat *frequency, const bit *single, const bit *semantics, const bit *match_nulls)
 {
-	return OAHASHomprobe(ctx, PRB_oid, HSH_slotid, PRB_mark, PRB_key, HSH_ht, frequency, single, semantics, true);
+	return OAHASHomprobe(ctx, PRB_oid, HSH_slotid, PRB_mark, PRB_key, HSH_ht, frequency, single, semantics, true /*any*/, match_nulls);
 }
 
 static str
-OAHASHmprobe(Client ctx, bat *PRB_oid, bat *HSH_slotid, bat *PRB_mark, const bat *PRB_key, const bat *HSH_ht, const bit *single, const bit *semantics)
+OAHASHmprobe(Client ctx, bat *PRB_oid, bat *HSH_slotid, bat *PRB_mark, const bat *PRB_key, const bat *HSH_ht, const bit *single, const bit *semantics, const bit *match_nulls)
 {
-	return OAHASHomprobe(ctx, PRB_oid, HSH_slotid, PRB_mark, PRB_key, HSH_ht, NULL, single, semantics, true);
+	return OAHASHomprobe(ctx, PRB_oid, HSH_slotid, PRB_mark, PRB_key, HSH_ht, NULL, single, semantics, true /*any*/, match_nulls);
 }
 
 #define BATvprobe_cmbd() \
@@ -3451,8 +3524,8 @@ static mel_func oa_hash_init_funcs[] = {
  command("oahash", "oprobe", OAHASHoprobe_single, false, "Probe the `key`-s in the hash table. For a matched key, return its OID in the 'key' column and the slot ID in the hash table", args(3,8, batarg("PRB_oid",oid),batarg("HSH_slotid",oid),batarg("PRB_mark",bit),batargany("PRB_key",1),batargany("HSH_ht",1),batarg("frequency",lng),arg("single",bit),arg("semantics",bit))),
  command("oahash", "oprobe", OAHASHoprobe, false, "Probe the `key`-s in the hash table. For a matched key, return its OID in the 'key' column and the slot ID in the hash table", args(3,7, batarg("PRB_oid",oid),batarg("HSH_slotid",oid),batarg("PRB_mark",bit),batargany("PRB_key",1),batargany("HSH_ht",1),arg("single",bit),arg("semantics",bit))),
 
- command("oahash", "mprobe", OAHASHmprobe_single, false, "Probe the `key`-s in the hash table. For a matched key, return its OID in the 'key' column and the slot ID in the hash table", args(3,8, batarg("PRB_oid",oid),batarg("HSH_slotid",oid),batarg("PRB_matched",bit),batargany("PRB_key",1),batargany("HSH_ht",1),batarg("frequency",lng),arg("single",bit),arg("semantics",bit))),
- command("oahash", "mprobe", OAHASHmprobe, false, "Probe the `key`-s in the hash table. For a matched key, return its OID in the 'key' column and the slot ID in the hash table", args(3,7, batarg("PRB_oid",oid),batarg("HSH_slotid",oid),batarg("PRB_matched",bit),batargany("PRB_key",1),batargany("HSH_ht",1),arg("single",bit),arg("semantics",bit))),
+ command("oahash", "mprobe", OAHASHmprobe_single, false, "Probe the `key`-s in the hash table. For a matched key, return its OID in the 'key' column and the slot ID in the hash table", args(3,9, batarg("PRB_oid",oid),batarg("HSH_slotid",oid),batarg("PRB_matched",bit),batargany("PRB_key",1),batargany("HSH_ht",1),batarg("frequency",lng),arg("single",bit),arg("semantics",bit),arg("match_nulls",bit))),
+ command("oahash", "mprobe", OAHASHmprobe, false, "Probe the `key`-s in the hash table. For a matched key, return its OID in the 'key' column and the slot ID in the hash table", args(3,8, batarg("PRB_oid",oid),batarg("HSH_slotid",oid),batarg("PRB_matched",bit),batargany("PRB_key",1),batargany("HSH_ht",1),arg("single",bit),arg("semantics",bit),arg("match_nulls",bit))),
 
  command("oahash", "combined_probe", OAHASHprobe_cmbd_single, false, "Probe the selected `key`-s in the hash table. For a matched item, return its OID in the 'key' column and the slot ID in the hash table", args(2,9, batarg("PRB_oid",oid),batarg("HSH_slotid",oid),batargany("PRB_key",1),batarg("PRB_selected",oid),batarg("HSH_pgids",oid),batargany("HSH_ht",1),batarg("frequency",lng),arg("single",bit),arg("semantics",bit))),
  command("oahash", "combined_probe", OAHASHprobe_cmbd, false, "Probe the selected `key`-s in the hash table. For a matched item, return its OID in the 'key' column and the slot ID in the hash table", args(2,8, batarg("PRB_oid",oid),batarg("HSH_slotid",oid),batargany("PRB_key",1),batarg("PRB_selected",oid),batarg("HSH_pgids",oid),batargany("HSH_ht",1),arg("single",bit),arg("semantics",bit))),

@@ -4964,8 +4964,9 @@ rel_push_select_down(visitor *v, sql_rel *rel)
 	}
 	exps = rel->exps;
 
+	ATOMIC_TYPE oahash_enabled = (1U<<19);
 	/* push select through join */
-	if (is_select(rel->op) && r && is_join(r->op) && !rel_is_ref(r) && !is_single(r)){
+	if (is_select(rel->op) && r && is_join(r->op) && list_empty(r->attr) && (GDKdebug & oahash_enabled) && !rel_is_ref(r) && !is_single(r)){
 		sql_rel *jl = r->l, *ojl = jl, *jr = r->r, *ojr = jr;
 		int left = r->op == op_join || r->op == op_left;
 		int right = r->op == op_join || r->op == op_right;
@@ -5006,8 +5007,8 @@ rel_push_select_down(visitor *v, sql_rel *rel)
 			set_processed(jr);
 	}
 
-	/* merge select and cross product ? */
-	if (is_select(rel->op) && r && r->op == op_join && !rel_is_ref(r) && !is_single(r) && !exps_have_unsafe(exps, false, true)) {
+	/* merge select and cross product ? TODO a more precies way to check if we can merge a select and a group-join than simply disable it with list_empty(r->attr) */
+	if (is_select(rel->op) && r && r->op == op_join && list_empty(r->attr) && (GDKdebug & oahash_enabled) && !rel_is_ref(r) && !is_single(r) && !exps_have_unsafe(exps, false, true)) {
 		for (n = exps->h; n;) {
 			node *next = n->next;
 			sql_exp *e = n->data;

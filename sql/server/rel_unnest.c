@@ -2303,8 +2303,21 @@ rewrite_anyequal(visitor *v, sql_rel *rel, sql_exp *e, int depth)
 					(void)rewrite_inner(sql, rel, lsq, op_left, &rewrite, NULL);
 					exp_reset_props(rewrite, le, is_left(rewrite->op));
 				}
+
+				//ATOMIC_TYPE oahash_enabled = (1U<<19);
+				bool tomarkjoin = (!is_anyequal(sf)) && (list_length(le->f) > 1);
+				if (tomarkjoin && is_tuple) {
+					list *t = le->f;
+					bool foundnil = 0;
+
+					for (node *n = t->h, *m = rsq->exps->h; n && m; n = n->next, m = m->next ) {
+						foundnil = foundnil || has_nil((sql_exp*)n->data) || has_nil(exp_ref(sql, m->data));
+					}
+					tomarkjoin = tomarkjoin && foundnil;
+				}
+
 				if (rsq) {
-					operator_type op = is_anyequal(sf)?op_semi:op_anti;
+					operator_type op = tomarkjoin?op_join:(is_anyequal(sf)?op_semi:op_anti);
 					(void)rewrite_inner(sql, rel, rsq, op, &rewrite, NULL);
 					exp_reset_props(rewrite, re, is_left(rewrite->op));
 				}
@@ -2325,6 +2338,22 @@ rewrite_anyequal(visitor *v, sql_rel *rel, sql_exp *e, int depth)
 						if (inexp)
 							set_any(inexp);
 					}
+
+					if (tomarkjoin) {
+						if (!rewrite->attr)
+							rewrite->attr = sa_list(v->sql->sa);
+						sql_exp *a = exp_atom_bool(v->sql->sa, false);
+						set_no_nil(a);
+						if (!e->alias.label)
+							exp_label(v->sql->sa, a, ++v->sql->label);
+						else
+							exp_setalias(a, e->alias.label, exp_relname(e), exp_name(e));
+						le = exp_ref(v->sql, a);
+						le->card = CARD_MULTI; /* mark as multi value, the real attribute is introduced later */
+						append(rewrite->attr, a);
+						return exp_compare(sql->sa, le, exp_atom_bool(sql->sa, 1), cmp_equal);
+					}
+
 					v->changes++;
 					return exp_atom_bool(sql->sa, 1);
 				} else {
@@ -2337,6 +2366,23 @@ rewrite_anyequal(visitor *v, sql_rel *rel, sql_exp *e, int depth)
 					append(rewrite->exps, inexp=exp_compare(sql->sa, le, exp_ref(sql, re), cmp_equal));
 					if (inexp)
 						set_any(inexp);
+
+					if (tomarkjoin) {
+						assert("tomarkjoin && !is_tuple");
+						if (!rewrite->attr)
+							rewrite->attr = sa_list(v->sql->sa);
+						sql_exp *a = exp_atom_bool(v->sql->sa, false);
+						set_no_nil(a);
+						if (!e->alias.label)
+							exp_label(v->sql->sa, a, ++v->sql->label);
+						else
+							exp_setalias(a, e->alias.label, exp_relname(e), exp_name(e));
+						le = exp_ref(v->sql, a);
+						le->card = CARD_MULTI; /* mark as multi value, the real attribute is introduced later */
+						append(rewrite->attr, a);
+						return exp_compare(sql->sa, le, exp_atom_bool(sql->sa, 1), cmp_equal);
+					}
+
 					v->changes++;
 					return exp_atom_bool(sql->sa, 1);
 				}
