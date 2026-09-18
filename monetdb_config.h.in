@@ -194,6 +194,7 @@
 #cmakedefine HAVE_LIBZ 1
 #cmakedefine HAVE_NETCDF 1
 #cmakedefine HAVE_OPENSSL 1
+#cmakedefine HAVE_HTSLIB 1
 #cmakedefine HAVE_PROJ 1
 #cmakedefine HAVE_READLINE 1
 #cmakedefine HAVE_RTREE 1
