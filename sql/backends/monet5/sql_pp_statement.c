@@ -10,6 +10,7 @@
 
 #include "monetdb_config.h"
 #include "mal_instruction.h"
+#include "mal_type.h"
 #include "sql_gencode.h"
 #include "sql_statement.h"
 #include "sql_pp_statement.h"
@@ -597,8 +598,8 @@ stmt_oahash_expand3(backend *be, const stmt *prb_oid, const stmt *hsh_gid, const
 	if (q == NULL)
 		return NULL;
 	setVarType(be->mb, getArg(q, 0), newBatType(TYPE_oid));      /* expanded prb_oid*/
-	q = pushReturn(be->mb, q, newTmpVariable(be->mb, TYPE_oid)); /* expanded hsh_gid */
-	q = pushReturn(be->mb, q, newTmpVariable(be->mb, TYPE_bit)); /* expanded mrk */
+	q = pushReturn(be->mb, q, newTmpVariable(be->mb, newBatType(TYPE_oid))); /* expanded hsh_gid */
+	q = pushReturn(be->mb, q, newTmpVariable(be->mb, newBatType(TYPE_bit))); /* expanded mrk */
 	q = pushArgument(be->mb, q, prb_oid->nr);
 	q = pushArgument(be->mb, q, hsh_gid->nr);
 	q = pushArgument(be->mb, q, mrk->nr);

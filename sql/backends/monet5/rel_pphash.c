@@ -21,6 +21,8 @@
 #include "sql_pp_statement.h"
 #include "bin_partition_by_value.h"
 #include "mal_builder.h"
+#include "sql_statement.h"
+#include "sql_types.h"
 
 static lng
 _estimate(mvc *sql, sql_rel *rel)
@@ -129,19 +131,6 @@ oahash_slicer(backend *be, stmt *sub)
 	return sub;
 }
 
-static stmt *
-InstrPtr2stmt(backend *be, const stmt *s, int nr, sql_subtype *tpe)
-{
-	stmt *ss = stmt_none(be);
-	if (!ss) return NULL;
-
-	ss->nr = getArg(s->q, nr);
-	ss->nrcols = s->nrcols;
-	ss->q = s->q;
-	ss->op4.typeval = *tpe;
-	return ss;
-}
-
 /* Generates the parallel block to probe the hash table
  */
 static stmt *
@@ -149,6 +138,8 @@ oahash_probe(backend *be, sql_rel *rel, list *jexps, list *exps_cmp_prb, const s
 {
 	stmt *prb_res = NULL, *outerm = NULL;
 	bool has_leftouter = (rel->op == op_left || rel->op == op_full /*|| (rel->op == op_right && rel->oahash == 1)*/);
+	sql_subtype *tpe_oid = sql_fetch_localtype(TYPE_oid);
+	sql_subtype *tpe_bit = sql_fetch_localtype(TYPE_bit);
 
 	/* stmts_ht is in the same order as the join columns */
 	node *n = exps_cmp_prb->h, *m = stmts_ht->op4.lval->h, *o = jexps->h;
@@ -167,7 +158,7 @@ oahash_probe(backend *be, sql_rel *rel, list *jexps, list *exps_cmp_prb, const s
 
 		if (has_leftouter || grpjoin) {
 			assert (prb_res->q->retc >= 2);
-			outerm = stmt_blackbox_result(be, prb_res->q, 2, sql_fetch_localtype(TYPE_bit));
+			outerm = stmt_blackbox_result(be, prb_res->q, 2, tpe_bit);
 		}
 
 		if (nulls && stmt_has_null(key) && is_any(e2))
@@ -175,14 +166,12 @@ oahash_probe(backend *be, sql_rel *rel, list *jexps, list *exps_cmp_prb, const s
 	}
 	if (anti && groupjoin) {
 		assert(n && o && !m); // for grouped-anti-join we expect more exps to process
-		sql_subtype *tpe_oid = sql_fetch_localtype(TYPE_oid);
-		sql_subtype *tpe_bit = sql_fetch_localtype(TYPE_bit);
 		stmt *hp_pos = stmts_ht->op2, *freq = stmts_ht->op3;
 		stmt *prb_oid = NULL, *hsh_gid = NULL, *mrk = NULL;
 
-		prb_oid = InstrPtr2stmt(be, prb_res, 0, tpe_oid);
-		hsh_gid = InstrPtr2stmt(be, prb_res, 1, tpe_oid);
-		mrk     = InstrPtr2stmt(be, prb_res, 2, tpe_bit);
+		prb_oid = stmt_blackbox_result(be, prb_res->q, 0, tpe_oid);
+		hsh_gid = stmt_blackbox_result(be, prb_res->q, 1, tpe_oid);
+		mrk     = stmt_blackbox_result(be, prb_res->q, 2, tpe_bit);
 		/* Get only the rows that are !FALSE */
 		stmt *sel = stmt_thetaselect(be, mrk, NULL, stmt_bool(be, 0), "ne", tpe_oid);
 		prb_oid = stmt_project(be, sel, prb_oid);
@@ -191,9 +180,9 @@ oahash_probe(backend *be, sql_rel *rel, list *jexps, list *exps_cmp_prb, const s
 
 		/* compute the prb_oid and hsh_gid (actually hp_pos) to process the "payload" columns */
 		stmt *expd = stmt_oahash_expand3(be, prb_oid, hsh_gid, mrk, freq, hp_pos);
-		prb_oid = InstrPtr2stmt(be, expd, 0, tpe_oid);
-		hsh_gid = InstrPtr2stmt(be, expd, 1, tpe_oid);
-		mrk     = InstrPtr2stmt(be, expd, 2, tpe_bit);
+		prb_oid = stmt_blackbox_result(be, expd->q, 0, tpe_oid);
+		hsh_gid = stmt_blackbox_result(be, expd->q, 1, tpe_oid);
+		mrk     = stmt_blackbox_result(be, expd->q, 2, tpe_bit);
 
 		for (node *p = stmts_ht->op1->op4.lval->h; n && o && p; n = n->next, o = o->next, p = p->next) {
 			sql_exp *prb_e = n->data;
@@ -212,26 +201,20 @@ oahash_probe(backend *be, sql_rel *rel, list *jexps, list *exps_cmp_prb, const s
 			q = pushArgument(be->mb, q, prb_col->nr);
 			q = pushArgument(be->mb, q, hsh_col->nr);
 			pushInstruction(be->mb, q);
-			//stmt *mrk2 = stmt_none(be);
-			//if (mrk2 == NULL) return NULL;
-			//mrk2->op4.typeval = *tpe_bit;
-			//mrk2->nr = getArg(q, 0);
-			//mrk2->nrcols = prb_oid->nrcols;
-			//mrk2->q = q;
 			
 			/* merge the two mrks */
 			InstrPtr qq = newStmt(be->mb, batcalcRef, andRef);
 			if (qq == NULL) return NULL;
 			setVarType(be->mb, getArg(qq, 0), newBatType(TYPE_bit));
-			q = pushArgument(be->mb, qq, mrk->nr);
-			q = pushArgument(be->mb, qq, getArg(q,0));
+			qq = pushArgument(be->mb, qq, mrk->nr);
+			qq = pushArgument(be->mb, qq, getArg(q,0));
 			pushInstruction(be->mb, qq);
 			stmt *s = stmt_none(be);
 			if (s == NULL) return NULL;
 			s->op4.typeval = *tpe_bit;
-			s->nr = getArg(q, 0);
+			s->nr = getArg(qq, 0);
 			s->nrcols = prb_oid->nrcols;
-			s->q = q;
+			s->q = qq;
 			mrk = s;
 
 			/* Get only the rows that are !FALSE */
@@ -240,6 +223,31 @@ oahash_probe(backend *be, sql_rel *rel, list *jexps, list *exps_cmp_prb, const s
 			hsh_gid = stmt_project(be, sel, hsh_gid);
 			mrk     = stmt_project(be, sel, mrk);
 		}
+
+		InstrPtr qqq = newStmt(be->mb, putName("oahash"), putName("expand"));
+		if (qqq == NULL)
+			return NULL;
+		setVarType(be->mb, getArg(qqq, 0), newBatType(TYPE_oid));      /* expanded prb_oid*/
+		qqq = pushReturn(be->mb, qqq, newTmpVariable(be->mb, newBatType(TYPE_oid))); /* expanded hsh_gid */
+		qqq = pushReturn(be->mb, qqq, newTmpVariable(be->mb, newBatType(TYPE_bit))); /* expanded mrk */
+		getArg(qqq, 0) = prb_oid->nr;
+		getArg(qqq, 1) = hsh_gid->nr;
+		getArg(qqq, 2) = mrk->nr;
+		//q = pushArgument(be->mb, q, prb_oid->nr);
+		//q = pushArgument(be->mb, q, hsh_gid->nr);
+		//q = pushArgument(be->mb, q, mrk->nr);
+		//q = pushArgument(be->mb, q, freq->nr);
+		//q = pushArgument(be->mb, q, hp_pos->nr);
+		//pushInstruction(be->mb, q);
+		stmt *sss = stmt_none(be);
+		if (sss == NULL) return NULL;
+		sss->op4.typeval = *sql_fetch_localtype(TYPE_oid);
+		sss->nr = getArg(qqq, 0);
+		sss->nrcols = 1;
+		sss->q = qqq;
+
+		prb_res = sss;
+		outerm = mrk;
 	}
 	assert(!n && !m && !o); // just make sure that all exps have been processed
 
@@ -526,14 +534,7 @@ rel2bin_oahash_equi_join(backend *be, sql_rel *rel, list *refs, list *jexps, stm
 	/* !exps_prj_hsh => !shared_hp => mark the last hash-column instead of a payload column */
 	if (outer && hsh_mrk && !*hsh_mrk) {
 		assert(list_empty(exps_prj_hsh));
-		stmt *s = stmt_none(be);
-		if (s == NULL) return NULL;
-		s->op4.typeval = *sql_fetch_localtype(TYPE_oid);
-		s->nr = getArg(prb_res->q, 1);
-		s->nrcols = 1;
-		s->q = prb_res->q;
-		s->op1 = prb_res;
-		*hsh_mrk = s;
+		*hsh_mrk = stmt_blackbox_result(be, prb_res->q, 1, sql_fetch_localtype(TYPE_oid));
 	}
 
 	if (outer && prb_mrk && !*prb_mrk) /* ToDo somehow expand the prb_mrk */
@@ -883,6 +884,7 @@ rel2bin_oahash_groupjoin(backend *be, sql_rel *rel, list *refs)
 		sub = rel2bin_oahash_equi_join(be, rel, refs, jexps, &probed_ids, &probe_sub, NULL /* nulls */, &prb_mrk, NULL /* hsh_mrk */, &probe_side, &hash_side, !list_empty(sexps) /* has_outerselect */);
 	}
 	if (list_empty(jexps) && list_empty(sexps) && mark) {
+		assert(exist); // should we create a exp_atom_bool(...false)?
 		sql_exp *e = exp_atom_bool(be->mvc->sa, true);
 		set_any(e);
 		append(sexps,e);

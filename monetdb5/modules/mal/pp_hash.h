@@ -99,6 +99,7 @@ typedef struct hash_table {
 	bool empty;
 	ATOMIC_TYPE has_nil;  /* whether the hashed column contain a NULL, defaul: 0, i.e. false */
 	ATOMIC_TYPE gid_NULL; /* if has_nil, remember the gid of NULL */
+	ATOMIC_TYPE max_gid;  /* if has_nil, remember the max value of the `gids` */
 	int vkey;	/* vheap is unique, ie hashing on offsets */
 
 	void *vals;			/* hash(ed) values */
