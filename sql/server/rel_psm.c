@@ -930,7 +930,7 @@ rel_create_func(sql_query *query, dlist *qname, dlist *params, symbol *res, dlis
 		return sql_error(sql, 02, SQLSTATE(42000) "CREATE %s: %s functions creation via SQL not supported", F, fn);
 	else if (LANG_EXT(lang) && !(type == F_FUNC || type == F_AGGR || type == F_UNION || type == F_LOADER))
 		return sql_error(sql, 02, SQLSTATE(42000) "CREATE %s: %ss creation via external programming languages not supported", F, fn);
-	else if (lang == FUNC_LANG_MAL && !admin_privs(sql->user_id) && !admin_privs(sql->role_id))
+	else if (lang != FUNC_LANG_SQL && !admin_privs(sql->user_id) && !admin_privs(sql->role_id))
 		return sql_error(sql, 02, SQLSTATE(42000) "CREATE %s: insufficient privileges for user '%s'", F, get_string_global_var(sql, "current_user"));
 
 	if (sname && !(s = mvc_bind_schema(sql, sname)))
