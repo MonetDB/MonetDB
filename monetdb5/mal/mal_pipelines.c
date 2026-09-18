@@ -33,6 +33,7 @@ static struct worker {
 	ATOMIC_PTR_TYPE cntxt;  /* client we do work for (NULL -> any) */
 	Queue *q;				/* pipeline tasks to execute */
 	int self;
+	int used;
 } workers[THREADS];
 static int pipelines_initialized = 0;
 
@@ -230,6 +231,7 @@ PIPELINEworker(void *T)
 			freeStack(stk);
 			ma_close(&ma_state);
 			GDKfree(p->wls);
+			t->used = 0;
 			MT_sema_up(&s->s);
 		}
 		GDKfree(p);
@@ -315,8 +317,26 @@ runMALpipelines(Client cntxt, MalBlkPtr mb, int startpc, int stoppc, int maxpart
 		s->channel[i] = 0;
 	MT_cond_init(&s->cond, "pipeline-workers");
 	/* somehow get number of workers from statement/barrier */
-	for (int i = 0; i < s->nr_workers; i++)
-		q_enqueue(workers[i].q, s);
+	int j = s->nr_workers;
+	while (j) {
+		for (int i = 0; i < GDKnr_threads && j > 0; i++) {
+			if (!workers[i].used) {
+				q_enqueue(workers[i].q, s);
+				j--;
+			}
+		}
+		if (j) {
+			if (j < s->nr_workers) {
+				/* run with less threads ?? */
+				s->nr_workers -= j;
+			} else {
+				/* here we should wait */
+	MT_lock_unset(&pipelineLock);
+				MT_sleep_ms(1000);
+	MT_lock_set(&pipelineLock);
+			}
+		}
+	}
 
 	MT_lock_unset(&pipelineLock);
 	/* wait for result */
