@@ -1,0 +1,8 @@
+@connection(id=bar, username=bar, password=bar)
+statement error
+CREATE PROCEDURE foo.snap(tarfile string) EXTERNAL NAME sql.hot_snapshot
+
+@connection(id=bar)
+statement error
+CALL foo.snap('/var/lib/monetdb/whatever.tar')
+
