@@ -150,6 +150,7 @@ macro(monetdb_macro_variables)
   set(SANITIZER ${SANITIZER})
   set(HAVE_RTREE ${RTREE_FOUND})
   set(HAVE_OPENSSL ${OPENSSL_FOUND})
+  set(HAVE_HTSLIB ${HTSLIB_FOUND})
 
   set(BUILD_TYPE "${CMAKE_BUILD_TYPE}")
   if(CMAKE_BUILD_TYPE)
