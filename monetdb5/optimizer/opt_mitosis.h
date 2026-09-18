@@ -12,8 +12,6 @@
 #define _OPT_MITOSIS_
 #include "opt_support.h"
 
-#define MAXSLICES 1024			/* to be refined */
-
 extern str OPTmitosisImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 									InstrPtr p);
 
