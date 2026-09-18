@@ -2079,7 +2079,7 @@ error:
 	} while(0)
 
 /* inout := algebra.project(groupid, val) */
-/* this (possibly) overwrites the values, therefor for expensive (var) types we
+/* this (possibly) overwrites the values, therefore for expensive (var) types we
  * only write offsets (ie use the heap from the parent) */
 static str
 //LALGconstant(bat *rid, bat *gid, void *val)
@@ -2294,7 +2294,7 @@ error:
 	}
 
 /* result := ialgebra.projection(groupid, input) */
-/* this (possibly) overwrites the values, therefor for expensive (var) types we
+/* this (possibly) overwrites the values, therefore for expensive (var) types we
  * only write offsets (ie use the heap from the parent) */
 static str
 LALGprojection(Client ctx, bat *rid, bat *gid, bat *bid)
@@ -2413,7 +2413,7 @@ LALGprojection(Client ctx, bat *rid, bat *gid, bat *bid)
 	/* get max id from gid */
 	if (ATOMvarsized(r->ttype) && cnt < max)
 		memset(Tloc(r, cnt), 0, r->twidth*(max-cnt));
-	cnt = BATcount(b);
+	cnt = BATcount(g);
 	if (!tt)
 		r->tseqbase = b->tseqbase;
 	if (tt && cnt) {

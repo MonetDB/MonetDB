@@ -315,8 +315,29 @@ runMALpipelines(Client cntxt, MalBlkPtr mb, int startpc, int stoppc, int maxpart
 		s->channel[i] = 0;
 	MT_cond_init(&s->cond, "pipeline-workers");
 	/* somehow get number of workers from statement/barrier */
-	for (int i = 0; i < s->nr_workers; i++)
-		q_enqueue(workers[i].q, s);
+	int j = s->nr_workers;
+	while (j) {
+		for (int i = 0; i < GDKnr_threads && j > 0; i++)
+			if (!workers[i].q->last)
+				j--;
+		if (j < s->nr_workers) {
+			/* run with less threads ?? */
+			s->nr_workers -= j;
+			for (int i = 0, k = s->nr_workers; i < GDKnr_threads && k > 0; i++) {
+				if (!workers[i].q->last) {
+					q_enqueue(workers[i].q, s);
+					k--;
+				}
+			}
+			j = 0;
+		}
+		if (j) {
+			/* here we should wait */
+	MT_lock_unset(&pipelineLock);
+			MT_sleep_ms(100);
+	MT_lock_set(&pipelineLock);
+		}
+	}
 
 	MT_lock_unset(&pipelineLock);
 	/* wait for result */

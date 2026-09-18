@@ -708,7 +708,7 @@ rel2bin_oahash_cart(backend *be, sql_rel *rel, list *refs, stmt *stmts_ht, stmt 
 			qL = pushInt(be->mb, qL, 0);
 			pushInstruction(be->mb, qL);
 
-			InstrPtr q = newStmtArgs(be->mb, calcRef, "and", 3);
+			InstrPtr q = newStmtArgs(be->mb, calcRef, andRef, 3);
 			q = pushArgument(be->mb, q, qR->argv[0]);
 			q = pushArgument(be->mb, q, qL->argv[0]);
 			pushInstruction(be->mb, q);

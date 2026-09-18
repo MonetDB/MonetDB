@@ -2357,6 +2357,8 @@ BATgroupavg3(BAT **avgp, BAT **remp, BAT **cntp, BAT *b, BAT *g, BAT *e, BAT *s,
 			o = canditer_next(&ci) - b->hseqbase;
 			if (ngrp > 1)
 				gid = (gids ? gids[o] : g->tseqbase + o) - min;
+			if (inout && cnts[gid] == 0)
+				avgs[gid] = 0;
 			if (is_bte_nil(vals[o])) {
 				if (!skip_nils) {
 					avgs[gid] = bte_nil;
@@ -2405,6 +2407,8 @@ BATgroupavg3(BAT **avgp, BAT **remp, BAT **cntp, BAT *b, BAT *g, BAT *e, BAT *s,
 			o = canditer_next(&ci) - b->hseqbase;
 			if (ngrp > 1)
 				gid = (gids ? gids[o] : g->tseqbase + o) - min;
+			if (inout && cnts[gid] == 0)
+				avgs[gid] = 0;
 			if (is_sht_nil(vals[o])) {
 				if (!skip_nils) {
 					avgs[gid] = sht_nil;
@@ -2453,6 +2457,8 @@ BATgroupavg3(BAT **avgp, BAT **remp, BAT **cntp, BAT *b, BAT *g, BAT *e, BAT *s,
 			o = canditer_next(&ci) - b->hseqbase;
 			if (ngrp > 1)
 				gid = (gids ? gids[o] : g->tseqbase + o) - min;
+			if (inout && cnts[gid] == 0)
+				avgs[gid] = 0;
 			if (is_int_nil(vals[o])) {
 				if (!skip_nils) {
 					avgs[gid] = int_nil;
@@ -2501,6 +2507,8 @@ BATgroupavg3(BAT **avgp, BAT **remp, BAT **cntp, BAT *b, BAT *g, BAT *e, BAT *s,
 			o = canditer_next(&ci) - b->hseqbase;
 			if (ngrp > 1)
 				gid = (gids ? gids[o] : g->tseqbase + o) - min;
+			if (inout && cnts[gid] == 0)
+				avgs[gid] = 0;
 			if (is_lng_nil(vals[o])) {
 				if (!skip_nils) {
 					avgs[gid] = lng_nil;
@@ -2550,6 +2558,8 @@ BATgroupavg3(BAT **avgp, BAT **remp, BAT **cntp, BAT *b, BAT *g, BAT *e, BAT *s,
 			o = canditer_next(&ci) - b->hseqbase;
 			if (ngrp > 1)
 				gid = (gids ? gids[o] : g->tseqbase + o) - min;
+			if (inout && cnts[gid] == 0)
+				avgs[gid] = 0;
 			if (is_hge_nil(vals[o])) {
 				if (!skip_nils) {
 					avgs[gid] = hge_nil;

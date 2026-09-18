@@ -1303,7 +1303,7 @@ GDKprepareExit(void)
 
 	if (MT_getpid() == mainpid) {
 		TRC_DEBUG_IF(THRD)
-			dump_threads();
+			dump_threads(NULL);
 		join_detached_threads();
 	}
 }
@@ -1366,7 +1366,7 @@ GDKreset(int status)
 		}
 
 #ifdef LOCK_STATS
-		TRC_DEBUG_IF(TEM) GDKlockstatistics(1);
+		TRC_DEBUG_IF(TEM) GDKlockstatistics(NULL , 1);
 #endif
 		ATOMIC_SET(&GDKdebug, 0);
 		GDK_mmap_minsize_persistent = MMAP_MINSIZE_PERSISTENT;
@@ -1683,11 +1683,11 @@ GDKlibversion(void)
 /* print some potentially interesting information */
 struct prinfocb {
 	struct prinfocb *next;
-	void (*func)(void);
+	void (*func)(FILE *);
 } *prinfocb;
 
 void
-GDKprintinforegister(void (*func)(void))
+GDKprintinforegister(void (*func)(FILE *))
 {
 	struct prinfocb *p = GDKmalloc(sizeof(struct prinfocb));
 	if (p == NULL) {
@@ -2628,12 +2628,23 @@ GDKprintinfo(void)
 	size_t allocated = (size_t) ATOMIC_GET(&GDK_mallocedbytes_estimate);
 	size_t vmallocated = (size_t) ATOMIC_GET(&GDK_vm_cursize);
 	char timestamp[20];
+	FILE *outf = stdout;
+	const char *fn = GDKgetenv("usr1_outputfile");
+	if (fn) {
+		outf = MT_fopen(fn, "a");
+		if (outf == NULL) {
+			outf = stdout;
+			fn = NULL;
+		}
+	}
 
 	strftime(timestamp, sizeof(timestamp), "%Y-%m-%d %H:%M:%S",
 		 localtime_r(&(time_t){time(NULL)}, &(struct tm){0}));
-	printf("SIGUSR1 info start @ %s\n", timestamp);
-	printf("Virtual memory allocated: %zu%s, of which %zu%s with malloc\n",
-	       vmallocated + allocated, humansize(vmallocated + allocated, (char[24]){0}, 24), allocated, humansize(allocated, (char[24]){0}, 24));
+	fprintf(outf, "SIGUSR1 info start @ %s\n", timestamp);
+	fprintf(outf,
+		"Virtual memory allocated: %zu%s, "
+		"of which %zu%s with malloc\n",
+		vmallocated + allocated, humansize(vmallocated + allocated, (char[24]){0}, 24), allocated, humansize(allocated, (char[24]){0}, 24));
 #ifdef WITH_MALLOC
 #ifdef WITH_JEMALLOC
 	size_t jeallocated = 0, jeactive = 0, jemapped = 0, jeresident = 0, jeretained = 0;
@@ -2642,13 +2653,14 @@ GDKprintinfo(void)
 	    mallctl("stats.mapped", &jemapped, &(size_t){sizeof(jemapped)}, NULL, 0) == 0 &&
 	    mallctl("stats.resident", &jeresident, &(size_t){sizeof(jeresident)}, NULL, 0) == 0 &&
 	    mallctl("stats.retained", &jeretained, &(size_t){sizeof(jeretained)}, NULL, 0) == 0)
-		printf("JEmalloc: allocated %zu%s, active %zu%s, "
-		       "mapped %zu%s, resident %zu%s, retained %zu%s\n",
-		       jeallocated, humansize(jeallocated, (char[24]){0}, 24),
-		       jeactive, humansize(jeactive, (char[24]){0}, 24),
-		       jemapped, humansize(jemapped, (char[24]){0}, 24),
-		       jeresident, humansize(jeresident, (char[24]){0}, 24),
-		       jeretained, humansize(jeretained, (char[24]){0}, 24));
+		fprintf(outf,
+			"JEmalloc: allocated %zu%s, active %zu%s, "
+			"mapped %zu%s, resident %zu%s, retained %zu%s\n",
+			jeallocated, humansize(jeallocated, (char[24]){0}, 24),
+			jeactive, humansize(jeactive, (char[24]){0}, 24),
+			jemapped, humansize(jemapped, (char[24]){0}, 24),
+			jeresident, humansize(jeresident, (char[24]){0}, 24),
+			jeretained, humansize(jeretained, (char[24]){0}, 24));
 #endif
 #ifdef WITH_TCMALLOC
 	size_t tcallocated = 0, tchsize = 0, tcfree = 0, tcunmapped = 0, tcmax = 0, tccur = 0;
@@ -2658,75 +2670,77 @@ GDKprintinfo(void)
 	MallocExtension_GetNumericProperty("tcmalloc.pageheap_unmapped_bytes", &tcunmapped);
 	MallocExtension_GetNumericProperty("tcmalloc.max_total_thread_cache_bytes", &tcmax);
 	MallocExtension_GetNumericProperty("tcmalloc.current_total_thread_cache_bytes", &tccur);
-	printf("tcmalloc: allocated %zu%s, heap size %zu%s, free %zu%s, "
-	       "unmapped %zu%s, max total thread cache %zu%s, "
-	       "current total thread cache %zu%s\n",
-	       tcallocated, humansize(tcallocated, (char[24]){0}, 24),
-	       tchsize, humansize(tchsize, (char[24]){0}, 24),
-	       tcfree, humansize(tcfree, (char[24]){0}, 24),
-	       tcunmapped, humansize(tcunmapped, (char[24]){0}, 24),
-	       tcmax, humansize(tcmax, (char[24]){0}, 24),
-	       tccur, humansize(tccur, (char[24]){0}, 24));
+	fprintf(outf,
+		"tcmalloc: allocated %zu%s, heap size %zu%s, free %zu%s, "
+		"unmapped %zu%s, max total thread cache %zu%s, "
+		"current total thread cache %zu%s\n",
+		tcallocated, humansize(tcallocated, (char[24]){0}, 24),
+		tchsize, humansize(tchsize, (char[24]){0}, 24),
+		tcfree, humansize(tcfree, (char[24]){0}, 24),
+		tcunmapped, humansize(tcunmapped, (char[24]){0}, 24),
+		tcmax, humansize(tcmax, (char[24]){0}, 24),
+		tccur, humansize(tccur, (char[24]){0}, 24));
 #endif
 #elif defined(HAVE_MALLINFO2)
 	struct mallinfo2 mi = mallinfo2();
-	printf("mallinfo: arena %zu%s, ordblks %zu, smblks %zu, hblks %zu, "
-	       "hblkhd %zu%s, fsmblks %zu%s, uordblks %zu%s, fordblks %zu%s, "
-	       "keepcost %zu\n",
-	       mi.arena, humansize(mi.arena, (char[24]){0}, 24),
-	       mi.ordblks, mi.smblks, mi.hblks,
-	       mi.hblkhd, humansize(mi.hblkhd, (char[24]){0}, 24),
-	       mi.fsmblks, humansize(mi.fsmblks, (char[24]){0}, 24),
-	       mi.uordblks, humansize(mi.uordblks, (char[24]){0}, 24),
-	       mi.fordblks, humansize(mi.fordblks, (char[24]){0}, 24),
-	       mi.keepcost);
-	printf("   total allocated (arena+hblkhd): %zu%s\n",
-	       mi.arena + mi.hblkhd,
-	       humansize(mi.arena + mi.hblkhd, (char[24]){0}, 24));
+	fprintf(outf,
+		"mallinfo: arena %zu%s, ordblks %zu, smblks %zu, "
+		"hblks %zu, hblkhd %zu%s, fsmblks %zu%s, uordblks %zu%s, "
+		"fordblks %zu%s, keepcost %zu\n",
+		mi.arena, humansize(mi.arena, (char[24]){0}, 24),
+		mi.ordblks, mi.smblks, mi.hblks,
+		mi.hblkhd, humansize(mi.hblkhd, (char[24]){0}, 24),
+		mi.fsmblks, humansize(mi.fsmblks, (char[24]){0}, 24),
+		mi.uordblks, humansize(mi.uordblks, (char[24]){0}, 24),
+		mi.fordblks, humansize(mi.fordblks, (char[24]){0}, 24),
+		mi.keepcost);
+	fprintf(outf, "   total allocated (arena+hblkhd): %zu%s\n",
+		mi.arena + mi.hblkhd,
+		humansize(mi.arena + mi.hblkhd, (char[24]){0}, 24));
 #endif
-	printf("gdk_vm_maxsize: %zu%s, gdk_mem_maxsize: %zu%s\n",
-	       GDK_vm_maxsize, humansize(GDK_vm_maxsize, (char[24]){0}, 24),
-	       GDK_mem_maxsize, humansize(GDK_mem_maxsize, (char[24]){0}, 24));
-	printf("gdk_mmap_minsize_persistent %zu%s, gdk_mmap_minsize_transient %zu%s\n",
-	       GDK_mmap_minsize_persistent,
-	       humansize(GDK_mmap_minsize_persistent, (char[24]){0}, 24),
-	       GDK_mmap_minsize_transient,
-	       humansize(GDK_mmap_minsize_transient, (char[24]){0}, 24));
+	fprintf(outf, "gdk_vm_maxsize: %zu%s, gdk_mem_maxsize: %zu%s\n",
+		GDK_vm_maxsize, humansize(GDK_vm_maxsize, (char[24]){0}, 24),
+		GDK_mem_maxsize, humansize(GDK_mem_maxsize, (char[24]){0}, 24));
+	fprintf(outf, "gdk_mmap_minsize_persistent %zu%s, "
+		"gdk_mmap_minsize_transient %zu%s\n",
+		GDK_mmap_minsize_persistent,
+		humansize(GDK_mmap_minsize_persistent, (char[24]){0}, 24),
+		GDK_mmap_minsize_transient,
+		humansize(GDK_mmap_minsize_transient, (char[24]){0}, 24));
 #ifdef __linux__
-	int fd = open("/proc/self/statm", O_RDONLY | O_CLOEXEC);
-	if (fd >= 0) {
-		char buf[512];
-		ssize_t s = read(fd, buf, sizeof(buf) - 1);
-		close(fd);
-		if (s > 0) {
-			assert((size_t) s < sizeof(buf));
-			size_t size, resident, shared;
-			buf[s] = 0;
-			if (sscanf(buf, "%zu %zu %zu", &size, &resident, &shared) == 3) {
-				size *= MT_pagesize();
-				resident *= MT_pagesize();
-				shared *= MT_pagesize();
-				printf("Virtual size: %zu%s, anonymous RSS: %zu%s, shared RSS: %zu%s (together: %zu%s)\n",
-				       size,
-				       humansize(size, (char[24]){0}, 24),
-				       resident - shared,
-				       humansize(resident - shared, (char[24]){0}, 24),
-				       shared,
-				       humansize(shared, (char[24]){0}, 24),
-				       resident,
-				       humansize(resident, (char[24]){0}, 24));
-			}
+	FILE *f = fopen("/proc/self/statm", "re"); /* e: O_CLOEXEC */
+	if (f != NULL) {
+		size_t size, resident, shared;
+		if (fscanf(f, "%zu %zu %zu", &size, &resident, &shared) == 3) {
+			size *= MT_pagesize();
+			resident *= MT_pagesize();
+			shared *= MT_pagesize();
+			fprintf(outf,
+				"Virtual size: %zu%s, anonymous RSS: %zu%s,"
+				" shared RSS: %zu%s (together: %zu%s)\n",
+				size,
+				humansize(size, (char[24]){0}, 24),
+				resident - shared,
+				humansize(resident - shared, (char[24]){0}, 24),
+				shared,
+				humansize(shared, (char[24]){0}, 24),
+				resident,
+				humansize(resident, (char[24]){0}, 24));
 		}
+		fclose(f);
 	}
 #endif
-	BBPprintinfo();
+	BBPprintinfo(outf);
 #ifdef LOCK_STATS
-	GDKlockstatistics(3);
+	GDKlockstatistics(outf, 3);
 #endif
-	dump_threads();
+	dump_threads(outf);
 	for (struct prinfocb *p = prinfocb; p; p = p->next)
-		(*p->func)();
-	printf("SIGUSR1 info end\n");
+		(*p->func)(outf);
+	fprintf(outf, "SIGUSR1 info end\n");
+	fflush(outf);
+	if (fn)
+		fclose(outf);
 }
 
 void (*GDKtriggerusr1)(void);

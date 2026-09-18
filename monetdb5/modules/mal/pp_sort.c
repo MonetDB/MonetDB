@@ -525,27 +525,35 @@ PPmproject_any( BAT *res, BAT *zzl, BAT *lcol, BAT *rcol)
 	int tt = lcol->ttype;
 
 	if(!ATOMvarsized(tt)) {
-		int width = lcol->twidth;
-		if(width == 0) {
+		switch (lcol->twidth) {
+		case 0:
 			if (lcol->ttype == TYPE_void && rcol->ttype == TYPE_void) {
 				zzl_vvproject(bte, res, zzl, lcol, rcol);
 			} else {
 				zzl_vproject(bte, res, zzl, lcol, rcol);
 			}
-		} else if(width == sizeof(bte)) {
+			break;
+		case 1:
 			zzl_project(bte, res, zzl, lcol, rcol);
-		} else if(width == sizeof(sht)) {
+			break;
+		case 2:
 			zzl_project(sht, res, zzl, lcol, rcol);
-		} else if(width == sizeof(int)) {
+			break;
+		case 4:
 			zzl_project(int, res, zzl, lcol, rcol);
-		} else if(width == sizeof(lng)) {
+			break;
+		case 8:
 			zzl_project(lng, res, zzl, lcol, rcol);
+			break;
+		case 16:
 #ifdef HAVE_HGE
-		} else if(width == sizeof(hge)) {
 			zzl_project(hge, res, zzl, lcol, rcol);
+#else
+			zzl_project(uuid, res, zzl, lcol, rcol);
 #endif
-		} else {
-			printf("width %d\n", width);
+			break;
+		default:
+			printf("width %d\n", lcol->twidth);
 			assert(0);
 		}
 		/* zap props */
@@ -553,14 +561,19 @@ PPmproject_any( BAT *res, BAT *zzl, BAT *lcol, BAT *rcol)
 		BATsetcount(res, cnt);
 		return MAL_SUCCEED;
 	} else if (tt == TYPE_str && res->tvheap->parentid == lcol->tvheap->parentid) {
-		if(lcol->twidth == 1) {
+		switch (lcol->twidth) {
+		case 1:
 			zzl_project(bte, res, zzl, lcol, rcol);
-		} else if(lcol->twidth == 2) {
+			break;
+		case 2:
 			zzl_project(sht, res, zzl, lcol, rcol);
-		} else if(lcol->twidth == 4) {
+			break;
+		case 4:
 			zzl_project(int, res, zzl, lcol, rcol);
-		} else if(lcol->twidth == 8) {
+			break;
+		case 8:
 			zzl_project(lng, res, zzl, lcol, rcol);
+			break;
 		}
 		/* zap props */
 		BATnegateprops(res);
