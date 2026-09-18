@@ -895,9 +895,9 @@ pushArgument(MalBlkPtr mb, InstrPtr p, int varid)
 		if (mb->errors)
 			return p;
 	}							/* protect against the case that the instruction is malloced in isolation */
-	if (mb->maxarg < p->maxarg)
-		mb->maxarg = p->maxarg;
 	p->argv[p->argc++] = varid;
+	if (mb->maxarg < p->argc)
+		mb->maxarg = p->argc;
 	return p;
 }
 
