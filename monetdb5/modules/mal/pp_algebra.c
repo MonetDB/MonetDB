@@ -2413,7 +2413,7 @@ LALGprojection(Client ctx, bat *rid, bat *gid, bat *bid)
 	/* get max id from gid */
 	if (ATOMvarsized(r->ttype) && cnt < max)
 		memset(Tloc(r, cnt), 0, r->twidth*(max-cnt));
-	cnt = BATcount(b);
+	cnt = BATcount(g);
 	if (!tt)
 		r->tseqbase = b->tseqbase;
 	if (tt && cnt) {
