@@ -206,4 +206,4 @@ KNOWNFAIL?8024-MALoptimizer-bug
 8026-having-expression-bug
 8027-having-expression-issue
 8028-coalesce-groupby-rollup-having-bug
-KNOWNFAIL?8030-inner-join-group-by-bug
+8030-inner-join-group-by-bug
