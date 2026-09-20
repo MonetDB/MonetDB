@@ -244,6 +244,8 @@ pqc_find_subtype(mvc *sql, const pqc_schema_element *pse)
 				return tpe;
 			break;
 		case inttype:
+			if (!pse->isSigned)
+				printf("handle unsigned (by 2x width)\n");
 			if (pse->precision == 8 && sql_find_subtype(tpe, "tinyint", pse->precision, 0))
 				return tpe;
 			if (pse->precision == 16 && sql_find_subtype(tpe, "smallint", pse->precision, 0))
