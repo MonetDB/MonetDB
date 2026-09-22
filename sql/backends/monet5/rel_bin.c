@@ -1834,7 +1834,7 @@ exp_bin(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, 
 				list_append(l, es);
 			}
 		}
-		if (SQLrunning && be->client->qryctx.oahash_enabled && f->pipeline && f->func->mod && f->func->imp && strcmp(f->func->mod, "generator") == 0 && strcmp(f->func->imp, "series") == 0)
+		if (SQLrunning && be->client->qryctx.pipeline_mode && f->pipeline && f->func->mod && f->func->imp && strcmp(f->func->mod, "generator") == 0 && strcmp(f->func->imp, "series") == 0)
 			return exp2bin_generator(be, e, l);
 		if (!(s = stmt_Nop(be, stmt_list(be, l), sel, f, rows)))
 			return NULL;

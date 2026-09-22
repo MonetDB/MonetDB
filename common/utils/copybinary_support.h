@@ -11,6 +11,7 @@
 #ifndef COPYBINARY_SUPPORT_H
 #define COPYBINARY_SUPPORT_H
 
+#include <stdint.h>
 #include "copybinary.h"
 
 // According to Godbolt, these code sequences are recognized by
@@ -27,64 +28,83 @@
 #ifdef _MSC_VER
 
 static inline uint16_t
-copy_binary_byteswap16(uint16_t value) {
+copy_binary_byteswap16(uint16_t value)
+{
 	return _byteswap_ushort(value);
 }
 
 static inline uint32_t
-copy_binary_byteswap32(uint32_t value) {
+copy_binary_byteswap32(uint32_t value)
+{
 	return _byteswap_ulong(value);
 }
 
 static inline uint64_t
-copy_binary_byteswap64(uint64_t value) {
+copy_binary_byteswap64(uint64_t value)
+{
 	return _byteswap_uint64(value);
 }
 
 #else
 
 static inline uint16_t
-copy_binary_byteswap16(uint16_t value) {
+copy_binary_byteswap16(uint16_t value)
+{
 	return
-		((value & 0xFF00u) >>  8u) |
-		((value & 0x00FFu) <<  8u)
+		((value & (UINT16_C(0xFF) << 8)) >>  8) |
+		((value & (UINT16_C(0xFF) << 0)) <<  8)
 		;
 }
 
 static inline uint32_t
-copy_binary_byteswap32(uint32_t value) {
+copy_binary_byteswap32(uint32_t value)
+{
 	return
-		((value & 0xFF000000u) >> 24u) |
-		((value & 0x00FF0000u) >>  8u) |
-		((value & 0x0000FF00u) <<  8u) |
-		((value & 0x000000FFu) << 24u)
+		((value & (UINT32_C(0xFF) << 24)) >> 24) |
+		((value & (UINT32_C(0xFF) << 16)) >>  8) |
+		((value & (UINT32_C(0xFF) <<  8)) <<  8) |
+		((value & (UINT32_C(0xFF) <<  0)) << 24)
 		;
 }
 
 static inline uint64_t
-copy_binary_byteswap64(uint64_t value) {
+copy_binary_byteswap64(uint64_t value)
+{
 	return
-		((value & 0xFF00000000000000u) >> 56u) |
-		((value & 0x00FF000000000000u) >> 40u) |
-		((value & 0x0000FF0000000000u) >> 24u) |
-		((value & 0x000000FF00000000u) >>  8u) |
-		((value & 0x00000000FF000000u) <<  8u) |
-		((value & 0x0000000000FF0000u) << 24u) |
-		((value & 0x000000000000FF00u) << 40u) |
-		((value & 0x00000000000000FFu) << 56u)
+		((value & (UINT64_C(0xFF) << 56)) >> 56) |
+		((value & (UINT64_C(0xFF) << 48)) >> 40) |
+		((value & (UINT64_C(0xFF) << 40)) >> 24) |
+		((value & (UINT64_C(0xFF) << 32)) >>  8) |
+		((value & (UINT64_C(0xFF) << 24)) <<  8) |
+		((value & (UINT64_C(0xFF) << 16)) << 24) |
+		((value & (UINT64_C(0xFF) <<  8)) << 40) |
+		((value & (UINT64_C(0xFF) <<  0)) << 56)
 		;
 }
 
 #endif
 
 #ifdef HAVE_HGE
-static inline
-uint128_t copy_binary_byteswap128(uint128_t value) {
-	uint64_t lo = (uint64_t) value;
-	uint64_t hi = (uint64_t) (value >> 64);
-	uint128_t swapped_lo = (uint128_t)copy_binary_byteswap64(lo);
-	uint128_t swapped_hi = (uint128_t)copy_binary_byteswap64(hi);
-	return swapped_hi | (swapped_lo << 64);
+static inline uint128_t
+copy_binary_byteswap128(uint128_t value)
+{
+	return
+		((value & ((uint128_t) 0xFF << 120)) >> 120) |
+		((value & ((uint128_t) 0xFF << 112)) >> 104) |
+		((value & ((uint128_t) 0xFF << 104)) >>  88) |
+		((value & ((uint128_t) 0xFF <<  96)) >>  72) |
+		((value & ((uint128_t) 0xFF <<  88)) >>  56) |
+		((value & ((uint128_t) 0xFF <<  80)) >>  40) |
+		((value & ((uint128_t) 0xFF <<  72)) >>  24) |
+		((value & ((uint128_t) 0xFF <<  64)) >>   8) |
+		((value & ((uint128_t) 0xFF <<  56)) <<   8) |
+		((value & ((uint128_t) 0xFF <<  48)) <<  24) |
+		((value & ((uint128_t) 0xFF <<  40)) <<  40) |
+		((value & ((uint128_t) 0xFF <<  32)) <<  56) |
+		((value & ((uint128_t) 0xFF <<  24)) <<  72) |
+		((value & ((uint128_t) 0xFF <<  16)) <<  88) |
+		((value & ((uint128_t) 0xFF <<   8)) << 104) |
+		((value & ((uint128_t) 0xFF <<   0)) << 120);
 }
 #endif
 

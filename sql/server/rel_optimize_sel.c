@@ -1768,8 +1768,8 @@ rel_join_use_fk(visitor *v, sql_rel *rel)
 static sql_rel *
 rel_optimize_joins_topdown_(visitor *v, sql_rel *rel)
 {
-	bool oahash_enabled = MT_thread_get_qry_ctx()->oahash_enabled;
-	if (oahash_enabled)
+	bool pipeline_mode = MT_thread_get_qry_ctx()->pipeline_mode;
+	if (pipeline_mode)
 		rel = transitivity_rule(v, rel);
 	rel = rel_join_use_fk(v, rel);
 	return rel;
@@ -3571,7 +3571,7 @@ order_joins_bushy2( visitor *v, list *rels, list *exps)
 static sql_rel *
 order_joins(visitor *v, list *rels, list *exps)
 {
-	bool oahash_enabled = MT_thread_get_qry_ctx()->oahash_enabled;
+	bool pipeline_mode = MT_thread_get_qry_ctx()->pipeline_mode;
 	sql_rel *top = NULL, *l = NULL, *r = NULL, *f = NULL;
 	sql_exp *cje;
 	node *djn;
@@ -3678,7 +3678,7 @@ order_joins(visitor *v, list *rels, list *exps)
 		rsingle = is_single(r);
 		reset_single(r);
 		top = rel_crossproduct(v->sql->sa, l, r, op_join);
-		if (oahash_enabled)
+		if (pipeline_mode)
 			top = rel_get_statistics_(v, top); /* we need stats */
 		if (rsingle)
 			set_single(r);
@@ -3939,7 +3939,7 @@ static sql_rel *rel_join_order_(visitor *v, sql_rel *rel);
 sql_rel *
 reorder_join(visitor *v, sql_rel *rel)
 {
-	bool oahash_enabled = MT_thread_get_qry_ctx()->oahash_enabled;
+	bool pipeline_mode = MT_thread_get_qry_ctx()->pipeline_mode;
 
 	list *exps, *rels;
 	allocator *ta = MT_thread_getallocator();
@@ -3966,7 +3966,7 @@ reorder_join(visitor *v, sql_rel *rel)
 			int cnt = list_length(exps);
 			rel->exps = exps;
 			if (list_length(rel->exps) != cnt) {
-				if (oahash_enabled)
+				if (pipeline_mode)
 					rel->exps = order_join_expressions_pp(v->sql, exps, rels);
 				else
 					rel->exps = order_join_expressions(v->sql, exps, rels);
@@ -3981,7 +3981,7 @@ reorder_join(visitor *v, sql_rel *rel)
 		get_relations(v, rel, rels);
 		if (list_length(rels) > 1) {
 			rels = push_in_join_down(v->sql, rels, exps);
-			if (oahash_enabled)
+			if (pipeline_mode)
 				rel = order_joins_bushy2(v, rels, exps);
 			else
 				rel = order_joins(v, rels, exps);
@@ -4076,9 +4076,9 @@ rel_join_order(visitor *v, global_props *gp, sql_rel *rel)
 run_optimizer
 bind_join_order(visitor *v, global_props *gp)
 {
-	bool oahash_enabled = MT_thread_get_qry_ctx()->oahash_enabled;
+	bool pipeline_mode = MT_thread_get_qry_ctx()->pipeline_mode;
 	int flag = v->sql->sql_optimizer;
-	return !oahash_enabled && gp->opt_level == 1 && gp->opt_cycle < 10 && !gp->cnt[op_update] && (gp->cnt[op_join] || gp->cnt[op_left] ||
+	return !pipeline_mode && gp->opt_level == 1 && gp->opt_cycle < 10 && !gp->cnt[op_update] && (gp->cnt[op_join] || gp->cnt[op_left] ||
 		gp->cnt[op_right] || gp->cnt[op_full]) && (flag & join_order) ? rel_join_order : NULL;
 }
 

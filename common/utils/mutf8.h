@@ -20,13 +20,15 @@
 #endif
 #endif
 
+#include <stdint.h>
+
 /* return display width of Unicode codepoint c */
 mutils_export int charwidth(uint32_t c);
 
 /* decode UTF-8 string byte by byte into *state and *codep, returns
-*  state; UTF-8 sequence is complete (and value is in *codep) when state
-*  is UTF8_ACCEPT, incorrect when state is UTF8_REJECT, and incomplete
-*  for any other value of state */
+ * state; UTF-8 sequence is complete (and value is in *codep) when state
+ * is UTF8_ACCEPT, incorrect when state is UTF8_REJECT, and incomplete
+ * for any other value of state */
 
 /* this function and the table are copyright Bjoern Hoehrmann per the
  * below notice.  The layout was changed. */

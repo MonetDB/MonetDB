@@ -1084,7 +1084,7 @@ class SQLLogic:
                     hash = None
                     expected = []
                     while line and line != '\n':
-                        expected.append(line.rstrip('\n'))
+                        expected.extend(line.rstrip('\n').split('\t'))
                         line = self.readline()
                     nresult = len(expected)
                 if not skipping:
@@ -1098,8 +1098,19 @@ class SQLLogic:
                             self.writeline(line.rstrip(), replace=True)
                         if result1[0] == 'query':
                             self.writeline('----')
-                            for line in result2:
-                                self.writeline(line)
+                            if result1[2] in ('rowsort', 'nosort'):
+                                line = []
+                                ncols = len(result1[1])
+                                for val in result2:
+                                    line.append(val)
+                                    if len(line) == ncols:
+                                        self.writeline('\t'.join(line))
+                                        line = []
+                                if line:
+                                    self.writeline('\t'.join(line))
+                            else:
+                                for line in result2:
+                                    self.writeline(line)
                 if skipping:
                     self.writeline(qrline.rstrip())
                     for line in query:
