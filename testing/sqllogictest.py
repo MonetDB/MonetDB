@@ -81,6 +81,12 @@ hashge = False                  # may get updated at start of testing
 
 skipidx = re.compile(r'create index .* \b(asc|desc)\b', re.I)
 
+# SQL/GDK types that are represented with an I column type
+inttypes = ('boolean', 'tinyint', 'smallint', 'int', 'bigint', 'hugeint',
+            'bit', 'sht', 'lng', 'hge', 'oid', 'void')
+# SQL/GDK types that are represented with a R column type
+flttypes =('double', 'real', 'flt', 'dbl')
+
 
 class UnsafeDirectoryHandler(pymonetdb.SafeDirectoryHandler):
     def __init__(self, srcdir, data_dir:Optional[Path]=None, **kwargs):
@@ -586,11 +592,11 @@ class SQLLogic:
         if crs.description:
             rescols = []
             for desc in crs.description:
-                if desc.type_code in ('boolean', 'tinyint', 'smallint', 'int', 'bigint', 'hugeint', 'bit', 'sht', 'lng', 'hge', 'oid', 'void'):
+                if desc.type_code in inttypes:
                     rescols.append('I')
                 elif desc.type_code == 'decimal':
                     rescols.append('D') # extension
-                elif desc.type_code in ('double', 'real', 'flt', 'dbl'):
+                elif desc.type_code in flttypes:
                     rescols.append('R')
                 else:
                     rescols.append('T')
