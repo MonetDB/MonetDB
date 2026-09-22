@@ -17,6 +17,7 @@
 #include "rel_rewriter.h"
 #include "rel_physical.h"
 #include "rel_util.h"
+#include "sql_list.h"
 #include "sql_pp_statement.h"
 #include "bin_partition_by_value.h"
 #include "mal_builder.h"
@@ -1337,7 +1338,7 @@ rel2bin_oahash_semi(backend *be, sql_rel *rel, list *refs)
 		probe_sub = sub = _start_pp(be, rel_prb->l, false, refs, NULL);
 		if (!sub) return NULL;
 
-		stmt *prb_res = oahash_probe(be, rel, rel->exps, exps_cmp_prb, stmts_ht, sub, anti, false/*groupjoin*/, !list_empty(sexps)/*has_outerselect*/, &nulls, NULL);
+		stmt *prb_res = oahash_probe(be, rel, rel->exps, exps_cmp_prb, stmts_ht, sub, anti, false /* groupjoin */, false /* has_outerselect */, &nulls, NULL);
 		if (prb_res == NULL) return NULL;
 
 		/*** PROJECT RESULT PHASE ***/
