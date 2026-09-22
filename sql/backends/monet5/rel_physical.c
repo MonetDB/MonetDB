@@ -16,7 +16,7 @@
 #include "rel_rel.h"
 #include "sql_storage.h"
 #include "sql_scenario.h"
-#include "rel_bin.h"
+#include "rel_util.h"
 #include "bin_partition_by_slice.h"
 
 #define IS_ORDER_BASED_AGGR(fname, argc) (\
@@ -889,7 +889,7 @@ rel_pipeline(visitor *v, sql_rel *rel, bool materialize, int pb)
 	} else if (is_semi(rel->op)) {
 		list *eq_exps = sa_list(v->sql->sa);
 		list *other = sa_list(v->sql->sa);
-		split_join_exps_pp(rel, eq_exps, other, true);
+		split_join_exps(rel, eq_exps, other, true /* eqonly */, true /* anti */);
 		bool needs_payload = (!list_empty(other));
 		bool need_all = false;
 		bool cross = list_empty(eq_exps);
@@ -1012,7 +1012,7 @@ rel_pipeline(visitor *v, sql_rel *rel, bool materialize, int pb)
 			list *other = sa_list(v->sql->sa);
 			if (!list_empty(rel->attr))
 				rel->exps = get_simple_equi_joins_first(v->sql, rel, rel->exps);
-			split_join_exps_pp(rel, eq_exps, other, true);
+			split_join_exps(rel, eq_exps, other, true /* eqonly */, true /* anti */);
 
 			sql_rel *l = rel->l, *r = rel->r;
 			sql_rel *rel_hsh = NULL, *rel_prb = NULL, *iprj = NULL, *pprj = NULL;
@@ -1608,24 +1608,6 @@ rel_push_down_topn(visitor *v, sql_rel *rel)
 		}
 	}
 	return rel;
-}
-
-void
-split_join_exps_pp(sql_rel *rel, list *joinable, list *not_joinable, bool anti)
-{
-	if (!list_empty(rel->exps)) {
-		for (node *n = rel->exps->h; n; n = n->next) {
-			sql_exp *e = n->data;
-
-			/* we can handle thetajoins, rangejoins and filter joins (like) */
-			/* ToDo how about atom expressions? */
-			if (can_join_exp(rel, e, anti) && is_equi_exp_(e) && !exp_is_atom(e->r) && !exp_is_atom(e->l)) {
-				append(joinable, e);
-			} else {
-				append(not_joinable, e);
-			}
-		}
-	}
 }
 
 static sql_rel *
