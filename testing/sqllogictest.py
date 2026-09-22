@@ -292,7 +292,7 @@ class SQLLogic:
     def drop(self):
         if self.language != 'sql':
             return
-        self.crs.execute('select s.name, t.name, case when t.type in (select table_type_id from sys.table_types where table_type_name like \'%VIEW%\') then \'VIEW\' else \'TABLE\' end from sys.tables t, sys.schemas s where not t.system and t.schema_id = s.id')
+        self.crs.execute("select s.name, t.name, case when t.type in (select table_type_id from sys.table_types where table_type_name like '%VIEW%') then 'VIEW' else 'TABLE' end from sys.tables t, sys.schemas s where not t.system and t.schema_id = s.id")
         for row in self.crs.fetchall():
             try:
                 self.crs.execute(f'drop {row[2]} "{dq(row[0])}"."{dq(row[1])}" cascade')
@@ -335,7 +335,7 @@ class SQLLogic:
         self.crs.execute("select sqlname from sys.types where systemname is null order by id")
         for row in self.crs.fetchall():
             try:
-                self.crs.execute('drop type "{}"'.format(row[0]))
+                self.crs.execute(f'drop type "{row[0]}"')
             except pymonetdb.Error:
                 pass
 
@@ -457,7 +457,7 @@ class SQLLogic:
                         elif row[i] in ('false', 'False'):
                             nrow.append('0')
                         else:
-                            nrow.append('%d' % row[i])
+                            nrow.append(f'{int(row[i]):d}')
                     elif columns[i] == 'T':
                         if row[i] == '' or row[i] == b'':
                             nrow.append('(empty)')
@@ -465,7 +465,7 @@ class SQLLogic:
                             nval = []
                             if isinstance(row[i], bytes):
                                 for c in row[i]:
-                                    c = '%02X' % c
+                                    c = f'{c:02X}'
                                     nval.append(c)
                             else:
                                 for c in str(row[i]):
@@ -484,7 +484,7 @@ class SQLLogic:
                     elif columns[i] == 'D':
                         nrow.append(str(row[i]))
                     elif columns[i] == 'R':
-                        nrow.append('%.3f' % row[i])
+                        nrow.append(f'{row[i]:.3f}')
                     else:
                         self.raise_error('incorrect column type indicator')
                 except TypeError:
@@ -510,7 +510,7 @@ class SQLLogic:
             print(message, file=self.out)
             if exception:
                 print(exception.rstrip('\n'), file=self.out)
-            print("query started on line %d of file %s" % (self.qline, self.name),
+            print(f"query started on line {self.qline} of file {self.name}",
                   file=self.out)
             print("query text:", file=self.out)
             print(query, file=self.out)
@@ -595,6 +595,8 @@ class SQLLogic:
                 else:
                     rescols.append('T')
             rescols = ''.join(rescols)
+            # if columns != rescols:
+            #     print(self.name, self.line, columns, rescols, file=sys.stderr)
             if len(crs.description) != len(columns):
                 self.query_error(query, f'received {len(crs.description)} columns, expected {len(columns)} columns', data=data)
                 columns = rescols
@@ -637,7 +639,7 @@ class SQLLogic:
             for col in ndata:
                 if expected is not None:
                     if i < len(expected) and col != expected[i]:
-                        self.query_error(query, 'unexpected value; received "%s", expected "%s"' % (col, expected[i]))
+                        self.query_error(query, f'unexpected value; received "{col}", expected "{expected[i]}"')
                         err = True
                     i += 1
                 m.update(bytes(col, encoding='utf-8'))
@@ -710,7 +712,7 @@ class SQLLogic:
                 for col in row:
                     if expected is not None:
                         if i < len(expected) and col != expected[i]:
-                            self.query_error(query, 'unexpected value; received "%s", expected "%s"' % (col, expected[i]))
+                            self.query_error(query, f'unexpected value; received "{col}", expected "{expected[i]}"')
                             err = True
                         i += 1
                     m.update(bytes(col, encoding='utf-8'))
@@ -791,10 +793,10 @@ class SQLLogic:
             resh = resm.hexdigest()
         if not err:
             if hashlabel is not None and hashlabel in self.hashes and self.hashes[hashlabel][0] != h:
-                self.query_error(query, 'query hash differs from previous query at line %d' % self.hashes[hashlabel][1], data=data)
+                self.query_error(query, f'query hash differs from previous query at line {self.hashes[hashlabel][1]}', data=data)
                 err = True
             elif hash is not None and h != hash:
-                self.query_error(query, 'hash mismatch; received: "%s", expected: "%s"' % (h, hash), data=data)
+                self.query_error(query, f'hash mismatch; received: "{h}", expected: "{hash}"', data=data)
                 err = True
         if hashlabel is not None and hashlabel not in self.hashes:
             if hash is not None:
