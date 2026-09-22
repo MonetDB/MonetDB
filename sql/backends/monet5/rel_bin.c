@@ -3409,7 +3409,7 @@ rel2bin_join(backend *be, sql_rel *rel, list *refs)
 		list *jexps = sa_list(sql->sa);
 		sexps = sa_list(sql->sa);
 
-		split_join_exps(rel, jexps, sexps, false /* eqonly */, false /* anti */);
+		split_join_exps(rel, jexps, sexps, false /* anti */, false /* eqonly */);
 		if (list_empty(jexps)) { /* cross product and continue after project */
 			stmt *l = bin_find_smallest_column(be, left);
 			stmt *r = bin_find_smallest_column(be, right);
@@ -3656,7 +3656,7 @@ rel2bin_antijoin(backend *be, sql_rel *rel, list *refs)
 	jexps = sa_list(sql->sa);
 	sexps = sa_list(sql->sa);
 
-	split_join_exps(rel, jexps, sexps, false /* eqonly */, true /* anti */);
+	split_join_exps(rel, jexps, sexps, true /* anti */, false /* eqonly */);
 	if (list_empty(jexps)) {
 		stmt *l = bin_find_smallest_column(be, left);
 		stmt *r = bin_find_smallest_column(be, right);
@@ -3882,7 +3882,7 @@ rel2bin_semijoin(backend *be, sql_rel *rel, list *refs)
 		list *jexps = sa_list(sql->sa);
 		sexps = sa_list(sql->sa);
 
-		split_join_exps(rel, jexps, sexps, false /* eqonly */, false /* anti */);
+		split_join_exps(rel, jexps, sexps, false /* anti */, false /* eqonly */);
 		if (list_empty(jexps)) { /* cross product and continue after project */
 			right = subrel_project(be, right, refs, rel->r);
 			stmt *l = bin_find_smallest_column(be, left);
