@@ -16,7 +16,7 @@
 #include "rel_rel.h"
 #include "sql_storage.h"
 #include "sql_scenario.h"
-#include "rel_bin.h"
+#include "rel_util.h"
 #include "bin_partition_by_slice.h"
 
 #define IS_ORDER_BASED_AGGR(fname, argc) (\
@@ -426,7 +426,7 @@ rel_groupby_partition_safe(sql_rel *rel)
 static int
 do_oahash_join(visitor *v, sql_rel *rel, int *side)
 {
-	if (!MT_thread_get_qry_ctx()->oahash_enabled)
+	if (!MT_thread_get_qry_ctx()->pipeline_mode)
 		return 0;
 
 	/* fetch join */
@@ -889,7 +889,7 @@ rel_pipeline(visitor *v, sql_rel *rel, bool materialize, int pb)
 	} else if (is_semi(rel->op)) {
 		list *eq_exps = sa_list(v->sql->sa);
 		list *other = sa_list(v->sql->sa);
-		split_join_exps_pp(rel, eq_exps, other, true);
+		split_join_exps(rel, eq_exps, other, true /* anti */, true /* eqonly */);
 		bool needs_payload = (!list_empty(other));
 		bool need_all = false;
 		bool cross = list_empty(eq_exps);
@@ -1012,7 +1012,7 @@ rel_pipeline(visitor *v, sql_rel *rel, bool materialize, int pb)
 			list *other = sa_list(v->sql->sa);
 			if (!list_empty(rel->attr))
 				rel->exps = get_simple_equi_joins_first(v->sql, rel, rel->exps);
-			split_join_exps_pp(rel, eq_exps, other, true);
+			split_join_exps(rel, eq_exps, other, true /* anti */, true /* eqonly */);
 
 			sql_rel *l = rel->l, *r = rel->r;
 			sql_rel *rel_hsh = NULL, *rel_prb = NULL, *iprj = NULL, *pprj = NULL;
@@ -1610,24 +1610,6 @@ rel_push_down_topn(visitor *v, sql_rel *rel)
 	return rel;
 }
 
-void
-split_join_exps_pp(sql_rel *rel, list *joinable, list *not_joinable, bool anti)
-{
-	if (!list_empty(rel->exps)) {
-		for (node *n = rel->exps->h; n; n = n->next) {
-			sql_exp *e = n->data;
-
-			/* we can handle thetajoins, rangejoins and filter joins (like) */
-			/* ToDo how about atom expressions? */
-			if (can_join_exp(rel, e, anti) && is_equi_exp_(e) && !exp_is_atom(e->r) && !exp_is_atom(e->l)) {
-				append(joinable, e);
-			} else {
-				append(not_joinable, e);
-			}
-		}
-	}
-}
-
 static sql_rel *
 rel_add_project(visitor *v, sql_rel *rel)
 {
@@ -1663,7 +1645,7 @@ rel_rewrite_physical(visitor *v, sql_rel *rel)
 	if (rel)
 		rel = rel_push_down_topn(v, rel);
 	if (rel) { /* split equi-join/select */
-		if (SQLrunning && MT_thread_get_qry_ctx()->oahash_enabled) {
+		if (SQLrunning && MT_thread_get_qry_ctx()->pipeline_mode) {
 			rel = rel_count_gt_zero(v, rel);
 			if (rel)	/* Add a projection after each join, needed for limited number of columns in hash tables */
 				rel = rel_add_project(v, rel);
@@ -1691,7 +1673,7 @@ rel_physical(mvc *sql, sql_rel *rel)
 	v.data = NULL;
 
 	if (!sql->recursive) {
-		if (!SQLrunning || !MT_thread_get_qry_ctx()->oahash_enabled || gp.complex_modify || gp.cnt[op_except] || gp.cnt[op_inter]) {
+		if (!SQLrunning || !MT_thread_get_qry_ctx()->pipeline_mode || gp.complex_modify || gp.cnt[op_except] || gp.cnt[op_inter]) {
 			if (v.opt >= 0)
 				v.opt = rel->opt+1;
 			(void)rel_partition(&v, sql, rel);

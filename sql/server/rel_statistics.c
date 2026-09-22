@@ -1297,9 +1297,9 @@ rel_get_statistics(visitor *v, global_props *gp, sql_rel *rel)
 run_optimizer
 bind_get_statistics(visitor *v, global_props *gp)
 {
-	bool oahash_enabled = MT_thread_get_qry_ctx()->oahash_enabled;
+	bool pipeline_mode = MT_thread_get_qry_ctx()->pipeline_mode;
 	(void) v;
-	return (!oahash_enabled && gp->opt_level == 1 /*&& !gp->cnt[op_insert]*/) ? rel_get_statistics : NULL;
+	return (!pipeline_mode && gp->opt_level == 1 /*&& !gp->cnt[op_insert]*/) ? rel_get_statistics : NULL;
 }
 
 

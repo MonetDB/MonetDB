@@ -235,7 +235,7 @@ iconv_rstream(stream *restrict ss, const char *restrict charset, const char *res
 	if (priv->cd == (iconv_t) -1) {
 		free(priv);
 		fprintf(stderr, "Cannot initiate character set translation from %s\n",
-				charset);
+			charset);
 		return NULL;
 	}
 	stream *s = callback_stream(priv, ic_read, NULL, ic_close, ic_destroy, name);
@@ -266,7 +266,7 @@ iconv_wstream(stream *restrict ss, const char *restrict charset, const char *res
 	if (priv->cd == (iconv_t) -1) {
 		free(priv);
 		fprintf(stderr, "Cannot initiate character set translation from %s\n",
-				charset);
+			charset);
 		return NULL;
 	}
 	stream *s = callback_stream(priv, NULL, ic_write, ic_close, ic_destroy, name);
