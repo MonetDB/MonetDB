@@ -233,12 +233,6 @@ oahash_probe(backend *be, sql_rel *rel, list *jexps, list *exps_cmp_prb, const s
 		getArg(qqq, 0) = prb_oid->nr;
 		getArg(qqq, 1) = hsh_gid->nr;
 		getArg(qqq, 2) = mrk->nr;
-		//q = pushArgument(be->mb, q, prb_oid->nr);
-		//q = pushArgument(be->mb, q, hsh_gid->nr);
-		//q = pushArgument(be->mb, q, mrk->nr);
-		//q = pushArgument(be->mb, q, freq->nr);
-		//q = pushArgument(be->mb, q, hp_pos->nr);
-		//pushInstruction(be->mb, q);
 		stmt *sss = stmt_none(be);
 		if (sss == NULL) return NULL;
 		sss->op4.typeval = *sql_fetch_localtype(TYPE_oid);
@@ -413,6 +407,7 @@ rel2bin_oahash_build(backend *be, sql_rel *rel, list *refs)
 	/* BUILD HT */
 	list *l = sa_list(be->mvc->sa);
 	stmt *prnt = NULL;
+	bool need_has_nil = (exps_cmp_hsh->cnt == 1) && (exps_prj_hsh->cnt > 0) && is_any((sql_exp*)exps_cmp_hsh->h->data);
 	for (node *n = exps_cmp_hsh->h, *inout = shared_ht->op4.lval->h; n && inout; n = n->next, inout = inout->next) {
 		sql_exp *e = n->data;
 		stmt *ht = inout->data;
@@ -420,7 +415,7 @@ rel2bin_oahash_build(backend *be, sql_rel *rel, list *refs)
 		assert(key); /* must find */
 		key = column(be, key);
 
-		prnt = stmt_oahash_build_ht(be, ht, key, prnt, is_any(e));
+		prnt = stmt_oahash_build_ht(be, ht, key, prnt, need_has_nil);
 		if (prnt == NULL) return NULL;
 
 		if (e->alias.label)
@@ -433,7 +428,7 @@ rel2bin_oahash_build(backend *be, sql_rel *rel, list *refs)
 		stmt *s = stmt_oahash_frequency(be, freq, prnt, (hp_gid != NULL));
 
 		if (hp_gid) {
-			prnt = stmt_oahash_build_ht(be, hp_gid, s, prnt, false);
+			prnt = stmt_oahash_build_ht(be, hp_gid, s, prnt, need_has_nil);
 			if (prnt == NULL) return NULL;
 		}
 	}
