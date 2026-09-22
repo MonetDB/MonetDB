@@ -25,3 +25,15 @@ SELECT * FROM '$QTSTDATAPATH/parquet/parquet_testing/unsigned.parquet'
 65535
 4294967295
 18446744073709551615
+
+query IIII nosort
+SELECT * FROM '$QTSTDATAPATH/parquet/parquet_testing/unsigned_stats.parquet'
+----
+0
+0
+0
+0
+255
+65535
+4294967295
+18446744073709551615
