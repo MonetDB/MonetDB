@@ -136,7 +136,7 @@ addOptimizers(Client c, MalBlkPtr mb, const char *pipe, int prepare)
 
 	be = (backend *) c->sqlcontext;
 	c->no_mitosis = be->no_mitosis;
-	if (c->qryctx.oahash_enabled)
+	if (c->qryctx.pipeline_mode)
 		c->no_mitosis = 1;
 	assert(be && be->mvc);	/* SQL clients should always have their state set */
 

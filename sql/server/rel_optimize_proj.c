@@ -3360,7 +3360,7 @@ rel_project_select_exp(visitor *v, sql_rel *rel)
 static sql_rel *
 rel_optimize_projections_(visitor *v, sql_rel *rel)
 {
-	bool oahash_enabled = MT_thread_get_qry_ctx()->oahash_enabled;
+	bool pipeline_mode = MT_thread_get_qry_ctx()->pipeline_mode;
 	rel = rel_project_cse(v, rel);
 	rel = rel_project_select_exp(v, rel);
 	rel = rel_use_equality_exps(v, rel);
@@ -3375,11 +3375,11 @@ rel_optimize_projections_(visitor *v, sql_rel *rel)
 		rel = rel_simplify_groupby_columns(v, rel);
 	}
 	rel = rel_groupby_cse(v, rel);
-	if (!oahash_enabled) rel = rel_push_aggr_down(v, rel);
+	if (!pipeline_mode) rel = rel_push_aggr_down(v, rel);
 	rel = rel_push_groupby_down(v, rel);
 	rel = rel_reduce_groupby_exps(v, rel);
 	rel = rel_distinct_aggregate_on_unique_values(v, rel);
-	if (!oahash_enabled) rel = rel_groupby_distinct(v, rel);
+	if (!pipeline_mode) rel = rel_groupby_distinct(v, rel);
 	rel = rel_push_count_down(v, rel);
 
 	/* only when value_based_opt is on, ie not for dependency resolution */
@@ -3536,8 +3536,8 @@ rel_merge_unions(visitor *v, sql_rel *rel)
 static inline sql_rel *
 rel_push_join_down_munion(visitor *v, sql_rel *rel)
 {
-	bool oahash_enabled = MT_thread_get_qry_ctx()->oahash_enabled;
-	if (!oahash_enabled && ((is_join(rel->op) && !is_outerjoin(rel->op) && !is_single(rel)) || is_semi(rel->op))) {
+	bool pipeline_mode = MT_thread_get_qry_ctx()->pipeline_mode;
+	if (!pipeline_mode && ((is_join(rel->op) && !is_outerjoin(rel->op) && !is_single(rel)) || is_semi(rel->op))) {
 		sql_rel *l = rel->l, *r = rel->r, *ol = l, *or = r;
 		list *exps = rel->exps, *attr = rel->attr;
 		sql_exp *je = NULL;
