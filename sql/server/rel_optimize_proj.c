@@ -591,6 +591,11 @@ rel_push_project_up_(visitor *v, sql_rel *rel)
 					return rel;
 				if (e->alias.label && exps_bind_nid(r_exps, e->alias.label))
 					return rel;
+				/* handle old style duplicates needed for remote plans */
+				if ((e->l && exps_bind_column2(r_exps, e->l, e->r, NULL) != NULL) ||
+				   (exps_bind_column(r_exps, e->r, NULL, NULL, 1) != NULL && (!e->l || !e->r))) {
+					return rel;
+				}
 			}
 			/* conflict with new left expressions */
 			for(n = r_exps->h; n; n = n->next) {
@@ -602,6 +607,11 @@ rel_push_project_up_(visitor *v, sql_rel *rel)
 					return rel;
 				if (e->alias.label && exps_bind_nid(l_exps, e->alias.label))
 					return rel;
+				/* handle old style duplicates needed for remote plans */
+				if ((e->l && exps_bind_column2(l_exps, e->l, e->r, NULL) != NULL) ||
+				   (exps_bind_column(l_exps, e->r, NULL, NULL, 1) != NULL && (!e->l || !e->r))) {
+					return rel;
+				}
 			}
 		}
 

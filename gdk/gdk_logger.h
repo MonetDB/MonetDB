@@ -76,6 +76,8 @@ gdk_export gdk_return log_tflush(logger *lg, ulng log_file_id, ulng commit_ts); 
 gdk_export gdk_return log_tsequence(logger *lg, int seq, lng id);
 gdk_export log_bid log_find_bat(logger *lg, log_id id);
 
-gdk_export void log_printinfo(logger *lg);
+gdk_export void log_printinfo(FILE *outf, logger *lg)
+	__attribute__((__nonnull__(1)))
+	__attribute__((__nonnull__(2)));
 
 #endif /*_LOGGER_H_*/

@@ -1,6 +1,12 @@
 # ChangeLog file for devel
 # This file is updated with Maddlog
 
+* Thu Sep 17 2026 Sjoerd Mullender <sjoerd@acm.org>
+- It is now possible to use --set usr1_outputfile=... to specify a file
+  where the output for the SIGUSR1 signal is to be written.  The file
+  is opened (created if it doesn't exist, appended to if it does) every
+  time output is generated, making it easy to rotate the file.
+
 * Mon Aug  3 2026 Sjoerd Mullender <sjoerd@acm.org>
 - The hash function used for all internal hash tables has been changed
   to xxhash which is therefore now a build requirement.

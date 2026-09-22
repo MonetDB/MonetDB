@@ -4,8 +4,8 @@ CREATE TABLE t8019 (
     v INT
 )
 
-statement ok rowcount 1
-INSERT INTO t8019 VALUES (1, 5)
+statement ok rowcount 3
+INSERT INTO t8019 VALUES (1, 5), (2, 7), (3, 9)
 
 query II nosort
 SELECT k, SUM(DISTINCT v)
@@ -14,13 +14,14 @@ GROUP BY k
 ----
 1
 5
+2
+7
+3
+9
 
--- next query logs server msgs:
---    exp_bin: CRITICAL: Could not find %2.%2
---    exp_bin: ERROR: Query: 'select input.k, sum(distinct input.v)
--- and triggers assert failure: sql/backends/monet5/rel_bin.c:1914: exp_bin: Assertion `s' failed.
--- An identity derived table must not remove the grouped result.
-query II nosort
+-- grouping through an identity derived table used to drop every result
+-- row (or crash with an exp_bin assert).  The grouped result must survive.
+query II rowsort
 SELECT input.k, SUM(DISTINCT input.v)
 FROM (
     SELECT k, v
@@ -30,8 +31,47 @@ GROUP BY input.k
 ----
 1
 5
+2
+7
+3
+9
 
--- next statement triggers assert failure: sql/backends/monet5/rel_bin.c:1914: exp_bin: Assertion `s' failed.
+-- same query shaped as a CTE
+query II rowsort
+WITH input AS (SELECT k, v FROM t8019)
+SELECT input.k, SUM(DISTINCT input.v) AS s
+FROM input
+GROUP BY input.k
+----
+1
+5
+2
+7
+3
+9
+
+-- same query shaped as a view
+statement ok
+CREATE VIEW v8019 AS
+SELECT k, v
+FROM t8019
+
+query II rowsort
+SELECT k, SUM(DISTINCT v)
+FROM v8019
+GROUP BY k
+----
+1
+5
+2
+7
+3
+9
+
+statement ok
+DROP VIEW IF EXISTS v8019
+
+-- the CREATE TABLE AS form must keep every group too
 statement ok
 CREATE TABLE t8019_ctas AS
 SELECT input.k, SUM(DISTINCT input.v) AS s
@@ -46,6 +86,10 @@ SELECT k, s FROM t8019_ctas
 ----
 1
 5
+2
+7
+3
+9
 
 statement ok
 DROP TABLE IF EXISTS t8019_ctas

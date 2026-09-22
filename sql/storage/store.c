@@ -8037,22 +8037,23 @@ sql_trans_convert_partitions(allocator *sa, sql_trans *tr)
 }
 
 void
-store_printinfo(sqlstore *store)
+store_printinfo(FILE *outf, sqlstore *store)
 {
-	printf("SQL store object id: %"PRIu64"\n",
-		   (uint64_t) ATOMIC_GET(&store->obj_id));
+	fprintf(outf, "SQL store object id: %"PRIu64"\n",
+			(uint64_t) ATOMIC_GET(&store->obj_id));
 	char buf[200];
 	if (ma_info(store->sa, buf, sizeof(buf), "SQL store allocator ") > 0)
-		printf("%s\n", buf);
+		fprintf(outf, "%s\n", buf);
 	if (!MT_lock_trytime(&store->commit, 1000)) {
-		printf("WAL is currently locked, so no WAL information\n");
+		fprintf(outf, "WAL is currently locked, so no WAL information\n");
 		return;
 	}
 	if (MT_lock_trytime(&store->lock, 1000)) {
-		printf("WAL:\n");
-		printf("SQL store oldest pending "ULLFMT"\n", store->oldest_pending);
+		fprintf(outf, "WAL:\n");
+		fprintf(outf, "SQL store oldest pending " ULLFMT "\n",
+				store->oldest_pending);
 		MT_lock_unset(&store->lock);
 	}
-	log_printinfo(store->logger);
+	log_printinfo(outf, store->logger);
 	MT_lock_unset(&store->commit);
 }

@@ -576,6 +576,8 @@ extern BAT *FORdecompress_(BAT *o, lng minval, int tt, role_t role);
 extern int FORprepare4append(BAT **noffsets, BAT *vals, lng minval, int tt);
 extern int FORprepare4append_vals(void **noffsets, void *vals, BUN cnt, lng minval, int vtype, int ft);
 
-extern void store_printinfo(sqlstore *store);
+extern void store_printinfo(FILE *outf, sqlstore *store)
+	__attribute__((__nonnull__(1)))
+	__attribute__((__nonnull__(2)));
 
 #endif /*SQL_STORAGE_H */

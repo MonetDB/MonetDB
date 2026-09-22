@@ -96,7 +96,8 @@ gdk_return BBPinit(bool allow_hge_upgrade, bool no_manager)
 bat BBPallocbat(int tt)
 	__attribute__((__warn_unused_result__))
 	__attribute__((__visibility__("hidden")));
-void BBPprintinfo(void)
+void BBPprintinfo(FILE *outf)
+	__attribute__((__nonnull__(1)))
 	__attribute__((__visibility__("hidden")));
 int BBPselectfarm(role_t role, int type, enum heaptype hptype)
 	__attribute__((__visibility__("hidden")));
