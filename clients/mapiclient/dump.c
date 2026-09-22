@@ -11,7 +11,6 @@
 #include "monetdb_config.h"
 #include "mapi.h"
 #include "stream.h"
-#include "mstring.h"
 #include <unistd.h>
 #include <string.h>
 #include <ctype.h>
