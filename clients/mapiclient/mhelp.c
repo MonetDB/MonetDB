@@ -1242,12 +1242,12 @@ sql_help(const char *pattern, stream *toConsole, int pagewidth)
 		mnstr_printf(toConsole, "\n");
 	}
 	mnstr_printf(toConsole,
-		"Using the conventional grammar constructs:\n"
-		"[ A | B ]    token A or B or none\n"
-		"{ A | B }    exactly one of the options A or B should be chosen\n"
-		"A [',' ...]       a comma separated list of A elements\n"
-		"{ A | B } ...     a series of A and B's\n"
-		"{ A B } [',' ...] a series of A B,A B,A B,A B\n"
-		"For more search terms type: \\help *\n"
-		"See also https://www.monetdb.org/documentation/user-guide/sql-manual/\n");
+		     "Using the conventional grammar constructs:\n"
+		     "[ A | B ]    token A or B or none\n"
+		     "{ A | B }    exactly one of the options A or B should be chosen\n"
+		     "A [',' ...]       a comma separated list of A elements\n"
+		     "{ A | B } ...     a series of A and B's\n"
+		     "{ A B } [',' ...] a series of A B,A B,A B,A B\n"
+		     "For more search terms type: \\help *\n"
+		     "See also https://www.monetdb.org/documentation/user-guide/sql-manual/\n");
 }
