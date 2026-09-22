@@ -2100,7 +2100,35 @@ pqc_read_page_chunk( pqc_reader_t *r, pqc_creader_t *cr, void *output /*fixed si
 		}
 	}
 	/* convert data */
-	if (r->pse->type == datetype) {
+	if (r->pse->precision == 64 && !r->pse->isSigned) {
+		uint64_t *l = output;
+		l += nrows-1;
+		int128_t *r = output;
+		r += nrows-1;
+		for(uint64_t i=0; i< nrows; i++)
+			r[-i] = l[-i];
+	} else if (r->pse->precision == 32 && !r->pse->isSigned) {
+		uint32_t *l = output;
+		l += nrows-1;
+		int64_t *r = output;
+		r += nrows-1;
+		for(uint64_t i=0; i< nrows; i++)
+			r[-i] = l[-i];
+	} else if (r->pse->precision == 16 && !r->pse->isSigned) {
+		uint16_t *l = output;
+		l += nrows-1;
+		int32_t *r = output;
+		r += nrows-1;
+		for(uint64_t i=0; i< nrows; i++)
+			r[-i] = l[-i];
+	} else if (r->pse->precision == 8 && !r->pse->isSigned) {
+		uint8_t *l = output;
+		l += nrows-1;
+		int16_t *r = output;
+		r += nrows-1;
+		for(uint64_t i=0; i< nrows; i++)
+			r[-i] = l[-i];
+	} else if (r->pse->type == datetype) {
 		/* days since epoch ie 1-1-1970 */
 		uint32_t epoch_date = mkdate(1970, 1, 1);
 		if (r->pse->precision == 32) {

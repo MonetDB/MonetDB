@@ -244,6 +244,28 @@ pqc_find_subtype(mvc *sql, const pqc_schema_element *pse)
 				return tpe;
 			break;
 		case inttype:
+			if (!pse->isSigned) {
+				switch(pse->precision) {
+					case 8:
+						if (sql_find_subtype(tpe, "smallint", pse->precision + 1, 0))
+							return tpe;
+						break;
+					case 16:
+						if (sql_find_subtype(tpe, "int", pse->precision + 1, 0))
+							return tpe;
+						break;
+					case 32:
+						if (sql_find_subtype(tpe, "bigint", pse->precision + 1, 0))
+							return tpe;
+						break;
+					case 64:
+						if (sql_find_subtype(tpe, "hugeint", pse->precision + 1, 0))
+							return tpe;
+						break;
+				}
+			}
+			if (pse->precision == 8 && sql_find_subtype(tpe, "tinyint", pse->precision, 0))
+				return tpe;
 			if (pse->precision == 8 && sql_find_subtype(tpe, "tinyint", pse->precision, 0))
 				return tpe;
 			if (pse->precision == 16 && sql_find_subtype(tpe, "smallint", pse->precision, 0))
@@ -252,7 +274,6 @@ pqc_find_subtype(mvc *sql, const pqc_schema_element *pse)
 				return tpe;
 			if (pse->precision == 64 && sql_find_subtype(tpe, "bigint", pse->precision, 0))
 				return tpe;
-			//if (pse->size == 96 && sql_find_subtype(tpe, "hugeint", pse->precision, 0))
 			if (pse->precision == 96 && sql_find_subtype(tpe, "timestamp", 6, 0))
 				return tpe;
 			break;
@@ -321,18 +342,27 @@ pqc_find_localtype(const pqc_schema_element *pse)
 				return TYPE_bte;
 			break;
 		case inttype:
-			//if (pse->size == 8)
-			if (pse->precision == 8)
-				return TYPE_bte;
-			//if (pse->size == 16)
-			if (pse->precision == 16)
-				return TYPE_sht;
-			//if (pse->size == 32)
-			if (pse->precision == 32)
-				return TYPE_int;
-			//if (pse->size == 64)
-			if (pse->precision == 64)
-				return TYPE_lng;
+			if (!pse->isSigned) {
+				if (pse->precision == 8)
+					return TYPE_sht;
+				if (pse->precision == 16)
+					return TYPE_int;
+				if (pse->precision == 32)
+					return TYPE_lng;
+#ifdef HAVE_HGE
+				if (pse->precision == 64)
+					return TYPE_hge;
+#endif
+			} else {
+				if (pse->precision == 8)
+					return TYPE_bte;
+				if (pse->precision == 16)
+					return TYPE_sht;
+				if (pse->precision == 32)
+					return TYPE_int;
+				if (pse->precision == 64)
+						return TYPE_lng;
+			}
 			if (pse->precision == 96)
 				return TYPE_timestamp;
 #ifdef HAVE_HGE
