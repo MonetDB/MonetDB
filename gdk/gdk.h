@@ -458,7 +458,7 @@ typedef struct QryCtx {
 	ATOMIC_TYPE datasize;
 	ATOMIC_BASE_TYPE maxmem;
 	allocator *errorallocator;
-	bool oahash_enabled;
+	bool pipeline_mode;
 } QryCtx;
 
 gdk_export bool THRhighwater(void);
