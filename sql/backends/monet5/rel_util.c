@@ -86,7 +86,7 @@ can_join_exp(sql_rel *rel, sql_exp *e, bool anti)
 }
 
 void
-split_join_exps(sql_rel *rel, list *joinable, list *not_joinable, bool eqonly, bool anti)
+split_join_exps(sql_rel *rel, list *joinable, list *not_joinable, bool anti, bool eqonly)
 {
 	if (!list_empty(rel->exps)) {
 		for (node *n = rel->exps->h; n; n = n->next) {

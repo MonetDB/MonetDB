@@ -889,7 +889,7 @@ rel_pipeline(visitor *v, sql_rel *rel, bool materialize, int pb)
 	} else if (is_semi(rel->op)) {
 		list *eq_exps = sa_list(v->sql->sa);
 		list *other = sa_list(v->sql->sa);
-		split_join_exps(rel, eq_exps, other, true /* eqonly */, true /* anti */);
+		split_join_exps(rel, eq_exps, other, true /* anti */, true /* eqonly */);
 		bool needs_payload = (!list_empty(other));
 		bool need_all = false;
 		bool cross = list_empty(eq_exps);
@@ -1012,7 +1012,7 @@ rel_pipeline(visitor *v, sql_rel *rel, bool materialize, int pb)
 			list *other = sa_list(v->sql->sa);
 			if (!list_empty(rel->attr))
 				rel->exps = get_simple_equi_joins_first(v->sql, rel, rel->exps);
-			split_join_exps(rel, eq_exps, other, true /* eqonly */, true /* anti */);
+			split_join_exps(rel, eq_exps, other, true /* anti */, true /* eqonly */);
 
 			sql_rel *l = rel->l, *r = rel->r;
 			sql_rel *rel_hsh = NULL, *rel_prb = NULL, *iprj = NULL, *pprj = NULL;
