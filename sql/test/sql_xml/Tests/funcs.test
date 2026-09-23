@@ -35,5 +35,5 @@ statement ok
 CREATE FUNCTION isdocument (val STRING) RETURNS xml external name xml.isdocument
 
 statement ok
-CREATE AGGREGATE "xmlagg"( x xml ) RETURNS xml with order external name xml.aggr
+CREATE AGGREGATE "xmlagg"( x xml ) RETURNS xml with order external name aggr.xmlaggr
 

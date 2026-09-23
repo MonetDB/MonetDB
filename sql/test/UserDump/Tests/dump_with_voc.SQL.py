@@ -1,6 +1,5 @@
 from MonetDBtesting.sqltest import SQLTestCase
 
-with SQLTestCase() as tc:
-    # dump with default user
-    tc.connect(username='voc', password='voc')
+# dump with voc user
+with SQLTestCase(username='voc', password='voc') as tc:
     tc.sqldump().assertMatchStableOut(fout='dump_with_voc.stable.out')

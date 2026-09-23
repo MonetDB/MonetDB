@@ -1,3 +1,10 @@
+==========================
+All relational operators:
+
+* MUST return the resulting columns in the order specified by the SQL standard:
+  * single operant: rel->exps
+  * multi-operants: rel->l, rel->r[, rel->attr]
+==========================
 
 BASETABLE
 	(card MULTI)
@@ -59,8 +66,8 @@ UNION|EXCEPT|INTERSECT
 
 MUNION
 	(card ATOM, AGGR or MULTI (same card as lower relation))
-    -> exps     is list of projection expressions
-    -> l        is list of union relations
+	-> exps     is list of projection expressions
+	-> l        is list of union relations
 	-> flag		(0) no flags
 
 PROJECT  (card ATOM, AGGR or MULTI (same card as lower relation))
@@ -92,23 +99,32 @@ INSERT|DELETE|UPDATE|TRUNCATE 	(card ATOM, AGGR or MULTI (same card as the to be
 
 	-> flag		(if set don't insert (is done already))
 only (UPDATE)
-	-> exps		
-			Named columns to update
-only (TRUNCATE)
-	-> exps		
-			The first expression is a e_atom integer indicating to restart sequences, and the second is another e_atom integer telling to cascade the truncate if the table has fk dependents
+	-> exps
+			UPDATE: Named columns to update
+			DELETE:	deleted rows (for returning return all columns (the deleted content))
+			INSERT:	inserted values
+			TRUNCATE: The first expression is a e_atom integer indicating to restart sequences, and the second is another e_atom integer telling to cascade the truncate if the table has fk dependents
+	-> attr		UPDATE:	for returning all columns of updated rows
 
-INSERT/UPDATE have a special case 	
+TODO cleanup
+UPDATE have a special case
 
 			for inserts/updates with indices a double
 			relation is used as we need to keep access to
 			the bottom value relation
 
-MERGE (card ATOM, AGGR or MULTI (max card of updates))
-	-> l 		left join between the target table and the source
-	-> r		a DDL list with an insert and update/delete, or a single relation update on the target table
-	-> flag		(0) no flags
-	->exps 		empty list, ie not used
+physical implementation operators.
+
+BUILDHASH
+PROBEHASH
+	-> l 		relation
+	-> attr		hash-expressions
+	-> exps		payload
+
+PARTITION
+	-> l 		relation
+	-> attr		hash-expressions
+	-> exps		payload
 
 Expressions
 
@@ -128,22 +144,25 @@ e_convert
 e_cmp
 	-> l	left sub expression
 	-> r	right sub expression (f second arg (->f) for range expressions)
-	-> flag compare type		
+	-> flag compare type
 		(
-			cmp_gt = 0,		or [ v > l && v < h ] 
+			cmp_gt = 0,		or [ v > l && v < h ]
 			cmp_gte = 1,		or [ v >= l && v < h ]
 			cmp_lte = 2,		or [ v > l && v <= h ]
 			cmp_lt = 3,		or [ v >= l && v <= h ]
-						 uses flag&CMP_BETWEEN bit for handling nil 
+						 uses flag&CMP_BETWEEN bit for handling nil
 							open ranges and isNull vs NULL
-						 uses flag&CMP_SYMMETRIC bit for symmetric 
+						 uses flag&CMP_SYMMETRIC bit for symmetric
 			cmp_equal = 4,
 			cmp_notequal = 5,
 
 			cmp_filter = 6,		filters			->l/r are both lists
-			cmp_or = 7,			or handling  		->l/r are both lists
-			cmp_in = 8,			in list handling 	->r is a list of values
-			cmp_notin = 9		not in list handling	->r is a list of values
+
+			cmp_in = 8,		in list handling 	->r is a list of values
+			cmp_notin = 9,		not in list handling	->r is a list of values
+
+			cmp_conjunctive = 10,			and handling  		-> l is a list
+			cmp_disjuncive = 11,			or handling  		-> l is a list
 
 			/* The following cmp_* are only used within stmt (not sql_exp) */
 			cmp_all = 12,			/* special case for crossproducts */
@@ -161,6 +180,8 @@ e_aggr
 	-> f	func / aggr
 for aggr
 	-> flag DISTINCT and NO_NIL could be set
+for func
+ 	-> flag could be the quantifiers (ALL/ANY)
 for window functions
 	-> r contains a list with two values: the first is a list with the partition by expressions, and the second a list with order by expressions
 for aggregate functions
@@ -170,9 +191,11 @@ e_column
 	-> rname alias for the relation (i.e., alias of ->l, used by higher expressions)
 	-> name alias for the expression (i.e., alias of ->r, used by higher expressions)
 		l,r names of referred expression
-	-> l 	optional relation name 
+	-> l 	optional relation name
 	-> r	expression name
-	-> type 
+	-> f 	pointer to relation, if expression is part of base table
+	-> nid == label of referenced expression (down the tree)
+	-> type
 
 e_psm
 	-> flag

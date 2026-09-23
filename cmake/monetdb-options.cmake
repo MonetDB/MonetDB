@@ -3,11 +3,9 @@
 #
 # This Source Code Form is subject to the terms of the Mozilla Public
 # License, v. 2.0.  If a copy of the MPL was not distributed with this
-# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+# file, You can obtain one at https://mozilla.org/MPL/2.0/.
 #
-# Copyright 2024, 2025 MonetDB Foundation;
-# Copyright August 2008 - 2023 MonetDB B.V.;
-# Copyright 1997 - July 2008 CWI.
+# For copyright information, see the file debian/copyright.
 #]]
 
 option(RELEASE_VERSION
@@ -25,26 +23,12 @@ option(TESTING
   "Enable support for testing"
   ON)
 
-cmake_dependent_option(CINTEGRATION
-  "Enable support for C UDFs (default=ON)"
-  ON
-  "NOT WIN32"
-  OFF)
-
 option(WITH_SQLPARSE
   "Compile and install the sqlparse utility (default=ON)"
   ON)
 
 option(WITH_RTREE
   "Enable support for rtrees (librtree; default=ON)"
-  ON)
-
-option(PY3INTEGRATION
-  "Enable support for Python 3 integration into MonetDB (default=ON)"
-  ON)
-
-option(RINTEGRATION
-  "Enable support for R integration into MonetDB (default=ON)"
   ON)
 
 option(FITS
@@ -127,6 +111,18 @@ option(WITH_CMOCKA
 
 option(WITH_LZ4
   "Include lz4 support"
+  ON)
+
+option(WITH_ZSTD
+  "Include zstd support"
+  ON)
+
+option(WITH_SNAPPY
+  "Include snappy support"
+  ON)
+
+option(WITH_BROTLI
+  "Include brotli support"
   ON)
 
 option(WITH_PROJ

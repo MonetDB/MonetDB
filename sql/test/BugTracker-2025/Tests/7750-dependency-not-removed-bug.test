@@ -1,0 +1,102 @@
+statement ok
+CREATE SEQUENCE s7750
+
+query I nosort
+SELECT COUNT(*) FROM sys.dependencies_vw WHERE name IN ('s7750', 't7750') OR used_by_name IN ('s7750', 't7750')
+----
+0
+
+statement ok
+CREATE TABLE t7750 (id int NOT NULL DEFAULT next value for s7750, nm varchar(99))
+
+-- the table has a reference to sequence s7750
+-- \d t7750
+-- CREATE TABLE "sys"."t7750" (
+-- 	"id" INTEGER       NOT NULL DEFAULT next value for "sys"."s7750",
+-- 	"nm" VARCHAR(99)
+-- )
+
+query I nosort
+SELECT COUNT(*) FROM sys.dependencies_vw WHERE name IN ('s7750', 't7750') OR used_by_name IN ('s7750', 't7750')
+----
+1
+
+-- SELECT * FROM sys.dependencies_vw WHERE name IN ('s7750', 't7750') OR used_by_name IN ('s7750', 't7750')
+-- 1 row
+-- +------+----------+-------+------------+------------------+--------------+-------------+----------------------+
+-- | id   | obj_type | name  | used_by_id | used_by_obj_type | used_by_name | depend_type | dependency_type_name |
+-- +======+==========+=======+============+==================+==============+=============+======================+
+-- | 7950 | sequence | s7750 |       7954 | table            | t7750        |           7 | FUNCTION             |
+-- +------+----------+-------+------------+------------------+--------------+-------------+----------------------+
+
+-- remove the dependency on sequence s7750 from the default setting by setting the default to null
+statement ok
+ALTER TABLE t7750 ALTER COLUMN id SET DEFAULT NULL
+
+-- \d t7750
+-- CREATE TABLE "sys"."t7750" (
+-- 	"id" INTEGER       NOT NULL DEFAULT NULL,
+-- 	"nm" VARCHAR(99)
+-- )
+
+-- the table should now no longer have a reference to sequence s7750, as the default was set to null
+query I nosort
+SELECT COUNT(*) FROM sys.dependencies_vw WHERE name IN ('s7750', 't7750') OR used_by_name IN ('s7750', 't7750')
+----
+0
+
+-- the table should now no longer have a reference to sequence s7750, as the default was set to null, and should be able to be dropped
+-- however we got Error: DROP SEQUENCE: unable to drop sequence s7750 (there are database objects which depend on it)
+statement ok
+DROP SEQUENCE s7750
+
+-- try to remove the dependency on sequence s7750 from the default setting by dropping the default
+statement ok
+ALTER TABLE t7750 ALTER COLUMN id DROP DEFAULT
+
+-- \d t7750
+-- CREATE TABLE "sys"."t7750" (
+-- 	"id" INTEGER       NOT NULL,
+-- 	"nm" VARCHAR(99)
+-- )
+
+-- the table should now no longer have a reference to sequence s7750, as the default was dropped
+query I nosort
+SELECT COUNT(*) FROM sys.dependencies_vw WHERE name IN ('s7750', 't7750') OR used_by_name IN ('s7750', 't7750')
+----
+0
+
+-- the table should now no longer have a reference to sequence s7750, as the default was dropped, and should be able to be dropped
+-- however we got Error: DROP SEQUENCE: unable to drop sequence s7750 (there are database objects which depend on it)
+statement ok
+DROP SEQUENCE s7750
+
+-- try to remove the dependency on sequence s7750 from the default setting by dropping the column
+statement ok
+ALTER TABLE t7750 DROP COLUMN id
+
+-- the table should now no longer have a reference to sequence s7750, as the column with the default was dropped
+query I nosort
+SELECT COUNT(*) FROM sys.dependencies_vw WHERE name IN ('s7750', 't7750') OR used_by_name IN ('s7750', 't7750')
+----
+0
+
+-- the table should now no longer have a reference to sequence s7750, as the column with the default was dropped, and should be able to be dropped
+-- however we got Error: DROP SEQUENCE: unable to drop sequence s7750 (there are database objects which depend on it)
+statement ok
+DROP SEQUENCE s7750
+
+-- finally remove the whole table
+statement ok
+DROP TABLE t7750
+
+-- the table should now no longer have a reference to sequence s7750, as the table was dropped
+query I nosort
+SELECT COUNT(*) FROM sys.dependencies_vw WHERE name IN ('s7750', 't7750') OR used_by_name IN ('s7750', 't7750')
+----
+0
+
+-- finally now we succeed in dropping the sequence
+statement ok
+DROP SEQUENCE s7750
+

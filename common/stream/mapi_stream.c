@@ -3,11 +3,9 @@
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024, 2025 MonetDB Foundation;
- * Copyright August 2008 - 2023 MonetDB B.V.;
- * Copyright 1997 - July 2008 CWI.
+ * For copyright information, see the file debian/copyright.
  */
 
 #include "monetdb_config.h"
@@ -56,6 +54,7 @@ discard(stream *s)
 struct mapi_filetransfer {
 	stream *from_client; // set to NULL after sending MAPI_PROMPT3
 	stream *to_client; // set to NULL when client sends empty
+	bstream *bs;
 };
 
 static ssize_t
@@ -77,7 +76,8 @@ upload_read(stream *restrict s, void *restrict buf, size_t elmsize, size_t cnt)
 			mnstr_write(state->to_client, PROMPT2, strlen(PROMPT2), 1) != 1
 		||	mnstr_flush(state->to_client, MNSTR_FLUSH_ALL) < 0
 	) {
-		mnstr_set_error(s, mnstr_errnr(state->to_client), "%s", mnstr_peek_error(state->to_client));
+		state->bs->pos = state->bs->len;
+		mnstr_copy_error(s, state->to_client);
 		return -1;
 	}
 
@@ -92,6 +92,7 @@ upload_read(stream *restrict s, void *restrict buf, size_t elmsize, size_t cnt)
 		state->from_client = NULL;
 		return nread;
 	} else {
+		state->bs->pos = state->bs->len;
 		mnstr_set_error(s, mnstr_errnr(state->from_client), "%s", mnstr_peek_error(state->from_client));
 		return -1;
 	}
@@ -116,7 +117,15 @@ download_write(stream *restrict s, const void *restrict buf, size_t elmsize, siz
 {
 	struct mapi_filetransfer *state = s->stream_data.p;
 	stream *to = state->to_client;
-	return to->write(to, buf, elmsize, cnt);
+	ssize_t res = to->write(to, buf, elmsize, cnt);
+	if (res < 0) {
+		state->bs->pos = state->bs->len;
+		mnstr_copy_error(s, to);
+	} else if (res == 0) {
+		assert(to->eof);
+		s->eof = to->eof;
+	}
+	return res;
 }
 
 static void
@@ -205,6 +214,7 @@ setup_transfer(const char *req, const char *filename, bstream *bs, stream *ws)
 	}
 	state->from_client = rs;
 	state->to_client = ws;
+	state->bs = bs;
 	s->stream_data.p = state;
 end:
 	if (msg) {

@@ -3,11 +3,9 @@
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024, 2025 MonetDB Foundation;
- * Copyright August 2008 - 2023 MonetDB B.V.;
- * Copyright 1997 - July 2008 CWI.
+ * For copyright information, see the file debian/copyright.
  */
 
 /*
@@ -23,8 +21,9 @@
 #include "mal_exception.h"
 
 static str
-TRACERflush_buffer(void *ret)
+TRACERflush_buffer(Client ctx, void *ret)
 {
+	(void) ctx;
 	(void) ret;
 	GDKtracer_flush_buffer();
 	return MAL_SUCCEED;
@@ -32,8 +31,9 @@ TRACERflush_buffer(void *ret)
 
 
 static str
-TRACERset_component_level(void *ret, const char *const *comp_id, const char *const *lvl_id)
+TRACERset_component_level(Client ctx, void *ret, const char *const *comp_id, const char *const *lvl_id)
 {
+	(void) ctx;
 	(void) ret;
 	if (GDKtracer_set_component_level(*comp_id, *lvl_id) != GDK_SUCCEED)
 		throw(MAL, "logging.setcomplevel", ILLEGAL_ARGUMENT);
@@ -43,8 +43,9 @@ TRACERset_component_level(void *ret, const char *const *comp_id, const char *con
 
 
 static str
-TRACERreset_component_level(void *ret, const char *const *comp_id)
+TRACERreset_component_level(Client ctx, void *ret, const char *const *comp_id)
 {
+	(void) ctx;
 	(void) ret;
 	if (GDKtracer_reset_component_level(*comp_id) != GDK_SUCCEED)
 		throw(MAL, "logging.resetcomplevel", ILLEGAL_ARGUMENT "\n");
@@ -54,8 +55,9 @@ TRACERreset_component_level(void *ret, const char *const *comp_id)
 
 
 static str
-TRACERset_layer_level(void *ret, const char *const *layer_id, const char *const *lvl_id)
+TRACERset_layer_level(Client ctx, void *ret, const char *const *layer_id, const char *const *lvl_id)
 {
+	(void) ctx;
 	(void) ret;
 	if (GDKtracer_set_layer_level(*layer_id, *lvl_id) != GDK_SUCCEED)
 		throw(MAL, "logging.setlayerlevel", ILLEGAL_ARGUMENT "\n");
@@ -65,8 +67,9 @@ TRACERset_layer_level(void *ret, const char *const *layer_id, const char *const 
 
 
 static str
-TRACERreset_layer_level(void *ret, const char *const *layer_id)
+TRACERreset_layer_level(Client ctx, void *ret, const char *const *layer_id)
 {
+	(void) ctx;
 	(void) ret;
 	if (GDKtracer_reset_layer_level(*layer_id) != GDK_SUCCEED)
 		throw(MAL, "logging.resetlayerlevel", ILLEGAL_ARGUMENT "\n");
@@ -76,8 +79,9 @@ TRACERreset_layer_level(void *ret, const char *const *layer_id)
 
 
 static str
-TRACERset_flush_level(void *ret, const char *const *lvl_id)
+TRACERset_flush_level(Client ctx, void *ret, const char *const *lvl_id)
 {
+	(void) ctx;
 	(void) ret;
 	if (GDKtracer_set_flush_level(*lvl_id) != GDK_SUCCEED)
 		throw(MAL, "logging.setflushlevel", ILLEGAL_ARGUMENT "\n");
@@ -87,8 +91,9 @@ TRACERset_flush_level(void *ret, const char *const *lvl_id)
 
 
 static str
-TRACERreset_flush_level(void *ret)
+TRACERreset_flush_level(Client ctx, void *ret)
 {
+	(void) ctx;
 	(void) ret;
 	if (GDKtracer_reset_flush_level() != GDK_SUCCEED)
 		throw(MAL, "logging.resetflushlevel", _OPERATION_FAILED "\n");
@@ -98,8 +103,9 @@ TRACERreset_flush_level(void *ret)
 
 
 static str
-TRACERset_adapter(void *ret, const char *const *adapter_id)
+TRACERset_adapter(Client ctx, void *ret, const char *const *adapter_id)
 {
+	(void) ctx;
 	(void) ret;
 	if (GDKtracer_set_adapter(*adapter_id) != GDK_SUCCEED)
 		throw(MAL, "logging.setadapter", ILLEGAL_ARGUMENT "\n");
@@ -109,8 +115,9 @@ TRACERset_adapter(void *ret, const char *const *adapter_id)
 
 
 static str
-TRACERreset_adapter(void *ret)
+TRACERreset_adapter(Client ctx, void *ret)
 {
+	(void) ctx;
 	(void) ret;
 	if (GDKtracer_reset_adapter() != GDK_SUCCEED)
 		throw(MAL, "logging.resetadapter", _OPERATION_FAILED "\n");
@@ -130,9 +137,9 @@ TRACERcomp_info(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	bat *c = getArgReference_bat(stk, pci, 1);
 	bat *l = getArgReference_bat(stk, pci, 2);
 
-	id = COLnew(0, TYPE_int, (BUN) COMPONENTS_COUNT, TRANSIENT);
-	component = COLnew(0, TYPE_str, (BUN) COMPONENTS_COUNT, TRANSIENT);
-	log_level = COLnew(0, TYPE_str, (BUN) COMPONENTS_COUNT, TRANSIENT);
+	id = COLnew(0, TYPE_int, (BUN) TRC_NAME(COMPONENTS_COUNT), TRANSIENT);
+	component = COLnew(0, TYPE_str, (BUN) TRC_NAME(COMPONENTS_COUNT), TRANSIENT);
+	log_level = COLnew(0, TYPE_str, (BUN) TRC_NAME(COMPONENTS_COUNT), TRANSIENT);
 
 	if (id == NULL || component == NULL || log_level == NULL) {
 		BBPreclaim(id);
@@ -158,7 +165,7 @@ TRACERcomp_info(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 
 #include "mel.h"
-mel_func tracer_init_funcs[] = {
+static mel_func tracer_init_funcs[] = {
  command("logging", "flush", TRACERflush_buffer, true, "Flush the buffer", args(1,1, arg("",void))),
  command("logging", "setcomplevel", TRACERset_component_level, true, "Sets the log level for a specific component", args(1,3, arg("",void),arg("comp",str),arg("lvl",str))),
  command("logging", "resetcomplevel", TRACERreset_component_level, true, "Resets the log level for a specific component back to the default", args(1,2, arg("",void),arg("comp",str))),
@@ -168,7 +175,7 @@ mel_func tracer_init_funcs[] = {
  command("logging", "resetflushlevel", TRACERreset_flush_level, true, "Resets the flush level back to the default", args(1,1, arg("",void))),
  command("logging", "setadapter", TRACERset_adapter, true, "Sets the adapter", args(1,2, arg("",void),arg("adapter",str))),
  command("logging", "resetadapter", TRACERreset_adapter, true, "Resets the adapter back to the default", args(1,1, arg("",void))),
- pattern("logging", "compinfo", TRACERcomp_info, false, "Returns in the form of a SQL result-set all the components along with their ID\nand the their current logging level being set", args(3,3, batarg("id",int),batarg("component",str),batarg("log_level",str))),
+ pattern("logging", "compinfo", TRACERcomp_info, false, "Returns in the form of a SQL result-set all the components along with their ID and the their current logging level being set", args(3,3, batarg("id",int),batarg("component",str),batarg("log_level",str))),
  { .imp=NULL }
 };
 #include "mal_import.h"

@@ -1,0 +1,5 @@
+query I nosort
+SELECT (COALESCE(((VALUES (1)))))
+----
+1
+

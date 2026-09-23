@@ -3,11 +3,9 @@
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024, 2025 MonetDB Foundation;
- * Copyright August 2008 - 2023 MonetDB B.V.;
- * Copyright 1997 - July 2008 CWI.
+ * For copyright information, see the file debian/copyright.
  */
 
 /*
@@ -57,10 +55,9 @@ ODBCGetKeyAttr(const SQLCHAR **conn, SQLSMALLINT *nconn, char **key, char **attr
 	if (*nconn == 0 || !**conn || **conn == ';')
 		return 0;
 	len = *conn - p;
-	*key = (char *) malloc(len + 1);
+	*key = strndup((const char *) p, len);
 	if (*key == NULL)
 		return -1;
-	strcpy_len(*key, (char *) p, len + 1);
 	(*conn)++;
 	(*nconn)--;
 	p = *conn;
@@ -74,13 +71,12 @@ ODBCGetKeyAttr(const SQLCHAR **conn, SQLSMALLINT *nconn, char **key, char **attr
 			(*nconn)--;
 		}
 		len = *conn - p;
-		*attr = (char *) malloc(len + 1);
+		*attr = strndup((const char *) p, len);
 		if (*attr == NULL) {
 			free(*key);
 			*key = NULL;
 			return -1;
 		}
-		strcpy_len(*attr, (char *) p, len + 1);
 		(*conn)++;
 		(*nconn)--;
 		/* should check that *nconn == 0 || **conn == ';' */
@@ -90,13 +86,12 @@ ODBCGetKeyAttr(const SQLCHAR **conn, SQLSMALLINT *nconn, char **key, char **attr
 			(*nconn)--;
 		}
 		len = *conn - p;
-		*attr = (char *) malloc(len + 1);
+		*attr = strndup((const char *) p, len);
 		if (*attr == NULL) {
 			free(*key);
 			*key = NULL;
 			return -1;
 		}
-		strcpy_len(*attr, (char *) p, len + 1);
 	}
 	if (*nconn > 0 && **conn) {
 		(*conn)++;
@@ -183,8 +178,9 @@ MNDBDriverConnect(ODBCDbc *dbc,
 	if (!SQL_SUCCEEDED(rc))
 		goto end;
 
-	if (!msettings_validate(settings, &scratch_alloc)) {
-		addDbcError(dbc, "HY009", scratch_alloc, 0);
+	scratch_no_alloc = msettings_validate(settings);
+	if (scratch_no_alloc != NULL) {
+		addDbcError(dbc, "HY009", scratch_no_alloc, 0);
 		rc = SQL_ERROR;
 		goto end;
 	}
@@ -193,7 +189,10 @@ MNDBDriverConnect(ODBCDbc *dbc,
 	scratch_alloc = buildConnectionString(dsn ? dsn : "DEFAULT", settings);
 	if (!scratch_alloc)
 		goto failure;
-	out_len = strcpy_len((char*)OutConnectionString, scratch_alloc, BufferLength);
+	if (OutConnectionString)
+		out_len = strlcpy((char*)OutConnectionString, scratch_alloc, BufferLength);
+	else
+		out_len = strlen(scratch_alloc);
 	if (StringLength2Ptr)
 		*StringLength2Ptr = (SQLSMALLINT)out_len;
 	if (out_len + 1 > (size_t)BufferLength) {

@@ -1,0 +1,73 @@
+statement ok
+CREATE TABLE rift_min_a (
+  g INT,
+  x INT
+)
+
+statement ok
+CREATE TABLE rift_min_b (
+  y INT
+)
+
+statement ok
+INSERT INTO rift_min_a VALUES
+  (1, 10),
+  (1, 20),
+  (2, 100)
+
+statement ok
+INSERT INTO rift_min_b VALUES
+  (1)
+
+-- Control query 1: succeeds.
+query II rowsort
+SELECT SUM(x) AS s, g
+FROM rift_min_a
+GROUP BY g
+HAVING EXISTS(SELECT 1 FROM rift_min_b) OR SUM(x) < 81
+----
+100
+2
+30
+1
+
+-- Control query 2: succeeds.
+query II rowsort
+SELECT SUM(x) AS s, g
+FROM rift_min_a
+GROUP BY g
+HAVING SUM(x) < 81 OR EXISTS(SELECT 1 FROM rift_min_b)
+----
+100
+2
+30
+1
+
+-- Control query 3: succeeds.
+query II rowsort
+SELECT SUM(x) AS s, g
+FROM rift_min_a
+GROUP BY g
+HAVING SUM(x) < 81 OR SUM(x) < 81
+----
+30
+1
+
+-- Failing query: should also be valid, but MonetDB rejects it.
+query II rowsort
+SELECT SUM(x) AS s, g
+FROM rift_min_a
+GROUP BY g
+HAVING SUM(x) < 81 OR EXISTS(SELECT 1 FROM rift_min_b) OR SUM(x) < 81
+----
+100
+2
+30
+1
+
+statement ok
+DROP TABLE IF EXISTS rift_min_b
+
+statement ok
+DROP TABLE IF EXISTS rift_min_a
+

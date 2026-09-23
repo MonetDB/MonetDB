@@ -3,11 +3,9 @@
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024, 2025 MonetDB Foundation;
- * Copyright August 2008 - 2023 MonetDB B.V.;
- * Copyright 1997 - July 2008 CWI.
+ * For copyright information, see the file debian/copyright.
  */
 
 #ifndef _MAL_PROFILER_H
@@ -48,41 +46,19 @@ typedef struct MalEvent {
 	lng duration;
 } MalEvent;
 
-mal_export int profilerStatus;
-mal_export int profilerMode;
-
-mal_export void profilerEvent(MalEvent * me, NonMalEvent * nme);
 mal_export oid runtimeProfileSetTag(Client cntxt);
 
 mal_export str startTrace(Client cntxt);
 mal_export str stopTrace(Client cntxt);
-mal_export void clearTrace(Client cntxt);
 mal_export int TRACEtable(Client cntxt, BAT **r);
 
 #ifdef LIBMONETDB5
 /* only available in monetdb5 */
 extern void initProfiler(void);
-extern str openProfilerStream(Client cntxt, int m);
-extern str closeProfilerStream(Client cntxt);
-
-extern str startProfiler(Client cntxt);
-extern str stopProfiler(Client cntxt);
-extern void setHeartbeat(int delay);
-extern void initHeartbeat(void);
-extern void profilerHeartbeatEvent(char *alter);
-extern int getprofilerlimit(void);
-extern void setprofilerlimit(int limit);
 
 extern void MPresetProfiler(stream *fdout);
 
-extern str cleanupTraces(Client cntxt);
-extern BAT *getTrace(Client cntxt, const char *nme);
-
 extern lng getDiskSpace(void);
-extern lng getDiskReads(void);
-extern lng getDiskWrites(void);
-extern lng getUserTime(void);
-extern lng getSystemTime(void);
 extern void profilerGetCPUStat(lng *user, lng *nice, lng *sys, lng *idle,
 							   lng *iowait);
 #endif

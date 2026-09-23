@@ -1,4 +1,5 @@
-import time, sys, os, pymonetdb
+from MonetDBtesting import tpymonetdb as pymonetdb
+import time, sys, os
 
 client1 = pymonetdb.connect(database=os.getenv("TSTDB"), port=int(os.getenv("MAPIPORT")))
 cur1 = client1.cursor()

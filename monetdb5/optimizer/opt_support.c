@@ -3,11 +3,9 @@
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024, 2025 MonetDB Foundation;
- * Copyright August 2008 - 2023 MonetDB B.V.;
- * Copyright 1997 - July 2008 CWI.
+ * For copyright information, see the file debian/copyright.
  */
 
  /* (c) M. Kersten
@@ -59,27 +57,6 @@ isOptimizerEnabled(MalBlkPtr mb, const char *opt)
 	return 0;
 }
 
-/*
- * Find if an optimizer 'opt' has run before the instruction 'p'.
- */
-int
-isOptimizerUsed(MalBlkPtr mb, InstrPtr p, const char *opt)
-{
-	bool p_found = false;
-
-	for (int i = mb->stop - 1; i > 0; i--) {
-		InstrPtr q = getInstrPtr(mb, i);
-
-		p_found |= q == p;		/* the optimizer to find must come before p */
-		if (q && q->token == ENDsymbol)
-			return 0;
-		if (p_found && q && q != p && getModuleId(q) == optimizerRef
-			&& getFunctionId(q) == opt)
-			return 1;
-	}
-	return 0;
-}
-
 /* Simple insertion statements do not require complex optimizer steps */
 int
 isSimpleSQL(MalBlkPtr mb)
@@ -118,7 +95,6 @@ int
 hasSameArguments(MalBlkPtr mb, InstrPtr p, InstrPtr q)
 {
 	int k;
-	int (*cmp)(const void *, const void *);
 	VarPtr w, u;
 
 	(void) mb;
@@ -131,9 +107,8 @@ hasSameArguments(MalBlkPtr mb, InstrPtr p, InstrPtr q)
 				&& isVarConstant(mb, getArg(q, k))) {
 				w = getVar(mb, getArg(p, k));
 				u = getVar(mb, getArg(q, k));
-				cmp = ATOMcompare(w->value.vtype);
 				if (w->value.vtype == u->value.vtype
-					&& (*cmp) (VALptr(&w->value), VALptr(&u->value)) == 0)
+					&& ATOMeq(w->value.vtype, VALptr(&w->value), VALptr(&u->value)))
 					continue;
 			}
 			return FALSE;
@@ -292,7 +267,7 @@ hasSideEffects(MalBlkPtr mb, InstrPtr p, int strict)
 		return TRUE;
 
 	if ((getModuleId(p) == batRef || getModuleId(p) == sqlRef)
-		&& (getFunctionId(p) == setAccessRef))
+		&& (getFunctionId(p) == setAccessRef || getFunctionId(p) == singleRef))
 		return TRUE;
 
 	if (getModuleId(p) == malRef && getFunctionId(p) == multiplexRef)
@@ -310,11 +285,6 @@ hasSideEffects(MalBlkPtr mb, InstrPtr p, int strict)
 		getModuleId(p) == alarmRef)
 		return TRUE;
 
-	if( getModuleId(p) == pyapi3Ref ||
-		getModuleId(p) == rapiRef ||
-		getModuleId(p) == capiRef)
-		return TRUE;
-
 	if (getModuleId(p) == sqlcatalogRef)
 		return TRUE;
 	if (getModuleId(p) == sqlRef) {
@@ -328,9 +298,9 @@ hasSideEffects(MalBlkPtr mb, InstrPtr p, int strict)
 			return FALSE;
 		if (getFunctionId(p) == bindRef)
 			return FALSE;
-		if (getFunctionId(p) == bindidxRef)
+		if (getFunctionId(p) == bind_idxbatRef)
 			return FALSE;
-		if (getFunctionId(p) == binddbatRef)
+		if (getFunctionId(p) == bind_dbatRef)
 			return FALSE;
 		if (getFunctionId(p) == columnBindRef)
 			return FALSE;
@@ -343,9 +313,11 @@ hasSideEffects(MalBlkPtr mb, InstrPtr p, int strict)
 			return FALSE;
 		if (getFunctionId(p) == mvcRef)
 			return FALSE;
-		if (getFunctionId(p) == singleRef)
-			return FALSE;
 		if (getFunctionId(p) == importColumnRef)
+			return FALSE;
+		if (getFunctionId(p) == importRawRef)
+			return FALSE;
+		if (getFunctionId(p) == importNulTerminatedRef)
 			return FALSE;
 		return TRUE;
 	}
@@ -403,26 +375,6 @@ isSideEffectFree(MalBlkPtr mb)
 }
 
 /*
- * Breaking up a MAL program into pieces for distributed processing requires
- * identification of (partial) blocking instructions. A conservative
- * definition can be used.
- */
-inline int
-isBlocking(InstrPtr p)
-{
-	if (blockStart(p) || blockExit(p) || blockCntrl(p))
-		return TRUE;
-
-	if (getFunctionId(p) == sortRef)
-		return TRUE;
-
-	if (getModuleId(p) == aggrRef || getModuleId(p) == groupRef
-		|| getModuleId(p) == sqlcatalogRef)
-		return TRUE;
-	return FALSE;
-}
-
-/*
  * Used in the merge table optimizer. It is built incrementally
  * and should be conservative.
  */
@@ -432,8 +384,8 @@ isOrderDepenent(InstrPtr p)
 {
 	if (getModuleId(p) != batsqlRef)
 		return 0;
-	if (getFunctionId(p) == differenceRef || getFunctionId(p) == window_boundRef
-		|| getFunctionId(p) == row_numberRef || getFunctionId(p) == rankRef
+	if (getFunctionId(p) == diffRef || getFunctionId(p) == window_boundRef
+		/*|| getFunctionId(p) == row_numberRef*/ || getFunctionId(p) == rankRef
 		|| getFunctionId(p) == dense_rankRef
 		|| getFunctionId(p) == percent_rankRef
 		|| getFunctionId(p) == cume_distRef || getFunctionId(p) == ntileRef
@@ -456,9 +408,7 @@ isMapOp(InstrPtr p)
 				|| (getModuleId(p) == batcalcRef)
 				|| (getModuleId(p) != batcalcRef && getModuleId(p) != batRef
 					&& strncmp(getModuleId(p), "bat", 3) == 0)
-				|| (getModuleId(p) == batmkeyRef)) && !isOrderDepenent(p)
-			&& getModuleId(p) != batrapiRef && getModuleId(p) != batpyapi3Ref
-			&& getModuleId(p) != batcapiRef;
+				|| (getModuleId(p) == batmkeyRef)) && !isOrderDepenent(p);
 }
 
 inline int
@@ -469,12 +419,11 @@ isMap2Op(InstrPtr p)
 	return getModuleId(p)
 			&& ((getModuleId(p) == malRef && getFunctionId(p) == multiplexRef)
 				|| (getModuleId(p) == malRef && getFunctionId(p) == manifoldRef)
+				|| (getModuleId(p) == batsqlRef && getFunctionId(p) == row_numberRef)
 				|| (getModuleId(p) == batcalcRef)
 				|| (getModuleId(p) != batcalcRef && getModuleId(p) != batRef
 					&& strncmp(getModuleId(p), "bat", 3) == 0)
-				|| (getModuleId(p) == batmkeyRef)) && !isOrderDepenent(p)
-			&& getModuleId(p) != batrapiRef && getModuleId(p) != batpyapi3Ref
-			&& getModuleId(p) != batcapiRef;
+				|| (getModuleId(p) == batmkeyRef)) && !isOrderDepenent(p);
 }
 
 inline int
@@ -517,7 +466,7 @@ isMatJoinOp(InstrPtr p)
 {
 	return (isSubJoin(p)
 			|| (getModuleId(p) == algebraRef
-				&& (getFunctionId(p) == crossRef || getFunctionId(p) == joinRef
+				&& (getFunctionId(p) == crossproductRef || getFunctionId(p) == joinRef
 					|| getFunctionId(p) == thetajoinRef
 					|| getFunctionId(p) == bandjoinRef
 					|| getFunctionId(p) == rangejoinRef)

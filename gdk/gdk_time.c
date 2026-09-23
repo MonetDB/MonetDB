@@ -3,49 +3,39 @@
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024, 2025 MonetDB Foundation;
- * Copyright August 2008 - 2023 MonetDB B.V.;
- * Copyright 1997 - July 2008 CWI.
+ * For copyright information, see the file debian/copyright.
  */
 
 #include "monetdb_config.h"
 #include "gdk.h"
 #include "gdk_time.h"
 
-#define YEAR_MIN		(-4712)	/* 4713 BC */
+/* layout of a `date`:
+ * bottom 5 bits: day number minus 1 (i.e. 0..27/28/29/30 depending on month)
+ * next 21 bits: (year + 4712) * 12 + month
+ *  where month is 0 based (i.e. counting months since -4712)
+ * i.e. 000000mmmmmmmmmmmmmmmmmmmmmddddd
+ *
+ * A `daytime` is the number of microseconds since midnight
+ * (i.e. max is 24*60*60*1000000 which requires 37 bits out of 64)
+ *
+ * layout of a `timestamp`
+ * bottom 37 bits: `daytime`
+ * next 26 bits: `date` (21 bits months since -4712 and 5 bits day number)
+ * (i.e. 0mmmmmmmmmmmmmmmmmmmmmdddddttttttttttttttttttttttttttttttttttttt)
+ */
 
-#define YEAR_OFFSET		(-YEAR_MIN)
-#define DTDAY_WIDTH		5		/* 1..28/29/30/31, depending on month/year */
-#define DTDAY_SHIFT		0
-#define DTMONTH_WIDTH	21		/* enough for 174761 years (and 8 months) */
+#define YEAR_MIN	(-4712)	/* 4713 BC */
+
+#define YEAR_OFFSET	(-YEAR_MIN)
+#define DTDAY_WIDTH	5	/* 1..28/29/30/31, depending on month/year */
+#define DTDAY_SHIFT	0
+#define DTMONTH_WIDTH	21	/* enough for 174761 years (and 8 months) */
 #define DTMONTH_SHIFT	(DTDAY_WIDTH+DTDAY_SHIFT)
 
-#define YEAR_MAX		(YEAR_MIN+(1<<DTMONTH_WIDTH)/12-1)
-
-#define isdate(y, m, d)	((m) > 0 && (m) <= 12 && (d) > 0 && (y) >= YEAR_MIN && (y) <= YEAR_MAX && (d) <= monthdays(y, m))
-#define mkdate(y, m, d)	((date) (((uint32_t) (((y) + YEAR_OFFSET) * 12 + (m) - 1) << DTMONTH_SHIFT) \
-				 | ((uint32_t) (d) << DTDAY_SHIFT)))
-#define date_extract_day(dt)	((int) (((uint32_t) (dt) >> DTDAY_SHIFT) & ((1 << DTDAY_WIDTH) - 1)))
-#define date_extract_month(dt)	((int) ((((uint32_t) (dt) >> DTMONTH_SHIFT) & ((1 << DTMONTH_WIDTH) - 1)) % 12 + 1))
-#define date_extract_year(dt)	((int) ((((uint32_t) (dt) >> DTMONTH_SHIFT) & ((1 << DTMONTH_WIDTH) - 1)) / 12 - YEAR_OFFSET))
-
-#define istime(h,m,s,u)	((h) >= 0 && (h) < 24 && (m) >= 0 && (m) < 60 && (s) >= 0 && (s) <= 60 && (u) >= 0 && (u) < 1000000)
-#define mkdaytime(h,m,s,u)	(((((daytime) (h) * 60 + (m)) * 60) + (s)) * LL_CONSTANT(1000000) + (u))
-
-#define daytime_extract_hour(tm)	((int) (tm / HOUR_USEC))
-#define daytime_extract_minute(tm)	((int) ((tm / 60000000) % 60))
-#define daytime_extract_usecond(tm)	((int) (tm % 60000000)) /* includes seconds */
-
-#define TSTIME_WIDTH	37		/* [0..24*60*60*1000000) */
-#define TSTIME_SHIFT	0
-#define TSDATE_WIDTH	(DTDAY_WIDTH+DTMONTH_WIDTH)
-#define TSDATE_SHIFT	(TSTIME_SHIFT+TSTIME_WIDTH)
-#define ts_time(ts)		((daytime) (((uint64_t) (ts) >> TSTIME_SHIFT) & ((LL_CONSTANT(1) << TSTIME_WIDTH) - 1)))
-#define ts_date(ts)		((date) (((uint64_t) (ts) >> TSDATE_SHIFT) & ((1 << TSDATE_WIDTH) - 1)))
-#define mktimestamp(d, t)	((timestamp) (((uint64_t) (d) << TSDATE_SHIFT) | \
-					      ((uint64_t) (t) << TSTIME_SHIFT)))
+#define YEAR_MAX	(YEAR_MIN+(1<<DTMONTH_WIDTH)/12-1)
 
 static const int leapdays[13] = { /* days per month in leap year */
 	0, 31, 29, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31
@@ -53,10 +43,119 @@ static const int leapdays[13] = { /* days per month in leap year */
 static const int cumdays[13] = { /* cumulative days in non leap year */
 	0, 31, 59, 90, 120, 151, 181, 212, 243, 273, 304, 334, 365
 };
-#define isleapyear(y)		((y) % 4 == 0 && ((y) % 100 != 0 || (y) % 400 == 0))
-#define monthdays(y, m)		(leapdays[m] - ((m) == 2 && !isleapyear(y)))
 
-const timestamp unixepoch = mktimestamp(mkdate(1970, 1, 1), mkdaytime(0, 0, 0, 0));
+__attribute__((__const__))
+static inline bool
+isleapyear(int y)
+{
+	return y % 4 == 0 && (y % 100 != 0 || y % 400 == 0);
+}
+
+__attribute__((__const__))
+static inline int
+monthdays(int y, int m)
+{
+	return leapdays[m] - (m == 2 && !isleapyear(y));
+}
+
+__attribute__((__const__))
+static inline bool
+isdate(int y, int m, int d)
+{
+	return m > 0 && m <= 12 && d > 0 && y >= YEAR_MIN && y <= YEAR_MAX && d <= monthdays(y, m);
+}
+
+__attribute__((__const__))
+static inline date
+mkdate(int y, int m, int d)
+{
+	return (date) (((uint32_t) ((y + YEAR_OFFSET) * 12 + m - 1) << DTMONTH_SHIFT) | ((uint32_t) d << DTDAY_SHIFT));
+}
+
+__attribute__((__const__))
+static inline int
+date_extract_day(date dt)
+{
+	return (int) (((uint32_t) dt >> DTDAY_SHIFT) & ((1 << DTDAY_WIDTH) - 1));
+}
+
+__attribute__((__const__))
+static inline int
+date_extract_month(date dt)
+{
+	return (int) ((((uint32_t) dt >> DTMONTH_SHIFT) & ((1 << DTMONTH_WIDTH) - 1)) % 12 + 1);
+}
+
+__attribute__((__const__))
+static inline int
+date_extract_year(date dt)
+{
+	return (int) ((((uint32_t) dt >> DTMONTH_SHIFT) & ((1 << DTMONTH_WIDTH) - 1)) / 12 - YEAR_OFFSET);
+}
+
+__attribute__((__const__))
+static inline bool
+istime(int h, int m, int s, int u)
+{
+	return h >= 0 && h < 24 && m >= 0 && m < 60 && s >= 0 && s <= 60 && u >= 0 && u < 1000000;
+}
+
+__attribute__((__const__))
+static inline daytime
+mkdaytime(int h, int m, int s, int u)
+{
+	return ((((daytime) h * 60 + m) * 60) + s) * LL_CONSTANT(1000000) + u;
+}
+
+__attribute__((__const__))
+static inline int
+daytime_extract_hour(daytime tm)
+{
+	return (int) (tm / HOUR_USEC);
+}
+
+__attribute__((__const__))
+static inline int
+daytime_extract_minute(daytime tm)
+{
+	return (int) ((tm / 60000000) % 60);
+}
+
+__attribute__((__const__))
+static inline int
+daytime_extract_usecond(daytime tm)
+{
+	return (int) (tm % 60000000); /* includes seconds */
+}
+
+#define TSTIME_WIDTH	37		/* [0..24*60*60*1000000) */
+#define TSTIME_SHIFT	0
+#define TSDATE_WIDTH	(DTDAY_WIDTH+DTMONTH_WIDTH)
+#define TSDATE_SHIFT	(TSTIME_SHIFT+TSTIME_WIDTH)
+
+__attribute__((__const__))
+static inline daytime
+ts_time(timestamp ts)
+{
+	return (daytime) (((uint64_t) ts >> TSTIME_SHIFT) & ((LL_CONSTANT(1) << TSTIME_WIDTH) - 1));
+}
+
+__attribute__((__const__))
+static inline date
+ts_date(timestamp ts)
+{
+	return (date) (((uint64_t) ts >> TSDATE_SHIFT) & ((1 << TSDATE_WIDTH) - 1));
+}
+
+__attribute__((__const__))
+static inline timestamp
+mktimestamp(date d, daytime t)
+{
+	return (timestamp) (((uint64_t) d << TSDATE_SHIFT) |
+			    ((uint64_t) t << TSTIME_SHIFT));
+}
+
+const timestamp unixepoch = (((((timestamp) 1970 + YEAR_OFFSET) * 12) << DTMONTH_SHIFT) | ((timestamp) 1 << DTDAY_SHIFT)) << TSDATE_SHIFT; /* mktimestamp(mkdate(1970, 1, 1), mkdaytime(0, 0, 0, 0)) */
 
 date
 date_create(int year, int month, int day)
@@ -363,7 +462,7 @@ daytime_add_usec_modulo(daytime t, lng usec)
 timestamp
 timestamp_fromtime(time_t timeval)
 {
-	struct tm tm = (struct tm) {0};
+	struct tm tm = {0};
 	date d;
 	daytime t;
 
@@ -499,43 +598,36 @@ static ssize_t
 fleximatch(const char *s, const char *pat, size_t min)
 {
 	size_t hit;
-	bool spacy = false;
 
 	if (min == 0) {
-		min = (int) strlen(pat);	/* default minimum required hits */
+		min = strlen(pat);	/* default minimum required hits */
 	}
 	for (hit = 0; *pat; hit++) {
 		if (tolower((unsigned char) s[hit]) != (unsigned char) *pat) {
-			if (GDKisspace(s[hit]) && spacy) {
-				min++;
-				continue;		/* extra spaces */
-			}
 			break;
 		}
-		spacy = GDKisspace(*pat);
 		pat++;
 	}
 	return (hit >= min) ? hit : 0;
 }
 
 static ssize_t
-parse_substr(int *ret, const char *s, size_t min, const char *list[], int size)
+parse_substr(int *ret, const char *s, size_t min, const char *const list[], int size)
 {
-	ssize_t j = 0;
-	int i = 0;
+	for (int i = 0; i < size; i++) {
+		ssize_t j = 0;
 
-	*ret = int_nil;
-	while (++i <= size) {
 		if ((j = fleximatch(s, list[i], min)) > 0) {
-			*ret = i;
-			break;
+			*ret = i + 1;
+			return j;
 		}
 	}
-	return j;
+	*ret = int_nil;
+	return 0;
 }
 
-static const char *MONTHS[13] = {
-	NULL, "january", "february", "march", "april", "may", "june",
+static const char *const months[12] = {
+	"january", "february", "march", "april", "may", "june",
 	"july", "august", "september", "october", "november", "december"
 };
 
@@ -582,7 +674,7 @@ parse_date(const char *buf, date *d, bool external)
 			month = (buf[pos++] - '0') + month * 10;
 		}
 	} else {
-		pos += parse_substr(&month, buf + pos, 3, MONTHS, 12);
+		pos += parse_substr(&month, buf + pos, 3, months, 12);
 	}
 	if (is_int_nil(month) || (sep && buf[pos++] != sep)) {
 		GDKerror("Syntax error in date.\n");
@@ -646,11 +738,10 @@ parse_date(const char *buf, date *d, bool external)
 }
 
 ssize_t
-date_fromstr(const char *buf, size_t *len, date **d, bool external)
+date_fromstr(allocator *ma, const char *buf, size_t *len, date **d, bool external)
 {
 	if (*len < sizeof(date) || *d == NULL) {
-		GDKfree(*d);
-		*d = (date *) GDKmalloc(*len = sizeof(date));
+		*d = (date *) ma_alloc(ma, *len = sizeof(date));
 		if( *d == NULL)
 			return -1;
 	}
@@ -685,12 +776,11 @@ do_date_tostr(char *buf, size_t len, const date *val, bool external)
 }
 
 ssize_t
-date_tostr(str *buf, size_t *len, const date *val, bool external)
+date_tostr(allocator *ma, str *buf, size_t *len, const date *val, bool external)
 {
 	/* 15 bytes is more than enough */
 	if (*len < 15 || *buf == NULL) {
-		GDKfree(*buf);
-		*buf = GDKmalloc(15);
+		*buf = ma_alloc(ma, 15);
 		if( *buf == NULL)
 			return -1;
 		*len = 15;
@@ -778,11 +868,10 @@ parse_daytime(const char *buf, daytime *dt, bool external)
 }
 
 ssize_t
-daytime_fromstr(const char *buf, size_t *len, daytime **ret, bool external)
+daytime_fromstr(allocator *ma, const char *buf, size_t *len, daytime **ret, bool external)
 {
 	if (*len < sizeof(daytime) || *ret == NULL) {
-		GDKfree(*ret);
-		*ret = (daytime *) GDKmalloc(*len = sizeof(daytime));
+		*ret = (daytime *) ma_alloc(ma, *len = sizeof(daytime));
 		if (*ret == NULL)
 			return -1;
 	}
@@ -799,7 +888,7 @@ daytime_fromstr(const char *buf, size_t *len, daytime **ret, bool external)
 }
 
 static ssize_t
-daytime_tz_fromstr_internal(const char *buf, size_t *len, daytime **ret, long tz_sec, bool tzlocal, bool external)
+daytime_tz_fromstr_internal(allocator *ma, const char *buf, size_t *len, daytime **ret, long tz_sec, bool tzlocal, bool external)
 {
 	const char *s = buf;
 	ssize_t pos;
@@ -807,7 +896,7 @@ daytime_tz_fromstr_internal(const char *buf, size_t *len, daytime **ret, long tz
 	int offset = 0;
 	bool has_tz = false;
 
-	pos = daytime_fromstr(s, len, ret, external);
+	pos = daytime_fromstr(ma, s, len, ret, external);
 	if (pos < 0 || is_daytime_nil(**ret))
 		return pos;
 
@@ -816,7 +905,7 @@ daytime_tz_fromstr_internal(const char *buf, size_t *len, daytime **ret, long tz
 	while (GDKisspace(*s))
 		s++;
 	/* for GMT we need to add the time zone */
-	if (fleximatch(s, "gmt", 0) == 3) {
+	if (strcasecmp(s, "gmt") == 0) {
 		s += 3;
 	}
 	if ((s[0] == '-' || s[0] == '+') &&
@@ -847,16 +936,16 @@ daytime_tz_fromstr_internal(const char *buf, size_t *len, daytime **ret, long tz
 }
 
 ssize_t
-daytime_tz_fromstr(const char *buf, size_t *len, daytime **ret, bool external)
+daytime_tz_fromstr(allocator *ma, const char *buf, size_t *len, daytime **ret, bool external)
 {
-	return daytime_tz_fromstr_internal(buf, len, ret, 0, false, external);
+	return daytime_tz_fromstr_internal(ma, buf, len, ret, 0, false, external);
 }
 
 ssize_t
-sql_daytime_fromstr(const char *buf, daytime *ret, long tz_sec, bool tclocal)
+sql_daytime_fromstr(allocator *ma, const char *buf, daytime *ret, long tz_sec, bool tclocal)
 {
 	size_t len = sizeof(daytime);
-	return daytime_tz_fromstr_internal(buf, &len, &ret, tz_sec, tclocal, false);
+	return daytime_tz_fromstr_internal(ma, buf, &len, &ret, tz_sec, tclocal, false);
 }
 
 static ssize_t
@@ -907,14 +996,13 @@ GCC_Pragma("GCC diagnostic ignored \"-Wformat-truncation\"")
 }
 
 ssize_t
-daytime_precision_tostr(str *buf, size_t *len, const daytime dt,
+daytime_precision_tostr(allocator *ma, str *buf, size_t *len, const daytime dt,
 			int precision, bool external)
 {
 	if (precision < 0)
 		precision = 0;
 	if (*len < 10 + (size_t) precision || *buf == NULL) {
-		GDKfree(*buf);
-		*buf = (str) GDKmalloc(*len = 10 + (size_t) precision);
+		*buf = (str) ma_alloc(ma, *len = 10 + (size_t) precision);
 		if( *buf == NULL)
 			return -1;
 	}
@@ -922,13 +1010,13 @@ daytime_precision_tostr(str *buf, size_t *len, const daytime dt,
 }
 
 ssize_t
-daytime_tostr(str *buf, size_t *len, const daytime *val, bool external)
+daytime_tostr(allocator *ma, str *buf, size_t *len, const daytime *val, bool external)
 {
-	return daytime_precision_tostr(buf, len, *val, 6, external);
+	return daytime_precision_tostr(ma, buf, len, *val, 6, external);
 }
 
 static ssize_t
-timestamp_fromstr_internal(const char *buf, size_t *len, timestamp **ret, bool external, bool parse_offset)
+timestamp_fromstr_internal(allocator *ma, const char *buf, size_t *len, timestamp **ret, bool external, bool parse_offset)
 {
 	const char *s = buf;
 	ssize_t pos;
@@ -936,8 +1024,7 @@ timestamp_fromstr_internal(const char *buf, size_t *len, timestamp **ret, bool e
 	daytime tm;
 
 	if (*len < sizeof(timestamp) || *ret == NULL) {
-		GDKfree(*ret);
-		*ret = (timestamp *) GDKmalloc(*len = sizeof(timestamp));
+		*ret = (timestamp *) ma_alloc(ma, *len = sizeof(timestamp));
 		if (*ret == NULL)
 			return -1;
 	}
@@ -977,7 +1064,7 @@ timestamp_fromstr_internal(const char *buf, size_t *len, timestamp **ret, bool e
 			while (GDKisspace(*s))
 				s++;
 			/* in case of gmt we need to add the time zone */
-			if (fleximatch(s, "gmt", 0) == 3) {
+			if (strcasecmp(s, "gmt") == 0) {
 				s += 3;
 			}
 			if ((s[0] == '-' || s[0] == '+') &&
@@ -998,16 +1085,16 @@ timestamp_fromstr_internal(const char *buf, size_t *len, timestamp **ret, bool e
 }
 
 ssize_t
-timestamp_fromstr(const char *buf, size_t *len, timestamp **ret, bool external)
+timestamp_fromstr(allocator *ma, const char *buf, size_t *len, timestamp **ret, bool external)
 {
-	return timestamp_fromstr_internal(buf, len, ret, external, true);
+	return timestamp_fromstr_internal(ma, buf, len, ret, external, true);
 }
 
 static ssize_t
-timestamp_tz_fromstr_internal(const char *buf, size_t *len, timestamp **ret, long tz_sec, bool tzlocal, bool external)
+timestamp_tz_fromstr_internal(allocator *ma, const char *buf, size_t *len, timestamp **ret, long tz_sec, bool tzlocal, bool external)
 {
 	const char *s = buf;
-	ssize_t pos = timestamp_fromstr_internal(s, len, ret, external, false);
+	ssize_t pos = timestamp_fromstr_internal(ma, s, len, ret, external, false);
 	lng offset = 0;
 	bool has_tz = false;
 
@@ -1019,7 +1106,7 @@ timestamp_tz_fromstr_internal(const char *buf, size_t *len, timestamp **ret, lon
 	while (GDKisspace(*s))
 		s++;
 	/* in case of gmt we need to add the time zone */
-	if (fleximatch(s, "gmt", 0) == 3) {
+	if (strcasecmp(s, "gmt") == 0) {
 		s += 3;
 	}
 	if ((s[0] == '-' || s[0] == '+') &&
@@ -1042,21 +1129,21 @@ timestamp_tz_fromstr_internal(const char *buf, size_t *len, timestamp **ret, lon
 }
 
 ssize_t
-timestamp_tz_fromstr(const char *buf, size_t *len, timestamp **ret, bool external)
+timestamp_tz_fromstr(allocator *ma, const char *buf, size_t *len, timestamp **ret, bool external)
 {
-	return timestamp_tz_fromstr_internal(buf, len, ret, 0, false, external);
+	return timestamp_tz_fromstr_internal(ma, buf, len, ret, 0, false, external);
 }
 
 /* timestamp from str (return timestamp in local time */
 ssize_t
-sql_timestamp_fromstr(const char *buf, timestamp *ret, long tz_sec, bool tzlocal)
+sql_timestamp_fromstr(allocator *ma, const char *buf, timestamp *ret, long tz_sec, bool tzlocal)
 {
 	size_t len = sizeof(timestamp);
-	return timestamp_tz_fromstr_internal(buf, &len, &ret, tz_sec, tzlocal, false);
+	return timestamp_tz_fromstr_internal(ma, buf, &len, &ret, tz_sec, tzlocal, false);
 }
 
 ssize_t
-timestamp_precision_tostr(str *buf, size_t *len, timestamp val, int precision, bool external)
+timestamp_precision_tostr(allocator *ma, str *buf, size_t *len, timestamp val, int precision, bool external)
 {
 	ssize_t len1, len2;
 	char buf1[128], buf2[128];
@@ -1065,8 +1152,7 @@ timestamp_precision_tostr(str *buf, size_t *len, timestamp val, int precision, b
 
 	if (is_timestamp_nil(val)) {
 		if (*len < 4 || *buf == NULL) {
-			GDKfree(*buf);
-			*buf = GDKmalloc(*len = 4);
+			*buf = ma_alloc(ma, *len = 4);
 			if( *buf == NULL)
 				return -1;
 		}
@@ -1087,16 +1173,15 @@ timestamp_precision_tostr(str *buf, size_t *len, timestamp val, int precision, b
 		return -1;
 
 	if (*len < 2 + (size_t) len1 + (size_t) len2 || *buf == NULL) {
-		GDKfree(*buf);
-		*buf = GDKmalloc(*len = (size_t) len1 + (size_t) len2 + 2);
+		*buf = ma_alloc(ma, *len = (size_t) len1 + (size_t) len2 + 2);
 		if( *buf == NULL)
 			return -1;
 	}
-	return (ssize_t) strconcat_len(*buf, *len, buf1, " ", buf2, NULL);
+	return (ssize_t) strlconcat(*buf, *len, buf1, " ", buf2, NULL);
 }
 
 ssize_t
-timestamp_tostr(str *buf, size_t *len, const timestamp *val, bool external)
+timestamp_tostr(allocator *ma, str *buf, size_t *len, const timestamp *val, bool external)
 {
-	return timestamp_precision_tostr(buf, len, *val, 6, external);
+	return timestamp_precision_tostr(ma, buf, len, *val, 6, external);
 }

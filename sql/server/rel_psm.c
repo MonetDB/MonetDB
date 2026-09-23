@@ -3,11 +3,9 @@
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024, 2025 MonetDB Foundation;
- * Copyright August 2008 - 2023 MonetDB B.V.;
- * Copyright 1997 - July 2008 CWI.
+ * For copyright information, see the file debian/copyright.
  */
 
 #include "monetdb_config.h"
@@ -90,7 +88,7 @@ psm_set_exp(sql_query *query, dnode *n)
 
 		if (!(e = exp_check_type(sql, tpe, rel, e, type_cast)))
 			return NULL;
-		res = exp_set(sql->sa, var && var->sname ? sa_strdup(sql->sa, var->sname) : NULL, sa_strdup(sql->sa, vname), e, level);
+		res = exp_set(sql->sa, var && var->sname ? ma_strdup(sql->sa, var->sname) : NULL, ma_strdup(sql->sa, vname), e, level);
 	} else { /* multi assignment */
 		exp_kind ek = {type_relation, card_value, FALSE};
 		sql_rel *rel_val = rel_subquery(query, val, ek);
@@ -124,7 +122,7 @@ psm_set_exp(sql_query *query, dnode *n)
 			v = exp_ref(sql, v);
 			if (!(v = exp_check_type(sql, tpe, rel_val, v, type_cast)))
 				return NULL;
-			append(b, exp_set(sql->sa, var && var->sname ? sa_strdup(sql->sa, var->sname) : NULL, sa_strdup(sql->sa, vname), v, level));
+			append(b, exp_set(sql->sa, var && var->sname ? ma_strdup(sql->sa, var->sname) : NULL, ma_strdup(sql->sa, vname), v, level));
 		}
 		res = exp_rel(sql, rel_psm_block(sql->sa, b));
 	}
@@ -171,7 +169,7 @@ rel_psm_declare(mvc *sql, dnode *n)
 			/* variables are put on stack, globals on a separate list */
 			if (!frame_push_var(sql, tname, ctype))
 				return sql_error(sql, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
-			r = exp_var(sql->sa, NULL, sa_strdup(sql->sa, tname), ctype, sql->frame);
+			r = exp_var(sql->sa, NULL, ma_strdup(sql->sa, tname), ctype, sql->frame);
 			append(l, r);
 			ids = ids->next;
 		}
@@ -211,7 +209,7 @@ rel_psm_declare_table(sql_query *query, dnode *n)
 	t = (sql_table*)((atom*)((sql_exp*)baset->exps->t->data)->l)->data.val.pval;
 	if (!frame_push_table(sql, t))
 		return sql_error(sql, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
-	return exp_table(sql->sa, sa_strdup(sql->sa, name), t, sql->frame);
+	return exp_table(sql->sa, ma_strdup(sql->sa, name), t, sql->frame);
 }
 
 /* [ label: ]
@@ -492,7 +490,7 @@ rel_psm_return( sql_query *query, sql_subtype *restype, list *restypelist, symbo
 			char name[16];
 
 			if (!cname)
-				cname = sa_strdup(sql->sa, number2name(name, sizeof(name), ++sql->label));
+				cname = ma_strdup(sql->sa, number2name(name, sizeof(name), ++sql->label));
 			if (!isproject)
 				e = exp_ref(sql, e);
 			e = exp_check_type(sql, &ce->type, oexps_rel, e, type_equal);
@@ -555,7 +553,7 @@ rel_select_into( sql_query *query, symbol *sq, exp_kind ek)
 		return NULL;
 	if (!is_project(r->op))
 		return sql_error(sql, 02, SQLSTATE(42000) "SELECT INTO: The subquery is not a projection");
-	if (list_length(r->exps) != dlist_length(into))
+	if (!into || list_length(r->exps) != dlist_length(into))
 		return sql_error(sql, 02, SQLSTATE(21S01) "SELECT INTO: number of values doesn't match number of variables to set");
 	r = rel_return_zero_or_one(sql, r, ek);
 	nl = sa_list(sql->sa);
@@ -576,7 +574,7 @@ rel_select_into( sql_query *query, symbol *sq, exp_kind ek)
 		v = exp_ref(sql, v);
 		if (!(v = exp_check_type(sql, tpe, r, v, type_equal)))
 			return NULL;
-		v = exp_set(sql->sa, var && var->sname ? sa_strdup(sql->sa, var->sname) : NULL, sa_strdup(sql->sa, vname), v, level);
+		v = exp_set(sql->sa, var && var->sname ? ma_strdup(sql->sa, var->sname) : NULL, ma_strdup(sql->sa, vname), v, level);
 		list_append(nl, v);
 	}
 	return nl;
@@ -882,6 +880,7 @@ has_generic_decimal_result(list *types)
 	return false;
 }
 
+#define admin_privs(g)	((g) == USER_MONETDB || (g) == ROLE_SYSADMIN)
 
 static sql_rel *
 rel_create_func(sql_query *query, dlist *qname, dlist *params, symbol *res, dlist *ext_name, dlist *body, sql_ftype type, sql_flang lang, int replace, int order_spec)
@@ -921,9 +920,9 @@ rel_create_func(sql_query *query, dlist *qname, dlist *params, symbol *res, dlis
 		return sql_error(sql, 02, SQLSTATE(42000) "CREATE %s: %ss cannot return tables", F, fn);
 	else if (res && type == F_PROC)
 		return sql_error(sql, 02, SQLSTATE(42000) "CREATE %s: procedures cannot have return parameters", F);
-	else if (res && (type == F_FILT || type == F_LOADER))
+	else if (res && (type == F_FILT || type == F_LOADER || type == F_GROUPFILT))
 		return sql_error(sql, 02, SQLSTATE(42000) "CREATE %s: %s functions don't have to specify a return type", F, fn);
-	else if (!res && !(type == F_PROC || type == F_FILT || type == F_LOADER))
+	else if (!res && !(type == F_PROC || type == F_FILT || type == F_LOADER || type == F_GROUPFILT))
 		return sql_error(sql, 02, SQLSTATE(42000) "CREATE %s: %ss require a return type", F, fn);
 	else if (lang == FUNC_LANG_MAL && type == F_LOADER)
 		return sql_error(sql, 02, SQLSTATE(42000) "CREATE %s: %s functions creation via MAL not supported", F, fn);
@@ -931,6 +930,8 @@ rel_create_func(sql_query *query, dlist *qname, dlist *params, symbol *res, dlis
 		return sql_error(sql, 02, SQLSTATE(42000) "CREATE %s: %s functions creation via SQL not supported", F, fn);
 	else if (LANG_EXT(lang) && !(type == F_FUNC || type == F_AGGR || type == F_UNION || type == F_LOADER))
 		return sql_error(sql, 02, SQLSTATE(42000) "CREATE %s: %ss creation via external programming languages not supported", F, fn);
+	else if (lang != FUNC_LANG_SQL && !admin_privs(sql->user_id) && !admin_privs(sql->role_id))
+		return sql_error(sql, 02, SQLSTATE(42000) "CREATE %s: insufficient privileges for user '%s'", F, get_string_global_var(sql, "current_user"));
 
 	if (sname && !(s = mvc_bind_schema(sql, sname)))
 		return sql_error(sql, ERR_NOTFOUND, SQLSTATE(3F000) "CREATE %s: no such schema '%s'", F, sname);
@@ -940,7 +941,7 @@ rel_create_func(sql_query *query, dlist *qname, dlist *params, symbol *res, dlis
 
 	type_list = create_type_list(sql, params, 1);
 
-	if ((sf = sql_bind_func_(sql, s->base.name, fname, type_list, type, true, true)) != NULL && create) {
+	if ((sf = sql_bind_func_(sql, s->base.name, fname, type_list, type==F_GROUPFILT?F_FILT:type, true, true)) != NULL && create) {
 		if (sf->func->private) { /* cannot create a function using a private name or replace a existing one */
 			list_destroy(type_list);
 			return sql_error(sql, 02, SQLSTATE(42000) "CREATE %s: name '%s' cannot be used", F, fname);
@@ -948,17 +949,20 @@ rel_create_func(sql_query *query, dlist *qname, dlist *params, symbol *res, dlis
 		if (!replace && params) {
 			char *arg_list = NULL;
 			node *n;
+			allocator *ta = MT_thread_getallocator();
+			allocator_state ta_state = ma_open(ta);
 
 			for (n = type_list->h; n; n = n->next) {
-				char *tpe =  sql_subtype_string(sql->ta, (sql_subtype *) n->data);
+				char *tpe =  sql_subtype_string(ta, (sql_subtype *) n->data);
 
 				if (arg_list) {
-					arg_list = sa_message(sql->ta, "%s, %s", arg_list, tpe);
+					arg_list = sa_message(ta, "%s, %s", arg_list, tpe);
 				} else {
 					arg_list = tpe;
 				}
 			}
 			(void)sql_error(sql, 02, SQLSTATE(42000) "CREATE %s: name '%s' (%s) already in use", F, fname, arg_list ? arg_list : "");
+			ma_close(&ta_state);
 			list_destroy(type_list);
 			return NULL;
 		} else if (!replace) {
@@ -973,9 +977,9 @@ rel_create_func(sql_query *query, dlist *qname, dlist *params, symbol *res, dlis
 		sql->errstr[0] = '\0';
 	}
 
-	if (create && (type == F_FUNC || type == F_AGGR || type == F_FILT)) {
+	if (create && (type == F_FUNC || type == F_AGGR || type == F_FILT || type == F_GROUPFILT)) {
 		sql_subfunc *found = NULL;
-		if ((found = sql_bind_func_(sql, s->base.name, fname, type_list, (type == F_FUNC || type == F_FILT) ? F_AGGR : F_FUNC, true, true))) {
+		if ((found = sql_bind_func_(sql, s->base.name, fname, type_list, (type == F_FUNC || type == F_FILT || type == F_GROUPFILT) ? F_AGGR : F_FUNC, true, true))) {
 			list_destroy(type_list);
 			if (found->func->private) /* cannot create a function using a private name or replace a existing one */
 				return sql_error(sql, 02, SQLSTATE(42000) "CREATE %s: name '%s' cannot be used", F, fname);
@@ -1013,61 +1017,7 @@ rel_create_func(sql_query *query, dlist *qname, dlist *params, symbol *res, dlis
 	if (lang > FUNC_LANG_SQL && has_generic_decimal_result(restype))
 		return sql_error(sql, 02, SQLSTATE(42000) "CREATE %s: the function '%s' returns a generic DECIMAL type, UDFs require precision and scale", F, fname);
 	if (body && LANG_EXT(lang)) {
-		const char *lang_body = body->h->data.sval, *mod = "unknown", *slang = "Unknown", *imp = "Unknown";
-		switch (lang) {
-		case FUNC_LANG_R:
-			mod = "rapi";
-			slang = "R";
-			break;
-		case FUNC_LANG_C:
-			mod = "capi";
-			slang = "C";
-			break;
-		case FUNC_LANG_CPP:
-			mod = "capi";
-			slang = "CPP";
-			break;
-		case FUNC_LANG_J:
-			mod = "japi";
-			slang = "Javascript";
-			break;
-		case FUNC_LANG_PY:
-		case FUNC_LANG_PY3:
-			mod = "pyapi3";
-			slang = "Python";
-			break;
-		default:
-			return sql_error(sql, 01, SQLSTATE(42000) "Function language without a MAL backend");
-		}
-		switch(type) {
-		case F_AGGR:
-			imp = "eval_aggr";
-			break;
-		case F_LOADER:
-			imp = "eval_loader";
-			break;
-		default: /* for every other function type at the moment */
-			imp = "eval";
-		}
-
-		if (type == F_LOADER && !(lang == FUNC_LANG_PY || lang == FUNC_LANG_PY3))
-			return sql_error(sql, 01, SQLSTATE(42000) "CREATE %s: Language name \"Python[3]\" expected", F);
-
-		sql->params = NULL;
-		if (create) {
-			bit side_effect = (list_empty(restype) || (!vararg && list_empty(l))); /* TODO make this more precise? */
-			switch (mvc_create_func(&f, sql, sql->sa, s, fname, l, restype, type, lang, mod, imp, lang_body, (type == F_LOADER)?TRUE:FALSE, vararg, FALSE, side_effect, order_required, opt_order)) {
-				case -1:
-					return sql_error(sql, 01, SQLSTATE(HY013) MAL_MALLOC_FAIL);
-				case -2:
-				case -3:
-					return sql_error(sql, 01, SQLSTATE(42000) "CREATE %s: transaction conflict detected", F);
-				default:
-					break;
-			}
-		} else if (!sf) {
-			return sql_error(sql, 01, SQLSTATE(42000) "CREATE %s: %s function %s.%s not bound", F, slang, s->base.name, fname);
-		}
+		return sql_error(sql, 01, SQLSTATE(42000) "Function language without a MAL backend");
 	} else if (body) { /* SQL implementation */
 		sql_arg *ra = (restype && type != F_UNION)?restype->h->data:NULL;
 		list *b = NULL;
@@ -1075,16 +1025,21 @@ rel_create_func(sql_query *query, dlist *qname, dlist *params, symbol *res, dlis
 
 		if (create) { /* needed for recursive functions */
 			bit side_effect = list_empty(restype) == 1; /* TODO make this more precise? */
-			q = query_cleaned(sql->ta, q);
+			allocator *ta = MT_thread_getallocator();
+			allocator_state ta_state = ma_open(ta);
+			q = query_cleaned(ta, q);
 			switch (mvc_create_func(&f, sql, sql->sa, s, fname, l, restype, type, lang, sql_shared_module_name, NULL, q, FALSE, vararg, FALSE, side_effect, order_required, opt_order)) {
 				case -1:
+					ma_close(&ta_state);
 					return sql_error(sql, 01, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 				case -2:
 				case -3:
+					ma_close(&ta_state);
 					return sql_error(sql, 01, SQLSTATE(42000) "CREATE %s: transaction conflict detected", F);
 				default:
 					break;
 			}
+			ma_close(&ta_state);
 			sql->forward = f;
 		} else if (!sf) {
 			return sql_error(sql, 01, SQLSTATE(42000) "CREATE %s: SQL function %s.%s not bound", F, s->base.name, fname);
@@ -1118,16 +1073,21 @@ rel_create_func(sql_query *query, dlist *qname, dlist *params, symbol *res, dlis
 			return sql_error(sql, 01, SQLSTATE(42000) "CREATE %s: MAL function name '%s' too large for the backend", F, fnme);
 		sql->params = NULL;
 		if (create) {
-			q = query_cleaned(sql->ta, q);
+			allocator *ta = MT_thread_getallocator();
+			allocator_state ta_state = ma_open(ta);
+			q = query_cleaned(ta, q);
 			switch (mvc_create_func(&f, sql, sql->sa, s, fname, l, restype, type, lang, fmod, fnme, q, FALSE, vararg, FALSE, FALSE, order_required, opt_order)) {
 				case -1:
+					ma_close(&ta_state);
 					return sql_error(sql, 01, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 				case -2:
 				case -3:
+					ma_close(&ta_state);
 					return sql_error(sql, 01, SQLSTATE(42000) "CREATE %s: transaction conflict detected", F);
 				default:
 					break;
 			}
+			ma_close(&ta_state);
 
 			/* instantiate MAL functions while being created. This also sets the side-effects flag */
 			bool se = f->side_effect;
@@ -1212,19 +1172,22 @@ resolve_func(mvc *sql, const char *sname, const char *name, dlist *typelist, sql
 			node *n;
 
 			if (type_list->cnt > 0) {
+				allocator *ta = MT_thread_getallocator();
+				allocator_state ta_state = ma_open(ta);
 				for (n = type_list->h; n; n = n->next) {
-					char *tpe =  sql_subtype_string(sql->ta, (sql_subtype *) n->data);
+					char *tpe =  sql_subtype_string(ta, (sql_subtype *) n->data);
 
 					if (arg_list) {
-						arg_list = sa_message(sql->ta, "%s, %s", arg_list, tpe);
+						arg_list = sa_message(ta, "%s, %s", arg_list, tpe);
 					} else {
 						arg_list = tpe;
 					}
 				}
-				list_destroy(list_func);
-				list_destroy(type_list);
 				if (!if_exists)
 					e = sql_error(sql, ERR_NOTFOUND, SQLSTATE(42000) "%s %s: no such %s '%s' (%s)", op, F, fn, name, arg_list);
+				ma_close(&ta_state);
+				list_destroy(list_func);
+				list_destroy(type_list);
 				return e;
 			}
 			list_destroy(list_func);
@@ -1237,7 +1200,7 @@ resolve_func(mvc *sql, const char *sname, const char *name, dlist *typelist, sql
 				e = sql_error(sql, ERR_NOTFOUND, SQLSTATE(42000) "%s %s: no such %s '%s'", op, F, fn, name);
 			return e;
 		}
-	} else if (((is_func && type != F_FILT) && !func->res) || (!is_func && func->res)) {
+	} else if (((is_func && type != F_FILT && type != F_GROUPFILT) && !func->res) || (!is_func && func->res)) {
 		list_destroy(list_func);
 		list_destroy(type_list);
 		return sql_error(sql, ERR_NOTFOUND, SQLSTATE(42000) "%s %s: cannot drop %s '%s'", op, F, fn, name);
@@ -1305,17 +1268,17 @@ rel_create_trigger(mvc *sql, const char *sname, const char *tname, const char *t
 	if(!rel || !exps)
 		return NULL;
 
-	append(exps, exp_atom_str(sql->sa, sname, sql_bind_localtype("str") ));
-	append(exps, exp_atom_str(sql->sa, tname, sql_bind_localtype("str") ));
-	append(exps, exp_atom_str(sql->sa, triggername, sql_bind_localtype("str") ));
+	append(exps, exp_atom_str(sql->sa, sname, sql_fetch_localtype(TYPE_str) ));
+	append(exps, exp_atom_str(sql->sa, tname, sql_fetch_localtype(TYPE_str) ));
+	append(exps, exp_atom_str(sql->sa, triggername, sql_fetch_localtype(TYPE_str) ));
 	append(exps, exp_atom_int(sql->sa, time));
 	append(exps, exp_atom_int(sql->sa, orientation));
 	append(exps, exp_atom_int(sql->sa, event));
-	append(exps, exp_atom_str(sql->sa, old_name, sql_bind_localtype("str") ));
-	append(exps, exp_atom_str(sql->sa, new_name, sql_bind_localtype("str") ));
+	append(exps, exp_atom_str(sql->sa, old_name, sql_fetch_localtype(TYPE_str) ));
+	append(exps, exp_atom_str(sql->sa, new_name, sql_fetch_localtype(TYPE_str) ));
 	(void)condition;
-	append(exps, exp_atom_str(sql->sa, NULL, sql_bind_localtype("str") ));
-	append(exps, exp_atom_str(sql->sa, query, sql_bind_localtype("str") ));
+	append(exps, exp_atom_str(sql->sa, NULL, sql_fetch_localtype(TYPE_str) ));
+	append(exps, exp_atom_str(sql->sa, query, sql_fetch_localtype(TYPE_str) ));
 	append(exps, exp_atom_int(sql->sa, replace));
 	rel->l = NULL;
 	rel->r = NULL;
@@ -1332,7 +1295,7 @@ _stack_push_table(mvc *sql, const char *tname, sql_table *t)
 {
 	sql_rel *r = rel_basetable(sql, t, tname );
 	rel_base_use_all(sql, r);
-	r = rewrite_basetable(sql, r);
+	r = rewrite_basetable(sql, r, false);
 	return stack_push_rel_view(sql, tname, r);
 }
 
@@ -1424,8 +1387,12 @@ create_trigger(sql_query *query, dlist *qname, int time, symbol *trigger_event, 
 
 		assert(triggered_action->h->type == type_int);
 		orientation = triggered_action->h->data.i_val;
-		q = query_cleaned(sql->ta, QUERY(sql->scanner));
-		return rel_create_trigger(sql, sname, tname, triggername, time, orientation, event, old_name, new_name, condition, q, replace);
+		allocator *ta = MT_thread_getallocator();
+		allocator_state ta_state = ma_open(ta);
+		q = query_cleaned(ta, QUERY(sql->scanner));
+		r = rel_create_trigger(sql, sname, tname, triggername, time, orientation, event, old_name, new_name, condition, q, replace);
+		ma_close(&ta_state);
+		return r;
 	}
 
 	if (!instantiate) {
@@ -1456,7 +1423,8 @@ create_trigger(sql_query *query, dlist *qname, int time, symbol *trigger_event, 
 			rel = stack_find_rel_view(sql, "old");
 		if (!rel)
 			rel = stack_find_rel_view(sql, "new");
-		rel = rel_logical_exp(query, rel, condition, sql_where);
+		if (rel)
+			rel = rel_logical_exp(query, rel, condition, sql_where);
 		if (!rel) {
 			if (!instantiate)
 				stack_pop_frame(sql);
@@ -1464,7 +1432,7 @@ create_trigger(sql_query *query, dlist *qname, int time, symbol *trigger_event, 
 		}
 		/* transition tables */
 		/* insert: rel_select(table [new], searchcondition) */
-		/* delete: rel_select(table [old], searchcondition) */
+		/* delete/truncate: rel_select(table [old], searchcondition) */
 		/* update: rel_select(table [old,new]), searchcondition) */
 		if (new_name)
 			stack_update_rel_view(sql, new_name, rel);
@@ -1498,8 +1466,8 @@ rel_drop_trigger(mvc *sql, const char *sname, const char *tname, int if_exists)
 	if(!rel || !exps)
 		return NULL;
 
-	append(exps, exp_atom_str(sql->sa, sname, sql_bind_localtype("str") ));
-	append(exps, exp_atom_str(sql->sa, tname, sql_bind_localtype("str") ));
+	append(exps, exp_atom_str(sql->sa, sname, sql_fetch_localtype(TYPE_str) ));
+	append(exps, exp_atom_str(sql->sa, tname, sql_fetch_localtype(TYPE_str) ));
 	append(exps, exp_atom_int(sql->sa, if_exists));
 	rel->l = NULL;
 	rel->r = NULL;
@@ -1529,34 +1497,6 @@ drop_trigger(mvc *sql, dlist *qname, int if_exists)
 	if (tr->t && !mvc_schema_privs(sql, tr->t->s))
 		return sql_error(sql, 02, SQLSTATE(3F000) "DROP TRIGGER: access denied for %s to schema '%s'", get_string_global_var(sql, "current_user"), tr->t->s->base.name);
 	return rel_drop_trigger(sql, tr->t?tr->t->s->base.name:NULL, tname, if_exists);
-}
-
-static sql_rel*
-create_table_from_loader(sql_query *query, dlist *qname, symbol *fcall)
-{
-	mvc *sql = query->sql;
-	sql_schema *s = cur_schema(sql);
-	char *sname = qname_schema(qname);
-	char *tname = qname_schema_object(qname);
-	sql_subfunc *loader = NULL;
-	sql_rel *rel = NULL;
-	sql_table *t = NULL;
-
-	if (sname && !(s = mvc_bind_schema(sql, sname)))
-		return sql_error(sql, ERR_NOTFOUND, SQLSTATE(3F000) "CREATE TABLE FROM LOADER: no such schema '%s'", sname);
-	if ((t = mvc_bind_table(sql, s, tname)))
-		return sql_error(sql, 02, SQLSTATE(42S01) "CREATE TABLE FROM LOADER: name '%s' already in use", tname);
-	if (!mvc_schema_privs(sql, s))
-		return sql_error(sql, 02, SQLSTATE(42000) "CREATE TABLE FROM LOADER: insufficient privileges for user '%s' in schema '%s'", get_string_global_var(sql, "current_user"), s->base.name);
-
-	rel = rel_loader_function(query, fcall, new_exp_list(sql->sa), &loader);
-	if (!rel || !loader)
-		return NULL;
-
-	loader->sname = s ? sa_strdup(sql->sa, s->base.name) : NULL;
-	loader->tname = tname ? sa_strdup(sql->sa, tname) : NULL;
-
-	return rel;
 }
 
 static list *
@@ -1639,18 +1579,6 @@ rel_psm(sql_query *query, symbol *s)
 		} else
 			ret = rel_psm_stmt(sql->sa, rel_psm_call(query, s->data.sym));
 		break;
-	case SQL_CREATE_TABLE_LOADER:
-	{
-		dlist *l = s->data.lval;
-		dlist *qname = l->h->data.lval;
-		symbol *sym = l->h->next->data.sym;
-
-		ret = create_table_from_loader(query, qname, sym);
-		if (ret == NULL)
-			return NULL;
-		ret = rel_psm_stmt(sql->sa, exp_rel(sql, ret));
-		sql->type = Q_SCHEMA;
-	}	break;
 	case SQL_CREATE_TRIGGER:
 	{
 		dlist *l = s->data.lval;

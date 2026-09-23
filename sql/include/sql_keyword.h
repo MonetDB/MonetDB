@@ -3,11 +3,9 @@
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024, 2025 MonetDB Foundation;
- * Copyright August 2008 - 2023 MonetDB B.V.;
- * Copyright 1997 - July 2008 CWI.
+ * For copyright information, see the file debian/copyright.
  */
 
 #ifndef SQL_KEYWORD_H
@@ -25,7 +23,7 @@ typedef struct keyword {
 	struct keyword *next;
 } keyword;
 
-extern int keywords_insert(char *k, int token);
+extern int keywords_insert(const char *k, int token);
 extern keyword *find_keyword(char *text);
 extern int keyword_exists(char *text);
 

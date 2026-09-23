@@ -2,11 +2,9 @@
 --
 -- This Source Code Form is subject to the terms of the Mozilla Public
 -- License, v. 2.0.  If a copy of the MPL was not distributed with this
--- file, You can obtain one at http://mozilla.org/MPL/2.0/.
+-- file, You can obtain one at https://mozilla.org/MPL/2.0/.
 --
--- Copyright 2024, 2025 MonetDB Foundation;
--- Copyright August 2008 - 2023 MonetDB B.V.;
--- Copyright 1997 - July 2008 CWI.
+-- For copyright information, see the file debian/copyright.
 
 CREATE FUNCTION sys.sql_datatype(mtype varchar(999), digits integer, tscale integer, nameonly boolean, shortname boolean)
   RETURNS varchar(1024)
@@ -212,7 +210,7 @@ CREATE VIEW sys.describe_tables AS
 			GROUP_CONCAT(
 				sys.DQ(c.name) || ' ' ||
 				sys.describe_type(c.type, c.type_digits, c.type_scale) ||
-				ifthenelse(c."null" = 'false', ' NOT NULL', '')
+				ifthenelse(c."null" = false, ' NOT NULL', '')
 			, ', ') || ')'
 		FROM sys._columns c
 		WHERE c.table_id = t.id) col,
@@ -333,7 +331,7 @@ CREATE VIEW sys.describe_user_defined_types AS
 	WHERE
 		t.eclass = 18 AND
 		(
-			(s.name = 'sys' AND t.sqlname not in ('geometrya', 'mbr', 'url', 'inet', 'json', 'uuid', 'xml')) OR
+			(s.name = 'sys' AND t.sqlname not in ('geometrya', 'mbr', 'url', 'inet', 'json', 'uuid', 'xml', 'inet4', 'inet6')) OR
 			(s.name <> 'sys')
 		);
 

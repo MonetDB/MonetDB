@@ -97,7 +97,7 @@ CREATE TABLE LINEITEM ( L_ORDERKEY    INTEGER NOT NULL,
 statement ok
 COMMIT
 
-query ITTITRTT rowsort
+query ITTITDTT rowsort
 select * from customer
 ----
 
@@ -105,15 +105,15 @@ query ITIT rowsort
 select * from nation
 ----
 
-query IITRTTTIT rowsort
+query IITDTTTIT rowsort
 select * from orders
 ----
 
-query IIIRT rowsort
+query IIIDT rowsort
 select * from partsupp
 ----
 
-query ITTTTITRT rowsort
+query ITTTTITDT rowsort
 select * from part
 ----
 
@@ -121,11 +121,11 @@ query ITT rowsort
 select * from region
 ----
 
-query ITTITRT rowsort
+query ITTITDT rowsort
 select * from supplier
 ----
 
-query IIIIRRRRTTTTTTTT rowsort
+query IIIIDDDDTTTTTTTT rowsort
 select * from lineitem
 ----
 

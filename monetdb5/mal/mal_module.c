@@ -3,11 +3,9 @@
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024, 2025 MonetDB Foundation;
- * Copyright August 2008 - 2023 MonetDB B.V.;
- * Copyright 1997 - July 2008 CWI.
+ * For copyright information, see the file debian/copyright.
  */
 
 /*
@@ -169,18 +167,15 @@ addModuleToIndex(Module cur)
 Module
 getModule(const char *name)
 {
-	int index = getModuleIndex(name);
-	Module m = moduleIndex[index];
-	while (m) {
+	for (Module m = moduleIndex[getModuleIndex(name)]; m; m = m->link) {
 		if (name == m->name)
 			return m;
-		m = m->link;
 	}
 	return NULL;
 }
 
 void
-getModuleList(Module **out, int *length)
+getModuleList(allocator *ma, Module **out, int *length)
 {
 	int i;
 	int moduleCount = 0;
@@ -192,7 +187,7 @@ getModuleList(Module **out, int *length)
 			m = m->link;
 		}
 	}
-	*out = GDKzalloc(moduleCount * sizeof(Module));
+	*out = ma_zalloc(ma, moduleCount * sizeof(Module));
 	if (*out == NULL) {
 		return;
 	}
@@ -205,12 +200,6 @@ getModuleList(Module **out, int *length)
 			m = m->link;
 		}
 	}
-}
-
-void
-freeModuleList(Module *list)
-{
-	GDKfree(list);
 }
 
 /*
@@ -298,10 +287,9 @@ freeModule(Module m)
 	if ((s = findSymbolInModule(m, "epilogue")) != NULL) {
 		if (s->kind == COMMANDsymbol && s->func->argc <= 1 /* zero or one arg */) {
 			int status = 0;
-			str ret = MAL_SUCCEED;
 
-			ret = (*(str (*)(int *)) s->func->imp) (&status);
-			freeException(ret);
+			TRC_INFO(MAL_LOADER, "Unloading module %s\n", m->name);
+			(void) (*(str (*)(Client, int *)) s->func->imp) (NULL, &status);
 			(void) status;
 		}
 	}
@@ -330,7 +318,7 @@ insertSymbol(Module scope, Symbol prg)
 	if (scope->space[t] != prg) {
 		prg->peer = scope->space[t];
 		scope->space[t] = prg;
-		if (prg->peer && idcmp(prg->name, prg->peer->name) == 0)
+		if (prg->peer && strcmp(prg->name, prg->peer->name) == 0)
 			prg->skip = prg->peer->skip;
 		else
 			prg->skip = prg->peer;
@@ -421,7 +409,7 @@ findSymbolInModule(Module v, const char *fcn)
 		return NULL;
 	s = v->space[(int) (*fcn)];
 	while (s != NULL) {
-		if (idcmp(s->name, fcn) == 0)
+		if (strcmp(s->name, fcn) == 0)
 			return s;
 		s = s->skip;
 	}

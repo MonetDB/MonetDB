@@ -3,11 +3,9 @@
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024, 2025 MonetDB Foundation;
- * Copyright August 2008 - 2023 MonetDB B.V.;
- * Copyright 1997 - July 2008 CWI.
+ * For copyright information, see the file debian/copyright.
  */
 
 /* Generic stream handling code such as init and close */
@@ -27,18 +25,18 @@
 /* streams working on a socket */
 
 static int
-socket_getoob(const stream *s)
+socket_getoob(stream *s)
 {
 	SOCKET fd = s->stream_data.s;
 #ifdef HAVE_POLL
-	struct pollfd pfd = (struct pollfd) {
+	struct pollfd pfd = {
 		.fd = fd,
 		.events = POLLPRI,
 	};
 	if (poll(&pfd, 1, 0) > 0)
 #else
 	fd_set xfds;
-	struct timeval t = (struct timeval) {
+	struct timeval t = {
 		.tv_sec = 0,
 		.tv_usec = 0,
 	};
@@ -92,7 +90,7 @@ socket_getoob(const stream *s)
 			}
 		}
 #endif
-		char b = 0;
+		unsigned char b = 0;
 		switch (recv(fd, &b, 1, MSG_OOB)) {
 		case 0:
 			/* unexpectedly didn't receive a byte */
@@ -108,7 +106,7 @@ socket_getoob(const stream *s)
 }
 
 static int
-socket_putoob(const stream *s, char val)
+socket_putoob(stream *s, char val)
 {
 	SOCKET fd = s->stream_data.s;
 	if (send(fd, &val, 1, MSG_OOB) == -1) {
@@ -125,18 +123,18 @@ socket_putoob(const stream *s, char val)
 #define OOBMSG1	'\377'
 
 static int
-socket_getoob_unix(const stream *s)
+socket_getoob_unix(stream *s)
 {
 	SOCKET fd = s->stream_data.s;
 #ifdef HAVE_POLL
-	struct pollfd pfd = (struct pollfd) {
+	struct pollfd pfd = {
 		.fd = fd,
 		.events = POLLIN,
 	};
 	if (poll(&pfd, 1, 0) > 0)
 #else
 	fd_set fds;
-	struct timeval t = (struct timeval) {
+	struct timeval t = {
 		.tv_sec = 0,
 		.tv_usec = 0,
 	};
@@ -163,16 +161,16 @@ socket_getoob_unix(const stream *s)
 			if (nr == 2 && buf[0] == OOBMSG0 && buf[1] == OOBMSG1) {
 				nr = recv(fd, buf, 3, 0);
 				if (nr == 3)
-					return buf[2];
+					return (unsigned char) buf[2];
 			}
 		}
 	return 0;
 }
 
 static int
-socket_putoob_unix(const stream *s, char val)
+socket_putoob_unix(stream *s, char val)
 {
-	char buf[3] = {
+	const char buf[3] = {
 		OOBMSG0,
 		OOBMSG1,
 		val,
@@ -209,7 +207,7 @@ socket_write(stream *restrict s, const void *restrict buf, size_t elmsize, size_
 #ifdef _MSC_VER
 						   (int) min(size - res, 1 << 16)
 #else
-						   size
+						   size - res
 #endif
 						   , 0)) > 0)
 		       || (nr < 0 &&	/* syscall failed */
@@ -286,10 +284,10 @@ socket_read(stream *restrict s, void *restrict buf, size_t elmsize, size_t cnt)
 		if (s->timeout) {
 			int ret;
 #ifdef HAVE_POLL
-			struct pollfd pfd;
-
-			pfd = (struct pollfd) {.fd = s->stream_data.s,
-					       .events = POLLIN};
+			struct pollfd pfd = {
+				.fd = s->stream_data.s,
+				.events = POLLIN
+			};
 #ifdef HAVE_SYS_UN_H
 			if (s->putoob != socket_putoob_unix)
 				pfd.events |= POLLPRI;
@@ -428,20 +426,6 @@ socket_read(stream *restrict s, void *restrict buf, size_t elmsize, size_t cnt)
 			mnstr_set_error_errno(s, errno == EINTR ? MNSTR_INTERRUPT : MNSTR_READ_ERROR, NULL);
 			return -1;
 		}
-#ifdef HAVE_SYS_UN_H
-		/* when reading a block size in a block stream
-		 * (elmsize==2,cnt==1), we may actually get an "OOB" message
-		 * when this is a Unix domain socket */
-		if (s->putoob == socket_putoob_unix &&
-			elmsize == 2 && cnt == 1 && nr == 2 &&
-			((char *)buf)[0] == OOBMSG0 &&
-			((char *)buf)[1] == OOBMSG1) {
-			/* also read (and discard) the "pay load" */
-			(void) recv(s->stream_data.s, buf, 1, 0);
-			mnstr_set_error(s, MNSTR_INTERRUPT, "query abort from client");
-			return -1;
-		}
-#endif
 		break;
 	}
 	if (nr == 0) {
@@ -530,9 +514,8 @@ socket_isalive(const stream *s)
 {
 	SOCKET fd = s->stream_data.s;
 #ifdef HAVE_POLL
-	struct pollfd pfd;
+	struct pollfd pfd = {.fd = fd};
 	int ret;
-	pfd = (struct pollfd){.fd = fd};
 	if ((ret = poll(&pfd, 1, 0)) == 0)
 		return 1;
 	if (ret == -1 && errno == EINTR)

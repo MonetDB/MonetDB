@@ -3,11 +3,9 @@
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024, 2025 MonetDB Foundation;
- * Copyright August 2008 - 2023 MonetDB B.V.;
- * Copyright 1997 - July 2008 CWI.
+ * For copyright information, see the file debian/copyright.
  */
 
 #include "monetdb_config.h"
@@ -36,6 +34,12 @@ checkbats(BATiter *b1i, BATiter *b2i, const char *func)
 
 #define NOT(x)		(~(x))
 #define NOTBIT(x)	(!(x))
+#define NOTINET4(x)	((inet4) {.align = ~(x).align})
+#ifdef HAVE_HGE
+#define NOTINET6(x)	((inet6) {.align = ~(x).align})
+#else
+#define NOTINET6(x)	((inet6) {.align[0] = ~(x).align[0], .align[1] = ~(x).align[1]})
+#endif
 
 BAT *
 BATcalcnot(BAT *b, BAT *s)
@@ -129,6 +133,12 @@ BATcalcnot(BAT *b, BAT *s)
 		UNARY_2TYPE_FUNC_nonil(uhge, uhge, NOT);
 		break;
 #endif
+	case TYPE_inet4:
+		UNARY_2TYPE_FUNC_nilcheck(inet4, inet4, NOTINET4, nils++);
+		break;
+	case TYPE_inet6:
+		UNARY_2TYPE_FUNC_nilcheck(inet6, inet6, NOTINET6, nils++);
+		break;
 	default:
 		GDKerror("type %s not supported.\n", ATOMname(bi.type));
 		goto bailout;
@@ -245,6 +255,18 @@ VARcalcnot(ValPtr ret, const ValRecord *v)
 		ret->val.uhval = ~v->val.uhval;
 		break;
 #endif
+	case TYPE_inet4:
+		if (is_inet4_nil(v->val.ip4val))
+			ret->val.ip4val = inet4_nil;
+		else
+			ret->val.ip4val = NOTINET4(v->val.ip4val);
+		break;
+	case TYPE_inet6:
+		if (is_inet6_nil(v->val.ip6val))
+			ret->val.ip6val = inet6_nil;
+		else
+			ret->val.ip6val = NOTINET6(v->val.ip6val);
+		break;
 	default:
 		GDKerror("bad input type %s.\n", ATOMname(v->vtype));
 		return GDK_FAIL;
@@ -962,14 +984,20 @@ BATcalcisnil_implementation(BAT *b, BAT *s, bool notnil)
 	case TYPE_uuid:
 		ISNIL_TYPE(uuid, notnil);
 		break;
+	case TYPE_inet4:
+		ISNIL_TYPE(inet4, notnil);
+		break;
+	case TYPE_inet6:
+		ISNIL_TYPE(inet6, notnil);
+		break;
 	default:
 	{
-		int (*atomcmp)(const void *, const void *) = ATOMcompare(bi.type);
+		bool (*atomeq)(const void *, const void *) = ATOMequal(bi.type);
 		const void *nil = ATOMnilptr(bi.type);
 
 		TIMEOUT_LOOP_IDX(i, ci.ncand, qry_ctx) {
 			x = canditer_next(&ci) - bhseqbase;
-			dst[i] = (bit) (((*atomcmp)(BUNtail(bi, x), nil) == 0) ^ notnil);
+			dst[i] = (bit) ((*atomeq)(BUNtail(&bi, x), nil) ^ notnil);
 		}
 		TIMEOUT_CHECK(qry_ctx, GOTO_LABEL_TIMEOUT_HANDLER(bailout, qry_ctx));
 		break;
@@ -1175,15 +1203,16 @@ BATcalcmin(BAT *b1, BAT *b2, BAT *s1, BAT *s2)
 	default: {
 		const void *restrict nil = ATOMnilptr(b1i.type);
 		int (*cmp)(const void *, const void *) = ATOMcompare(b1i.type);
+		bool (*eq)(const void *, const void *) = ATOMequal(b1i.type);
 
 		if (ATOMvarsized(b1i.type)) {
 			if (ci1.tpe == cand_dense && ci2.tpe == cand_dense) {
 				TIMEOUT_LOOP_IDX_DECL(i, ci1.ncand, qry_ctx) {
 					oid x1 = canditer_next_dense(&ci1) - b1hseqbase;
 					oid x2 = canditer_next_dense(&ci2) - b2hseqbase;
-					const void *p1 = BUNtvar(b1i, x1);
-					const void *p2 = BUNtvar(b2i, x2);
-					if (cmp(p1, nil) == 0 || cmp(p2, nil) == 0) {
+					const void *p1 = BUNtvar(&b1i, x1);
+					const void *p2 = BUNtvar(&b2i, x2);
+					if (eq(p1, nil) || eq(p2, nil)) {
 						nils = true;
 						p1 = nil;
 					} else {
@@ -1199,8 +1228,8 @@ BATcalcmin(BAT *b1, BAT *b2, BAT *s1, BAT *s2)
 				TIMEOUT_LOOP_IDX_DECL(i, ci1.ncand, qry_ctx) {
 					oid x1 = canditer_next(&ci1) - b1hseqbase;
 					oid x2 = canditer_next(&ci2) - b2hseqbase;
-					const void *p1 = BUNtvar(b1i, x1);
-					const void *p2 = BUNtvar(b2i, x2);
+					const void *p1 = BUNtvar(&b1i, x1);
+					const void *p2 = BUNtvar(&b2i, x2);
 					if (cmp(p1, nil) == 0 || cmp(p2, nil) == 0) {
 						nils = true;
 						p1 = nil;
@@ -1218,11 +1247,11 @@ BATcalcmin(BAT *b1, BAT *b2, BAT *s1, BAT *s2)
 			uint8_t *restrict bcast = (uint8_t *) Tloc(bn, 0);
 			uint16_t width = bn->twidth;
 			if (ci1.tpe == cand_dense && ci2.tpe == cand_dense) {
-				TIMEOUT_LOOP_IDX_DECL(i, ci1.ncand, qry_ctx) {
+				TIMEOUT_LOOP(ci1.ncand, qry_ctx) {
 					oid x1 = canditer_next_dense(&ci1) - b1hseqbase;
 					oid x2 = canditer_next_dense(&ci2) - b2hseqbase;
-					const void *p1 = BUNtloc(b1i, x1);
-					const void *p2 = BUNtloc(b2i, x2);
+					const void *p1 = BUNtloc(&b1i, x1);
+					const void *p2 = BUNtloc(&b2i, x2);
 					if (cmp(p1, nil) == 0 || cmp(p2, nil) == 0) {
 						nils = true;
 						p1 = nil;
@@ -1235,11 +1264,11 @@ BATcalcmin(BAT *b1, BAT *b2, BAT *s1, BAT *s2)
 				TIMEOUT_CHECK(qry_ctx,
 					      GOTO_LABEL_TIMEOUT_HANDLER(bailout, qry_ctx));
 			} else {
-				TIMEOUT_LOOP_IDX_DECL(i, ci1.ncand, qry_ctx) {
+				TIMEOUT_LOOP(ci1.ncand, qry_ctx) {
 					oid x1 = canditer_next(&ci1) - b1hseqbase;
 					oid x2 = canditer_next(&ci2) - b2hseqbase;
-					const void *p1 = BUNtloc(b1i, x1);
-					const void *p2 = BUNtloc(b2i, x2);
+					const void *p1 = BUNtloc(&b1i, x1);
+					const void *p2 = BUNtloc(&b2i, x2);
 					if (cmp(p1, nil) == 0 || cmp(p2, nil) == 0) {
 						nils = true;
 						p1 = nil;
@@ -1410,23 +1439,24 @@ BATcalcmin_no_nil(BAT *b1, BAT *b2, BAT *s1, BAT *s2)
 	default: {
 		const void *restrict nil = ATOMnilptr(b1i.type);
 		int (*cmp)(const void *, const void *) = ATOMcompare(b1i.type);
+		bool (*eq)(const void *, const void *) = ATOMequal(b1i.type);
 
 		if (ATOMvarsized(b1i.type)) {
 			if (ci1.tpe == cand_dense && ci2.tpe == cand_dense) {
 				TIMEOUT_LOOP_IDX_DECL(i, ci1.ncand, qry_ctx) {
 					oid x1 = canditer_next_dense(&ci1) - b1hseqbase;
 					oid x2 = canditer_next_dense(&ci2) - b2hseqbase;
-					const void *p1 = BUNtvar(b1i, x1);
-					const void *p2 = BUNtvar(b2i, x2);
-					if (cmp(p1, nil) == 0) {
-						if (cmp(p2, nil) == 0) {
+					const void *p1 = BUNtvar(&b1i, x1);
+					const void *p2 = BUNtvar(&b2i, x2);
+					if (eq(p1, nil)) {
+						if (eq(p2, nil)) {
 							/* both values are nil */
 							nils = true;
 						} else {
 							p1 = p2;
 						}
 					} else {
-						p1 = cmp(p2, nil) != 0 && cmp(p2, p1) < 0 ? p2 : p1;
+						p1 = !eq(p2, nil) != 0 && cmp(p2, p1) < 0 ? p2 : p1;
 					}
 					if (tfastins_nocheckVAR(bn, i, p1) != GDK_SUCCEED) {
 						goto bailout;
@@ -1438,17 +1468,17 @@ BATcalcmin_no_nil(BAT *b1, BAT *b2, BAT *s1, BAT *s2)
 				TIMEOUT_LOOP_IDX_DECL(i, ci1.ncand, qry_ctx) {
 					oid x1 = canditer_next(&ci1) - b1hseqbase;
 					oid x2 = canditer_next(&ci2) - b2hseqbase;
-					const void *p1 = BUNtvar(b1i, x1);
-					const void *p2 = BUNtvar(b2i, x2);
-					if (cmp(p1, nil) == 0) {
-						if (cmp(p2, nil) == 0) {
+					const void *p1 = BUNtvar(&b1i, x1);
+					const void *p2 = BUNtvar(&b2i, x2);
+					if (eq(p1, nil)) {
+						if (eq(p2, nil)) {
 							/* both values are nil */
 							nils = true;
 						} else {
 							p1 = p2;
 						}
 					} else {
-						p1 = cmp(p2, nil) != 0 && cmp(p2, p1) < 0 ? p2 : p1;
+						p1 = !eq(p2, nil) && cmp(p2, p1) < 0 ? p2 : p1;
 					}
 					if (tfastins_nocheckVAR(bn, i, p1) != GDK_SUCCEED) {
 						goto bailout;
@@ -1461,20 +1491,20 @@ BATcalcmin_no_nil(BAT *b1, BAT *b2, BAT *s1, BAT *s2)
 			uint8_t *restrict bcast = (uint8_t *) Tloc(bn, 0);
 			uint16_t width = bn->twidth;
 			if (ci1.tpe == cand_dense && ci2.tpe == cand_dense) {
-				TIMEOUT_LOOP_IDX_DECL(i, ci1.ncand, qry_ctx) {
+				TIMEOUT_LOOP(ci1.ncand, qry_ctx) {
 					oid x1 = canditer_next_dense(&ci1) - b1hseqbase;
 					oid x2 = canditer_next_dense(&ci2) - b2hseqbase;
-					const void *p1 = BUNtloc(b1i, x1);
-					const void *p2 = BUNtloc(b2i, x2);
-					if (cmp(p1, nil) == 0) {
-						if (cmp(p2, nil) == 0) {
+					const void *p1 = BUNtloc(&b1i, x1);
+					const void *p2 = BUNtloc(&b2i, x2);
+					if (eq(p1, nil)) {
+						if (eq(p2, nil)) {
 							/* both values are nil */
 							nils = true;
 						} else {
 							p1 = p2;
 						}
 					} else {
-						p1 = cmp(p2, nil) != 0 && cmp(p2, p1) < 0 ? p2 : p1;
+						p1 = !eq(p2, nil) && cmp(p2, p1) < 0 ? p2 : p1;
 					}
 					memcpy(bcast, p1, width);
 					bcast += width;
@@ -1482,20 +1512,20 @@ BATcalcmin_no_nil(BAT *b1, BAT *b2, BAT *s1, BAT *s2)
 				TIMEOUT_CHECK(qry_ctx,
 					      GOTO_LABEL_TIMEOUT_HANDLER(bailout, qry_ctx));
 			} else {
-				TIMEOUT_LOOP_IDX_DECL(i, ci1.ncand, qry_ctx) {
+				TIMEOUT_LOOP(ci1.ncand, qry_ctx) {
 					oid x1 = canditer_next(&ci1) - b1hseqbase;
 					oid x2 = canditer_next(&ci2) - b2hseqbase;
-					const void *p1 = BUNtloc(b1i, x1);
-					const void *p2 = BUNtloc(b2i, x2);
-					if (cmp(p1, nil) == 0) {
-						if (cmp(p2, nil) == 0) {
+					const void *p1 = BUNtloc(&b1i, x1);
+					const void *p2 = BUNtloc(&b2i, x2);
+					if (eq(p1, nil)) {
+						if (eq(p2, nil)) {
 							/* both values are nil */
 							nils = true;
 						} else {
 							p1 = p2;
 						}
 					} else {
-						p1 = cmp(p2, nil) != 0 && cmp(p2, p1) < 0 ? p2 : p1;
+						p1 = !eq(p2, nil) && cmp(p2, p1) < 0 ? p2 : p1;
 					}
 					memcpy(bcast, p1, width);
 					bcast += width;
@@ -1578,6 +1608,7 @@ BATcalcmincst(BAT *b, const ValRecord *v, BAT *s)
 	const void *p2;
 	const void *restrict nil;
 	int (*cmp)(const void *, const void *);
+	bool (*eq)(const void *, const void *);
 	oid bhseqbase;
 
 	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
@@ -1588,6 +1619,7 @@ BATcalcmincst(BAT *b, const ValRecord *v, BAT *s)
 
 	nil = ATOMnilptr(b->ttype);
 	cmp = ATOMcompare(b->ttype);
+	eq = ATOMequal(b->ttype);
 	bhseqbase = b->hseqbase;
 	if (ATOMtype(b->ttype) != v->vtype) {
 		GDKerror("inputs have incompatible types\n");
@@ -1650,8 +1682,8 @@ BATcalcmincst(BAT *b, const ValRecord *v, BAT *s)
 		if (ATOMvarsized(bi.type)) {
 			TIMEOUT_LOOP_IDX_DECL(i, ci.ncand, qry_ctx) {
 				oid x = canditer_next(&ci) - bhseqbase;
-				const void *restrict p1 = BUNtvar(bi, x);
-				if (cmp(p1, nil) == 0) {
+				const void *restrict p1 = BUNtvar(&bi, x);
+				if (eq(p1, nil)) {
 					nils = true;
 					p1 = nil;
 				} else {
@@ -1666,10 +1698,10 @@ BATcalcmincst(BAT *b, const ValRecord *v, BAT *s)
 		} else {
 			uint8_t *restrict bcast = (uint8_t *) Tloc(bn, 0);
 			uint16_t width = bn->twidth;
-			TIMEOUT_LOOP_IDX_DECL(i, ci.ncand, qry_ctx) {
+			TIMEOUT_LOOP(ci.ncand, qry_ctx) {
 				oid x = canditer_next(&ci) - bhseqbase;
-				const void *restrict p1 = BUNtloc(bi, x);
-				if (cmp(p1, nil) == 0) {
+				const void *restrict p1 = BUNtloc(&bi, x);
+				if (eq(p1, nil)) {
 					nils = true;
 					p1 = nil;
 				} else {
@@ -1754,6 +1786,7 @@ BATcalcmincst_no_nil(BAT *b, const ValRecord *v, BAT *s)
 	const void *p2;
 	const void *restrict nil;
 	int (*cmp)(const void *, const void *);
+	bool (*eq)(const void *, const void *);
 	oid bhseqbase;
 
 	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
@@ -1764,6 +1797,7 @@ BATcalcmincst_no_nil(BAT *b, const ValRecord *v, BAT *s)
 
 	nil = ATOMnilptr(b->ttype);
 	cmp = ATOMcompare(b->ttype);
+	eq = ATOMequal(b->ttype);
 	bhseqbase = b->hseqbase;
 	if (ATOMtype(b->ttype) != v->vtype) {
 		GDKerror("inputs have incompatible types\n");
@@ -1826,11 +1860,11 @@ BATcalcmincst_no_nil(BAT *b, const ValRecord *v, BAT *s)
 		break;
 	default:
 		if (ATOMvarsized(bi.type)) {
-			if (cmp(p2, nil) == 0) {
+			if (eq(p2, nil)) {
 				TIMEOUT_LOOP_IDX_DECL(i, ci.ncand, qry_ctx) {
 					oid x = canditer_next(&ci) - bhseqbase;
-					const void *restrict p1 = BUNtvar(bi, x);
-					nils |= cmp(p1, nil) == 0;
+					const void *restrict p1 = BUNtvar(&bi, x);
+					nils |= eq(p1, nil);
 					if (tfastins_nocheckVAR(bn, i, p1) != GDK_SUCCEED) {
 						goto bailout;
 					}
@@ -1840,8 +1874,8 @@ BATcalcmincst_no_nil(BAT *b, const ValRecord *v, BAT *s)
 			} else {
 				TIMEOUT_LOOP_IDX_DECL(i, ci.ncand, qry_ctx) {
 					oid x = canditer_next(&ci) - bhseqbase;
-					const void *restrict p1 = BUNtvar(bi, x);
-					p1 = cmp(p1, nil) == 0 || cmp(p2, p1) < 0 ? p2 : p1;
+					const void *restrict p1 = BUNtvar(&bi, x);
+					p1 = eq(p1, nil) || cmp(p2, p1) < 0 ? p2 : p1;
 					if (tfastins_nocheckVAR(bn, i, p1) != GDK_SUCCEED) {
 						goto bailout;
 					}
@@ -1852,21 +1886,21 @@ BATcalcmincst_no_nil(BAT *b, const ValRecord *v, BAT *s)
 		} else {
 			uint8_t *restrict bcast = (uint8_t *) Tloc(bn, 0);
 			uint16_t width = bn->twidth;
-			if (cmp(p2, nil) == 0) {
-				TIMEOUT_LOOP_IDX_DECL(i, ci.ncand, qry_ctx) {
+			if (eq(p2, nil)) {
+				TIMEOUT_LOOP(ci.ncand, qry_ctx) {
 					oid x = canditer_next(&ci) - bhseqbase;
-					const void *restrict p1 = BUNtloc(bi, x);
-					nils |= cmp(p1, nil) == 0;
+					const void *restrict p1 = BUNtloc(&bi, x);
+					nils |= eq(p1, nil);
 					memcpy(bcast, p1, width);
 					bcast += width;
 				}
 				TIMEOUT_CHECK(qry_ctx,
 					      GOTO_LABEL_TIMEOUT_HANDLER(bailout, qry_ctx));
 			} else {
-				TIMEOUT_LOOP_IDX_DECL(i, ci.ncand, qry_ctx) {
+				TIMEOUT_LOOP(ci.ncand, qry_ctx) {
 					oid x = canditer_next(&ci) - bhseqbase;
-					const void *restrict p1 = BUNtloc(bi, x);
-					p1 = cmp(p1, nil) == 0 || cmp(p2, p1) < 0 ? p2 : p1;
+					const void *restrict p1 = BUNtloc(&bi, x);
+					p1 = eq(p1, nil) || cmp(p2, p1) < 0 ? p2 : p1;
 					memcpy(bcast, p1, width);
 					bcast += width;
 				}
@@ -1990,15 +2024,16 @@ BATcalcmax(BAT *b1, BAT *b2, BAT *s1, BAT *s2)
 	default: {
 		const void *restrict nil = ATOMnilptr(b1i.type);
 		int (*cmp)(const void *, const void *) = ATOMcompare(b1i.type);
+		bool (*eq)(const void *, const void *) = ATOMequal(b1i.type);
 
 		if (ATOMvarsized(b1i.type)) {
 			if (ci1.tpe == cand_dense && ci2.tpe == cand_dense) {
 				TIMEOUT_LOOP_IDX_DECL(i, ci1.ncand, qry_ctx) {
 					oid x1 = canditer_next_dense(&ci1) - b1hseqbase;
 					oid x2 = canditer_next_dense(&ci2) - b2hseqbase;
-					const void *p1 = BUNtvar(b1i, x1);
-					const void *p2 = BUNtvar(b2i, x2);
-					if (cmp(p1, nil) == 0 || cmp(p2, nil) == 0) {
+					const void *p1 = BUNtvar(&b1i, x1);
+					const void *p2 = BUNtvar(&b2i, x2);
+					if (eq(p1, nil) || eq(p2, nil)) {
 						nils = true;
 						p1 = nil;
 					} else {
@@ -2014,9 +2049,9 @@ BATcalcmax(BAT *b1, BAT *b2, BAT *s1, BAT *s2)
 				TIMEOUT_LOOP_IDX_DECL(i, ci1.ncand, qry_ctx) {
 					oid x1 = canditer_next(&ci1) - b1hseqbase;
 					oid x2 = canditer_next(&ci2) - b2hseqbase;
-					const void *p1 = BUNtvar(b1i, x1);
-					const void *p2 = BUNtvar(b2i, x2);
-					if (cmp(p1, nil) == 0 || cmp(p2, nil) == 0) {
+					const void *p1 = BUNtvar(&b1i, x1);
+					const void *p2 = BUNtvar(&b2i, x2);
+					if (eq(p1, nil) || eq(p2, nil)) {
 						nils = true;
 						p1 = nil;
 					} else {
@@ -2033,12 +2068,12 @@ BATcalcmax(BAT *b1, BAT *b2, BAT *s1, BAT *s2)
 			uint8_t *restrict bcast = (uint8_t *) Tloc(bn, 0);
 			uint16_t width = bn->twidth;
 			if (ci1.tpe == cand_dense && ci2.tpe == cand_dense) {
-				TIMEOUT_LOOP_IDX_DECL(i, ci1.ncand, qry_ctx) {
+				TIMEOUT_LOOP(ci1.ncand, qry_ctx) {
 					oid x1 = canditer_next_dense(&ci1) - b1hseqbase;
 					oid x2 = canditer_next_dense(&ci2) - b2hseqbase;
-					const void *p1 = BUNtloc(b1i, x1);
-					const void *p2 = BUNtloc(b2i, x2);
-					if (cmp(p1, nil) == 0 || cmp(p2, nil) == 0) {
+					const void *p1 = BUNtloc(&b1i, x1);
+					const void *p2 = BUNtloc(&b2i, x2);
+					if (eq(p1, nil) || eq(p2, nil)) {
 						nils = true;
 						p1 = nil;
 					} else {
@@ -2050,12 +2085,12 @@ BATcalcmax(BAT *b1, BAT *b2, BAT *s1, BAT *s2)
 				TIMEOUT_CHECK(qry_ctx,
 					      GOTO_LABEL_TIMEOUT_HANDLER(bailout, qry_ctx));
 			} else {
-				TIMEOUT_LOOP_IDX_DECL(i, ci1.ncand, qry_ctx) {
+				TIMEOUT_LOOP(ci1.ncand, qry_ctx) {
 					oid x1 = canditer_next(&ci1) - b1hseqbase;
 					oid x2 = canditer_next(&ci2) - b2hseqbase;
-					const void *p1 = BUNtloc(b1i, x1);
-					const void *p2 = BUNtloc(b2i, x2);
-					if (cmp(p1, nil) == 0 || cmp(p2, nil) == 0) {
+					const void *p1 = BUNtloc(&b1i, x1);
+					const void *p2 = BUNtloc(&b2i, x2);
+					if (eq(p1, nil) || eq(p2, nil)) {
 						nils = true;
 						p1 = nil;
 					} else {
@@ -2183,6 +2218,7 @@ BATcalcmax_no_nil(BAT *b1, BAT *b2, BAT *s1, BAT *s2)
 	default: {
 		const void *restrict nil = ATOMnilptr(b1i.type);
 		int (*cmp)(const void *, const void *) = ATOMcompare(b1i.type);
+		bool (*eq)(const void *, const void *) = ATOMequal(b1i.type);
 
 		if (ATOMvarsized(b1i.type)) {
 			if (ci1.tpe == cand_dense && ci2.tpe == cand_dense) {
@@ -2190,17 +2226,17 @@ BATcalcmax_no_nil(BAT *b1, BAT *b2, BAT *s1, BAT *s2)
 					oid x1 = canditer_next_dense(&ci1) - b1hseqbase;
 					oid x2 = canditer_next_dense(&ci2) - b2hseqbase;
 					const void *p1, *p2;
-					p1 = BUNtvar(b1i, x1);
-					p2 = BUNtvar(b2i, x2);
-					if (cmp(p1, nil) == 0) {
-						if (cmp(p2, nil) == 0) {
+					p1 = BUNtvar(&b1i, x1);
+					p2 = BUNtvar(&b2i, x2);
+					if (eq(p1, nil)) {
+						if (eq(p2, nil)) {
 							/* both values are nil */
 							nils = true;
 						} else {
 							p1 = p2;
 						}
 					} else {
-						p1 = cmp(p2, nil) != 0 && cmp(p2, p1) > 0 ? p2 : p1;
+						p1 = !eq(p2, nil) && cmp(p2, p1) > 0 ? p2 : p1;
 					}
 					if (tfastins_nocheckVAR(bn, i, p1) != GDK_SUCCEED) {
 						goto bailout;
@@ -2213,17 +2249,17 @@ BATcalcmax_no_nil(BAT *b1, BAT *b2, BAT *s1, BAT *s2)
 					oid x1 = canditer_next(&ci1) - b1hseqbase;
 					oid x2 = canditer_next(&ci2) - b2hseqbase;
 					const void *p1, *p2;
-					p1 = BUNtvar(b1i, x1);
-					p2 = BUNtvar(b2i, x2);
-					if (cmp(p1, nil) == 0) {
-						if (cmp(p2, nil) == 0) {
+					p1 = BUNtvar(&b1i, x1);
+					p2 = BUNtvar(&b2i, x2);
+					if (eq(p1, nil)) {
+						if (eq(p2, nil)) {
 							/* both values are nil */
 							nils = true;
 						} else {
 							p1 = p2;
 						}
 					} else {
-						p1 = cmp(p2, nil) != 0 && cmp(p2, p1) > 0 ? p2 : p1;
+						p1 = !eq(p2, nil) && cmp(p2, p1) > 0 ? p2 : p1;
 					}
 					if (tfastins_nocheckVAR(bn, i, p1) != GDK_SUCCEED) {
 						goto bailout;
@@ -2236,21 +2272,21 @@ BATcalcmax_no_nil(BAT *b1, BAT *b2, BAT *s1, BAT *s2)
 			uint8_t *restrict bcast = (uint8_t *) Tloc(bn, 0);
 			uint16_t width = bn->twidth;
 			if (ci1.tpe == cand_dense && ci2.tpe == cand_dense) {
-				TIMEOUT_LOOP_IDX_DECL(i, ci1.ncand, qry_ctx) {
+				TIMEOUT_LOOP(ci1.ncand, qry_ctx) {
 					oid x1 = canditer_next_dense(&ci1) - b1hseqbase;
 					oid x2 = canditer_next_dense(&ci2) - b2hseqbase;
 					const void *p1, *p2;
-					p1 = BUNtloc(b1i, x1);
-					p2 = BUNtloc(b2i, x2);
-					if (cmp(p1, nil) == 0) {
-						if (cmp(p2, nil) == 0) {
+					p1 = BUNtloc(&b1i, x1);
+					p2 = BUNtloc(&b2i, x2);
+					if (eq(p1, nil)) {
+						if (eq(p2, nil)) {
 							/* both values are nil */
 							nils = true;
 						} else {
 							p1 = p2;
 						}
 					} else {
-						p1 = cmp(p2, nil) != 0 && cmp(p2, p1) > 0 ? p2 : p1;
+						p1 = !eq(p2, nil) && cmp(p2, p1) > 0 ? p2 : p1;
 					}
 					memcpy(bcast, p1, width);
 					bcast += width;
@@ -2258,21 +2294,21 @@ BATcalcmax_no_nil(BAT *b1, BAT *b2, BAT *s1, BAT *s2)
 				TIMEOUT_CHECK(qry_ctx,
 					      GOTO_LABEL_TIMEOUT_HANDLER(bailout, qry_ctx));
 			} else {
-				TIMEOUT_LOOP_IDX_DECL(i, ci1.ncand, qry_ctx) {
+				TIMEOUT_LOOP(ci1.ncand, qry_ctx) {
 					oid x1 = canditer_next(&ci1) - b1hseqbase;
 					oid x2 = canditer_next(&ci2) - b2hseqbase;
 					const void *p1, *p2;
-					p1 = BUNtloc(b1i, x1);
-					p2 = BUNtloc(b2i, x2);
-					if (cmp(p1, nil) == 0) {
-						if (cmp(p2, nil) == 0) {
+					p1 = BUNtloc(&b1i, x1);
+					p2 = BUNtloc(&b2i, x2);
+					if (eq(p1, nil)) {
+						if (eq(p2, nil)) {
 							/* both values are nil */
 							nils = true;
 						} else {
 							p1 = p2;
 						}
 					} else {
-						p1 = cmp(p2, nil) != 0 && cmp(p2, p1) > 0 ? p2 : p1;
+						p1 = !eq(p2, nil) && cmp(p2, p1) > 0 ? p2 : p1;
 					}
 					memcpy(bcast, p1, width);
 					bcast += width;
@@ -2326,6 +2362,7 @@ BATcalcmaxcst(BAT *b, const ValRecord *v, BAT *s)
 	const void *p2;
 	const void *restrict nil;
 	int (*cmp)(const void *, const void *);
+	bool (*eq)(const void *, const void *);
 	oid bhseqbase;
 
 	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
@@ -2336,6 +2373,7 @@ BATcalcmaxcst(BAT *b, const ValRecord *v, BAT *s)
 
 	nil = ATOMnilptr(b->ttype);
 	cmp = ATOMcompare(b->ttype);
+	eq = ATOMequal(b->ttype);
 	bhseqbase = b->hseqbase;
 	if (ATOMtype(b->ttype) != v->vtype) {
 		GDKerror("inputs have incompatible types\n");
@@ -2346,7 +2384,7 @@ BATcalcmaxcst(BAT *b, const ValRecord *v, BAT *s)
 	p2 = VALptr(v);
 	if (ci.ncand == 0)
 		return COLnew(ci.hseq, b->ttype, 0, TRANSIENT);
-	if ((nil != NULL && cmp(p2, nil) == 0) ||
+	if ((nil != NULL && eq(p2, nil)) ||
 	    (b->ttype == TYPE_void && is_oid_nil(b->tseqbase)))
 		return BATconstantV(ci.hseq, b->ttype, nil, ci.ncand, TRANSIENT);
 
@@ -2398,8 +2436,8 @@ BATcalcmaxcst(BAT *b, const ValRecord *v, BAT *s)
 		if (ATOMvarsized(bi.type)) {
 			TIMEOUT_LOOP_IDX_DECL(i, ci.ncand, qry_ctx) {
 				oid x = canditer_next(&ci) - bhseqbase;
-				const void *restrict p1 = BUNtvar(bi, x);
-				if (cmp(p1, nil) == 0) {
+				const void *restrict p1 = BUNtvar(&bi, x);
+				if (eq(p1, nil)) {
 					nils = true;
 					p1 = nil;
 				} else {
@@ -2414,10 +2452,10 @@ BATcalcmaxcst(BAT *b, const ValRecord *v, BAT *s)
 		} else {
 			uint8_t *restrict bcast = (uint8_t *) Tloc(bn, 0);
 			uint16_t width = bn->twidth;
-			TIMEOUT_LOOP_IDX_DECL(i, ci.ncand, qry_ctx) {
+			TIMEOUT_LOOP(ci.ncand, qry_ctx) {
 				oid x = canditer_next(&ci) - bhseqbase;
-				const void *restrict p1 = BUNtloc(bi, x);
-				if (cmp(p1, nil) == 0) {
+				const void *restrict p1 = BUNtloc(&bi, x);
+				if (eq(p1, nil)) {
 					nils = true;
 					p1 = nil;
 				} else {
@@ -2475,6 +2513,7 @@ BATcalcmaxcst_no_nil(BAT *b, const ValRecord *v, BAT *s)
 	const void *p2;
 	const void *restrict nil;
 	int (*cmp)(const void *, const void *);
+	bool (*eq)(const void *, const void *);
 	oid bhseqbase;
 
 	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
@@ -2485,6 +2524,7 @@ BATcalcmaxcst_no_nil(BAT *b, const ValRecord *v, BAT *s)
 
 	nil = ATOMnilptr(b->ttype);
 	cmp = ATOMcompare(b->ttype);
+	eq = ATOMequal(b->ttype);
 	bhseqbase = b->hseqbase;
 	if (ATOMtype(b->ttype) != v->vtype) {
 		GDKerror("inputs have incompatible types\n");
@@ -2495,7 +2535,6 @@ BATcalcmaxcst_no_nil(BAT *b, const ValRecord *v, BAT *s)
 	if (ci.ncand == 0)
 		return COLnew(ci.hseq, b->ttype, 0, TRANSIENT);
 
-	cmp = ATOMcompare(b->ttype);
 	p2 = VALptr(v);
 	if (b->ttype == TYPE_void &&
 	    is_oid_nil(b->tseqbase) &&
@@ -2548,11 +2587,11 @@ BATcalcmaxcst_no_nil(BAT *b, const ValRecord *v, BAT *s)
 		break;
 	default:
 		if (ATOMvarsized(bi.type)) {
-			if (cmp(p2, nil) == 0) {
+			if (eq(p2, nil)) {
 				TIMEOUT_LOOP_IDX_DECL(i, ci.ncand, qry_ctx) {
 					oid x = canditer_next(&ci) - bhseqbase;
-					const void *restrict p1 = BUNtvar(bi, x);
-					nils |= cmp(p1, nil) == 0;
+					const void *restrict p1 = BUNtvar(&bi, x);
+					nils |= eq(p1, nil);
 					if (tfastins_nocheckVAR(bn, i, p1) != GDK_SUCCEED) {
 						goto bailout;
 					}
@@ -2562,8 +2601,8 @@ BATcalcmaxcst_no_nil(BAT *b, const ValRecord *v, BAT *s)
 			} else {
 				TIMEOUT_LOOP_IDX_DECL(i, ci.ncand, qry_ctx) {
 					oid x = canditer_next(&ci) - bhseqbase;
-					const void *restrict p1 = BUNtvar(bi, x);
-					p1 = cmp(p1, nil) == 0 || cmp(p2, p1) > 0 ? p2 : p1;
+					const void *restrict p1 = BUNtvar(&bi, x);
+					p1 = eq(p1, nil) || cmp(p2, p1) > 0 ? p2 : p1;
 					if (tfastins_nocheckVAR(bn, i, p1) != GDK_SUCCEED) {
 						goto bailout;
 					}
@@ -2574,21 +2613,21 @@ BATcalcmaxcst_no_nil(BAT *b, const ValRecord *v, BAT *s)
 		} else {
 			uint8_t *restrict bcast = (uint8_t *) Tloc(bn, 0);
 			uint16_t width = bn->twidth;
-			if (cmp(p2, nil) == 0) {
-				TIMEOUT_LOOP_IDX_DECL(i, ci.ncand, qry_ctx) {
+			if (eq(p2, nil)) {
+				TIMEOUT_LOOP(ci.ncand, qry_ctx) {
 					oid x = canditer_next(&ci) - bhseqbase;
-					const void *restrict p1 = BUNtloc(bi, x);
-					nils |= cmp(p1, nil) == 0;
+					const void *restrict p1 = BUNtloc(&bi, x);
+					nils |= eq(p1, nil);
 					memcpy(bcast, p1, width);
 					bcast += width;
 				}
 				TIMEOUT_CHECK(qry_ctx,
 					      GOTO_LABEL_TIMEOUT_HANDLER(bailout, qry_ctx));
 			} else {
-				TIMEOUT_LOOP_IDX_DECL(i, ci.ncand, qry_ctx) {
+				TIMEOUT_LOOP(ci.ncand, qry_ctx) {
 					oid x = canditer_next(&ci) - bhseqbase;
-					const void *restrict p1 = BUNtloc(bi, x);
-					p1 = cmp(p1, nil) == 0 || cmp(p2, p1) > 0 ? p2 : p1;
+					const void *restrict p1 = BUNtloc(&bi, x);
+					p1 = eq(p1, nil) || cmp(p2, p1) > 0 ? p2 : p1;
 					memcpy(bcast, p1, width);
 					bcast += width;
 				}
@@ -2637,6 +2676,12 @@ BATcalccstmax_no_nil(const ValRecord *v, BAT *b, BAT *s)
 
 #define XOR(a, b)	((a) ^ (b))
 #define XORBIT(a, b)	(((a) == 0) != ((b) == 0))
+#define XORINET4(a, b)	((inet4) {.align = (a).align ^ (b).align})
+#ifdef HAVE_HGE
+#define XORINET6(a, b)	((inet6) {.align = (a).align ^ (b).align})
+#else
+#define XORINET6(a, b)	((inet6) {.align[0] = (a).align[0] ^ (b).align[0],.align[1] = (a).align[1] ^ (b).align[1]})
+#endif
 
 static BUN
 xor_typeswitchloop(const void *lft, bool incr1,
@@ -2707,6 +2752,12 @@ xor_typeswitchloop(const void *lft, bool incr1,
 		BINARY_3TYPE_FUNC_nonil(uhge, uhge, uhge, XOR);
 		break;
 #endif
+	case TYPE_inet4:
+		BINARY_3TYPE_FUNC_nonil_nilcheck(inet4, inet4, inet4, XORINET4, nils++);
+		break;
+	case TYPE_inet6:
+		BINARY_3TYPE_FUNC_nonil_nilcheck(inet6, inet6, inet6, XORINET6, nils++);
+		break;
 	default:
 		GDKerror("%s: bad input type %s.\n", func, ATOMname(tp));
 		return BUN_NONE;
@@ -2814,7 +2865,7 @@ BATcalcxorcst(BAT *b, const ValRecord *v, BAT *s)
 				  &ci,
 				  &(struct canditer){.tpe=cand_dense, .ncand=ci.ncand},
 				  b->hseqbase, 0,
-				  bi.nonil && ATOMcmp(v->vtype, VALptr(v), ATOMnilptr(v->vtype)) != 0,
+				  bi.nonil && !ATOMeq(v->vtype, VALptr(v), ATOMnilptr(v->vtype)),
 				  __func__);
 	bat_iterator_end(&bi);
 
@@ -2854,6 +2905,7 @@ VARcalcxor(ValPtr ret, const ValRecord *lft, const ValRecord *rgt)
 	}
 
 	ret->bat = false;
+	ret->allocated = false;
 	if (xor_typeswitchloop(VALptr(lft), false,
 			       VALptr(rgt), false,
 			       VALget(ret), lft->vtype,
@@ -2870,6 +2922,12 @@ VARcalcxor(ValPtr ret, const ValRecord *lft, const ValRecord *rgt)
 #define or3(a,b)	((a) == 1 || (b) == 1 ? 1 : is_bit_nil(a) || is_bit_nil(b) ? bit_nil : 0)
 
 #define OR(a, b)	((a) | (b))
+#define ORINET4(a, b)	((inet4) {.align = (a).align | (b).align})
+#ifdef HAVE_HGE
+#define ORINET6(a, b)	((inet6) {.align = (a).align | (b).align})
+#else
+#define ORINET6(a, b)	((inet6) {.align[0] = (a).align[0] | (b).align[0],.align[1] = (a).align[1] | (b).align[1]})
+#endif
 
 static BUN
 or_typeswitchloop(const void *lft, bool incr1,
@@ -2953,6 +3011,12 @@ or_typeswitchloop(const void *lft, bool incr1,
 		BINARY_3TYPE_FUNC_nonil(uhge, uhge, uhge, OR);
 		break;
 #endif
+	case TYPE_inet4:
+		BINARY_3TYPE_FUNC_nonil_nilcheck(inet4, inet4, inet4, ORINET4, nils++);
+		break;
+	case TYPE_inet6:
+		BINARY_3TYPE_FUNC_nonil_nilcheck(inet6, inet6, inet6, ORINET6, nils++);
+		break;
 	default:
 		GDKerror("%s: bad input type %s.\n", func, ATOMname(tp));
 		return BUN_NONE;
@@ -3065,7 +3129,7 @@ BATcalcorcst(BAT *b, const ValRecord *v, BAT *s)
 				 &ci,
 				 &(struct canditer){.tpe=cand_dense, .ncand=ci.ncand},
 				 b->hseqbase, 0,
-				 bi.nonil && ATOMcmp(v->vtype, VALptr(v), ATOMnilptr(v->vtype)) != 0,
+				 bi.nonil && !ATOMeq(v->vtype, VALptr(v), ATOMnilptr(v->vtype)),
 				 __func__);
 	bat_iterator_end(&bi);
 
@@ -3105,6 +3169,7 @@ VARcalcor(ValPtr ret, const ValRecord *lft, const ValRecord *rgt)
 	}
 
 	ret->bat = false;
+	ret->allocated = false;
 	if (or_typeswitchloop(VALptr(lft), false,
 			      VALptr(rgt), false,
 			      VALget(ret), lft->vtype,
@@ -3121,6 +3186,12 @@ VARcalcor(ValPtr ret, const ValRecord *lft, const ValRecord *rgt)
 #define and3(a,b)	((a) == 0 || (b) == 0 ? 0 : is_bit_nil(a) || is_bit_nil(b) ? bit_nil : 1)
 
 #define AND(a, b)	((a) & (b))
+#define ANDINET4(a, b)	((inet4) {.align = (a).align & (b).align})
+#ifdef HAVE_HGE
+#define ANDINET6(a, b)	((inet6) {.align = (a).align & (b).align})
+#else
+#define ANDINET6(a, b)	((inet6) {.align[0] = (a).align[0] & (b).align[0],.align[1] = (a).align[1] & (b).align[1]})
+#endif
 
 static BUN
 and_typeswitchloop(const void *lft, bool incr1,
@@ -3199,6 +3270,12 @@ and_typeswitchloop(const void *lft, bool incr1,
 		BINARY_3TYPE_FUNC_nonil(uhge, uhge, uhge, AND);
 		break;
 #endif
+	case TYPE_inet4:
+		BINARY_3TYPE_FUNC_nonil_nilcheck(inet4, inet4, inet4, ANDINET4, nils++);
+		break;
+	case TYPE_inet6:
+		BINARY_3TYPE_FUNC_nonil_nilcheck(inet6, inet6, inet6, ANDINET6, nils++);
+		break;
 	default:
 		GDKerror("%s: bad input type %s.\n", func, ATOMname(tp));
 		return BUN_NONE;
@@ -3311,7 +3388,7 @@ BATcalcandcst(BAT *b, const ValRecord *v, BAT *s)
 				  &ci,
 				  &(struct canditer){.tpe=cand_dense, .ncand=ci.ncand},
 				  b->hseqbase, 0,
-				  bi.nonil && ATOMcmp(v->vtype, VALptr(v), ATOMnilptr(v->vtype)) != 0,
+				  bi.nonil && !ATOMeq(v->vtype, VALptr(v), ATOMnilptr(v->vtype)),
 				  __func__);
 	bat_iterator_end(&bi);
 
@@ -3351,6 +3428,7 @@ VARcalcand(ValPtr ret, const ValRecord *lft, const ValRecord *rgt)
 	}
 
 	ret->bat = false;
+	ret->allocated = false;
 	if (and_typeswitchloop(VALptr(lft), false,
 			       VALptr(rgt), false,
 			       VALget(ret), lft->vtype,
@@ -4795,9 +4873,9 @@ VARcalcrsh(ValPtr ret, const ValRecord *lft, const ValRecord *rgt)
 #define EQoid(a,b)	((a) == (b))
 #define EQflt(a,b)	((a) == (b))
 #define EQdbl(a,b)	((a) == (b))
-#define EQany(a,b)	((*atomcmp)(a, b) == 0)
+#define EQany(a,b)	((*atomeq)(a, b))
 
-#define is_any_nil(v)	((v) == NULL || (*atomcmp)((v), nil) == 0)
+#define is_any_nil(v)	((v) == NULL || (*atomeq)((v), nil))
 
 #define less3(a,b,i,t)	(is_##t##_nil(a) || is_##t##_nil(b) ? bit_nil : LT##t(a, b) || ((i) && EQ##t(a, b)))
 #define less2(a,b,i,t)	(LT##t(a, b) || ((i) && EQ##t(a, b)))
@@ -4873,6 +4951,7 @@ BATcalcbetween_intern(const void *src, bool incr1, const char *hp1, int wd1,
 	bit *restrict dst;
 	const void *nil;
 	int (*atomcmp)(const void *, const void *);
+	bool (*atomeq)(const void *, const void *);
 
 	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
 
@@ -4970,6 +5049,7 @@ BATcalcbetween_intern(const void *src, bool incr1, const char *hp1, int wd1,
 				 func, ATOMname(tp));
 			return NULL;
 		}
+		atomeq = ATOMequal(tp);
 		nil = ATOMnilptr(tp);
 		i = j = k = 0;
 		TIMEOUT_LOOP_IDX(l, ncand, qry_ctx) {
@@ -4980,14 +5060,21 @@ BATcalcbetween_intern(const void *src, bool incr1, const char *hp1, int wd1,
 			if (incr3)
 				k = canditer_next(cihi) - seqbase3;
 			const void *p1, *p2, *p3;
+			var_t off;
 			p1 = hp1
-				? (const void *) (hp1 + VarHeapVal(src, i, wd1))
+				? (off = VarHeapVal(src, i, wd1)) == 0
+				? nil
+				: (const void *) (hp1 + off)
 				: (const void *) ((const char *) src + i * wd1);
 			p2 = hp2
-				? (const void *) (hp2 + VarHeapVal(lo, j, wd2))
+				? (off = VarHeapVal(lo, j, wd2)) == 0
+				? nil
+				: (const void *) (hp2 + off)
 				: (const void *) ((const char *) lo + j * wd2);
 			p3 = hp3
-				? (const void *) (hp3 + VarHeapVal(hi, k, wd3))
+				? (off = VarHeapVal(hi, k, wd3)) == 0
+				? nil
+				: (const void *) (hp3 + off)
 				: (const void *) ((const char *) hi + k * wd3);
 			dst[l] = BETWEEN(p1, p2, p3, any);
 			nils += is_bit_nil(dst[l]);
@@ -5190,7 +5277,7 @@ BATcalcbetweenbatcst(BAT *b, BAT *lo, const ValRecord *hi, BAT *s, BAT *slo,
 	BATcheck(b, NULL);
 	BATcheck(lo, NULL);
 
-	if (ATOMbasetype(b->ttype) != ATOMbasetype(hi->vtype)) {
+	if (ATOMtype(b->ttype) != ATOMtype(hi->vtype)) {
 		GDKerror("incompatible input types.\n");
 		return NULL;
 	}
@@ -5270,7 +5357,7 @@ BATcalcbetweencstbat(BAT *b, const ValRecord *lo, BAT *hi, BAT *s, BAT *shi,
 	BATcheck(b, NULL);
 	BATcheck(hi, NULL);
 
-	if (ATOMbasetype(b->ttype) != ATOMbasetype(lo->vtype)) {
+	if (ATOMtype(b->ttype) != ATOMtype(lo->vtype)) {
 		GDKerror("incompatible input types.\n");
 		return NULL;
 	}
@@ -5343,6 +5430,7 @@ VARcalcbetween(ValPtr ret, const ValRecord *v, const ValRecord *lo,
 {
 	int t;
 	int (*atomcmp)(const void *, const void *);
+	bool (*atomeq)(const void *, const void *);
 	const void *nil;
 
 	t = v->vtype;
@@ -5400,6 +5488,7 @@ VARcalcbetween(ValPtr ret, const ValRecord *v, const ValRecord *lo,
 	default:
 		nil = ATOMnilptr(t);
 		atomcmp = ATOMcompare(t);
+		atomeq = ATOMequal(t);
 		ret->val.btval = BETWEEN(VALptr(v), VALptr(lo), VALptr(hi), any);
 		break;
 	}
@@ -5476,6 +5565,7 @@ BATcalcifthenelse_intern(BATiter *bi,
 	if (bn->tvheap) {
 		assert((heap1 != NULL && width1 > 0) || (width1 == 0 && incr1 == 0));
 		assert((heap2 != NULL && width2 > 0) || (width2 == 0 && incr2 == 0));
+		const void *nil = ATOMnilptr(tpe);
 		if (ATOMstorage(bi->type) == TYPE_msk) {
 			const uint32_t *src = bi->base;
 			BUN n = cnt / 32;
@@ -5483,16 +5573,21 @@ BATcalcifthenelse_intern(BATiter *bi,
 				BUN rem = i == n ? cnt % 32 : 32;
 				uint32_t mask = rem != 0 ? src[i] : 0;
 				for (BUN j = 0; j < rem; j++) {
+					var_t off;
 					if (mask & (1U << j)) {
-						if (heap1)
-							p = heap1 + VarHeapVal(col1, k, width1);
-						else
+						if (heap1) {
+							off = VarHeapVal(col1, k, width1);
+							p = off == 0 ? nil : heap1 + off;
+						} else {
 							p = col1;
+						}
 					} else {
-						if (heap2)
-							p = heap2 + VarHeapVal(col2, l, width2);
-						else
+						if (heap2) {
+							off = VarHeapVal(col2, l, width2);
+							p = off == 0 ? nil : heap2 + off;
+						} else {
 							p = col2;
+						}
 					}
 					if (tfastins_nocheckVAR(bn, i, p) != GDK_SUCCEED) {
 						goto bailout;
@@ -5506,16 +5601,21 @@ BATcalcifthenelse_intern(BATiter *bi,
 		} else {
 			const bit *src = bi->base;
 			TIMEOUT_LOOP_IDX(i, cnt, qry_ctx) {
+				var_t off;
 				if (src[i] && !is_bit_nil(src[i])) {
-					if (heap1)
-						p = heap1 + VarHeapVal(col1, k, width1);
-					else
+					if (heap1) {
+						off = VarHeapVal(col1, k, width1);
+						p = off == 0 ? nil : heap1 + off;
+					} else {
 						p = col1;
+					}
 				} else {
-					if (heap2)
-						p = heap2 + VarHeapVal(col2, l, width2);
-					else
+					if (heap2) {
+						off = VarHeapVal(col2, l, width2);
+						p = off == 0 ? nil : heap2 + off;
+					} else {
 						p = col2;
+					}
 				}
 				if (tfastins_nocheckVAR(bn, i, p) != GDK_SUCCEED) {
 					goto bailout;
@@ -5621,7 +5721,7 @@ BATcalcifthenelse_intern(BATiter *bi,
 					if (src[i] && !is_bit_nil(src[i])) {
 						((oid *) dst)[i] = col1 ? ((oid *) col1)[k] : seq1;
 					} else {
-						((oid *) dst)[i] = col2 ? ((oid *) col2)[k] : seq2;
+						((oid *) dst)[i] = col2 ? ((oid *) col2)[l] : seq2;
 					}
 					k += incr1;
 					l += incr2;

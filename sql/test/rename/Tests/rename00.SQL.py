@@ -14,8 +14,7 @@ with tempfile.TemporaryDirectory() as farm_dir:
                         dbfarm=os.path.join(farm_dir, 'db1'),
                         stdin=process.PIPE,
                         stdout=process.PIPE, stderr=process.PIPE) as s:
-        with SQLTestCase() as tc:
-            tc.connect(username="monetdb", password="monetdb", port=s.dbport, database='db1')
+        with SQLTestCase(server=s) as tc:
             tc.execute('create table "something" (a int);').assertSucceeded()
             tc.execute('alter table "something" rename to "newname";').assertSucceeded()
             tc.execute('insert into "newname" values (1);').assertSucceeded().assertRowCount(1)
@@ -25,8 +24,7 @@ with tempfile.TemporaryDirectory() as farm_dir:
                         dbfarm=os.path.join(farm_dir, 'db1'),
                         stdin=process.PIPE,
                         stdout=process.PIPE, stderr=process.PIPE) as s:
-        with SQLTestCase() as tc:
-            tc.connect(username="monetdb", password="monetdb", port=s.dbport, database='db1')
+        with SQLTestCase(server=s) as tc:
             tc.execute('select "name" from sys.tables where "name" = \'newname\';').assertSucceeded()
             tc.execute('insert into "newname" values (2);').assertSucceeded().assertRowCount(1)
             tc.execute('select "a" from "newname";').assertSucceeded().assertDataResultMatch([(1,),(2,)])

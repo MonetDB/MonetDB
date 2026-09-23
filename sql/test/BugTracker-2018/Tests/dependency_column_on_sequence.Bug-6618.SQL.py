@@ -1,4 +1,5 @@
-import sys, pymonetdb, os
+from MonetDBtesting import tpymonetdb as pymonetdb
+import sys, os
 
 # Test automatically created sequence:
 db = os.getenv("TSTDB")

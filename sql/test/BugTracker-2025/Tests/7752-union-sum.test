@@ -1,0 +1,4 @@
+query I
+select sum(1) from ( select null abc from schemas union all select null abc union all select null abc )
+----
+8

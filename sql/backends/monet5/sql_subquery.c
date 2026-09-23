@@ -3,11 +3,9 @@
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024, 2025 MonetDB Foundation;
- * Copyright August 2008 - 2023 MonetDB B.V.;
- * Copyright 1997 - July 2008 CWI.
+ * For copyright information, see the file debian/copyright.
  */
 
 #include "monetdb_config.h"
@@ -15,8 +13,9 @@
 #include "gdk_subquery.h"
 
 str
-zero_or_one_error(ptr ret, const bat *bid, const bit *err)
+zero_or_one_error(Client ctx, ptr ret, const bat *bid, const bit *err)
 {
+	allocator *ma = ctx->curprg->def->ma;
 	BAT *b;
 	BUN c;
 	size_t _s;
@@ -31,7 +30,7 @@ zero_or_one_error(ptr ret, const bat *bid, const bit *err)
 		p = ATOMnilptr(b->ttype);
 	} else if (c == 1 || (c > 1 && *err == false)) {
 		bi = bat_iterator(b);
-		p = BUNtail(bi, 0);
+		p = BUNtail(&bi, 0);
 	} else {
 		BBPunfix(b->batCacheid);
 		throw(SQL, "sql.zero_or_one", SQLSTATE(21000) "Cardinality violation, scalar value expected");
@@ -41,7 +40,7 @@ zero_or_one_error(ptr ret, const bat *bid, const bit *err)
 		p = &oid_nil;
 	if (ATOMextern(b->ttype)) {
 		_s = ATOMlen(ATOMtype(b->ttype), p);
-		*(ptr *) ret = GDKmalloc(_s);
+		*(ptr *) ret = ma_alloc(ma, _s);
 		if (*(ptr *) ret == NULL) {
 			bat_iterator_end(&bi);
 			BBPunfix(b->batCacheid);
@@ -69,23 +68,26 @@ zero_or_one_error(ptr ret, const bat *bid, const bit *err)
 }
 
 str
-zero_or_one_error_bat(ptr ret, const bat *bid, const bat *err)
+zero_or_one_error_bat(Client ctx, ptr ret, const bat *bid, const bat *err)
 {
+	(void) ctx;
 	bit t = FALSE;
 	(void)err;
-	return zero_or_one_error(ret, bid, &t);
+	return zero_or_one_error(ctx, ret, bid, &t);
 }
 
 str
-zero_or_one(ptr ret, const bat *bid)
+zero_or_one(Client ctx, ptr ret, const bat *bid)
 {
+	(void) ctx;
 	bit t = TRUE;
-	return zero_or_one_error(ret, bid, &t);
+	return zero_or_one_error(ctx, ret, bid, &t);
 }
 
 str
-SQLsubzero_or_one(bat *ret, const bat *bid, const bat *gid, const bat *eid, bit *no_nil)
+SQLsubzero_or_one(Client ctx, bat *ret, const bat *bid, const bat *gid, const bat *eid, bit *no_nil)
 {
+	(void) ctx;
 	gdk_return r;
 	BAT *ng = NULL, *h = NULL, *g = NULL;
 	lng max = 0;
@@ -136,8 +138,9 @@ SQLsubzero_or_one(bat *ret, const bat *bid, const bat *gid, const bat *eid, bit 
 	} while (0)
 
 str
-SQLall(ptr ret, const bat *bid)
+SQLall(Client ctx, ptr ret, const bat *bid)
 {
+	allocator *ma = ctx->curprg->def->ma;
 	BAT *b;
 	BUN c, q = 0;
 
@@ -175,22 +178,22 @@ SQLall(ptr ret, const bat *bid)
 			SQLall_imp(dbl);
 			break;
 		default: {
-			int (*ocmp) (const void *, const void *) = ATOMcompare(bi.type);
+			bool (*oeq) (const void *, const void *) = ATOMequal(bi.type);
 			const void *n = ATOMnilptr(bi.type), *p = n;
 			size_t s;
 
 			if (c > 0) {
 				if (c == 1 || (bi.sorted && bi.revsorted)) {
-					p = BUNtail(bi, 0);
+					p = BUNtail(&bi, 0);
 				} else {
 					for (; q < c; q++) { /* find first non nil */
-						p = BUNtail(bi, q);
-						if (ocmp(n, p) != 0)
+						p = BUNtail(&bi, q);
+						if (!oeq(n, p))
 							break;
 					}
 					for (; q < c; q++) {
-						const void *pp = BUNtail(bi, q);
-						if (ocmp(p, pp) != 0 && ocmp(n, pp) != 0) { /* values != and not nil */
+						const void *pp = BUNtail(&bi, q);
+						if (!oeq(p, pp) && !oeq(n, pp)) { /* values != and not nil */
 							p = n;
 							break;
 						}
@@ -199,7 +202,7 @@ SQLall(ptr ret, const bat *bid)
 			}
 			s = ATOMlen(ATOMtype(bi.type), p);
 			if (ATOMextern(bi.type)) {
-				*(ptr *) ret = GDKmalloc(s);
+				*(ptr *) ret = ma_alloc(ma, s);
 				if (*(ptr *) ret == NULL) {
 					bat_iterator_end(&bi);
 					BBPunfix(b->batCacheid);
@@ -268,8 +271,9 @@ SQLall_grp(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	} while (0)
 
 str
-SQLnil(bit *ret, const bat *bid)
+SQLnil(Client ctx, bit *ret, const bat *bid)
 {
+	(void) ctx;
 	BAT *b;
 
 	if ((b = BATdescriptor(*bid)) == NULL) {
@@ -307,12 +311,12 @@ SQLnil(bit *ret, const bat *bid)
 			SQLnil_imp(dbl);
 			break;
 		default: {
-			int (*ocmp) (const void *, const void *) = ATOMcompare(bi.type);
+			bool (*oeq) (const void *, const void *) = ATOMequal(bi.type);
 			const void *restrict nilp = ATOMnilptr(bi.type);
 
 			for (BUN q = 0; q < o; q++) {
-				const void *restrict c = BUNtail(bi, q);
-				if (ocmp(nilp, c) == 0) {
+				const void *restrict c = BUNtail(&bi, q);
+				if (oeq(nilp, c)) {
 					*ret = TRUE;
 					break;
 				}
@@ -672,12 +676,12 @@ SQLanyequal(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			SQLanyequal_or_not_imp_multi(dbl, ==);
 			break;
 		default: {
-			int (*ocmp) (const void *, const void *) = ATOMcompare(li.type);
+			bool (*oeq) (const void *, const void *) = ATOMequal(li.type);
 			const void *nilp = ATOMnilptr(li.type);
 
 			for (BUN q = 0; q < o; q++) {
-				const void *c = BUNtail(ri, q), *d = BUNtail(li, q);
-				res_l[q] = ocmp(nilp, c) == 0 || ocmp(nilp, d) == 0 ? bit_nil : ocmp(c, d) == 0;
+				const void *c = BUNtail(&ri, q), *d = BUNtail(&li, q);
+				res_l[q] = oeq(nilp, c) || oeq(nilp, d) ? bit_nil : oeq(c, d);
 			}
 		}
 		}
@@ -718,15 +722,15 @@ SQLanyequal(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				SQLanyequal_or_not_imp_single(dbl, TRUE);
 				break;
 			default: {
-				int (*ocmp) (const void *, const void *) = ATOMcompare(li.type);
+				bool (*oeq) (const void *, const void *) = ATOMequal(li.type);
 				const void *nilp = ATOMnilptr(li.type);
-				const void *p = BUNtail(li, 0);
+				const void *p = BUNtail(&li, 0);
 
 				for (BUN q = 0; q < o; q++) {
-					const void *c = BUNtail(ri, q);
-					if (ocmp(nilp, c) == 0)
+					const void *c = BUNtail(&ri, q);
+					if (oeq(nilp, c))
 						*ret = bit_nil;
-					else if (ocmp(p, c) == 0) {
+					else if (oeq(p, c)) {
 						*ret = TRUE;
 						break;
 					}
@@ -919,12 +923,12 @@ SQLallnotequal(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			SQLanyequal_or_not_imp_multi(dbl, !=);
 			break;
 		default: {
-			int (*ocmp) (const void *, const void *) = ATOMcompare(li.type);
+			bool (*oeq) (const void *, const void *) = ATOMequal(li.type);
 			const void *nilp = ATOMnilptr(li.type);
 
 			for (BUN q = 0; q < o; q++) {
-				const void *c = BUNtail(ri, q), *d = BUNtail(li, q);
-				res_l[q] = ocmp(nilp, c) == 0 || ocmp(nilp, d) == 0 ? bit_nil : ocmp(c, d) != 0;
+				const void *c = BUNtail(&ri, q), *d = BUNtail(&li, q);
+				res_l[q] = oeq(nilp, c) || oeq(nilp, d) ? bit_nil : !oeq(c, d);
 			}
 		}
 		}
@@ -965,15 +969,15 @@ SQLallnotequal(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				SQLanyequal_or_not_imp_single(dbl, FALSE);
 				break;
 			default: {
-				int (*ocmp) (const void *, const void *) = ATOMcompare(li.type);
+				bool (*oeq) (const void *, const void *) = ATOMequal(li.type);
 				const void *nilp = ATOMnilptr(li.type);
-				const void *p = BUNtail(li, 0);
+				const void *p = BUNtail(&li, 0);
 
 				for (BUN q = 0; q < o; q++) {
-					const void *c = BUNtail(ri, q);
-					if (ocmp(nilp, c) == 0)
+					const void *c = BUNtail(&ri, q);
+					if (oeq(nilp, c))
 						*ret = bit_nil;
-					else if (ocmp(p, c) == 0) {
+					else if (oeq(p, c)) {
 						*ret = FALSE;
 						break;
 					}

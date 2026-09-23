@@ -4,20 +4,20 @@ begin
 return power(10,7);
 end
 
-query R rowsort
+query D rowsort
 select bug2969(12,12)
 ----
-10000000.000
+10000000
 
-query R rowsort
+query D rowsort
 select bug2969(12.1111,12.1111)
 ----
-10000000.000
+10000000
 
-query R rowsort
+query D rowsort
 select bug2969(12,12)
 ----
-10000000.000
+10000000
 
 statement ok
 drop function bug2969

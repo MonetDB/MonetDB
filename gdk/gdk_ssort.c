@@ -3,11 +3,9 @@
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024, 2025 MonetDB Foundation;
- * Copyright August 2008 - 2023 MonetDB B.V.;
- * Copyright 1997 - July 2008 CWI.
+ * For copyright information, see the file debian/copyright.
  */
 
 #include "monetdb_config.h"
@@ -88,6 +86,11 @@ typedef struct {
 	 * with malloc. */
 	char temparrayh[MERGESTATE_TEMP_SIZE];
 	char temparrayt[MERGESTATE_TEMP_SIZE];
+
+	allocator *ma;
+	allocator_state ma_state;
+
+	var_t off0, off1;
 } MergeState;
 
 /* Free all the temp memory owned by the MergeState.  This must be
@@ -97,14 +100,11 @@ static void
 merge_freemem(MergeState *ms)
 {
 	assert(ms != NULL);
-	if (ms->ah != (void *) ms->temparrayh)
-		GDKfree(ms->ah);
 	ms->ah = (void *) ms->temparrayh;
 	ms->allocedh = MERGESTATE_TEMP_SIZE;
-	if (ms->at != (void *) ms->temparrayt)
-		GDKfree(ms->at);
 	ms->at = (void *) ms->temparrayt;
 	ms->allocedt = MERGESTATE_TEMP_SIZE;
+	ma_close(&ms->ma_state);
 }
 
 /* Ensure enough temp memory for 'need' array slots is available.
@@ -119,9 +119,8 @@ merge_getmem(MergeState *ms, ssize_t need, void **ap,
 		return 0;
 	/* Don't realloc!  That can cost cycles to copy the old data,
 	 * but we don't care what's in the block. */
-	if (*ap != (void *) temparray)
-		GDKfree(*ap);
-	*ap = GDKmalloc(need);
+	(void) temparray;
+	*ap = ma_alloc(ms->ma, need);
 	if (*ap) {
 		*allocedp = need;
 		return 0;
@@ -211,7 +210,18 @@ merge_getmem(MergeState *ms, ssize_t need, void **ap,
 		}							\
 	} while (0)
 
-#define ISLT_any(X, Y, ms)  (((ms)->heap ? (*(ms)->compare)((ms)->heap + VarHeapVal(X,0,(ms)->hs), (ms)->heap + VarHeapVal(Y,0,(ms)->hs)) : (*(ms)->compare)((X), (Y))) < 0)
+#define ISLT_any(X, Y, ms)  	(((ms)->heap				\
+				  ? ((ms)->off0 = VarHeapVal(X,0,(ms)->hs), \
+				     (ms)->off1 = VarHeapVal(Y,0,(ms)->hs), \
+				     (ms)->off0 == (ms)->off1		\
+				     ? 0				\
+				     : (ms)->off0 == 0			\
+				     ? -1				\
+				     : (ms)->off1 == 0			\
+				     ? 1				\
+				     : (*(ms)->compare)((ms)->heap + (ms)->off0, \
+							(ms)->heap + (ms)->off1)) \
+				  : (*(ms)->compare)((X), (Y))) < 0)
 #define ISLT_bte(X, Y, ms)	(* (bte *) (X) < * (bte *) (Y))
 #define ISLT_sht(X, Y, ms)	(* (sht *) (X) < * (sht *) (Y))
 #define ISLT_int(X, Y, ms)	(* (int *) (X) < * (int *) (Y))

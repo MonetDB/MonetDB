@@ -3,28 +3,9 @@
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024, 2025 MonetDB Foundation;
- * Copyright August 2008 - 2023 MonetDB B.V.;
- * Copyright 1997 - July 2008 CWI.
- */
-
-/*
- *  Martin Kersten
- * Language Extensions
- * Iterators over scalar ranges are often needed, also at the MAL level.
- * The barrier and control primitives are sufficient to mimic them directly.
- *
- * The modules located in the kernel directory should not
- * rely on the MAL datastructures. That's why we have to deal with
- * some bat operations here and delegate the signature to the
- * proper module upon loading.
- *
- * Running a script is typically used to initialize a context.
- * Therefore we need access to the runtime context.
- * For the call variants we have
- * to determine an easy way to exchange the parameter/return values.
+ * For copyright information, see the file debian/copyright.
  */
 
 #include "monetdb_config.h"
@@ -37,10 +18,8 @@
  * with the SQL transaction manager.
  *
  * The events being captured are stored in separate BATs.
- * They are made persistent to accumulate information over
- * multiple sessions. This means it has to be explicitly reset
- * to avoid disc overflow using querylog.reset().
-create table querylog.catalog(
+ *
+create table querylog.catalog (
     id oid,
     "user" string,      -- owner of the query
     defined timestamp,  -- when entered into the cache
@@ -48,7 +27,7 @@ create table querylog.catalog(
     pipe string,   		-- optimizer pipe-line deployed
     optimize bigint     -- time in usec
 );
-create table querylog.calls(
+create table querylog.calls (
     id oid,
     "start" timestamp,  -- time the statement was started
     "stop" timestamp,   -- time the statement was completely finished
@@ -175,25 +154,26 @@ QLOGcreate(const char *hnme, const char *tnme, int tt)
 	BAT *b;
 	char buf[128];
 
-	snprintf(buf, 128, "querylog_%s_%s", hnme, tnme);
+	snprintf(buf, sizeof(buf), "querylog_%s_%s", hnme, tnme);
 	b = BATdescriptor(BBPindex(buf));
 	if (b) {
 		/* make append-only in case this wasn't done when created */
-		return BATsetaccess(b, BAT_APPEND);
+		b = BATsetaccess(b, BAT_APPEND);
+		if (b)
+			commitlist[committop++] = b->batCacheid;
+		return b;
 	}
 
-	b = COLnew(0, tt, 1 << 16, PERSISTENT);
+	b = COLnew(0, tt, 1 << 16, SYSTRANS);
 	if (b == NULL)
 		return NULL;
 	if ((b = BATsetaccess(b, BAT_APPEND)) == NULL)
 		return NULL;
 
-	if (BBPrename(b, buf) != 0 || BATmode(b, false) != GDK_SUCCEED) {
+	if (BBPrename(b, buf) != 0) {
 		BBPunfix(b->batCacheid);
 		return NULL;
 	}
-	commitlist[committop++] = b->batCacheid;
-	assert(committop < MAXCOMMITLIST);
 	return b;
 }
 
@@ -208,7 +188,7 @@ QLOGcreate(const char *hnme, const char *tnme, int tt)
 	} while (0)
 
 static void
-_QLOGcleanup(void)
+QLOGcleanup(void)
 {
 	cleanup(QLOG_cat_id);
 	cleanup(QLOG_cat_user);
@@ -231,54 +211,56 @@ _QLOGcleanup(void)
 }
 
 static str
-_initQlog(void)
-{
-	QLOG_cat_id = QLOGcreate("cat", "id", TYPE_oid);
-	QLOG_cat_user = QLOGcreate("cat", "user", TYPE_str);
-	QLOG_cat_defined = QLOGcreate("cat", "defined", TYPE_timestamp);
-	QLOG_cat_query = QLOGcreate("cat", "query", TYPE_str);
-	QLOG_cat_pipe = QLOGcreate("cat", "pipe", TYPE_str);
-	QLOG_cat_plan = QLOGcreate("cat", "size", TYPE_str);
-	QLOG_cat_mal = QLOGcreate("cat", "mal", TYPE_int);
-	QLOG_cat_optimize = QLOGcreate("cat", "optimize", TYPE_lng);
-
-	QLOG_calls_id = QLOGcreate("calls", "id", TYPE_oid);
-	QLOG_calls_start = QLOGcreate("calls", "start", TYPE_timestamp);
-	QLOG_calls_stop = QLOGcreate("calls", "stop", TYPE_timestamp);
-	QLOG_calls_arguments = QLOGcreate("calls", "arguments", TYPE_str);
-	QLOG_calls_tuples = QLOGcreate("calls", "tuples", TYPE_lng);
-	QLOG_calls_exec = QLOGcreate("calls", "exec", TYPE_lng);
-	QLOG_calls_result = QLOGcreate("calls", "result", TYPE_lng);
-	QLOG_calls_cpuload = QLOGcreate("calls", "cpuload", TYPE_int);
-	QLOG_calls_iowait = QLOGcreate("calls", "iowait", TYPE_int);
-
-	if (QLOG_cat_id == NULL || QLOG_cat_user == NULL || QLOG_cat_defined == NULL
-		|| QLOG_cat_query == NULL || QLOG_cat_pipe == NULL
-		|| QLOG_cat_plan == NULL || QLOG_cat_mal == NULL
-		|| QLOG_cat_optimize == NULL || QLOG_calls_id == NULL
-		|| QLOG_calls_start == NULL || QLOG_calls_stop == NULL
-		|| QLOG_calls_arguments == NULL || QLOG_calls_tuples == NULL
-		|| QLOG_calls_exec == NULL || QLOG_calls_result == NULL
-		|| QLOG_calls_cpuload == NULL || QLOG_calls_iowait == NULL) {
-		_QLOGcleanup();
-		throw(MAL, "querylog.init", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-	}
-
-	QLOG_init = true;
-	if (TMsubcommit_list(commitlist, NULL, committop, -1) != GDK_SUCCEED)
-		throw(MAL, "querylog.init", GDK_EXCEPTION);
-	return MAL_SUCCEED;
-}
-
-static str
 initQlog(void)
 {
-	str msg;
-
-	if (QLOG_init)
-		return MAL_SUCCEED;		/* already initialized */
+	str msg = MAL_SUCCEED;
 	MT_lock_set(&QLOGlock);
-	msg = _initQlog();
+	if (!QLOG_init) {
+		QLOG_cat_id = QLOGcreate("cat", "id", TYPE_oid);
+		QLOG_cat_user = QLOGcreate("cat", "user", TYPE_str);
+		QLOG_cat_defined = QLOGcreate("cat", "defined", TYPE_timestamp);
+		QLOG_cat_query = QLOGcreate("cat", "query", TYPE_str);
+		QLOG_cat_pipe = QLOGcreate("cat", "pipe", TYPE_str);
+		QLOG_cat_plan = QLOGcreate("cat", "size", TYPE_str);
+		QLOG_cat_mal = QLOGcreate("cat", "mal", TYPE_int);
+		QLOG_cat_optimize = QLOGcreate("cat", "optimize", TYPE_lng);
+
+		QLOG_calls_id = QLOGcreate("calls", "id", TYPE_oid);
+		QLOG_calls_start = QLOGcreate("calls", "start", TYPE_timestamp);
+		QLOG_calls_stop = QLOGcreate("calls", "stop", TYPE_timestamp);
+		QLOG_calls_arguments = QLOGcreate("calls", "arguments", TYPE_str);
+		QLOG_calls_tuples = QLOGcreate("calls", "tuples", TYPE_lng);
+		QLOG_calls_exec = QLOGcreate("calls", "exec", TYPE_lng);
+		QLOG_calls_result = QLOGcreate("calls", "result", TYPE_lng);
+		QLOG_calls_cpuload = QLOGcreate("calls", "cpuload", TYPE_int);
+		QLOG_calls_iowait = QLOGcreate("calls", "iowait", TYPE_int);
+
+		if (QLOG_cat_id == NULL || QLOG_cat_user == NULL
+			|| QLOG_cat_defined == NULL || QLOG_cat_query == NULL
+			|| QLOG_cat_pipe == NULL || QLOG_cat_plan == NULL
+			|| QLOG_cat_mal == NULL || QLOG_cat_optimize == NULL
+			|| QLOG_calls_id == NULL || QLOG_calls_start == NULL
+			|| QLOG_calls_stop == NULL || QLOG_calls_arguments == NULL
+			|| QLOG_calls_tuples == NULL || QLOG_calls_exec == NULL
+			|| QLOG_calls_result == NULL || QLOG_calls_cpuload == NULL
+			|| QLOG_calls_iowait == NULL) {
+			QLOGcleanup();
+			msg = createException(MAL, "querylog.init",
+								  SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		} else {
+			QLOG_init = true;
+			if (committop > 1) {
+				/* we need this piece of code in order to remove the old
+				 * querylog bats from the BBP.dir; this should happen
+				 * only exactly once */
+				for (int i = 1; i < committop; i++)
+					if (BATmode(BBP_desc(commitlist[i]), true) != GDK_SUCCEED)
+						TRC_WARNING(MAL_SERVER, "BATmode in querylog failed");
+				if (TMsubcommit_list(commitlist, NULL, committop, -1) != GDK_SUCCEED)
+					TRC_WARNING(MAL_SERVER, "subcommit in querylog failed");
+			}
+		}
+	}
 	MT_lock_unset(&QLOGlock);
 	return msg;
 }
@@ -293,8 +275,9 @@ QLOGenable(void *ret)
 }
 
 str
-QLOGenableThreshold(void *ret, const int *threshold)
+QLOGenableThreshold(Client ctx, void *ret, const int *threshold)
 {
+	(void) ctx;
 	(void) ret;
 	QLOGtrace = true;
 	QLOGthreshold = *threshold * LL_CONSTANT(1000);
@@ -316,8 +299,9 @@ QLOGisset(void)
 }
 
 static str
-QLOGissetFcn(int *ret)
+QLOGissetFcn(Client ctx, int *ret)
 {
+	(void) ctx;
 	*ret = QLOGtrace;
 	return MAL_SUCCEED;
 }
@@ -353,8 +337,6 @@ QLOGempty(void *ret)
 	BATclear(QLOG_calls_cpuload, true);
 	BATclear(QLOG_calls_iowait, true);
 
-	if (TMsubcommit_list(commitlist, NULL, committop, -1) != GDK_SUCCEED)
-		msg = createException(MAL, "querylog.empty", GDK_EXCEPTION);
 	MT_lock_unset(&QLOGlock);
 	return MAL_SUCCEED;
 }
@@ -376,7 +358,7 @@ QLOGappend(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	msg = initQlog();
 	if (msg)
 		return msg;
-	snprintf(buf, 128, "%s.%s", getModuleId(sig), getFunctionId(sig));
+	snprintf(buf, sizeof(buf), "%s.%s", getModuleId(sig), getFunctionId(sig));
 	MT_lock_set(&QLOGlock);
 	o = BUNfnd(QLOG_cat_id, &mb->tag);
 	if (o == BUN_NONE) {
@@ -393,15 +375,14 @@ QLOGappend(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			throw(MAL, "querylog.append", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		}
 	}
-	if (TMsubcommit_list(commitlist, NULL, committop, -1) != GDK_SUCCEED)
-		msg = createException(MAL, "querylog", GDK_EXCEPTION);
 	MT_lock_unset(&QLOGlock);
 	return msg;
 }
 
 static str
-QLOGdefineNaive(void *ret, const char *const *qry, const char *const *opt, const int *nr)
+QLOGdefineNaive(Client ctx, void *ret, const char *const *qry, const char *const *opt, const int *nr)
 {
+	(void) ctx;
 	// Nothing else to be done.
 	(void) ret;
 	(void) qry;
@@ -411,8 +392,9 @@ QLOGdefineNaive(void *ret, const char *const *qry, const char *const *opt, const
 }
 
 static str
-QLOGcontextNaive(void *ret, const char *const *release, const char *const *version, const char *const *revision, const char *const *uri)
+QLOGcontextNaive(Client ctx, void *ret, const char *const *release, const char *const *version, const char *const *revision, const char *const *uri)
 {
+	(void) ctx;
 	// Nothing else to be done.
 	(void) ret;
 	(void) release;
@@ -455,14 +437,12 @@ QLOGcall(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		MT_lock_unset(&QLOGlock);
 		throw(MAL, "querylog.call", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
-	if (TMsubcommit_list(commitlist, NULL, committop, -1) != GDK_SUCCEED)
-		msg = createException(MAL, "querylog", GDK_EXCEPTION);
 	MT_lock_unset(&QLOGlock);
 	return msg;
 }
 
 #include "mel.h"
-mel_func querylog_init_funcs[] = {
+static mel_func querylog_init_funcs[] = {
  command("querylog", "enable", QLOGenableThreshold, false, "Turn on the query logger", args(0,1, arg("threshold",int))),
  command("querylog", "enable", QLOGenable, false, "Turn on the query logger", noargs),
  command("querylog", "disable", QLOGdisable, false, "Turn off the query logger", noargs),

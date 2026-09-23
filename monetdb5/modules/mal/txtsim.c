@@ -3,11 +3,9 @@
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024, 2025 MonetDB Foundation;
- * Copyright August 2008 - 2023 MonetDB B.V.;
- * Copyright 1997 - July 2008 CWI.
+ * For copyright information, see the file debian/copyright.
  */
 
 #include "monetdb_config.h"
@@ -94,12 +92,19 @@ dameraulevenshtein(int *res, const char *s, const char *t, int insdel_cost,
 		*res = n;
 		return MAL_SUCCEED;
 	}
+
 	sz = (((lng)n) + 1) * (((lng)m) + 1) * sizeof(int);
 	if (sz > (LL_CONSTANT(1)<<28))
 		throw(MAL, "dameraulevenshtein", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-	d = (int *) GDKmalloc((size_t)sz);
-	if (d == NULL)
+
+	allocator *ma = MT_thread_getallocator();
+	allocator_state ma_state = ma_open(ma);
+
+	d = (int *) ma_alloc(ma, (size_t)sz);
+	if (d == NULL) {
+		ma_close(&ma_state);
 		throw(MAL, "dameraulevenshtein", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+	}
 
 	/* Step 2 */
 	for (i = 0; i <= n; i++) {
@@ -143,27 +148,29 @@ dameraulevenshtein(int *res, const char *s, const char *t, int insdel_cost,
 	}
 	/* Step 7 */
 	*res = damerau_getat(d, n, m, n);
-	GDKfree(d);
+	ma_close(&ma_state);
 	return MAL_SUCCEED;
 }
 
 static str
-TXTSIMdameraulevenshtein1(int *result, const char *const *s, const char *const *t)
+TXTSIMdameraulevenshtein1(Client ctx, int *result, const char *const *s, const char *const *t)
 {
+	(void) ctx;
 	return dameraulevenshtein(result, *s, *t, 1, 1, 2);
 }
 
 static str
-TXTSIMdameraulevenshtein2(int *result, const char *const *s, const char *const *t)
+TXTSIMdameraulevenshtein2(Client ctx, int *result, const char *const *s, const char *const *t)
 {
+	(void) ctx;
 	return dameraulevenshtein(result, *s, *t, 1, 1, 1);
 }
 
 static str
-TXTSIMdameraulevenshtein(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
+TXTSIMdameraulevenshtein(Client ctx, MalBlkPtr mb, MalStkPtr stk,
 						 InstrPtr pci)
 {
-	(void) cntxt;
+	(void) ctx;
 	(void) mb;
 	int *res = getArgReference_int(stk, pci, 0);
 	const char *x = *getArgReference_str(stk, pci, 1),
@@ -208,9 +215,14 @@ levenshtein(int *res, const char *x, const char *y, int insdel_cost,
 		return MAL_SUCCEED;
 	}
 
-	column = GDKmalloc((xlen + 1) * sizeof(unsigned int));
-	if (column == NULL)
+	allocator *ma = MT_thread_getallocator();
+	allocator_state ma_state = ma_open(ma);
+
+	column = ma_alloc(ma, (xlen + 1) * sizeof(unsigned int));
+	if (column == NULL) {
+		ma_close(&ma_state);
 		throw(MAL, "levenshtein", MAL_MALLOC_FAIL);
+	}
 
 	for (i = 1; i <= xlen; i++)
 		column[i] = i;
@@ -236,16 +248,16 @@ levenshtein(int *res, const char *x, const char *y, int insdel_cost,
 		}
 		if (max != -1 && min > (unsigned int) max) {
 			*res = INT_MAX;
-			GDKfree(column);
+			ma_close(&ma_state);
 			return MAL_SUCCEED;
 		}
 	}
 
 	*res = column[xlen];
-	GDKfree(column);
+	ma_close(&ma_state);
 	return MAL_SUCCEED;
   illegal:
-	GDKfree(column);
+	ma_close(&ma_state);
 	throw(MAL, "txtsim.levenshtein", "Illegal unicode code point");
 }
 
@@ -296,9 +308,9 @@ levenshtein2(const char *x, const char *y, const size_t xlen, const size_t ylen,
 }
 
 static str
-TXTSIMlevenshtein(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+TXTSIMlevenshtein(Client ctx, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	(void) cntxt;
+	(void) ctx;
 	(void) mb;
 	int *res = getArgReference_int(stk, pci, 0);
 	const char *x = *getArgReference_str(stk, pci, 1),
@@ -325,9 +337,9 @@ TXTSIMlevenshtein(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 
 static str
-TXTSIMmaxlevenshtein(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+TXTSIMmaxlevenshtein(Client ctx, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	(void) cntxt;
+	(void) ctx;
 	(void) mb;
 	int *res = getArgReference_int(stk, pci, 0);
 	const char *x = *getArgReference_str(stk, pci, 1),
@@ -349,9 +361,9 @@ TXTSIMmaxlevenshtein(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 
 static str
-BATTXTSIMmaxlevenshtein(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+BATTXTSIMmaxlevenshtein(Client ctx, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	(void) cntxt;
+	(void) ctx;
 	(void) mb;
 	bat *res = getArgReference_bat(stk, pci, 0);
 	bat *lid = getArgReference_bat(stk, pci, 1);
@@ -368,6 +380,7 @@ BATTXTSIMmaxlevenshtein(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	size_t llen = 0, rlen = 0, maxlen = 0;
 	int d;
 	bit v;
+	allocator *ma = NULL;
 
 	if ((left = BATdescriptor(*lid)) == NULL) {
 		msg = createException(MAL, "battxtsim.maxlevenshtein",
@@ -392,25 +405,29 @@ BATTXTSIMmaxlevenshtein(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	li = bat_iterator(left);
 	ri = bat_iterator(right);
-	BATloop(left, p, q) {
-		lv = BUNtail(li, p);
-		rv = BUNtail(ri, p);
+
+	ma = MT_thread_getallocator();
+	allocator_state ma_state = ma_open(ma);
+
+	BATloop(&li, p, q) {
+		lv = BUNtail(&li, p);
+		rv = BUNtail(&ri, p);
 		llen = UTF8_strlen(lv);
 		rlen = UTF8_strlen(rv);
 		if (abs((int) llen - (int) rlen) > (int) *k)
 			v = false;
 		else {
 			if (llen > maxlen) {
+				size_t osz = maxlen * sizeof(unsigned int);
 				maxlen = llen;
-				unsigned int *tmp = GDKrealloc(buffer, (maxlen + 1) * sizeof(unsigned int));
-				if (tmp == NULL) {
+				buffer = ma_realloc(ma, buffer, (maxlen + 1) * sizeof(unsigned int), osz);
+				if (buffer == NULL) {
 					bat_iterator_end(&li);
 					bat_iterator_end(&ri);
 					msg = createException(MAL, "battxtsim.maxlevenshtein",
 										  SQLSTATE(HY013) MAL_MALLOC_FAIL);
 					goto exit;
 				}
-				buffer = tmp;
 			}
 			d = levenshtein2(lv, rv, llen, rlen, buffer, insdel_cost,
 							 replace_cost, (int) *k);
@@ -430,7 +447,8 @@ BATTXTSIMmaxlevenshtein(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	*res = bn->batCacheid;
 	BBPkeepref(bn);
   exit:
-	GDKfree(buffer);
+	if (ma)
+		ma_close(&ma_state);
 	BBPreclaim(left);
 	BBPreclaim(right);
 	if (msg != MAL_SUCCEED)
@@ -486,7 +504,7 @@ str_item_lenrev_cmp(const void *a, const void *b)
 }
 
 static str
-str_2_codepointseq(str_item *s)
+str_2_codepointseq(allocator *ma, str_item *s)
 {
 	const uint8_t *p = (const uint8_t *) s->val;
 
@@ -494,7 +512,7 @@ str_2_codepointseq(str_item *s)
 		s->cp_sequence = NULL;
 		return MAL_SUCCEED;
 	}
-	s->cp_sequence = GDKmalloc(s->len * sizeof(int));
+	s->cp_sequence = ma_alloc(ma, s->len * sizeof(int));
 	if (s->cp_sequence == NULL)
 		throw(MAL, "str_2_byteseq", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 
@@ -599,12 +617,13 @@ jarowinkler(const str_item *x, const str_item *y, double lp, int *x_flags,
 }
 
 static str
-TXTSIMjarowinkler(dbl *res, const char *const *x, const char *const *y)
+TXTSIMjarowinkler(Client ctx, dbl *res, const char *const *x, const char *const *y)
 {
 	int *x_flags = NULL, *y_flags = NULL;
 	str_item xi, yi;
 	str msg = MAL_SUCCEED;
 
+	(void) ctx;
 	if (strNil(*x) || strNil(*y)) {
 		*res = dbl_nil;
 		return MAL_SUCCEED;
@@ -622,14 +641,17 @@ TXTSIMjarowinkler(dbl *res, const char *const *x, const char *const *y)
 		return MAL_SUCCEED;
 	}
 
-	if ((msg = str_2_codepointseq(&xi)) != MAL_SUCCEED)
+	allocator *ma = MT_thread_getallocator();
+	allocator_state ma_state = ma_open(ma);
+
+	if ((msg = str_2_codepointseq(ma, &xi)) != MAL_SUCCEED)
 		goto bailout;
 
-	if ((msg = str_2_codepointseq(&yi)) != MAL_SUCCEED)
+	if ((msg = str_2_codepointseq(ma, &yi)) != MAL_SUCCEED)
 		goto bailout;
 
-	x_flags = GDKmalloc(xi.len * sizeof(int));
-	y_flags = GDKmalloc(yi.len * sizeof(int));
+	x_flags = ma_alloc(ma, xi.len * sizeof(int));
+	y_flags = ma_alloc(ma, yi.len * sizeof(int));
 
 	if (x_flags == NULL || y_flags == NULL)
 		goto bailout;
@@ -637,20 +659,18 @@ TXTSIMjarowinkler(dbl *res, const char *const *x, const char *const *y)
 	*res = jarowinkler(&xi, &yi, -1, x_flags, y_flags);
 
   bailout:
-	GDKfree(x_flags);
-	GDKfree(y_flags);
-	GDKfree(xi.cp_sequence);
-	GDKfree(yi.cp_sequence);
+	ma_close(&ma_state);
 	return msg;
 }
 
 static str
-TXTSIMminjarowinkler(bit *res, const char *const *x, const char *const *y, const dbl *threshold)
+TXTSIMminjarowinkler(Client ctx, bit *res, const char *const *x, const char *const *y, const dbl *threshold)
 {
+	(void) ctx;
 	str msg = MAL_SUCCEED;
 	double s = 1;
 
-	msg = TXTSIMjarowinkler(&s, x, y);
+	msg = TXTSIMjarowinkler(ctx, &s, x, y);
 	if (msg != MAL_SUCCEED)
 		throw(MAL, "txt.minjarowinkler", OPERATION_FAILED);
 
@@ -658,7 +678,9 @@ TXTSIMminjarowinkler(bit *res, const char *const *x, const char *const *y, const
 	return MAL_SUCCEED;
 }
 
-#define VALUE(s, x) (s##vars + VarHeapVal(s##vals, (x), s##width))
+#undef VALUE
+#undef APPEND
+#define VALUE(s, x) ((off = VarHeapVal(s##vals, (x), s##width)) == 0 ? str_nil : s##vars + off)
 #define APPEND(b, o) (((oid *) b->theap->base)[b->batCount++] = (o))
 
 #define PREP_BAT_STRITEM(B, CI, SI)										\
@@ -670,7 +692,7 @@ TXTSIMminjarowinkler(bit *res, const char *const *x, const char *const *y, const
 				SI[n].cp_sequence = NULL;								\
 				SI[n].len = UTF8_strlen(SI[n].val);						\
 				SI[n].cp_seq_len = str_strlen(SI[n].val);				\
-				if ((msg = str_2_codepointseq(&SI[n])) != MAL_SUCCEED)	\
+				if ((msg = str_2_codepointseq(ma, &SI[n])) != MAL_SUCCEED)	\
 					goto exit;											\
 				str_alphabet_bitmap(&SI[n]);							\
 			}															\
@@ -749,6 +771,7 @@ maxlevenshteinjoin(BAT **r1, BAT **r2, BAT *l, BAT *r, BAT *sl, BAT *sr, int k)
 	BUN n;
 	struct canditer lci, rci;
 	const char *lvals, *rvals, *lvars, *rvars;;
+	var_t off;
 	int lwidth, rwidth, d;
 	str_item *lsi = NULL, *rsi = NULL;
 	str msg = MAL_SUCCEED;
@@ -760,8 +783,8 @@ maxlevenshteinjoin(BAT **r1, BAT **r2, BAT *l, BAT *r, BAT *sl, BAT *sr, int k)
 	canditer_init(&lci, l, sl);
 	canditer_init(&rci, r, sr);
 
-	if (lci.ncand == 0 || rci.ncand == 0)
-		goto exit;
+	allocator *ma = MT_thread_getallocator();
+	allocator_state ma_state = ma_open(ma);
 
 	lvals = (const char *) Tloc(l, 0);
 	rvals = (const char *) Tloc(r, 0);
@@ -778,11 +801,14 @@ maxlevenshteinjoin(BAT **r1, BAT **r2, BAT *l, BAT *r, BAT *sl, BAT *sr, int k)
 		goto exit;
 	}
 
+	if (lci.ncand == 0 || rci.ncand == 0)
+		goto exit1;
+
 	r1t->tsorted = r1t->trevsorted = false;
 	r2t->tsorted = r2t->trevsorted = false;
 
-	if ((lsi = GDKmalloc(lci.ncand * sizeof(str_item))) == NULL ||
-		(rsi = GDKmalloc(rci.ncand * sizeof(str_item))) == NULL) {
+	if ((lsi = ma_alloc(ma, lci.ncand * sizeof(str_item))) == NULL ||
+		(rsi = ma_alloc(ma, rci.ncand * sizeof(str_item))) == NULL) {
 		reclaim_bats(2, r1t, r2t);
 		msg = createException(MAL, "txtsim.maxlevenshteinjoin",
 							  SQLSTATE(HY013) MAL_MALLOC_FAIL);
@@ -794,7 +820,7 @@ maxlevenshteinjoin(BAT **r1, BAT **r2, BAT *l, BAT *r, BAT *sl, BAT *sr, int k)
 	qsort(lsi, lci.ncand, sizeof(str_item), str_item_lenrev_cmp);
 	qsort(rsi, rci.ncand, sizeof(str_item), str_item_lenrev_cmp);
 
-	if ((buffer = GDKmalloc((lsi[0].len + 1) * sizeof(int))) == NULL) {
+	if ((buffer = ma_alloc(ma, (lsi[0].len + 1) * sizeof(int))) == NULL) {
 		msg = createException(MAL, "txtsim.maxlevenshteinjoin",
 							  SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto exit;
@@ -840,22 +866,17 @@ maxlevenshteinjoin(BAT **r1, BAT **r2, BAT *l, BAT *r, BAT *sl, BAT *sr, int k)
 	}
 
 	FINALIZE_BATS(r1t, r2t, lci, rci, lsi, rsi);
+  exit1:
 	*r1 = r1t;
 	*r2 = r2t;
 
   exit:
-	for (n = 0; lsi && n < lci.ncand; n++)
-		GDKfree(lsi[n].cp_sequence);
-	for (n = 0; rsi && n < rci.ncand; n++)
-		GDKfree(rsi[n].cp_sequence);
-	GDKfree(lsi);
-	GDKfree(rsi);
-	GDKfree(buffer);
+	ma_close(&ma_state);
 	return msg;
 }
 
 static str
-TXTSIMmaxlevenshteinjoin(bat *r1, bat *r2, const bat *lid, const bat *rid,
+TXTSIMmaxlevenshteinjoin(Client ctx, bat *r1, bat *r2, const bat *lid, const bat *rid,
 						 const bat *kid, const bat *slid, const bat *srid,
 						 const bit *nil_matches, const lng *estimate,
 						 const bit *anti)
@@ -863,6 +884,7 @@ TXTSIMmaxlevenshteinjoin(bat *r1, bat *r2, const bat *lid, const bat *rid,
 	(void) nil_matches;
 	(void) estimate;
 	(void) anti;
+	(void) ctx;
 
 	BAT *bleft = NULL, *bright = NULL, *bk = NULL,
 			*bcandleft = NULL, *bcandright = NULL, *r1t = NULL, *r2t = NULL;
@@ -886,7 +908,7 @@ TXTSIMmaxlevenshteinjoin(bat *r1, bat *r2, const bat *lid, const bat *rid,
 
 	if (BATcount(bk) > 0) {
 		BATiter ki = bat_iterator(bk);
-		k = *(int *) BUNtloc(ki, 0);
+		k = *(int *) BUNtloc(&ki, 0);
 		bat_iterator_end(&ki);
 	}
 
@@ -934,20 +956,21 @@ minjarowinklerjoin(BAT **r1, BAT **r2, BAT *l, BAT *r, BAT *sl, BAT *sr,
 	BUN n;
 	struct canditer lci, rci;
 	const char *lvals, *rvals, *lvars, *rvars;
+	var_t off;
 	int lwidth, rwidth, lb = 0, ub = 0, m = -1, *x_flags = NULL, *y_flags = NULL;
 	str_item *ssl = NULL, *ssr = NULL, shortest;
 	str msg = MAL_SUCCEED;
 	const bool sliding_window_allowed = threshold > (2.01 + JARO_WINKLER_PREFIX_LEN * JARO_WINKLER_SCALING_FACTOR) / 3.0;
 	double s, lp = 0;
 
+	allocator *ma = MT_thread_getallocator();
+	allocator_state ma_state = ma_open(ma);
+
 	assert(ATOMtype(l->ttype) == ATOMtype(r->ttype));
 	assert(ATOMtype(l->ttype) == TYPE_str);
 
 	canditer_init(&lci, l, sl);
 	canditer_init(&rci, r, sr);
-
-	if (lci.ncand == 0 || rci.ncand == 0)
-		goto exit;
 
 	lvals = (const char *) Tloc(l, 0);
 	rvals = (const char *) Tloc(r, 0);
@@ -965,11 +988,14 @@ minjarowinklerjoin(BAT **r1, BAT **r2, BAT *l, BAT *r, BAT *sl, BAT *sr,
 		goto exit;
 	}
 
+	if (lci.ncand == 0 || rci.ncand == 0)
+		goto exit1;
+
 	r1t->tsorted = r1t->trevsorted = false;
 	r2t->tsorted = r2t->trevsorted = false;
 
-	if ((ssl = GDKmalloc(lci.ncand * sizeof(str_item))) == NULL ||
-		(ssr = GDKmalloc(rci.ncand * sizeof(str_item))) == NULL) {
+	if ((ssl = ma_alloc(ma, lci.ncand * sizeof(str_item))) == NULL ||
+		(ssr = ma_alloc(ma, rci.ncand * sizeof(str_item))) == NULL) {
 		reclaim_bats(2, r1t, r2t);
 		msg = createException(MAL, "txtsim.maxlevenshteinjoin",
 							  SQLSTATE(HY013) MAL_MALLOC_FAIL);
@@ -981,8 +1007,8 @@ minjarowinklerjoin(BAT **r1, BAT **r2, BAT *l, BAT *r, BAT *sl, BAT *sr,
 	qsort(ssl, lci.ncand, sizeof(str_item), str_item_lenrev_cmp);
 	qsort(ssr, rci.ncand, sizeof(str_item), str_item_lenrev_cmp);
 
-	if ((x_flags = GDKmalloc(ssl[0].len * sizeof(int))) == NULL ||
-		(y_flags = GDKmalloc(ssr[0].len * sizeof(int))) == NULL) {
+	if ((x_flags = ma_alloc(ma, ssl[0].len * sizeof(int))) == NULL ||
+		(y_flags = ma_alloc(ma, ssr[0].len * sizeof(int))) == NULL) {
 		msg = createException(MAL, "txtsim.minjarowinklerjoin",
 							  SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto exit;
@@ -1042,25 +1068,17 @@ minjarowinklerjoin(BAT **r1, BAT **r2, BAT *l, BAT *r, BAT *sl, BAT *sr,
 	}
 
 	FINALIZE_BATS(r1t, r2t, lci, rci, ssl, ssr);
+  exit1:
 	*r1 = r1t;
 	*r2 = r2t;
 
   exit:
-	if (ssl)
-		for (n = 0; n < lci.ncand; n++)
-			GDKfree(ssl[n].cp_sequence);
-	if (ssr)
-		for (n = 0; n < rci.ncand; n++)
-			GDKfree(ssr[n].cp_sequence);
-	GDKfree(x_flags);
-	GDKfree(y_flags);
-	GDKfree(ssl);
-	GDKfree(ssr);
+	ma_close(&ma_state);
 	return msg;
 }
 
 static str
-TXTSIMminjarowinklerjoin(bat *r1, bat *r2, const bat *lid, const bat *rid,
+TXTSIMminjarowinklerjoin(Client ctx, bat *r1, bat *r2, const bat *lid, const bat *rid,
 						 const bat *thresholdid, const bat *slid,
 						 const bat *srid, const bit *nil_matches,
 						 const lng *estimate, const bit *anti)
@@ -1068,6 +1086,7 @@ TXTSIMminjarowinklerjoin(bat *r1, bat *r2, const bat *lid, const bat *rid,
 	(void) nil_matches;
 	(void) estimate;
 	(void) anti;
+	(void) ctx;
 
 	BAT *bleft = NULL, *bright = NULL,
 			*bcandleft = NULL, *bcandright = NULL, *bthreshold = NULL,
@@ -1092,7 +1111,7 @@ TXTSIMminjarowinklerjoin(bat *r1, bat *r2, const bat *lid, const bat *rid,
 
 	if (BATcount(bthreshold) > 0) {
 		BATiter thresholdi = bat_iterator(bthreshold);
-		threshold = *(dbl *) BUNtail(thresholdi, 0);
+		threshold = *(dbl *) BUNtail(&thresholdi, 0);
 		bat_iterator_end(&thresholdi);
 	}
 
@@ -1120,18 +1139,6 @@ static const int Code[] = { 0, 1, 2, 3, 0, 1,
 	5, 5, 0, 1, 2, 6,
 	2, 3, 0, 1, 0, 2, 0, 2
 };
-
-#define RETURN_NIL_IF(b,t)												\
-	if (b) {															\
-		if (ATOMextern(t)) {											\
-			*(ptr*) res = (ptr) ATOMnil(t);							\
-			if ( *(ptr *) res == NULL)									\
-				throw(MAL,"txtsim", SQLSTATE(HY013) MAL_MALLOC_FAIL);	\
-		} else {														\
-			memcpy(res, ATOMnilptr(t), ATOMsize(t));					\
-		}																\
-		return MAL_SUCCEED;											\
-	}
 
 static inline char
 SCode(unsigned char c)
@@ -1187,20 +1194,25 @@ soundex_code(const char *Name, char *Key)
 }
 
 static str
-soundex(str *res, const char *const *Name)
+soundex(Client ctx, str *res, const char *const *Name)
 {
+	(void) ctx;
+	allocator *ma = ctx->curprg->def->ma;
 	str msg = MAL_SUCCEED;
 
-	GDKfree(*res);
-	RETURN_NIL_IF(strNil(*Name), TYPE_str);
+	if (strNil(*Name)) {
+		*res = (char *) str_nil;
+		if (*res == NULL)
+			throw(MAL, "soundex", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		return MAL_SUCCEED;
+	}
 
-	*res = (str) GDKmalloc(sizeof(char) * (SoundexLen + 1));
+	*res = (str) ma_alloc(ma, sizeof(char) * (SoundexLen + 1));
 	if (*res == NULL)
 		throw(MAL, "soundex", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 
 	/* calculate Key for Name */
 	if ((msg = soundex_code(*Name, *res))) {
-		GDKfree(*res);
 		*res = NULL;
 		return msg;
 	}
@@ -1208,22 +1220,20 @@ soundex(str *res, const char *const *Name)
 }
 
 static str
-stringdiff(int *res, const char *const *s1, const char *const *s2)
+stringdiff(Client ctx, int *res, const char *const *s1, const char *const *s2)
 {
+	(void) ctx;
 	str r = MAL_SUCCEED;
 	char *S1 = NULL, *S2 = NULL;
 
-	r = soundex(&S1, s1);
+	r = soundex(ctx, &S1, s1);
 	if (r != MAL_SUCCEED)
 		return r;
-	r = soundex(&S2, s2);
+	r = soundex(ctx, &S2, s2);
 	if (r != MAL_SUCCEED) {
-		GDKfree(S1);
 		return r;
 	}
-	r = TXTSIMdameraulevenshtein1(res, &(const char *){S1}, &(const char *){S2});
-	GDKfree(S1);
-	GDKfree(S2);
+	r = TXTSIMdameraulevenshtein1(ctx, res, &(const char *){S1}, &(const char *){S2});
 	return r;
 }
 
@@ -1239,15 +1249,18 @@ stringdiff(int *res, const char *const *s1, const char *const *s2)
  *
  *****************************/
 static str
-qgram_normalize(str *res, const char *const *Input)
+qgram_normalize(Client ctx, str *res, const char *const *Input)
 {
+	allocator *ma = ctx->curprg->def->ma;
 	const char *input = *Input;
 	int i, j = 0;
 	char c, last = ' ';
 
-	GDKfree(*res);
-	RETURN_NIL_IF(strNil(input), TYPE_str);
-	*res = (str) GDKmalloc(sizeof(char) * (strlen(input) + 1));	/* normalized strings are never longer than original */
+	if (strNil(*Input)) {
+		*res = (char *) str_nil;
+		return MAL_SUCCEED;
+	}
+	*res = (str) ma_alloc(ma, sizeof(char) * (strlen(input) + 1));	/* normalized strings are never longer than original */
 	if (*res == NULL)
 		throw(MAL, "txtsim.qgramnormalize", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 
@@ -1269,9 +1282,10 @@ qgram_normalize(str *res, const char *const *Input)
 }
 
 static str
-qgram_selfjoin(bat *res1, bat *res2, bat *qid, bat *bid, bat *pid, bat *lid,
+qgram_selfjoin(Client ctx, bat *res1, bat *res2, bat *qid, bat *bid, bat *pid, bat *lid,
 			   flt *c, int *k)
 {
+	(void) ctx;
 	BAT *qgram, *id, *pos, *len;
 	BUN n;
 	BUN i, j;
@@ -1463,13 +1477,16 @@ utf8strncpy(char *buf, size_t bufsize, const char *src, size_t utf8len)
 }
 
 static str
-str_2_qgrams(bat *ret, const char *const *val)
+str_2_qgrams(Client ctx, bat *ret, const char *const *val)
 {
+	allocator *ma = MT_thread_getallocator();
+	allocator_state ma_state = ma_open(ma);
 	BAT *bn;
 	size_t i, len = strlen(*val) + 5;
-	str s = GDKmalloc(len);
+	str s = ma_alloc(ma, len);
 	char qgram[4 * 6 + 1];		/* 4 UTF-8 code points plus NULL byte */
 
+	(void) ctx;
 	if (s == NULL)
 		throw(MAL, "txtsim.str2qgram", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	strcpy(s, "##");
@@ -1477,7 +1494,7 @@ str_2_qgrams(bat *ret, const char *const *val)
 	strcpy(s + len - 3, "$$");
 	bn = COLnew(0, TYPE_str, (BUN) strlen(*val), TRANSIENT);
 	if (bn == NULL) {
-		GDKfree(s);
+		ma_close(&ma_state);
 		throw(MAL, "txtsim.str2qgram", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 
@@ -1487,7 +1504,7 @@ str_2_qgrams(bat *ret, const char *const *val)
 			break;
 		if (BUNappend(bn, qgram, false) != GDK_SUCCEED) {
 			BBPreclaim(bn);
-			GDKfree(s);
+			ma_close(&ma_state);
 			throw(MAL, "txtsim.str2qgram", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		}
 		if ((s[i++] & 0xC0) == 0xC0) {
@@ -1497,12 +1514,12 @@ str_2_qgrams(bat *ret, const char *const *val)
 	}
 	*ret = bn->batCacheid;
 	BBPkeepref(bn);
-	GDKfree(s);
+	ma_close(&ma_state);
 	return MAL_SUCCEED;
 }
 
 #include "mel.h"
-mel_func txtsim_init_funcs[] = {
+static mel_func txtsim_init_funcs[] = {
 	pattern("txtsim", "dameraulevenshtein", TXTSIMdameraulevenshtein, false, "Calculates Damerau-Levenshtein distance between two strings, operation costs (ins/del = 1, replacement = 1, transposition = 2)", args(1,3,arg("",int),arg("x",str),arg("y",str))),
 	pattern("txtsim", "dameraulevenshtein", TXTSIMdameraulevenshtein, false, "Calculates Damerau-Levenshtein distance between two strings, variable operation costs (ins/del, replacement, transposition)", args(1,6,arg("",int),arg("x",str),arg("y",str),arg("insdel_cost",int),arg("replace_cost",int),arg("transpose_cost",int))),
 	command("txtsim", "editdistance", TXTSIMdameraulevenshtein1, false, "Alias for Damerau-Levenshtein(str,str), insdel cost = 1, replace cost = 1 and transpose = 2", args(1,3, arg("",int),arg("s",str),arg("t",str))),

@@ -1,5 +1,8 @@
 bincopy_test_the_testdata
 
+bincopy_filecount_mismatch
+
+
 bincopy_ints_on_client
 bincopy_ints_on_server
 bincopy_more_ints_on_client
@@ -41,6 +44,11 @@ bincopy_json_objects_on_server
 bincopy_uuids_on_client
 bincopy_uuids_on_server
 
+bincopy_inet4_on_client
+bincopy_inet4_on_server
+bincopy_inet6_on_client
+bincopy_inet6_on_server
+
 bincopy_nulls
 
 bincopy_invalid_json
@@ -60,3 +68,6 @@ bincopycollist-prepare
 bincopycollist
 bincopy_decimal_range
 bincopy_string_width
+
+!ARCH_BITS32&VMSIZE>=16000000000?very_large_file
+!ARCH_BITS32&VMSIZE>=16000000000?very_large_date_file

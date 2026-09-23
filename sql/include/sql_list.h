@@ -3,11 +3,9 @@
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024, 2025 MonetDB Foundation;
- * Copyright August 2008 - 2023 MonetDB B.V.;
- * Copyright 1997 - July 2008 CWI.
+ * For copyright information, see the file debian/copyright.
  */
 
 #ifndef LIST_H
@@ -43,12 +41,13 @@ sql_export list *sa_list(allocator *sa);
 extern list *list_new(allocator *sa, fdestroy destroy);
 
 extern list *sa_list_append( allocator *sa, list *l, void *data);
+extern list *sa_list_prepend( allocator *sa, list *l, void *data);
 extern list *list_add( list *l, void *data);
 
 extern void list_destroy(list *l);
 extern void list_destroy2(list *l, void *data);
-sql_export int list_length(list *l);
-extern int list_empty(list *l);
+sql_export int list_length(const list *l);
+extern int list_empty(const list *l);
 
 sql_export list *list_append(list *l, void *data);
 extern list *list_append_before(list *l, node *n, void *data);
@@ -83,6 +82,7 @@ extern void *list_append_sorted(list *l, void *data, void *extra, fcmpvalidate c
 extern node *list_find(list *l, void *key, fcmp cmp);
 extern int  list_position(list *l, void *val);
 sql_export void *list_fetch(list *l, int pos);
+extern node *list_fetch_node(list *l, int pos);
 extern list *list_select(list *l, void *key, fcmp cmp, fdup dup);
 extern list *list_order(list *l, fcmp cmp, fdup dup);
 extern list *list_distinct(list *l, fcmp cmp, fdup dup);
@@ -96,13 +96,11 @@ extern int list_match(list *l1, list *l2, fcmp cmp);
 extern list *list_sort(list *l, fkeyvalue key, fdup dup);
 /* The sort function sorts the list using the key function, which
  * translates the list item values into integer keyvalues. */
-/* sometimes more complex functions are needed to compute a key, then
- * we can pass the keys via an array, to keysort */
-extern list *list_keysort(list *l, int *key, fdup dup);
 
 extern list *list_dup(list *l, fdup dup);
 extern list *list_merge(list *l, list *data, fdup dup);
 extern list *list_merge_destroy(list *l, list *data, fdup dup);
+extern list *list_join(list *l, list *data);
 
 extern list *list_flatten(list *l);
 

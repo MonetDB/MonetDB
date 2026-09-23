@@ -3,11 +3,9 @@
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024, 2025 MonetDB Foundation;
- * Copyright August 2008 - 2023 MonetDB B.V.;
- * Copyright 1997 - July 2008 CWI.
+ * For copyright information, see the file debian/copyright.
  */
 
 #include "monetdb_config.h"
@@ -1436,16 +1434,20 @@ addstr_loop(BAT *b1, const char *l, BAT *b2, const char *r, BAT *bn,
 	candoff1 = b1 ? b1->hseqbase : 0;
 	candoff2 = b2 ? b2->hseqbase : 0;
 	slen = 1024;
-	s = GDKmalloc(slen);
-	if (s == NULL)
+	allocator *ta = MT_thread_getallocator();
+	allocator_state ta_state = ma_open(ta);
+	s = ma_alloc(ta, slen);
+	if (s == NULL) {
+		ma_close(&ta_state);
 		return BUN_NONE;
+	}
 	TIMEOUT_LOOP_IDX_DECL(i, ncand, qry_ctx) {
 		oid x1 = canditer_next(ci1) - candoff1;
 		oid x2 = canditer_next(ci2) - candoff2;
 		if (b1)
-			l = BUNtvar(*b1i, x1);
+			l = BUNtvar(b1i, x1);
 		if (b2)
-			r = BUNtvar(*b2i, x2);
+			r = BUNtvar(b2i, x2);
 		if (strNil(l) || strNil(r)) {
 			nils++;
 			if (tfastins_nocheckVAR(bn, i, str_nil) != GDK_SUCCEED)
@@ -1454,11 +1456,10 @@ addstr_loop(BAT *b1, const char *l, BAT *b2, const char *r, BAT *bn,
 			llen = strlen(l);
 			rlen = strlen(r);
 			if (llen + rlen >= slen) {
-				slen = llen + rlen + 1024;
-				GDKfree(s);
-				s = GDKmalloc(slen);
+				s = ma_realloc(ta, s, llen + rlen + 1024, slen);
 				if (s == NULL)
 					goto bailout;
+				slen = llen + rlen + 1024;
 			}
 			(void) stpcpy(stpcpy(s, l), r);
 			if (tfastins_nocheckVAR(bn, i, s) != GDK_SUCCEED)
@@ -1467,12 +1468,12 @@ addstr_loop(BAT *b1, const char *l, BAT *b2, const char *r, BAT *bn,
 	}
 	TIMEOUT_CHECK(qry_ctx,
 		      GOTO_LABEL_TIMEOUT_HANDLER(bailout, qry_ctx));
-	GDKfree(s);
+	ma_close(&ta_state);
 	bn->theap->dirty = true;
 	return nils;
 
   bailout:
-	GDKfree(s);
+	ma_close(&ta_state);
 	return BUN_NONE;
 }
 
@@ -1667,6 +1668,7 @@ gdk_return
 VARcalcadd(ValPtr ret, const ValRecord *lft, const ValRecord *rgt)
 {
 	ret->bat = false;
+	ret->allocated = false;
 	if (add_typeswitchloop(VALptr(lft), lft->vtype, false,
 			       VALptr(rgt), rgt->vtype, false,
 			       VALget(ret), ret->vtype,
@@ -1748,6 +1750,7 @@ gdk_return
 VARcalcincr(ValPtr ret, const ValRecord *v)
 {
 	ret->bat = false;
+	ret->allocated = false;
 	if (add_typeswitchloop(VALptr(v), v->vtype, false,
 			       &(bte){1}, TYPE_bte, false,
 			       VALget(ret), ret->vtype,
@@ -3336,6 +3339,7 @@ gdk_return
 VARcalcsub(ValPtr ret, const ValRecord *lft, const ValRecord *rgt)
 {
 	ret->bat = false;
+	ret->allocated = false;
 	if (sub_typeswitchloop(VALptr(lft), lft->vtype, false,
 			       VALptr(rgt), rgt->vtype, false,
 			       VALget(ret), ret->vtype,
@@ -3357,6 +3361,7 @@ gdk_return
 VARcalcdecr(ValPtr ret, const ValRecord *v)
 {
 	ret->bat = false;
+	ret->allocated = false;
 	if (sub_typeswitchloop(VALptr(v), v->vtype, false,
 			       &(bte){1}, TYPE_bte, false,
 			       VALget(ret), ret->vtype,

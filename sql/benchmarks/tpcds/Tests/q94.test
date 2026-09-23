@@ -1,4 +1,4 @@
-query IRR nosort
+query IDD nosort
 -- query 94
 select
    count(distinct ws_order_number) as "order count"
@@ -28,6 +28,6 @@ order by count(distinct ws_order_number)
 limit 100
 ----
 33
-64554.350
--3979.350
+64554.35
+-3979.35
 

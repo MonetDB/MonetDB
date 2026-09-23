@@ -3,11 +3,9 @@
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024, 2025 MonetDB Foundation;
- * Copyright August 2008 - 2023 MonetDB B.V.;
- * Copyright 1997 - July 2008 CWI.
+ * For copyright information, see the file debian/copyright.
  */
 
 /*
@@ -28,8 +26,7 @@ geomerror(_In_z_ _Printf_format_string_ const char *fmt, ...)
 	char err[256];
 	va_start(va, fmt);
 	vsnprintf(err, sizeof(err), fmt, va);
-	GDKtracer_log(__FILE__, __func__, __LINE__, M_ERROR,
-		      GDK, NULL, "%s", err);
+	TRC_ERROR(GEOM, "%s", err);
 	va_end(va);
 }
 

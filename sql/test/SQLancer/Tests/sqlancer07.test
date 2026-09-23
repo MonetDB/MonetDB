@@ -48,10 +48,10 @@ INSERT INTO "t1" VALUES (0.39517295223772886)
 statement ok rowcount 1
 INSERT INTO "t1" VALUES (NULL)
 
-statement error GDK reported error: BATsubcross: more than one match
+statement error /more than one match/
 SELECT t0.c0 BETWEEN SYMMETRIC (SELECT t0.c0 FROM t0) AND t0.c0 FROM t0
 
-statement error GDK reported error: BATsubcross: more than one match
+statement error /more than one match/
 SELECT CAST(NOT ((t0.c0) NOT BETWEEN SYMMETRIC ((SELECT DISTINCT t0.c0 FROM t0, t1)) AND (t0.c0)) AS INT) FROM t0
 
 statement ok
@@ -284,13 +284,13 @@ SELECT CAST(SUM(count) AS BIGINT) FROM (SELECT ALL CAST(((((t0.c0)%((SELECT DIST
 ----
 NULL
 
-statement error GDK reported error: BATsubcross: more than one match
+statement error /more than one match/
 SELECT 1 FROM t2, t0 WHERE (SELECT 1 UNION SELECT 2) > 0
 
-statement error GDK reported error: BATsubcross: more than one match
+statement error /more than one match/
 SELECT 1 FROM t2, t0, t1 WHERE (SELECT 1 UNION SELECT 2) > 0
 
-statement error GDK reported error: BATsubcross: more than one match
+statement error /more than one match/
 SELECT 1 FROM t2, t0 CROSS JOIN t1 WHERE (SELECT 1 UNION SELECT 2) > 0
 
 statement ok
@@ -365,7 +365,7 @@ CREATE TABLE "t2" ("c0" INTEGER)
 statement ok rowcount 3
 INSERT INTO "t2" VALUES (1), (2), (3)
 
-query R rowsort
+query D rowsort
 SELECT t0.c1 FROM t0 WHERE (VALUES (t0.c1 = (SELECT t0.c1 FROM t0)))
 ----
 0.553
@@ -391,21 +391,21 @@ select 1 from (values (0.86), ((select 3 from t1))) as sub0(c0)
 1
 1
 
-query R rowsort
+query D rowsort
 select sub0.c0 from (values (0.86), ((select 3 from t1))) as sub0(c0)
 ----
-0.860
+0.86
 NULL
 
-query R rowsort
+query D rowsort
 select sub0.c0 from (values (0.86), ((select 3 from t1))) as sub0(c0) WHERE NOT TRUE
 ----
 
-query R rowsort
+query D rowsort
 select sub0.c0 from (values (0.86), ((select 3))) as sub0(c0)
 ----
-0.860
-3.000
+0.86
+3.00
 
 statement ok
 ROLLBACK
@@ -500,7 +500,7 @@ statement ok
 create view v0(c0) as (values (((-839450346)||(0.2907855)))) with check option
 
 statement ok
-create view v1(c0) as (with cte0(c0) as (values (case when ((true)or(true)) then ((0.75)&(0.16181643)) else 0.5068248 end)) select all 0.48 from t1, v0, t2,t0,cte0)
+create view v1(c0) as (with cte0(c0) as (values (case when ((true)or(true)) then ((075)&(016181643)) else 0.5068248 end)) select all 0.48 from t1, v0, t2,t0,cte0)
 
 statement ok
 create view v2(c0) as (select distinct interval '883554454' month from t1, t2) with check option
@@ -523,6 +523,9 @@ CREATE TABLE t0(c0 BLOB DEFAULT (blob 'E443Aefab0') UNIQUE PRIMARY KEY NULL)
 
 statement ok
 CREATE TABLE t2(LIKE t0)
+
+statement ok
+ALTER TABLE t2 ALTER COLUMN c0 SET NULL
 
 statement ok rowcount 3
 INSERT INTO t2(c0) VALUES(blob ''), (NULL), (blob 'A0')

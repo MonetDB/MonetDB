@@ -3,25 +3,23 @@
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024, 2025 MonetDB Foundation;
- * Copyright August 2008 - 2023 MonetDB B.V.;
- * Copyright 1997 - July 2008 CWI.
+ * For copyright information, see the file debian/copyright.
  */
 
 #ifndef _SQL_SUBQUERY_H
 #define _SQL_SUBQUERY_H
 
-#include "sql.h"
+#include "sql_monet_backend.h"
 
-extern str zero_or_one_error(ptr ret, const bat *bid, const bit *err );
-extern str zero_or_one_error_bat(ptr ret, const bat *bid, const bat *err );
-extern str zero_or_one(ptr ret, const bat *bid);
-extern str SQLsubzero_or_one(bat *ret, const bat *b, const bat *gp, const bat *gpe, bit *no_nil);
-extern str SQLall(ptr ret, const bat *bid);
+extern str zero_or_one_error(Client ctx, ptr ret, const bat *bid, const bit *err );
+extern str zero_or_one_error_bat(Client ctx, ptr ret, const bat *bid, const bat *err );
+extern str zero_or_one(Client ctx, ptr ret, const bat *bid);
+extern str SQLsubzero_or_one(Client ctx, bat *ret, const bat *b, const bat *gp, const bat *gpe, bit *no_nil);
+extern str SQLall(Client ctx, ptr ret, const bat *bid);
 extern str SQLall_grp(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
-extern str SQLnil(bit *ret, const bat *bid);
+extern str SQLnil(Client ctx, bit *ret, const bat *bid);
 extern str SQLnil_grp(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 extern str SQLany_cmp(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 extern str SQLall_cmp(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);

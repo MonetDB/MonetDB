@@ -1,4 +1,5 @@
-import os, random, pymonetdb
+from MonetDBtesting import tpymonetdb as pymonetdb
+import os, random
 from concurrent.futures import ThreadPoolExecutor
 
 init    =   '''
@@ -30,7 +31,7 @@ except Exception as e:
 def client(_):
     conn = pymonetdb.connect(hostname=h, port=p,database=db, autocommit=True)
     cursor = conn.cursor()
-    cursor.execute("set optimizer = 'default_fast';")
+    cursor.execute("set optimizer = 'default_pipe';")
 
     for x in range(0, nr_queries):
         try:

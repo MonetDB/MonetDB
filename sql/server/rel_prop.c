@@ -3,21 +3,19 @@
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024, 2025 MonetDB Foundation;
- * Copyright August 2008 - 2023 MonetDB B.V.;
- * Copyright 1997 - July 2008 CWI.
+ * For copyright information, see the file debian/copyright.
  */
 
 #include "monetdb_config.h"
+#include "sql_catalog.h"
 #include "sql_relation.h"
 #include "rel_prop.h"
 #include "sql_string.h"
-#include "sql_atom.h"
 
 prop *
-prop_create( allocator *sa, rel_prop kind, prop *pre )
+prop_create( allocator *sa, prop_kind kind, prop *pre )
 {
 	prop *p = SA_NEW(sa, prop);
 
@@ -53,12 +51,15 @@ prop_copy( allocator *sa, prop *p )
 }
 
 prop *
-prop_remove( prop *plist, prop *p )
+prop_remove(allocator *sa, prop *plist, prop *p)
 {
 	prop *op = plist;
+	(void) sa;
 
-	if (plist == p)
-		return p->p;
+	if (plist == p) {
+		plist = p->p;
+		return plist;
+	}
 	for(; op; op = op->p) {
 		if (op->p == p) {
 			op->p = p->p;
@@ -69,7 +70,7 @@ prop_remove( prop *plist, prop *p )
 }
 
 prop *
-find_prop( prop *p, rel_prop kind)
+find_prop(prop *p, prop_kind kind)
 {
 	while(p) {
 		if (p->kind == kind)
@@ -80,7 +81,7 @@ find_prop( prop *p, rel_prop kind)
 }
 
 void *
-find_prop_and_get(prop *p, rel_prop kind)
+find_prop_and_get(prop *p, prop_kind kind)
 {
 	prop *found = find_prop(p, kind);
 
@@ -104,6 +105,7 @@ propkind2string( prop *p)
 #define PT(TYPE) case PROP_##TYPE : return #TYPE
 		PT(COUNT);
 		PT(NUNIQUES);
+		PT(UKEY);
 		PT(JOINIDX);
 		PT(HASHIDX);
 		PT(HASHCOL);
@@ -112,6 +114,9 @@ propkind2string( prop *p)
 		PT(GROUPINGS);
 		PT(MIN);
 		PT(MAX);
+		PT(UNNESTING);
+		PT(SELECTIVITY);
+		PT(HASH);
 	}
 	return "UNKNOWN";
 }
@@ -122,21 +127,34 @@ propvalue2string(allocator *sa, prop *p)
 	char buf [BUFSIZ];
 
 	switch(p->kind) {
+	case PROP_HASH:
 	case PROP_COUNT: {
-		snprintf(buf, BUFSIZ, BUNFMT, p->value.lval);
-		return sa_strdup(sa, buf);
+		snprintf(buf, sizeof(buf), BUNFMT, p->value.lval);
+		return ma_strdup(sa, buf);
 	}
 	case PROP_NUNIQUES: {
-		snprintf(buf, BUFSIZ, "%f", p->value.dval);
-		return sa_strdup(sa, buf);
+		snprintf(buf, sizeof(buf), "%f", p->value.dval);
+		return ma_strdup(sa, buf);
 	}
+	case PROP_UKEY: {
+		list *exps = p->value.pval;
+		size_t offset = 0;
+
+		offset += snprintf(buf + offset, BUFSIZ, "[ ");
+		for(node *n = exps->h; n; n = n->next) {
+			sql_exp *e = n->data;
+			offset += snprintf(buf + offset, BUFSIZ, "%s.%s ", e->alias.rname, e->alias.name);
+		}
+		offset += snprintf(buf + offset, BUFSIZ, "]");
+		return ma_strdup(sa, buf);
+	} break;
 	case PROP_JOINIDX: {
 		sql_idx *i = p->value.pval;
 
 		if (i) {
-			snprintf(buf, BUFSIZ, "\"%s\".\"%s\".\"%s\"", sql_escape_ident(sa, i->t->s->base.name),
+			snprintf(buf, sizeof(buf), "\"%s\".\"%s\".\"%s\"", sql_escape_ident(sa, i->t->s->base.name),
 					 sql_escape_ident(sa, i->t->base.name), sql_escape_ident(sa, i->base.name));
-			return sa_strdup(sa, buf);
+			return ma_strdup(sa, buf);
 		}
 	} break;
 	case PROP_REMOTE: {
@@ -150,30 +168,44 @@ propvalue2string(allocator *sa, prop *p)
 					                   sql_escape_ident(sa, offset?" ":""),
 					                   sql_escape_ident(sa, tu->uri));
 			}
-			return sa_strdup(sa, buf);
+			return ma_strdup(sa, buf);
 		}
 	} break;
+	case PROP_SELECTIVITY: {
+		snprintf(buf, sizeof(buf), "%f", p->value.dval);
+		return ma_strdup(sa, buf);
+	}
 	case PROP_MIN:
 	case PROP_MAX: {
 		atom *a = p->value.pval;
 		char *res = NULL;
 
 		if (a->isnull) {
-			res = sa_strdup(sa, "\"NULL\"");
+			res = "\"NULL\"";
 		} else {
-			char *s = ATOMformat(a->data.vtype, VALptr(&a->data));
+			char *s = ATOMformat(sa, a->data.vtype, VALptr(&a->data));
 			if (s && *s == '"') {
-				res = sa_strdup(sa, s);
+				res = ma_strdup(sa, s);
 			} else if (s) {
-				res = sa_alloc(sa, strlen(s) + 3);
+				res = ma_alloc(sa, strlen(s) + 3);
 				stpcpy(stpcpy(stpcpy(res, "\""), s), "\"");
 			}
-			GDKfree(s);
 		}
 		return res;
 	}
 	default:
 		break;
 	}
-	return sa_strdup(sa, "");
+	return "";
+}
+
+
+void
+free_props( allocator *sa, prop *p )
+{
+	while(p) {
+		prop* tmp = p;
+		p = p->p;
+		ma_free(sa, tmp);
+	}
 }

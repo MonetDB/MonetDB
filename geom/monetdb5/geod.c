@@ -3,11 +3,9 @@
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024, 2025 MonetDB Foundation;
- * Copyright August 2008 - 2023 MonetDB B.V.;
- * Copyright 1997 - July 2008 CWI.
+ * For copyright information, see the file debian/copyright.
  */
 
 #include "geod.h"
@@ -174,40 +172,40 @@ geoPointFromGeom(GEOSGeom geom)
 /* Converts the a GEOSGeom Line into GeoLines
    Argument must be a Line geometry. */
 static GeoLines
-geoLinesFromGeom(GEOSGeom geom)
+geoLinesFromGeom(allocator *ma, GEOSGeom geom)
 {
 	const GEOSCoordSequence *gcs = GEOSGeom_getCoordSeq_r(geoshandle, geom);
 	GeoLines geo;
 	geo.pointCount = GEOSGeomGetNumPoints_r(geoshandle, geom);
-	geo.points = GDKmalloc(sizeof(GeoPoint) * geo.pointCount);
+	geo.points = ma_alloc(ma, sizeof(GeoPoint) * geo.pointCount);
 	for (int i = 0; i < geo.pointCount; i++)
 		GEOSCoordSeq_getXY_r(geoshandle, gcs, i, &geo.points[i].lon, &geo.points[i].lat);
 	geo.bbox = NULL;
 	return geo;
 }
 
-static BoundingBox * boundingBoxLines(GeoLines lines);
+static BoundingBox * boundingBoxLines(allocator *ma, GeoLines lines);
 
 /* Converts the a GEOSGeom Line into GeoPolygon (with exterior ring and zero-to-multiple interior rings)
    Argument must be a Polygon geometry. */
 static GeoPolygon
-geoPolygonFromGeom(GEOSGeom geom)
+geoPolygonFromGeom(allocator *ma, GEOSGeom geom)
 {
 	GeoPolygon geo;
 	//Get exterior ring GeoLines
-	geo.exteriorRing = geoLinesFromGeom((GEOSGeom)GEOSGetExteriorRing_r(geoshandle, geom));
+	geo.exteriorRing = geoLinesFromGeom(ma, (GEOSGeom)GEOSGetExteriorRing_r(geoshandle, geom));
 	geo.interiorRingsCount = GEOSGetNumInteriorRings_r(geoshandle, geom);
 	//If there are interior rings, allocate space to their GeoLines representation
 	if (geo.interiorRingsCount > 0)
 		//TODO Malloc fail exception?
-		geo.interiorRings = GDKmalloc(sizeof(GeoLines) * geo.interiorRingsCount);
+		geo.interiorRings = ma_alloc(ma, sizeof(GeoLines) * geo.interiorRingsCount);
 	else
 		geo.interiorRings = NULL;
 	//Get interior rings GeoLines
 	for (int i = 0; i < geo.interiorRingsCount; i++)
-		geo.interiorRings[i] = geoLinesFromGeom((GEOSGeom)GEOSGetInteriorRingN_r(geoshandle, geom, i));
+		geo.interiorRings[i] = geoLinesFromGeom(ma, (GEOSGeom)GEOSGetInteriorRingN_r(geoshandle, geom, i));
 	// If the geometry doesn't have BoundingBoxe, calculate it
-	geo.bbox = boundingBoxLines(geo.exteriorRing);
+	geo.bbox = boundingBoxLines(ma, geo.exteriorRing);
 	return geo;
 }
 
@@ -218,28 +216,6 @@ geoPointFromLatLon(double lon, double lat)
 	geo.lon = lon;
 	geo.lat = lat;
 	return geo;
-}
-
-static str
-freeGeoLines(GeoLines lines) {
-	str msg = MAL_SUCCEED;
-	GDKfree(lines.points);
-	if (lines.bbox)
-		GDKfree(lines.bbox);
-	return msg;
-}
-
-static str
-freeGeoPolygon(GeoPolygon polygon) {
-	str msg = MAL_SUCCEED;
-	msg = freeGeoLines(polygon.exteriorRing);
-	if (polygon.bbox)
-		GDKfree(polygon.bbox);
-	for (int i = 0; i < polygon.interiorRingsCount; i++)
-		msg = freeGeoLines(polygon.interiorRings[i]);
-	if (polygon.interiorRings)
-		GDKfree(polygon.interiorRings);
-	return msg;
 }
 
 static CartPoint3D
@@ -346,7 +322,7 @@ boundingBoxAddPoint(BoundingBox *bb, CartPoint3D p)
 
 /* Builds the BoundingBox for a GeoLines geometry */
 static BoundingBox *
-boundingBoxLines(GeoLines lines)
+boundingBoxLines(allocator *ma, GeoLines lines)
 {
 	CartPoint3D c;
 	BoundingBox *bb;
@@ -355,7 +331,7 @@ boundingBoxLines(GeoLines lines)
 	if (lines.pointCount == 0)
 		return NULL;
 
-	bb = GDKmalloc(sizeof(BoundingBox));
+	bb = ma_alloc(ma, sizeof(BoundingBox));
 	if (bb == NULL)
 		return NULL;
 
@@ -684,6 +660,8 @@ geoDistanceSingle(GEOSGeom aGeom, GEOSGeom bGeom, double distance_min_limit)
 	double distance = INT_MAX;
 	dimA = GEOSGeom_getDimensions_r(geoshandle, aGeom);
 	dimB = GEOSGeom_getDimensions_r(geoshandle, bGeom);
+	allocator *ta = MT_thread_getallocator();
+	allocator_state ta_state = ma_open(ta);
 	if (dimA == 0 && dimB == 0) {
 		/* Point and Point */
 		GeoPoint a = geoPointFromGeom(aGeom);
@@ -692,56 +670,45 @@ geoDistanceSingle(GEOSGeom aGeom, GEOSGeom bGeom, double distance_min_limit)
 	} else if (dimA == 0 && dimB == 1) {
 		/* Point and Line/LinearRing */
 		GeoPoint a = geoPointFromGeom(aGeom);
-		GeoLines b = geoLinesFromGeom(bGeom);
+		GeoLines b = geoLinesFromGeom(ta, bGeom);
 		distance = geoDistancePointLine(a, b, distance_min_limit);
-		freeGeoLines(b);
 	} else if (dimA == 1 && dimB == 0) {
 		/* Line/LinearRing and Point */
-		GeoLines a = geoLinesFromGeom(aGeom);
+		GeoLines a = geoLinesFromGeom(ta, aGeom);
 		GeoPoint b = geoPointFromGeom(bGeom);
 		distance = geoDistancePointLine(b, a, distance_min_limit);
-		freeGeoLines(a);
 	} else if (dimA == 1 && dimB == 1) {
 		/* Line/LinearRing and Line/LinearRing */
-		GeoLines a = geoLinesFromGeom(aGeom);
-		GeoLines b = geoLinesFromGeom(bGeom);
+		GeoLines a = geoLinesFromGeom(ta, aGeom);
+		GeoLines b = geoLinesFromGeom(ta, bGeom);
 		distance = geoDistanceLineLine(a, b, distance_min_limit);
-		freeGeoLines(a);
-		freeGeoLines(b);
 	} else if (dimA == 0 && dimB == 2) {
 		/* Point and Polygon */
 		GeoPoint a = geoPointFromGeom(aGeom);
-		GeoPolygon b = geoPolygonFromGeom(bGeom);
+		GeoPolygon b = geoPolygonFromGeom(ta, bGeom);
 		distance = geoDistancePointPolygon(a, b, distance_min_limit);
-		freeGeoPolygon(b);
 	} else if (dimA == 2 && dimB == 0) {
 		/* Polygon and Point */
-		GeoPolygon a = geoPolygonFromGeom(aGeom);
+		GeoPolygon a = geoPolygonFromGeom(ta, aGeom);
 		GeoPoint b = geoPointFromGeom(bGeom);
 		distance = geoDistancePointPolygon(b, a, distance_min_limit);
-		freeGeoPolygon(a);
 	} else if (dimA == 1 && dimB == 2) {
 		/* Line/LinearRing and Polygon */
-		GeoLines a = geoLinesFromGeom(aGeom);
-		GeoPolygon b = geoPolygonFromGeom(bGeom);
+		GeoLines a = geoLinesFromGeom(ta, aGeom);
+		GeoPolygon b = geoPolygonFromGeom(ta, bGeom);
 		distance = geoDistanceLinePolygon(a, b, distance_min_limit);
-		freeGeoLines(a);
-		freeGeoPolygon(b);
 	} else if (dimA == 2 && dimB == 1) {
 		/* Polygon and Line/LinearRing */
-		GeoPolygon a = geoPolygonFromGeom(aGeom);
-		GeoLines b = geoLinesFromGeom(bGeom);
+		GeoPolygon a = geoPolygonFromGeom(ta, aGeom);
+		GeoLines b = geoLinesFromGeom(ta, bGeom);
 		distance = geoDistanceLinePolygon(b, a, distance_min_limit);
-		freeGeoPolygon(a);
-		freeGeoLines(b);
 	} else if (dimA == 2 && dimB == 2) {
 		/* Polygon and Polygon */
-		GeoPolygon a = geoPolygonFromGeom(aGeom);
-		GeoPolygon b = geoPolygonFromGeom(bGeom);
+		GeoPolygon a = geoPolygonFromGeom(ta, aGeom);
+		GeoPolygon b = geoPolygonFromGeom(ta, bGeom);
 		distance = geoDistancePolygonPolygon(a, b, distance_min_limit);
-		freeGeoPolygon(a);
-		freeGeoPolygon(b);
 	}
+	ma_close(&ta_state);
 	return distance;
 }
 
@@ -775,8 +742,9 @@ geoDistanceInternal(GEOSGeom a, GEOSGeom b, double distance_min_limit)
 **/
 /* Calculates the distance, in meters, between two geographic geometries with latitude/longitude coordinates */
 str
-wkbDistanceGeographic(dbl *out, wkb * const *a, wkb * const *b)
+wkbDistanceGeographic(Client ctx, dbl *out, wkb * const *a, wkb * const *b)
 {
+	(void) ctx;
 	str err = MAL_SUCCEED;
 	GEOSGeom ga, gb;
 	err = wkbGetCompatibleGeometries(a, b, &ga, &gb);
@@ -794,8 +762,9 @@ wkbDistanceGeographic(dbl *out, wkb * const *a, wkb * const *b)
 **/
 /* Checks if two geographic geometries are within d meters of one another */
 str
-wkbDWithinGeographic(bit *out, wkb * const *a, wkb * const *b, const dbl *d)
+wkbDWithinGeographic(Client ctx, bit *out, wkb * const *a, wkb * const *b, const dbl *d)
 {
+	(void) ctx;
 	str err = MAL_SUCCEED;
 	GEOSGeom ga, gb;
 	double distance;
@@ -815,8 +784,9 @@ wkbDWithinGeographic(bit *out, wkb * const *a, wkb * const *b, const dbl *d)
 **/
 /* Checks if two geographic geometries intersect at any point */
 str
-wkbIntersectsGeographic(bit *out, wkb * const *a, wkb * const *b)
+wkbIntersectsGeographic(Client ctx, bit *out, wkb * const *a, wkb * const *b)
 {
+	(void) ctx;
 	str err = MAL_SUCCEED;
 	GEOSGeom ga, gb;
 	double distance;
@@ -864,7 +834,7 @@ geoCoversSingle(GEOSGeom a, GEOSGeom b)
 		return geoPointEquals(pointA, pointB);
 	} else if (dimA == 1) {
 		//A is Line
-		//GeoLines lineA = geoLinesFromGeom(a);
+		//GeoLines lineA = geoLinesFromGeom(ma, a);
 		if (dimB == 0) {
 			//B is Point
 			//GeoPoint pointB = geoPointFromGeom(b);
@@ -872,27 +842,32 @@ geoCoversSingle(GEOSGeom a, GEOSGeom b)
 			return false;
 		} else {
 			//B is Line
-			//GeoLines lineB = geoLinesFromGeom(b);
+			//GeoLines lineB = geoLinesFromGeom(ma, b);
 			//return geoLineCoversLine(lineA, lineB);
 			return false;
 		}
 	} else if (dimA == 2) {
+		allocator *ta = MT_thread_getallocator();
+		allocator_state ta_state = ma_open(ta);
+		bool res;
 		//A is Polygon
-		GeoPolygon polygonA = geoPolygonFromGeom(a);
+		GeoPolygon polygonA = geoPolygonFromGeom(ta, a);
 		if (dimB == 0){
 			//B is Point
 			GeoPoint pointB = geoPointFromGeom(b);
-			return pointWithinPolygon(polygonA, pointB);
+			res = pointWithinPolygon(polygonA, pointB);
 		} else if (dimB == 1) {
 			//B is Line
-			GeoLines lineB = geoLinesFromGeom(b);
-			return geoPolygonCoversLine(polygonA, lineB);
+			GeoLines lineB = geoLinesFromGeom(ta, b);
+			res = geoPolygonCoversLine(polygonA, lineB);
 		} else {
 			//B is Polygon
-			GeoPolygon polygonB = geoPolygonFromGeom(b);
+			GeoPolygon polygonB = geoPolygonFromGeom(ta, b);
 			//If every point in the exterior ring of B is covered, polygon B is covered by polygon A
-			return geoPolygonCoversLine(polygonA, polygonB.exteriorRing);
+			res = geoPolygonCoversLine(polygonA, polygonB.exteriorRing);
 		}
+		ma_close(&ta_state);
+		return res;
 	} else
 		return false;
 }
@@ -919,8 +894,9 @@ geoCoversInternal(GEOSGeom a, GEOSGeom b)
 **/
 /* Checks if no point of Geometry B is outside Geometry A */
 str
-wkbCoversGeographic(bit *out, wkb * const *a, wkb * const *b)
+wkbCoversGeographic(Client ctx, bit *out, wkb * const *a, wkb * const *b)
 {
+	(void) ctx;
 	str err = MAL_SUCCEED;
 	GEOSGeom ga, gb;
 	err = wkbGetCompatibleGeometries(a, b, &ga, &gb);
@@ -980,7 +956,7 @@ filterSelectGeomGeomDoubleToBit(bat* outid, const bat *bid , const bat *sid, con
 	//Loop through column and compare with constant
 	for (BUN i = 0; i < ci.ncand; i++) {
 		oid c_oid = canditer_next(&ci);
-		const wkb *col_wkb = BUNtvar(b_iter, c_oid - b->hseqbase);
+		const wkb *col_wkb = BUNtvar(&b_iter, c_oid - b->hseqbase);
 		if ((col_geom = wkb2geos(col_wkb)) == NULL)
 			continue;
 		if (GEOSGetSRID_r(geoshandle, col_geom) != GEOSGetSRID_r(geoshandle, const_geom)) {
@@ -1042,6 +1018,8 @@ filterJoinGeomGeomDoubleToBit(bat *lres_id, bat *rres_id, const bat *l_id, const
 			BBPunfix(r->batCacheid);
 		throw(MAL, name, SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	}
+	allocator *ta = MT_thread_getallocator();
+	allocator_state ta_state = ma_open(ta);
 	//get the candidate lists
 	if (ls_id && !is_bat_nil(*ls_id) && !(ls = BATdescriptor(*ls_id)) && rs_id && !is_bat_nil(*rs_id) && !(rs = BATdescriptor(*rs_id))) {
 		msg = createException(MAL, name, SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
@@ -1061,7 +1039,8 @@ filterJoinGeomGeomDoubleToBit(bat *lres_id, bat *rres_id, const bat *l_id, const
 	}
 
 	//Allocate arrays for reutilizing GEOS type conversion
-	if ((l_geoms = GDKmalloc(l_ci.ncand * sizeof(GEOSGeometry *))) == NULL || (r_geoms = GDKmalloc(r_ci.ncand * sizeof(GEOSGeometry *))) == NULL) {
+	if ((l_geoms = ma_alloc(ta, l_ci.ncand * sizeof(GEOSGeometry *))) == NULL ||
+		(r_geoms = ma_alloc(ta, r_ci.ncand * sizeof(GEOSGeometry *))) == NULL) {
 		msg = createException(MAL, name, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto free;
 	}
@@ -1072,11 +1051,11 @@ filterJoinGeomGeomDoubleToBit(bat *lres_id, bat *rres_id, const bat *l_id, const
 	//Convert wkb to GEOS only once
 	for (BUN i = 0; i < l_ci.ncand; i++) {
 		oid l_oid = canditer_next(&l_ci);
-		l_geoms[i] = wkb2geos((const wkb*) BUNtvar(l_iter, l_oid - l->hseqbase));
+		l_geoms[i] = wkb2geos((const wkb*) BUNtvar(&l_iter, l_oid - l->hseqbase));
 	}
 	for (BUN j = 0; j < r_ci.ncand; j++) {
 		oid r_oid = canditer_next(&r_ci);
-		r_geoms[j] = wkb2geos((const wkb*)BUNtvar(r_iter, r_oid - r->hseqbase));
+		r_geoms[j] = wkb2geos((const wkb*)BUNtvar(&r_iter, r_oid - r->hseqbase));
 	}
 
 	canditer_reset(&l_ci);
@@ -1125,14 +1104,13 @@ filterJoinGeomGeomDoubleToBit(bat *lres_id, bat *rres_id, const bat *l_id, const
 		for (BUN i = 0; i < l_ci.ncand; i++) {
 			GEOSGeom_destroy_r(geoshandle, l_geoms[i]);
 		}
-		GDKfree(l_geoms);
 	}
 	if (r_geoms) {
 		for (BUN i = 0; i < r_ci.ncand; i++) {
 			GEOSGeom_destroy_r(geoshandle, r_geoms[i]);
 		}
-		GDKfree(r_geoms);
 	}
+	ma_close(&ta_state);
 	bat_iterator_end(&l_iter);
 	bat_iterator_end(&r_iter);
 	BBPunfix(l->batCacheid);
@@ -1151,14 +1129,13 @@ free:
 		for (BUN i = 0; i < l_ci.ncand; i++) {
 			GEOSGeom_destroy_r(geoshandle, l_geoms[i]);
 		}
-		GDKfree(l_geoms);
 	}
 	if (r_geoms) {
 		for (BUN i = 0; i < r_ci.ncand; i++) {
 			GEOSGeom_destroy_r(geoshandle, r_geoms[i]);
 		}
-		GDKfree(r_geoms);
 	}
+	ma_close(&ta_state);
 	BBPunfix(l->batCacheid);
 	BBPunfix(r->batCacheid);
 	if (ls)
@@ -1173,7 +1150,8 @@ free:
 }
 
 str
-wkbDWithinGeographicJoin(bat *lres_id, bat *rres_id, const bat *l_id, const bat *r_id, const bat *d_id, const bat *ls_id, const bat *rs_id, const bit *nil_matches, const lng *estimate, const bit *anti) {
+wkbDWithinGeographicJoin(Client ctx, bat *lres_id, bat *rres_id, const bat *l_id, const bat *r_id, const bat *d_id, const bat *ls_id, const bat *rs_id, const bit *nil_matches, const lng *estimate, const bit *anti) {
+	(void) ctx;
 	double distance_within = 0;
 	BAT *d = NULL;
 	//Get the distance BAT and get the double value
@@ -1188,17 +1166,20 @@ wkbDWithinGeographicJoin(bat *lres_id, bat *rres_id, const bat *l_id, const bat 
 }
 
 str
-wkbDWithinGeographicSelect(bat* outid, const bat *bid , const bat *sid, wkb * const *wkb_const, const dbl *distance_within, const bit *anti) {
+wkbDWithinGeographicSelect(Client ctx, bat* outid, const bat *bid , const bat *sid, wkb * const *wkb_const, const dbl *distance_within, const bit *anti) {
+	(void) ctx;
 	return filterSelectGeomGeomDoubleToBit(outid,bid,sid,*wkb_const,*distance_within,*anti,geosDistanceWithin,"geom.wkbDWithinGeographicSelect");
 }
 
 str
-wkbIntersectsGeographicJoin(bat *lres_id, bat *rres_id, const bat *l_id, const bat *r_id, const bat *ls_id, const bat *rs_id, const bit *nil_matches, const lng *estimate, const bit *anti) {
+wkbIntersectsGeographicJoin(Client ctx, bat *lres_id, bat *rres_id, const bat *l_id, const bat *r_id, const bat *ls_id, const bat *rs_id, const bit *nil_matches, const lng *estimate, const bit *anti) {
+	(void) ctx;
 	return filterJoinGeomGeomDoubleToBit(lres_id,rres_id,l_id,r_id,0,ls_id,rs_id,*nil_matches,estimate,*anti,geosDistanceWithin,"geom.wkbIntersectsGeographicJoin");
 }
 
 str
-wkbIntersectsGeographicSelect(bat* outid, const bat *bid , const bat *sid, wkb * const *wkb_const, const bit *anti) {
+wkbIntersectsGeographicSelect(Client ctx, bat* outid, const bat *bid , const bat *sid, wkb * const *wkb_const, const bit *anti) {
+	(void) ctx;
 	return filterSelectGeomGeomDoubleToBit(outid,bid,sid,*wkb_const,0,*anti,geosDistanceWithin,"geom.wkbIntersectsGeographicSelect");
 }
 

@@ -11,6 +11,8 @@ user = 'monetdb'
 passwd = 'monetdb'
 approve = None
 check = None
+stableout = 'check.stable.out.32bit' if os.getenv('TST_BITS', '') == '32bit' else 'check.stable.out.int128' if os.getenv('HAVE_HGE') else 'check.stable.out'
+
 if __name__ == '__main__':
     import argparse
     parser = argparse.ArgumentParser(description='Run check queries on a database')
@@ -24,11 +26,17 @@ if __name__ == '__main__':
                         help='user name to login to the database with')
     parser.add_argument('--password', action='store', default=passwd,
                         help='password to use to login to the database with')
-    parser.add_argument('--approve', action='store', default=approve,
+    xgroup = parser.add_argument_group(title='at most one of these')
+    rgroup = xgroup.add_mutually_exclusive_group()
+    rgroup.add_argument('--approve', action='store', default=approve,
                         type=argparse.FileType('w'),
                         help='file in which to produce a new .test file '
                         'with updated results')
-    parser.add_argument('check', nargs='*', help='name of test')
+    rgroup.add_argument('--stableout', action='store', default=None,
+                        help='stable output to compare against '
+                        '(implies check mode)')
+    parser.add_argument('check', nargs='*', help='name of test '
+                        '(implies check mode, ignored if --approve)')
     opts = parser.parse_args()
     port = opts.port
     dbname = opts.database
@@ -37,6 +45,18 @@ if __name__ == '__main__':
     passwd = opts.password
     approve = opts.approve
     check = opts.check
+    if opts.stableout is not None:
+        stableout = opts.stableout
+        check = True
+    if not approve and \
+       os.getenv('MTEST_APPROVE') and \
+       not os.path.exists(os.path.join(os.getenv('TSTSRCDIR'),
+                                       f'{stableout}.src')):
+        if os.getenv('MTEST_APPROVE') == 'REPLACE':
+            approve = os.path.join(os.getenv('TSTSRCDIR'), stableout)
+        else:
+            approve = os.path.join(os.getenv('TSTTRGDIR'),
+                                   'check.stable.out.new')
 
 xit = 0
 output = []
@@ -87,7 +107,7 @@ sys_pkeys = [
     ('var_values', 'var_name'),
 
     ('table_partitions', 'id'),
-    ('range_partitions', 'table_id, partition_id, minimum'),
+    ('range_partitions', 'table_id'),
     ('value_partitions', 'table_id, partition_id, "value"'),
 
     ('queue', 'tag'),
@@ -131,7 +151,6 @@ sys_akeys = [
 
     ('table_partitions WHERE column_id IS NOT NULL', 'table_id, column_id'),
     ('table_partitions WHERE "expression" IS NOT NULL', 'table_id, "expression"'),
-    ('range_partitions', 'table_id, partition_id, "maximum"'),
 
     ('fkey_actions', 'action_name'),
     ('fkeys', 'table_id, name'),
@@ -436,12 +455,10 @@ sys_notnull = [
 # they are too volatile, and if it makes sense, dump an identifier
 # from a referenced table
 out = r'''
--- helper function
-create function pcre_replace(origin string, pat string, repl string, flags string) returns string external name pcre.replace;
 -- schemas
 select 'sys.schemas', s.name, a1.name as authorization, a2.name as owner, system, c.remark as comment from sys.schemas s left outer join sys.auths a1 on s.authorization = a1.id left outer join sys.auths a2 on s.owner = a2.id left outer join sys.comments c on c.id = s.id order by s.name;
 -- _tables
-select 'sys._tables', s.name, t.name, replace(replace(pcre_replace(pcre_replace(t.query, E'--.*\n*', '', ''), E'[ \t\n]+', ' ', ''), '( ', '('), ' )', ')') as query, tt.table_type_name as type, t.system, ca.action_name as commit_action, at.value as access, c.remark as comment from sys._tables t left outer join sys.schemas s on t.schema_id = s.id left outer join sys.table_types tt on t.type = tt.table_type_id left outer join (values (0, 'COMMIT'), (1, 'DELETE'), (2, 'PRESERVE'), (3, 'DROP'), (4, 'ABORT')) as ca (action_id, action_name) on t.commit_action = ca.action_id left outer join (values (0, 'WRITABLE'), (1, 'READONLY'), (2, 'APPENDONLY')) as at (id, value) on t.access = at.id left outer join sys.comments c on c.id = t.id order by s.name, t.name;
+select 'sys._tables', s.name, t.name, replace(replace(sys.regexp_replace(sys.regexp_replace(t.query, E'--.*\n*', '', ''), E'[ \t\n]+', ' ', ''), '( ', '('), ' )', ')') as query, tt.table_type_name as type, t.system, ca.action_name as commit_action, at.value as access, c.remark as comment from sys._tables t left outer join sys.schemas s on t.schema_id = s.id left outer join sys.table_types tt on t.type = tt.table_type_id left outer join (values (0, 'COMMIT'), (1, 'DELETE'), (2, 'PRESERVE'), (3, 'DROP'), (4, 'ABORT')) as ca (action_id, action_name) on t.commit_action = ca.action_id left outer join (values (0, 'WRITABLE'), (1, 'READONLY'), (2, 'APPENDONLY')) as at (id, value) on t.access = at.id left outer join sys.comments c on c.id = t.id order by s.name, t.name;
 -- _columns
 select 'sys._columns', s.name, t.name, c.name, c.type, c.type_digits, c.type_scale, c."default", c."null", c.number, c.storage, r.remark as comment from sys.schemas s, sys._tables t, sys._columns c left outer join sys.comments r on r.id = c.id where s.id = t.schema_id and t.id = c.table_id order by s.name, t.name, c.number;
 -- partitioned tables (these three should be empty)
@@ -449,7 +466,7 @@ select 'sys.table_partitions', t.name, c.name, p.expression from sys.table_parti
 select 'sys.range_partitions', t.name, p.expression, r.minimum, r.maximum, r.with_nulls from sys.range_partitions r left outer join sys._tables t on t.id = r.table_id left outer join sys.table_partitions p on r.partition_id = p.id;
 select 'sys.value_partitions', t.name, p.expression, v.value from sys.value_partitions v left outer join sys._tables t on t.id = v.table_id left outer join sys.table_partitions p on v.partition_id = p.id;
 -- external functions that don't reference existing MAL function (should be empty)
-with funcs as (select name, pcre_replace(func, E'--.*\n*', '', '') as func, schema_id from sys.functions), x (sname, name, modfunc) as (select s.name, f.name, replace(pcre_replace(f.func, '.*external name (.*);.*', '$1', 'ims'), '"', '') from funcs f left outer join sys.schemas s on f.schema_id = s.id where f.func ilike '% external name %') select 'dangling external functions', * from x where x.modfunc not in (select m.module || '.' || m."function" from sys.malfunctions() m);
+with funcs as (select name, sys.regexp_replace(func, E'--.*\n*', '', '') as func, schema_id from sys.functions), x (sname, name, modfunc) as (select s.name, f.name, replace(sys.regexp_replace(f.func, '.*external name (.*);.*', '$1', 'ims'), '"', '') from funcs f left outer join sys.schemas s on f.schema_id = s.id where f.func ilike '% external name %') select 'dangling external functions', * from x where x.modfunc not in (select m.module || '.' || m."function" from sys.malfunctions() m);
 -- args
 '''
 # generate a monster query to get all functions with all their
@@ -462,7 +479,7 @@ MAXARGS = 16
 # columns of the args table we're interested in
 args = ['name', 'type', 'type_digits', 'type_scale', 'inout']
 
-out += r"select 'sys.functions', s.name, f.name, case f.system when true then 'SYSTEM' else '' end as system, replace(replace(replace(pcre_replace(pcre_replace(pcre_replace(f.func, E'--.*\n', '', ''), E'[ \t\n]+', ' ', 'm'), '^ ', '', ''), '( ', '('), ' )', ')'), 'create system ', 'create ') as query, f.mod, fl.language_name, ft.function_type_name as func_type, f.side_effect, f.varres, f.vararg, f.semantics, c.remark as comment"
+out += r"select 'sys.functions', s.name, f.name, case f.system when true then 'SYSTEM' else '' end as system, replace(replace(replace(sys.regexp_replace(sys.regexp_replace(sys.regexp_replace(f.func, E'--.*\n', '', ''), E'[ \t\n]+', ' ', 'm'), '^ ', '', ''), '( ', '('), ' )', ')'), 'create system ', 'create ') as query, f.mod, fl.language_name, ft.function_type_name as func_type, f.side_effect, f.varres, f.vararg, f.semantics, c.remark as comment"
 for i in range(0, MAXARGS):
     for a in args[:-1]:
         out += ", a%d.%s as %s%d" % (i, a, a, i)
@@ -538,8 +555,6 @@ select 'sys.index_types', index_type_name from sys.index_types order by index_ty
 select 'sys.privilege_codes', privilege_code_name from sys.privilege_codes order by privilege_code_name;
 -- dependency_types
 select 'sys.dependency_types', dependency_type_id, dependency_type_name from sys.dependency_types order by dependency_type_id, dependency_type_name;
--- drop helper function
-drop function pcre_replace(string, string, string, string);
 '''
 
 for table, columns in sys_pkeys:
@@ -587,12 +602,18 @@ with process.client('sql', interactive=True, echo=False, format='test',
 
 if check:
     output = ''.join(output).splitlines(keepends=True)
-    stableout = 'check.stable.out.32bit' if os.getenv('TST_BITS', '') == '32bit' else 'check.stable.out.int128' if os.getenv('HAVE_HGE') else 'check.stable.out'
-    stable = open(stableout).readlines()
+    with open(stableout) as fil:
+        stable = fil.readlines()
     import difflib
-    for line in difflib.unified_diff([x for x in stable if not x.startswith('%')], [x for x in output if not x.startswith('%')], fromfile='test', tofile=stableout):
+    for line in difflib.unified_diff(
+            [x for x in stable if not x.startswith('%')],
+            [x for x in output if not x.startswith('%')],
+            fromfile='expected', tofile='received'):
         sys.stderr.write(line)
         xit = 1
+    if type(approve) == str:
+        with open(approve, 'w') as f:
+            f.writelines(output)
 elif approve:
     approve.writelines(output)
 else:

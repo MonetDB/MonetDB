@@ -3,11 +3,9 @@
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024, 2025 MonetDB Foundation;
- * Copyright August 2008 - 2023 MonetDB B.V.;
- * Copyright 1997 - July 2008 CWI.
+ * For copyright information, see the file debian/copyright.
  */
 
 #include "monetdb_config.h"
@@ -27,13 +25,6 @@
 */
 
 __attribute__((__pure__))
-static inline bool
-isProjectConst(const InstrRecord *p)
-{
-	return (getModuleId(p) == algebraRef && getFunctionId(p) == projectRef);
-}
-
-__attribute__((__pure__))
 static int
 hashInstruction(const MalBlkRecord *mb, const InstrRecord *p)
 {
@@ -47,7 +38,7 @@ hashInstruction(const MalBlkRecord *mb, const InstrRecord *p)
 }
 
 str
-OPTcommonTermsImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
+OPTcommonTermsImplementation(Client ctx, MalBlkPtr mb, MalStkPtr stk,
 							 InstrPtr pci)
 {
 	int i, j, k, barrier = 0, bailout = 0;
@@ -61,26 +52,41 @@ OPTcommonTermsImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 	str msg = MAL_SUCCEED;
 
 	InstrPtr *old = NULL;
+	allocator *ta = MT_thread_getallocator();
 
-	/* catch simple insert operations */
-	if (isSimpleSQL(mb)) {
-		goto wrapup;
+	old = mb->stmt;
+	limit = mb->stop;
+	slimit = mb->ssize;
+	for (i = 0; i < limit; i++) {
+		p = old[i];
+		if (isUpdateInstruction(p)) {
+			old = NULL;
+			goto wrapup1;
+		}
 	}
 
-	(void) cntxt;
+	/* catch simple insert operations */
+	if (isSimpleSQL(mb) || MB_LARGE(mb)) {
+		old = NULL;
+		goto wrapup1;
+	}
+	for (i = 0; i < mb->stop; i++) {
+		p = mb->stmt[i];
+		if (getFunctionId(p) == replaceRef)
+			goto wrapup1;
+	}
+
 	(void) stk;
-	alias = (int *) GDKzalloc(sizeof(int) * mb->vtop);
-	list = (int *) GDKzalloc(sizeof(int) * mb->stop);
-	hash = (int *) GDKzalloc(sizeof(int) * mb->vtop);
+	allocator_state ta_state = ma_open(ta);
+	alias = (int *) ma_zalloc(ta, sizeof(int) * mb->vtop);
+	list = (int *) ma_zalloc(ta, sizeof(int) * mb->stop);
+	hash = (int *) ma_zalloc(ta, sizeof(int) * mb->vtop);
 	if (alias == NULL || list == NULL || hash == NULL) {
 		msg = createException(MAL, "optimizer.commonTerms",
 							  SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto wrapup;
 	}
 
-	old = mb->stmt;
-	limit = mb->stop;
-	slimit = mb->ssize;
 	if (newMalBlkStmt(mb, mb->ssize) < 0) {
 		msg = createException(MAL, "optimizer.commonTerms",
 							  SQLSTATE(HY013) MAL_MALLOC_FAIL);
@@ -132,7 +138,7 @@ OPTcommonTermsImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 		/* side-effect producing operators can never be replaced */
 		/* the same holds for function calls without an argument, it is
 		 * unclear where the results comes from (e.g. clock()) */
-		if (mayhaveSideEffects(cntxt, mb, p, TRUE) || p->argc == p->retc) {
+		if (mayhaveSideEffects(ctx, mb, p, TRUE) || p->argc == p->retc) {
 			TRC_DEBUG(MAL_OPTIMIZER, "Skipped[%d] side-effect: %d\n", i,
 					  p->retc == p->argc);
 			pushInstruction(mb, p);
@@ -158,7 +164,7 @@ OPTcommonTermsImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 
 		TRC_DEBUG(MAL_OPTIMIZER, "Candidate[%d] look at list[%d] => %d\n", i, h,
 				  hash[h]);
-		traceInstruction(MAL_OPTIMIZER, mb, 0, p, LIST_MAL_ALL);
+		traceInstruction(mb, 0, p, LIST_MAL_ALL);
 
 		if (h < 0) {
 			pushInstruction(mb, p);
@@ -180,7 +186,7 @@ OPTcommonTermsImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 																			 q),
 						  !isUnsafeFunction(q), !isUpdateInstruction(q),
 						  isLinearFlow(q));
-				traceInstruction(MAL_OPTIMIZER, mb, 0, q, LIST_MAL_ALL);
+				traceInstruction(mb, 0, q, LIST_MAL_ALL);
 
 				/*
 				 * Simple assignments are not replaced either. They should be
@@ -192,8 +198,7 @@ OPTcommonTermsImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 					&& !hasCommonResults(p, q)
 					&& !isUnsafeFunction(q)
 					&& !isUpdateInstruction(q)
-					&& !isProjectConst(q) &&	/* disable project(x,val), as its used for the result of case statements */
-					isLinearFlow(q)) {
+					&& isLinearFlow(q)) {
 					if (safetyBarrier(p, q)) {
 						TRC_DEBUG(MAL_OPTIMIZER, "Safety barrier reached\n");
 						break;
@@ -209,16 +214,16 @@ OPTcommonTermsImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 
 					TRC_DEBUG(MAL_OPTIMIZER, "Modified expression %d -> %d ",
 							  getArg(p, 0), getArg(p, 1));
-					traceInstruction(MAL_OPTIMIZER, mb, 0, p, LIST_MAL_ALL);
+					traceInstruction(mb, 0, p, LIST_MAL_ALL);
 
 					actions++;
 					break;		/* end of search */
 				}
 			} else if (isUpdateInstruction(p)) {
 				TRC_DEBUG(MAL_OPTIMIZER, "Skipped: %d %d\n",
-						  mayhaveSideEffects(cntxt, mb, q, TRUE),
+						  mayhaveSideEffects(ctx, mb, q, TRUE),
 						  isUpdateInstruction(p));
-				traceInstruction(MAL_OPTIMIZER, mb, 0, q, LIST_MAL_ALL);
+				traceInstruction(mb, 0, q, LIST_MAL_ALL);
 			}
 		}
 
@@ -231,9 +236,9 @@ OPTcommonTermsImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 		TRC_DEBUG(MAL_OPTIMIZER,
 				  "Update hash[%d] - look at arg '%d' hash '%d' list '%d'\n", i,
 				  getArg(p, p->argc - 1), h, hash[h]);
-		traceInstruction(MAL_OPTIMIZER, mb, 0, p, LIST_MAL_ALL);
+		traceInstruction(mb, 0, p, LIST_MAL_ALL);
 
-		if (!mayhaveSideEffects(cntxt, mb, p, TRUE) && p->argc != p->retc
+		if (!mayhaveSideEffects(ctx, mb, p, TRUE) && p->argc != p->retc
 			&& isLinearFlow(p) && !isUnsafeFunction(p)
 			&& !isUpdateInstruction(p)) {
 			list[i] = hash[h];
@@ -247,23 +252,17 @@ OPTcommonTermsImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 			pushInstruction(mb, old[i]);
 	/* Defense line against incorrect plans */
 	if (actions > 0) {
-		msg = chkTypes(cntxt->usermodule, mb, FALSE);
+		msg = chkTypes(ctx->usermodule, mb, FALSE);
 		if (!msg)
 			msg = chkFlow(mb);
 		if (!msg)
 			msg = chkDeclarations(mb);
 	}
   wrapup:
+	ma_close(&ta_state);
+  wrapup1:
 	/* keep actions taken as a fake argument */
 	(void) pushInt(mb, pci, actions);
 
-	if (alias)
-		GDKfree(alias);
-	if (list)
-		GDKfree(list);
-	if (hash)
-		GDKfree(hash);
-	if (old)
-		GDKfree(old);
 	return msg;
 }

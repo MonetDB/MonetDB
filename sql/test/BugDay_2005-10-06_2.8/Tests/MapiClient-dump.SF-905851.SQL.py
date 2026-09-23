@@ -26,8 +26,20 @@ def main():
                         'JdbcClient_inserts_selects.sql'))
     out = client('sqldump')
     output = out.splitlines(keepends=True)
-    stable = open('MapiClient-dump.SF-905851.stable.out').readlines()
-    for line in difflib.unified_diff(stable, output):
+    with open('MapiClient-dump.SF-905851.stable.out') as fil:
+        stable = fil.readlines()
+    for line in difflib.unified_diff(stable, output,
+                                     fromfile='expected', tofile='received'):
         sys.stderr.write(line)
+    approve = os.getenv('MTEST_APPROVE')
+    if approve:
+        if approve == 'REPLACE':
+            fn = os.path.join(os.getenv('TSTSRCDIR'),
+                              'MapiClient-dump.SF-905851.stable.out')
+        else:
+            fn = os.path.join(os.getenv('TSTTRGDIR'),
+                              'MapiClient-dump.SF-905851.stable.out.new')
+        with open(fn, 'w') as f:
+            f.write(out)
 
 main()

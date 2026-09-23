@@ -3,11 +3,9 @@
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024, 2025 MonetDB Foundation;
- * Copyright August 2008 - 2023 MonetDB B.V.;
- * Copyright 1997 - July 2008 CWI.
+ * For copyright information, see the file debian/copyright.
  */
 
 /*
@@ -107,7 +105,6 @@ getAddress(const char *modname, const char *fcnname)
 	if (lastfile == 0) {
 		char *msg = loadLibrary("monetdb5", 1);
 		if (msg) {
-			freeException(msg);
 			return NULL;
 		}
 	}
@@ -185,11 +182,11 @@ loadLibrary(const char *filename, int flag)
 		int len;
 
 		if (is_mod && flag < 0)
-			len = snprintf(nme, FILENAME_MAX, ".%c%s_%s%s", DIR_SEP, SO_PREFIX, s, SO_EXT);
+			len = snprintf(nme, sizeof(nme), ".%c%s_%s%s", DIR_SEP, SO_PREFIX, s, SO_EXT);
 		else if (is_mod)
-			len = snprintf(nme, FILENAME_MAX, "%s_%s%s", SO_PREFIX, s, SO_EXT);
+			len = snprintf(nme, sizeof(nme), "%s_%s%s", SO_PREFIX, s, SO_EXT);
 		else
-			len = snprintf(nme, FILENAME_MAX, "%s%s%s", SO_PREFIX, s, SO_EXT);
+			len = snprintf(nme, sizeof(nme), "%s%s%s", SO_PREFIX, s, SO_EXT);
 		if (len == -1 || len >= FILENAME_MAX)
 			throw(LOADER, "loadLibrary",
 				  RUNTIME_LOAD_ERROR "Library filename path is too large");
@@ -202,7 +199,15 @@ loadLibrary(const char *filename, int flag)
 		if (!handle) {
 			if (flag>0)
 				throw(LOADER, "loadLibrary", RUNTIME_FILE_NOT_FOUND ":%s", s);
+			TRC_INFO(MAL_LOADER, "Module %s not loaded\n", filename);
 			return MAL_SUCCEED;
+		}
+		TRC_INFO_IF(MAL_LOADER) {
+			if (is_monetdb5)
+				TRC_INFO_ENDIF(MAL_LOADER, "Module %s loaded\n", filename);
+			else
+				TRC_INFO_ENDIF(MAL_LOADER, "Module %s loaded from %s\n",
+							   filename, nme);
 		}
 	}
 
@@ -214,11 +219,11 @@ loadLibrary(const char *filename, int flag)
 			;
 
 		if (is_mod)
-			len = snprintf(nme, FILENAME_MAX, "%.*s%c%s_%s%s",
+			len = snprintf(nme, sizeof(nme), "%.*s%c%s_%s%s",
 						   (int) (p - mod_path), mod_path, DIR_SEP, SO_PREFIX,
 						   s, SO_EXT);
 		else
-			len = snprintf(nme, FILENAME_MAX, "%.*s%c%s%s%s",
+			len = snprintf(nme, sizeof(nme), "%.*s%c%s%s%s",
 						   (int) (p - mod_path), mod_path, DIR_SEP, SO_PREFIX,
 						   s, SO_EXT);
 		if (len == -1 || len >= FILENAME_MAX)
@@ -233,11 +238,11 @@ loadLibrary(const char *filename, int flag)
 		if (handle == NULL && strcmp(SO_EXT, ".so") != /* DISABLES CODE */ (0)) {
 			/* try .so */
 			if (is_mod)
-				len = snprintf(nme, FILENAME_MAX, "%.*s%c%s_%s.so",
+				len = snprintf(nme, sizeof(nme), "%.*s%c%s_%s.so",
 							   (int) (p - mod_path), mod_path, DIR_SEP,
 							   SO_PREFIX, s);
 			else
-				len = snprintf(nme, FILENAME_MAX, "%.*s%c%s%s.so",
+				len = snprintf(nme, sizeof(nme), "%.*s%c%s%s.so",
 							   (int) (p - mod_path), mod_path, DIR_SEP,
 							   SO_PREFIX, s);
 			if (len == -1 || len >= FILENAME_MAX)
@@ -254,11 +259,11 @@ loadLibrary(const char *filename, int flag)
 		if (handle == NULL && strcmp(SO_EXT, ".bundle") != 0) {
 			/* try .bundle */
 			if (is_mod)
-				len = snprintf(nme, FILENAME_MAX, "%.*s%c%s_%s.bundle",
+				len = snprintf(nme, sizeof(nme), "%.*s%c%s_%s.bundle",
 							   (int) (p - mod_path), mod_path, DIR_SEP,
 							   SO_PREFIX, s);
 			else
-				len = snprintf(nme, FILENAME_MAX, "%.*s%c%s%s.bundle",
+				len = snprintf(nme, sizeof(nme), "%.*s%c%s%s.bundle",
 							   (int) (p - mod_path), mod_path, DIR_SEP,
 							   SO_PREFIX, s);
 			if (len == -1 || len >= FILENAME_MAX)
@@ -272,6 +277,8 @@ loadLibrary(const char *filename, int flag)
 					  s, nme, dlerror());
 		}
 #endif
+		if (handle)
+			TRC_INFO(MAL_LOADER, "Module %s loaded from %s\n", filename, nme);
 
 		if (*p == 0 || handle != NULL)
 			break;
@@ -279,31 +286,29 @@ loadLibrary(const char *filename, int flag)
 	}
 
 	if (handle == NULL) {
-		if (!is_monetdb5
-			&& strcmp(filename, "sql") != 0
-			&& strcmp(filename, "generator") != 0
-#ifdef HAVE_GEOM
-			&& strcmp(filename, "geom") != 0
-#endif
-#ifdef HAVE_LIBR
-			&& strcmp(filename, "rapi") != 0
-#endif
-#ifdef HAVE_LIBPY3
-			&& strcmp(filename, "pyapi3") != 0
-#endif
-#ifdef HAVE_CUDF
-			&& strcmp(filename, "capi") != 0
-#endif
+		static const char *const optional[] = {
 #ifdef HAVE_FITS
-			&& strcmp(filename, "fits") != 0
+			"fits",
+#endif
+#ifdef HAVE_GEOM
+			"geom",
 #endif
 #ifdef HAVE_NETCDF
-			&& strcmp(filename, "netcdf") != 0
+			"netcdf",
 #endif
 #ifdef HAVE_SHP
-			&& strcmp(filename, "shp") != 0
+			"shp",
 #endif
-				)
+			NULL
+		};
+		for (const char * const *p = optional; *p; p++) {
+			if (strcmp(filename, *p) == 0) {
+				TRC_INFO(MAL_LOADER, "Optional module %s not loaded\n",
+						 filename);
+				return MAL_SUCCEED;
+			}
+		}
+		if (!is_monetdb5 && strcmp(filename, "sql") != 0)
 			throw(LOADER, "loadLibrary",
 				  RUNTIME_LOAD_ERROR
 				  " could not locate library %s (from within file '%s'): %s", s,
@@ -372,27 +377,12 @@ mal_linker_reset(void)
  * The plausible locations of the modules can be designated by
  * an environment variable.
  */
-static int
-cmpstr(const void *_p1, const void *_p2)
-{
-	const char *p1 = *(char *const *) _p1;
-	const char *p2 = *(char *const *) _p2;
-	const char *f1 = strrchr(p1, (int) DIR_SEP);
-	const char *f2 = strrchr(p2, (int) DIR_SEP);
-	return strcmp(f1 ? f1 : p1, f2 ? f2 : p2);
-}
-
-
-#define MAXMULTISCRIPT 48
 char *
-locate_file(const char *basename, const char *ext, bit recurse)
+locate_file(allocator *ma, const char *basename, const char *ext)
 {
 	const char *mod_path = GDKgetenv("monet_mod_path");
 	char *fullname;
-	size_t fullnamelen;
 	size_t filelen = strlen(basename) + strlen(ext);
-	str strs[MAXMULTISCRIPT];	/* hardwired limit */
-	int lasts = 0;
 
 	if (mod_path == NULL)
 		return NULL;
@@ -401,170 +391,49 @@ locate_file(const char *basename, const char *ext, bit recurse)
 		mod_path++;
 	if (*mod_path == 0)
 		return NULL;
-	fullnamelen = 512;
-	fullname = GDKmalloc(fullnamelen);
+	fullname = ma_alloc(ma, PATH_MAX);
 	if (fullname == NULL)
 		return NULL;
 	while (*mod_path) {
 		size_t i;
 		const char *p;
 		int fd;
-		DIR *rdir;
 
 		if ((p = strchr(mod_path, PATH_SEP)) != NULL) {
 			i = p - mod_path;
 		} else {
 			i = strlen(mod_path);
 		}
-		while (i + filelen + 2 > fullnamelen) {
-			char *tmp;
-			fullnamelen += 512;
-			tmp = GDKrealloc(fullname, fullnamelen);
-			if (tmp == NULL) {
-				GDKfree(fullname);
-				return NULL;
-			}
-			fullname = tmp;
-		}
-		/* we are now sure the directory name, file
-		   base name, extension, and separator fit
-		   into fullname, so we don't need to do any
-		   extra checks */
-		strncpy(fullname, mod_path, i);
+		if (i + filelen + 2 > PATH_MAX)
+			return NULL;
+		/* we are now sure the directory name, file base name,
+		 * extension, and separator fit into fullname, so we don't need
+		 * to do any extra checks */
+		strtcpy(fullname, mod_path, i + 1);
 		fullname[i] = DIR_SEP;
-		char *nameend = stpcpy(fullname + i + 1, basename);
-		/* see if this is a directory, if so, recurse */
-		if (recurse == 1 && (rdir = opendir(fullname)) != NULL) {
-			struct dirent *e;
-			/* list *ext, sort, return */
-			while ((e = readdir(rdir)) != NULL) {
-				if (strcmp(e->d_name, "..") == 0 || strcmp(e->d_name, ".") == 0)
-					continue;
-				if (strcmp(e->d_name + strlen(e->d_name) - strlen(ext), ext) == 0) {
-					int len;
-					strs[lasts] = GDKmalloc(strlen(fullname) + sizeof(DIR_SEP)
-											+ strlen(e->d_name) +
-											sizeof(PATH_SEP) + 1);
-					if (strs[lasts] == NULL) {
-						while (lasts >= 0)
-							GDKfree(strs[lasts--]);
-						GDKfree(fullname);
-						(void) closedir(rdir);
-						return NULL;
-					}
-					len = sprintf(strs[lasts], "%s%c%s%c", fullname, DIR_SEP,
-								  e->d_name, PATH_SEP);
-					if (len == -1 || len >= FILENAME_MAX) {
-						while (lasts >= 0)
-							GDKfree(strs[lasts--]);
-						GDKfree(fullname);
-						(void) closedir(rdir);
-						return NULL;
-					}
-					lasts++;
-				}
-				if (lasts >= MAXMULTISCRIPT)
-					break;
-			}
-			(void) closedir(rdir);
-		} else {
-			strcpy(nameend, ext);
-			if ((fd = MT_open(fullname, O_RDONLY | O_CLOEXEC)) >= 0) {
-				char *tmp;
-				close(fd);
-				tmp = GDKrealloc(fullname, strlen(fullname) + 1);
-				if (tmp == NULL)
-					return fullname;
-				return tmp;
-			}
+		strcpy(stpcpy(fullname + i + 1, basename), ext);
+		if ((fd = MT_open(fullname, O_RDONLY | O_CLOEXEC)) >= 0) {
+			close(fd);
+			return fullname;
 		}
 		if ((mod_path = p) == NULL)
 			break;
 		while (*mod_path == PATH_SEP)
 			mod_path++;
 	}
-	if (lasts > 0) {
-		size_t i = 0;
-		int c;
-		char *tmp;
-		/* assure that an ordering such as 10_first, 20_second works */
-		qsort(strs, lasts, sizeof(char *), cmpstr);
-		for (c = 0; c < lasts; c++)
-			i += strlen(strs[c]) + 1;	/* PATH_SEP or \0 */
-		tmp = GDKrealloc(fullname, i);
-		if (tmp == NULL) {
-			GDKfree(fullname);
-			return NULL;
-		}
-		fullname = tmp;
-		i = 0;
-		for (c = 0; c < lasts; c++) {
-			if (strstr(fullname, strs[c]) == NULL) {
-				strcpy(fullname + i, strs[c]);
-				i += strlen(strs[c]);
-			}
-			GDKfree(strs[c]);
-		}
-		fullname[i - 1] = '\0';
-		return fullname;
-	}
 	/* not found */
-	GDKfree(fullname);
 	return NULL;
 }
 
 char *
-MSP_locate_script(const char *filename)
+MSP_locate_script(allocator *ma, const char *filename)
 {
-	return locate_file(filename, MAL_EXT, 1);
+	return locate_file(ma, filename, MAL_EXT);
 }
 
 char *
-MSP_locate_sqlscript(const char *filename, bit recurse)
+MSP_locate_sqlscript(allocator *ma, const char *filename)
 {
 	/* no directory semantics (yet) */
-	return locate_file(filename, SQL_EXT, recurse);
-}
-
-int
-malLibraryEnabled(const char *name)
-{
-	if (strcmp(name, "pyapi3") == 0) {
-		const char *val = GDKgetenv("embedded_py");
-		return val && (strcmp(val, "3") == 0 ||
-					   strcasecmp(val, "true") == 0 ||
-					   strcasecmp(val, "yes") == 0);
-	} else if (strcmp(name, "rapi") == 0) {
-		const char *val = GDKgetenv("embedded_r");
-		return val && (strcasecmp(val, "true") == 0 ||
-					   strcasecmp(val, "yes") == 0);
-	} else if (strcmp(name, "capi") == 0) {
-		const char *val = GDKgetenv("embedded_c");
-		return val && (strcasecmp(val, "true") == 0 ||
-					   strcasecmp(val, "yes") == 0);
-	}
-	return true;
-}
-
-#define HOW_TO_ENABLE_ERROR(LANGUAGE, OPTION)						\
-	do {															\
-		if (malLibraryEnabled(name))								\
-			return "Embedded " LANGUAGE " has not been installed. "	\
-				"Please install it first, then start server with "	\
-				"--set " OPTION;									\
-		return "Embedded " LANGUAGE " has not been enabled. "		\
-			"Start server with --set " OPTION;						\
-	} while (0)
-
-char *
-malLibraryHowToEnable(const char *name)
-{
-	if (strcmp(name, "pyapi3") == 0) {
-		HOW_TO_ENABLE_ERROR("Python 3", "embedded_py=3");
-	} else if (strcmp(name, "rapi") == 0) {
-		HOW_TO_ENABLE_ERROR("R", "embedded_r=true");
-	} else if (strcmp(name, "capi") == 0) {
-		HOW_TO_ENABLE_ERROR("C/C++", "embedded_c=true");
-	}
-	return "";
+	return locate_file(ma, filename, SQL_EXT);
 }

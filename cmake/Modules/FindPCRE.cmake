@@ -3,11 +3,9 @@
 #
 # This Source Code Form is subject to the terms of the Mozilla Public
 # License, v. 2.0.  If a copy of the MPL was not distributed with this
-# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+# file, You can obtain one at https://mozilla.org/MPL/2.0/.
 #
-# Copyright 2024, 2025 MonetDB Foundation;
-# Copyright August 2008 - 2023 MonetDB B.V.;
-# Copyright 1997 - July 2008 CWI.
+# For copyright information, see the file debian/copyright.
 #]]
 
 # Adapted from https://github.com/LuaDist/pcre/blob/master/FindPCRE.cmake
@@ -24,9 +22,9 @@
 # PCRE_VERSION	- The version found.
 # PCRE_FOUND	- True if pcre found.
 
-find_path(PCRE_INCLUDE_DIR NAMES pcre.h)
+find_path(PCRE_INCLUDE_DIR NAMES pcre2.h)
 
-find_library(PCRE_LIBRARIES NAMES pcre)
+find_library(PCRE_LIBRARIES NAMES pcre2-8)
 
 include(FindPackageHandleStandardArgs)
 find_package_handle_standard_args(PCRE
@@ -37,9 +35,9 @@ find_package_handle_standard_args(PCRE
 mark_as_advanced(PCRE_INCLUDE_DIR PCRE_LIBRARIES PCRE_VERSION)
 
 if(PCRE_FOUND)
-  file(STRINGS "${PCRE_INCLUDE_DIR}/pcre.h" PCRE_VERSION_LINES REGEX "[ \t]*#define[ \t]+PCRE_(MAJOR|MINOR)")
-  string(REGEX REPLACE ".*PCRE_MAJOR *\([0-9]*\).*" "\\1" PCRE_VERSION_MAJOR "${PCRE_VERSION_LINES}")
-  string(REGEX REPLACE ".*PCRE_MINOR *\([0-9]*\).*" "\\1" PCRE_VERSION_MINOR "${PCRE_VERSION_LINES}")
+  file(STRINGS "${PCRE_INCLUDE_DIR}/pcre2.h" PCRE_VERSION_LINES REGEX "[ \t]*#define[ \t]+PCRE2_(MAJOR|MINOR)")
+  string(REGEX REPLACE ".*PCRE2_MAJOR *\([0-9]*\).*" "\\1" PCRE_VERSION_MAJOR "${PCRE_VERSION_LINES}")
+  string(REGEX REPLACE ".*PCRE2_MINOR *\([0-9]*\).*" "\\1" PCRE_VERSION_MINOR "${PCRE_VERSION_LINES}")
   set(PCRE_VERSION "${PCRE_VERSION_MAJOR}.${PCRE_VERSION_MINOR}")
 
   if(NOT TARGET PCRE::PCRE AND

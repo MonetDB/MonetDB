@@ -18,7 +18,7 @@ dbfarm = os.environ['GDK_DBFARM']
 db = os.path.join(dbfarm, os.environ['TSTDB'])
 archive = os.path.join(dbfarm, 'lastchainrel.zip')
 if not os.path.exists(archive):
-    print('file "{}" not found'.format(archive), file=sys.stderr)
+    print(f'file "{archive}" not found', file=sys.stderr)
     sys.exit(1)
 
 # unpackage database
@@ -42,12 +42,12 @@ with process.server(args=['--clean-BBP', '--set', 'allow_hge_upgrade=yes'],
                         stdout=process.PIPE,
                         stderr=process.PIPE,
                         server=srv) as clt:
-        cltout, clterr = clt.communicate('select count(*) from testschema.smallstring;\n')
+        cltout, clterr = clt.communicate('drop function if exists testschema.pyapi01;\ndrop function if exists testschema.pyapi02;\ndrop function if exists testschema.rapi01;\ndrop function if exists testschema.rapi02;\ndrop function if exists testschema.capi00;\ndrop function if exists testschema.pyapi10_mult;\ndrop aggregate if exists testschema.aggrmedian;\n')
     srvout, srverr = srv.communicate()
 
 srvout = [line for line in srvout.splitlines(keepends=True) if not line.startswith('#')]
 
-# check server output (upgrade commands) and check dump (empty)
+# check server output (upgrade commands)
 if len(sys.argv) == 2 and sys.argv[1] == 'upgrade':
     bits = os.getenv('TST_BITS')
     if bits:
@@ -65,7 +65,7 @@ if len(sys.argv) == 2 and sys.argv[1] == 'upgrade':
     for b in bits:
         for a in arch:
             for h in hge:
-                f = 'upgrade.stable.out{}{}{}'.format(b, a, h)
+                f = f'upgrade.stable.out{b}{a}{h}'
                 found = os.path.exists(f)
                 if found:
                     break
@@ -73,16 +73,21 @@ if len(sys.argv) == 2 and sys.argv[1] == 'upgrade':
                 break
         if found:
             break
-    stable = open(f).readlines()
-    if not os.getenv('HAVE_SHP'):
-        for i in range(len(stable)):
-            if 'create procedure SHPLoad' in stable[i]:
-                del stable[i-1:i+4]
-                break
+    with open(f) as fil:
+        stable = fil.readlines()
     import difflib
-    for line in difflib.unified_diff(stable, srvout, fromfile='test', tofile=f):
+    for line in difflib.unified_diff(stable, srvout,
+                                     fromfile='expected', tofile='received'):
         sys.stderr.write(line)
         xit = 1
+    approve = os.getenv('MTEST_APPROVE')
+    if approve:
+        if approve == 'REPLACE':
+            fn = os.path.join(os.getenv('TSTSRCDIR'), f)
+        else:
+            fn = os.path.join(os.getenv('TSTTRGDIR'), f'{f}.new')
+        with open(fn, 'w') as fil:
+            fil.writelines(srvout)
 else:
     sys.stdout.writelines(srvout)
 

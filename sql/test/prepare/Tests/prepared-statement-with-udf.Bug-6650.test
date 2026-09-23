@@ -1,0 +1,167 @@
+statement ok
+start transaction
+
+statement ok
+create table onet (a text, b text, c text)
+
+statement ok
+insert into onet values ('a', 'b', 'c')
+
+statement ok
+create function get_onet(d text) returns table (aa text, bb text, cc text) return table(select * from onet where a = d)
+
+query TIITTT nosort
+prepare select * from get_onet(?)
+----
+varchar
+0
+0
+(empty)
+%1
+aa
+varchar
+0
+0
+(empty)
+%1
+bb
+varchar
+0
+0
+(empty)
+%1
+cc
+varchar
+0
+0
+NULL
+NULL
+NULL
+
+query TTT rowsort
+exec <LAST_PREPARE_ID>('a')
+----
+a
+b
+c
+
+query TIITTT nosort
+prepare select * from get_onet(?) tt where tt.aa = ?
+----
+varchar
+0
+0
+(empty)
+tt
+aa
+varchar
+0
+0
+(empty)
+tt
+bb
+varchar
+0
+0
+(empty)
+tt
+cc
+varchar
+0
+0
+NULL
+NULL
+NULL
+varchar
+0
+0
+NULL
+NULL
+NULL
+
+query TTT rowsort
+exec <LAST_PREPARE_ID>('a', 'b')
+----
+
+query TIITTT nosort
+prepare with something as (select a from onet where a = ?) select * from get_onet(?), something
+----
+varchar
+0
+0
+(empty)
+%1
+aa
+varchar
+0
+0
+(empty)
+%1
+bb
+varchar
+0
+0
+(empty)
+%1
+cc
+varchar
+0
+0
+(empty)
+something
+a
+varchar
+0
+0
+NULL
+NULL
+NULL
+varchar
+0
+0
+NULL
+NULL
+NULL
+
+query TTTT rowsort
+exec <LAST_PREPARE_ID>('a', 'a')
+----
+a
+b
+c
+a
+
+statement ok
+drop function get_onet
+
+statement ok
+drop table onet
+
+statement ok
+CREATE FUNCTION twoargs(input1 INT, input2 CLOB) RETURNS TABLE (outt CLOB) BEGIN RETURN TABLE(SELECT input1 || input2); END
+
+query TIITTT nosort
+prepare select 1 from twoargs(?,?)
+----
+tinyint
+1
+0
+(empty)
+%5
+%5
+int
+31
+0
+NULL
+NULL
+NULL
+varchar
+0
+0
+NULL
+NULL
+NULL
+
+statement ok
+rollback
+

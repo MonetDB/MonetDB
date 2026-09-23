@@ -3,11 +3,9 @@
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024, 2025 MonetDB Foundation;
- * Copyright August 2008 - 2023 MonetDB B.V.;
- * Copyright 1997 - July 2008 CWI.
+ * For copyright information, see the file debian/copyright.
  */
 
 /*
@@ -51,13 +49,31 @@ bteCmp(const bte *l, const bte *r)
 }
 
 static int
+ubteCmp(const ubte *l, const ubte *r)
+{
+	return (*l > *r) - (*l < *r);
+}
+
+static int
 shtCmp(const sht *l, const sht *r)
 {
 	return (*l > *r) - (*l < *r);
 }
 
 static int
+ushtCmp(const usht *l, const usht *r)
+{
+	return (*l > *r) - (*l < *r);
+}
+
+static int
 intCmp(const int *l, const int *r)
+{
+	return (*l > *r) - (*l < *r);
+}
+
+static int
+uintCmp(const uint *l, const uint *r)
 {
 	return (*l > *r) - (*l < *r);
 }
@@ -74,9 +90,21 @@ lngCmp(const lng *l, const lng *r)
 	return (*l > *r) - (*l < *r);
 }
 
+static int
+ulngCmp(const ulng *l, const ulng *r)
+{
+	return (*l > *r) - (*l < *r);
+}
+
 #ifdef HAVE_HGE
 static int
 hgeCmp(const hge *l, const hge *r)
+{
+	return (*l > *r) - (*l < *r);
+}
+
+static int
+uhgeCmp(const uhge *l, const uhge *r)
 {
 	return (*l > *r) - (*l < *r);
 }
@@ -88,93 +116,93 @@ dblCmp(const dbl *l, const dbl *r)
 	return is_dbl_nil(*l) ? -!is_dbl_nil(*r) : is_dbl_nil(*r) ? 1 : (*l > *r) - (*l < *r);
 }
 
-static int
-ubteCmp(const ubte *l, const ubte *r)
+static bool
+mskEq(const msk *l, const msk *r)
 {
-	return (*l > *r) - (*l < *r);
+	return *l == *r;
 }
 
-static int
-ushtCmp(const usht *l, const usht *r)
+static bool
+bteEq(const bte *l, const bte *r)
 {
-	return (*l > *r) - (*l < *r);
+	return *l == *r;
 }
 
-static int
-uintCmp(const uint *l, const uint *r)
+static bool
+ubteEq(const ubte *l, const ubte *r)
 {
-	return (*l > *r) - (*l < *r);
+	return *l == *r;
 }
 
-static int
-ulngCmp(const ulng *l, const ulng *r)
+static bool
+shtEq(const sht *l, const sht *r)
 {
-	return (*l > *r) - (*l < *r);
+	return *l == *r;
+}
+
+static bool
+ushtEq(const usht *l, const usht *r)
+{
+	return *l == *r;
+}
+
+static bool
+intEq(const int *l, const int *r)
+{
+	return *l == *r;
+}
+
+static bool
+uintEq(const uint *l, const uint *r)
+{
+	return *l == *r;
+}
+
+static bool
+fltEq(const flt *l, const flt *r)
+{
+	if (is_flt_nil(*l))
+		return is_flt_nil(*r);
+	if (is_flt_nil(*r))
+		return false;
+	return *l == *r;
+}
+
+static bool
+lngEq(const lng *l, const lng *r)
+{
+	return *l == *r;
+}
+
+static bool
+ulngEq(const ulng *l, const ulng *r)
+{
+	return *l == *r;
+}
+
+static bool
+dblEq(const dbl *l, const dbl *r)
+{
+	if (is_dbl_nil(*l))
+		return is_dbl_nil(*r);
+	if (is_dbl_nil(*r))
+		return false;
+	return *l == *r;
 }
 
 #ifdef HAVE_HGE
-static int
-uhgeCmp(const uhge *l, const uhge *r)
+static bool
+hgeEq(const hge *l, const hge *r)
 {
-	return (*l > *r) - (*l < *r);
+	return *l == *r;
+}
+
+static bool
+uhgeEq(const uhge *l, const uhge *r)
+{
+	return *l == *r;
 }
 #endif
-
-/*
- * @- inline hash routines
- * Return some positive integer derived from one atom value.
- */
-static BUN
-bteHash(const bte *v)
-{
-	return (BUN) mix_bte(*(const unsigned char *) v);
-}
-
-static BUN
-shtHash(const sht *v)
-{
-	return (BUN) mix_sht(*(const unsigned short *) v);
-}
-
-static BUN
-intHash(const int *v)
-{
-	return (BUN) mix_int(*(const unsigned int *) v);
-}
-
-static BUN
-lngHash(const lng *v)
-{
-	return (BUN) mix_lng(*(const ulng *) v);
-}
-
-#ifdef HAVE_HGE
-static BUN
-hgeHash(const hge *v)
-{
-	return (BUN) mix_hge(*(const uhge *) v);
-}
-#endif
-
-static BUN
-fltHash(const flt *v)
-{
-	if (is_flt_nil(*v))
-		return (BUN) mix_int(GDK_int_min);
-	if (*v == 0)
-		return (BUN) mix_int(0);
-	return (BUN) mix_int(*(const unsigned int *) v);
-}
-
-static BUN
-dblHash(const dbl *v)
-{
-	if (is_dbl_nil(*v))
-		return (BUN) mix_lng(GDK_lng_min);
-	if (*v == 0)
-		return (BUN) mix_lng(0);
-	return (BUN) mix_lng(*(const ulng *) v);
-}
 
 /*
  * @+ Standard Atoms
@@ -275,14 +303,14 @@ ATOMname(int t)
 bool
 ATOMisdescendant(int tpe, int parent)
 {
-	int cur = -1;
+	int cur;
 
-	while (cur != tpe) {
-		cur = tpe;
-		if (cur == parent)
+	do {
+		if (tpe == parent)
 			return true;
+		cur = tpe;
 		tpe = ATOMstorage(tpe);
-	}
+	} while (cur != tpe);
 	return false;
 }
 
@@ -290,19 +318,8 @@ ATOMisdescendant(int tpe, int parent)
 const bte bte_nil = GDK_bte_min-1;
 const sht sht_nil = GDK_sht_min-1;
 const int int_nil = GDK_int_min-1;
-#ifdef NAN_CANNOT_BE_USED_AS_INITIALIZER
-/* Definition of NAN is seriously broken on Intel compiler (at least
- * in some versions), so we work around it. */
-const union _flt_nil_t _flt_nil_ = {
-	.l = UINT32_C(0x7FC00000)
-};
-const union _dbl_nil_t _dbl_nil_ = {
-	.l = UINT64_C(0x7FF8000000000000)
-};
-#else
 const flt flt_nil = NAN;
 const dbl dbl_nil = NAN;
-#endif
 const lng lng_nil = GDK_lng_min-1;
 #ifdef HAVE_HGE
 const hge hge_nil = GDK_hge_min-1;
@@ -310,18 +327,8 @@ const hge hge_nil = GDK_hge_min-1;
 const oid oid_nil = (oid) 1 << (sizeof(oid) * 8 - 1);
 const ptr ptr_nil = NULL;
 const uuid uuid_nil = {0};
-
-ptr
-ATOMnil(int t)
-{
-	const void *src = ATOMnilptr(t);
-	size_t len = ATOMlen(ATOMtype(t), src);
-	ptr dst = GDKmalloc(len);
-
-	if (dst)
-		memcpy(dst, src, len);
-	return dst;
-}
+const inet4 inet4_nil = {0};
+const inet6 inet6_nil = {0};
 
 /*
  * @- Atomic ADT functions
@@ -354,28 +361,30 @@ ATOMheap(int t, Heap *hp, size_t cap)
 int
 ATOMprint(int t, const void *p, stream *s)
 {
-	ssize_t (*tostr) (char **, size_t *, const void *, bool);
+	ssize_t (*tostr) (allocator *ma, char **, size_t *, const void *, bool);
 	ssize_t res;
 
 	if (p && t >= 0 && t < GDKatomcnt && (tostr = BATatoms[t].atomToStr)) {
 		size_t sz;
+		allocator *ta = MT_thread_getallocator();
+		allocator_state ta_state = ma_open(ta);
 
 		if (t < TYPE_date) {
 			char buf[dblStrlen], *addr = buf;	/* use memory from stack */
 
 			sz = dblStrlen;
-			res = (*tostr) (&addr, &sz, p, true);
+			res = (*tostr) (ta, &addr, &sz, p, true);
 			if (res > 0)
 				res = mnstr_write(s, buf, (size_t) res, 1);
 		} else {
 			str buf = NULL;
 
 			sz = 0;
-			res = (*tostr) (&buf, &sz, p, true);
+			res = (*tostr) (ta, &buf, &sz, p, true);
 			if (res > 0)
 				res = mnstr_write(s, buf, (size_t) res, 1);
-			GDKfree(buf);
 		}
+		ma_close(&ta_state);
 	} else {
 		res = mnstr_write(s, "nil", 1, 3);
 	}
@@ -386,32 +395,19 @@ ATOMprint(int t, const void *p, stream *s)
 
 
 char *
-ATOMformat(int t, const void *p)
+ATOMformat(allocator *ma, int t, const void *p)
 {
-	ssize_t (*tostr) (char **, size_t *, const void *, bool);
+	ssize_t (*tostr) (allocator *ma, char **, size_t *, const void *, bool);
 
 	if (p && 0 <= t && t < GDKatomcnt && (tostr = BATatoms[t].atomToStr)) {
 		size_t sz = 0;
 		char *buf = NULL;
-		ssize_t res = (*tostr) (&buf, &sz, p, true);
-		if (res < 0 && buf) {
-			GDKfree(buf);
-			buf = NULL;
-		}
+		ssize_t res = (*tostr) (ma, &buf, &sz, p, true);
+		if (res < 0)
+			return NULL;
 		return buf;
 	}
-	return GDKstrdup("nil");
-}
-
-ptr
-ATOMdup(int t, const void *p)
-{
-	size_t len = ATOMlen(t, p);
-	ptr n = GDKmalloc(len);
-
-	if (n)
-		memcpy(n, p, len);
-	return n;
+	return "nil";
 }
 
 /*
@@ -432,9 +428,8 @@ ATOMdup(int t, const void *p)
 #define atommem(size)					\
 	do {						\
 		if (*dst == NULL || *len < (size)) {	\
-			GDKfree(*dst);			\
 			*len = (size);			\
-			*dst = GDKmalloc(*len);		\
+			*dst = ma_alloc(ma, *len);	\
 			if (*dst == NULL) {		\
 				*len = 0;		\
 				return -1;		\
@@ -446,7 +441,7 @@ ATOMdup(int t, const void *p)
 
 #define atomtostr(TYPE, FMT, FMTCAST)					\
 ssize_t									\
-TYPE##ToStr(char **dst, size_t *len, const TYPE *src, bool external)	\
+TYPE##ToStr(allocator *ma, char **dst, size_t *len, const TYPE *src, bool external)	\
 {									\
 	atommem(TYPE##Strlen);						\
 	if (is_##TYPE##_nil(*src)) {					\
@@ -466,11 +461,12 @@ TYPE##ToStr(char **dst, size_t *len, const TYPE *src, bool external)	\
 #define mult16(x)	((x) << 4)
 
 static void *
-voidRead(void *a, size_t *dstlen, stream *s, size_t cnt)
+voidRead(allocator *ma, void *a, size_t *dstlen, stream *s, size_t cnt)
 {
 	(void) dstlen;
 	(void) s;
 	(void) cnt;
+	(void) ma;
 	return a;
 }
 
@@ -490,7 +486,7 @@ voidWrite(const void *a, stream *s, size_t cnt)
  * now also support True/False (and trUe/FAlSE should this become a thing).
  */
 static ssize_t
-mskFromStr(const char *src, size_t *len, msk **dst, bool external)
+mskFromStr(allocator *ma, const char *src, size_t *len, msk **dst, bool external)
 {
 	const char *p = src;
 
@@ -517,7 +513,7 @@ mskFromStr(const char *src, size_t *len, msk **dst, bool external)
 }
 
 static ssize_t
-mskToStr(char **dst, size_t *len, const msk *src, bool external)
+mskToStr(allocator *ma, char **dst, size_t *len, const msk *src, bool external)
 {
 	(void) external;
 	atommem(2);
@@ -526,7 +522,7 @@ mskToStr(char **dst, size_t *len, const msk *src, bool external)
 }
 
 ssize_t
-bitFromStr(const char *src, size_t *len, bit **dst, bool external)
+bitFromStr(allocator *ma, const char *src, size_t *len, bit **dst, bool external)
 {
 	const char *p = src;
 
@@ -562,7 +558,7 @@ bitFromStr(const char *src, size_t *len, bit **dst, bool external)
 }
 
 ssize_t
-bitToStr(char **dst, size_t *len, const bit *src, bool external)
+bitToStr(allocator *ma, char **dst, size_t *len, const bit *src, bool external)
 {
 	atommem(6);
 
@@ -580,65 +576,6 @@ bitToStr(char **dst, size_t *len, const bit *src, bool external)
 	}
 	strcpy(*dst, "false");
 	return 5;
-}
-
-ssize_t
-batFromStr(const char *src, size_t *len, bat **dst, bool external)
-{
-	char *s;
-	const char *t, *r = src;
-	int c;
-	bat bid = 0;
-
-	atommem(sizeof(bat));
-
-	if (strNil(src)) {
-		**dst = bat_nil;
-		return 1;
-	}
-
-	while (GDKisspace(*r))
-		r++;
-
-	if (external && strcmp(r, "nil") == 0) {
-		**dst = bat_nil;
-		return (ssize_t) (r - src) + 3;
-	}
-
-	if (*r == '<')
-		r++;
-	t = r;
-	while ((c = *t) && (c == '_' || GDKisalnum(c)))
-		t++;
-
-	s = GDKstrndup(r, t - r);
-	if (s == NULL)
-		return -1;
-	bid = BBPindex(s);
-	GDKfree(s);
-	**dst = bid == 0 ? bat_nil : bid;
-	return (ssize_t) (t + (c == '>') - src);
-}
-
-ssize_t
-batToStr(char **dst, size_t *len, const bat *src, bool external)
-{
-	bat b = *src;
-	size_t i;
-	str s;
-
-	if (is_bat_nil(b) || !BBPcheck(b) || (s = BBP_logical(b)) == NULL || *s == 0) {
-		atommem(4);
-		if (external) {
-			strcpy(*dst, "nil");
-			return 3;
-		}
-		strcpy(*dst, str_nil);
-		return 1;
-	}
-	i = strlen(s) + 3;
-	atommem(i);
-	return (ssize_t) strconcat_len(*dst, *len, "<", s, ">", NULL);
 }
 
 
@@ -728,7 +665,7 @@ static const struct maxdiv maxdiv[] = {
 static const int maxmod10 = 7;	/* (int) (maxdiv[0].maxval % 10) */
 
 static ssize_t
-numFromStr(const char *src, size_t *len, void **dst, int tp, bool external)
+numFromStr(allocator *ma, const char *src, size_t *len, void **dst, int tp, bool external)
 {
 	const char *p = src;
 	size_t sz = ATOMsize(tp);
@@ -740,11 +677,12 @@ numFromStr(const char *src, size_t *len, void **dst, int tp, bool external)
 	int sign = 1;
 
 	/* a valid number has the following syntax:
-	 * [-+]?[0-9]+([eE][0-9]+)?(LL)? -- PCRE syntax, or in other words
+	 * [-+]?[0-9]+(_[0-9]+)*([eE][0-9]+(_[0-9]+)*)?(LL)? -- PCRE syntax, or in other words
 	 * optional sign, one or more digits, optional exponent, optional LL
 	 * the exponent has the following syntax:
 	 * lower or upper case letter E, one or more digits
-	 * embedded spaces are not allowed
+	 * embedded spaces are not allowed but embedded underscores are
+	 * (but not more than one consecutively)
 	 * the optional LL at the end are only allowed for lng and hge
 	 * values */
 	atommem(sz);
@@ -766,7 +704,7 @@ numFromStr(const char *src, size_t *len, void **dst, int tp, bool external)
 					return (ssize_t) (p - src);
 				}
 			}
-			GDKerror("not a number");
+			GDKerror("'%s' not a number\n", src);
 			goto bailout;
 		case '-':
 			sign = -1;
@@ -777,7 +715,7 @@ numFromStr(const char *src, size_t *len, void **dst, int tp, bool external)
 			break;
 		}
 		if (!GDKisdigit(*p)) {
-			GDKerror("not a number");
+			GDKerror("'%s' not a number\n", src);
 			goto bailout;
 		}
 	}
@@ -790,6 +728,8 @@ numFromStr(const char *src, size_t *len, void **dst, int tp, bool external)
 		}
 		base = 10 * base + dig;
 		p++;
+		if (*p == '_' && GDKisdigit(p[1]))
+			p++;
 	} while (GDKisdigit(*p));
 	if ((*p == 'e' || *p == 'E') && GDKisdigit(p[1])) {
 		p++;
@@ -808,6 +748,8 @@ numFromStr(const char *src, size_t *len, void **dst, int tp, bool external)
 					goto overflow;
 				}
 				p++;
+				if (*p == '_' && GDKisdigit(p[1]))
+					p++;
 			} while (GDKisdigit(*p));
 			if (base > maxdiv[exp].maxval) {
 				/* overflow */
@@ -879,34 +821,34 @@ numFromStr(const char *src, size_t *len, void **dst, int tp, bool external)
 }
 
 ssize_t
-bteFromStr(const char *src, size_t *len, bte **dst, bool external)
+bteFromStr(allocator *ma, const char *src, size_t *len, bte **dst, bool external)
 {
-	return numFromStr(src, len, (void **) dst, TYPE_bte, external);
+	return numFromStr(ma, src, len, (void **) dst, TYPE_bte, external);
 }
 
 ssize_t
-shtFromStr(const char *src, size_t *len, sht **dst, bool external)
+shtFromStr(allocator *ma, const char *src, size_t *len, sht **dst, bool external)
 {
-	return numFromStr(src, len, (void **) dst, TYPE_sht, external);
+	return numFromStr(ma, src, len, (void **) dst, TYPE_sht, external);
 }
 
 ssize_t
-intFromStr(const char *src, size_t *len, int **dst, bool external)
+intFromStr(allocator *ma, const char *src, size_t *len, int **dst, bool external)
 {
-	return numFromStr(src, len, (void **) dst, TYPE_int, external);
+	return numFromStr(ma, src, len, (void **) dst, TYPE_int, external);
 }
 
 ssize_t
-lngFromStr(const char *src, size_t *len, lng **dst, bool external)
+lngFromStr(allocator *ma, const char *src, size_t *len, lng **dst, bool external)
 {
-	return numFromStr(src, len, (void **) dst, TYPE_lng, external);
+	return numFromStr(ma, src, len, (void **) dst, TYPE_lng, external);
 }
 
 #ifdef HAVE_HGE
 ssize_t
-hgeFromStr(const char *src, size_t *len, hge **dst, bool external)
+hgeFromStr(allocator *ma, const char *src, size_t *len, hge **dst, bool external)
 {
-	return numFromStr(src, len, (void **) dst, TYPE_hge, external);
+	return numFromStr(ma, src, len, (void **) dst, TYPE_hge, external);
 }
 #endif
 
@@ -918,7 +860,7 @@ const ulng maxunum = UINT64_C(18446744073709551615); /* (1 << 64) - 1 */
 #endif
 
 static ssize_t
-unumFromStr(const char *src, size_t *len, void **dst, int tp)
+unumFromStr(allocator *ma, const char *src, size_t *len, void **dst, int tp)
 {
 	const char *p = src;
 	size_t sz = ATOMsize(tp);
@@ -1005,57 +947,66 @@ unumFromStr(const char *src, size_t *len, void **dst, int tp)
 }
 
 static ssize_t
-ubteFromStr(const char *src, size_t *len, ubte **dst, bool external)
+ubteFromStr(allocator *ma, const char *src, size_t *len, ubte **dst, bool external)
 {
 	(void) external;
-	return unumFromStr(src, len, (void **) dst, TYPE_ubte);
+	return unumFromStr(ma, src, len, (void **) dst, TYPE_ubte);
 }
 
 static ssize_t
-ushtFromStr(const char *src, size_t *len, usht **dst, bool external)
+ushtFromStr(allocator *ma, const char *src, size_t *len, usht **dst, bool external)
 {
 	(void) external;
-	return unumFromStr(src, len, (void **) dst, TYPE_usht);
+	return unumFromStr(ma, src, len, (void **) dst, TYPE_usht);
 }
 
 static ssize_t
-uintFromStr(const char *src, size_t *len, uint **dst, bool external)
+uintFromStr(allocator *ma, const char *src, size_t *len, uint **dst, bool external)
 {
 	(void) external;
-	return unumFromStr(src, len, (void **) dst, TYPE_uint);
+	return unumFromStr(ma, src, len, (void **) dst, TYPE_uint);
 }
 
 static ssize_t
-ulngFromStr(const char *src, size_t *len, ulng **dst, bool external)
+ulngFromStr(allocator *ma, const char *src, size_t *len, ulng **dst, bool external)
 {
 	(void) external;
-	return unumFromStr(src, len, (void **) dst, TYPE_ulng);
+	return unumFromStr(ma, src, len, (void **) dst, TYPE_ulng);
 }
 
 #ifdef HAVE_HGE
 static ssize_t
-uhgeFromStr(const char *src, size_t *len, uhge **dst, bool external)
+uhgeFromStr(allocator *ma, const char *src, size_t *len, uhge **dst, bool external)
 {
 	(void) external;
-	return unumFromStr(src, len, (void **) dst, TYPE_uhge);
+	return unumFromStr(ma, src, len, (void **) dst, TYPE_uhge);
 }
 #endif
 
 #define atom_io(TYPE, NAME, CAST)					\
 static TYPE *								\
-TYPE##Read(TYPE *A, size_t *dstlen, stream *s, size_t cnt)		\
+TYPE##Read(allocator *ma, TYPE *A, size_t *dstlen, stream *s, size_t cnt) \
 {									\
 	TYPE *a = A;							\
 	if (a == NULL || *dstlen < cnt * sizeof(TYPE)) {		\
-		if ((a = GDKrealloc(a, cnt * sizeof(TYPE))) == NULL)	\
+		if (ma) {						\
+			a = ma_realloc(ma, a, cnt * sizeof(TYPE), *dstlen); \
+		} else {						\
+			a = GDKmalloc(cnt * sizeof(TYPE));		\
+		}							\
+		if (a == NULL)						\
 			return NULL;					\
-		*dstlen = cnt * sizeof(TYPE);				\
 	}								\
 	if (mnstr_read##NAME##Array(s, (CAST *) a, cnt) == 0 ||		\
 	    mnstr_errnr(s) != MNSTR_NO__ERROR) {			\
-		if (a != A)						\
+		if (ma == NULL && a != A)				\
 			GDKfree(a);					\
 		return NULL;						\
+	}								\
+	if (a != A) {							\
+		if (ma == NULL)						\
+			GDKfree(A);					\
+		*dstlen = cnt * sizeof(TYPE);				\
 	}								\
 	return a;							\
 }									\
@@ -1077,21 +1028,30 @@ mskWrite(const msk *a, stream *s, size_t cnt)
 }
 
 static void *
-mskRead(msk *A, size_t *dstlen, stream *s, size_t cnt)
+mskRead(allocator *ma, msk *A, size_t *dstlen, stream *s, size_t cnt)
 {
 	int8_t v;
 	msk *a = A;
 	if (cnt != 1)
 		return NULL;
 	if (a == NULL || *dstlen == 0) {
-		if ((a = GDKrealloc(a, 1)) == NULL)
+		if (ma) {
+			a = ma_realloc(ma, a, 1, *dstlen);
+		} else {
+			a = GDKmalloc(1);
+		}
+		if (a == NULL)
 			return NULL;
-		*dstlen = 1;
 	}
 	if (mnstr_readBte(s, &v) != 1) {
-		if (a != A)
+		if (ma == NULL && a != A)
 			GDKfree(a);
 		return NULL;
+	}
+	if (a != A) {
+		if (ma == NULL)
+			GDKfree(A);
+		*dstlen = 1;
 	}
 	*a = v != 0;
 	return a;
@@ -1116,7 +1076,7 @@ atom_io(lng, Lng, lng)
 #define HGE_LL18DIGITS LL_CONSTANT(1000000000000000000)
 #define HGE_ABS(a) (((a) < 0) ? -(a) : (a))
 ssize_t
-hgeToStr(char **dst, size_t *len, const hge *src, bool external)
+hgeToStr(allocator *ma, char **dst, size_t *len, const hge *src, bool external)
 {
 	atommem(hgeStrlen);
 	if (is_hge_nil(*src)) {
@@ -1131,10 +1091,10 @@ hgeToStr(char **dst, size_t *len, const hge *src, bool external)
 	}
 	if ((hge) GDK_lng_min <= *src && *src <= (hge) GDK_lng_max) {
 		lng s = (lng) *src;
-		return lngToStr(dst, len, &s, external);
+		return lngToStr(ma, dst, len, &s, external);
 	} else {
 		hge s = *src / HGE_LL18DIGITS;
-		ssize_t llen = hgeToStr(dst, len, &s, external);
+		ssize_t llen = hgeToStr(ma, dst, len, &s, external);
 		if (llen < 0)
 			return llen;
 		snprintf(*dst + llen, *len - llen, HGE_LL018FMT,
@@ -1147,7 +1107,7 @@ atom_io(hge, Hge, hge);
 
 #define uatomtostr(TYPE, FMT, FMTCAST)					\
 static ssize_t								\
-u##TYPE##ToStr(char **dst, size_t *len, const u##TYPE *src, bool external) \
+u##TYPE##ToStr(allocator *ma, char **dst, size_t *len, const u##TYPE *src, bool external) \
 {									\
 	(void) external;						\
 	atommem(TYPE##Strlen);						\
@@ -1164,12 +1124,12 @@ uatomtostr(lng, ULLFMT, )
 #define HGE_LL18DIGITS LL_CONSTANT(1000000000000000000)
 #define HGE_ABS(a) (((a) < 0) ? -(a) : (a))
 static ssize_t
-uhgeToStr(char **dst, size_t *len, const uhge *src, bool external)
+uhgeToStr(allocator *ma, char **dst, size_t *len, const uhge *src, bool external)
 {
 	atommem(hgeStrlen);
 	if (*src <= (hge) GDK_lng_max) {
 		ulng s = (ulng) *src;
-		return ulngToStr(dst, len, &s, external);
+		return ulngToStr(ma, dst, len, &s, external);
 	}
 	char *p = *dst;
 	uhge v = *src;
@@ -1187,7 +1147,7 @@ uhgeToStr(char **dst, size_t *len, const uhge *src, bool external)
 #endif
 
 ssize_t
-ptrFromStr(const char *src, size_t *len, ptr **dst, bool external)
+ptrFromStr(allocator *ma, const char *src, size_t *len, ptr **dst, bool external)
 {
 	size_t base = 0;
 	const char *p = src;
@@ -1207,12 +1167,12 @@ ptrFromStr(const char *src, size_t *len, ptr **dst, bool external)
 			p += 2;
 		}
 		if (!GDKisxdigit(*p)) {
-			GDKerror("not a number\n");
+			GDKerror("'%s' not a number\n", src);
 			return -1;
 		}
 		while (GDKisxdigit(*p)) {
 			if (base >= ((size_t) 1 << (8 * sizeof(size_t) - 4))) {
-				GDKerror("overflow\n");
+				GDKerror("'%s' overflow\n", src);
 				return -1;
 			}
 			base = mult16(base) + base16(*p);
@@ -1239,7 +1199,7 @@ atom_io(ptr, Lng, lng)
 #endif
 
 ssize_t
-dblFromStr(const char *src, size_t *len, dbl **dst, bool external)
+dblFromStr(allocator *ma, const char *src, size_t *len, dbl **dst, bool external)
 {
 	const char *p = src;
 	ssize_t n = 0;
@@ -1276,7 +1236,7 @@ dblFromStr(const char *src, size_t *len, dbl **dst, bool external)
 		if (n == 0 || (errno == ERANGE && (d < -1 || d > 1))
 		    || !isfinite(d) /* no NaN or Infinite */
 		    ) {
-			GDKerror("overflow or not a number\n");
+			GDKerror("'%s' overflow or not a number\n", src);
 			return -1;
 		} else {
 			while (src[n] && GDKisspace(src[n]))
@@ -1288,7 +1248,7 @@ dblFromStr(const char *src, size_t *len, dbl **dst, bool external)
 }
 
 ssize_t
-dblToStr(char **dst, size_t *len, const dbl *src, bool external)
+dblToStr(allocator *ma, char **dst, size_t *len, const dbl *src, bool external)
 {
 	int l = 0;
 
@@ -1319,7 +1279,7 @@ dblToStr(char **dst, size_t *len, const dbl *src, bool external)
 atom_io(dbl, Lng, lng)
 
 ssize_t
-fltFromStr(const char *src, size_t *len, flt **dst, bool external)
+fltFromStr(allocator *ma, const char *src, size_t *len, flt **dst, bool external)
 {
 	const char *p = src;
 	ssize_t n = 0;
@@ -1355,7 +1315,7 @@ fltFromStr(const char *src, size_t *len, flt **dst, bool external)
 		n = (ssize_t) (p - src);
 		if (n == 0 || (errno == ERANGE && (f < -1 || f > 1))
 		    || !isfinite(f) /* no NaN or infinite */) {
-			GDKerror("overflow or not a number\n");
+			GDKerror("'%s' overflow or not a number\n", src);
 			return -1;
 		} else {
 			while (src[n] && GDKisspace(src[n]))
@@ -1369,7 +1329,7 @@ fltFromStr(const char *src, size_t *len, flt **dst, bool external)
 }
 
 ssize_t
-fltToStr(char **dst, size_t *len, const flt *src, bool external)
+fltToStr(allocator *ma, char **dst, size_t *len, const flt *src, bool external)
 {
 	int l = 0;
 
@@ -1404,7 +1364,7 @@ atom_io(flt, Int, int)
  * String conversion routines.
  */
 ssize_t
-OIDfromStr(const char *src, size_t *len, oid **dst, bool external)
+OIDfromStr(allocator *ma, const char *src, size_t *len, oid **dst, bool external)
 {
 #if SIZEOF_OID == SIZEOF_INT
 	int ui = 0, *uip = &ui;
@@ -1429,9 +1389,9 @@ OIDfromStr(const char *src, size_t *len, oid **dst, bool external)
 
 	if (*p >= '0' && *p <= '9') {
 #if SIZEOF_OID == SIZEOF_INT
-		pos = intFromStr(p, &l, &uip, external);
+		pos = intFromStr(ma, p, &l, &uip, external);
 #else
-		pos = lngFromStr(p, &l, &uip, external);
+		pos = lngFromStr(ma, p, &l, &uip, external);
 #endif
 		if (pos < 0)
 			return pos;
@@ -1445,7 +1405,7 @@ OIDfromStr(const char *src, size_t *len, oid **dst, bool external)
 		}
 		p += pos;
 	} else {
-		GDKerror("not an OID\n");
+		GDKerror("'%s' not an OID\n", src);
 		return -1;
 	}
 	while (GDKisspace(*p))
@@ -1454,7 +1414,7 @@ OIDfromStr(const char *src, size_t *len, oid **dst, bool external)
 }
 
 ssize_t
-OIDtoStr(char **dst, size_t *len, const oid *src, bool external)
+OIDtoStr(allocator *ma, char **dst, size_t *len, const oid *src, bool external)
 {
 	atommem(oidStrlen);
 
@@ -1473,22 +1433,24 @@ static int
 UUIDcompare(const void *L, const void *R)
 {
 	const uuid *l = L, *r = R;
-	if (is_uuid_nil(*r))
-		return !is_uuid_nil(*l);
-	if (is_uuid_nil(*l))
-		return -1;
 	return memcmp(l->u, r->u, UUID_SIZE);
 }
 
+static bool
+UUIDequal(const void *L, const void *R)
+{
+	const uuid *l = L, *r = R;
+	return memcmp(l->u, r->u, UUID_SIZE) == 0;
+}
+
 static ssize_t
-UUIDfromString(const char *svalue, size_t *len, void **RETVAL, bool external)
+UUIDfromString(allocator *ma, const char *svalue, size_t *len, void **RETVAL, bool external)
 {
 	uuid **retval = (uuid **) RETVAL;
 	const char *s = svalue;
 
 	if (*len < UUID_SIZE || *retval == NULL) {
-		GDKfree(*retval);
-		if ((*retval = GDKmalloc(UUID_SIZE)) == NULL)
+		if ((*retval = ma_alloc(ma, UUID_SIZE)) == NULL)
 			return -1;
 		*len = UUID_SIZE;
 	}
@@ -1544,25 +1506,28 @@ UUIDfromString(const char *svalue, size_t *len, void **RETVAL, bool external)
 	return -1;
 }
 
-static BUN
-UUIDhash(const void *v)
-{
-	return mix_uuid((const uuid *) v);
-}
-
 static void *
-UUIDread(void *U, size_t *dstlen, stream *s, size_t cnt)
+UUIDread(allocator *ma, void *U, size_t *dstlen, stream *s, size_t cnt)
 {
 	uuid *u = U;
 	if (u == NULL || *dstlen < cnt * sizeof(uuid)) {
-		if ((u = GDKrealloc(u, cnt * sizeof(uuid))) == NULL)
+		if (ma) {
+			u = ma_realloc(ma, u, cnt * sizeof(uuid), *dstlen);
+		} else {
+			u = GDKmalloc(cnt * sizeof(uuid));
+		}
+		if (u == NULL)
 			return NULL;
-		*dstlen = cnt * sizeof(uuid);
 	}
 	if (mnstr_read(s, u, UUID_SIZE, cnt) < (ssize_t) cnt) {
-		if (u != U)
+		if (ma == NULL && u != (uuid *) U)
 			GDKfree(u);
 		return NULL;
+	}
+	if (u != (uuid *) U) {
+		if (ma == NULL)
+			GDKfree(U);
+		*dstlen = cnt * sizeof(uuid);
 	}
 	return u;
 }
@@ -1574,13 +1539,11 @@ UUIDwrite(const void *u, stream *s, size_t cnt)
 }
 
 static ssize_t
-UUIDtoString(str *retval, size_t *len, const void *VALUE, bool external)
+UUIDtoString(allocator *ma, str *retval, size_t *len, const void *VALUE, bool external)
 {
 	const uuid *value = VALUE;
 	if (*len <= UUID_STRLEN || *retval == NULL) {
-		if (*retval)
-			GDKfree(*retval);
-		if ((*retval = GDKmalloc(UUID_STRLEN + 1)) == NULL)
+		if ((*retval = ma_alloc(ma, UUID_STRLEN + 1)) == NULL)
 			return -1;
 		*len = UUID_STRLEN + 1;
 	}
@@ -1603,6 +1566,531 @@ UUIDtoString(str *retval, size_t *len, const void *VALUE, bool external)
 			 value->u[12], value->u[13], value->u[14], value->u[15]);
 	assert(strlen(*retval) == UUID_STRLEN);
 	return UUID_STRLEN;
+}
+
+static int
+INET4compare(const void *L, const void *R)
+{
+	const inet4 *l = L, *r = R;
+	return memcmp(l->quad, r->quad, sizeof(l->quad));
+}
+
+static bool
+INET4equal(const void *L, const void *R)
+{
+	const inet4 *l = L, *r = R;
+	return l->align == r->align;
+}
+
+static ssize_t
+INET4fromString(allocator *ma, const char *svalue, size_t *len, void **RETVAL, bool external)
+{
+	(void) ma;
+	inet4 **retval = (inet4 **) RETVAL;
+	const char *s = svalue;
+
+	if (*len < 4 || *retval == NULL) {
+		if ((*retval = ma_alloc(ma, 4)) == NULL)
+			return -1;
+		*len = 4;
+	}
+	if (external && strcmp(svalue, "nil") == 0) {
+		**retval = inet4_nil;
+		return 3;
+	}
+	if (strNil(svalue)) {
+		**retval = inet4_nil;
+		return 1;
+	}
+	while (GDKisspace(*s))
+		s++;
+	inet4 i4;
+	unsigned long ul;
+	char *e;
+	ul = strtoul(s, &e, 10);
+	if (ul == 0 && s == e) {
+		GDKerror("IPv4 address does not start with a number.");
+		goto bailout;
+	}
+	if (ul > 255) {
+		GDKerror("Overflow in IPv4 address.");
+		goto bailout;
+	}
+	i4.quad[0] = (uint8_t) ul;
+	s = e;
+	for (int i = 1; i < 4; i++) {
+		if (*s++ != '.') {
+			GDKerror("Missing components in IPv4 address.");
+			goto bailout;
+		}
+		if (!isdigit(*s)) {
+			GDKerror("Not a number in IPv4 address.");
+			goto bailout;
+		}
+		ul = strtoul(s, &e, 10);
+		if (ul == 0 && s == e) {
+			GDKerror("Impossible error.");
+			goto bailout;
+		}
+		if (ul > 255) {
+			GDKerror("Overflow in IPv4 address.");
+			goto bailout;
+		}
+		i4.quad[i] = (uint8_t) ul;
+		s = e;
+	}
+	while (GDKisspace(*s))
+		s++;
+	if (*s != 0) {
+		GDKerror("Extra junk after IP4v address.");
+		goto bailout;
+	}
+	**retval = i4;
+	return (ssize_t) (s - svalue);
+
+  bailout:
+	**retval = inet4_nil;
+	return -1;
+}
+
+static void *
+INET4read(allocator *ma, void *U, size_t *dstlen, stream *s, size_t cnt)
+{
+	inet4 *u = U;
+	if (u == NULL || *dstlen < cnt * sizeof(inet4)) {
+		if (ma) {
+			u = ma_realloc(ma, u, cnt * sizeof(inet4), *dstlen);
+		} else {
+			u = GDKmalloc(cnt * sizeof(inet4));
+		}
+		if (u == NULL)
+			return NULL;
+	}
+	if (mnstr_read(s, u, sizeof(inet4), cnt) < (ssize_t) cnt) {
+		if (ma == NULL && u != (inet4 *) U)
+			GDKfree(u);
+		return NULL;
+	}
+	if (u != (inet4 *) U) {
+		if (ma == NULL)
+			GDKfree(U);
+		*dstlen = cnt * sizeof(inet4);
+	}
+	return u;
+}
+
+static gdk_return
+INET4write(const void *u, stream *s, size_t cnt)
+{
+	return mnstr_write(s, u, 4, cnt) ? GDK_SUCCEED : GDK_FAIL;
+}
+
+static ssize_t
+INET4toString(allocator *ma, str *retval, size_t *len, const void *VALUE, bool external)
+{
+	(void) ma;
+	const inet4 *value = VALUE;
+	(void) external;
+	if (*len < 16 || *retval == NULL) {
+		if ((*retval = ma_alloc(ma, 16)) == NULL)
+			return -1;
+		*len = 16;
+	}
+	return snprintf(*retval, *len,
+			"%u.%u.%u.%u",
+			(unsigned) value->quad[0],
+			(unsigned) value->quad[1],
+			(unsigned) value->quad[2],
+			(unsigned) value->quad[3]);
+}
+
+static int
+INET6compare(const void *L, const void *R)
+{
+	const inet6 *l = L, *r = R;
+	return memcmp(l->hex, r->hex, sizeof(l->hex));
+}
+
+static bool
+INET6equal(const void *L, const void *R)
+{
+	const inet6 *l = L, *r = R;
+	return memcmp(l->hex, r->hex, sizeof(l->hex)) == 0;
+}
+
+static uint8_t
+inet6_classify(char c)
+{
+	/* The values in this table are all one too high so the invalid
+	 * ones can be left at 0. */
+	static const uint8_t table[256] = {
+		['0'] = 0 + 1, ['1'] = 1 + 1, ['2'] = 2 + 1,
+		['3'] = 3 + 1, ['4'] = 4 + 1, ['5'] = 5 + 1,
+		['6'] = 6 + 1, ['7'] = 7 + 1, ['8'] = 8 + 1,
+		['9'] = 9 + 1,
+		['A'] = 0xA + 1, ['B'] = 0xB + 1, ['C'] = 0xC + 1,
+		['D'] = 0xD + 1, ['E'] = 0xE + 1, ['F'] = 0xF + 1,
+		['a'] = 0xa + 1, ['b'] = 0xb + 1, ['c'] = 0xc + 1,
+		['d'] = 0xd + 1, ['e'] = 0xe + 1, ['f'] = 0xf + 1,
+		/* not hex digits but valid as terminators */
+		['\0'] = 16 + 1, [':'] = 16 + 1, ['.'] = 16 + 1,
+	};
+	return table[(uint8_t)c] - 1;
+}
+
+static int
+inet6_scan_hexdigits(const char **pos)
+{
+	const char *p = *pos;
+	int acc;
+
+	acc = inet6_classify(*p++);
+	if (acc >= 16) {
+		/* must have at least one digit */
+		return -1;
+	}
+
+	for (int i = 0; i < 3; i++) {
+		uint8_t d = inet6_classify(*p);
+		if (d >= 16)
+			break;
+		acc = 16 * acc + d;
+		p++;
+	}
+
+	*pos = p;    /* points to the terminator */
+	return acc;
+}
+
+/* move the part after the :: to the correct position */
+static bool
+inet6_expand_gap(uint8_t *bytes, int gap_start, int groups, int max_groups)
+{
+	assert(gap_start <= groups);
+	assert(groups <= max_groups);
+	assert(max_groups == 6 || max_groups == 8);
+
+	int gap_len = max_groups - groups;
+	assert(gap_len >= 0);
+
+	if (gap_start == -1 && gap_len > 0) {
+		/* no :: found but not all groups are present */
+		return false;
+	}
+	if (gap_start != -1 && gap_len == 0) {
+		/* :: found but all groups are present */
+		return false;
+	}
+
+	if (gap_len == 0) {
+		/* nothing to do */
+		return true;
+	}
+
+	void *src = &bytes[ 2 * gap_start ];
+	void *dst = &bytes[ 2 * (gap_start + gap_len)];
+	size_t len = 2 * (groups - gap_start);
+	memmove(dst, src, len);
+	memset(src, '\0', 2 * gap_len);
+	return true;
+}
+
+/* scan an address written as 32 hexdigits without any punctuation */
+static bool
+inet6_scan_big_hexnumber(uint8_t *bytes, const char *s, const char *end)
+{
+	if (end - s != 32)
+		return false;
+
+	for (int i = 0; i < 16; i++) {
+		int hi = inet6_classify(s[2 * i]);
+		int lo = inet6_classify(s[2 * i + 1]);
+		if (hi >= 16 || lo >= 16)
+			return false;
+		bytes[i] = 16 * hi + lo;
+	}
+	return true;
+
+}
+
+/* scan the optional decimal bytes at the end of for example ::ffff:127.0.0.1 */
+static bool
+inet6_scan_embedded_inet4(uint8_t *bytes, const char *start, const char *end)
+{
+	/* We cannot use sscanf because its behavior is undefined for invalid inputs.
+	 * Strtol and friends accept whitespace etc which we don't want	.
+	 * We'll just do it by hand */
+
+	int fields[4] = { 0 };
+	int n = 0;
+	bool need_digit = true;
+	for (const char *s = start; s < end; s++) {
+		if (isdigit(*s)) {
+			fields[n] = 10 * fields[n] + *s - '0';
+			if (fields[n] > 255)
+				return false;
+			need_digit = false;
+		} else if (*s == '.') {
+			n++;
+			if (n == 4)
+				return false;
+			need_digit = true;
+		} else {
+			return false;
+		}
+	}
+	if (n != 3 || need_digit)
+		return false;
+
+	for (int i = 0; i < 4; i++)
+		bytes[12 + i] = (uint8_t) fields[i];
+
+	return true;
+}
+
+static bool
+inet6_scan_address(uint8_t *bytes, const char *s, const char *end)
+{
+	if (inet6_scan_big_hexnumber(bytes, s, end))
+		return true;
+
+	int groups = 0;         /* nr of groups seen */
+	int gap = -1;           /* position of gap, -1 means not seen */
+
+	if (end - s < 3) {
+		/* The smallest legal addresses are ::n and n::.
+		 * :: is legal as an IP address but not in MonetDB because it's
+		 * our nil representation. */
+		return false;
+	}
+
+	/* Colons at the start are tricky. Two means the gap is at the start,
+	 * one is forbidden. */
+	if (s[0] == ':') {
+		if (s[1] == ':') {
+			s += 2;
+			gap = 0;
+		} else {
+			return false;
+		}
+	}
+
+	/* with the leading colons out of the way, read hex groups terminated by
+	 * :, . or END */
+	while (s < end) {
+		if (groups >= 8) {
+			/* too many! */
+			return false;
+		}
+		if (*s == ':') {
+			if (gap == -1) {
+				/* found the gap */
+				gap = groups;
+				s++;
+				continue;
+			} else {
+				/* there can only be one gap */
+				return false;
+			}
+		}
+
+		const char *group_start = s;
+		int group = inet6_scan_hexdigits(&s);
+		if (group < 0)
+			return false;
+
+		/* check the terminator */
+		char terminator = s < end ? *s : '\0';
+		if (groups == 7) {
+			if (terminator != '\0')
+				return false;
+		} else {
+			if (inet6_classify(terminator) != 16)
+				return false;
+		}
+
+		/* check for trailing decimal bytes */
+		if (terminator == '.') {
+			if (!inet6_expand_gap(bytes, gap, groups, 6))
+				return false;
+			return inet6_scan_embedded_inet4(bytes, group_start, end);
+		}
+
+		/* record the group, skip the separator and move on */
+		bytes[2 * groups] = (uint8_t)(group >> 8);
+		bytes[2 * groups + 1] = (uint8_t)group;
+		groups++;
+		s++;
+	}
+
+	return inet6_expand_gap(bytes, gap, groups, 8);
+}
+
+
+static ssize_t
+INET6fromString(allocator *ma, const char *svalue, size_t *len, void **retval, bool external)
+{
+	/* make room for return value */
+	if (*len < 16 || *retval == NULL) {
+		if ((*retval = ma_alloc(ma, 16)) == NULL)
+			return -1;
+		*len = 16;
+	}
+	inet6 *addr = (inet6*)*retval;
+	uint8_t *bytes = &addr->hex[0];
+
+	/* handle nils */
+	if (external && strcmp(svalue, "nil") == 0) {
+		*addr = inet6_nil;
+		return 3;
+	}
+	if (strNil(svalue)) {
+		*addr = inet6_nil;
+		return 1;
+	}
+
+	/* find start and end */
+	const char *start = svalue;
+	ssize_t svalue_len = strlen(svalue);
+	const char *end = start + svalue_len;
+	while (GDKisspace(*start))
+		start++;
+	while (end > start && GDKisspace(end[-1]))
+		end--;
+
+	if (!inet6_scan_address(bytes, start, end))
+		return -1;
+
+	uint8_t zeroes[16] = { 0 };
+	if (memcmp(bytes, zeroes, 16) == 0) {
+		/* that's our nil representation! cannot use it */
+		return -1;
+	}
+
+	return svalue_len;
+}
+
+static void *
+INET6read(allocator *ma, void *U, size_t *dstlen, stream *s, size_t cnt)
+{
+	inet6 *u = U;
+	if (u == NULL || *dstlen < cnt * sizeof(inet6)) {
+		if (ma) {
+			u = ma_realloc(ma, u, cnt * sizeof(inet6), *dstlen);
+		} else {
+			u = GDKmalloc(cnt * sizeof(inet6));
+		}
+		if (u == NULL)
+			return NULL;
+	}
+	if (mnstr_read(s, u, sizeof(inet6), cnt) < (ssize_t) cnt) {
+		if (ma == NULL && u != (inet6 *) U)
+			GDKfree(u);
+		return NULL;
+	}
+	if (u != (inet6 *) U) {
+		if (ma == NULL)
+			GDKfree(U);
+		*dstlen = cnt * sizeof(inet6);
+	}
+	return u;
+}
+
+static gdk_return
+INET6write(const void *u, stream *s, size_t cnt)
+{
+	return mnstr_write(s, u, sizeof(inet6), cnt) ? GDK_SUCCEED : GDK_FAIL;
+}
+
+static ssize_t
+INET6toString(allocator *ma, str *retval, size_t *len, const void *VALUE, bool external)
+{
+	(void) ma;
+	const inet6 *value = VALUE;
+	(void) external;
+
+	/* ensure buffer capacity. */
+	/* max size: 8 * (digit digit digit digit colon-or-nul) == 40 */
+	if (*len < 40 || *retval == NULL) {
+		if ((*retval = ma_alloc(ma, 40)) == NULL)
+			return -1;
+		*len = 40;
+	}
+
+	/* find longest stretch of zeroes */
+	int run_len = 0;	/* length of current stretch of zeros */
+	int best_start = 16;	/* start of longest stretch of zeros */
+	int best_len = 0;	/* length of longest stretch of zeros */
+	for (int i = 0; i < 16; i += 2) {
+		if (value->hex[i] == 0 && value->hex[i + 1] == 0) {
+			/* record it as part of a stretch of zeroes */
+			run_len += 2;
+			continue;
+		}
+		if (run_len > best_len) {
+			/* record new longest stretch */
+			best_start = i - run_len;
+			best_len = run_len;
+		}
+		/* definitely not part of a stretch of zeroes */
+		run_len = 0;
+	}
+	if (run_len > best_len) {
+		/* longest stretch is at the end */
+		best_start = 16 - run_len;
+		best_len = run_len;
+	}
+
+	/* nils should never reach us here */
+	if (best_len == 16) {
+		assert(external);
+		strcpy(*retval, "nil");
+		return 3;
+	}
+	if (best_len <= 2) {
+		best_len = 0;
+		best_start = 16;
+	}
+
+	/* Special case: IPv4-mapped IPv6 address 	*/
+	if (best_start == 0 && best_len == 10 && value->hex[10] == 0xFF && value->hex[11] == 0xFF) {
+		return snprintf(*retval, *len,
+				"::ffff:%d.%d.%d.%d",
+				value->hex[12], value->hex[13],
+				value->hex[14], value->hex[15]);
+	}
+
+	/* render it as colon-separated quads */
+	char *p = *retval;
+	for (int i = 0; i < 16; i += 2) {
+		/* In principle, each iteration prints a hex quad followed by a
+		 * colon, but the stretch is treated specially. */
+		if (i != best_start) {
+			unsigned int quad = value->hex[i] * 256 + value->hex[i + 1];
+			static const char hexdigits[17] = "0123456789abcdef";
+			*p = hexdigits[value->hex[i] >> 4];
+			p += quad >= 0x1000;
+			*p = hexdigits[value->hex[i] & 0xF];
+			p += quad >= 0x0100;
+			*p = hexdigits[value->hex[i + 1] >> 4];
+			p += quad >= 0x0010;
+			*p++ = hexdigits[value->hex[i + 1] & 0xF];
+			if (i < 14)
+				*p++ = ':';
+		} else {
+			/* the stretch */
+			if (i == 0)
+				*p++ = ':';
+			*p++ = ':';
+			i += best_len - 2;
+		}
+	}
+	*p = '\0';
+
+	/* we must have written at least 3 characters followed by a NUL */
+	assert(p - *retval >= 3);
+
+	return p - *retval;
 }
 
 static const blob blob_nil = {
@@ -1639,37 +2127,55 @@ BLOBcmp(const void *L, const void *R)
 	return c;
 }
 
+static bool
+BLOBeq(const void *L, const void *R)
+{
+	if (L == R)
+		return true;
+	const blob *l = L, *r = R;
+	if (l->nitems != r->nitems)
+		return false;
+	if (is_blob_nil(l) || l->nitems == 0)
+		return true;
+	return memcmp(l->data, r->data, l->nitems) == 0;
+}
+
 static void
 BLOBdel(Heap *h, var_t *idx)
 {
-	HEAP_free(h, *idx);
-}
-
-static BUN
-BLOBhash(const void *B)
-{
-	const blob *b = B;
-	return (BUN) b->nitems;
+	if (*idx != 0)
+		HEAP_free(h, *idx);
 }
 
 static void *
-BLOBread(void *A, size_t *dstlen, stream *s, size_t cnt)
+BLOBread(allocator *ma, void *A, size_t *dstlen, stream *s, size_t cnt)
 {
 	blob *a = A;
-	int len;
+	lng len;
 
 	(void) cnt;
 	assert(cnt == 1);
-	if (mnstr_readInt(s, &len) != 1 || len < 0)
+	if (mnstr_readLng(s, &len) != 1 || len < 0) {
 		return NULL;
-	if (a == NULL || *dstlen < (size_t) len) {
-		if ((a = GDKrealloc(a, (size_t) len)) == NULL)
+	}
+	if (a == NULL || (lng) *dstlen < len) {
+		if (ma) {
+			a = ma_realloc(ma, a, (size_t) len, *dstlen);
+		} else {
+			a = GDKmalloc((size_t) len);
+		}
+		if (a == NULL)
 			return NULL;
-		*dstlen = (size_t) len;
 	}
 	if (mnstr_read(s, (char *) a, (size_t) len, 1) != 1) {
-		GDKfree(a);
+		if (ma == NULL && a != (blob *) A)
+			GDKfree(a);
 		return NULL;
+	}
+	if (a != (blob *) A) {
+		if (ma == NULL)
+			GDKfree(A);
+		*dstlen = (size_t) len;
 	}
 	return a;
 }
@@ -1682,8 +2188,7 @@ BLOBwrite(const void *A, stream *s, size_t cnt)
 
 	(void) cnt;
 	assert(cnt == 1);
-	if (!mnstr_writeInt(s, (int) len) /* 64bit: check for overflow */ ||
-		mnstr_write(s, a, len, 1) < 0)
+	if (!mnstr_writeLng(s, (lng) len) || mnstr_write(s, a, len, 1) < 0)
 		return GDK_FAIL;
 	return GDK_SUCCEED;
 }
@@ -1692,7 +2197,7 @@ static size_t
 BLOBlength(const void *P)
 {
 	const blob *p = P;
-	size_t l = blobsize(p->nitems); /* 64bit: check for overflow */
+	size_t l = blobsize(p->nitems);
 	assert(l <= (size_t) GDK_int_max);
 	return l;
 }
@@ -1709,6 +2214,8 @@ BLOBput(BAT *b, var_t *bun, const void *VAL)
 	const blob *val = VAL;
 	char *base = NULL;
 
+	if (is_blob_nil(val))
+		return *bun = 0;
 	*bun = HEAP_malloc(b, blobsize(val->nitems));
 	base = b->tvheap->base;
 	if (*bun != (var_t) -1) {
@@ -1719,7 +2226,7 @@ BLOBput(BAT *b, var_t *bun, const void *VAL)
 }
 
 static ssize_t
-BLOBtostr(str *tostr, size_t *l, const void *P, bool external)
+BLOBtostr(allocator *ma, str *tostr, size_t *l, const void *P, bool external)
 {
 	static const char hexit[] = "0123456789ABCDEF";
 	const blob *p = P;
@@ -1732,8 +2239,7 @@ BLOBtostr(str *tostr, size_t *l, const void *P, bool external)
 	else
 		expectedlen = p->nitems * 2 + 1;
 	if (*l < expectedlen || *tostr == NULL) {
-		GDKfree(*tostr);
-		*tostr = GDKmalloc(expectedlen);
+		*tostr = ma_alloc(ma, expectedlen);
 		if (*tostr == NULL)
 			return -1;
 		*l = expectedlen;
@@ -1758,7 +2264,7 @@ BLOBtostr(str *tostr, size_t *l, const void *P, bool external)
 }
 
 static ssize_t
-BLOBfromstr(const char *instr, size_t *l, void **VAL, bool external)
+BLOBfromStr(allocator *ma, const char *instr, size_t *l, void **VAL, bool external)
 {
 	blob **val = (blob **) VAL;
 	size_t i;
@@ -1767,11 +2273,11 @@ BLOBfromstr(const char *instr, size_t *l, void **VAL, bool external)
 	blob *result;
 	const char *s = instr;
 
+
 	if (strNil(instr) || (external && strncmp(instr, "nil", 3) == 0)) {
 		nbytes = blobsize(0);
 		if (*l < nbytes || *val == NULL) {
-			GDKfree(*val);
-			if ((*val = GDKmalloc(nbytes)) == NULL)
+			if ((*val = ma_alloc(ma, nbytes)) == NULL)
 				return -1;
 		}
 		**val = blob_nil;
@@ -1783,7 +2289,7 @@ BLOBfromstr(const char *instr, size_t *l, void **VAL, bool external)
 		if (GDKisxdigit(instr[i]))
 			nitems++;
 		else if (!GDKisspace(instr[i])) {
-			GDKerror("Illegal char in blob\n");
+			GDKerror("Illegal char '%c' in blob\n", instr[i]);
 			return -1;
 		}
 	}
@@ -1795,8 +2301,7 @@ BLOBfromstr(const char *instr, size_t *l, void **VAL, bool external)
 	nbytes = blobsize(nitems);
 
 	if (*l < nbytes || *val == NULL) {
-		GDKfree(*val);
-		*val = GDKmalloc(nbytes);
+		*val = ma_alloc(ma, nbytes);
 		if( *val == NULL)
 			return -1;
 		*l = nbytes;
@@ -1858,15 +2363,17 @@ atomDesc BATatoms[MAXATOMS] = {
 #if SIZEOF_OID == SIZEOF_INT
 		.atomNull = (void *) &int_nil,
 		.atomCmp = (int (*)(const void *, const void *)) intCmp,
+		.atomEqual = (bool (*)(const void *, const void *)) intEq,
 		.atomHash = (BUN (*)(const void *)) intHash,
 #else
 		.atomNull = (void *) &lng_nil,
 		.atomCmp = (int (*)(const void *, const void *)) lngCmp,
+		.atomEqual = (bool (*)(const void *, const void *)) lngEq,
 		.atomHash = (BUN (*)(const void *)) lngHash,
 #endif
-		.atomFromStr = (ssize_t (*)(const char *, size_t *, void **, bool)) OIDfromStr,
-		.atomToStr = (ssize_t (*)(char **, size_t *, const void *, bool)) OIDtoStr,
-		.atomRead = (void *(*)(void *, size_t *, stream *, size_t)) voidRead,
+		.atomFromStr = (ssize_t (*)(allocator *, const char *, size_t *, void **, bool)) OIDfromStr,
+		.atomToStr = (ssize_t (*)(allocator *, char **, size_t *, const void *, bool)) OIDtoStr,
+		.atomRead = (void *(*)(allocator *, void *, size_t *, stream *, size_t)) voidRead,
 		.atomWrite = (gdk_return (*)(const void *, stream *, size_t)) voidWrite,
 	},
 	[TYPE_bit] = {
@@ -1875,11 +2382,12 @@ atomDesc BATatoms[MAXATOMS] = {
 		.linear = true,
 		.size = sizeof(bit),
 		.atomNull = (void *) &bte_nil,
-		.atomFromStr = (ssize_t (*)(const char *, size_t *, void **, bool)) bitFromStr,
-		.atomToStr = (ssize_t (*)(char **, size_t *, const void *, bool)) bitToStr,
-		.atomRead = (void *(*)(void *, size_t *, stream *, size_t)) bitRead,
+		.atomFromStr = (ssize_t (*)(allocator *, const char *, size_t *, void **, bool)) bitFromStr,
+		.atomToStr = (ssize_t (*)(allocator *, char **, size_t *, const void *, bool)) bitToStr,
+		.atomRead = (void *(*)(allocator *, void *, size_t *, stream *, size_t)) bitRead,
 		.atomWrite = (gdk_return (*)(const void *, stream *, size_t)) bitWrite,
 		.atomCmp = (int (*)(const void *, const void *)) bteCmp,
+		.atomEqual = (bool (*)(const void *, const void *)) bteEq,
 		.atomHash = (BUN (*)(const void *)) bteHash,
 	},
 	[TYPE_msk] = {
@@ -1887,11 +2395,12 @@ atomDesc BATatoms[MAXATOMS] = {
 		.storage = TYPE_msk,
 		.linear = false,
 		.size = 1,	/* really 1/8 */
-		.atomFromStr = (ssize_t (*)(const char *, size_t *, void **, bool)) mskFromStr,
-		.atomToStr = (ssize_t (*)(char **, size_t *, const void *, bool)) mskToStr,
-		.atomRead = (void *(*)(void *, size_t *, stream *, size_t)) mskRead,
+		.atomFromStr = (ssize_t (*)(allocator *, const char *, size_t *, void **, bool)) mskFromStr,
+		.atomToStr = (ssize_t (*)(allocator *, char **, size_t *, const void *, bool)) mskToStr,
+		.atomRead = (void *(*)(allocator *, void *, size_t *, stream *, size_t)) mskRead,
 		.atomWrite = (gdk_return (*)(const void *, stream *, size_t)) mskWrite,
 		.atomCmp = (int (*)(const void *, const void *)) mskCmp,
+		.atomEqual = (bool (*)(const void *, const void *)) mskEq,
 	},
 	[TYPE_bte] = {
 		.name = "bte",
@@ -1899,24 +2408,26 @@ atomDesc BATatoms[MAXATOMS] = {
 		.linear = true,
 		.size = sizeof(bte),
 		.atomNull = (void *) &bte_nil,
-		.atomFromStr = (ssize_t (*)(const char *, size_t *, void **, bool)) bteFromStr,
-		.atomToStr = (ssize_t (*)(char **, size_t *, const void *, bool)) bteToStr,
-		.atomRead = (void *(*)(void *, size_t *, stream *, size_t)) bteRead,
+		.atomFromStr = (ssize_t (*)(allocator *, const char *, size_t *, void **, bool)) bteFromStr,
+		.atomToStr = (ssize_t (*)(allocator *, char **, size_t *, const void *, bool)) bteToStr,
+		.atomRead = (void *(*)(allocator *, void *, size_t *, stream *, size_t)) bteRead,
 		.atomWrite = (gdk_return (*)(const void *, stream *, size_t)) bteWrite,
 		.atomCmp = (int (*)(const void *, const void *)) bteCmp,
+		.atomEqual = (bool (*)(const void *, const void *)) bteEq,
 		.atomHash = (BUN (*)(const void *)) bteHash,
 	},
 	[TYPE_ubte] = {
 		.name = "ubte",
-		.storage = TYPE_bte,
+		.storage = TYPE_ubte,
 		.linear = true,
 		.size = sizeof(ubte),
 		.atomNull = NULL,
-		.atomFromStr = (ssize_t (*)(const char *, size_t *, void **, bool)) ubteFromStr,
-		.atomToStr = (ssize_t (*)(char **, size_t *, const void *, bool)) ubteToStr,
-		.atomRead = (void *(*)(void *, size_t *, stream *, size_t)) bteRead,
+		.atomFromStr = (ssize_t (*)(allocator *, const char *, size_t *, void **, bool)) ubteFromStr,
+		.atomToStr = (ssize_t (*)(allocator *, char **, size_t *, const void *, bool)) ubteToStr,
+		.atomRead = (void *(*)(allocator *, void *, size_t *, stream *, size_t)) bteRead,
 		.atomWrite = (gdk_return (*)(const void *, stream *, size_t)) bteWrite,
 		.atomCmp = (int (*)(const void *, const void *)) ubteCmp,
+		.atomEqual = (bool (*)(const void *, const void *)) ubteEq,
 		.atomHash = (BUN (*)(const void *)) bteHash,
 	},
 	[TYPE_sht] = {
@@ -1925,23 +2436,26 @@ atomDesc BATatoms[MAXATOMS] = {
 		.linear = true,
 		.size = sizeof(sht),
 		.atomNull = (void *) &sht_nil,
-		.atomFromStr = (ssize_t (*)(const char *, size_t *, void **, bool)) shtFromStr,
-		.atomToStr = (ssize_t (*)(char **, size_t *, const void *, bool)) shtToStr,
-		.atomRead = (void *(*)(void *, size_t *, stream *, size_t)) shtRead,
+		.atomFromStr = (ssize_t (*)(allocator *, const char *, size_t *, void **, bool)) shtFromStr,
+		.atomToStr = (ssize_t (*)(allocator *, char **, size_t *, const void *, bool)) shtToStr,
+		.atomRead = (void *(*)(allocator *, void *, size_t *, stream *, size_t)) shtRead,
 		.atomWrite = (gdk_return (*)(const void *, stream *, size_t)) shtWrite,
 		.atomCmp = (int (*)(const void *, const void *)) shtCmp,
+		.atomEqual = (bool (*)(const void *, const void *)) shtEq,
 		.atomHash = (BUN (*)(const void *)) shtHash,
 	},
 	[TYPE_usht] = {
 		.name = "usht",
-		.storage = TYPE_sht,
+		.storage = TYPE_usht,
 		.linear = true,
 		.size = sizeof(usht),
-		.atomFromStr = (ssize_t (*)(const char *, size_t *, void **, bool)) ushtFromStr,
-		.atomToStr = (ssize_t (*)(char **, size_t *, const void *, bool)) ushtToStr,
-		.atomRead = (void *(*)(void *, size_t *, stream *, size_t)) shtRead,
+		.atomNull = NULL,
+		.atomFromStr = (ssize_t (*)(allocator *, const char *, size_t *, void **, bool)) ushtFromStr,
+		.atomToStr = (ssize_t (*)(allocator *, char **, size_t *, const void *, bool)) ushtToStr,
+		.atomRead = (void *(*)(allocator *, void *, size_t *, stream *, size_t)) shtRead,
 		.atomWrite = (gdk_return (*)(const void *, stream *, size_t)) shtWrite,
 		.atomCmp = (int (*)(const void *, const void *)) ushtCmp,
+		.atomEqual = (bool (*)(const void *, const void *)) ushtEq,
 		.atomHash = (BUN (*)(const void *)) shtHash,
 	},
 	[TYPE_int] = {
@@ -1950,23 +2464,26 @@ atomDesc BATatoms[MAXATOMS] = {
 		.linear = true,
 		.size = sizeof(int),
 		.atomNull = (void *) &int_nil,
-		.atomFromStr = (ssize_t (*)(const char *, size_t *, void **, bool)) intFromStr,
-		.atomToStr = (ssize_t (*)(char **, size_t *, const void *, bool)) intToStr,
-		.atomRead = (void *(*)(void *, size_t *, stream *, size_t)) intRead,
+		.atomFromStr = (ssize_t (*)(allocator *, const char *, size_t *, void **, bool)) intFromStr,
+		.atomToStr = (ssize_t (*)(allocator *, char **, size_t *, const void *, bool)) intToStr,
+		.atomRead = (void *(*)(allocator *, void *, size_t *, stream *, size_t)) intRead,
 		.atomWrite = (gdk_return (*)(const void *, stream *, size_t)) intWrite,
 		.atomCmp = (int (*)(const void *, const void *)) intCmp,
+		.atomEqual = (bool (*)(const void *, const void *)) intEq,
 		.atomHash = (BUN (*)(const void *)) intHash,
 	},
 	[TYPE_uint] = {
 		.name = "uint",
-		.storage = TYPE_int,
+		.storage = TYPE_uint,
 		.linear = true,
 		.size = sizeof(uint),
-		.atomFromStr = (ssize_t (*)(const char *, size_t *, void **, bool)) uintFromStr,
-		.atomToStr = (ssize_t (*)(char **, size_t *, const void *, bool)) uintToStr,
-		.atomRead = (void *(*)(void *, size_t *, stream *, size_t)) intRead,
+		.atomNull = NULL,
+		.atomFromStr = (ssize_t (*)(allocator *, const char *, size_t *, void **, bool)) uintFromStr,
+		.atomToStr = (ssize_t (*)(allocator *, char **, size_t *, const void *, bool)) uintToStr,
+		.atomRead = (void *(*)(allocator *, void *, size_t *, stream *, size_t)) intRead,
 		.atomWrite = (gdk_return (*)(const void *, stream *, size_t)) intWrite,
 		.atomCmp = (int (*)(const void *, const void *)) uintCmp,
+		.atomEqual = (bool (*)(const void *, const void *)) uintEq,
 		.atomHash = (BUN (*)(const void *)) intHash,
 	},
 	[TYPE_oid] = {
@@ -1976,20 +2493,22 @@ atomDesc BATatoms[MAXATOMS] = {
 #if SIZEOF_OID == SIZEOF_INT
 		.storage = TYPE_int,
 		.atomNull = (void *) &int_nil,
-		.atomRead = (void *(*)(void *, size_t *, stream *, size_t)) intRead,
+		.atomRead = (void *(*)(allocator *, void *, size_t *, stream *, size_t)) intRead,
 		.atomWrite = (gdk_return (*)(const void *, stream *, size_t)) intWrite,
 		.atomCmp = (int (*)(const void *, const void *)) intCmp,
+		.atomEqual = (bool (*)(const void *, const void *)) intEq,
 		.atomHash = (BUN (*)(const void *)) intHash,
 #else
 		.storage = TYPE_lng,
 		.atomNull = (void *) &lng_nil,
-		.atomRead = (void *(*)(void *, size_t *, stream *, size_t)) lngRead,
+		.atomRead = (void *(*)(allocator *, void *, size_t *, stream *, size_t)) lngRead,
 		.atomWrite = (gdk_return (*)(const void *, stream *, size_t)) lngWrite,
 		.atomCmp = (int (*)(const void *, const void *)) lngCmp,
+		.atomEqual = (bool (*)(const void *, const void *)) lngEq,
 		.atomHash = (BUN (*)(const void *)) lngHash,
 #endif
-		.atomFromStr = (ssize_t (*)(const char *, size_t *, void **, bool)) OIDfromStr,
-		.atomToStr = (ssize_t (*)(char **, size_t *, const void *, bool)) OIDtoStr,
+		.atomFromStr = (ssize_t (*)(allocator *, const char *, size_t *, void **, bool)) OIDfromStr,
+		.atomToStr = (ssize_t (*)(allocator *, char **, size_t *, const void *, bool)) OIDtoStr,
 	},
 	[TYPE_ptr] = {
 		.name = "ptr",
@@ -1997,15 +2516,17 @@ atomDesc BATatoms[MAXATOMS] = {
 		.linear = true,
 		.size = sizeof(void *),
 		.atomNull = (void *) &ptr_nil,
-		.atomFromStr = (ssize_t (*)(const char *, size_t *, void **, bool)) ptrFromStr,
-		.atomToStr = (ssize_t (*)(char **, size_t *, const void *, bool)) ptrToStr,
-		.atomRead = (void *(*)(void *, size_t *, stream *, size_t)) ptrRead,
+		.atomFromStr = (ssize_t (*)(allocator *, const char *, size_t *, void **, bool)) ptrFromStr,
+		.atomToStr = (ssize_t (*)(allocator *, char **, size_t *, const void *, bool)) ptrToStr,
+		.atomRead = (void *(*)(allocator *, void *, size_t *, stream *, size_t)) ptrRead,
 		.atomWrite = (gdk_return (*)(const void *, stream *, size_t)) ptrWrite,
 #if SIZEOF_VOID_P == SIZEOF_INT
 		.atomCmp = (int (*)(const void *, const void *)) intCmp,
+		.atomEqual = (bool (*)(const void *, const void *)) intEq,
 		.atomHash = (BUN (*)(const void *)) intHash,
 #else /* SIZEOF_VOID_P == SIZEOF_LNG */
 		.atomCmp = (int (*)(const void *, const void *)) lngCmp,
+		.atomEqual = (bool (*)(const void *, const void *)) lngEq,
 		.atomHash = (BUN (*)(const void *)) lngHash,
 #endif
 	},
@@ -2015,11 +2536,12 @@ atomDesc BATatoms[MAXATOMS] = {
 		.linear = true,
 		.size = sizeof(flt),
 		.atomNull = (void *) &flt_nil,
-		.atomFromStr = (ssize_t (*)(const char *, size_t *, void **, bool)) fltFromStr,
-		.atomToStr = (ssize_t (*)(char **, size_t *, const void *, bool)) fltToStr,
-		.atomRead = (void *(*)(void *, size_t *, stream *, size_t)) fltRead,
+		.atomFromStr = (ssize_t (*)(allocator *, const char *, size_t *, void **, bool)) fltFromStr,
+		.atomToStr = (ssize_t (*)(allocator *, char **, size_t *, const void *, bool)) fltToStr,
+		.atomRead = (void *(*)(allocator *, void *, size_t *, stream *, size_t)) fltRead,
 		.atomWrite = (gdk_return (*)(const void *, stream *, size_t)) fltWrite,
 		.atomCmp = (int (*)(const void *, const void *)) fltCmp,
+		.atomEqual = (bool (*)(const void *, const void *)) fltEq,
 		.atomHash = (BUN (*)(const void *)) fltHash,
 	},
 	[TYPE_dbl] = {
@@ -2028,11 +2550,12 @@ atomDesc BATatoms[MAXATOMS] = {
 		.linear = true,
 		.size = sizeof(dbl),
 		.atomNull = (void *) &dbl_nil,
-		.atomFromStr = (ssize_t (*)(const char *, size_t *, void **, bool)) dblFromStr,
-		.atomToStr = (ssize_t (*)(char **, size_t *, const void *, bool)) dblToStr,
-		.atomRead = (void *(*)(void *, size_t *, stream *, size_t)) dblRead,
+		.atomFromStr = (ssize_t (*)(allocator *, const char *, size_t *, void **, bool)) dblFromStr,
+		.atomToStr = (ssize_t (*)(allocator *, char **, size_t *, const void *, bool)) dblToStr,
+		.atomRead = (void *(*)(allocator *, void *, size_t *, stream *, size_t)) dblRead,
 		.atomWrite = (gdk_return (*)(const void *, stream *, size_t)) dblWrite,
 		.atomCmp = (int (*)(const void *, const void *)) dblCmp,
+		.atomEqual = (bool (*)(const void *, const void *)) dblEq,
 		.atomHash = (BUN (*)(const void *)) dblHash,
 	},
 	[TYPE_lng] = {
@@ -2041,23 +2564,26 @@ atomDesc BATatoms[MAXATOMS] = {
 		.linear = true,
 		.size = sizeof(lng),
 		.atomNull = (void *) &lng_nil,
-		.atomFromStr = (ssize_t (*)(const char *, size_t *, void **, bool)) lngFromStr,
-		.atomToStr = (ssize_t (*)(char **, size_t *, const void *, bool)) lngToStr,
-		.atomRead = (void *(*)(void *, size_t *, stream *, size_t)) lngRead,
+		.atomFromStr = (ssize_t (*)(allocator *, const char *, size_t *, void **, bool)) lngFromStr,
+		.atomToStr = (ssize_t (*)(allocator *, char **, size_t *, const void *, bool)) lngToStr,
+		.atomRead = (void *(*)(allocator *, void *, size_t *, stream *, size_t)) lngRead,
 		.atomWrite = (gdk_return (*)(const void *, stream *, size_t)) lngWrite,
 		.atomCmp = (int (*)(const void *, const void *)) lngCmp,
+		.atomEqual = (bool (*)(const void *, const void *)) lngEq,
 		.atomHash = (BUN (*)(const void *)) lngHash,
 	},
 	[TYPE_ulng] = {
 		.name = "ulng",
-		.storage = TYPE_lng,
+		.storage = TYPE_ulng,
 		.linear = true,
 		.size = sizeof(ulng),
-		.atomFromStr = (ssize_t (*)(const char *, size_t *, void **, bool)) ulngFromStr,
-		.atomToStr = (ssize_t (*)(char **, size_t *, const void *, bool)) ulngToStr,
-		.atomRead = (void *(*)(void *, size_t *, stream *, size_t)) lngRead,
+		.atomNull = NULL,
+		.atomFromStr = (ssize_t (*)(allocator *, const char *, size_t *, void **, bool)) ulngFromStr,
+		.atomToStr = (ssize_t (*)(allocator *, char **, size_t *, const void *, bool)) ulngToStr,
+		.atomRead = (void *(*)(allocator *, void *, size_t *, stream *, size_t)) lngRead,
 		.atomWrite = (gdk_return (*)(const void *, stream *, size_t)) lngWrite,
 		.atomCmp = (int (*)(const void *, const void *)) ulngCmp,
+		.atomEqual = (bool (*)(const void *, const void *)) ulngEq,
 		.atomHash = (BUN (*)(const void *)) lngHash,
 	},
 #ifdef HAVE_HGE
@@ -2067,23 +2593,26 @@ atomDesc BATatoms[MAXATOMS] = {
 		.linear = true,
 		.size = sizeof(hge),
 		.atomNull = (void *) &hge_nil,
-		.atomFromStr = (ssize_t (*)(const char *, size_t *, void **, bool)) hgeFromStr,
-		.atomToStr = (ssize_t (*)(char **, size_t *, const void *, bool)) hgeToStr,
-		.atomRead = (void *(*)(void *, size_t *, stream *, size_t)) hgeRead,
+		.atomFromStr = (ssize_t (*)(allocator *, const char *, size_t *, void **, bool)) hgeFromStr,
+		.atomToStr = (ssize_t (*)(allocator *, char **, size_t *, const void *, bool)) hgeToStr,
+		.atomRead = (void *(*)(allocator *, void *, size_t *, stream *, size_t)) hgeRead,
 		.atomWrite = (gdk_return (*)(const void *, stream *, size_t)) hgeWrite,
 		.atomCmp = (int (*)(const void *, const void *)) hgeCmp,
+		.atomEqual = (bool (*)(const void *, const void *)) hgeEq,
 		.atomHash = (BUN (*)(const void *)) hgeHash,
 	},
 	[TYPE_uhge] = {
 		.name = "uhge",
-		.storage = TYPE_hge,
+		.storage = TYPE_uhge,
 		.linear = true,
 		.size = sizeof(uhge),
-		.atomFromStr = (ssize_t (*)(const char *, size_t *, void **, bool)) uhgeFromStr,
-		.atomToStr = (ssize_t (*)(char **, size_t *, const void *, bool)) uhgeToStr,
-		.atomRead = (void *(*)(void *, size_t *, stream *, size_t)) hgeRead,
+		.atomNull = NULL,
+		.atomFromStr = (ssize_t (*)(allocator *, const char *, size_t *, void **, bool)) uhgeFromStr,
+		.atomToStr = (ssize_t (*)(allocator *, char **, size_t *, const void *, bool)) uhgeToStr,
+		.atomRead = (void *(*)(allocator *, void *, size_t *, stream *, size_t)) hgeRead,
 		.atomWrite = (gdk_return (*)(const void *, stream *, size_t)) hgeWrite,
 		.atomCmp = (int (*)(const void *, const void *)) uhgeCmp,
+		.atomEqual = (bool (*)(const void *, const void *)) uhgeEq,
 		.atomHash = (BUN (*)(const void *)) hgeHash,
 	},
 #endif
@@ -2093,11 +2622,12 @@ atomDesc BATatoms[MAXATOMS] = {
 		.linear = true,
 		.size = sizeof(int),
 		.atomNull = (void *) &int_nil,
-		.atomFromStr = (ssize_t (*)(const char *, size_t *, void **, bool)) date_fromstr,
-		.atomToStr = (ssize_t (*)(char **, size_t *, const void *, bool)) date_tostr,
-		.atomRead = (void *(*)(void *, size_t *, stream *, size_t)) intRead,
+		.atomFromStr = (ssize_t (*)(allocator *, const char *, size_t *, void **, bool)) date_fromstr,
+		.atomToStr = (ssize_t (*)(allocator *, char **, size_t *, const void *, bool)) date_tostr,
+		.atomRead = (void *(*)(allocator *, void *, size_t *, stream *, size_t)) intRead,
 		.atomWrite = (gdk_return (*)(const void *, stream *, size_t)) intWrite,
 		.atomCmp = (int (*)(const void *, const void *)) intCmp,
+		.atomEqual = (bool (*)(const void *, const void *)) intEq,
 		.atomHash = (BUN (*)(const void *)) intHash,
 	},
 	[TYPE_daytime] = {
@@ -2106,11 +2636,12 @@ atomDesc BATatoms[MAXATOMS] = {
 		.linear = true,
 		.size = sizeof(lng),
 		.atomNull = (void *) &lng_nil,
-		.atomFromStr = (ssize_t (*)(const char *, size_t *, void **, bool)) daytime_tz_fromstr,
-		.atomToStr = (ssize_t (*)(char **, size_t *, const void *, bool)) daytime_tostr,
-		.atomRead = (void *(*)(void *, size_t *, stream *, size_t)) lngRead,
+		.atomFromStr = (ssize_t (*)(allocator *, const char *, size_t *, void **, bool)) daytime_tz_fromstr,
+		.atomToStr = (ssize_t (*)(allocator *, char **, size_t *, const void *, bool)) daytime_tostr,
+		.atomRead = (void *(*)(allocator *, void *, size_t *, stream *, size_t)) lngRead,
 		.atomWrite = (gdk_return (*)(const void *, stream *, size_t)) lngWrite,
 		.atomCmp = (int (*)(const void *, const void *)) lngCmp,
+		.atomEqual = (bool (*)(const void *, const void *)) lngEq,
 		.atomHash = (BUN (*)(const void *)) lngHash,
 	},
 	[TYPE_timestamp] = {
@@ -2119,11 +2650,12 @@ atomDesc BATatoms[MAXATOMS] = {
 		.linear = true,
 		.size = sizeof(lng),
 		.atomNull = (void *) &lng_nil,
-		.atomFromStr = (ssize_t (*)(const char *, size_t *, void **, bool)) timestamp_fromstr,
-		.atomToStr = (ssize_t (*)(char **, size_t *, const void *, bool)) timestamp_tostr,
-		.atomRead = (void *(*)(void *, size_t *, stream *, size_t)) lngRead,
+		.atomFromStr = (ssize_t (*)(allocator *, const char *, size_t *, void **, bool)) timestamp_fromstr,
+		.atomToStr = (ssize_t (*)(allocator *, char **, size_t *, const void *, bool)) timestamp_tostr,
+		.atomRead = (void *(*)(allocator *, void *, size_t *, stream *, size_t)) lngRead,
 		.atomWrite = (gdk_return (*)(const void *, stream *, size_t)) lngWrite,
 		.atomCmp = (int (*)(const void *, const void *)) lngCmp,
+		.atomEqual = (bool (*)(const void *, const void *)) lngEq,
 		.atomHash = (BUN (*)(const void *)) lngHash,
 	},
 	[TYPE_uuid] = {
@@ -2137,7 +2669,36 @@ atomDesc BATatoms[MAXATOMS] = {
 		.atomRead = UUIDread,
 		.atomWrite = UUIDwrite,
 		.atomCmp = UUIDcompare,
-		.atomHash = UUIDhash,
+		.atomEqual = UUIDequal,
+		.atomHash = uuidHash,
+	},
+	[TYPE_inet4] = {
+		.name = "inet4",
+		.storage = TYPE_inet4,
+		.linear = true,
+		.size = sizeof(inet4),
+		.atomNull = (void *) &inet4_nil,
+		.atomFromStr = INET4fromString,
+		.atomToStr = INET4toString,
+		.atomRead = INET4read,
+		.atomWrite = INET4write,
+		.atomCmp = INET4compare,
+		.atomEqual = INET4equal,
+		.atomHash = inet4Hash,
+	},
+	[TYPE_inet6] = {
+		.name = "inet6",
+		.storage = TYPE_inet6,
+		.linear = true,
+		.size = sizeof(inet6),
+		.atomNull = (void *) &inet6_nil,
+		.atomFromStr = INET6fromString,
+		.atomToStr = INET6toString,
+		.atomRead = INET6read,
+		.atomWrite = INET6write,
+		.atomCmp = INET6compare,
+		.atomEqual = INET6equal,
+		.atomHash = inet6Hash,
 	},
 	[TYPE_str] = {
 		.name = "str",
@@ -2145,11 +2706,12 @@ atomDesc BATatoms[MAXATOMS] = {
 		.linear = true,
 		.size = sizeof(var_t),
 		.atomNull = (void *) str_nil,
-		.atomFromStr = (ssize_t (*)(const char *, size_t *, void **, bool)) strFromStr,
-		.atomToStr = (ssize_t (*)(char **, size_t *, const void *, bool)) strToStr,
-		.atomRead = (void *(*)(void *, size_t *, stream *, size_t)) strRead,
+		.atomFromStr = (ssize_t (*)(allocator *, const char *, size_t *, void **, bool)) strFromStr,
+		.atomToStr = (ssize_t (*)(allocator *, char **, size_t *, const void *, bool)) strToStr,
+		.atomRead = (void *(*)(allocator *, void *, size_t *, stream *, size_t)) strRead,
 		.atomWrite = (gdk_return (*)(const void *, stream *, size_t)) strWrite,
 		.atomCmp = (int (*)(const void *, const void *)) strCmp,
+		.atomEqual = (bool (*)(const void *, const void *)) strEq,
 		.atomHash = (BUN (*)(const void *)) strHash,
 		.atomPut = strPut,
 		.atomLen = (size_t (*)(const void *)) strLen,
@@ -2161,12 +2723,13 @@ atomDesc BATatoms[MAXATOMS] = {
 		.linear = true,
 		.size = sizeof(var_t),
 		.atomNull = (void *) &blob_nil,
-		.atomFromStr = BLOBfromstr,
+		.atomFromStr = BLOBfromStr,
 		.atomToStr = BLOBtostr,
 		.atomRead = BLOBread,
 		.atomWrite = BLOBwrite,
 		.atomCmp = BLOBcmp,
-		.atomHash = BLOBhash,
+		.atomEqual = BLOBeq,
+		.atomHash = blobHash,
 		.atomPut = BLOBput,
 		.atomDel = BLOBdel,
 		.atomLen = BLOBlength,

@@ -3,11 +3,9 @@
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024, 2025 MonetDB Foundation;
- * Copyright August 2008 - 2023 MonetDB B.V.;
- * Copyright 1997 - July 2008 CWI.
+ * For copyright information, see the file debian/copyright.
  */
 
 /*
@@ -58,7 +56,6 @@ SQLgetSpace(mvc *m, MalBlkPtr mb, int prepare)
 {
 	sql_trans *tr = m->session->tr;
 	lng size,space = 0, i;
-	str lasttable = 0;
 
 	for (i = 0; i < mb->stop; i++) {
 		InstrPtr p = mb->stmt[i];
@@ -84,31 +81,28 @@ SQLgetSpace(mvc *m, MalBlkPtr mb, int prepare)
 				continue;
 
 			/* we have to sum the cost of all three components of a BAT */
-			if (c && isTable(c->t) && (lasttable == 0 || strcmp(lasttable,tname)==0)) {
+			if (c && isTable(c->t)) {
 				size = SQLgetColumnSize(tr, c, access);
 				space += size;	// accumulate once per table
-				//lasttable = tname;	 invalidate this attempt
-				if( !prepare && size == 0  && ! t->system){
+				if (!prepare && size == 0  && !t->system)
 					setFunctionId(p, emptybindRef);
-				}
 			}
 		}
-		if (getModuleId(p) == sqlRef && (getFunctionId(p) == bindidxRef)) {
+		if (getModuleId(p) == sqlRef && (getFunctionId(p) == bind_idxbatRef)) {
 			char *sname = getVarConstant(mb, getArg(p, 1 + p->retc)).val.sval;
 			//char *tname = getVarConstant(mb, getArg(p, 2 + p->retc)).val.sval;
 			char *idxname = getVarConstant(mb, getArg(p, 3 + p->retc)).val.sval;
 			int access = getVarConstant(mb, getArg(p, 4 + p->retc)).val.ival;
 			sql_schema *s = mvc_bind_schema(m, sname);
 
-			if (getFunctionId(p) == bindidxRef) {
+			if (getFunctionId(p) == bind_idxbatRef) {
 				sql_idx *i = mvc_bind_idx(m, s, idxname);
 
 				if (i && isTable(i->t)) {
 					size = SQLgetIdxSize(tr, i, access);
 
-					if( !prepare && size == 0 && ! i->t->system){
+					if (!prepare && size == 0 && !i->t->system)
 						setFunctionId(p, emptybindidxRef);
-					}
 				}
 			}
 		}
@@ -133,7 +127,7 @@ getSQLoptimizer(mvc *m)
 }
 
 static str
-addOptimizers(Client c, MalBlkPtr mb, char *pipe, int prepare)
+addOptimizers(Client c, MalBlkPtr mb, const char *pipe, int prepare)
 {
 	int i;
 	InstrPtr q;
@@ -141,10 +135,18 @@ addOptimizers(Client c, MalBlkPtr mb, char *pipe, int prepare)
 	str msg= MAL_SUCCEED;
 
 	be = (backend *) c->sqlcontext;
+	c->no_mitosis = be->no_mitosis;
+	if (c->qryctx.pipeline_mode)
+		c->no_mitosis = 1;
 	assert(be && be->mvc);	/* SQL clients should always have their state set */
 
 	(void) SQLgetSpace(be->mvc, mb, prepare); // detect empty bats.
-	pipe = pipe? pipe: "default_pipe";
+	if (pipe == NULL)
+		pipe = "default_pipe";
+	else if (strcmp(pipe, "no_mitosis_pipe") == 0) {
+		pipe = "default_pipe";
+		c->no_mitosis = true;
+	}
 	msg = addOptimizerPipe(c, mb, pipe);
 	if (msg){
 		return msg;
@@ -207,11 +209,9 @@ SQLoptimizeQuery(Client c, MalBlkPtr mb)
 		if (c->listing)
 			printFunction(c->fdout, mb, 0, c->listing);
 		if (mb->errors && msg && msg != mb->errors) { /* if both set, throw mb->errors as the earliest one */
-			freeException(msg);
 			msg = MAL_SUCCEED;
 		}
 		str nmsg = createException(MAL, "optimizer.optimizeQuery", "%s", mb->errors ? mb->errors : msg);
-		freeException(msg);
 		return nmsg;
 	}
 

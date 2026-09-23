@@ -58,7 +58,7 @@ NULL	0.692
 NULL	0.860
 NULL	0.230
 
-query R rowsort
+query D rowsort
 SELECT max(t2.c1) FROM t1 LEFT OUTER JOIN t2 ON CASE WHEN t2.c0 < t1.c0 OR t1.c0 THEN t1.c0 WHEN t1.c0 THEN t1.c0 END
 ----
 0.860
@@ -66,7 +66,7 @@ SELECT max(t2.c1) FROM t1 LEFT OUTER JOIN t2 ON CASE WHEN t2.c0 < t1.c0 OR t1.c0
 statement ok
 create view v0(c0) as (select all 7.948668E7 from t1) with check option
 
-query R rowsort
+query D rowsort
 SELECT max(t2.c1) FROM t0, t1 CROSS JOIN v0 LEFT OUTER JOIN t2
 ON CASE WHEN ((((((((v0.c0)=(v0.c0)))OR(((t1.c0)>=(t1.c0)))))AND(((t2.c0)<(t1.c0)))))OR(((((t1.c0)AND(t1.c0)))AND(t1.c0))))
 THEN t1.c0 WHEN COALESCE(COALESCE(TRUE, t2.c0, t1.c0), CASE t1.c1 WHEN t2.c1 THEN t2.c0 WHEN t1.c1 THEN t2.c0 ELSE t1.c0 END)
@@ -208,7 +208,7 @@ INSERT INTO t1(c0) VALUES(0.40), (0.75)
 statement error 40002!UPDATE: PRIMARY KEY constraint 't1.t1_c0_pkey' violated
 UPDATE t1 SET c0 = 0.28 WHERE (CAST(INTERVAL '31' MONTH AS STRING)) NOT IN (COALESCE('靟', 'P먌+}I*CpQ'))
 
-query R rowsort
+query D rowsort
 SELECT c0 FROM t1
 ----
 0.400
@@ -690,7 +690,7 @@ NULL
 
 query T rowsort
 select t2.c1 from v0, t2 right outer join (values (least(ifthenelse(false, '', '47940718'), sql_max('栩', 'U*>Kz0')),
-case cast(interval '-165227345' month as string) when "insert"('f3', 0.57506007, -1550051844, '0.06527867754732408')
+case cast(interval '-165227345' month as string) when "insert"('f3', 057506007, -1550051844, '0.06527867754732408')
 then 'u' when '2033856974' then case when true then '' when false then '-1543387917' when true then '0.4055556886118663'
 when false then 'c' else 'E\n' end end)) as sub0 on nullif(not (false), (t2.c1) not between asymmetric (t2.c1) and (t2.c1))
 where case ((50)*(1836147184)) when least(5110, 1303739364) then (false) = false when 3 then least(true, true) when

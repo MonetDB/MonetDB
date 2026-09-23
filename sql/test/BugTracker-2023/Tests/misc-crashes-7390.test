@@ -65,10 +65,10 @@ SELECT count(*) as cnt FROM v0
 122850
 
 statement ok
-SELECT FIRST_VALUE(v1) OVER (PARTITION BY v1=5 ORDER BY 3003*v1 DESC NULLS FIRST, v1) FROM v0 LIMIT 1000000000
+SELECT FIRST_VALUE(v1) OVER (PARTITION BY cast(v1 as integer)=5 ORDER BY 3003*cast(v1 as integer) DESC NULLS FIRST, v1) FROM v0 LIMIT 1000000000
 
 query T nosort
-SELECT distinct FIRST_VALUE(v1) OVER (PARTITION BY v1=5 ORDER BY 3003*v1 DESC NULLS FIRST, v1) FROM v0 LIMIT 1000000000
+SELECT distinct FIRST_VALUE(v1) OVER (PARTITION BY cast(v1 as integer)=5 ORDER BY 3003*cast(v1 as integer) DESC NULLS FIRST, v1) FROM v0 LIMIT 1000000000
 ----
 122500
 5
@@ -106,7 +106,7 @@ statement ok
 DROP TABLE v0
 
 -- 06.sql
-statement error HY013!Could not allocate space
+statement error HY013!Could not allocate memory
 CREATE TEMP TABLE Table0 (Col0 INT, PRIMARY KEY(Col0), FOREIGN KEY (Col0) REFERENCES Table0)
 
 -- 07.sql
@@ -252,16 +252,15 @@ statement ok
 CREATE TABLE v0(v1 NUMERIC)
 
 query I nosort
-SELECT 38 ^ v1 FROM v0 AS v3 WINDOW v2 AS ( ), v4 AS (GROUPS BETWEEN -32768 PRECEDING AND 94 FOLLOWING) LIMIT 16 OFFSET 8
+SELECT power(38, v1) FROM v0 AS v3 WINDOW v2 AS ( ), v4 AS (GROUPS BETWEEN -32768 PRECEDING AND 94 FOLLOWING) LIMIT 16 OFFSET 8
 ----
 
 query I nosort
 WITH v0 (v1) AS (SELECT 127 FROM v0 WHERE (v1 < 2147483647 OR v1 > -1) AND v1 / v1 + v1 <= 95 = v1 >= -128 + 15) SELECT 38 ^ v1 FROM v0 AS v3 WINDOW v2 AS ( ), v4 AS (GROUPS BETWEEN -32768 PRECEDING AND 94 FOLLOWING) LIMIT 16 OFFSET 8
 ----
 
-statement error 42000!
-UPDATE v0 SET v1 = (WITH v0 (v1) AS (SELECT 127 WHERE (v1 < 2147483647 OR v1 > -1) AND v1 / v1 + v1 <= 95 = v1 >= -128 + 15) SELECT 38 FROM v0 AS v3 WINDOW v2 AS ( ), v4 AS (GROUPS BETWEEN -32768 PRECEDING AND 94 FOLLOWING) LIMIT 16 OFFSET 8) ^ v1
--- sql/server/rel_select.c:3104: rel_binop_: Assertion `t1 && t2' failed.
+statement ok
+UPDATE v0 SET v1 = power((WITH v0 (v1) AS (SELECT 127 WHERE (v1 < 2147483647 OR v1 > -1) AND v1 / v1 + v1 <= 95 = v1 >= -128 + 15) SELECT 38 FROM v0 AS v3 WINDOW v2 AS ( ), v4 AS (GROUPS BETWEEN -32768 PRECEDING AND 94 FOLLOWING) LIMIT 16 OFFSET 8), v1)
 
 statement ok
 DROP TABLE v0
@@ -322,7 +321,7 @@ DROP TABLE v0
 statement ok
 CREATE TABLE v0 (v1 INTEGER PRIMARY KEY)
 
-query R nosort
+query D nosort
 SELECT 67 + 0 + -1 + 96 + 46463082.000000 + 30 AS v2 FROM v0 WHERE 255 = v1 LIMIT 66 OFFSET 16
 ----
 
@@ -412,7 +411,7 @@ statement ok
 CREATE TABLE v0(v1 SMALLINT PRIMARY KEY)
 
 statement ok
-INSERT INTO v0 VALUES ('x' IN (SELECT - SUM(18) OVER ( ) * 8 AS v2)), (-128), (34), (39)
+INSERT INTO v0 VALUES ('x' IN (SELECT cast(- SUM(18) OVER ( ) * 8 as varchar))), (-128), (34), (39)
 
 query I nosort
 SELECT * FROM v0 order by 1
@@ -432,7 +431,7 @@ CREATE TABLE v0(v1 DECIMAL NOT NULL)
 statement ok
 INSERT INTO v0 VALUES (22542428.000000), (54), (19), (0), (0), (0)
 
-query R nosort
+query D nosort
 SELECT * FROM v0 WHERE (v1 >= 0 AND v1 <= 0) OR (51867923.000000 LIKE 'x' AND (SELECT v1 BETWEEN 47130623.000000 AND v1) LIKE 'x')
 ----
 0.000
@@ -458,8 +457,12 @@ statement ok
 DROP TABLE v0
 
 -- 31.sql
-statement error 22003!overflow ...
-SELECT ALL ( SELECT - - - - - - - - - - - 1 - - - - - - 16 FROM ( SELECT NULL - - - - - - - - - - - - - - - - 1 FROM ( SELECT - - - - 1 * - - - - - - 2147483648 * - - - 43 * 77745222.000000 ) AS v1 ( v1 ) GROUP BY GROUPING SETS ( GROUPING SETS ( CUBE ( v1 ) ) ) ORDER BY v1 , - - - 86 + - - 93 ^ v1 , v1 LIMIT 21 ) AS v1 UNION SELECT - - - - - - - - - - - - 93 WHERE - v1 < - 63226945.000000 - - - - - - - - - - 68 ) FROM ( VALUES ( - - - - - - - - - 40 / - ( SELECT - - - - - - - - 0 WHERE - - - - - - - 40 = - - - - - 0 ) ) , ( - - 88 ) ) v1 ( v1 )
+onlyif has-hugeint
+query I nosort
+SELECT ALL ( SELECT - - - - - - - - - - - 1 - - - - - - 16 FROM ( SELECT NULL - - - - - - - - - - - - - - - - 1 FROM ( SELECT - - - - 1 * - - - - - - 2147483648 * - - - 43 * 77745222.000000 ) AS v1 ( v1 ) GROUP BY GROUPING SETS ( GROUPING SETS ( CUBE ( v1 ) ) ) ORDER BY v1 , - - - 86 + - - 93 ^ 2 , v1 LIMIT 21 ) AS v1 UNION SELECT - - - - - - - - - - - - 93 WHERE - v1 < - 63226945.000000 - - - - - - - - - - 68 ) FROM ( VALUES ( - - - - - - - - - 40 / - ( SELECT - - - - - - - - 0 WHERE - - - - - - - 40 = - - - - - 0 ) ) , ( - - 88 ) ) v1 ( v1 )
+----
+15
+15
 
 -- 32.sql
 statement ok
@@ -562,7 +565,7 @@ DROP TABLE v0
 statement ok
 CREATE TABLE v0(v2 DOUBLE, v1 REAL)
 
-query I
+query I nosort
 SELECT 2 FROM v0 AS v0 WHERE v0 . v2 = ( SELECT v2 WHERE v2 = 2 ) + v0 . v1
 ----
 

@@ -13257,30 +13257,30 @@ Winslet,+Kate
 2978
 Zane,+Billy
 
-query RTTR nosort
+query DTTD nosort
  SELECT * from Video ORDER BY  id, imdb, image, mediainformationfk
 ----
-896 values hashing to fa825bcff873b78b672428fa5f2b814e
+896 values hashing to 13439ec601ba014eb72856d3db76ee90
 
-query RTT nosort
+query DTT nosort
  SELECT * from Creation ORDER BY  creationpk, title, creationdate
 ----
-672 values hashing to d552f4aaf4581ad4e5df5451510fcb34
+672 values hashing to a3e1df64e6462121c876a5a22f68ab7a
 
-query RR nosort
+query DD nosort
  SELECT * from CreationCreator ORDER BY  creationfk, creatorfk
 ----
-7992 values hashing to 798550cddb1d7660c6a728db16231696
+7992 values hashing to 9eba9ded0e5714bf29729da00ef0e3b0
 
-query RTR nosort
+query DTD nosort
  SELECT * from Creator ORDER BY  creatorpk, role, individualfk
 ----
-11988 values hashing to dcf8dbebea2fb0a318f4b0e8c4580be7
+11988 values hashing to dbea08edd6961370893b32cefb815141
 
-query RT nosort
+query DT nosort
  SELECT * from Individual ORDER BY  individualpk, personname
 ----
-5974 values hashing to ea101a57cd4d5bea79b5042b558bb6d2
+5974 values hashing to e1b745a8a9341aeb82fe3d8e698f4fe6
 
 statement ok
  create table _t6 (CreatorPK int, Role varchar(255), IndividualFK int)

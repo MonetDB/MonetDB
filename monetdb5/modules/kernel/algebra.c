@@ -3,11 +3,9 @@
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024, 2025 MonetDB Foundation;
- * Copyright August 2008 - 2023 MonetDB B.V.;
- * Copyright 1997 - July 2008 CWI.
+ * For copyright information, see the file debian/copyright.
  */
 
 /*
@@ -59,6 +57,7 @@ static gdk_return
 CMDgen_group(BAT **result, BAT *gids, BAT *cnts)
 {
 	BUN j;
+	BUN n = 0;
 	BATiter gi = bat_iterator(gids);
 	BAT *r = COLnew(0, TYPE_oid, gi.count * 2, TRANSIENT);
 
@@ -67,38 +66,45 @@ CMDgen_group(BAT **result, BAT *gids, BAT *cnts)
 		return GDK_FAIL;
 	}
 	BATiter ci = bat_iterator(cnts);
+	oid *rp = (oid *) Tloc(r, 0);
 	if (gi.type == TYPE_void) {
 		oid id = gi.tseq;
 		lng *cnt = (lng *) ci.base;
 		for (j = 0; j < gi.count; j++) {
-			lng i, sz = cnt[j];
-			for (i = 0; i < sz; i++) {
-				if (BUNappend(r, &id, false) != GDK_SUCCEED) {
-					BBPreclaim(r);
-					bat_iterator_end(&ci);
-					bat_iterator_end(&gi);
-					return GDK_FAIL;
+			for (lng sz = cnt[j], i = 0; i < sz; i++) {
+				if (n >= BATcapacity(r)) {
+					r->theap->free = n * sizeof(oid);
+					BUN sz = BATgrows(r);
+					if (BATextend(r, sz) != GDK_SUCCEED) {
+						BBPreclaim(r);
+						return GDK_FAIL;
+					}
+					rp = (oid *) Tloc(r, 0);
 				}
+				rp[n++] = id;
 			}
-			id ++;
+			id++;
 		}
 	} else {
-		oid *id = (oid *) gi.base;
+		oid *idp = (oid *) gi.base;
 		lng *cnt = (lng *) ci.base;
 		for (j = 0; j < gi.count; j++) {
-			lng i, sz = cnt[j];
-			for (i = 0; i < sz; i++) {
-				if (BUNappend(r, id, false) != GDK_SUCCEED) {
-					BBPreclaim(r);
-					bat_iterator_end(&ci);
-					bat_iterator_end(&gi);
-					return GDK_FAIL;
+			for (lng sz = cnt[j], i = 0; i < sz; i++) {
+				if (n >= BATcapacity(r)) {
+					r->theap->free = n * sizeof(oid);
+					BUN sz = BATgrows(r);
+					if (BATextend(r, sz) != GDK_SUCCEED) {
+						BBPreclaim(r);
+						return GDK_FAIL;
+					}
+					rp = (oid *) Tloc(r, 0);
 				}
+				rp[n++] = idp[j];
 			}
-			id ++;
 		}
 	}
 	bat_iterator_end(&ci);
+	BATsetcount(r, n);
 	r->tkey = false;
 	r->tseqbase = oid_nil;
 	r->tsorted = gi.sorted;
@@ -137,8 +143,10 @@ slice(BAT **retval, BAT *b, lng start, lng end)
  */
 
 static str
-ALGminany_skipnil(ptr result, const bat *bid, const bit *skipnil)
+ALGminany_skipnil(Client ctx, ptr result, const bat *bid, const bit *skipnil)
 {
+	(void) ctx;
+	allocator *ma = ctx->curprg->def->ma;
 	BAT *b;
 	ptr p;
 	str msg = MAL_SUCCEED;
@@ -152,9 +160,9 @@ ALGminany_skipnil(ptr result, const bat *bid, const bit *skipnil)
 							  ATOMname(b->ttype));
 	} else {
 		if (ATOMextern(b->ttype)) {
-			*(ptr *) result = p = BATmin_skipnil(b, NULL, *skipnil);
+			*(ptr *) result = p = BATmin_skipnil(ma, b, NULL, *skipnil, false);
 		} else {
-			p = BATmin_skipnil(b, result, *skipnil);
+			p = BATmin_skipnil(ma, b, result, *skipnil, false);
 			if (p != result)
 				msg = createException(MAL, "algebra.min",
 									  SQLSTATE(HY002) "INTERNAL ERROR");
@@ -167,15 +175,17 @@ ALGminany_skipnil(ptr result, const bat *bid, const bit *skipnil)
 }
 
 static str
-ALGminany(ptr result, const bat *bid)
+ALGminany(Client ctx, ptr result, const bat *bid)
 {
+	(void) ctx;
 	bit skipnil = TRUE;
-	return ALGminany_skipnil(result, bid, &skipnil);
+	return ALGminany_skipnil(ctx, result, bid, &skipnil);
 }
 
 static str
-ALGmaxany_skipnil(ptr result, const bat *bid, const bit *skipnil)
+ALGmaxany_skipnil(Client ctx, ptr result, const bat *bid, const bit *skipnil)
 {
+	allocator *ma = ctx->curprg->def->ma;
 	BAT *b;
 	ptr p;
 	str msg = MAL_SUCCEED;
@@ -189,9 +199,9 @@ ALGmaxany_skipnil(ptr result, const bat *bid, const bit *skipnil)
 							  ATOMname(b->ttype));
 	} else {
 		if (ATOMextern(b->ttype)) {
-			*(ptr *) result = p = BATmax_skipnil(b, NULL, *skipnil);
+			*(ptr *) result = p = BATmax_skipnil(ma, b, NULL, *skipnil, false);
 		} else {
-			p = BATmax_skipnil(b, result, *skipnil);
+			p = BATmax_skipnil(ma, b, result, *skipnil, false);
 			if (p != result)
 				msg = createException(MAL, "algebra.max",
 									  SQLSTATE(HY002) "INTERNAL ERROR");
@@ -204,15 +214,17 @@ ALGmaxany_skipnil(ptr result, const bat *bid, const bit *skipnil)
 }
 
 static str
-ALGmaxany(ptr result, const bat *bid)
+ALGmaxany(Client ctx, ptr result, const bat *bid)
 {
+	(void) ctx;
 	bit skipnil = TRUE;
-	return ALGmaxany_skipnil(result, bid, &skipnil);
+	return ALGmaxany_skipnil(ctx, result, bid, &skipnil);
 }
 
 static str
-ALGgroupby(bat *res, const bat *gids, const bat *cnts)
+ALGgroupby(Client ctx, bat *res, const bat *gids, const bat *cnts)
 {
+	(void) ctx;
 	BAT *bn, *g, *c;
 
 	g = BATdescriptor(*gids);
@@ -237,8 +249,9 @@ ALGgroupby(bat *res, const bat *gids, const bat *cnts)
 }
 
 static str
-ALGcard(lng *result, const bat *bid)
+ALGcard(Client ctx, lng *result, const bat *bid)
 {
+	(void) ctx;
 	BAT *b, *en;
 
 	if ((b = BATdescriptor(*bid)) == NULL) {
@@ -257,10 +270,11 @@ ALGcard(lng *result, const bat *bid)
 }
 
 static str
-ALGselect2nil(bat *result, const bat *bid, const bat *sid, const void *low,
+ALGselect2nil(Client ctx, bat *result, const bat *bid, const bat *sid, const void *low,
 			  const void *high, const bit *li, const bit *hi, const bit *anti,
 			  const bit *unknown)
 {
+	(void) ctx;
 	BAT *b, *s = NULL, *bn;
 
 	if ((*li != 0 && *li != 1) ||
@@ -284,22 +298,22 @@ ALGselect2nil(bat *result, const bat *bid, const bat *sid, const void *low,
 	if (!nanti && *unknown) {
 		const void *nilptr = ATOMnilptr(b->ttype);
 		if (nilptr) {
-			if (nli && ATOMcmp(b->ttype, low, nilptr) == 0) {
+			if (nli && ATOMeq(b->ttype, low, nilptr)) {
 				low = high;
 				nli = false;
 			}
-			if (nhi && ATOMcmp(b->ttype, high, nilptr) == 0) {
+			if (nhi && ATOMeq(b->ttype, high, nilptr)) {
 				high = low;
 				nhi = false;
 			}
-			if (ATOMcmp(b->ttype, low, high) == 0 && ATOMcmp(b->ttype, high, nilptr) == 0)	/* ugh sql nil != nil */
+			if (ATOMeq(b->ttype, low, high) && ATOMeq(b->ttype, high, nilptr))	/* ugh sql nil != nil */
 				nanti = true;
 		}
 	} else if (!*unknown) {
 		const void *nilptr = ATOMnilptr(b->ttype);
 		if (nli && nhi && nilptr != NULL &&
-			ATOMcmp(b->ttype, low, nilptr) == 0 &&
-			ATOMcmp(b->ttype, high, nilptr) == 0) {
+			ATOMeq(b->ttype, low, nilptr) &&
+			ATOMeq(b->ttype, high, nilptr)) {
 			/* special case: equi-select for NIL */
 			high = NULL;
 		}
@@ -316,30 +330,34 @@ ALGselect2nil(bat *result, const bat *bid, const bat *sid, const void *low,
 }
 
 static str
-ALGselect2(bat *result, const bat *bid, const bat *sid, const void *low,
+ALGselect2(Client ctx, bat *result, const bat *bid, const bat *sid, const void *low,
 		   const void *high, const bit *li, const bit *hi, const bit *anti)
 {
-	return ALGselect2nil(result, bid, sid, low, high, li, hi, anti, &(bit){0});
+	(void) ctx;
+	return ALGselect2nil(ctx, result, bid, sid, low, high, li, hi, anti, &(bit){0});
 }
 
 static str
-ALGselect1(bat *result, const bat *bid, const void *low, const void *high,
+ALGselect1(Client ctx, bat *result, const bat *bid, const void *low, const void *high,
 		   const bit *li, const bit *hi, const bit *anti)
 {
-	return ALGselect2nil(result, bid, NULL, low, high, li, hi, anti, &(bit){0});
+	(void) ctx;
+	return ALGselect2nil(ctx, result, bid, NULL, low, high, li, hi, anti, &(bit){0});
 }
 
 static str
-ALGselect1nil(bat *result, const bat *bid, const void *low, const void *high,
+ALGselect1nil(Client ctx, bat *result, const bat *bid, const void *low, const void *high,
 			  const bit *li, const bit *hi, const bit *anti, const bit *unknown)
 {
-	return ALGselect2nil(result, bid, NULL, low, high, li, hi, anti, unknown);
+	(void) ctx;
+	return ALGselect2nil(ctx, result, bid, NULL, low, high, li, hi, anti, unknown);
 }
 
 static str
-ALGthetaselect2(bat *result, const bat *bid, const bat *sid, const void *val,
+ALGthetaselect2(Client ctx, bat *result, const bat *bid, const bat *sid, const void *val,
 				const char **op)
 {
+	(void) ctx;
 	BAT *b, *s = NULL, *bn;
 
 	if ((b = BATdescriptor(*bid)) == NULL) {
@@ -363,8 +381,9 @@ ALGthetaselect2(bat *result, const bat *bid, const bat *sid, const void *val,
 }
 
 static str
-ALGmarkselect(bat *r1, bat *r2, const bat *gid, const bat *mid, const bat *pid, const bit *Any)
+ALGmarkselect(Client ctx, bat *r1, bat *r2, const bat *gid, const bat *mid, const bat *pid, const bit *Any)
 {
+	(void) ctx;
 	BAT *g = BATdescriptor(*gid); /* oid */
 	BAT *m = BATdescriptor(*mid); /* bit, true: match, false: empty set, nil: nil on left */
 	BAT *p = BATdescriptor(*pid); /* bit */
@@ -378,6 +397,7 @@ ALGmarkselect(bat *r1, bat *r2, const bat *gid, const bat *mid, const bat *pid, 
 		throw(MAL, "algebra.markselect", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	}
 	BUN nr = BATcount(g), q = 0;
+	assert (nr == BATcount(m) && nr == BATcount(p));
 
 	if ((res1 = COLnew(0, TYPE_oid, nr, TRANSIENT)) == NULL || (res2 = COLnew(0, TYPE_bit, nr, TRANSIENT)) == NULL) {
 		BBPreclaim(g);
@@ -431,8 +451,8 @@ ALGmarkselect(bat *r1, bat *r2, const bat *gid, const bat *mid, const bat *pid, 
 		if (nr) {
 			ri1[q] = c-1;
 			ri2[q] = (m == TRUE)?TRUE:(has_nil)?bit_nil:FALSE;
+			q++;
 		}
-		q++;
 	}
 	BATsetcount(res1, q);
 	BATsetcount(res2, q);
@@ -458,13 +478,41 @@ ALGmarkselect(bat *r1, bat *r2, const bat *gid, const bat *mid, const bat *pid, 
 }
 
 static str
-ALGouterselect(bat *r1, bat *r2, const bat *gid, const bat *mid, const bat *pid, const bit *Any)
+ALGsingle(Client ctx, bat *r, bat *cands, bat *ids)
 {
+	(void)ctx;
+	BAT *i = BATdescriptor(*ids); /* bit */
+
+	if (!i)
+		throw(MAL, "algebra.single", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+	BUN nr = BATcount(i);
+	if (i->ttype == TYPE_oid && nr > 0) {
+		oid *ii = Tloc(i, 0);
+		oid cur = ii[0];
+
+		for (BUN n = 1; n < nr; n++) {
+			if (cur == ii[n]) {
+				BBPreclaim(i);
+				throw(MAL, "algebra.single", SQLSTATE(HY002) "more than one match");
+			}
+			cur = ii[n];
+		}
+	}
+	BBPreclaim(i);
+	*r = *cands;
+	BBPretain(*r);
+	return MAL_SUCCEED;
+}
+
+static str
+ALGouterselect(Client ctx, bat *r1, bat *r2, const bat *gid, const bat *mid, const bat *pid, const bit *Any, const bit *Single)
+{
+	(void) ctx;
 	BAT *g = BATdescriptor(*gid); /* oid */
 	BAT *m = BATdescriptor(*mid); /* bit, true: match, false: empty set, nil: nil on left */
 	BAT *p = BATdescriptor(*pid); /* bit */
 	BAT *res1 = NULL, *res2 = NULL;
-	bit any = *Any; /* any or normal comparison semantics */
+	bit any = *Any, single = *Single; /* any or normal comparison semantics */
 
 	if (!g || !m || !p) {
 		if (g) BBPreclaim(g);
@@ -514,16 +562,22 @@ ALGouterselect(bat *r1, bat *r2, const bat *gid, const bat *mid, const bat *pid,
 			if (mi[n] == TRUE && pi[n] == TRUE) {
 				ri1[q] = c;
 				ri2[q] = TRUE;
+				if (used && single)
+					goto error;
 				used = true;
 				q++;
 			} else if (mi[n] == FALSE) { /* empty */
 				ri1[q] = c;
 				ri2[q] = FALSE;
+				if (used && single)
+					goto error;
 				used = true;
 				q++;
 			} else if (any && (mi[n] == bit_nil /* ie has nil */ || pi[n] == bit_nil)) {
 				ri1[q] = c;
 				ri2[q] = bit_nil;
+				if (used && single)
+					goto error;
 				used = true;
 				q++;
 			}
@@ -555,12 +609,20 @@ ALGouterselect(bat *r1, bat *r2, const bat *gid, const bat *mid, const bat *pid,
 	*r1 = res1->batCacheid;
 	*r2 = res2->batCacheid;
 	return MAL_SUCCEED;
+error:
+	BBPreclaim(g);
+	BBPreclaim(m);
+	BBPreclaim(p);
+	BBPreclaim(res1);
+	BBPreclaim(res2);
+	throw(MAL, "algebra.outerselect", SQLSTATE(HY002) "more than one match");
 }
 
 
 static str
-ALGselectNotNil(bat *result, const bat *bid)
+ALGselectNotNil(Client ctx, bat *result, const bat *bid)
 {
+	(void) ctx;
 	BAT *b;
 
 	if ((b = BATdescriptor(*bid)) == NULL)
@@ -601,7 +663,7 @@ do_join(bat *r1, bat *r2, bat *r3, const bat *lid, const bat *rid, const bat *r2
 		gdk_return (*semifunc)(BAT **, BAT **, BAT *, BAT *, BAT *, BAT *,
 							  bool, bool, BUN),
 		gdk_return (*markfunc)(BAT **, BAT **, BAT **,
-							   BAT *, BAT *, BAT *, BAT *, BUN),
+							   BAT *, BAT *, BAT *, BAT *, bool, BUN),
 		gdk_return (*thetafunc)(BAT **, BAT **, BAT *, BAT *, BAT *, BAT *,
 							   int, bool, BUN),
 		gdk_return (*bandfunc)(BAT **, BAT **, BAT *, BAT *, BAT *, BAT *,
@@ -676,7 +738,7 @@ do_join(bat *r1, bat *r2, bat *r3, const bat *lid, const bat *rid, const bat *r2
 		assert(difffunc == NULL);
 		assert(interfunc == NULL);
 		if ((*markfunc) (&result1, r2 ? &result2 : NULL, &result3,
-						 left, right, candleft, candright, est) != GDK_SUCCEED)
+						 left, right, candleft, candright, *nil_matches, est) != GDK_SUCCEED)
 			goto fail;
 	} else if (bandfunc) {
 		assert(rangefunc == NULL);
@@ -738,9 +800,10 @@ do_join(bat *r1, bat *r2, bat *r3, const bat *lid, const bat *rid, const bat *r2
 }
 
 static str
-ALGjoin(bat *r1, bat *r2, const bat *lid, const bat *rid, const bat *slid,
+ALGjoin(Client ctx, bat *r1, bat *r2, const bat *lid, const bat *rid, const bat *slid,
 		const bat *srid, const bit *nil_matches, const lng *estimate)
 {
+	(void) ctx;
 	return do_join(r1, r2, NULL, lid, rid, NULL, slid, srid, 0, NULL, NULL,
 				   false, false, false, false, nil_matches, NULL, NULL,
 				   estimate, BATjoin, NULL, NULL, NULL, NULL, NULL, NULL, NULL,
@@ -748,9 +811,10 @@ ALGjoin(bat *r1, bat *r2, const bat *lid, const bat *rid, const bat *slid,
 }
 
 static str
-ALGjoin1(bat *r1, const bat *lid, const bat *rid, const bat *slid,
+ALGjoin1(Client ctx, bat *r1, const bat *lid, const bat *rid, const bat *slid,
 		 const bat *srid, const bit *nil_matches, const lng *estimate)
 {
+	(void) ctx;
 	return do_join(r1, NULL, NULL, lid, rid, NULL, slid, srid, 0, NULL, NULL,
 				   false, false, false, false, nil_matches, NULL, NULL,
 				   estimate, BATjoin, NULL, NULL, NULL, NULL, NULL, NULL, NULL,
@@ -758,9 +822,10 @@ ALGjoin1(bat *r1, const bat *lid, const bat *rid, const bat *slid,
 }
 
 static str
-ALGleftjoin(bat *r1, bat *r2, const bat *lid, const bat *rid, const bat *slid,
+ALGleftjoin(Client ctx, bat *r1, bat *r2, const bat *lid, const bat *rid, const bat *slid,
 			const bat *srid, const bit *nil_matches, const lng *estimate)
 {
+	(void) ctx;
 	return do_join(r1, r2, NULL, lid, rid, NULL, slid, srid, 0, NULL, NULL,
 				   false, false, false, false, nil_matches, NULL, NULL,
 				   estimate, BATleftjoin, NULL, NULL, NULL, NULL, NULL, NULL, NULL,
@@ -768,9 +833,10 @@ ALGleftjoin(bat *r1, bat *r2, const bat *lid, const bat *rid, const bat *slid,
 }
 
 static str
-ALGleftjoin1(bat *r1, const bat *lid, const bat *rid, const bat *slid,
+ALGleftjoin1(Client ctx, bat *r1, const bat *lid, const bat *rid, const bat *slid,
 			 const bat *srid, const bit *nil_matches, const lng *estimate)
 {
+	(void) ctx;
 	return do_join(r1, NULL, NULL, lid, rid, NULL, slid, srid, 0, NULL, NULL,
 				   false, false, false, false, nil_matches, NULL, NULL,
 				   estimate, BATleftjoin, NULL, NULL, NULL, NULL, NULL, NULL, NULL,
@@ -778,10 +844,11 @@ ALGleftjoin1(bat *r1, const bat *lid, const bat *rid, const bat *slid,
 }
 
 static str
-ALGouterjoin(bat *r1, bat *r2, const bat *lid, const bat *rid, const bat *slid,
+ALGouterjoin(Client ctx, bat *r1, bat *r2, const bat *lid, const bat *rid, const bat *slid,
 			 const bat *srid, const bit *nil_matches, const bit *match_one,
 			 const lng *estimate)
 {
+	(void) ctx;
 	return do_join(r1, r2, NULL, lid, rid, NULL, slid, srid, 0, NULL, NULL,
 				   false, false, false, false, nil_matches, NULL, match_one,
 				   estimate, NULL, BATouterjoin, NULL, NULL, NULL, NULL, NULL, NULL,
@@ -789,10 +856,11 @@ ALGouterjoin(bat *r1, bat *r2, const bat *lid, const bat *rid, const bat *slid,
 }
 
 static str
-ALGouterjoin1(bat *r1, const bat *lid, const bat *rid, const bat *slid,
+ALGouterjoin1(Client ctx, bat *r1, const bat *lid, const bat *rid, const bat *slid,
 			  const bat *srid, const bit *nil_matches, const bit *match_one,
 			  const lng *estimate)
 {
+	(void) ctx;
 	return do_join(r1, NULL, NULL, lid, rid, NULL, slid, srid, 0, NULL, NULL,
 				   false, false, false, false, nil_matches, NULL, match_one,
 				   estimate, NULL, BATouterjoin, NULL, NULL, NULL, NULL, NULL, NULL,
@@ -800,10 +868,11 @@ ALGouterjoin1(bat *r1, const bat *lid, const bat *rid, const bat *slid,
 }
 
 static str
-ALGsemijoin(bat *r1, bat *r2, const bat *lid, const bat *rid, const bat *slid,
+ALGsemijoin(Client ctx, bat *r1, bat *r2, const bat *lid, const bat *rid, const bat *slid,
 			const bat *srid, const bit *nil_matches, const bit *max_one,
 			const lng *estimate)
 {
+	(void) ctx;
 	return do_join(r1, r2, NULL, lid, rid, NULL, slid, srid, 0, NULL, NULL,
 				   false, false, false, false, nil_matches, NULL, max_one,
 				   estimate, NULL, BATsemijoin, NULL, NULL, NULL, NULL, NULL, NULL,
@@ -811,30 +880,33 @@ ALGsemijoin(bat *r1, bat *r2, const bat *lid, const bat *rid, const bat *slid,
 }
 
 static str
-ALGmark2join(bat *r1, bat *r3, const bat *lid, const bat *rid,
-			 const bat *slid, const bat *srid, const lng *estimate)
+ALGmark2join(Client ctx, bat *r1, bat *r3, const bat *lid, const bat *rid,
+			 const bat *slid, const bat *srid, const bit *nil_matches, const lng *estimate)
 {
+	(void) ctx;
 	return do_join(r1, NULL, r3, lid, rid, NULL, slid, srid, 0, NULL, NULL,
-				   false, false, false, false, NULL, NULL, NULL,
+				   false, false, false, false, nil_matches, NULL, NULL,
 				   estimate, NULL, NULL, BATmarkjoin, NULL, NULL, NULL, NULL, NULL,
 				   "algebra.markjoin");
 }
 
 static str
-ALGmark3join(bat *r1, bat *r2, bat *r3, const bat *lid, const bat *rid,
-			 const bat *slid, const bat *srid, const lng *estimate)
+ALGmark3join(Client ctx, bat *r1, bat *r2, bat *r3, const bat *lid, const bat *rid,
+			 const bat *slid, const bat *srid, const bit *nil_matches, const lng *estimate)
 {
+	(void) ctx;
 	return do_join(r1, r2, r3, lid, rid, NULL, slid, srid, 0, NULL, NULL,
-				   false, false, false, false, NULL, NULL, NULL,
+				   false, false, false, false, nil_matches, NULL, NULL,
 				   estimate, NULL, NULL, BATmarkjoin, NULL, NULL, NULL, NULL, NULL,
 				   "algebra.markjoin");
 }
 
 static str
-ALGthetajoin(bat *r1, bat *r2, const bat *lid, const bat *rid, const bat *slid,
+ALGthetajoin(Client ctx, bat *r1, bat *r2, const bat *lid, const bat *rid, const bat *slid,
 			 const bat *srid, const int *op, const bit *nil_matches,
 			 const lng *estimate)
 {
+	(void) ctx;
 	return do_join(r1, r2, NULL, lid, rid, NULL, slid, srid, *op, NULL, NULL,
 				   false, false, false, false, nil_matches, NULL, NULL,
 				   estimate, NULL, NULL, NULL, BATthetajoin, NULL, NULL, NULL, NULL,
@@ -842,10 +914,11 @@ ALGthetajoin(bat *r1, bat *r2, const bat *lid, const bat *rid, const bat *slid,
 }
 
 static str
-ALGthetajoin1(bat *r1, const bat *lid, const bat *rid, const bat *slid,
+ALGthetajoin1(Client ctx, bat *r1, const bat *lid, const bat *rid, const bat *slid,
 			  const bat *srid, const int *op, const bit *nil_matches,
 			  const lng *estimate)
 {
+	(void) ctx;
 	return do_join(r1, NULL, NULL, lid, rid, NULL, slid, srid, *op, NULL, NULL,
 				   false, false, false, false, nil_matches, NULL, NULL,
 				   estimate, NULL, NULL, NULL, BATthetajoin, NULL, NULL, NULL, NULL,
@@ -853,10 +926,11 @@ ALGthetajoin1(bat *r1, const bat *lid, const bat *rid, const bat *slid,
 }
 
 static str
-ALGbandjoin(bat *r1, bat *r2, const bat *lid, const bat *rid, const bat *slid,
+ALGbandjoin(Client ctx, bat *r1, bat *r2, const bat *lid, const bat *rid, const bat *slid,
 			const bat *srid, const void *c1, const void *c2, const bit *li,
 			const bit *hi, const lng *estimate)
 {
+	(void) ctx;
 	return do_join(r1, r2, NULL, lid, rid, NULL, slid, srid, 0, c1, c2,
 				   *li, *hi, false, false, NULL, NULL, NULL, estimate,
 				   NULL, NULL, NULL, NULL, BATbandjoin, NULL, NULL, NULL,
@@ -864,10 +938,11 @@ ALGbandjoin(bat *r1, bat *r2, const bat *lid, const bat *rid, const bat *slid,
 }
 
 static str
-ALGbandjoin1(bat *r1, const bat *lid, const bat *rid, const bat *slid,
+ALGbandjoin1(Client ctx, bat *r1, const bat *lid, const bat *rid, const bat *slid,
 			 const bat *srid, const void *c1, const void *c2, const bit *li,
 			 const bit *hi, const lng *estimate)
 {
+	(void) ctx;
 	return do_join(r1, NULL, NULL, lid, rid, NULL, slid, srid, 0, c1, c2,
 				   *li, *hi, false, false, NULL, NULL, NULL, estimate,
 				   NULL, NULL, NULL, NULL, BATbandjoin, NULL, NULL, NULL,
@@ -875,10 +950,11 @@ ALGbandjoin1(bat *r1, const bat *lid, const bat *rid, const bat *slid,
 }
 
 static str
-ALGrangejoin(bat *r1, bat *r2, const bat *lid, const bat *rlid, const bat *rhid,
+ALGrangejoin(Client ctx, bat *r1, bat *r2, const bat *lid, const bat *rlid, const bat *rhid,
 			 const bat *slid, const bat *srid, const bit *li, const bit *hi,
 			 const bit *anti, const bit *symmetric, const lng *estimate)
 {
+	(void) ctx;
 	return do_join(r1, r2, NULL, lid, rlid, rhid, slid, srid, 0, NULL, NULL,
 				   *li, *hi, *anti, *symmetric, NULL, NULL, NULL, estimate,
 				   NULL, NULL, NULL, NULL, NULL, BATrangejoin, NULL, NULL,
@@ -886,10 +962,11 @@ ALGrangejoin(bat *r1, bat *r2, const bat *lid, const bat *rlid, const bat *rhid,
 }
 
 static str
-ALGrangejoin1(bat *r1, const bat *lid, const bat *rlid, const bat *rhid,
+ALGrangejoin1(Client ctx, bat *r1, const bat *lid, const bat *rlid, const bat *rhid,
 			  const bat *slid, const bat *srid, const bit *li, const bit *hi,
 			  const bit *anti, const bit *symmetric, const lng *estimate)
 {
+	(void) ctx;
 	return do_join(r1, NULL, NULL, lid, rlid, rhid, slid, srid, 0, NULL, NULL,
 				   *li, *hi, *anti, *symmetric, NULL, NULL, NULL, estimate,
 				   NULL, NULL, NULL, NULL, NULL, BATrangejoin, NULL, NULL,
@@ -897,10 +974,11 @@ ALGrangejoin1(bat *r1, const bat *lid, const bat *rlid, const bat *rhid,
 }
 
 static str
-ALGdifference(bat *r1, const bat *lid, const bat *rid, const bat *slid,
+ALGdifference(Client ctx, bat *r1, const bat *lid, const bat *rid, const bat *slid,
 			  const bat *srid, const bit *nil_matches, const bit *not_in,
 			  const lng *estimate)
 {
+	(void) ctx;
 	return do_join(r1, NULL, NULL, lid, rid, NULL, slid, srid, 0, NULL, NULL,
 				   false, false, false, false, nil_matches, not_in, NULL,
 				   estimate, NULL, NULL, NULL, NULL, NULL, NULL, BATdiff, NULL,
@@ -908,10 +986,11 @@ ALGdifference(bat *r1, const bat *lid, const bat *rid, const bat *slid,
 }
 
 static str
-ALGintersect(bat *r1, const bat *lid, const bat *rid, const bat *slid,
+ALGintersect(Client ctx, bat *r1, const bat *lid, const bat *rid, const bat *slid,
 			 const bat *srid, const bit *nil_matches, const bit *max_one,
 			 const lng *estimate)
 {
+	(void) ctx;
 	return do_join(r1, NULL, NULL, lid, rid, NULL, slid, srid, 0, NULL, NULL,
 				   false, false, false, false, nil_matches, NULL, max_one,
 				   estimate, NULL, NULL, NULL, NULL, NULL, NULL, NULL, BATintersect,
@@ -919,13 +998,18 @@ ALGintersect(bat *r1, const bat *lid, const bat *rid, const bat *slid,
 }
 
 /* algebra.firstn(b:bat[:any],
- *                [ s:bat[:oid],
- *                [ g:bat[:oid], ] ]
+ *                s:bat[:oid],
+ *                g:bat[:oid],
  *                n:lng,
+ *                [ o:lng, return_skipped:bit, ] -- if specified, no second return
  *                asc:bit,
  *                nilslast:bit,
  *                distinct:bit)
  * returns :bat[:oid] [ , :bat[:oid] ]
+ *
+ * if asc is nil, there is no sorting and a second return value is not
+ * allowed; the result is a dense sequence starting at offset (default
+ * 0) + hseqbase of length n.
  */
 static str
 ALGfirstn(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
@@ -935,48 +1019,92 @@ ALGfirstn(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	BAT *b, *s = NULL, *g = NULL;
 	BAT *bn = NULL, *gn = NULL;
 	lng n;
+	lng o = 0;
 	bit asc, nilslast, distinct;
-	gdk_return rc;
+	gdk_return rc = GDK_SUCCEED;
 
 	(void) cntxt;
 	(void) mb;
 
 	assert(pci->retc == 1 || pci->retc == 2);
-	assert(pci->argc - pci->retc >= 5 && pci->argc - pci->retc <= 7);
+	assert(pci->argc - pci->retc >= 5 && pci->argc - pci->retc <= 9);
 
-	n = *getArgReference_lng(stk, pci, pci->argc - 4);
-	if (n < 0)
-		throw(MAL, "algebra.firstn", ILLEGAL_ARGUMENT);
-	if (n > (lng) BUN_MAX)
-		n = BUN_MAX;
 	ret1 = getArgReference_bat(stk, pci, 0);
 	if (pci->retc == 2)
 		ret2 = getArgReference_bat(stk, pci, 1);
+
 	bid = *getArgReference_bat(stk, pci, pci->retc);
+	sid = *getArgReference_bat(stk, pci, pci->retc + 1);
+	gid = *getArgReference_bat(stk, pci, pci->retc + 2);
 	if ((b = BATdescriptor(bid)) == NULL)
-		throw(MAL, "algebra.firstn", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
-	if (pci->argc - pci->retc > 5) {
-		sid = *getArgReference_bat(stk, pci, pci->retc + 1);
-		if (!is_bat_nil(sid) && (s = BATdescriptor(sid)) == NULL) {
-			BBPunfix(bid);
-			throw(MAL, "algebra.firstn",
-				  SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+		rc = GDK_FAIL;
+	if (rc == GDK_SUCCEED && !is_bat_nil(sid) && (s = BATdescriptor(sid)) == NULL)
+		rc = GDK_FAIL;
+	if (rc == GDK_SUCCEED && !is_bat_nil(gid) && (g = BATdescriptor(gid)) == NULL)
+		rc = GDK_FAIL;
+	if (rc != GDK_SUCCEED) {
+		BBPreclaim(b);
+		BBPreclaim(s);
+		BBPreclaim(g);
+		throw(MAL, "algebra.firstn",
+			  SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+	}
+	n = *getArgReference_lng(stk, pci, pci->retc + 3);
+	if (is_lng_nil(n)) {
+		n = BUN_MAX;
+	} else if (n < 0) {
+		BBPreclaim(b);
+		BBPreclaim(s);
+		BBPreclaim(g);
+		throw(MAL, "algebra.firstn", ILLEGAL_ARGUMENT);
+	}
+	if (n > (lng) BUN_MAX)
+		n = BUN_MAX;
+	if (getArgType(mb, pci, pci->retc + 4) == TYPE_lng) {
+		o = *getArgReference_lng(stk, pci, pci->retc + 4);
+		if (o < 0 || o > (lng) BUN_MAX) {
+			BBPreclaim(b);
+			BBPreclaim(s);
+			BBPreclaim(g);
+			throw(MAL, "algebra.firstn", ILLEGAL_ARGUMENT);
 		}
-		if (pci->argc - pci->retc > 6) {
-			gid = *getArgReference_bat(stk, pci, pci->retc + 2);
-			if (!is_bat_nil(gid) && (g = BATdescriptor(gid)) == NULL) {
-				BBPunfix(bid);
-				BBPunfix(sid);
-				throw(MAL, "algebra.firstn",
-					  SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
-			}
+		if (*getArgReference_bit(stk, pci, pci->retc + 5)) {
+			n += o;
+			o = 0;
+		}
+		if (ret2 && o != 0) {
+			BBPreclaim(b);
+			BBPreclaim(s);
+			BBPreclaim(g);
+			throw(MAL, "algebra.firstn", ILLEGAL_ARGUMENT);
 		}
 	}
 	asc = *getArgReference_bit(stk, pci, pci->argc - 3);
 	nilslast = *getArgReference_bit(stk, pci, pci->argc - 2);
 	distinct = *getArgReference_bit(stk, pci, pci->argc - 1);
-	rc = BATfirstn(&bn, ret2 ? &gn : NULL, b, s, g, (BUN) n, asc, nilslast,
-				   distinct);
+
+	if (is_bit_nil(asc)) {
+		if (ret2) {
+			BBPreclaim(b);
+			BBPreclaim(s);
+			BBPreclaim(g);
+			throw(MAL, "algebra.firstn", ILLEGAL_ARGUMENT);
+		}
+		if (o > (lng) BATcount(b))
+			o = (lng) BATcount(b);
+		if ((BUN) o + (BUN) n > BATcount(b))
+			n = (lng) BATcount(b) - o;
+		bn = BATdense(0, b->hseqbase + (oid) o, (BUN) n);
+		if (bn == NULL)
+			rc = GDK_FAIL;
+	} else if (o > 0) {
+		bn = BATfirstn_offset(b, s, g, (BUN) n, (BUN) o, asc, nilslast,
+							  distinct);
+		if (bn == NULL)
+			rc = GDK_FAIL;
+	} else
+		rc = BATfirstn(&bn, ret2 ? &gn : NULL, b, s, g, (BUN) n,
+					   asc, nilslast, distinct);
 	BBPunfix(b->batCacheid);
 	BBPreclaim(s);
 	BBPreclaim(g);
@@ -999,6 +1127,8 @@ ALGgroupedfirstn(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	BAT *s = NULL, *g = NULL;
 	BAT *bn = NULL;
 	lng n;
+	lng o = 0;
+	int hasoff = 0;
 
 	(void) cntxt;
 	(void) mb;
@@ -1007,57 +1137,55 @@ ALGgroupedfirstn(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (n < 0)
 		throw(MAL, "algebra.groupedfirstn", ILLEGAL_ARGUMENT);
 	ret = getArgReference_bat(stk, pci, 0);
-	sid = *getArgReference_bat(stk, pci, 2);
-	gid = *getArgReference_bat(stk, pci, 3);
-	int nbats = pci->argc - 4;
+	if (getArgType(mb, pci, 2) == TYPE_lng) {
+		o = *getArgReference_lng(stk, pci, 2);
+		if (o < 0)
+			throw(MAL, "algebra.groupedfirstn", ILLEGAL_ARGUMENT);
+		if (*getArgReference_bit(stk, pci, 3)) {
+			n += o;
+			o = 0;
+		}
+		hasoff = 2;
+	}
+	sid = *getArgReference_bat(stk, pci, 2 + hasoff);
+	gid = *getArgReference_bat(stk, pci, 3 + hasoff);
+	int nbats = pci->argc - 4 - hasoff;
 	if (nbats % 3 != 0)
 		throw(MAL, "algebra.groupedfirstn", ILLEGAL_ARGUMENT);
 	nbats /= 3;
-	BAT **bats = GDKmalloc(nbats * sizeof(BAT *));
-	bool *ascs = GDKmalloc(nbats * sizeof(bool));
-	bool *nlss = GDKmalloc(nbats * sizeof(bool));
+	BAT **bats = ma_alloc(mb->ma, nbats * sizeof(BAT *));
+	bool *ascs = ma_alloc(mb->ma, nbats * sizeof(bool));
+	bool *nlss = ma_alloc(mb->ma, nbats * sizeof(bool));
 	if (bats == NULL || ascs == NULL || nlss == NULL) {
-		GDKfree(bats);
-		GDKfree(ascs);
-		GDKfree(nlss);
 		throw(MAL, "algebra.groupedfirstn", MAL_MALLOC_FAIL);
 	}
 	if (!is_bat_nil(sid) && (s = BATdescriptor(sid)) == NULL) {
-		GDKfree(bats);
-		GDKfree(ascs);
-		GDKfree(nlss);
 		throw(MAL, "algebra.groupedfirstn", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	}
 	if (!is_bat_nil(gid) && (g = BATdescriptor(gid)) == NULL) {
 		BBPreclaim(s);
-		GDKfree(bats);
-		GDKfree(ascs);
-		GDKfree(nlss);
 		throw(MAL, "algebra.groupedfirstn", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	}
 	for (int i = 0; i < nbats; i++) {
-		bats[i] = BATdescriptor(*getArgReference_bat(stk, pci, i * 3 + 4));
+		bats[i] = BATdescriptor(*getArgReference_bat(stk, pci, i * 3 + 4 + hasoff));
 		if (bats[i] == NULL) {
 			while (i > 0)
 				BBPreclaim(bats[--i]);
 			BBPreclaim(g);
 			BBPreclaim(s);
-			GDKfree(bats);
-			GDKfree(ascs);
-			GDKfree(nlss);
 			throw(MAL, "algebra.groupedfirstn", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		}
-		ascs[i] = *getArgReference_bit(stk, pci, i * 3 + 5);
-		nlss[i] = *getArgReference_bit(stk, pci, i * 3 + 6);
+		ascs[i] = *getArgReference_bit(stk, pci, i * 3 + 5 + hasoff);
+		nlss[i] = *getArgReference_bit(stk, pci, i * 3 + 6 + hasoff);
 	}
-	bn = BATgroupedfirstn((BUN) n, s, g, nbats, bats, ascs, nlss);
+	if (o > 0)
+		bn = BATgroupedfirstn_offset((BUN) n, (BUN) o, s, g, nbats, bats, ascs, nlss);
+	else
+		bn = BATgroupedfirstn((BUN) n, s, g, nbats, bats, ascs, nlss);
 	BBPreclaim(s);
 	BBPreclaim(g);
 	for (int i = 0; i < nbats; i++)
 		BBPreclaim(bats[i]);
-	GDKfree(bats);
-	GDKfree(ascs);
-	GDKfree(nlss);
 	if (bn == NULL)
 		throw(MAL, "algebra.groupedfirstn", GDK_EXCEPTION);
 	*ret = bn->batCacheid;
@@ -1089,14 +1217,16 @@ BATwcopy(BAT *b)
 }
 
 static str
-ALGcopy(bat *result, const bat *bid)
+ALGcopy(Client ctx, bat *result, const bat *bid)
 {
+	(void) ctx;
 	return ALGunary(result, bid, BATwcopy, "algebra.copy");
 }
 
 static str
-ALGunique(bat *result, const bat *bid, const bat *sid)
+ALGunique(Client ctx, bat *result, const bat *bid, const bat *sid)
 {
+	(void) ctx;
 	BAT *b, *s = NULL, *bn = NULL;
 
 	if ((b = BATdescriptor(*bid)) == NULL) {
@@ -1159,35 +1289,40 @@ ALGcrossproduct(bat *l, bat *r, const bat *left, const bat *right,
 }
 
 static str
-ALGcrossproduct1(bat *l, const bat *left, const bat *right, const bit *max_one)
+ALGcrossproduct1(Client ctx, bat *l, const bat *left, const bat *right, const bit *max_one)
 {
+	(void) ctx;
 	return ALGcrossproduct(l, NULL, left, right, NULL, NULL, max_one);
 }
 
 static str
-ALGcrossproduct2(bat *l, bat *r, const bat *left, const bat *right,
+ALGcrossproduct2(Client ctx, bat *l, bat *r, const bat *left, const bat *right,
 				 const bit *max_one)
 {
+	(void) ctx;
 	return ALGcrossproduct(l, r, left, right, NULL, NULL, max_one);
 }
 
 static str
-ALGcrossproduct3(bat *l, bat *r, const bat *left, const bat *right,
+ALGcrossproduct3(Client ctx, bat *l, bat *r, const bat *left, const bat *right,
 				 const bat *sl, const bat *sr, const bit *max_one)
 {
+	(void) ctx;
 	return ALGcrossproduct(l, r, left, right, sl, sr, max_one);
 }
 
 static str
-ALGcrossproduct4(bat *l, const bat *left, const bat *right, const bat *sl,
+ALGcrossproduct4(Client ctx, bat *l, const bat *left, const bat *right, const bat *sl,
 				 const bat *sr, const bit *max_one)
 {
+	(void) ctx;
 	return ALGcrossproduct(l, NULL, left, right, sl, sr, max_one);
 }
 
 static str
-ALGoutercrossproduct3(bat *l, bat *r, const bat *left, const bat *right, const bat *slid, const bat *srid, const bit *max_one)
+ALGoutercrossproduct3(Client ctx, bat *l, bat *r, const bat *left, const bat *right, const bat *slid, const bat *srid, const bit *max_one)
 {
+	(void) ctx;
 	BAT *L, *R, *bn1, *bn2 = NULL;
 	BAT *sl = NULL, *sr = NULL;
 	gdk_return ret;
@@ -1225,8 +1360,9 @@ ALGoutercrossproduct3(bat *l, bat *r, const bat *left, const bat *right, const b
 }
 
 static str
-ALGprojection2(bat *result, const bat *lid, const bat *r1id, const bat *r2id)
+ALGprojection2(Client ctx, bat *result, const bat *lid, const bat *r1id, const bat *r2id)
 {
+	(void) ctx;
 	BAT *l, *r1, *r2 = NULL, *bn;
 
 	if ((l = BATdescriptor(*lid)) == NULL) {
@@ -1256,16 +1392,18 @@ ALGprojection2(bat *result, const bat *lid, const bat *r1id, const bat *r2id)
 }
 
 str
-ALGprojection(bat *result, const bat *lid, const bat *rid)
+ALGprojection(Client ctx, bat *result, const bat *lid, const bat *rid)
 {
-	return ALGprojection2(result, lid, rid, NULL);
+	(void) ctx;
+	return ALGprojection2(ctx, result, lid, rid, NULL);
 }
 
 static str
-ALGsort33(bat *result, bat *norder, bat *ngroup, const bat *bid,
+ALGsort33(Client ctx, bat *result, bat *norder, bat *ngroup, const bat *bid,
 		  const bat *order, const bat *group, const bit *reverse,
 		  const bit *nilslast, const bit *stable)
 {
+	(void) ctx;
 	BAT *bn = NULL, *on = NULL, *gn = NULL;
 	BAT *b = NULL, *o = NULL, *g = NULL;
 
@@ -1308,75 +1446,84 @@ ALGsort33(bat *result, bat *norder, bat *ngroup, const bat *bid,
 }
 
 static str
-ALGsort32(bat *result, bat *norder, const bat *bid, const bat *order,
+ALGsort32(Client ctx, bat *result, bat *norder, const bat *bid, const bat *order,
 		  const bat *group, const bit *reverse, const bit *nilslast,
 		  const bit *stable)
 {
-	return ALGsort33(result, norder, NULL, bid, order, group, reverse, nilslast,
+	(void) ctx;
+	return ALGsort33(ctx, result, norder, NULL, bid, order, group, reverse, nilslast,
 					 stable);
 }
 
 static str
-ALGsort31(bat *result, const bat *bid, const bat *order, const bat *group,
+ALGsort31(Client ctx, bat *result, const bat *bid, const bat *order, const bat *group,
 		  const bit *reverse, const bit *nilslast, const bit *stable)
 {
-	return ALGsort33(result, NULL, NULL, bid, order, group, reverse, nilslast,
+	(void) ctx;
+	return ALGsort33(ctx, result, NULL, NULL, bid, order, group, reverse, nilslast,
 					 stable);
 }
 
 static str
-ALGsort23(bat *result, bat *norder, bat *ngroup, const bat *bid,
+ALGsort23(Client ctx, bat *result, bat *norder, bat *ngroup, const bat *bid,
 		  const bat *order, const bit *reverse, const bit *nilslast,
 		  const bit *stable)
 {
-	return ALGsort33(result, norder, ngroup, bid, order, NULL, reverse,
+	(void) ctx;
+	return ALGsort33(ctx, result, norder, ngroup, bid, order, NULL, reverse,
 					 nilslast, stable);
 }
 
 static str
-ALGsort22(bat *result, bat *norder, const bat *bid, const bat *order,
+ALGsort22(Client ctx, bat *result, bat *norder, const bat *bid, const bat *order,
 		  const bit *reverse, const bit *nilslast, const bit *stable)
 {
-	return ALGsort33(result, norder, NULL, bid, order, NULL, reverse, nilslast,
+	(void) ctx;
+	return ALGsort33(ctx, result, norder, NULL, bid, order, NULL, reverse, nilslast,
 					 stable);
 }
 
 static str
-ALGsort21(bat *result, const bat *bid, const bat *order, const bit *reverse,
+ALGsort21(Client ctx, bat *result, const bat *bid, const bat *order, const bit *reverse,
 		  const bit *nilslast, const bit *stable)
 {
-	return ALGsort33(result, NULL, NULL, bid, order, NULL, reverse, nilslast,
+	(void) ctx;
+	return ALGsort33(ctx, result, NULL, NULL, bid, order, NULL, reverse, nilslast,
 					 stable);
 }
 
 static str
-ALGsort13(bat *result, bat *norder, bat *ngroup, const bat *bid,
+ALGsort13(Client ctx, bat *result, bat *norder, bat *ngroup, const bat *bid,
 		  const bit *reverse, const bit *nilslast, const bit *stable)
 {
-	return ALGsort33(result, norder, ngroup, bid, NULL, NULL, reverse, nilslast,
+	(void) ctx;
+	return ALGsort33(ctx, result, norder, ngroup, bid, NULL, NULL, reverse, nilslast,
 					 stable);
 }
 
 static str
-ALGsort12(bat *result, bat *norder, const bat *bid, const bit *reverse,
+ALGsort12(Client ctx, bat *result, bat *norder, const bat *bid, const bit *reverse,
 		  const bit *nilslast, const bit *stable)
 {
-	return ALGsort33(result, norder, NULL, bid, NULL, NULL, reverse, nilslast,
+	(void) ctx;
+	return ALGsort33(ctx, result, norder, NULL, bid, NULL, NULL, reverse, nilslast,
 					 stable);
 }
 
 static str
-ALGsort11(bat *result, const bat *bid, const bit *reverse, const bit *nilslast,
+ALGsort11(Client ctx, bat *result, const bat *bid, const bit *reverse, const bit *nilslast,
 		  const bit *stable)
 {
-	return ALGsort33(result, NULL, NULL, bid, NULL, NULL, reverse, nilslast,
+	(void) ctx;
+	return ALGsort33(ctx, result, NULL, NULL, bid, NULL, NULL, reverse, nilslast,
 					 stable);
 }
 
 static str
-ALGcountCND_nil(lng *result, const bat *bid, const bat *cnd,
+ALGcountCND_nil(Client ctx, lng *result, const bat *bid, const bat *cnd,
 				const bit *ignore_nils)
 {
+	(void) ctx;
 	BAT *b, *s = NULL;
 
 	if ((b = BATdescriptor(*bid)) == NULL) {
@@ -1387,7 +1534,7 @@ ALGcountCND_nil(lng *result, const bat *bid, const bat *cnd,
 		throw(MAL, "aggr.count", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	}
 	if (b->ttype == TYPE_msk || mask_cand(b)) {
-		BATsum(result, TYPE_lng, b, s, *ignore_nils, false);
+		BATsum(result, TYPE_lng, b, s, *ignore_nils, false, false);
 	} else if (*ignore_nils) {
 		*result = (lng) BATcount_no_nil(b, s);
 	} else {
@@ -1401,33 +1548,38 @@ ALGcountCND_nil(lng *result, const bat *bid, const bat *cnd,
 }
 
 static str
-ALGcount_nil(lng *result, const bat *bid, const bit *ignore_nils)
+ALGcount_nil(Client ctx, lng *result, const bat *bid, const bit *ignore_nils)
 {
-	return ALGcountCND_nil(result, bid, NULL, ignore_nils);
+	(void) ctx;
+	return ALGcountCND_nil(ctx, result, bid, NULL, ignore_nils);
 }
 
 static str
-ALGcountCND_bat(lng *result, const bat *bid, const bat *cnd)
+ALGcountCND_bat(Client ctx, lng *result, const bat *bid, const bat *cnd)
 {
-	return ALGcountCND_nil(result, bid, cnd, &(bit) { 0 });
+	(void) ctx;
+	return ALGcountCND_nil(ctx, result, bid, cnd, &(bit) { 0 });
 }
 
 static str
-ALGcount_bat(lng *result, const bat *bid)
+ALGcount_bat(Client ctx, lng *result, const bat *bid)
 {
-	return ALGcountCND_nil(result, bid, NULL, &(bit) { 0 });
+	(void) ctx;
+	return ALGcountCND_nil(ctx, result, bid, NULL, &(bit) { 0 });
 }
 
 static str
-ALGcountCND_no_nil(lng *result, const bat *bid, const bat *cnd)
+ALGcountCND_no_nil(Client ctx, lng *result, const bat *bid, const bat *cnd)
 {
-	return ALGcountCND_nil(result, bid, cnd, &(bit) { 1 });
+	(void) ctx;
+	return ALGcountCND_nil(ctx, result, bid, cnd, &(bit) { 1 });
 }
 
 static str
-ALGcount_no_nil(lng *result, const bat *bid)
+ALGcount_no_nil(Client ctx, lng *result, const bat *bid)
 {
-	return ALGcountCND_nil(result, bid, NULL, &(bit) { 1 });
+	(void) ctx;
+	return ALGcountCND_nil(ctx, result, bid, NULL, &(bit) { 1 });
 }
 
 static str
@@ -1449,8 +1601,9 @@ ALGslice(bat *ret, const bat *bid, const lng *start, const lng *end)
 }
 
 static str
-ALGslice_int(bat *ret, const bat *bid, const int *start, const int *end)
+ALGslice_int(Client ctx, bat *ret, const bat *bid, const int *start, const int *end)
 {
+	(void) ctx;
 	lng s = *start;
 	lng e = (is_int_nil(*end) ? lng_nil : *end);
 
@@ -1458,8 +1611,9 @@ ALGslice_int(bat *ret, const bat *bid, const int *start, const int *end)
 }
 
 static str
-ALGslice_lng(bat *ret, const bat *bid, const lng *start, const lng *end)
+ALGslice_lng(Client ctx, bat *ret, const bat *bid, const lng *start, const lng *end)
 {
+	(void) ctx;
 	lng s = *start;
 	lng e = *end;
 
@@ -1469,8 +1623,9 @@ ALGslice_lng(bat *ret, const bat *bid, const lng *start, const lng *end)
 /* carve out a slice based on the OIDs */
 /* beware that BATs may have different OID bases */
 static str
-ALGslice_oid(bat *ret, const bat *bid, const oid *start, const oid *end)
+ALGslice_oid(Client ctx, bat *ret, const bat *bid, const oid *start, const oid *end)
 {
+	(void) ctx;
 	lng s = (lng) (is_oid_nil(*start) ? 0 : (lng) *start);
 	lng e = (is_oid_nil(*end) ? lng_nil : (lng) *end);
 
@@ -1478,8 +1633,9 @@ ALGslice_oid(bat *ret, const bat *bid, const oid *start, const oid *end)
 }
 
 static str
-ALGsubslice_lng(bat *ret, const bat *bid, const lng *start, const lng *end)
+ALGsubslice_lng(Client ctx, bat *ret, const bat *bid, const lng *start, const lng *end)
 {
+	(void) ctx;
 	BAT *b, *bn;
 	BUN s, e;
 
@@ -1508,14 +1664,14 @@ ALGsubslice_lng(bat *ret, const bat *bid, const lng *start, const lng *end)
  */
 
 static str
-doALGfetch(ptr ret, BAT *b, BUN pos)
+doALGfetch(allocator *ma, ptr ret, BAT *b, BUN pos)
 {
 	assert(pos <= BUN_MAX);
 	BATiter bi = bat_iterator(b);
 	if (ATOMextern(b->ttype)) {
-		ptr _src = BUNtail(bi, pos);
+		const void *_src = BUNtail(&bi, pos);
 		size_t _len = ATOMlen(b->ttype, _src);
-		ptr _dst = GDKmalloc(_len);
+		ptr _dst = ma_alloc(ma, _len);
 		if (_dst == NULL) {
 			bat_iterator_end(&bi);
 			throw(MAL, "doAlgFetch", SQLSTATE(HY013) MAL_MALLOC_FAIL);
@@ -1549,7 +1705,7 @@ doALGfetch(ptr ret, BAT *b, BUN pos)
 }
 
 static str
-ALGfetch(ptr ret, const bat *bid, const lng *pos)
+ALGfetch(allocator *ma, ptr ret, const bat *bid, const lng *pos)
 {
 	BAT *b;
 	str msg;
@@ -1573,22 +1729,24 @@ ALGfetch(ptr ret, const bat *bid, const lng *pos)
 		throw(MAL, "algebra.fetch",
 			  ILLEGAL_ARGUMENT ": row index to fetch is out of range\n");
 	}
-	msg = doALGfetch(ret, b, (BUN) *pos);
+	msg = doALGfetch(ma, ret, b, (BUN) *pos);
 	BBPunfix(b->batCacheid);
 	return msg;
 }
 
 str
-ALGfetchoid(ptr ret, const bat *bid, const oid *pos)
+ALGfetchoid(Client ctx, ptr ret, const bat *bid, const oid *pos)
 {
+	allocator *ma = ctx->curprg->def->ma;
 	lng o = *pos;
 
-	return ALGfetch(ret, bid, &o);
+	return ALGfetch(ma, ret, bid, &o);
 }
 
 static str
-ALGexist(bit *ret, const bat *bid, const void *val)
+ALGexist(Client ctx, bit *ret, const bat *bid, const void *val)
 {
+	(void) ctx;
 	BAT *b;
 	BUN q;
 
@@ -1603,8 +1761,9 @@ ALGexist(bit *ret, const bat *bid, const void *val)
 }
 
 static str
-ALGfind(oid *ret, const bat *bid, ptr val)
+ALGfind(Client ctx, oid *ret, const bat *bid, ptr val)
 {
+	(void) ctx;
 	BAT *b;
 	BUN q;
 	str msg = MAL_SUCCEED;
@@ -1650,8 +1809,9 @@ ALGprojecttail(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 
 static str
-ALGreuse(bat *ret, const bat *bid)
+ALGreuse(Client ctx, bat *ret, const bat *bid)
 {
+	(void) ctx;
 	BAT *b, *bn;
 	if ((b = BATdescriptor(*bid)) == NULL)
 		throw(MAL, "algebra.reuse", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
@@ -1686,8 +1846,9 @@ ALGreuse(bat *ret, const bat *bid)
  * BAT standard deviation
  */
 static str
-ALGstdev(dbl *res, const bat *bid)
+ALGstdev(Client ctx, dbl *res, const bat *bid)
 {
+	(void) ctx;
 	BAT *b;
 	dbl stdev;
 
@@ -1702,8 +1863,9 @@ ALGstdev(dbl *res, const bat *bid)
 }
 
 static str
-ALGstdevp(dbl *res, const bat *bid)
+ALGstdevp(Client ctx, dbl *res, const bat *bid)
 {
+	(void) ctx;
 	BAT *b;
 	dbl stdev;
 
@@ -1721,8 +1883,9 @@ ALGstdevp(dbl *res, const bat *bid)
  * BAT variance
  */
 static str
-ALGvariance(dbl *res, const bat *bid)
+ALGvariance(Client ctx, dbl *res, const bat *bid)
 {
+	(void) ctx;
 	BAT *b;
 	dbl variance;
 
@@ -1737,8 +1900,9 @@ ALGvariance(dbl *res, const bat *bid)
 }
 
 static str
-ALGvariancep(dbl *res, const bat *bid)
+ALGvariancep(Client ctx, dbl *res, const bat *bid)
 {
+	(void) ctx;
 	BAT *b;
 	dbl variance;
 
@@ -1756,8 +1920,9 @@ ALGvariancep(dbl *res, const bat *bid)
  * BAT covariance
  */
 static str
-ALGcovariance(dbl *res, const bat *bid1, const bat *bid2)
+ALGcovariance(Client ctx, dbl *res, const bat *bid1, const bat *bid2)
 {
+	(void) ctx;
 	BAT *b1, *b2;
 	dbl covariance;
 
@@ -1778,8 +1943,9 @@ ALGcovariance(dbl *res, const bat *bid1, const bat *bid2)
 }
 
 static str
-ALGcovariancep(dbl *res, const bat *bid1, const bat *bid2)
+ALGcovariancep(Client ctx, dbl *res, const bat *bid1, const bat *bid2)
 {
+	(void) ctx;
 	BAT *b1, *b2;
 	dbl covariance;
 
@@ -1803,8 +1969,9 @@ ALGcovariancep(dbl *res, const bat *bid1, const bat *bid2)
  * BAT correlation
  */
 static str
-ALGcorr(dbl *res, const bat *bid1, const bat *bid2)
+ALGcorr(Client ctx, dbl *res, const bat *bid1, const bat *bid2)
 {
+	(void) ctx;
 	BAT *b1, *b2;
 	dbl covariance;
 
@@ -1825,7 +1992,7 @@ ALGcorr(dbl *res, const bat *bid1, const bat *bid2)
 }
 
 #include "mel.h"
-mel_func algebra_init_funcs[] = {
+static mel_func algebra_init_funcs[] = {
  command("algebra", "groupby", ALGgroupby, false, "Produces a new BAT with groups identified by the head column. The result contains tail times the head value, ie the tail contains the result group sizes.", args(1,3, batarg("",oid),batarg("gids",oid),batarg("cnts",lng))),
  command("algebra", "find", ALGfind, false, "Returns the index position of a value.  If no such BUN exists return OID-nil.", args(1,3, arg("",oid),batargany("b",1),argany("t",1))),
  command("algebra", "fetch", ALGfetchoid, false, "Returns the value of the BUN at x-th position with 0 <= x < b.count", args(1,3, argany("",1),batargany("b",1),arg("x",oid))),
@@ -1834,25 +2001,26 @@ mel_func algebra_init_funcs[] = {
  command("algebra", "projection", ALGprojection2, false, "Project left input onto right inputs which should be consecutive.", args(1,4, batargany("",1),batarg("left",oid),batargany("right1",1),batargany("right2",1))),
  command("algebra", "copy", ALGcopy, false, "Returns physical copy of a BAT.", args(1,2, batargany("",1),batargany("b",1))),
  command("algebra", "exist", ALGexist, false, "Returns whether 'val' occurs in b.", args(1,3, arg("",bit),batargany("b",1),argany("val",1))),
- command("algebra", "select", ALGselect1, false, "Select all head values for which the tail value is in range.\nInput is a dense-headed BAT, output is a dense-headed BAT with in\nthe tail the head value of the input BAT for which the tail value\nis between the values low and high (inclusive if li respectively\nhi is set).  The output BAT is sorted on the tail value.  If low\nor high is nil, the boundary is not considered (effectively - and\n+ infinity).  If anti is set, the result is the complement.  Nil\nvalues in the tail are never matched, unless low=nil, high=nil,\nli=1, hi=1, anti=0.  All non-nil values are returned if low=nil,\nhigh=nil, and li, hi are not both 1, or anti=1.\nNote that the output is suitable as second input for the other\nversion of this function.", args(1,7, batarg("",oid),batargany("b",1),argany("low",1),argany("high",1),arg("li",bit),arg("hi",bit),arg("anti",bit))),
- command("algebra", "select", ALGselect2, false, "Select all head values of the first input BAT for which the tail value\nis in range and for which the head value occurs in the tail of the\nsecond input BAT.\nThe first input is a dense-headed BAT, the second input is a\ndense-headed BAT with sorted tail, output is a dense-headed BAT\nwith in the tail the head value of the input BAT for which the\ntail value is between the values low and high (inclusive if li\nrespectively hi is set).  The output BAT is sorted on the tail\nvalue.  If low or high is nil, the boundary is not considered\n(effectively - and + infinity).  If anti is set, the result is the\ncomplement.  Nil values in the tail are never matched, unless\nlow=nil, high=nil, li=1, hi=1, anti=0.  All non-nil values are\nreturned if low=nil, high=nil, and li, hi are not both 1, or anti=1.\nNote that the output is suitable as second input for this\nfunction.", args(1,8, batarg("",oid),batargany("b",1),batarg("s",oid),argany("low",1),argany("high",1),arg("li",bit),arg("hi",bit),arg("anti",bit))),
+ command("algebra", "select", ALGselect1, false, "Select all head values for which the tail value is in range. Input is a dense-headed BAT, output is a dense-headed BAT with in the tail the head value of the input BAT for which the tail value is between the values low and high (inclusive if li respectively hi is set).  The output BAT is sorted on the tail value.  If low or high is nil, the boundary is not considered (effectively - and + infinity).  If anti is set, the result is the complement.  Nil values in the tail are never matched, unless low=nil, high=nil, li=1, hi=1, anti=0.  All non-nil values are returned if low=nil, high=nil, and li, hi are not both 1, or anti=1. Note that the output is suitable as second input for the other version of this function.", args(1,7, batarg("",oid),batargany("b",1),argany("low",1),argany("high",1),arg("li",bit),arg("hi",bit),arg("anti",bit))),
+ command("algebra", "select", ALGselect2, false, "Select all head values of the first input BAT for which the tail value is in range and for which the head value occurs in the tail of the second input BAT. The first input is a dense-headed BAT, the second input is a dense-headed BAT with sorted tail, output is a dense-headed BAT with in the tail the head value of the input BAT for which the tail value is between the values low and high (inclusive if li respectively hi is set).  The output BAT is sorted on the tail value.  If low or high is nil, the boundary is not considered (effectively - and + infinity).  If anti is set, the result is the complement.  Nil values in the tail are never matched, unless low=nil, high=nil, li=1, hi=1, anti=0.  All non-nil values are returned if low=nil, high=nil, and li, hi are not both 1, or anti=1. Note that the output is suitable as second input for this function.", args(1,8, batarg("",oid),batargany("b",1),batarg("s",oid),argany("low",1),argany("high",1),arg("li",bit),arg("hi",bit),arg("anti",bit))),
  command("algebra", "select", ALGselect1nil, false, "With unknown set, each nil != nil", args(1,8, batarg("",oid),batargany("b",1),argany("low",1),argany("high",1),arg("li",bit),arg("hi",bit),arg("anti",bit),arg("unknown",bit))),
  command("algebra", "select", ALGselect2nil, false, "With unknown set, each nil != nil", args(1,9, batarg("",oid),batargany("b",1),batarg("s",oid),argany("low",1),argany("high",1),arg("li",bit),arg("hi",bit),arg("anti",bit),arg("unknown",bit))),
- command("algebra", "thetaselect", ALGthetaselect2, false, "Select all head values of the first input BAT for which the tail value\nobeys the relation value OP VAL and for which the head value occurs in\nthe tail of the second input BAT.\nInput is a dense-headed BAT, output is a dense-headed BAT with in\nthe tail the head value of the input BAT for which the\nrelationship holds.  The output BAT is sorted on the tail value.", args(1,5, batarg("",oid),batargany("b",1),batarg("s",oid),argany("val",1),arg("op",str))),
+ command("algebra", "thetaselect", ALGthetaselect2, false, "Select all head values of the first input BAT for which the tail value obeys the relation value OP VAL and for which the head value occurs in the tail of the second input BAT. Input is a dense-headed BAT, output is a dense-headed BAT with in the tail the head value of the input BAT for which the relationship holds.  The output BAT is sorted on the tail value.", args(1,5, batarg("",oid),batargany("b",1),batarg("s",oid),argany("val",1),arg("op",str))),
  command("algebra", "markselect", ALGmarkselect, false, "Group on group-ids, return aggregated anyequal or allnotequal", args(2,6, batarg("",oid), batarg("", bit), batarg("gid",oid), batarg("m", bit), batarg("p", bit), arg("any", bit))),
- command("algebra", "outerselect", ALGouterselect, false, "Per input lid return at least one row, if none of the predicates (p) hold, return a nil, else 'all' true cases.", args(2,6, batarg("",oid), batarg("", bit), batarg("lid", oid), batarg("rid", bit), batarg("predicate", bit), arg("any", bit))),
+ command("algebra", "single", ALGsingle, false, "Check for single result ids.", args(1,3, batarg("r",oid), batarg("cands", oid), batarg("i", oid))),
+ command("algebra", "outerselect", ALGouterselect, false, "Per input lid return at least one row, if none of the predicates (p) hold, return a nil, else 'all' true cases.", args(2,7, batarg("",oid), batarg("", bit), batarg("lid", oid), batarg("rid", bit), batarg("predicate", bit), arg("any", bit), arg("single", bit))),
  command("algebra", "selectNotNil", ALGselectNotNil, false, "Select all not-nil values", args(1,2, batargany("",1),batargany("b",1))),
- command("algebra", "sort", ALGsort11, false, "Returns a copy of the BAT sorted on tail values.\nThe order is descending if the reverse bit is set.\nThis is a stable sort if the stable bit is set.", args(1,5, batargany("",1),batargany("b",1),arg("reverse",bit),arg("nilslast",bit),arg("stable",bit))),
- command("algebra", "sort", ALGsort12, false, "Returns a copy of the BAT sorted on tail values and a BAT that\nspecifies how the input was reordered.\nThe order is descending if the reverse bit is set.\nThis is a stable sort if the stable bit is set.", args(2,6, batargany("",1),batarg("",oid),batargany("b",1),arg("reverse",bit),arg("nilslast",bit),arg("stable",bit))),
- command("algebra", "sort", ALGsort13, false, "Returns a copy of the BAT sorted on tail values, a BAT that specifies\nhow the input was reordered, and a BAT with group information.\nThe order is descending if the reverse bit is set.\nThis is a stable sort if the stable bit is set.", args(3,7, batargany("",1),batarg("",oid),batarg("",oid),batargany("b",1),arg("reverse",bit),arg("nilslast",bit),arg("stable",bit))),
- command("algebra", "sort", ALGsort21, false, "Returns a copy of the BAT sorted on tail values.\nThe order is descending if the reverse bit is set.\nThis is a stable sort if the stable bit is set.", args(1,6, batargany("",1),batargany("b",1),batarg("o",oid),arg("reverse",bit),arg("nilslast",bit),arg("stable",bit))),
- command("algebra", "sort", ALGsort22, false, "Returns a copy of the BAT sorted on tail values and a BAT that\nspecifies how the input was reordered.\nThe order is descending if the reverse bit is set.\nThis is a stable sort if the stable bit is set.", args(2,7, batargany("",1),batarg("",oid),batargany("b",1),batarg("o",oid),arg("reverse",bit),arg("nilslast",bit),arg("stable",bit))),
- command("algebra", "sort", ALGsort23, false, "Returns a copy of the BAT sorted on tail values, a BAT that specifies\nhow the input was reordered, and a BAT with group information.\nThe order is descending if the reverse bit is set.\nThis is a stable sort if the stable bit is set.", args(3,8, batargany("",1),batarg("",oid),batarg("",oid),batargany("b",1),batarg("o",oid),arg("reverse",bit),arg("nilslast",bit),arg("stable",bit))),
- command("algebra", "sort", ALGsort31, false, "Returns a copy of the BAT sorted on tail values.\nThe order is descending if the reverse bit is set.\nThis is a stable sort if the stable bit is set.", args(1,7, batargany("",1),batargany("b",1),batarg("o",oid),batarg("g",oid),arg("reverse",bit),arg("nilslast",bit),arg("stable",bit))),
- command("algebra", "sort", ALGsort32, false, "Returns a copy of the BAT sorted on tail values and a BAT that\nspecifies how the input was reordered.\nThe order is descending if the reverse bit is set.\nThis is a stable sort if the stable bit is set.", args(2,8, batargany("",1),batarg("",oid),batargany("b",1),batarg("o",oid),batarg("g",oid),arg("reverse",bit),arg("nilslast",bit),arg("stable",bit))),
- command("algebra", "sort", ALGsort33, false, "Returns a copy of the BAT sorted on tail values, a BAT that specifies\nhow the input was reordered, and a BAT with group information.\nThe order is descending if the reverse bit is set.\nThis is a stable sort if the stable bit is set.", args(3,9, batargany("",1),batarg("",oid),batarg("",oid),batargany("b",1),batarg("o",oid),batarg("g",oid),arg("reverse",bit),arg("nilslast",bit),arg("stable",bit))),
- command("algebra", "unique", ALGunique, false, "Select all unique values from the tail of the first input.\nInput is a dense-headed BAT, the second input is a\ndense-headed BAT with sorted tail, output is a dense-headed\nBAT with in the tail the head value of the input BAT that was\nselected.  The output BAT is sorted on the tail value.  The\nsecond input BAT is a list of candidates.", args(1,3, batarg("",oid),batargany("b",1),batarg("s",oid))),
- command("algebra", "crossproduct", ALGcrossproduct2, false, "Returns 2 columns with all BUNs, consisting of the head-oids\nfrom 'left' and 'right' for which there are BUNs in 'left'\nand 'right' with equal tails", args(2,5, batarg("l",oid),batarg("r",oid),batargany("left",1),batargany("right",2),arg("max_one",bit))),
+ command("algebra", "sort", ALGsort11, false, "Returns a copy of the BAT sorted on tail values. The order is descending if the reverse bit is set. This is a stable sort if the stable bit is set.", args(1,5, batargany("",1),batargany("b",1),arg("reverse",bit),arg("nilslast",bit),arg("stable",bit))),
+ command("algebra", "sort", ALGsort12, false, "Returns a copy of the BAT sorted on tail values and a BAT that specifies how the input was reordered. The order is descending if the reverse bit is set. This is a stable sort if the stable bit is set.", args(2,6, batargany("",1),batarg("",oid),batargany("b",1),arg("reverse",bit),arg("nilslast",bit),arg("stable",bit))),
+ command("algebra", "sort", ALGsort13, false, "Returns a copy of the BAT sorted on tail values, a BAT that specifies how the input was reordered, and a BAT with group information. The order is descending if the reverse bit is set. This is a stable sort if the stable bit is set.", args(3,7, batargany("",1),batarg("",oid),batarg("",oid),batargany("b",1),arg("reverse",bit),arg("nilslast",bit),arg("stable",bit))),
+ command("algebra", "sort", ALGsort21, false, "Returns a copy of the BAT sorted on tail values. The order is descending if the reverse bit is set. This is a stable sort if the stable bit is set.", args(1,6, batargany("",1),batargany("b",1),batarg("o",oid),arg("reverse",bit),arg("nilslast",bit),arg("stable",bit))),
+ command("algebra", "sort", ALGsort22, false, "Returns a copy of the BAT sorted on tail values and a BAT that specifies how the input was reordered. The order is descending if the reverse bit is set. This is a stable sort if the stable bit is set.", args(2,7, batargany("",1),batarg("",oid),batargany("b",1),batarg("o",oid),arg("reverse",bit),arg("nilslast",bit),arg("stable",bit))),
+ command("algebra", "sort", ALGsort23, false, "Returns a copy of the BAT sorted on tail values, a BAT that specifies how the input was reordered, and a BAT with group information. The order is descending if the reverse bit is set. This is a stable sort if the stable bit is set.", args(3,8, batargany("",1),batarg("",oid),batarg("",oid),batargany("b",1),batarg("o",oid),arg("reverse",bit),arg("nilslast",bit),arg("stable",bit))),
+ command("algebra", "sort", ALGsort31, false, "Returns a copy of the BAT sorted on tail values. The order is descending if the reverse bit is set. This is a stable sort if the stable bit is set.", args(1,7, batargany("",1),batargany("b",1),batarg("o",oid),batarg("g",oid),arg("reverse",bit),arg("nilslast",bit),arg("stable",bit))),
+ command("algebra", "sort", ALGsort32, false, "Returns a copy of the BAT sorted on tail values and a BAT that specifies how the input was reordered. The order is descending if the reverse bit is set. This is a stable sort if the stable bit is set.", args(2,8, batargany("",1),batarg("",oid),batargany("b",1),batarg("o",oid),batarg("g",oid),arg("reverse",bit),arg("nilslast",bit),arg("stable",bit))),
+ command("algebra", "sort", ALGsort33, false, "Returns a copy of the BAT sorted on tail values, a BAT that specifies how the input was reordered, and a BAT with group information. The order is descending if the reverse bit is set. This is a stable sort if the stable bit is set.", args(3,9, batargany("",1),batarg("",oid),batarg("",oid),batargany("b",1),batarg("o",oid),batarg("g",oid),arg("reverse",bit),arg("nilslast",bit),arg("stable",bit))),
+ command("algebra", "unique", ALGunique, false, "Select all unique values from the tail of the first input. Input is a dense-headed BAT, the second input is a dense-headed BAT with sorted tail, output is a dense-headed BAT with in the tail the head value of the input BAT that was selected.  The output BAT is sorted on the tail value.  The second input BAT is a list of candidates.", args(1,3, batarg("",oid),batargany("b",1),batarg("s",oid))),
+ command("algebra", "crossproduct", ALGcrossproduct2, false, "Returns 2 columns with all BUNs, consisting of the head-oids from 'left' and 'right' for which there are BUNs in 'left' and 'right' with equal tails", args(2,5, batarg("l",oid),batarg("r",oid),batargany("left",1),batargany("right",2),arg("max_one",bit))),
  command("algebra", "crossproduct", ALGcrossproduct1, false, "Compute the cross product of both input bats; but only produce left output", args(1,4, batarg("",oid),batargany("left",1),batargany("right",2),arg("max_one",bit))),
  command("algebra", "crossproduct", ALGcrossproduct3, false, "Compute the cross product of both input bats", args(2,7, batarg("l",oid),batarg("r",oid),batargany("left",1),batargany("right",2),batarg("sl",oid),batarg("sr",oid),arg("max_one",bit))),
  command("algebra", "crossproduct", ALGcrossproduct4, false, "Compute the cross product of both input bats; but only produce left output", args(1,6, batarg("",oid),batargany("left",1),batargany("right",2),batarg("sl",oid),batarg("sr",oid),arg("max_one",bit))),
@@ -1864,8 +2032,8 @@ mel_func algebra_init_funcs[] = {
  command("algebra", "outerjoin", ALGouterjoin, false, "Left outer join with candidate lists", args(2,9, batarg("",oid),batarg("",oid),batargany("l",1),batargany("r",1),batarg("sl",oid),batarg("sr",oid),arg("nil_matches",bit),arg("match_one",bit),arg("estimate",lng))),
  command("algebra", "outerjoin", ALGouterjoin1, false, "Left outer join with candidate lists; only produce left output", args(1,8,batarg("",oid),batargany("l",1),batargany("r",1),batarg("sl",oid),batarg("sr",oid),arg("nil_matches",bit),arg("match_one",bit),arg("estimate",lng))),
  command("algebra", "semijoin", ALGsemijoin, false, "Semi join with candidate lists", args(2,9, batarg("",oid),batarg("",oid),batargany("l",1),batargany("r",1),batarg("sl",oid),batarg("sr",oid),arg("nil_matches",bit),arg("max_one",bit),arg("estimate",lng))),
- command("algebra", "markjoin", ALGmark2join, false, "Mark join with candidate lists", args(2,7, batarg("",oid),batarg("",bit),batargany("l",1),batargany("r",1),batarg("sl",oid),batarg("sr",oid),arg("estimate",lng))),
- command("algebra", "markjoin", ALGmark3join, false, "Mark join with candidate lists", args(3,8, batarg("",oid),batarg("",oid),batarg("",bit),batargany("l",1),batargany("r",1),batarg("sl",oid),batarg("sr",oid),arg("estimate",lng))),
+ command("algebra", "markjoin", ALGmark2join, false, "Mark join with candidate lists", args(2,8, batarg("",oid),batarg("",bit),batargany("l",1),batargany("r",1),batarg("sl",oid),batarg("sr",oid),arg("nil_matches", bit), arg("estimate",lng))),
+ command("algebra", "markjoin", ALGmark3join, false, "Mark join with candidate lists", args(3,9, batarg("",oid),batarg("",oid),batarg("",bit),batargany("l",1),batargany("r",1),batarg("sl",oid),batarg("sr",oid),arg("nil_matches", bit), arg("estimate",lng))),
  command("algebra", "thetajoin", ALGthetajoin, false, "Theta join with candidate lists", args(2,9, batarg("",oid),batarg("",oid),batargany("l",1),batargany("r",1),batarg("sl",oid),batarg("sr",oid),arg("op",int),arg("nil_matches",bit),arg("estimate",lng))),
  command("algebra", "thetajoin", ALGthetajoin1, false, "Theta join with candidate lists; only produce left output", args(1,8, batarg("",oid),batargany("l",1),batargany("r",1),batarg("sl",oid),batarg("sr",oid),arg("op",int),arg("nil_matches",bit),arg("estimate",lng))),
  command("algebra", "bandjoin", ALGbandjoin, false, "Band join: values in l and r match if r - c1 <[=] l <[=] r + c2", args(2,11, batarg("",oid),batarg("",oid),batargany("l",1),batargany("r",1),batarg("sl",oid),batarg("sr",oid),argany("c1",1),argany("c2",1),arg("li",bit),arg("hi",bit),arg("estimate",lng))),
@@ -1876,18 +2044,21 @@ mel_func algebra_init_funcs[] = {
  command("algebra", "intersect", ALGintersect, false, "Intersection of l and r with candidate lists (i.e. half of semi-join)", args(1,8, batarg("",oid),batargany("l",1),batargany("r",1),batarg("sl",oid),batarg("sr",oid),arg("nil_matches",bit),arg("max_one",bit),arg("estimate",lng))),
  pattern("algebra", "firstn", ALGfirstn, false, "Calculate first N values of B with candidate list S", args(1,8, batarg("",oid),batargany("b",0),batarg("s",oid),batarg("g",oid),arg("n",lng),arg("asc",bit),arg("nilslast",bit),arg("distinct",bit))),
  pattern("algebra", "firstn", ALGfirstn, false, "Calculate first N values of B with candidate list S", args(2,9, batarg("",oid),batarg("",oid),batargany("b",0),batarg("s",oid),batarg("g",oid),arg("n",lng),arg("asc",bit),arg("nilslast",bit),arg("distinct",bit))),
+ pattern("algebra", "firstn", ALGfirstn, false, "Calculate first N values of B with candidate list S", args(1,10, batarg("",oid),batargany("b",0),batarg("s",oid),batarg("g",oid),arg("n",lng),arg("o",lng),arg("return_skipped",bit),arg("asc",bit),arg("nilslast",bit),arg("distinct",bit))),
+ pattern("algebra", "firstn", ALGfirstn, false, "Calculate first N values of B with candidate list S", args(2,11, batarg("",oid),batarg("",oid),batargany("b",0),batarg("s",oid),batarg("g",oid),arg("n",lng),arg("o",lng),arg("return_skipped",bit),arg("asc",bit),arg("nilslast",bit),arg("distinct",bit))),
  pattern("algebra", "groupedfirstn", ALGgroupedfirstn, false, "Grouped firstn", args(1,5, batarg("",oid),arg("n",lng),batarg("s",oid),batarg("g",oid),varargany("arg",0))),
- command("algebra", "reuse", ALGreuse, false, "Reuse a temporary BAT if you can. Otherwise,\nallocate enough storage to accept result of an\noperation (not involving the heap)", args(1,2, batargany("",1),batargany("b",1))),
+ pattern("algebra", "groupedfirstn", ALGgroupedfirstn, false, "Grouped firstn", args(1,7, batarg("",oid),arg("n",lng),arg("o",lng),arg("return_skipped",bit),batarg("s",oid),batarg("g",oid),varargany("arg",0))),
+ command("algebra", "reuse", ALGreuse, false, "Reuse a temporary BAT if you can. Otherwise, allocate enough storage to accept result of an operation (not involving the heap)", args(1,2, batargany("",1),batargany("b",1))),
  command("algebra", "slice", ALGslice_oid, false, "Return the slice based on head oid x till y (exclusive).", args(1,4, batargany("",1),batargany("b",1),arg("x",oid),arg("y",oid))),
  command("algebra", "slice", ALGslice_int, false, "Return the slice with the BUNs at position x till y.", args(1,4, batargany("",1),batargany("b",1),arg("x",int),arg("y",int))),
  command("algebra", "slice", ALGslice_lng, false, "Return the slice with the BUNs at position x till y.", args(1,4, batargany("",1),batargany("b",1),arg("x",lng),arg("y",lng))),
  command("algebra", "subslice", ALGsubslice_lng, false, "Return the oids of the slice with the BUNs at position x till y.", args(1,4, batarg("",oid),batargany("b",1),arg("x",lng),arg("y",lng))),
  command("aggr", "count", ALGcount_bat, false, "Return the current size (in number of elements) in a BAT.", args(1,2, arg("",lng),batargany("b",0))),
- command("aggr", "count", ALGcount_nil, false, "Return the number of elements currently in a BAT ignores\nBUNs with nil-tail iff ignore_nils==TRUE.", args(1,3, arg("",lng),batargany("b",0),arg("ignore_nils",bit))),
- command("aggr", "count_no_nil", ALGcount_no_nil, false, "Return the number of elements currently\nin a BAT ignoring BUNs with nil-tail", args(1,2, arg("",lng),batargany("b",2))),
+ command("aggr", "count", ALGcount_nil, false, "Return the number of elements currently in a BAT ignores BUNs with nil-tail iff ignore_nils==TRUE.", args(1,3, arg("",lng),batargany("b",0),arg("ignore_nils",bit))),
+ command("aggr", "count_no_nil", ALGcount_no_nil, false, "Return the number of elements currently in a BAT ignoring BUNs with nil-tail", args(1,2, arg("",lng),batargany("b",2))),
  command("aggr", "count", ALGcountCND_bat, false, "Return the current size (in number of elements) in a BAT.", args(1,3, arg("",lng),batargany("b",0),batarg("cnd",oid))),
- command("aggr", "count", ALGcountCND_nil, false, "Return the number of elements currently in a BAT ignores\nBUNs with nil-tail iff ignore_nils==TRUE.", args(1,4, arg("",lng),batargany("b",0),batarg("cnd",oid),arg("ignore_nils",bit))),
- command("aggr", "count_no_nil", ALGcountCND_no_nil, false, "Return the number of elements currently\nin a BAT ignoring BUNs with nil-tail", args(1,3, arg("",lng),batargany("b",2),batarg("cnd",oid))),
+ command("aggr", "count", ALGcountCND_nil, false, "Return the number of elements currently in a BAT ignores BUNs with nil-tail iff ignore_nils==TRUE.", args(1,4, arg("",lng),batargany("b",0),batarg("cnd",oid),arg("ignore_nils",bit))),
+ command("aggr", "count_no_nil", ALGcountCND_no_nil, false, "Return the number of elements currently in a BAT ignoring BUNs with nil-tail", args(1,3, arg("",lng),batargany("b",2),batarg("cnd",oid))),
  command("aggr", "cardinality", ALGcard, false, "Return the cardinality of the BAT tail values.", args(1,2, arg("",lng),batargany("b",2))),
  command("aggr", "min", ALGminany, false, "Return the lowest tail value or nil.", args(1,2, argany("",2),batargany("b",2))),
  command("aggr", "min", ALGminany_skipnil, false, "Return the lowest tail value or nil.", args(1,3, argany("",2),batargany("b",2),arg("skipnil",bit))),

@@ -1,4 +1,4 @@
-query TTR rowsort
+query TTD rowsort
 -- query 23-2
  with frequent_ss_items as
  (select substr(i_item_desc,1,30) itemdesc,i_item_sk item_sk,d_date solddate,count(*) cnt
@@ -7,7 +7,7 @@ query TTR rowsort
       ,item
   where ss_sold_date_sk = d_date_sk
     and ss_item_sk = i_item_sk
-    and d_year in (2000,2000 + 1,2000 + 2,2000 + 3)
+    and d_year in (2000,2000+1,2000+2,2000+3)
   group by substr(i_item_desc,1,30),i_item_sk,d_date
   having count(*) >4),
  max_store_sales as
@@ -58,14 +58,14 @@ query TTR rowsort
 ----
 Brown
 Monika
-6031.520
+6031.52
 Collins
 Gordon
-727.570
+727.57
 Green
 Jesse
-9672.960
+9672.96
 NULL
 Robert
-598.860
+598.86
 

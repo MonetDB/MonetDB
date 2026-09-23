@@ -3,16 +3,13 @@
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024, 2025 MonetDB Foundation;
- * Copyright August 2008 - 2023 MonetDB B.V.;
- * Copyright 1997 - July 2008 CWI.
+ * For copyright information, see the file debian/copyright.
  */
 
 #include "monetdb_config.h"
 #include "dotmonetdb.h"
-#define LIBMUTILS 1
 #include "mutils.h"
 #include <string.h>
 
@@ -46,12 +43,19 @@ parse_dotmonetdb(DotMonetdb *dotfile)
 			int len = -1;
 			cfile = wbuf;
 			if (xdg != NULL)
-				len = _snwprintf(wbuf, sizeof(wbuf), L"%ls%lcmonetdb", xdg, DIR_SEP);
+				len = _snwprintf(wbuf, sizeof(wbuf),
+						 L"%ls%lcmonetdb", xdg,
+						 DIR_SEP);
 			else if (home != NULL)
-				len = _snwprintf(wbuf, sizeof(wbuf), L"%ls%lc.config%lcmonetdb", home, DIR_SEP, DIR_SEP);
-			if (len == -1 || len >= FILENAME_MAX || (config = _wfopen(wbuf, L"r")) == NULL) {
+				len = _snwprintf(wbuf, sizeof(wbuf),
+						 L"%ls%lc.config%lcmonetdb",
+						 home, DIR_SEP, DIR_SEP);
+			if (len == -1 || len >= FILENAME_MAX ||
+			    (config = _wfopen(wbuf, L"r")) == NULL) {
 				if (home) {
-					len = _snwprintf(wbuf, sizeof(wbuf), L"%ls%lc.monetdb", home, DIR_SEP);
+					len = _snwprintf(wbuf, sizeof(wbuf),
+							 L"%ls%lc.monetdb",
+							 home, DIR_SEP);
 					if (len >= 0 && len < FILENAME_MAX)
 						config = _wfopen(wbuf, L"r");
 				}
@@ -59,7 +63,7 @@ parse_dotmonetdb(DotMonetdb *dotfile)
 		}
 	} else if (*cfile != 0 && (config = _wfopen(cfile, L"r")) == NULL) {
 		fprintf(stderr, "failed to open file '%ls': %s\n",
-				cfile, strerror(errno));
+			cfile, strerror(errno));
 	}
 #else
 	char *cfile;
@@ -74,12 +78,18 @@ parse_dotmonetdb(DotMonetdb *dotfile)
 			int len = -1;
 			cfile = buf;
 			if (xdg != NULL)
-				len = snprintf(buf, sizeof(buf), "%s%cmonetdb", xdg, DIR_SEP);
+				len = snprintf(buf, sizeof(buf), "%s%cmonetdb",
+					       xdg, DIR_SEP);
 			else if (home != NULL)
-				len = snprintf(buf, sizeof(buf), "%s%c.config%cmonetdb", home, DIR_SEP, DIR_SEP);
-			if (len == -1 || len >= FILENAME_MAX || (config = fopen(buf, "r")) == NULL) {
+				len = snprintf(buf, sizeof(buf),
+					       "%s%c.config%cmonetdb",
+					       home, DIR_SEP, DIR_SEP);
+			if (len == -1 || len >= FILENAME_MAX ||
+			    (config = fopen(buf, "r")) == NULL) {
 				if (home) {
-					len = snprintf(buf, sizeof(buf), "%s%c.monetdb", home, DIR_SEP);
+					len = snprintf(buf, sizeof(buf),
+						       "%s%c.monetdb",
+						       home, DIR_SEP);
 					if (len >= 0 && len < FILENAME_MAX)
 						config = fopen(buf, "r");
 				}
@@ -87,7 +97,7 @@ parse_dotmonetdb(DotMonetdb *dotfile)
 		}
 	} else if (*cfile != 0 && (config = fopen(cfile, "r")) == NULL) {
 		fprintf(stderr, "failed to open file '%s': %s\n",
-				cfile, strerror(errno));
+			cfile, strerror(errno));
 	}
 #endif
 
@@ -105,7 +115,7 @@ parse_dotmonetdb(DotMonetdb *dotfile)
 				continue;
 			if ((q = strchr(buf, '=')) == NULL) {
 				fprintf(stderr, CF ":%d: syntax error: %s\n",
-						cfile, line, buf);
+					cfile, line, buf);
 				continue;
 			}
 			*q++ = '\0';
@@ -128,8 +138,9 @@ parse_dotmonetdb(DotMonetdb *dotfile)
 				/* make sure we don't set garbage */
 				if (strcmp(q, "sql") != 0 &&
 				    strcmp(q, "mal") != 0) {
-					fprintf(stderr, CF ":%d: unsupported language: %s\n",
-							cfile, line, q);
+					fprintf(stderr, CF ":%d:"
+						" unsupported language: %s\n",
+						cfile, line, q);
 				}
 				dotfile->language = strdup(q);
 				q = NULL;
@@ -139,7 +150,7 @@ parse_dotmonetdb(DotMonetdb *dotfile)
 					dotfile->save_history = true;
 					q = NULL;
 				} else if (strcmp(q, "false") == 0 ||
-						   strcmp(q, "off") == 0) {
+					   strcmp(q, "off") == 0) {
 					dotfile->save_history = false;
 					q = NULL;
 				}
@@ -154,8 +165,9 @@ parse_dotmonetdb(DotMonetdb *dotfile)
 				q = NULL;
 			}
 			if (q != NULL)
-				fprintf(stderr, CF ":%d: unknown property: %s\n",
-						cfile, line, buf);
+				fprintf(stderr,
+					CF ":%d: unknown property: %s\n",
+					cfile, line, buf);
 		}
 		fclose(config);
 	}

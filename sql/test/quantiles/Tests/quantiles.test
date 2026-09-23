@@ -10008,32 +10008,32 @@ COPY 10000 RECORDS INTO "sys"."lit" FROM stdin USING DELIMITERS E'\t',E'\n','"'
 61475.78	"N"
 47779.50	"A"
 
-query R rowsort
+query D rowsort
 select quantile(l_extendedprice,0.5) from lit
 ----
-36724.500
+36724.50
 
-query R rowsort
+query D rowsort
 select median(l_extendedprice) from lit
 ----
-36724.500
+36724.50
 
-query R rowsort
+query D rowsort
 select quantile(l_extendedprice,0.0) from lit
 ----
-947.020
+947.02
 
-query R rowsort
+query D rowsort
 select quantile(l_extendedprice,1.0) from lit
 ----
-103149.000
+103149.00
 
-query RRR rowsort
+query DDD rowsort
 select quantile(l_extendedprice,0.05),quantile(l_extendedprice,0.5),quantile(l_extendedprice,0.95) from lit
 ----
-4200.320
-36724.500
-79584.120
+4200.32
+36724.50
+79584.12
 
 statement error
 select quantile(l_extendedprice,-1.0) from lit
@@ -10041,15 +10041,15 @@ select quantile(l_extendedprice,-1.0) from lit
 statement error
 select quantile(l_extendedprice,-1) from lit
 
-query R rowsort
+query D rowsort
 select quantile(l_extendedprice,1) from lit
 ----
-103149.000
+103149.00
 
-query R rowsort
+query D rowsort
 select quantile(l_extendedprice,0) from lit
 ----
-947.020
+947.02
 
 statement error
 select quantile(l_extendedprice,42) from lit
@@ -10057,46 +10057,46 @@ select quantile(l_extendedprice,42) from lit
 statement error
 select quantile(l_extendedprice,42.0) from lit
 
-query R rowsort
+query D rowsort
 select quantile(l_extendedprice,0.5) from lit group by l_returnflag
 ----
-35937.880
-36960.680
-37144.200
+35937.88
+36960.68
+37144.20
 
-query R rowsort
+query D rowsort
 select median(l_extendedprice) from lit group by l_returnflag
 ----
-35937.880
-36960.680
-37144.200
+35937.88
+36960.68
+37144.20
 
-query R rowsort
+query D rowsort
 select quantile(l_extendedprice,0.0) from lit group by l_returnflag
 ----
-1012.090
-1027.010
-947.020
+1012.09
+1027.01
+947.02
 
-query R rowsort
+query D rowsort
 select quantile(l_extendedprice,1.0) from lit group by l_returnflag
 ----
-100248.500
-101896.500
-103149.000
+100248.50
+101896.50
+103149.00
 
-query RRR rowsort
+query DDD rowsort
 select quantile(l_extendedprice,0.05),quantile(l_extendedprice,0.5),quantile(l_extendedprice,0.95) from lit  group by l_returnflag
 ----
-3889.960
-37144.200
-79010.100
-4204.470
-35937.880
-78572.760
-4424.440
-36960.680
-80045.910
+3889.96
+37144.20
+79010.10
+4204.47
+35937.88
+78572.76
+4424.44
+36960.68
+80045.91
 
 statement error
 select quantile(l_extendedprice,-1.0) from lit group by l_returnflag
@@ -10104,19 +10104,19 @@ select quantile(l_extendedprice,-1.0) from lit group by l_returnflag
 statement error
 select quantile(l_extendedprice,-1) from lit group by l_returnflag
 
-query R rowsort
+query D rowsort
 select quantile(l_extendedprice,1) from lit group by l_returnflag
 ----
-100248.500
-101896.500
-103149.000
+100248.50
+101896.50
+103149.00
 
-query R rowsort
+query D rowsort
 select quantile(l_extendedprice,0) from lit group by l_returnflag
 ----
-1012.090
-1027.010
-947.020
+1012.09
+1027.01
+947.02
 
 statement error
 select quantile(l_extendedprice,42) from lit group by l_returnflag

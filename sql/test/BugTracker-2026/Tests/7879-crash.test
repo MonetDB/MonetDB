@@ -1,0 +1,86 @@
+statement ok
+CREATE SCHEMA test7879
+
+statement ok
+SET SCHEMA test7879
+
+statement ok
+CREATE TABLE posts (
+    id          INT,
+    user_id     INT,
+    title       VARCHAR(255),
+    content     VARCHAR(1000),
+    views       INT,
+    likes       INT,
+    created_at  TIMESTAMP,
+    rating      DOUBLE
+)
+
+statement ok
+CREATE TABLE orders (
+    id          INT,
+    user_id     INT,
+    amount      DOUBLE,
+    status      VARCHAR(20),
+    created_at  TIMESTAMP
+)
+
+statement ok
+INSERT INTO posts VALUES
+(1, 1, 'Hello World', 'First post', 100, 10, '2022-01-10 10:00:00', 4.5),
+(2, 1, 'Another Post', NULL,        150, 20, '2022-01-11 11:00:00', 3.0),
+(3, 2, 'Bob Post',     'Content',   NULL,  5, '2022-01-12 12:00:00', NULL),
+(4, 3, NULL,           'Empty',     50,   2, '2022-01-13 13:00:00', 5.0),
+(5, 4, 'Last Post',    'Last',      300,  30,'2022-01-14 14:00:00', 4.9)
+
+statement ok
+INSERT INTO orders VALUES
+(1, 1, 100.00, 'paid',    '2022-02-01 09:00:00'),
+(2, 1, 200.50, 'shipped', '2022-02-02 10:00:00'),
+(3, 2, NULL,   'failed',  '2022-02-03 11:00:00'),
+(4, 3, 50.00,  'paid',    '2022-02-04 12:00:00'),
+(5, 5, 999.99, 'paid',    '2022-02-05 13:00:00')
+
+query TITI rowsort
+SELECT
+    (SELECT created_at FROM orders LIMIT 1 OFFSET 5) AS c0,
+    ref_2.id AS c1,
+    MAX(
+        UPPER(
+            REPLACE(
+                'K',
+                CASE WHEN TRUE AND FALSE THEN 'onw07j' ELSE 'Er9U' END,
+                COALESCE('zGR', '37')
+            )
+        )
+    ) OVER (PARTITION BY ref_2.likes ORDER BY ref_2.user_id, ref_2.likes) AS c2,
+    ref_2.user_id AS c3
+FROM (
+    SELECT subq_0.c0 AS c0
+    FROM orders AS ref_0,
+         LATERAL (
+             SELECT ref_0.id AS c0
+             FROM orders AS ref_1
+             WHERE TRUE
+             LIMIT 61
+         ) AS subq_0
+    WHERE FALSE
+    LIMIT 134
+) AS subq_1
+LEFT JOIN posts AS ref_2
+    ON TRUE
+WHERE ref_2.user_id <= ref_2.views
+----
+
+statement ok
+DROP TABLE orders
+
+statement ok
+DROP TABLE posts
+
+statement ok
+SET SCHEMA sys
+
+statement ok
+DROP SCHEMA test7879
+

@@ -86990,3 +86990,4 @@ SELECT SUM(test.dkey), test.dkey
 
 statement ok
 drop table if exists test
+

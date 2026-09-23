@@ -3,11 +3,9 @@
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024, 2025 MonetDB Foundation;
- * Copyright August 2008 - 2023 MonetDB B.V.;
- * Copyright 1997 - July 2008 CWI.
+ * For copyright information, see the file debian/copyright.
  */
 
 /*
@@ -80,10 +78,10 @@ backend_schema_has_user(ptr mvc, sql_schema *s)
 
 int
 backend_alter_user(ptr mvc, str user, str passwd, bool enc,
-				   sqlid schema_id, char *schema_path, str oldpasswd, sqlid role_id, lng max_memory, int max_workers)
+				sqlid schema_id, char *schema_path, str oldpasswd, sqlid role_id, lng max_memory, int max_workers, char *optimizer)
 {
 	if (be_funcs.fauser != NULL)
-		return(be_funcs.fauser(mvc, user, passwd, enc, schema_id, schema_path, oldpasswd, role_id, max_memory, max_workers));
+		return(be_funcs.fauser(mvc, user, passwd, enc, schema_id, schema_path, oldpasswd, role_id, max_memory, max_workers, optimizer));
 	return(FALSE);
 }
 
@@ -125,4 +123,11 @@ backend_find_role(ptr mvc, char *name, sqlid *role_id)
 	if (be_funcs.ffrole != NULL)
 		return be_funcs.ffrole(mvc, name, role_id);
 	return 0;
+}
+
+void
+backend_set_idle(int clientid, time_t t)
+{
+	if (be_funcs.setIdle != NULL)
+		be_funcs.setIdle(clientid, t);
 }

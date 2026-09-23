@@ -1,0 +1,17 @@
+statement ok
+CREATE TABLE v0 ( v1 INTEGER , v2 REAL )
+
+-- sql/backends/monet5/rel_bin.c:5040: rel2bin_groupby: Assertion `sql->session->status == -10' failed.
+query I nosort
+SELECT v1 FROM v0 WHERE ( v1 = -1
+                          OR ( SELECT v1 FROM v0 AS v3 WHERE ( v0 . v1 < v0 . v1 ) * 2147483647 >= v0 . v1 AND v0 . v1 > v0 . v2 GROUP BY v2 + 51 , v1 ) )
+                     OR ( v2 BETWEEN 8 AND 49 AND v1 = -128 OR v2 = 'x')
+----
+
+-- sql/backends/monet5/rel_bin.c:5040: rel2bin_groupby: Assertion `sql->session->status == -10' failed.
+statement ok
+INSERT INTO v0 VALUES ( ( SELECT v1 FROM v0 WHERE ( v1 = -1 OR ( SELECT v1 FROM v0 AS v3 WHERE ( v0 . v1 < v0 . v1 ) * 2147483647 >= v0 . v1 AND v0 . v1 > v0 . v2 GROUP BY v2 + 51 , v1 ) ) OR ( v2 BETWEEN 8 AND 49 AND v1 = -128 OR v2 = 'x' ) ) , 26871590.000000 ) , ( -128 , 13922972.000000 ) , ( -1 , 65290499.000000 )
+
+statement ok
+DROP TABLE v0
+

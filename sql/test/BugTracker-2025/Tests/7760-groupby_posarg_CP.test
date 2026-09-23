@@ -1,0 +1,14 @@
+statement ok
+SELECT id FROM sys.columns WHERE id IN (SELECT columns.id FROM (SELECT a.id FROM sys.columns a JOIN sys.columns b ON 1=1 ) AS columns GROUP BY 1)
+
+statement ok
+SELECT columns.id FROM (SELECT a.id FROM sys.columns a JOIN sys.columns b ON true) AS columns GROUP BY 1
+
+statement ok
+SELECT a.id FROM sys._columns a JOIN sys._columns b ON true group by 1
+
+statement ok
+SELECT x FROM (select 1) a(x) JOIN (SELECT 2) b(y) ON true group by 1
+
+statement ok
+SELECT x FROM (select 1) a(x) JOIN (SELECT 2) b(y) ON true group by x

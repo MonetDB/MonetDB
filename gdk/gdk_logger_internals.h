@@ -3,15 +3,15 @@
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024, 2025 MonetDB Foundation;
- * Copyright August 2008 - 2023 MonetDB B.V.;
- * Copyright 1997 - July 2008 CWI.
+ * For copyright information, see the file debian/copyright.
  */
 
 #ifndef _LOGGER_INTERNALS_H_
 #define _LOGGER_INTERNALS_H_
+
+#include "gdk.h"
 
 #define FLUSH_QUEUE_SIZE 2048 /* maximum size of the flush queue, i.e. maximum number of transactions committing simultaneously */
 
@@ -71,7 +71,12 @@ struct logger {
 
 	// synchronized by store->flush
 	bool flushnow;
+	BUN maxupdated;
+	uint32_t *updated;
 	bool flushing;		/* log_flush only */
+	int max_pending, cur_max_pending;
+				/* iff log files pending is larger than
+				   this number, throw a warning */
 	logged_range *pending;	/* log_flush only */
 	stream *input_log;	/* log_flush only: current stream to flush */
 

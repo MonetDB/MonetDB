@@ -3,11 +3,9 @@
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024, 2025 MonetDB Foundation;
- * Copyright August 2008 - 2023 MonetDB B.V.;
- * Copyright 1997 - July 2008 CWI.
+ * For copyright information, see the file debian/copyright.
  */
 
 /*
@@ -116,10 +114,14 @@ MDBsetDebug(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	return MAL_SUCCEED;
 }
 
-#define addFlag(NME, FLG, DSET) \
-	state =  (DSET & FLG)  > 0;\
-	if (BUNappend(flg, (void*) NME, false) != GDK_SUCCEED) goto bailout;\
-	if (BUNappend(val, &state, false) != GDK_SUCCEED) goto bailout;
+#define addFlag(NME, FLG, DSET)									\
+	do {														\
+		state = (DSET & (FLG)) != 0;							\
+		if (BUNappend(flg, (void*) NME, false) != GDK_SUCCEED)	\
+			goto bailout;										\
+		if (BUNappend(val, &state, false) != GDK_SUCCEED)		\
+			goto bailout;										\
+	} while (0)
 
 static str
 MDBgetDebugFlags(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
@@ -151,6 +153,7 @@ MDBgetDebugFlags(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	addFlag("algorithms", GRPalgorithms, dbg);
 	addFlag("performance", GRPperformance, dbg);
 	addFlag("forcemito", GRPforcemito, dbg);
+	addFlag("pipeline", 1<<19, dbg);
 
 	*f = flg->batCacheid;
 	BBPkeepref(flg);
@@ -231,7 +234,7 @@ MDBStkDepth(Client cntxt, MalBlkPtr mb, MalStkPtr s, InstrPtr p)
 	int *ret = getArgReference_int(s, p, 0);
 
 	(void) cntxt;
-	(void) mb;					/* fool compiler */
+	(void) mb;
 	*ret = getStkDepth(s);
 	return MAL_SUCCEED;
 }
@@ -251,16 +254,14 @@ MDBgetFrame(BAT *b, BAT *bn, MalBlkPtr mb, MalStkPtr s, int depth, const char *n
 		char namebuf[IDLENGTH];
 		for (i = 0; i < s->stktop; i++, v++) {
 			v = &s->stk[i];
-			if ((v->bat && (buf = ATOMformat(TYPE_int, &v->val.ival)) == NULL) ||
-			    (!v->bat && (buf = ATOMformat(v->vtype, VALptr(v))) == NULL) ||
+			if ((v->bat && (buf = ATOMformat(mb->ma, TYPE_int, &v->val.ival)) == NULL) ||
+			    (!v->bat && (buf = ATOMformat(mb->ma, v->vtype, VALptr(v))) == NULL) ||
 				BUNappend(b, getVarNameIntoBuffer(mb, i, namebuf), false) != GDK_SUCCEED ||
 				BUNappend(bn, buf, false) != GDK_SUCCEED) {
 				BBPunfix(b->batCacheid);
 				BBPunfix(bn->batCacheid);
-				GDKfree(buf);
 				throw(MAL, name, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			}
-			GDKfree(buf);
 			buf = NULL;
 		}
 	}
@@ -356,9 +357,8 @@ MDBStkTrace(Client cntxt, MalBlkPtr m, MalStkPtr s, InstrPtr p)
 		throw(MAL, "mdb.getStackTrace", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 	len = strlen(msg);
-	buf = (char *) GDKmalloc(len + 1024);
+	buf = (char *) ma_alloc(m->ma, len + 1024);
 	if (buf == NULL) {
-		GDKfree(msg);
 		BBPreclaim(b);
 		BBPreclaim(bn);
 		throw(MAL, "mdb.setTrace", SQLSTATE(HY013) MAL_MALLOC_FAIL);
@@ -368,13 +368,10 @@ MDBStkTrace(Client cntxt, MalBlkPtr m, MalStkPtr s, InstrPtr p)
 			 getFunctionId(getInstrPtr(m, 0)), getPC(m, p));
 	if (BUNappend(b, &k, false) != GDK_SUCCEED ||
 		BUNappend(bn, buf, false) != GDK_SUCCEED) {
-		GDKfree(msg);
-		GDKfree(buf);
 		BBPreclaim(b);
 		BBPreclaim(bn);
 		throw(MAL, "mdb.setTrace", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
-	GDKfree(msg);
 
 	for (pcup = s->pcup, s = s->up, k++; s != NULL;
 		 pcup = s->pcup, s = s->up, k++) {
@@ -386,11 +383,9 @@ MDBStkTrace(Client cntxt, MalBlkPtr m, MalStkPtr s, InstrPtr p)
 		}
 		l = strlen(msg);
 		if (l > len) {
-			GDKfree(buf);
 			len = l;
-			buf = (char *) GDKmalloc(len + 1024);
+			buf = (char *) ma_alloc(m->ma, len + 1024);
 			if (buf == NULL) {
-				GDKfree(msg);
 				BBPunfix(b->batCacheid);
 				BBPunfix(bn->batCacheid);
 				throw(MAL, "mdb.setTrace", SQLSTATE(HY013) MAL_MALLOC_FAIL);
@@ -401,15 +396,11 @@ MDBStkTrace(Client cntxt, MalBlkPtr m, MalStkPtr s, InstrPtr p)
 				 getFunctionId(getInstrPtr(s->blk, 0)), pcup);
 		if (BUNappend(b, &k, false) != GDK_SUCCEED ||
 			BUNappend(bn, buf, false) != GDK_SUCCEED) {
-			GDKfree(buf);
-			GDKfree(msg);
 			BBPunfix(b->batCacheid);
 			BBPunfix(bn->batCacheid);
 			throw(MAL, "mdb.setTrace", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		}
-		GDKfree(msg);
 	}
-	GDKfree(buf);
 	*ret = b->batCacheid;
 	BBPkeepref(b);
 	*ret2 = bn->batCacheid;
@@ -449,7 +440,7 @@ MDBlist3(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	if (s == NULL)
 		throw(MAL, "mdb.list", "Could not find %s.%s", modnme, fcnnme);
 	printFunction(cntxt->fdout, s->def, 0, LIST_MAL_NAME);
-	(void) mb;					/* fool compiler */
+	(void) mb;
 	return MAL_SUCCEED;
 }
 
@@ -473,7 +464,7 @@ MDBlist3Detail(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	if (s == NULL)
 		throw(MAL, "mdb.list", "Could not find %s.%s", modnme, fcnnme);
 	printFunction(cntxt->fdout, s->def, 0, LIST_MAL_DEBUG);
-	(void) mb;					/* fool compiler */
+	(void) mb;
 	return NULL;
 }
 
@@ -525,9 +516,11 @@ printBATelm(stream *f, bat i, BUN cnt, BUN first)
 
 	b = BATdescriptor(i);
 	if (b) {
-		tpe = getTypeName(newBatType(b->ttype));
+		allocator *ta = MT_thread_getallocator();
+		allocator_state ta_state = ma_open(ta);
+		tpe = getTypeName(ta, newBatType(b->ttype));
 		mnstr_printf(f, ":%s ", tpe);
-		GDKfree(tpe);
+		ma_close(&ta_state);
 		printBATproperties(f, b);
 		/* perform property checking */
 		BATassertProps(b);
@@ -567,25 +560,23 @@ printStackElm(stream *f, MalBlkPtr mb, const ValRecord *v, int index, BUN cnt, B
 		BAT *b = BBPquickdesc(i);
 
 		if (b) {
-			nme = getTypeName(newBatType(b->ttype));
+			nme = getTypeName(mb->ma, newBatType(b->ttype));
 			mnstr_printf(f, " :%s rows=" BUNFMT, nme, BATcount(b));
 		} else {
-			nme = getTypeName(n->type);
+			nme = getTypeName(mb->ma, n->type);
 			mnstr_printf(f, " :%s", nme);
 		}
 	} else {
-		nme = getTypeName(n->type);
+		nme = getTypeName(mb->ma, n->type);
 		mnstr_printf(f, " :%s", nme);
 	}
-	nmeOnStk = v ? getTypeName(v->vtype) : GDKstrdup(nme);
+	nmeOnStk = v ? getTypeName(mb->ma, v->vtype) : ma_strdup(mb->ma, nme);
 	/* check for type errors */
 	if (nmeOnStk && strcmp(nmeOnStk, nme) && strncmp(nmeOnStk, "BAT", 3))
 		mnstr_printf(f, "!%s ", nmeOnStk);
 	mnstr_printf(f, " %s", (isVarConstant(mb, index) ? " constant" : ""));
 	mnstr_printf(f, " %s", (isVarTypedef(mb, index) ? " type variable" : ""));
-	GDKfree(nme);
 	mnstr_printf(f, "\n");
-	GDKfree(nmeOnStk);
 
 	if (cnt && v && (isaBatType(n->type) || v->bat) && !is_bat_nil(v->val.bval)) {
 		printBATelm(f, v->val.bval, cnt, first);
@@ -658,11 +649,9 @@ MDBgetDefinition(Client cntxt, MalBlkPtr m, MalStkPtr stk, InstrPtr p)
 			throw(MAL, "mdb.getDefinition", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		}
 		if (BUNappend(b, ps, false) != GDK_SUCCEED) {
-			GDKfree(ps);
 			BBPreclaim(b);
 			throw(MAL, "mdb.getDefinition", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		}
-		GDKfree(ps);
 	}
 	*ret = b->batCacheid;
 	BBPkeepref(b);
@@ -671,49 +660,49 @@ MDBgetDefinition(Client cntxt, MalBlkPtr m, MalStkPtr stk, InstrPtr p)
 }
 
 static str
-MDBgetExceptionVariable(str *ret, const char *const *msg)
+MDBgetExceptionVariable(Client ctx, str *ret, const char *const *msg)
 {
-	str tail;
+	allocator *ma = ctx->curprg->def->ma;
+	const char *tail;
 
 	tail = strchr(*msg, ':');
 	if (tail == 0)
 		throw(MAL, "mdb.getExceptionVariable",
 			  OPERATION_FAILED " ':'<name> missing");
 
-	*tail = 0;
-	*ret = GDKstrdup(*msg);
+	*ret = ma_strndup(ma, *msg, tail - *msg);
 	if (*ret == NULL)
 		throw(MAL, "mdb.getExceptionVariable", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-	*tail = ':';
 	return MAL_SUCCEED;
 }
 
 static str
-MDBgetExceptionContext(str *ret, const char *const *msg)
+MDBgetExceptionContext(Client ctx, str *ret, const char *const *msg)
 {
-	str tail, tail2;
+	allocator *ma = ctx->curprg->def->ma;
+	const char *tail, *tail2;
 
 	tail = strchr(*msg, ':');
 	if (tail == 0)
 		throw(MAL, "mdb.getExceptionContext",
 			  OPERATION_FAILED " ':'<name> missing");
-	tail2 = strchr(tail + 1, ':');
+	tail++;
+	tail2 = strchr(tail, ':');
 	if (tail2 == 0)
 		throw(MAL, "mdb.getExceptionContext",
 			  OPERATION_FAILED " <name> missing");
 
-	*tail2 = 0;
-	*ret = GDKstrdup(tail + 1);
+	*ret = ma_strndup(ma, tail, tail2 - tail);
 	if (*ret == NULL)
 		throw(MAL, "mdb.getExceptionContext", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-	*tail2 = ':';
 	return MAL_SUCCEED;
 }
 
 static str
-MDBgetExceptionReason(str *ret, const char *const *msg)
+MDBgetExceptionReason(Client ctx, str *ret, const char *const *msg)
 {
-	str tail;
+	allocator *ma = ctx->curprg->def->ma;
+	const char *tail;
 
 	tail = strchr(*msg, ':');
 	if (tail == 0)
@@ -722,23 +711,25 @@ MDBgetExceptionReason(str *ret, const char *const *msg)
 	if (tail == 0)
 		throw(MAL, "mdb.getExceptionReason", OPERATION_FAILED " ':' missing");
 
-	*ret = GDKstrdup(tail + 1);
+	*ret = ma_strdup(ma, tail + 1);
 	if (*ret == NULL)
 		throw(MAL, "mdb.getExceptionReason", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	return MAL_SUCCEED;
 }
 
 static str
-MDBdummy(void *ret)
+MDBdummy(Client ctx, void *ret)
 {
+	(void) ctx;
 	(void) ret;
 	throw(MAL, "mdb.dummy", OPERATION_FAILED);
 }
 
 
 static str
-CMDmodules(bat *bid)
+CMDmodules(Client ctx, bat *bid)
 {
+	(void) ctx;
 	BAT *b = getModules();
 
 	if (b == NULL)
@@ -749,13 +740,13 @@ CMDmodules(bat *bid)
 }
 
 #include "mel.h"
-mel_func mdb_init_funcs[] = {
+static mel_func mdb_init_funcs[] = {
  command("mdb", "modules", CMDmodules, false, "List available modules", args(1,1, batarg("",str))),
  pattern("mdb", "getVMsize", MDBgetVMsize, false, "Retrieve the max VM size", args(1,1, arg("",lng))),
  pattern("mdb", "setVMsize", MDBsetVMsize, false, "Manipulate the VM max size in MBs", args(1,2, arg("",lng),arg("l",lng))),
  pattern("mdb", "getDebugFlags", MDBgetDebugFlags, false, "Get the kernel debugging flags bit-set", args(2,2, batarg("flg",str),batarg("val",bit))),
- pattern("mdb", "getDebug", MDBgetDebug, false, "Get the kernel debugging bit-set.\nSee the MonetDB configuration file for details", args(1,1, arg("",int))),
- pattern("mdb", "setDebug", MDBsetDebugStr, false, "Set the kernel debugging bit-set and return its previous value.\nThe recognized options are: threads, memory, properties,\nio, transactions, modules, algorithms, estimates.", args(1,2, arg("",int),arg("flg",str))),
+ pattern("mdb", "getDebug", MDBgetDebug, false, "Get the kernel debugging bit-set. See the MonetDB configuration file for details", args(1,1, arg("",int))),
+ pattern("mdb", "setDebug", MDBsetDebugStr, false, "Set the kernel debugging bit-set and return its previous value. The recognized options are: threads, memory, properties, io, transactions, modules, algorithms, estimates.", args(1,2, arg("",int),arg("flg",str))),
  pattern("mdb", "setDebug", MDBsetDebug, false, "Set the kernel debugging bit-set and return its previous value.", args(1,2, arg("",int),arg("flg",int))),
  command("mdb", "getException", MDBgetExceptionVariable, false, "Extract the variable name from the exception message", args(1,2, arg("",str),arg("s",str))),
  command("mdb", "getReason", MDBgetExceptionReason, false, "Extract the reason from the exception message", args(1,2, arg("",str),arg("s",str))),
@@ -771,7 +762,7 @@ mel_func mdb_init_funcs[] = {
  pattern("mdb", "getStackFrame", MDBgetStackFrameN, false, "", args(2,3, batarg("",str),batarg("",str),arg("i",int))),
  pattern("mdb", "getStackFrame", MDBgetStackFrame, false, "Collect variable binding of current (n-th) stack frame.", args(2,2, batarg("",str),batarg("",str))),
  pattern("mdb", "getStackTrace", MDBStkTrace, false, "", args(2,2, batarg("",int),batarg("",str))),
- pattern("mdb", "getDefinition", MDBgetDefinition, false, "Returns a string representation of the current function \nwith typing information attached", args(1,1, batarg("",str))),
+ pattern("mdb", "getDefinition", MDBgetDefinition, false, "Returns a string representation of the current function with typing information attached", args(1,1, batarg("",str))),
  command("mdb", "#dummy", MDBdummy, false, "Dummy function for testing", args(1,1, arg("",void))),
  { .imp=NULL }
 };

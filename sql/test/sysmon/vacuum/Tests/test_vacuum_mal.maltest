@@ -1,31 +1,19 @@
 statement ok
-b:= bat.new(:str)
-
-statement ok
-bat.append(b, "hello")
-
-statement ok
-bat.append(b, "world")
-
-statement ok
-k:= 1@0
-
-statement ok
-bat_size_small:= bat.getVHeapSize(b)
-
-statement ok
-barrier i:= 0;
+b:= bat.new(:str);
+bat.append(b, "hello");
+bat.append(b, "world");
+k:= 1@0;
+bat_size_small:= bat.getVHeapSize(b);
+i := 0;
+barrier j:=i<100;
     u:= uuid.new();
     s:str:= uuid.str(u);
     bat.replace(b, k, s);
-	redo i:= iterator.next(1,100);
-exit i;
-
-statement ok
-bat_size_next:= bat.getVHeapSize(b)
-
-statement ok
-x_1:= calc.cmp(bat_size_next, bat_size_small)
+    i:=i+1;
+    redo j:= i<100;
+exit j;
+bat_size_next:= bat.getVHeapSize(b);
+x_1:= calc.cmp(bat_size_next, bat_size_small);
 
 query T rowsort
 io.print(x_1)

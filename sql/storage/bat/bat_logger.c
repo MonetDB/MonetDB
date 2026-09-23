@@ -3,11 +3,9 @@
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024, 2025 MonetDB Foundation;
- * Copyright August 2008 - 2023 MonetDB B.V.;
- * Copyright 1997 - July 2008 CWI.
+ * For copyright information, see the file debian/copyright.
  */
 
 #include "monetdb_config.h"
@@ -21,10 +19,45 @@
 #define CATALOG_JAN2022 52301	/* first in Jan2022 */
 #define CATALOG_SEP2022 52302	/* first in Sep2022 */
 #define CATALOG_AUG2024 52303	/* first in Aug2024 */
+#define CATALOG_MAR2025 52304	/* first in Mar2025 */
+#define CATALOG_DEC2025 52305	/* first in Dec2025 */
+#define CATALOG_DEC2025_1 52306	/* first in Dec2025-SP1 */
 
 /* Note, CATALOG version 52300 is the first one where the basic system
  * tables (the ones created in store.c) have fixed and unchangeable
  * ids. */
+
+#ifdef CATALOG_DEC2025
+static void *
+BLOBreadOld(allocator *ma, void *A, size_t *dstlen, stream *s, size_t cnt)
+{
+	blob *a = A;
+	int len;
+
+	(void) cnt;
+	assert(cnt == 1);
+	if (mnstr_readInt(s, &len) != 1 || len < 0)
+		return NULL;
+	if (a == NULL || *dstlen < (size_t) len) {
+		if (ma) {
+			a = ma_realloc(ma, a, (size_t) len, *dstlen);
+		} else {
+			GDKfree(a);
+			a = GDKmalloc((size_t) len);
+		}
+		if (a == NULL)
+			return NULL;
+		*dstlen = (size_t) len;
+	}
+	if (mnstr_read(s, (char *) a, (size_t) len, 1) != 1) {
+		return NULL;
+	}
+	return a;
+}
+
+/* original atomRead function for TYPE_blob */
+static void *(*blobread)(allocator *ma, ptr, size_t *, stream *, size_t);
+#endif
 
 /* return GDK_SUCCEED if we can handle the upgrade from oldversion to
  * newversion */
@@ -32,6 +65,16 @@ static gdk_return
 bl_preversion(sqlstore *store, int oldversion, int newversion)
 {
 	(void)newversion;
+
+#ifdef CATALOG_DEC2025
+	if (oldversion <= CATALOG_DEC2025) {
+		/* replace atomRead function for blobs with version compatible
+		 * with older WAL format; this change is reverted in the
+		 * postversion function */
+		blobread = BATatoms[TYPE_blob].atomRead;
+		BATatoms[TYPE_blob].atomRead = BLOBreadOld;
+	}
+#endif
 
 #ifdef CATALOG_JUL2021
 	if (oldversion == CATALOG_JUL2021) {
@@ -65,6 +108,30 @@ bl_preversion(sqlstore *store, int oldversion, int newversion)
 	}
 #endif
 
+#ifdef CATALOG_MAR2025
+	if (oldversion == CATALOG_MAR2025) {
+		/* upgrade to default releases */
+		store->catalog_version = oldversion;
+		return GDK_SUCCEED;
+	}
+#endif
+
+#ifdef CATALOG_DEC2025
+	if (oldversion == CATALOG_DEC2025) {
+		/* upgrade to default releases */
+		store->catalog_version = oldversion;
+		return GDK_SUCCEED;
+	}
+#endif
+
+#ifdef CATALOG_DEC2025_1
+	if (oldversion == CATALOG_DEC2025_1) {
+		/* upgrade to default releases */
+		store->catalog_version = oldversion;
+		return GDK_SUCCEED;
+	}
+#endif
+
 	return GDK_FAIL;
 }
 
@@ -82,7 +149,7 @@ replace_bat(logger *lg, int colid, BAT *newcol)
 		BATiter cii = bat_iterator_nolock(lg->catalog_id);
 		BUN p;
 		MT_rwlock_rdlock(&cii.b->thashlock);
-		HASHloop_int(cii, cii.b->thash, p, &colid) {
+		HASHloop_int(&cii, cii.b->thash, p, &colid) {
 			if (BUNfnd(lg->dcatalog, &(oid){(oid)p}) == BUN_NONE) {
 				if (BUNappend(lg->dcatalog, &(oid){(oid)p}, true) != GDK_SUCCEED ||
 					BUNreplace(lg->catalog_lid, (oid) p, &(lng){0}, false) != GDK_SUCCEED) {
@@ -135,7 +202,7 @@ tabins(logger *lg, ...)
 		if (rc == GDK_SUCCEED) {
 			BUN p;
 			MT_rwlock_rdlock(&cni.b->thashlock);
-			HASHloop_int(cni, cni.b->thash, p, &cid) {
+			HASHloop_int(&cni, cni.b->thash, p, &cid) {
 				if (BUNfnd(lg->dcatalog, &(oid){p}) == BUN_NONE) {
 					rc = BUNreplace(lg->catalog_cnt, p, &(lng){BATcount(b)}, false);
 					break;
@@ -158,6 +225,11 @@ bl_postversion(void *Store, logger *lg)
 {
 	sqlstore *store = Store;
 	gdk_return rc;
+
+#ifdef CATALOG_DEC2025
+	if (blobread)
+		BATatoms[TYPE_blob].atomRead = blobread;
+#endif
 
 #ifdef CATALOG_JUL2021
 	if (store->catalog_version <= CATALOG_JUL2021) {
@@ -276,7 +348,7 @@ bl_postversion(void *Store, logger *lg)
 		BATiter ffi = bat_iterator_nolock(func_func);
 		for (BUN p = 0; p < ci.ncand; p++) {
 			oid o = canditer_next(&ci);
-			const char *f = BUNtvar(ffi, o - func_func->hseqbase);
+			const char *f = BUNtvar(&ffi, o - func_func->hseqbase);
 			const char *e;
 			if (!strNil(f) &&
 				(e = strstr(f, "external")) != NULL &&
@@ -846,8 +918,7 @@ bl_postversion(void *Store, logger *lg)
 			 * arguments that we've found (i.e. just the input and
 			 * output arg for sys.st_interiorrings and the function
 			 * itself) */
-			BUN p, q;
-			BATloop (r1, p, q) {
+			for (BUN p = 0, q = r1->batCount; p < q; p++) {
 				oid o = BUNtoid(r1, p);
 				if (BUNreplace(b, o, &(bool) {true}, false) != GDK_SUCCEED) {
 					bat_destroy(funcs);
@@ -901,7 +972,7 @@ bl_postversion(void *Store, logger *lg)
 		BATiter fni = bat_iterator_nolock(fname);
 		for(BUN b = 0; b < BATcount(ftype); b++) {
 			if (ft[b] == F_AGGR) {
-				const char *f = BUNtvar(fni, b);
+				const char *f = BUNtvar(&fni, b);
 				if (strcmp(f, "group_concat") == 0 || strcmp(f, "listagg") == 0 || strcmp(f, "xmlagg") == 0)
 					os[b] = 1;
 				else if (strcmp(f, "quantile") == 0 || strcmp(f, "quantile_avg") == 0)
@@ -942,6 +1013,77 @@ bl_postversion(void *Store, logger *lg)
 	}
 #endif
 
+#ifdef CATALOG_MAR2025
+	if (store->catalog_version <= CATALOG_MAR2025) {
+		/* nothing to do */
+	}
+#endif
+
+#ifdef CATALOG_DEC2025
+	if (store->catalog_version <= CATALOG_DEC2025) {
+		if (tabins(lg,
+				   2067, &(msk) {false},	/* sys._tables */
+				   /* 2168 is tmp.dependencies */
+				   2068, &(int) {2168},		/* sys._tables.id */
+				   2069, "dependencies",	/* sys._tables.name */
+				   2070, &(int) {2114},		/* sys._tables.schema_id */
+				   2071, str_nil,			/* sys._tables.query */
+				   2072, &(sht) {0},		/* sys._tables.type */
+				   2073, &(bit) {TRUE},		/* sys._tables.system */
+				   2074, &(sht) {CA_PRESERVE}, /* sys._tables.commit_action */
+				   2075, &(sht) {0},		/* sys._tables.access */
+				   0) != GDK_SUCCEED)
+			return GDK_FAIL;
+		if (tabins(lg,
+				   2076, &(msk) {false},	/* sys._columns */
+				   /* 2169 is tmp.dependencies.id */
+				   2077, &(int) {2169},		/* sys._columns.id */
+				   2078, "id",				/* sys._columns.name */
+				   2079, "int",				/* sys._columns.type */
+				   2080, &(int) {31},		/* sys._columns.type_digits */
+				   2081, &(int) {0},		/* sys._columns.type_scale */
+				   2082, &(int) {2168},		/* sys._columns.table_id */
+				   2083, str_nil,			/* sys._columns.default */
+				   2084, &(bit) {TRUE},		/* sys._columns.null */
+				   2085, &(int) {0},		/* sys._columns.number */
+				   2086, str_nil,			/* sys._columns.storage */
+				   0) != GDK_SUCCEED)
+			return GDK_FAIL;
+		if (tabins(lg,
+				   2076, &(msk) {false},	/* sys._columns */
+				   /* 2170 is tmp.dependencies.depend_id */
+				   2077, &(int) {2170},		/* sys._columns.id */
+				   2078, "depend_id",		/* sys._columns.name */
+				   2079, "int",				/* sys._columns.type */
+				   2080, &(int) {31},		/* sys._columns.type_digits */
+				   2081, &(int) {0},		/* sys._columns.type_scale */
+				   2082, &(int) {2168},		/* sys._columns.table_id */
+				   2083, str_nil,			/* sys._columns.default */
+				   2084, &(bit) {TRUE},		/* sys._columns.null */
+				   2085, &(int) {1},		/* sys._columns.number */
+				   2086, str_nil,			/* sys._columns.storage */
+				   0) != GDK_SUCCEED)
+			return GDK_FAIL;
+		if (tabins(lg,
+				   2076, &(msk) {false},	/* sys._columns */
+				   /* 2171 is tmp.dependencies.depend_type */
+				   2077, &(int) {2171},		/* sys._columns.id */
+				   2078, "depend_type",		/* sys._columns.name */
+				   2079, "smallint",		/* sys._columns.type */
+				   2080, &(int) {15},		/* sys._columns.type_digits */
+				   2081, &(int) {0},		/* sys._columns.type_scale */
+				   2082, &(int) {2168},		/* sys._columns.table_id */
+				   2083, str_nil,			/* sys._columns.default */
+				   2084, &(bit) {TRUE},		/* sys._columns.null */
+				   2085, &(int) {2},		/* sys._columns.number */
+				   2086, str_nil,			/* sys._columns.storage */
+				   0) != GDK_SUCCEED)
+			return GDK_FAIL;
+	}
+#endif
+
+	/* no special handling for CATALOG_DEC2025_1 */
+
 	return GDK_SUCCEED;
 }
 
@@ -969,8 +1111,10 @@ bl_destroy(sqlstore *store)
 static int
 bl_flush(sqlstore *store, lng save_id)
 {
-	if (store->logger)
-		return log_flush(store->logger, save_id) == GDK_SUCCEED ? LOG_OK : LOG_ERR;
+	if (store->logger) {
+		int res = log_flush(store->logger, save_id) == GDK_SUCCEED ? LOG_OK : LOG_ERR;
+		return res;
+	}
 	return LOG_OK;
 }
 
@@ -1056,6 +1200,8 @@ snapshot_immediate_copy_file(stream *plan, const char *path, const char *name)
 	char *buf = NULL;
 	stream *s = NULL;
 	size_t to_copy;
+	allocator *ta = MT_thread_getallocator();
+	allocator_state ta_state = ma_open(ta);
 
 	if (MT_stat(path, &statbuf) < 0) {
 		GDKsyserror("stat failed on %s", path);
@@ -1069,7 +1215,7 @@ snapshot_immediate_copy_file(stream *plan, const char *path, const char *name)
 		goto end;
 	}
 
-	buf = GDKmalloc(bufsize);
+	buf = ma_alloc(ta, bufsize);
 	if (!buf) {
 		GDKerror("GDKmalloc failed");
 		goto end;
@@ -1104,7 +1250,7 @@ snapshot_immediate_copy_file(stream *plan, const char *path, const char *name)
 
 	ret = GDK_SUCCEED;
 end:
-	GDKfree(buf);
+	ma_close(&ta_state);
 	if (s)
 		close_stream(s);
 	return ret;
@@ -1129,7 +1275,7 @@ snapshot_wal(logger *bat_logger, stream *plan, const char *db_dir)
 	for (ulng id = bat_logger->saved_id+1; id <= bat_logger->id; id++) {
 		struct stat statbuf;
 
-		len = snprintf(log_file, sizeof(log_file), "%s/%s%s." LLFMT, db_dir, bat_logger->dir, LOGFILE, id);
+		len = snprintf(log_file, sizeof(log_file), "%s/%s%s." ULLFMT, db_dir, bat_logger->dir, LOGFILE, id);
 		if (len == -1 || (size_t)len >= sizeof(log_file)) {
 			GDKerror("Could not open %s, filename is too large", log_file);
 			return GDK_FAIL;
@@ -1160,7 +1306,7 @@ snapshot_heap(stream *plan, const char *db_dir, bat batid, const char *filename,
 		return GDK_SUCCEED;
 	}
 	// first check the backup dir
-	len = snprintf(path1, FILENAME_MAX, "%s/%s/%o.%s", db_dir, BAKDIR, (int) batid, suffix);
+	len = snprintf(path1, sizeof(path1), "%s/%s/%o.%s", db_dir, BAKDIR, (unsigned) batid, suffix);
 	if (len == -1 || len >= FILENAME_MAX) {
 		path1[FILENAME_MAX - 1] = '\0';
 		GDKerror("Could not open %s, filename is too large", path1);
@@ -1175,7 +1321,7 @@ snapshot_heap(stream *plan, const char *db_dir, bat batid, const char *filename,
 	}
 
 	// then check the regular location
-	len = snprintf(path2, FILENAME_MAX, "%s/%s/%s.%s", db_dir, BATDIR, filename, suffix);
+	len = snprintf(path2, sizeof(path2), "%s/%s/%s.%s", db_dir, BATDIR, filename, suffix);
 	if (len == -1 || len >= FILENAME_MAX) {
 		path2[FILENAME_MAX - 1] = '\0';
 		GDKerror("Could not open %s, filename is too large", path2);
@@ -1193,36 +1339,97 @@ snapshot_heap(stream *plan, const char *db_dir, bat batid, const char *filename,
 	return GDK_FAIL;
 }
 
+static gdk_return
+patch_bbpdir(BAT *bats_to_omit)
+{
+	gdk_return r, ret = GDK_FAIL;
+
+	FILE *in = NULL;
+	FILE *out = NULL;
+	int state = 0;
+	char buf[3000];
+	BAT *sorted = NULL;
+	BATiter item_iter;
+	bool item_iter_initialized = false;
+
+	assert(BATttype(bats_to_omit) == TYPE_int);
+
+	if (BBPdir_first(true, -1, &in, &out) != GDK_SUCCEED)
+		goto end;
+
+	r = BATsort(&sorted, NULL, NULL, bats_to_omit, NULL, NULL, false, false, false);
+	if (r != GDK_SUCCEED)
+		goto end;
+	item_iter = bat_iterator(sorted);
+	item_iter_initialized = true;
+	bat *items = item_iter.base;
+	for (BUN i = 0; i < item_iter.count; i++) {
+		bat id = items[i];
+		BATiter scratch = bat_iterator(BBP_desc(id));
+		state = BBPdir_step(id, 0, state, buf, sizeof(buf), &in, out, &scratch, NULL);
+		bat_iterator_end(&scratch);
+		if (state < -1)
+			goto end;
+	}
+
+	if (BBPdir_last(state, buf, sizeof(buf), in, out) == GDK_SUCCEED) {
+		/* _last closed them for us */
+		in = NULL;
+		out = NULL;
+	} else {
+		goto end;
+	}
+
+	ret = GDK_SUCCEED;
+end:
+	if (item_iter_initialized)
+		bat_iterator_end(&item_iter);
+	if (sorted)
+		BBPreclaim(sorted);
+	if (in)
+		fclose(in);
+	if (out) {
+		fclose(out);
+	}
+	return ret;
+}
+
 /* Add plan entries for all persistent BATs by looping over the BBP.dir.
  * Also include the BBP.dir itself.
  */
 __attribute__((__warn_unused_result__))
 static gdk_return
-snapshot_bats(stream *plan, const char *db_dir)
+snapshot_bats(stream *plan, BAT *bats_to_omit, const char *db_dir)
 {
 	char bbpdir[FILENAME_MAX];
+	char dest_bbp[20];
 	FILE *fp = NULL;
-	int len;
-	gdk_return ret = GDK_FAIL;
+	gdk_return r, ret = GDK_FAIL;
 	int lineno = 0;
 	bat bbpsize = 0;
 	lng logno;
 	unsigned bbpversion;
 
-	len = snprintf(bbpdir, FILENAME_MAX, "%s/%s/%s", db_dir, BAKDIR, "BBP.dir");
-	if (len == -1 || len >= FILENAME_MAX) {
-		GDKerror("Could not open %s, filename is too large", bbpdir);
+	// bbpdir is the full path to the patched version of BBP.dir that we will
+	// be reading. dest_bbp is the path inside the snapshot where we will store it.
+	if (GDKfilepath(bbpdir, sizeof(bbpdir), 0, BATDIR, "BBP", "dir") != GDK_SUCCEED ||
+		GDKfilepath(dest_bbp, sizeof(dest_bbp), NOFARM, BAKDIR, "BBP", "dir") != GDK_SUCCEED)
 		return GDK_FAIL;
-	}
-	ret = snapshot_immediate_copy_file(plan, bbpdir, bbpdir + strlen(db_dir) + 1);
+
+	// At this point 'bbpdir' (bat/BBP.dir) does not exist, only BACKUP/bat/BBP.dir exists.
+	if (patch_bbpdir(bats_to_omit) != GDK_SUCCEED)
+		goto end;
+	// At this point, 'bbpdir' (bat/BBP.dir) does exist and is a modified copy of BACKUP/bat/BBP.dir
+
+	ret = snapshot_immediate_copy_file(plan, bbpdir, dest_bbp);
 	if (ret != GDK_SUCCEED)
-		return ret;
+		goto end;
 
 	// Open the catalog and parse the header
 	fp = fopen(bbpdir, "r");
 	if (fp == NULL) {
 		GDKerror("Could not open %s for reading: %s", bbpdir, mnstr_peek_error(NULL));
-		return GDK_FAIL;
+		goto end;
 	}
 	bbpversion = BBPheader(fp, &lineno, &bbpsize, &logno, false);
 	if (bbpversion == 0)
@@ -1254,29 +1461,36 @@ snapshot_bats(stream *plan, const char *db_dir)
 							   batname, filename, &options)) {
 		case 0:
 			/* end of file */
-			fclose(fp);
-			return GDK_SUCCEED;
+			ret = GDK_SUCCEED;
+			goto end;
 		case 1:
 			/* successfully read an entry */
 			break;
 		default:
 			/* error */
-			fclose(fp);
-			return GDK_FAIL;
+			ret = GDK_FAIL;
+			goto end;
 		}
 #ifdef GDKLIBRARY_HASHASH
 		assert(hashash == 0);
 #endif
-		if (ATOMvarsized(b.ttype)) {
-			ret = snapshot_heap(plan, db_dir, b.batCacheid, filename, "theap", b.tvheap->free);
-			if (ret != GDK_SUCCEED)
+
+		if (b.batCount == 0) {
+			continue;
+		}
+
+		// Include the heaps in the plan
+		if (ATOMvarsized(b.ttype) && !b.ustr) {
+			r = snapshot_heap(plan, db_dir, b.batCacheid, filename, "theap", b.tvheap->free);
+			if (r != GDK_SUCCEED)
 				goto end;
 		}
-		ret = snapshot_heap(plan, db_dir, b.batCacheid, filename, BATtailname(&b), b.theap->free);
-		if (ret != GDK_SUCCEED)
+		r = snapshot_heap(plan, db_dir, b.batCacheid, filename, BATtailname(&b), b.theap->free);
+		if (r != GDK_SUCCEED)
 			goto end;
 	}
 
+	ret = GDK_SUCCEED;
 end:
 	if (fp) {
 		fclose(fp);
@@ -1291,7 +1505,7 @@ snapshot_vaultkey(stream *plan, const char *db_dir)
 	char path[FILENAME_MAX];
 	struct stat statbuf;
 
-	int len = snprintf(path, FILENAME_MAX, "%s/.vaultkey", db_dir);
+	int len = snprintf(path, sizeof(path), "%s/.vaultkey", db_dir);
 	if (len == -1 || len >= FILENAME_MAX) {
 		path[FILENAME_MAX - 1] = '\0';
 		GDKerror("Could not open %s, filename is too large", path);
@@ -1310,7 +1524,7 @@ snapshot_vaultkey(stream *plan, const char *db_dir)
 }
 
 static gdk_return
-bl_snapshot(sqlstore *store, stream *plan)
+bl_snapshot(sqlstore *store, BAT *bats_to_omit, stream *plan)
 {
 	logger *bat_logger = store->logger;
 	gdk_return ret;
@@ -1336,7 +1550,7 @@ bl_snapshot(sqlstore *store, stream *plan)
 	if (ret != GDK_SUCCEED)
 		goto end;
 
-	ret = snapshot_bats(plan, db_dir);
+	ret = snapshot_bats(plan, bats_to_omit, db_dir);
 	if (ret != GDK_SUCCEED)
 		goto end;
 

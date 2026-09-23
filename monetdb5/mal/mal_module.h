@@ -3,11 +3,9 @@
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024, 2025 MonetDB Foundation;
- * Copyright August 2008 - 2023 MonetDB B.V.;
- * Copyright 1997 - July 2008 CWI.
+ * For copyright information, see the file debian/copyright.
  */
 
 #ifndef _MAL_SCOPE_H_
@@ -36,8 +34,7 @@ mal_export Module findModule(Module scope, const char *name);
 mal_export Symbol findSymbol(Module usermodule, const char *mod,
 							 const char *fcn);
 mal_export Symbol findSymbolInModule(Module v, const char *fcn);
-mal_export void getModuleList(Module **out, int *length);
-mal_export void freeModuleList(Module *list);
+mal_export void getModuleList(allocator *ma, Module **out, int *length);
 mal_export void dumpModules(stream *out);
 mal_export BAT *getModules(void);
 

@@ -3,11 +3,9 @@
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024, 2025 MonetDB Foundation;
- * Copyright August 2008 - 2023 MonetDB B.V.;
- * Copyright 1997 - July 2008 CWI.
+ * For copyright information, see the file debian/copyright.
  */
 
 #ifndef _STREAM_H_
@@ -24,6 +22,8 @@
  * contains some stream info (for now only byteorder). This is
  * required for proper conversion on different byte order platforms.
  */
+
+#include "monetdb_config.h"
 
 #include <unistd.h>
 #include <ctype.h>
@@ -47,20 +47,6 @@
 # endif
 #else
 # define stream_export extern
-#endif
-
-/* Defines to help the compiler check printf-style format arguments.
- * These defines are also in our config.h, but we repeat them here so
- * that we don't need that for this file.*/
-#ifndef __GNUC__
-/* This feature is available in gcc versions 2.5 and later.  */
-# ifndef __attribute__
-#  define __attribute__(Spec)	/* empty */
-# endif
-#endif
-#if !defined(_MSC_VER) && !defined(_In_z_)
-# define _In_z_
-# define _Printf_format_string_
 #endif
 
 #define EOT 4
@@ -99,7 +85,7 @@ stream_export const char* mnstr_peek_error(const stream *s);
 stream_export mnstr_error_kind mnstr_errnr(const stream *s);
 stream_export const char *mnstr_error_kind_name(mnstr_error_kind k);
 stream_export void mnstr_clearerr(stream *s);
-stream_export void mnstr_set_error(stream *s, mnstr_error_kind kind, const char *fmt, ...)
+stream_export void mnstr_set_error(stream *s, mnstr_error_kind kind, _In_z_ _Printf_format_string_ const char *fmt, ...)
 	__attribute__((__format__(__printf__, 3, 4)));
 
 
@@ -124,8 +110,8 @@ stream_export int mnstr_writeFlt(stream *s, float val); // sql_result.c/mapi10
 stream_export int mnstr_writeDbl(stream *s, double val); // sql_result.c/mapi10
 
 #ifdef HAVE_HGE
-stream_export int mnstr_readHge(stream *restrict s, hge *restrict val); // unused
-stream_export int mnstr_writeHge(stream *s, hge val); // sql_result.c/mapi10
+stream_export int mnstr_readHge(stream *restrict s, int128_t *restrict val); // unused
+stream_export int mnstr_writeHge(stream *s, int128_t val); // sql_result.c/mapi10
 #endif
 
 stream_export int mnstr_readBteArray(stream *restrict s, int8_t *restrict val, size_t cnt); // unused
@@ -140,8 +126,8 @@ stream_export int mnstr_writeIntArray(stream *restrict s, const int *restrict va
 stream_export int mnstr_readLngArray(stream *restrict s, int64_t *restrict val, size_t cnt); // unused
 stream_export int mnstr_writeLngArray(stream *restrict s, const int64_t *restrict val, size_t cnt); // unused
 #ifdef HAVE_HGE
-stream_export int mnstr_readHgeArray(stream *restrict s, hge *restrict val, size_t cnt); // unused
-stream_export int mnstr_writeHgeArray(stream *restrict s, const hge *restrict val, size_t cnt); // unused
+stream_export int mnstr_readHgeArray(stream *restrict s, int128_t *restrict val, size_t cnt); // unused
+stream_export int mnstr_writeHgeArray(stream *restrict s, const int128_t *restrict val, size_t cnt); // unused
 #endif
 stream_export int mnstr_printf(stream *restrict s, _In_z_ _Printf_format_string_ const char *restrict format, ...) // USED all over
 	__attribute__((__format__(__printf__, 2, 3)));
@@ -160,8 +146,8 @@ stream_export bool mnstr_get_swapbytes(const stream *s); // sql_result.c/mapi10
 stream_export void mnstr_set_bigendian(stream *s, bool bigendian); // used in mapi.c and mal_session.c
 stream_export void mnstr_settimeout(stream *s, unsigned int ms, bool (*func)(void *), void *data); // used in mapi.c and mal_session.c
 stream_export int mnstr_isalive(const stream *s); // used once in mal_interpreter.c
-stream_export int mnstr_getoob(const stream *s);
-stream_export int mnstr_putoob(const stream *s, char val);
+stream_export int mnstr_getoob(stream *s);
+stream_export int mnstr_putoob(stream *s, char val);
 stream_export bool mnstr_eof(const stream *s); // stream saw end-of-file
 
 stream_export stream *open_rstream(const char *filename); // used in mclient.c, gdk_logger.c, store.c, snapshot.c
@@ -189,7 +175,7 @@ stream_export stream *compressed_stream(stream *inner, int preset);
 
 stream_export FILE *getFile(stream *s); // gdk_logger.c progress messages
 stream_export int getFileNo(stream *s);	/* fileno(getFile(s)) */ // mclient.c, gdk_logger.c progress messages
-stream_export size_t getFileSize(stream *s); // mal_import.c, sql_scenario.c, store.c, bat_logger.c
+stream_export int64_t getFileSize(stream *s); // mal_import.c, sql_scenario.c, store.c, bat_logger.c
 
 typedef struct buffer {
 	char *buf;
@@ -268,8 +254,6 @@ stream_export stream *callback_stream(
 	void (*close)(void *priv),
 	void (*destroy)(void *priv),
 	const char *restrict name); // used in mclient.c, for readline
-
-stream_export stream *stream_blackhole_create(void); // never used
 
 stream_export stream *stream_fwf_create(stream *restrict s, size_t num_fields, size_t *restrict widths, char filler); // sql.c
 

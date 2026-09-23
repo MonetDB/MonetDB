@@ -4,11 +4,9 @@
 #
 # This Source Code Form is subject to the terms of the Mozilla Public
 # License, v. 2.0.  If a copy of the MPL was not distributed with this
-# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+# file, You can obtain one at https://mozilla.org/MPL/2.0/.
 #
-# Copyright 2024, 2025 MonetDB Foundation;
-# Copyright August 2008 - 2023 MonetDB B.V.;
-# Copyright 1997 - July 2008 CWI.
+# For copyright information, see the file debian/copyright.
 
 ### BEGIN INIT INFO
 # Provides:          mserver5-sql
@@ -29,9 +27,31 @@ test -x $DAEMON || exit 0
 
 umask 022
 
-# Include monetdb5-sql defaults if available
-if [ -f /etc/default/monetdb5-sql ] ; then
-    . /etc/default/monetdb5-sql
+# Include monetdb-sql defaults if available
+if [ -f /etc/default/monetdb5-sql -a -f /etc/default/monetdb-sql ]; then
+    # old and new both available
+    case $(sum /etc/default/monetdb5-sql) in
+    46711*)			# unchanged
+	rm /etc/default/monetdb5-sql
+	;;
+    *)				# changed
+	case $(sum /etc/default/monetdb-sql) in
+	46711*)			# unchanged
+	    mv /etc/default/monetdb5-sql /etc/default/monetdb-sql
+	    ;;
+	*)			# changed
+	    rm /etc/default/monetdb5-sql
+	    ;;
+	esac
+	;;
+    esac
+    . /etc/default/monetdb-sql
+elif [ -f /etc/default/monetdb5-sql ]; then
+    # unexpected: only old available
+    mv /etc/default/monetdb5-sql /etc/default/monetdb-sql
+    . /etc/default/monetdb-sql
+elif [ -f /etc/default/monetdb-sql ]; then
+    . /etc/default/monetdb-sql
 fi
 
 PIDFILE=${DBFARM}/merovingian.pid

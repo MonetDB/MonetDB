@@ -3,11 +3,9 @@
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024, 2025 MonetDB Foundation;
- * Copyright August 2008 - 2023 MonetDB B.V.;
- * Copyright 1997 - July 2008 CWI.
+ * For copyright information, see the file debian/copyright.
  */
 
 /*
@@ -138,6 +136,7 @@ MNDBColAttribute(ODBCStmt *stmt,
 			*(SQLLEN *) NumericAttributePtr = rec->sql_desc_length;
 		break;
 	case SQL_DESC_LITERAL_PREFIX:
+		fillLiteralPrefixSuffix(rec);
 		copyString(rec->sql_desc_literal_prefix,
 			   strlen((char *) rec->sql_desc_literal_prefix),
 			   CharacterAttributePtr, BufferLength,
@@ -145,7 +144,12 @@ MNDBColAttribute(ODBCStmt *stmt,
 			   stmt, return SQL_ERROR);
 		break;
 	case SQL_DESC_LITERAL_SUFFIX:
-		copyString(rec->sql_desc_literal_suffix, strlen((char *) rec->sql_desc_literal_suffix), CharacterAttributePtr, BufferLength, StringLengthPtr, SQLSMALLINT, addStmtError, stmt, return SQL_ERROR);
+		fillLiteralPrefixSuffix(rec);
+		copyString(rec->sql_desc_literal_suffix,
+			   strlen((char *) rec->sql_desc_literal_suffix),
+			   CharacterAttributePtr, BufferLength,
+			   StringLengthPtr, SQLSMALLINT, addStmtError,
+			   stmt, return SQL_ERROR);
 		break;
 	case SQL_DESC_LOCAL_TYPE_NAME:
 		copyString(rec->sql_desc_local_type_name,
@@ -313,8 +317,15 @@ SQLColAttribute(SQLHSTMT StatementHandle,
 
 SQLRETURN SQL_API
 SQLColAttributeA(SQLHSTMT StatementHandle,
+#ifdef _IODBCUNIX_H
+		 /* iODBC, at least on Cygwin, uses SQLUSMALLINT */
+		 SQLUSMALLINT ColumnNumber,
+		 SQLUSMALLINT FieldIdentifier,
+#else
+		 /* UNIXodbc and Windows ODBC use SQLSMALLINT */
 		 SQLSMALLINT ColumnNumber,
 		 SQLSMALLINT FieldIdentifier,
+#endif
 		 SQLPOINTER CharacterAttributePtr,
 		 SQLSMALLINT BufferLength,
 		 SQLSMALLINT *StringLengthPtr,
@@ -370,7 +381,12 @@ SQLColAttributeW(SQLHSTMT StatementHandle,
 	case SQL_DESC_SCHEMA_NAME:	/* SQL_COLUMN_OWNER_NAME */
 	case SQL_DESC_TABLE_NAME:	/* SQL_COLUMN_TABLE_NAME */
 	case SQL_DESC_TYPE_NAME:	/* SQL_COLUMN_TYPE_NAME */
-		ptr = malloc(BufferLength);
+		if (BufferLength < 0) {
+			/* Invalid string or buffer length */
+			addStmtError(stmt, "HY090", NULL, 0);
+			return SQL_ERROR;
+		}
+		ptr = (SQLPOINTER) malloc(BufferLength);
 		if (ptr == NULL) {
 			/* Memory allocation error */
 			addStmtError(stmt, "HY001", NULL, 0);

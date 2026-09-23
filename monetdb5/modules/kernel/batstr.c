@@ -3,11 +3,9 @@
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024, 2025 MonetDB Foundation;
- * Copyright August 2008 - 2023 MonetDB B.V.;
- * Copyright 1997 - July 2008 CWI.
+ * For copyright information, see the file debian/copyright.
  */
 
 #include "monetdb_config.h"
@@ -84,9 +82,9 @@ do_batstr_int(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 	bool nils = false;
 	struct canditer ci1 = { 0 };
 	oid off1;
-	bat *res = getArgReference_bat(stk, pci, 0),
-		bid = *getArgReference_bat(stk, pci, 1),
-		*sid1 = pci->argc == 3 ? getArgReference_bat(stk, pci, 2) : NULL;
+	bat *res = getArgReference_bat(stk, pci, 0);
+	bat bid = *getArgReference_bat(stk, pci, 1);
+	bat sid = pci->argc == 3 ? *getArgReference_bat(stk, pci, 2) : 0;
 
 	(void) cntxt;
 	(void) mb;
@@ -95,7 +93,7 @@ do_batstr_int(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 							  SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		goto bailout;
 	}
-	if (sid1 && !is_bat_nil(*sid1) && !(bs = BATdescriptor(*sid1))) {
+	if (!is_bat_nil(sid) && !(bs = BATdescriptor(sid))) {
 		msg = createException(MAL, name,
 							  SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		goto bailout;
@@ -112,25 +110,33 @@ do_batstr_int(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 	if (ci1.tpe == cand_dense) {
 		for (BUN i = 0; i < ci1.ncand; i++) {
 			oid p1 = (canditer_next_dense(&ci1) - off1);
-			const char *restrict x = BUNtvar(bi, p1);
+			const char *restrict x = BUNtvar(&bi, p1);
 
 			if (strNil(x)) {
 				vals[i] = int_nil;
 				nils = true;
 			} else {
 				vals[i] = func(x);
+				if (vals[i] < 0) {
+					msg = createException(MAL, name, SQLSTATE(22003) "string too long to count bytes");
+					goto bailout;
+				}
 			}
 		}
 	} else {
 		for (BUN i = 0; i < ci1.ncand; i++) {
 			oid p1 = (canditer_next(&ci1) - off1);
-			const char *restrict x = BUNtvar(bi, p1);
+			const char *restrict x = BUNtvar(&bi, p1);
 
 			if (strNil(x)) {
 				vals[i] = int_nil;
 				nils = true;
 			} else {
 				vals[i] = func(x);
+				if (vals[i] < 0) {
+					msg = createException(MAL, name, SQLSTATE(22003) "string too long to count bytes");
+					goto bailout;
+				}
 			}
 		}
 	}
@@ -200,7 +206,7 @@ STRbatAscii(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (ci1.tpe == cand_dense) {
 		for (BUN i = 0; i < ci1.ncand; i++) {
 			oid p1 = (canditer_next_dense(&ci1) - off1);
-			const char *restrict x = BUNtvar(bi, p1);
+			const char *restrict x = BUNtvar(&bi, p1);
 
 			if ((msg = str_wchr_at(&next, x, 0)) != MAL_SUCCEED)
 				goto bailout1;
@@ -210,7 +216,7 @@ STRbatAscii(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	} else {
 		for (BUN i = 0; i < ci1.ncand; i++) {
 			oid p1 = (canditer_next(&ci1) - off1);
-			const char *restrict x = BUNtvar(bi, p1);
+			const char *restrict x = BUNtvar(&bi, p1);
 
 			if ((msg = str_wchr_at(&next, x, 0)) != MAL_SUCCEED)
 				goto bailout1;
@@ -232,7 +238,9 @@ STRbatFromWChr(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	BAT *bn = NULL, *b = NULL, *bs = NULL;
 	size_t buflen = MAX(strlen(str_nil) + 1, 8);
 	int *restrict vals, x;
-	str buf = GDKmalloc(buflen), msg = MAL_SUCCEED;
+	allocator *ma = MT_thread_getallocator();
+	allocator_state ma_state = ma_open(ma);
+	str buf = ma_alloc(ma, buflen), msg = MAL_SUCCEED;
 	bool nils = false;
 	struct canditer ci1 = { 0 };
 	oid off1;
@@ -318,7 +326,7 @@ STRbatFromWChr(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
   bailout1:
 	bat_iterator_end(&bi);
   bailout:
-	GDKfree(buf);
+	ma_close(&ma_state);
 	finalize_output(res, bn, msg, nils, ci1.ncand);
 	unfix_inputs(2, b, bs);
 	return msg;
@@ -330,9 +338,12 @@ STRbatSpace(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	BAT *bn = NULL, *b = NULL, *bs = NULL;
 	size_t buflen = INITIAL_STR_BUFFER_LENGTH;
 	int *restrict vals, x;
-	str buf = GDKmalloc(buflen), msg = MAL_SUCCEED;
+	allocator *ma = MT_thread_getallocator();
+	allocator_state ma_state = ma_open(ma);
+	str buf = ma_alloc(ma, buflen), msg = MAL_SUCCEED;
 	bool nils = false;
-	const char space[] = " ", *s = space;
+	static const char space[] = " ";
+	const char *s = space;
 	struct canditer ci1 = { 0 };
 	oid off1;
 	bat *res = getArgReference_bat(stk, pci, 0),
@@ -415,7 +426,7 @@ STRbatSpace(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
   bailout1:
 	bat_iterator_end(&bi);
   bailout:
-	GDKfree(buf);
+	ma_close(&ma_state);
 	finalize_output(res, bn, msg, nils, ci1.ncand);
 	unfix_inputs(2, b, bs);
 	return msg;
@@ -428,7 +439,9 @@ do_batstr_str(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 	BATiter bi;
 	BAT *bn = NULL, *b = NULL, *bs = NULL;
 	size_t buflen = INITIAL_STR_BUFFER_LENGTH;
-	str buf = GDKmalloc(buflen), msg = MAL_SUCCEED;
+	allocator *ma = MT_thread_getallocator();
+	allocator_state ma_state = ma_open(ma);
+	str buf = ma_alloc(ma, buflen), msg = MAL_SUCCEED;
 	bool nils = false;
 	struct canditer ci1 = { 0 };
 	oid off1;
@@ -463,7 +476,7 @@ do_batstr_str(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 	if (ci1.tpe == cand_dense) {
 		for (BUN i = 0; i < ci1.ncand; i++) {
 			oid p1 = (canditer_next_dense(&ci1) - off1);
-			const char *restrict x = BUNtvar(bi, p1);
+			const char *restrict x = BUNtvar(&bi, p1);
 
 			if (strNil(x)) {
 				if (tfastins_nocheckVAR(bn, i, str_nil) != GDK_SUCCEED) {
@@ -485,7 +498,7 @@ do_batstr_str(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 	} else {
 		for (BUN i = 0; i < ci1.ncand; i++) {
 			oid p1 = (canditer_next(&ci1) - off1);
-			const char *restrict x = BUNtvar(bi, p1);
+			const char *restrict x = BUNtvar(&bi, p1);
 
 			if (strNil(x)) {
 				if (tfastins_nocheckVAR(bn, i, str_nil) != GDK_SUCCEED) {
@@ -508,7 +521,7 @@ do_batstr_str(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
   bailout1:
 	bat_iterator_end(&bi);
   bailout:
-	GDKfree(buf);
+	ma_close(&ma_state);
 	finalize_output(res, bn, msg, nils, ci1.ncand);
 	unfix_inputs(2, b, bs);
 	return msg;
@@ -525,7 +538,9 @@ do_batstr_conststr_str(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 	BATiter bi;
 	BAT *bn = NULL, *b = NULL, *bs = NULL;
 	const char *y = *getArgReference_str(stk, pci, 2);
-	str buf = GDKmalloc(buflen), msg = MAL_SUCCEED;
+	allocator *ma = MT_thread_getallocator();
+	allocator_state ma_state = ma_open(ma);
+	str buf = ma_alloc(ma, buflen), msg = MAL_SUCCEED;
 	bool nils = false;
 	struct canditer ci1 = { 0 };
 	oid off1;
@@ -560,7 +575,7 @@ do_batstr_conststr_str(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 	if (ci1.tpe == cand_dense) {
 		for (BUN i = 0; i < ci1.ncand; i++) {
 			oid p1 = (canditer_next_dense(&ci1) - off1);
-			const char *x = BUNtvar(bi, p1);
+			const char *x = BUNtvar(&bi, p1);
 
 			if (strNil(x) || strNil(y)) {
 				if (tfastins_nocheckVAR(bn, i, str_nil) != GDK_SUCCEED) {
@@ -582,7 +597,7 @@ do_batstr_conststr_str(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 	} else {
 		for (BUN i = 0; i < ci1.ncand; i++) {
 			oid p1 = (canditer_next(&ci1) - off1);
-			const char *x = BUNtvar(bi, p1);
+			const char *x = BUNtvar(&bi, p1);
 
 			if (strNil(x) || strNil(y)) {
 				if (tfastins_nocheckVAR(bn, i, str_nil) != GDK_SUCCEED) {
@@ -605,7 +620,7 @@ do_batstr_conststr_str(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
   bailout1:
 	bat_iterator_end(&bi);
   bailout:
-	GDKfree(buf);
+	ma_close(&ma_state);
 	finalize_output(res, bn, msg, nils, ci1.ncand);
 	unfix_inputs(2, b, bs);
 	return msg;
@@ -622,7 +637,9 @@ do_batstr_str_conststr(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 	BATiter bi;
 	BAT *bn = NULL, *b = NULL, *bs = NULL;
 	const char *x = *getArgReference_str(stk, pci, 1);
-	str buf = GDKmalloc(buflen), msg = MAL_SUCCEED;
+	allocator *ma = MT_thread_getallocator();
+	allocator_state ma_state = ma_open(ma);
+	str buf = ma_alloc(ma, buflen), msg = MAL_SUCCEED;
 	bool nils = false;
 	struct canditer ci1 = { 0 };
 	oid off1;
@@ -657,7 +674,7 @@ do_batstr_str_conststr(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 	if (ci1.tpe == cand_dense) {
 		for (BUN i = 0; i < ci1.ncand; i++) {
 			oid p1 = (canditer_next_dense(&ci1) - off1);
-			const char *y = BUNtvar(bi, p1);
+			const char *y = BUNtvar(&bi, p1);
 
 			if (strNil(x) || strNil(y)) {
 				if (tfastins_nocheckVAR(bn, i, str_nil) != GDK_SUCCEED) {
@@ -679,7 +696,7 @@ do_batstr_str_conststr(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 	} else {
 		for (BUN i = 0; i < ci1.ncand; i++) {
 			oid p1 = (canditer_next(&ci1) - off1);
-			const char *y = BUNtvar(bi, p1);
+			const char *y = BUNtvar(&bi, p1);
 
 			if (strNil(x) || strNil(y)) {
 				if (tfastins_nocheckVAR(bn, i, str_nil) != GDK_SUCCEED) {
@@ -702,7 +719,7 @@ do_batstr_str_conststr(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
   bailout1:
 	bat_iterator_end(&bi);
   bailout:
-	GDKfree(buf);
+	ma_close(&ma_state);
 	finalize_output(res, bn, msg, nils, ci1.ncand);
 	unfix_inputs(2, b, bs);
 	return msg;
@@ -718,7 +735,9 @@ do_batstr_batstr_str(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 {
 	BATiter lefti, righti;
 	BAT *bn = NULL, *left = NULL, *lefts = NULL, *right = NULL, *rights = NULL;
-	str buf = GDKmalloc(buflen), msg = MAL_SUCCEED;
+	allocator *ma = MT_thread_getallocator();
+	allocator_state ma_state = ma_open(ma);
+	str buf = ma_alloc(ma, buflen), msg = MAL_SUCCEED;
 	bool nils = false;
 	struct canditer ci1 = { 0 }, ci2 = { 0 };
 	oid off1, off2;
@@ -766,8 +785,8 @@ do_batstr_batstr_str(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 		for (BUN i = 0; i < ci1.ncand; i++) {
 			oid p1 = (canditer_next_dense(&ci1) - off1),
 				p2 = (canditer_next_dense(&ci2) - off2);
-			const char *x = BUNtvar(lefti, p1);
-			const char *y = BUNtvar(righti, p2);
+			const char *x = BUNtvar(&lefti, p1);
+			const char *y = BUNtvar(&righti, p2);
 
 			if (strNil(x) || strNil(y)) {
 				if (tfastins_nocheckVAR(bn, i, str_nil) != GDK_SUCCEED) {
@@ -790,8 +809,8 @@ do_batstr_batstr_str(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 		for (BUN i = 0; i < ci1.ncand; i++) {
 			oid p1 = (canditer_next(&ci1) - off1),
 				p2 = (canditer_next(&ci2) - off2);
-			const char *x = BUNtvar(lefti, p1);
-			const char *y = BUNtvar(righti, p2);
+			const char *x = BUNtvar(&lefti, p1);
+			const char *y = BUNtvar(&righti, p2);
 
 			if (strNil(x) || strNil(y)) {
 				if (tfastins_nocheckVAR(bn, i, str_nil) != GDK_SUCCEED) {
@@ -815,7 +834,7 @@ do_batstr_batstr_str(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 	bat_iterator_end(&lefti);
 	bat_iterator_end(&righti);
   bailout:
-	GDKfree(buf);
+	ma_close(&ma_state);
 	finalize_output(res, bn, msg, nils, ci1.ncand);
 	unfix_inputs(4, left, lefts, right, rights);
 	return msg;
@@ -832,7 +851,9 @@ do_batstr_constint_str(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 	BATiter bi;
 	BAT *bn = NULL, *b = NULL, *bs = NULL;
 	size_t buflen = INITIAL_STR_BUFFER_LENGTH;
-	str buf = GDKmalloc(buflen), msg = MAL_SUCCEED;
+	allocator *ma = MT_thread_getallocator();
+	allocator_state ma_state = ma_open(ma);
+	str buf = ma_alloc(ma, buflen), msg = MAL_SUCCEED;
 	int y = *getArgReference_int(stk, pci, 2);
 	bool nils = false;
 	struct canditer ci1 = { 0 };
@@ -868,7 +889,7 @@ do_batstr_constint_str(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 	if (ci1.tpe == cand_dense) {
 		for (BUN i = 0; i < ci1.ncand; i++) {
 			oid p1 = (canditer_next_dense(&ci1) - off1);
-			const char *x = BUNtvar(bi, p1);
+			const char *x = BUNtvar(&bi, p1);
 
 			if (strNil(x) || is_int_nil(y)) {
 				if (tfastins_nocheckVAR(bn, i, str_nil) != GDK_SUCCEED) {
@@ -890,7 +911,7 @@ do_batstr_constint_str(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 	} else {
 		for (BUN i = 0; i < ci1.ncand; i++) {
 			oid p1 = (canditer_next(&ci1) - off1);
-			const char *x = BUNtvar(bi, p1);
+			const char *x = BUNtvar(&bi, p1);
 
 			if (strNil(x) || is_int_nil(y)) {
 				if (tfastins_nocheckVAR(bn, i, str_nil) != GDK_SUCCEED) {
@@ -913,7 +934,7 @@ do_batstr_constint_str(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
   bailout1:
 	bat_iterator_end(&bi);
   bailout:
-	GDKfree(buf);
+	ma_close(&ma_state);
 	finalize_output(res, bn, msg, nils, ci1.ncand);
 	unfix_inputs(2, b, bs);
 	return msg;
@@ -930,7 +951,9 @@ do_batstr_int_conststr(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 	BAT *bn = NULL, *b = NULL, *bs = NULL;
 	size_t buflen = INITIAL_STR_BUFFER_LENGTH;
 	const char *x = *getArgReference_str(stk, pci, 1);
-	str buf = GDKmalloc(buflen), msg = MAL_SUCCEED;
+	allocator *ma = MT_thread_getallocator();
+	allocator_state ma_state = ma_open(ma);
+	str buf = ma_alloc(ma, buflen), msg = MAL_SUCCEED;
 	int y, *restrict inputs;
 	bool nils = false;
 	struct canditer ci1 = { 0 };
@@ -1013,7 +1036,7 @@ do_batstr_int_conststr(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
   bailout1:
 	bat_iterator_end(&bi);
   bailout:
-	GDKfree(buf);
+	ma_close(&ma_state);
 	finalize_output(res, bn, msg, nils, ci1.ncand);
 	unfix_inputs(2, b, bs);
 	return msg;
@@ -1030,7 +1053,9 @@ do_batstr_batint_str(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 	BATiter lefti;
 	BAT *bn = NULL, *left = NULL, *ls = NULL, *right = NULL, *rs = NULL;
 	size_t buflen = INITIAL_STR_BUFFER_LENGTH;
-	str buf = GDKmalloc(buflen), msg = MAL_SUCCEED;
+	allocator *ma = MT_thread_getallocator();
+	allocator_state ma_state = ma_open(ma);
+	str buf = ma_alloc(ma, buflen), msg = MAL_SUCCEED;
 	bool nils = false;
 	int *restrict righti, y;
 	struct canditer ci1 = { 0 }, ci2 = { 0 };
@@ -1081,7 +1106,7 @@ do_batstr_batint_str(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 		for (BUN i = 0; i < ci1.ncand; i++) {
 			oid p1 = (canditer_next_dense(&ci1) - off1),
 				p2 = (canditer_next_dense(&ci2) - off2);
-			const char *x = BUNtvar(lefti, p1);
+			const char *x = BUNtvar(&lefti, p1);
 			y = righti[p2];
 
 			if (strNil(x) || is_int_nil(y)) {
@@ -1105,7 +1130,7 @@ do_batstr_batint_str(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 		for (BUN i = 0; i < ci1.ncand; i++) {
 			oid p1 = (canditer_next(&ci1) - off1),
 				p2 = (canditer_next(&ci2) - off2);
-			const char *x = BUNtvar(lefti, p1);
+			const char *x = BUNtvar(&lefti, p1);
 			y = righti[p2];
 
 			if (strNil(x) || is_int_nil(y)) {
@@ -1130,7 +1155,7 @@ do_batstr_batint_str(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 	bat_iterator_end(&bi);
 	bat_iterator_end(&lefti);
   bailout:
-	GDKfree(buf);
+	ma_close(&ma_state);
 	finalize_output(res, bn, msg, nils, ci1.ncand);
 	unfix_inputs(4, left, ls, right, rs);
 	return msg;
@@ -1148,7 +1173,9 @@ do_batstr_constint_conststr_str(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 	BAT *bn = NULL, *b = NULL, *bs = NULL;
 	size_t buflen = INITIAL_STR_BUFFER_LENGTH;
 	const char *z = *getArgReference_str(stk, pci, 3);
-	str buf = GDKmalloc(buflen), msg = MAL_SUCCEED;
+	allocator *ma = MT_thread_getallocator();
+	allocator_state ma_state = ma_open(ma);
+	str buf = ma_alloc(ma, buflen), msg = MAL_SUCCEED;
 	int y = *getArgReference_int(stk, pci, 2);
 	bool nils = false;
 	struct canditer ci1 = { 0 };
@@ -1184,7 +1211,7 @@ do_batstr_constint_conststr_str(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 	if (ci1.tpe == cand_dense) {
 		for (BUN i = 0; i < ci1.ncand; i++) {
 			oid p1 = (canditer_next_dense(&ci1) - off1);
-			const char *x = BUNtvar(bi, p1);
+			const char *x = BUNtvar(&bi, p1);
 
 			if (strNil(x) || is_int_nil(y) || strNil(z)) {
 				if (tfastins_nocheckVAR(bn, i, str_nil) != GDK_SUCCEED) {
@@ -1206,7 +1233,7 @@ do_batstr_constint_conststr_str(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 	} else {
 		for (BUN i = 0; i < ci1.ncand; i++) {
 			oid p1 = (canditer_next(&ci1) - off1);
-			const char *x = BUNtvar(bi, p1);
+			const char *x = BUNtvar(&bi, p1);
 
 			if (strNil(x) || is_int_nil(y) || strNil(z)) {
 				if (tfastins_nocheckVAR(bn, i, str_nil) != GDK_SUCCEED) {
@@ -1229,7 +1256,7 @@ do_batstr_constint_conststr_str(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
   bailout1:
 	bat_iterator_end(&bi);
   bailout:
-	GDKfree(buf);
+	ma_close(&ma_state);
 	finalize_output(res, bn, msg, nils, ci1.ncand);
 	unfix_inputs(2, b, bs);
 	return msg;
@@ -1248,7 +1275,9 @@ do_batstr_batint_conststr_str(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 	BAT *bn = NULL, *left = NULL, *ls = NULL, *right = NULL, *rs = NULL;
 	size_t buflen = INITIAL_STR_BUFFER_LENGTH;
 	const char *z = *getArgReference_str(stk, pci, 3);
-	str buf = GDKmalloc(buflen), msg = MAL_SUCCEED;
+	allocator *ma = MT_thread_getallocator();
+	allocator_state ma_state = ma_open(ma);
+	str buf = ma_alloc(ma, buflen), msg = MAL_SUCCEED;
 	bool nils = false;
 	int *restrict righti, y;
 	struct canditer ci1 = { 0 }, ci2 = { 0 };
@@ -1299,7 +1328,7 @@ do_batstr_batint_conststr_str(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 		for (BUN i = 0; i < ci1.ncand; i++) {
 			oid p1 = (canditer_next_dense(&ci1) - off1),
 				p2 = (canditer_next_dense(&ci2) - off2);
-			const char *x = BUNtvar(lefti, p1);
+			const char *x = BUNtvar(&lefti, p1);
 			y = righti[p2];
 
 			if (strNil(x) || is_int_nil(y) || strNil(z)) {
@@ -1323,7 +1352,7 @@ do_batstr_batint_conststr_str(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 		for (BUN i = 0; i < ci1.ncand; i++) {
 			oid p1 = (canditer_next(&ci1) - off1),
 				p2 = (canditer_next(&ci2) - off2);
-			const char *x = BUNtvar(lefti, p1);
+			const char *x = BUNtvar(&lefti, p1);
 			y = righti[p2];
 
 			if (strNil(x) || is_int_nil(y) || strNil(z)) {
@@ -1348,7 +1377,7 @@ do_batstr_batint_conststr_str(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 	bat_iterator_end(&bi);
 	bat_iterator_end(&lefti);
   bailout:
-	GDKfree(buf);
+	ma_close(&ma_state);
 	finalize_output(res, bn, msg, nils, ci1.ncand);
 	unfix_inputs(4, left, ls, right, rs);
 	return msg;
@@ -1366,7 +1395,9 @@ do_batstr_constint_batstr_str(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 	BATiter lefti, righti;
 	BAT *bn = NULL, *left = NULL, *ls = NULL, *right = NULL, *rs = NULL;
 	size_t buflen = INITIAL_STR_BUFFER_LENGTH;
-	str buf = GDKmalloc(buflen), msg = MAL_SUCCEED;
+	allocator *ma = MT_thread_getallocator();
+	allocator_state ma_state = ma_open(ma);
+	str buf = ma_alloc(ma, buflen), msg = MAL_SUCCEED;
 	bool nils = false;
 	int y = *getArgReference_int(stk, pci, 2);
 	struct canditer ci1 = { 0 }, ci2 = { 0 };
@@ -1415,8 +1446,8 @@ do_batstr_constint_batstr_str(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 		for (BUN i = 0; i < ci1.ncand; i++) {
 			oid p1 = (canditer_next_dense(&ci1) - off1),
 				p2 = (canditer_next_dense(&ci2) - off2);
-			const char *x = BUNtvar(lefti, p1);
-			const char *z = BUNtvar(righti, p2);
+			const char *x = BUNtvar(&lefti, p1);
+			const char *z = BUNtvar(&righti, p2);
 
 			if (strNil(x) || is_int_nil(y) || strNil(z)) {
 				if (tfastins_nocheckVAR(bn, i, str_nil) != GDK_SUCCEED) {
@@ -1439,8 +1470,8 @@ do_batstr_constint_batstr_str(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 		for (BUN i = 0; i < ci1.ncand; i++) {
 			oid p1 = (canditer_next(&ci1) - off1),
 				p2 = (canditer_next(&ci2) - off2);
-			const char *x = BUNtvar(lefti, p1);
-			const char *z = BUNtvar(righti, p2);
+			const char *x = BUNtvar(&lefti, p1);
+			const char *z = BUNtvar(&righti, p2);
 
 			if (strNil(x) || is_int_nil(y) || strNil(z)) {
 				if (tfastins_nocheckVAR(bn, i, str_nil) != GDK_SUCCEED) {
@@ -1464,7 +1495,7 @@ do_batstr_constint_batstr_str(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 	bat_iterator_end(&lefti);
 	bat_iterator_end(&righti);
   bailout:
-	GDKfree(buf);
+	ma_close(&ma_state);
 	finalize_output(res, bn, msg, nils, ci1.ncand);
 	unfix_inputs(4, left, ls, right, rs);
 	return msg;
@@ -1483,7 +1514,9 @@ do_batstr_batint_batstr_str(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 	BAT *bn = NULL, *arg1 = NULL, *arg1s = NULL, *arg2 = NULL, *arg2s = NULL,
 		*arg3 = NULL, *arg3s = NULL;
 	size_t buflen = INITIAL_STR_BUFFER_LENGTH;
-	str buf = GDKmalloc(buflen), msg = MAL_SUCCEED;
+	allocator *ma = MT_thread_getallocator();
+	allocator_state ma_state = ma_open(ma);
+	str buf = ma_alloc(ma, buflen), msg = MAL_SUCCEED;
 	bool nils = false;
 	int *restrict arg2i, y;
 	struct canditer ci1 = { 0 }, ci2 = { 0 }, ci3 = { 0 };
@@ -1542,9 +1575,9 @@ do_batstr_batint_batstr_str(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 			oid p1 = (canditer_next_dense(&ci1) - off1),
 				p2 = (canditer_next_dense(&ci2) - off2),
 				p3 = (canditer_next_dense(&ci3) - off3);
-			const char *x = BUNtvar(arg1i, p1);
+			const char *x = BUNtvar(&arg1i, p1);
 			y = arg2i[p2];
-			const char *z = BUNtvar(arg3i, p3);
+			const char *z = BUNtvar(&arg3i, p3);
 
 			if (strNil(x) || is_int_nil(y) || strNil(z)) {
 				if (tfastins_nocheckVAR(bn, i, str_nil) != GDK_SUCCEED) {
@@ -1568,9 +1601,9 @@ do_batstr_batint_batstr_str(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 			oid p1 = (canditer_next(&ci1) - off1),
 				p2 = (canditer_next(&ci2) - off2),
 				p3 = (canditer_next(&ci3) - off3);
-			const char *x = BUNtvar(arg1i, p1);
+			const char *x = BUNtvar(&arg1i, p1);
 			y = arg2i[p2];
-			const char *z = BUNtvar(arg3i, p3);
+			const char *z = BUNtvar(&arg3i, p3);
 
 			if (strNil(x) || is_int_nil(y) || strNil(z)) {
 				if (tfastins_nocheckVAR(bn, i, str_nil) != GDK_SUCCEED) {
@@ -1595,7 +1628,7 @@ do_batstr_batint_batstr_str(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 	bat_iterator_end(&arg3i);
 	bat_iterator_end(&bi);
   bailout:
-	GDKfree(buf);
+	ma_close(&ma_state);
 	finalize_output(res, bn, msg, nils, ci1.ncand);
 	unfix_inputs(6, arg1, arg1s, arg2, arg2s, arg3, arg3s);
 	return msg;
@@ -1835,7 +1868,7 @@ STRbatRpad3_bat_bat(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
  */
 static str
 prefix_or_suffix(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
-				 const char *name, int (*func)(const char *, const char *, int),
+				 const char *name, int (*func)(const char *, const char *, size_t),
 				 bit *icase)
 {
 	 (void) cntxt;
@@ -1887,28 +1920,28 @@ prefix_or_suffix(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 		for (BUN i = 0; i < ci1.ncand; i++) {
 			oid p1 = (canditer_next_dense(&ci1) - off1),
 				p2 = (canditer_next_dense(&ci2) - off2);
-			char *x = BUNtvar(lefti, p1);
-			char *y = BUNtvar(righti, p2);
+			const char *x = BUNtvar(&lefti, p1);
+			const char *y = BUNtvar(&righti, p2);
 
 			if (strNil(x) || strNil(y)) {
 				vals[i] = bit_nil;
 				nils = true;
 			} else {
-				vals[i] = func(x, y, str_strlen(y)) == 0;
+				vals[i] = func(x, y, strlen(y)) == 0;
 			}
 		}
 	} else {
 		for (BUN i = 0; i < ci1.ncand; i++) {
 			oid p1 = (canditer_next(&ci1) - off1),
 				p2 = (canditer_next(&ci2) - off2);
-			char *x = BUNtvar(lefti, p1);
-			char *y = BUNtvar(righti, p2);
+			const char *x = BUNtvar(&lefti, p1);
+			const char *y = BUNtvar(&righti, p2);
 
 			if (strNil(x) || strNil(y)) {
 				vals[i] = bit_nil;
 				nils = true;
 			} else {
-				vals[i] = func(x, y, str_strlen(y)) == 0;
+				vals[i] = func(x, y, strlen(y)) == 0;
 			}
 		}
 	}
@@ -1964,7 +1997,7 @@ BATSTRcontains(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 static str
 prefix_or_suffix_cst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 					 const char *name, int (*func)(const char *, const char *,
-												   int), bit *icase)
+												   size_t), bit *icase)
 {
 	 (void) cntxt;
 	(void) mb;
@@ -1979,7 +2012,8 @@ prefix_or_suffix_cst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 	oid off1;
 	bat *res = getArgReference_bat(stk, pci, 0),
 			bid = *getArgReference_bat(stk, pci, 1), *sid1 = NULL;
-	int ynil, ylen;
+	int ynil;
+	size_t ylen;
 
 	if ((!icase && (pci->argc == 4)) || pci->argc == 5) {
 		assert(isaBatType(getArgType(mb, pci, icase ? 4 : 3)));
@@ -2006,11 +2040,11 @@ prefix_or_suffix_cst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 	bi = bat_iterator(b);
 	vals = Tloc(bn, 0);
 	ynil = strNil(y);
-	ylen = ynil ? 0 : str_strlen(y); /* not used if nil */
+	ylen = ynil ? 0 : strlen(y); /* not used if nil */
 	if (ci1.tpe == cand_dense) {
 		for (BUN i = 0; i < ci1.ncand; i++) {
 			oid p1 = (canditer_next_dense(&ci1) - off1);
-			char *x = BUNtvar(bi, p1);
+			const char *x = BUNtvar(&bi, p1);
 
 			if (ynil || strNil(x)) {
 				vals[i] = bit_nil;
@@ -2022,7 +2056,7 @@ prefix_or_suffix_cst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 	} else {
 		for (BUN i = 0; i < ci1.ncand; i++) {
 			oid p1 = (canditer_next(&ci1) - off1);
-			char *x = BUNtvar(bi, p1);
+			const char *x = BUNtvar(&bi, p1);
 
 			if (ynil || strNil(x)) {
 				vals[i] = bit_nil;
@@ -2087,7 +2121,7 @@ BATSTRcontains_cst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 static str
 prefix_or_suffix_strcst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 						const char *name, int (*func)(const char *,
-													  const char *, int),
+													  const char *, size_t),
 						bit *icase)
 {
 	 (void) cntxt;
@@ -2133,25 +2167,25 @@ prefix_or_suffix_strcst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 	if (ci1.tpe == cand_dense) {
 		for (BUN i = 0; i < ci1.ncand; i++) {
 			oid p1 = (canditer_next_dense(&ci1) - off1);
-			char *y = BUNtvar(bi, p1);
+			const char *y = BUNtvar(&bi, p1);
 
 			if (xnil || strNil(y)) {
 				vals[i] = bit_nil;
 				nils = true;
 			} else {
-				vals[i] = func(x, y, str_strlen(y)) == 0;
+				vals[i] = func(x, y, strlen(y)) == 0;
 			}
 		}
 	} else {
 		for (BUN i = 0; i < ci1.ncand; i++) {
 			oid p1 = (canditer_next(&ci1) - off1);
-			char *y = BUNtvar(bi, p1);
+			const char *y = BUNtvar(&bi, p1);
 
 			if (xnil || strNil(y)) {
 				vals[i] = bit_nil;
 				nils = true;
 			} else {
-				vals[i] = func(x, y, str_strlen(y)) == 0;
+				vals[i] = func(x, y, strlen(y)) == 0;
 			}
 		}
 	}
@@ -2262,8 +2296,8 @@ search_string_bat(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 		for (BUN i = 0; i < ci1.ncand; i++) {
 			oid p1 = (canditer_next_dense(&ci1) - off1),
 				p2 = (canditer_next_dense(&ci2) - off2);
-			char *x = BUNtvar(lefti, p1);
-			char *y = BUNtvar(righti, p2);
+			const char *x = BUNtvar(&lefti, p1);
+			const char *y = BUNtvar(&righti, p2);
 
 			if (strNil(x) || strNil(y)) {
 				vals[i] = int_nil;
@@ -2276,8 +2310,8 @@ search_string_bat(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 		for (BUN i = 0; i < ci1.ncand; i++) {
 			oid p1 = (canditer_next(&ci1) - off1),
 				p2 = (canditer_next(&ci2) - off2);
-			char *x = BUNtvar(lefti, p1);
-			char *y = BUNtvar(righti, p2);
+			const char *x = BUNtvar(&lefti, p1);
+			const char *y = BUNtvar(&righti, p2);
 
 			if (strNil(x) || strNil(y)) {
 				vals[i] = int_nil;
@@ -2383,7 +2417,7 @@ search_string_bat_cst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 	if (ci1.tpe == cand_dense) {
 		for (BUN i = 0; i < ci1.ncand; i++) {
 			oid p1 = (canditer_next_dense(&ci1) - off1);
-			char *x = BUNtvar(bi, p1);
+			const char *x = BUNtvar(&bi, p1);
 
 			if (ynil || strNil(x)) {
 				vals[i] = int_nil;
@@ -2395,7 +2429,7 @@ search_string_bat_cst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 	} else {
 		for (BUN i = 0; i < ci1.ncand; i++) {
 			oid p1 = (canditer_next(&ci1) - off1);
-			char *x = BUNtvar(bi, p1);
+			const char *x = BUNtvar(&bi, p1);
 
 			if (ynil || strNil(x)) {
 				vals[i] = int_nil;
@@ -2500,7 +2534,7 @@ search_string_bat_strcst(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 	if (ci1.tpe == cand_dense) {
 		for (BUN i = 0; i < ci1.ncand; i++) {
 			oid p1 = (canditer_next_dense(&ci1) - off1);
-			char *y = BUNtvar(bi, p1);
+			const char *y = BUNtvar(&bi, p1);
 
 			if (xnil || strNil(y)) {
 				vals[i] = int_nil;
@@ -2512,7 +2546,7 @@ search_string_bat_strcst(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 	} else {
 		for (BUN i = 0; i < ci1.ncand; i++) {
 			oid p1 = (canditer_next(&ci1) - off1);
-			char *y = BUNtvar(bi, p1);
+			const char *y = BUNtvar(&bi, p1);
 
 			if (xnil || strNil(y)) {
 				vals[i] = int_nil;
@@ -2577,7 +2611,9 @@ STRbatWChrAt(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	BAT *bn = NULL, *left = NULL, *lefts = NULL, *right = NULL, *rights = NULL;
 	size_t buflen = INITIAL_STR_BUFFER_LENGTH;
 	int *restrict righti, *restrict vals, next, y;
-	str buf = GDKmalloc(buflen), msg = MAL_SUCCEED;
+	allocator *ma = MT_thread_getallocator();
+	allocator_state ma_state = ma_open(ma);
+	str buf = ma_alloc(ma, buflen), msg = MAL_SUCCEED;
 	bool nils = false;
 	struct canditer ci1 = { 0 }, ci2 = { 0 };
 	oid off1, off2;
@@ -2629,7 +2665,7 @@ STRbatWChrAt(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		for (BUN i = 0; i < ci1.ncand; i++) {
 			oid p1 = (canditer_next_dense(&ci1) - off1),
 				p2 = (canditer_next_dense(&ci2) - off2);
-			const char *x = BUNtvar(lefti, p1);
+			const char *x = BUNtvar(&lefti, p1);
 			y = righti[p2];
 
 			if ((msg = str_wchr_at(&next, x, y)) != MAL_SUCCEED)
@@ -2641,7 +2677,7 @@ STRbatWChrAt(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		for (BUN i = 0; i < ci1.ncand; i++) {
 			oid p1 = (canditer_next(&ci1) - off1),
 				p2 = (canditer_next(&ci2) - off2);
-			const char *x = BUNtvar(lefti, p1);
+			const char *x = BUNtvar(&lefti, p1);
 			y = righti[p2];
 
 			if ((msg = str_wchr_at(&next, x, y)) != MAL_SUCCEED)
@@ -2654,7 +2690,7 @@ STRbatWChrAt(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	bat_iterator_end(&bi);
 	bat_iterator_end(&lefti);
   bailout:
-	GDKfree(buf);
+	ma_close(&ma_state);
 	finalize_output(res, bn, msg, nils, ci1.ncand);
 	unfix_inputs(4, left, lefts, right, rights);
 	return msg;
@@ -2667,7 +2703,9 @@ STRbatWChrAtcst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	BAT *bn = NULL, *b = NULL, *bs = NULL;
 	size_t buflen = INITIAL_STR_BUFFER_LENGTH;
 	int y = *getArgReference_int(stk, pci, 2), *restrict vals, next;
-	str buf = GDKmalloc(buflen), msg = MAL_SUCCEED;
+	allocator *ma = MT_thread_getallocator();
+	allocator_state ma_state = ma_open(ma);
+	str buf = ma_alloc(ma, buflen), msg = MAL_SUCCEED;
 	bool nils = false;
 	struct canditer ci1 = { 0 };
 	oid off1;
@@ -2705,7 +2743,7 @@ STRbatWChrAtcst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (ci1.tpe == cand_dense) {
 		for (BUN i = 0; i < ci1.ncand; i++) {
 			oid p1 = (canditer_next_dense(&ci1) - off1);
-			const char *x = BUNtvar(bi, p1);
+			const char *x = BUNtvar(&bi, p1);
 
 			if ((msg = str_wchr_at(&next, x, y)) != MAL_SUCCEED)
 				goto bailout1;
@@ -2715,7 +2753,7 @@ STRbatWChrAtcst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	} else {
 		for (BUN i = 0; i < ci1.ncand; i++) {
 			oid p1 = (canditer_next(&ci1) - off1);
-			const char *x = BUNtvar(bi, p1);
+			const char *x = BUNtvar(&bi, p1);
 
 			if ((msg = str_wchr_at(&next, x, y)) != MAL_SUCCEED)
 				goto bailout1;
@@ -2726,7 +2764,7 @@ STRbatWChrAtcst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
   bailout1:
 	bat_iterator_end(&bi);
   bailout:
-	GDKfree(buf);
+	ma_close(&ma_state);
 	finalize_output(res, bn, msg, nils, ci1.ncand);
 	unfix_inputs(2, b, bs);
 	return msg;
@@ -2739,7 +2777,9 @@ STRbatWChrAt_strcst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	size_t buflen = INITIAL_STR_BUFFER_LENGTH;
 	int y, *restrict vals, *restrict input, next;
 	const char *x = *getArgReference_str(stk, pci, 1);
-	str buf = GDKmalloc(buflen), msg = MAL_SUCCEED;
+	allocator *ma = MT_thread_getallocator();
+	allocator_state ma_state = ma_open(ma);
+	str buf = ma_alloc(ma, buflen), msg = MAL_SUCCEED;
 	bool nils = false;
 	struct canditer ci1 = { 0 };
 	oid off1;
@@ -2800,7 +2840,7 @@ STRbatWChrAt_strcst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
   bailout1:
 	bat_iterator_end(&bi);
   bailout:
-	GDKfree(buf);
+	ma_close(&ma_state);
 	finalize_output(res, bn, msg, nils, ci1.ncand);
 	unfix_inputs(2, b, bs);
 	return msg;
@@ -2815,7 +2855,9 @@ do_batstr_str_int_cst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 	BAT *bn = NULL, *b = NULL, *bs = NULL;
 	size_t buflen = INITIAL_STR_BUFFER_LENGTH;
 	int y = *getArgReference_int(stk, pci, 2);
-	str buf = GDKmalloc(buflen), msg = MAL_SUCCEED;
+	allocator *ma = MT_thread_getallocator();
+	allocator_state ma_state = ma_open(ma);
+	str buf = ma_alloc(ma, buflen), msg = MAL_SUCCEED;
 	bool nils = false;
 	struct canditer ci1 = { 0 };
 	oid off1;
@@ -2850,7 +2892,7 @@ do_batstr_str_int_cst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 	if (ci1.tpe == cand_dense) {
 		for (BUN i = 0; i < ci1.ncand; i++) {
 			oid p1 = (canditer_next_dense(&ci1) - off1);
-			const char *x = BUNtvar(bi, p1);
+			const char *x = BUNtvar(&bi, p1);
 
 			if (strNil(x) || is_int_nil(y)) {
 				if (tfastins_nocheckVAR(bn, i, str_nil) != GDK_SUCCEED) {
@@ -2872,7 +2914,7 @@ do_batstr_str_int_cst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 	} else {
 		for (BUN i = 0; i < ci1.ncand; i++) {
 			oid p1 = (canditer_next(&ci1) - off1);
-			const char *x = BUNtvar(bi, p1);
+			const char *x = BUNtvar(&bi, p1);
 
 			if (strNil(x) || is_int_nil(y)) {
 				if (tfastins_nocheckVAR(bn, i, str_nil) != GDK_SUCCEED) {
@@ -2895,7 +2937,7 @@ do_batstr_str_int_cst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
   bailout1:
 	bat_iterator_end(&bi);
   bailout:
-	GDKfree(buf);
+	ma_close(&ma_state);
 	finalize_output(res, bn, msg, nils, ci1.ncand);
 	unfix_inputs(2, b, bs);
 	return msg;
@@ -2935,7 +2977,9 @@ STRbatrepeatcst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	BAT *bn = NULL, *b = NULL, *bs = NULL;
 	size_t buflen = INITIAL_STR_BUFFER_LENGTH;
 	int y = *getArgReference_int(stk, pci, 2);
-	str buf = GDKmalloc(buflen), msg = MAL_SUCCEED;
+	allocator *ma = MT_thread_getallocator();
+	allocator_state ma_state = ma_open(ma);
+	str buf = ma_alloc(ma, buflen), msg = MAL_SUCCEED;
 	bool nils = false;
 	struct canditer ci1 = { 0 };
 	oid off1;
@@ -2972,7 +3016,7 @@ STRbatrepeatcst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (ci1.tpe == cand_dense) {
 		for (BUN i = 0; i < ci1.ncand; i++) {
 			oid p1 = (canditer_next_dense(&ci1) - off1);
-			const char *x = BUNtvar(bi, p1);
+			const char *x = BUNtvar(&bi, p1);
 
 			if (strNil(x) || is_int_nil(y) || y < 0) {
 				if (tfastins_nocheckVAR(bn, i, str_nil) != GDK_SUCCEED) {
@@ -2994,7 +3038,7 @@ STRbatrepeatcst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	} else {
 		for (BUN i = 0; i < ci1.ncand; i++) {
 			oid p1 = (canditer_next(&ci1) - off1);
-			const char *x = BUNtvar(bi, p1);
+			const char *x = BUNtvar(&bi, p1);
 
 			if (strNil(x) || is_int_nil(y) || y < 0) {
 				if (tfastins_nocheckVAR(bn, i, str_nil) != GDK_SUCCEED) {
@@ -3017,7 +3061,7 @@ STRbatrepeatcst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
   bailout1:
 	bat_iterator_end(&bi);
   bailout:
-	GDKfree(buf);
+	ma_close(&ma_state);
 	finalize_output(res, bn, msg, nils, ci1.ncand);
 	unfix_inputs(2, b, bs);
 	return msg;
@@ -3032,7 +3076,9 @@ do_batstr_strcst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 	size_t buflen = INITIAL_STR_BUFFER_LENGTH;
 	int *restrict vals, y;
 	const char *x = *getArgReference_str(stk, pci, 1);
-	str buf = GDKmalloc(buflen), msg = MAL_SUCCEED;
+	allocator *ma = MT_thread_getallocator();
+	allocator_state ma_state = ma_open(ma);
+	str buf = ma_alloc(ma, buflen), msg = MAL_SUCCEED;
 	bool nils = false;
 	struct canditer ci1 = { 0 };
 	oid off1;
@@ -3114,7 +3160,7 @@ do_batstr_strcst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
   bailout1:
 	bat_iterator_end(&bi);
   bailout:
-	GDKfree(buf);
+	ma_close(&ma_state);
 	finalize_output(res, bn, msg, nils, ci1.ncand);
 	unfix_inputs(2, b, bs);
 	return msg;
@@ -3153,7 +3199,9 @@ STRbatrepeat_strcst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	size_t buflen = INITIAL_STR_BUFFER_LENGTH;
 	int *restrict vals, y;
 	const char *x = *getArgReference_str(stk, pci, 1);
-	str buf = GDKmalloc(buflen), msg = MAL_SUCCEED;
+	allocator *ma = MT_thread_getallocator();
+	allocator_state ma_state = ma_open(ma);
+	str buf = ma_alloc(ma, buflen), msg = MAL_SUCCEED;
 	bool nils = false;
 	struct canditer ci1 = { 0 };
 	oid off1;
@@ -3237,7 +3285,7 @@ STRbatrepeat_strcst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
   bailout1:
 	bat_iterator_end(&bi);
   bailout:
-	GDKfree(buf);
+	ma_close(&ma_state);
 	finalize_output(res, bn, msg, nils, ci1.ncand);
 	unfix_inputs(2, b, bs);
 	return msg;
@@ -3252,7 +3300,9 @@ do_batstr_str_int(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 	BAT *bn = NULL, *left = NULL, *lefts = NULL, *right = NULL, *rights = NULL;
 	size_t buflen = INITIAL_STR_BUFFER_LENGTH;
 	int *restrict righti, y;
-	str buf = GDKmalloc(buflen), msg = MAL_SUCCEED;
+	allocator *ma = MT_thread_getallocator();
+	allocator_state ma_state = ma_open(ma);
+	str buf = ma_alloc(ma, buflen), msg = MAL_SUCCEED;
 	bool nils = false;
 	struct canditer ci1 = { 0 }, ci2 = { 0 };
 	oid off1, off2;
@@ -3302,7 +3352,7 @@ do_batstr_str_int(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 		for (BUN i = 0; i < ci1.ncand; i++) {
 			oid p1 = (canditer_next_dense(&ci1) - off1),
 				p2 = (canditer_next_dense(&ci2) - off2);
-			const char *x = BUNtvar(lefti, p1);
+			const char *x = BUNtvar(&lefti, p1);
 			y = righti[p2];
 
 			if (strNil(x) || is_int_nil(y)) {
@@ -3326,7 +3376,7 @@ do_batstr_str_int(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 		for (BUN i = 0; i < ci1.ncand; i++) {
 			oid p1 = (canditer_next(&ci1) - off1),
 				p2 = (canditer_next(&ci2) - off2);
-			const char *x = BUNtvar(lefti, p1);
+			const char *x = BUNtvar(&lefti, p1);
 			y = righti[p2];
 
 			if (strNil(x) || is_int_nil(y)) {
@@ -3351,7 +3401,7 @@ do_batstr_str_int(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 	bat_iterator_end(&bi);
 	bat_iterator_end(&lefti);
   bailout:
-	GDKfree(buf);
+	ma_close(&ma_state);
 	finalize_output(res, bn, msg, nils, ci1.ncand);
 	unfix_inputs(4, left, lefts, right, rights);
 	return msg;
@@ -3389,7 +3439,9 @@ STRbatrepeat(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	BAT *bn = NULL, *left = NULL, *lefts = NULL, *right = NULL, *rights = NULL;
 	size_t buflen = INITIAL_STR_BUFFER_LENGTH;
 	int *restrict righti, y;
-	str buf = GDKmalloc(buflen), msg = MAL_SUCCEED;
+	allocator *ma = MT_thread_getallocator();
+	allocator_state ma_state = ma_open(ma);
+	str buf = ma_alloc(ma, buflen), msg = MAL_SUCCEED;
 	bool nils = false;
 	struct canditer ci1 = { 0 }, ci2 = { 0 };
 	oid off1, off2;
@@ -3441,7 +3493,7 @@ STRbatrepeat(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		for (BUN i = 0; i < ci1.ncand; i++) {
 			oid p1 = (canditer_next_dense(&ci1) - off1),
 				p2 = (canditer_next_dense(&ci2) - off2);
-			const char *x = BUNtvar(lefti, p1);
+			const char *x = BUNtvar(&lefti, p1);
 			y = righti[p2];
 
 			if (strNil(x) || is_int_nil(y) || y < 0) {
@@ -3465,7 +3517,7 @@ STRbatrepeat(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		for (BUN i = 0; i < ci1.ncand; i++) {
 			oid p1 = (canditer_next(&ci1) - off1),
 				p2 = (canditer_next(&ci2) - off2);
-			const char *x = BUNtvar(lefti, p1);
+			const char *x = BUNtvar(&lefti, p1);
 			y = righti[p2];
 
 			if (strNil(x) || is_int_nil(y) || y < 0) {
@@ -3490,7 +3542,7 @@ STRbatrepeat(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	bat_iterator_end(&bi);
 	bat_iterator_end(&lefti);
   bailout:
-	GDKfree(buf);
+	ma_close(&ma_state);
 	finalize_output(res, bn, msg, nils, ci1.ncand);
 	unfix_inputs(4, left, lefts, right, rights);
 	return msg;
@@ -3505,7 +3557,9 @@ STRbatSubstitutecst_imp(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 	size_t buflen = INITIAL_STR_BUFFER_LENGTH;
 	const char *y = *getArgReference_str(stk, pci, 2),
 		*z = *getArgReference_str(stk, pci, 3);
-	str buf = GDKmalloc(buflen), msg = MAL_SUCCEED;
+	allocator *ma = MT_thread_getallocator();
+	allocator_state ma_state = ma_open(ma);
+	str buf = ma_alloc(ma, buflen), msg = MAL_SUCCEED;
 	bool nils = false;
 	bit w = *rep;
 	struct canditer ci1 = { 0 };
@@ -3543,7 +3597,7 @@ STRbatSubstitutecst_imp(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 	if (ci1.tpe == cand_dense) {
 		for (BUN i = 0; i < ci1.ncand; i++) {
 			oid p1 = (canditer_next_dense(&ci1) - off1);
-			const char *x = BUNtvar(bi, p1);
+			const char *x = BUNtvar(&bi, p1);
 
 			if (strNil(x) || strNil(y) || strNil(z) || is_bit_nil(w)) {
 				if (tfastins_nocheckVAR(bn, i, str_nil) != GDK_SUCCEED) {
@@ -3565,7 +3619,7 @@ STRbatSubstitutecst_imp(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 	} else {
 		for (BUN i = 0; i < ci1.ncand; i++) {
 			oid p1 = (canditer_next(&ci1) - off1);
-			const char *x = BUNtvar(bi, p1);
+			const char *x = BUNtvar(&bi, p1);
 
 			if (strNil(x) || strNil(y) || strNil(z) || is_bit_nil(w)) {
 				if (tfastins_nocheckVAR(bn, i, str_nil) != GDK_SUCCEED) {
@@ -3588,7 +3642,7 @@ STRbatSubstitutecst_imp(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
   bailout1:
 	bat_iterator_end(&bi);
   bailout:
-	GDKfree(buf);
+	ma_close(&ma_state);
 	finalize_output(res, bn, msg, nils, ci1.ncand);
 	unfix_inputs(2, b, bs);
 	return msg;
@@ -3608,7 +3662,9 @@ STRbatSubstitute(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	BAT *bn = NULL, *arg1 = NULL, *arg1s = NULL, *arg2 = NULL, *arg2s = NULL,
 		*arg3 = NULL, *arg3s = NULL, *arg4 = NULL, *arg4s = NULL;
 	size_t buflen = INITIAL_STR_BUFFER_LENGTH;
-	str buf = GDKmalloc(buflen), msg = MAL_SUCCEED;
+	allocator *ma = MT_thread_getallocator();
+	allocator_state ma_state = ma_open(ma);
+	str buf = ma_alloc(ma, buflen), msg = MAL_SUCCEED;
 	bool nils = false;
 	bit *restrict arg4i, w;
 	struct canditer ci1 = { 0 }, ci2 = { 0 }, ci3 = { 0 }, ci4 = { 0 };
@@ -3679,9 +3735,9 @@ STRbatSubstitute(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				p2 = (canditer_next_dense(&ci2) - off2),
 				p3 = (canditer_next_dense(&ci3) - off3),
 				p4 = (canditer_next_dense(&ci4) - off4);
-			const char *x = BUNtvar(arg1i, p1);
-			const char *y = BUNtvar(arg2i, p2);
-			const char *z = BUNtvar(arg3i, p3);
+			const char *x = BUNtvar(&arg1i, p1);
+			const char *y = BUNtvar(&arg2i, p2);
+			const char *z = BUNtvar(&arg3i, p3);
 			w = arg4i[p4];
 
 			if (strNil(x) || strNil(y) || strNil(z) || is_bit_nil(w)) {
@@ -3707,9 +3763,9 @@ STRbatSubstitute(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				p2 = (canditer_next(&ci2) - off2),
 				p3 = (canditer_next(&ci3) - off3),
 				p4 = (canditer_next(&ci4) - off4);
-			const char *x = BUNtvar(arg1i, p1);
-			const char *y = BUNtvar(arg2i, p2);
-			const char *z = BUNtvar(arg3i, p3);
+			const char *x = BUNtvar(&arg1i, p1);
+			const char *y = BUNtvar(&arg2i, p2);
+			const char *z = BUNtvar(&arg3i, p3);
 			w = arg4i[p4];
 
 			if (strNil(x) || strNil(y) || strNil(z) || is_bit_nil(w)) {
@@ -3736,7 +3792,7 @@ STRbatSubstitute(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	bat_iterator_end(&arg2i);
 	bat_iterator_end(&arg3i);
   bailout:
-	GDKfree(buf);
+	ma_close(&ma_state);
 	finalize_output(res, bn, msg, nils, ci1.ncand);
 	unfix_inputs(8, arg1, arg1, arg2, arg2s, arg3, arg3s, arg4, arg4s);
 	return msg;
@@ -3750,7 +3806,9 @@ STRbatsplitpartcst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	size_t buflen = INITIAL_STR_BUFFER_LENGTH;
 	int z = *getArgReference_int(stk, pci, 3);
 	const char *y = *getArgReference_str(stk, pci, 2);
-	str buf = GDKmalloc(buflen), msg = MAL_SUCCEED;
+	allocator *ma = MT_thread_getallocator();
+	allocator_state ma_state = ma_open(ma);
+	str buf = ma_alloc(ma, buflen), msg = MAL_SUCCEED;
 	bool nils = false;
 	struct canditer ci1 = { 0 };
 	oid off1;
@@ -3787,7 +3845,7 @@ STRbatsplitpartcst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (ci1.tpe == cand_dense) {
 		for (BUN i = 0; i < ci1.ncand; i++) {
 			oid p1 = (canditer_next_dense(&ci1) - off1);
-			const char *x = BUNtvar(bi, p1);
+			const char *x = BUNtvar(&bi, p1);
 
 			if (strNil(x) || strNil(y) || is_int_nil(z)) {
 				if (tfastins_nocheckVAR(bn, i, str_nil) != GDK_SUCCEED) {
@@ -3809,7 +3867,7 @@ STRbatsplitpartcst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	} else {
 		for (BUN i = 0; i < ci1.ncand; i++) {
 			oid p1 = (canditer_next(&ci1) - off1);
-			const char *x = BUNtvar(bi, p1);
+			const char *x = BUNtvar(&bi, p1);
 
 			if (strNil(x) || strNil(y) || is_int_nil(z)) {
 				if (tfastins_nocheckVAR(bn, i, str_nil) != GDK_SUCCEED) {
@@ -3832,7 +3890,7 @@ STRbatsplitpartcst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
   bailout1:
 	bat_iterator_end(&bi);
   bailout:
-	GDKfree(buf);
+	ma_close(&ma_state);
 	finalize_output(res, bn, msg, nils, ci1.ncand);
 	unfix_inputs(2, b, bs);
 	return msg;
@@ -3847,7 +3905,9 @@ STRbatsplitpart_needlecst(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 	size_t buflen = INITIAL_STR_BUFFER_LENGTH;
 	int *restrict field, z;
 	const char *y = *getArgReference_str(stk, pci, 2);
-	str buf = GDKmalloc(buflen), msg = MAL_SUCCEED;
+	allocator *ma = MT_thread_getallocator();
+	allocator_state ma_state = ma_open(ma);
+	str buf = ma_alloc(ma, buflen), msg = MAL_SUCCEED;
 	bool nils = false;
 	struct canditer ci1 = { 0 }, ci2 = { 0 };
 	oid off1, off2;
@@ -3898,7 +3958,7 @@ STRbatsplitpart_needlecst(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 		for (BUN i = 0; i < ci1.ncand; i++) {
 			oid p1 = (canditer_next_dense(&ci1) - off1),
 				p2 = (canditer_next_dense(&ci2) - off2);
-			const char *x = BUNtvar(bi, p1);
+			const char *x = BUNtvar(&bi, p1);
 			z = field[p2];
 
 			if (strNil(x) || strNil(y) || is_int_nil(z)) {
@@ -3922,7 +3982,7 @@ STRbatsplitpart_needlecst(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 		for (BUN i = 0; i < ci1.ncand; i++) {
 			oid p1 = (canditer_next(&ci1) - off1),
 				p2 = (canditer_next(&ci2) - off2);
-			const char *x = BUNtvar(bi, p1);
+			const char *x = BUNtvar(&bi, p1);
 			z = field[p2];
 
 			if (strNil(x) || strNil(y) || is_int_nil(z)) {
@@ -3947,7 +4007,7 @@ STRbatsplitpart_needlecst(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 	bat_iterator_end(&fi);
 	bat_iterator_end(&bi);
   bailout:
-	GDKfree(buf);
+	ma_close(&ma_state);
 	finalize_output(res, bn, msg, nils, ci1.ncand);
 	unfix_inputs(4, b, bs, f, fs);
 	return msg;
@@ -3961,7 +4021,9 @@ STRbatsplitpart_fieldcst(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 	BAT *bn = NULL, *b = NULL, *bs = NULL, *n = NULL, *ns = NULL;
 	size_t buflen = INITIAL_STR_BUFFER_LENGTH;
 	int z = *getArgReference_int(stk, pci, 3);
-	str buf = GDKmalloc(buflen), msg = MAL_SUCCEED;
+	allocator *ma = MT_thread_getallocator();
+	allocator_state ma_state = ma_open(ma);
+	str buf = ma_alloc(ma, buflen), msg = MAL_SUCCEED;
 	bool nils = false;
 	struct canditer ci1 = { 0 }, ci2 = { 0 };
 	oid off1, off2;
@@ -4011,8 +4073,8 @@ STRbatsplitpart_fieldcst(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 		for (BUN i = 0; i < ci1.ncand; i++) {
 			oid p1 = (canditer_next_dense(&ci1) - off1),
 				p2 = (canditer_next_dense(&ci2) - off2);
-			const char *x = BUNtvar(bi, p1);
-			const char *y = BUNtvar(ni, p2);
+			const char *x = BUNtvar(&bi, p1);
+			const char *y = BUNtvar(&ni, p2);
 
 			if (strNil(x) || strNil(y) || is_int_nil(z)) {
 				if (tfastins_nocheckVAR(bn, i, str_nil) != GDK_SUCCEED) {
@@ -4035,8 +4097,8 @@ STRbatsplitpart_fieldcst(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 		for (BUN i = 0; i < ci1.ncand; i++) {
 			oid p1 = (canditer_next(&ci1) - off1),
 				p2 = (canditer_next(&ci2) - off2);
-			const char *x = BUNtvar(bi, p1);
-			const char *y = BUNtvar(ni, p2);
+			const char *x = BUNtvar(&bi, p1);
+			const char *y = BUNtvar(&ni, p2);
 
 			if (strNil(x) || strNil(y) || is_int_nil(z)) {
 				if (tfastins_nocheckVAR(bn, i, str_nil) != GDK_SUCCEED) {
@@ -4060,7 +4122,7 @@ STRbatsplitpart_fieldcst(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 	bat_iterator_end(&bi);
 	bat_iterator_end(&ni);
   bailout:
-	GDKfree(buf);
+	ma_close(&ma_state);
 	finalize_output(res, bn, msg, nils, ci1.ncand);
 	unfix_inputs(4, b, bs, n, ns);
 	return msg;
@@ -4074,7 +4136,9 @@ STRbatsplitpart(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		*arg2s = NULL, *arg3 = NULL, *arg3s = NULL;
 	size_t buflen = INITIAL_STR_BUFFER_LENGTH;
 	int *restrict arg3i, z;
-	str buf = GDKmalloc(buflen), msg = MAL_SUCCEED;
+	allocator *ma = MT_thread_getallocator();
+	allocator_state ma_state = ma_open(ma);
+	str buf = ma_alloc(ma, buflen), msg = MAL_SUCCEED;
 	bool nils = false;
 	struct canditer ci1 = { 0 }, ci2 = { 0 }, ci3 = { 0 };
 	oid off1, off2, off3;
@@ -4136,8 +4200,8 @@ STRbatsplitpart(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			oid p1 = (canditer_next_dense(&ci1) - off1),
 				p2 = (canditer_next_dense(&ci2) - off2),
 				p3 = (canditer_next_dense(&ci3) - off3);
-			const char *x = BUNtvar(arg1i, p1);
-			const char *y = BUNtvar(arg2i, p2);
+			const char *x = BUNtvar(&arg1i, p1);
+			const char *y = BUNtvar(&arg2i, p2);
 			z = arg3i[p3];
 
 			if (strNil(x) || strNil(y) || is_int_nil(z)) {
@@ -4162,8 +4226,8 @@ STRbatsplitpart(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			oid p1 = (canditer_next(&ci1) - off1),
 				p2 = (canditer_next(&ci2) - off2),
 				p3 = (canditer_next(&ci3) - off3);
-			const char *x = BUNtvar(arg1i, p1);
-			const char *y = BUNtvar(arg2i, p2);
+			const char *x = BUNtvar(&arg1i, p1);
+			const char *y = BUNtvar(&arg2i, p2);
 			z = arg3i[p3];
 
 			if (strNil(x) || strNil(y) || is_int_nil(z)) {
@@ -4189,7 +4253,7 @@ STRbatsplitpart(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	bat_iterator_end(&arg1i);
 	bat_iterator_end(&arg2i);
   bailout:
-	GDKfree(buf);
+	ma_close(&ma_state);
 	finalize_output(res, bn, msg, nils, ci1.ncand);
 	unfix_inputs(6, arg1, arg1s, arg2, arg2s, arg3, arg3s);
 	return msg;
@@ -4210,7 +4274,9 @@ STRbatReplace(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	BAT *bn = NULL, *arg1 = NULL, *arg1s = NULL, *arg2 = NULL,
 		*arg2s = NULL, *arg3 = NULL, *arg3s = NULL;
 	size_t buflen = INITIAL_STR_BUFFER_LENGTH;
-	str buf = GDKmalloc(buflen), msg = MAL_SUCCEED;
+	allocator *ma = MT_thread_getallocator();
+	allocator_state ma_state = ma_open(ma);
+	str buf = ma_alloc(ma, buflen), msg = MAL_SUCCEED;
 	bool nils = false;
 	struct canditer ci1 = { 0 }, ci2 = { 0 }, ci3 = { 0 };
 	oid off1, off2, off3;
@@ -4270,9 +4336,9 @@ STRbatReplace(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			oid p1 = (canditer_next_dense(&ci1) - off1),
 				p2 = (canditer_next_dense(&ci2) - off2),
 				p3 = (canditer_next_dense(&ci3) - off3);
-			const char *x = BUNtvar(arg1i, p1);
-			const char *y = BUNtvar(arg2i, p2);
-			const char *z = BUNtvar(arg3i, p3);
+			const char *x = BUNtvar(&arg1i, p1);
+			const char *y = BUNtvar(&arg2i, p2);
+			const char *z = BUNtvar(&arg3i, p3);
 
 			if (strNil(x) || strNil(y) || strNil(z)) {
 				if (tfastins_nocheckVAR(bn, i, str_nil) != GDK_SUCCEED) {
@@ -4296,9 +4362,9 @@ STRbatReplace(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			oid p1 = (canditer_next(&ci1) - off1),
 				p2 = (canditer_next(&ci2) - off2),
 				p3 = (canditer_next(&ci3) - off3);
-			const char *x = BUNtvar(arg1i, p1);
-			const char *y = BUNtvar(arg2i, p2);
-			const char *z = BUNtvar(arg3i, p3);
+			const char *x = BUNtvar(&arg1i, p1);
+			const char *y = BUNtvar(&arg2i, p2);
+			const char *z = BUNtvar(&arg3i, p3);
 
 			if (strNil(x) || strNil(y) || strNil(z)) {
 				if (tfastins_nocheckVAR(bn, i, str_nil) != GDK_SUCCEED) {
@@ -4323,7 +4389,7 @@ STRbatReplace(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	bat_iterator_end(&arg2i);
 	bat_iterator_end(&arg3i);
   bailout:
-	GDKfree(buf);
+	ma_close(&ma_state);
 	finalize_output(res, bn, msg, nils, ci1.ncand);
 	unfix_inputs(6, arg1, arg1s, arg2, arg2s, arg3, arg3s);
 	return msg;
@@ -4337,7 +4403,9 @@ STRbatInsert(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		*ss = NULL, *nchars = NULL, *ns = NULL, *right = NULL, *rs = NULL;
 	size_t buflen = INITIAL_STR_BUFFER_LENGTH;
 	int *sval, *lval, y, z;
-	str buf = GDKmalloc(buflen), msg = MAL_SUCCEED;
+	allocator *ma = MT_thread_getallocator();
+	allocator_state ma_state = ma_open(ma);
+	str buf = ma_alloc(ma, buflen), msg = MAL_SUCCEED;
 	bool nils = false;
 	struct canditer ci1 = { 0 }, ci2 = { 0 }, ci3 = { 0 }, ci4 = { 0 };
 	oid off1, off2, off3, off4;
@@ -4407,10 +4475,10 @@ STRbatInsert(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				p2 = (canditer_next_dense(&ci2) - off2),
 				p3 = (canditer_next_dense(&ci3) - off3),
 				p4 = (canditer_next_dense(&ci4) - off4);
-			const char *x = BUNtvar(lefti, p1);
+			const char *x = BUNtvar(&lefti, p1);
 			y = sval[p2];
 			z = lval[p3];
-			const char *w = BUNtvar(righti, p4);
+			const char *w = BUNtvar(&righti, p4);
 
 			if (strNil(x) || is_int_nil(y) || is_int_nil(z) || strNil(w)) {
 				if (tfastins_nocheckVAR(bn, i, str_nil) != GDK_SUCCEED) {
@@ -4435,10 +4503,10 @@ STRbatInsert(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				p2 = (canditer_next(&ci2) - off2),
 				p3 = (canditer_next(&ci3) - off3),
 				p4 = (canditer_next(&ci4) - off4);
-			const char *x = BUNtvar(lefti, p1);
+			const char *x = BUNtvar(&lefti, p1);
 			y = sval[p2];
 			z = lval[p3];
-			const char *w = BUNtvar(righti, p4);
+			const char *w = BUNtvar(&righti, p4);
 
 			if (strNil(x) || is_int_nil(y) || is_int_nil(z) || strNil(w)) {
 				if (tfastins_nocheckVAR(bn, i, str_nil) != GDK_SUCCEED) {
@@ -4464,7 +4532,7 @@ STRbatInsert(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	bat_iterator_end(&lefti);
 	bat_iterator_end(&righti);
   bailout:
-	GDKfree(buf);
+	ma_close(&ma_state);
 	finalize_output(res, bn, msg, nils, ci1.ncand);
 	unfix_inputs(8, left, ls, start, ss, nchars, ns, right, rs);
 	return msg;
@@ -4479,7 +4547,9 @@ STRbatInsertcst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	int y = *getArgReference_int(stk, pci, 2),
 		z = *getArgReference_int(stk, pci, 3);
 	const char *w = *getArgReference_str(stk, pci, 4);
-	str buf = GDKmalloc(buflen), msg = MAL_SUCCEED;
+	allocator *ma = MT_thread_getallocator();
+	allocator_state ma_state = ma_open(ma);
+	str buf = ma_alloc(ma, buflen), msg = MAL_SUCCEED;
 	bool nils = false;
 	struct canditer ci1 = { 0 };
 	oid off1;
@@ -4516,7 +4586,7 @@ STRbatInsertcst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (ci1.tpe == cand_dense) {
 		for (BUN i = 0; i < ci1.ncand; i++) {
 			oid p1 = (canditer_next_dense(&ci1) - off1);
-			const char *x = BUNtvar(bi, p1);
+			const char *x = BUNtvar(&bi, p1);
 
 			if (strNil(x) || is_int_nil(y) || is_int_nil(z) || strNil(w)) {
 				if (tfastins_nocheckVAR(bn, i, str_nil) != GDK_SUCCEED) {
@@ -4538,7 +4608,7 @@ STRbatInsertcst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	} else {
 		for (BUN i = 0; i < ci1.ncand; i++) {
 			oid p1 = (canditer_next(&ci1) - off1);
-			const char *x = BUNtvar(bi, p1);
+			const char *x = BUNtvar(&bi, p1);
 
 			if (strNil(x) || is_int_nil(y) || is_int_nil(z) || strNil(w)) {
 				if (tfastins_nocheckVAR(bn, i, str_nil) != GDK_SUCCEED) {
@@ -4561,7 +4631,7 @@ STRbatInsertcst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
   bailout1:
 	bat_iterator_end(&bi);
   bailout:
-	GDKfree(buf);
+	ma_close(&ma_state);
 	finalize_output(res, bn, msg, nils, ci1.ncand);
 	unfix_inputs(2, b, bs);
 	return msg;
@@ -4579,7 +4649,9 @@ STRbatsubstring_2nd_3rd_cst(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 	size_t buflen = INITIAL_STR_BUFFER_LENGTH;
 	int y = *getArgReference_int(stk, pci, 2),
 		z = *getArgReference_int(stk, pci, 3);
-	str buf = GDKmalloc(buflen), msg = MAL_SUCCEED;
+	allocator *ma = MT_thread_getallocator();
+	allocator_state ma_state = ma_open(ma);
+	str buf = ma_alloc(ma, buflen), msg = MAL_SUCCEED;
 	bool nils = false;
 	struct canditer ci1 = { 0 };
 	oid off1;
@@ -4616,7 +4688,7 @@ STRbatsubstring_2nd_3rd_cst(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 	if (ci1.tpe == cand_dense) {
 		for (BUN i = 0; i < ci1.ncand; i++) {
 			oid p1 = (canditer_next_dense(&ci1) - off1);
-			const char *x = BUNtvar(bi, p1);
+			const char *x = BUNtvar(&bi, p1);
 
 			if (strNil(x) || is_int_nil(y) || is_int_nil(z)) {
 				if (tfastins_nocheckVAR(bn, i, str_nil) != GDK_SUCCEED) {
@@ -4638,7 +4710,7 @@ STRbatsubstring_2nd_3rd_cst(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 	} else {
 		for (BUN i = 0; i < ci1.ncand; i++) {
 			oid p1 = (canditer_next(&ci1) - off1);
-			const char *x = BUNtvar(bi, p1);
+			const char *x = BUNtvar(&bi, p1);
 
 			if (strNil(x) || is_int_nil(y) || is_int_nil(z)) {
 				if (tfastins_nocheckVAR(bn, i, str_nil) != GDK_SUCCEED) {
@@ -4661,7 +4733,7 @@ STRbatsubstring_2nd_3rd_cst(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
   bailout1:
 	bat_iterator_end(&bi);
   bailout:
-	GDKfree(buf);
+	ma_close(&ma_state);
 	finalize_output(res, bn, msg, nils, ci1.ncand);
 	unfix_inputs(2, b, bs);
 	return msg;
@@ -4675,7 +4747,9 @@ STRbatsubstring_1st_2nd_cst(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 	size_t buflen = INITIAL_STR_BUFFER_LENGTH;
 	int y = *getArgReference_int(stk, pci, 2), z, *restrict input;
 	const char *x = *getArgReference_str(stk, pci, 1);
-	str buf = GDKmalloc(buflen), msg = MAL_SUCCEED;
+	allocator *ma = MT_thread_getallocator();
+	allocator_state ma_state = ma_open(ma);
+	str buf = ma_alloc(ma, buflen), msg = MAL_SUCCEED;
 	bool nils = false;
 	struct canditer ci1 = { 0 };
 	oid off1;
@@ -4759,7 +4833,7 @@ STRbatsubstring_1st_2nd_cst(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
   bailout1:
 	bat_iterator_end(&bi);
   bailout:
-	GDKfree(buf);
+	ma_close(&ma_state);
 	finalize_output(res, bn, msg, nils, ci1.ncand);
 	unfix_inputs(2, b, bs);
 	return msg;
@@ -4773,7 +4847,9 @@ STRbatsubstring_1st_3rd_cst(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 	size_t buflen = INITIAL_STR_BUFFER_LENGTH;
 	int y, z = *getArgReference_int(stk, pci, 3), *restrict input;
 	const char *x = *getArgReference_str(stk, pci, 1);
-	str buf = GDKmalloc(buflen), msg = MAL_SUCCEED;
+	allocator *ma = MT_thread_getallocator();
+	allocator_state ma_state = ma_open(ma);
+	str buf = ma_alloc(ma, buflen), msg = MAL_SUCCEED;
 	bool nils = false;
 	struct canditer ci1 = { 0 };
 	oid off1;
@@ -4857,7 +4933,7 @@ STRbatsubstring_1st_3rd_cst(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
   bailout1:
 	bat_iterator_end(&bi);
   bailout:
-	GDKfree(buf);
+	ma_close(&ma_state);
 	finalize_output(res, bn, msg, nils, ci1.ncand);
 	unfix_inputs(2, b, bs);
 	return msg;
@@ -4870,7 +4946,9 @@ STRbatsubstring_1st_cst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	size_t buflen = INITIAL_STR_BUFFER_LENGTH;
 	int y, z, *vals1, *vals2;
 	const char *x = *getArgReference_str(stk, pci, 1);
-	str buf = GDKmalloc(buflen), msg = MAL_SUCCEED;
+	allocator *ma = MT_thread_getallocator();
+	allocator_state ma_state = ma_open(ma);
+	str buf = ma_alloc(ma, buflen), msg = MAL_SUCCEED;
 	bool nils = false;
 	struct canditer ci1 = { 0 }, ci2 = { 0 };
 	oid off1, off2;
@@ -4973,7 +5051,7 @@ STRbatsubstring_1st_cst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	bat_iterator_end(&bi);
 	bat_iterator_end(&lbi);
   bailout:
-	GDKfree(buf);
+	ma_close(&ma_state);
 	finalize_output(res, bn, msg, nils, ci1.ncand);
 	unfix_inputs(4, b, bs, lb, lbs);
 	return msg;
@@ -4987,7 +5065,9 @@ STRbatsubstring_2nd_cst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	BAT *bn = NULL, *b = NULL, *bs = NULL, *lb = NULL, *lbs = NULL;
 	size_t buflen = INITIAL_STR_BUFFER_LENGTH;
 	int y = *getArgReference_int(stk, pci, 2), *len, z;
-	str buf = GDKmalloc(buflen), msg = MAL_SUCCEED;
+	allocator *ma = MT_thread_getallocator();
+	allocator_state ma_state = ma_open(ma);
+	str buf = ma_alloc(ma, buflen), msg = MAL_SUCCEED;
 	bool nils = false;
 	struct canditer ci1 = { 0 }, ci2 = { 0 };
 	oid off1, off2;
@@ -5038,7 +5118,7 @@ STRbatsubstring_2nd_cst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		for (BUN i = 0; i < ci1.ncand; i++) {
 			oid p1 = (canditer_next_dense(&ci1) - off1),
 				p2 = (canditer_next_dense(&ci2) - off2);
-			const char *x = BUNtvar(bi, p1);
+			const char *x = BUNtvar(&bi, p1);
 			z = len[p2];
 
 			if (strNil(x) || is_int_nil(y) || is_int_nil(z)) {
@@ -5062,7 +5142,7 @@ STRbatsubstring_2nd_cst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		for (BUN i = 0; i < ci1.ncand; i++) {
 			oid p1 = (canditer_next(&ci1) - off1),
 				p2 = (canditer_next(&ci2) - off2);
-			const char *x = BUNtvar(bi, p1);
+			const char *x = BUNtvar(&bi, p1);
 			z = len[p2];
 
 			if (strNil(x) || is_int_nil(y) || is_int_nil(z)) {
@@ -5087,7 +5167,7 @@ STRbatsubstring_2nd_cst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	bat_iterator_end(&lbi);
 	bat_iterator_end(&bi);
   bailout:
-	GDKfree(buf);
+	ma_close(&ma_state);
 	finalize_output(res, bn, msg, nils, ci1.ncand);
 	unfix_inputs(4, b, bs, lb, lbs);
 	return msg;
@@ -5100,7 +5180,9 @@ STRbatsubstring_3rd_cst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	BAT *bn = NULL, *b = NULL, *bs = NULL, *lb = NULL, *lbs = NULL;
 	size_t buflen = INITIAL_STR_BUFFER_LENGTH;
 	int *start, y, z = *getArgReference_int(stk, pci, 3);
-	str buf = GDKmalloc(buflen), msg = MAL_SUCCEED;
+	allocator *ma = MT_thread_getallocator();
+	allocator_state ma_state = ma_open(ma);
+	str buf = ma_alloc(ma, buflen), msg = MAL_SUCCEED;
 	bool nils = false;
 	struct canditer ci1 = { 0 }, ci2 = { 0 };
 	oid off1, off2;
@@ -5151,7 +5233,7 @@ STRbatsubstring_3rd_cst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		for (BUN i = 0; i < ci1.ncand; i++) {
 			oid p1 = (canditer_next_dense(&ci1) - off1),
 				p2 = (canditer_next_dense(&ci2) - off2);
-			const char *x = BUNtvar(bi, p1);
+			const char *x = BUNtvar(&bi, p1);
 			y = start[p2];
 
 			if (strNil(x) || is_int_nil(y) || is_int_nil(z)) {
@@ -5175,7 +5257,7 @@ STRbatsubstring_3rd_cst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		for (BUN i = 0; i < ci1.ncand; i++) {
 			oid p1 = (canditer_next(&ci1) - off1),
 				p2 = (canditer_next(&ci2) - off2);
-			const char *x = BUNtvar(bi, p1);
+			const char *x = BUNtvar(&bi, p1);
 			y = start[p2];
 
 			if (strNil(x) || is_int_nil(y) || is_int_nil(z)) {
@@ -5200,7 +5282,7 @@ STRbatsubstring_3rd_cst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	bat_iterator_end(&lbi);
 	bat_iterator_end(&bi);
   bailout:
-	GDKfree(buf);
+	ma_close(&ma_state);
 	finalize_output(res, bn, msg, nils, ci1.ncand);
 	unfix_inputs(4, b, bs, lb, lbs);
 	return msg;
@@ -5214,7 +5296,9 @@ STRbatsubstring(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		*ss = NULL, *length = NULL, *lens = NULL;
 	size_t buflen = INITIAL_STR_BUFFER_LENGTH;
 	int *svals, *lvals, y, z;
-	str buf = GDKmalloc(buflen), msg = MAL_SUCCEED;
+	allocator *ma = MT_thread_getallocator();
+	allocator_state ma_state = ma_open(ma);
+	str buf = ma_alloc(ma, buflen), msg = MAL_SUCCEED;
 	bool nils = false;
 	struct canditer ci1 = { 0 }, ci2 = { 0 }, ci3 = { 0 };
 	oid off1, off2, off3;
@@ -5275,7 +5359,7 @@ STRbatsubstring(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			oid p1 = (canditer_next_dense(&ci1) - off1),
 				p2 = (canditer_next_dense(&ci2) - off2),
 				p3 = (canditer_next_dense(&ci3) - off3);
-			const char *x = BUNtvar(lefti, p1);
+			const char *x = BUNtvar(&lefti, p1);
 			y = svals[p2];
 			z = lvals[p3];
 
@@ -5301,7 +5385,7 @@ STRbatsubstring(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			oid p1 = (canditer_next(&ci1) - off1),
 				p2 = (canditer_next(&ci2) - off2),
 				p3 = (canditer_next(&ci3) - off3);
-			const char *x = BUNtvar(lefti, p1);
+			const char *x = BUNtvar(&lefti, p1);
 			y = svals[p2];
 			z = lvals[p3];
 
@@ -5328,7 +5412,7 @@ STRbatsubstring(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	bat_iterator_end(&starti);
 	bat_iterator_end(&lengthi);
   bailout:
-	GDKfree(buf);
+	ma_close(&ma_state);
 	finalize_output(res, bn, msg, nils, ci1.ncand);
 	unfix_inputs(6, left, ls, start, ss, length, lens);
 	return msg;
@@ -5374,7 +5458,7 @@ STRbatstrLocatecst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (ci1.tpe == cand_dense) {
 		for (BUN i = 0; i < ci1.ncand; i++) {
 			oid p1 = (canditer_next_dense(&ci1) - off1);
-			const char *x = BUNtvar(bi, p1);
+			const char *x = BUNtvar(&bi, p1);
 
 			if (strNil(x) || strNil(y)) {
 				vals[i] = int_nil;
@@ -5386,7 +5470,7 @@ STRbatstrLocatecst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	} else {
 		for (BUN i = 0; i < ci1.ncand; i++) {
 			oid p1 = (canditer_next(&ci1) - off1);
-			const char *x = BUNtvar(bi, p1);
+			const char *x = BUNtvar(&bi, p1);
 
 			if (strNil(x) || strNil(y)) {
 				vals[i] = int_nil;
@@ -5443,7 +5527,7 @@ STRbatstrLocate_strcst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (ci1.tpe == cand_dense) {
 		for (BUN i = 0; i < ci1.ncand; i++) {
 			oid p1 = (canditer_next_dense(&ci1) - off1);
-			const char *y = BUNtvar(bi, p1);
+			const char *y = BUNtvar(&bi, p1);
 
 			if (strNil(x) || strNil(y)) {
 				vals[i] = int_nil;
@@ -5455,7 +5539,7 @@ STRbatstrLocate_strcst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	} else {
 		for (BUN i = 0; i < ci1.ncand; i++) {
 			oid p1 = (canditer_next(&ci1) - off1);
-			const char *y = BUNtvar(bi, p1);
+			const char *y = BUNtvar(&bi, p1);
 
 			if (strNil(x) || strNil(y)) {
 				vals[i] = int_nil;
@@ -5524,8 +5608,8 @@ STRbatstrLocate(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		for (BUN i = 0; i < ci1.ncand; i++) {
 			oid p1 = (canditer_next_dense(&ci1) - off1),
 				p2 = (canditer_next_dense(&ci2) - off2);
-			const char *x = BUNtvar(lefti, p1);
-			const char *y = BUNtvar(righti, p2);
+			const char *x = BUNtvar(&lefti, p1);
+			const char *y = BUNtvar(&righti, p2);
 
 			if (strNil(x) || strNil(y)) {
 				vals[i] = int_nil;
@@ -5538,8 +5622,8 @@ STRbatstrLocate(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		for (BUN i = 0; i < ci1.ncand; i++) {
 			oid p1 = (canditer_next(&ci1) - off1),
 				p2 = (canditer_next(&ci2) - off2);
-			const char *x = BUNtvar(lefti, p1);
-			const char *y = BUNtvar(righti, p2);
+			const char *x = BUNtvar(&lefti, p1);
+			const char *y = BUNtvar(&righti, p2);
 
 			if (strNil(x) || strNil(y)) {
 				vals[i] = int_nil;
@@ -5597,7 +5681,7 @@ STRbatstrLocate3cst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (ci1.tpe == cand_dense) {
 		for (BUN i = 0; i < ci1.ncand; i++) {
 			oid p1 = (canditer_next_dense(&ci1) - off1);
-			const char *x = BUNtvar(bi, p1);
+			const char *x = BUNtvar(&bi, p1);
 
 			if (strNil(x) || strNil(y) || is_int_nil(z)) {
 				vals[i] = int_nil;
@@ -5609,7 +5693,7 @@ STRbatstrLocate3cst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	} else {
 		for (BUN i = 0; i < ci1.ncand; i++) {
 			oid p1 = (canditer_next(&ci1) - off1);
-			const char *x = BUNtvar(bi, p1);
+			const char *x = BUNtvar(&bi, p1);
 
 			if (strNil(x) || strNil(y) || is_int_nil(z)) {
 				vals[i] = int_nil;
@@ -5689,8 +5773,8 @@ STRbatstrLocate3(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			oid p1 = (canditer_next_dense(&ci1) - off1),
 				p2 = (canditer_next_dense(&ci2) - off2),
 				p3 = (canditer_next_dense(&ci3) - off3);
-			const char *x = BUNtvar(lefti, p1);
-			const char *y = BUNtvar(righti, p2);
+			const char *x = BUNtvar(&lefti, p1);
+			const char *y = BUNtvar(&righti, p2);
 			z = svals[p3];
 
 			if (strNil(x) || strNil(y) || is_int_nil(z)) {
@@ -5705,8 +5789,8 @@ STRbatstrLocate3(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			oid p1 = (canditer_next(&ci1) - off1),
 				p2 = (canditer_next(&ci2) - off2),
 				p3 = (canditer_next(&ci3) - off3);
-			const char *x = BUNtvar(lefti, p1);
-			const char *y = BUNtvar(righti, p2);
+			const char *x = BUNtvar(&lefti, p1);
+			const char *y = BUNtvar(&righti, p2);
 			z = svals[p3];
 
 			if (strNil(x) || strNil(y) || is_int_nil(z)) {
@@ -5733,7 +5817,7 @@ BATSTRasciify(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 
 #include "mel.h"
-mel_func batstr_init_funcs[] = {
+static mel_func batstr_init_funcs[] = {
 	pattern("batstr", "length", STRbatLength, false, "Return the length of a string.", args(1,2, batarg("",int),batarg("s",str))),
 	pattern("batstr", "length", STRbatLength, false, "Return the length of a string.", args(1,3, batarg("",int),batarg("s",str),batarg("s",oid))),
 	pattern("batstr", "nbytes", STRbatBytes, false, "Return the string length in bytes.", args(1,2, batarg("",int),batarg("s",str))),
@@ -5824,10 +5908,10 @@ mel_func batstr_init_funcs[] = {
 	pattern("batstr", "contains", BATSTRcontains_strcst, false, "Check if string haystack contains bat string needle + icase flag.", args(1,4, batarg("",bit),arg("s",str),batarg("prefix",str),arg("icase",bit))),
 	pattern("batstr", "contains", BATSTRcontains_strcst, false, "Check if string haystack contains bat string needle (with CL).", args(1,4, batarg("",bit),arg("s",str),batarg("prefix",str),batarg("s",oid))),
 	pattern("batstr", "contains", BATSTRcontains_strcst, false, "Check if string haystack contains bat string needle (with CL) + icase flag.", args(1,5, batarg("",bit),arg("s",str),batarg("prefix",str),arg("icase",bit),batarg("s",oid))),
-	pattern("batstr", "splitpart", STRbatsplitpart, false, "Split string on delimiter. Returns\ngiven field (counting from one.)", args(1,4, batarg("",str),batarg("s",str),batarg("needle",str),batarg("field",int))),
-	pattern("batstr", "splitpart", STRbatsplitpartcst, false, "Split string on delimiter. Returns\ngiven field (counting from one.)", args(1,4, batarg("",str),batarg("s",str),arg("needle",str),arg("field",int))),
-	pattern("batstr", "splitpart", STRbatsplitpart_needlecst, false, "Split string on delimiter. Returns\ngiven field (counting from one.)", args(1,4, batarg("",str),batarg("s",str),arg("needle",str),batarg("field",int))),
-	pattern("batstr", "splitpart", STRbatsplitpart_fieldcst, false, "Split string on delimiter. Returns\ngiven field (counting from one.)", args(1,4, batarg("",str),batarg("s",str),batarg("needle",str),arg("field",int))),
+	pattern("batstr", "splitpart", STRbatsplitpart, false, "Split string on delimiter. Returns given field (counting from one.)", args(1,4, batarg("",str),batarg("s",str),batarg("needle",str),batarg("field",int))),
+	pattern("batstr", "splitpart", STRbatsplitpartcst, false, "Split string on delimiter. Returns given field (counting from one.)", args(1,4, batarg("",str),batarg("s",str),arg("needle",str),arg("field",int))),
+	pattern("batstr", "splitpart", STRbatsplitpart_needlecst, false, "Split string on delimiter. Returns given field (counting from one.)", args(1,4, batarg("",str),batarg("s",str),arg("needle",str),batarg("field",int))),
+	pattern("batstr", "splitpart", STRbatsplitpart_fieldcst, false, "Split string on delimiter. Returns given field (counting from one.)", args(1,4, batarg("",str),batarg("s",str),batarg("needle",str),arg("field",int))),
 	pattern("batstr", "search", BATSTRstr_search, false, "Search for a substring. Returns position, -1 if not found.", args(1,3, batarg("",int),batarg("s",str),batarg("c",str))),
 	pattern("batstr", "search", BATSTRstr_search, false, "Search for a substring. Returns position, -1 if not found, icase flag.", args(1,4, batarg("",int),batarg("s",str),batarg("c",str),arg("icase",bit))),
 	pattern("batstr", "search", BATSTRstr_search, false, "Search for a substring. Returns position, -1 if not found.", args(1,5, batarg("",int),batarg("s",str),batarg("c",str),batarg("s1",oid),batarg("s2",oid))),
@@ -5888,8 +5972,8 @@ mel_func batstr_init_funcs[] = {
 	pattern("batstr", "unicodeAt", STRbatWChrAtcst, false, "get a unicode character (as an int) from a string position.", args(1,4, batarg("",int),batarg("s",str),arg("index",int),batarg("s",oid))),
 	pattern("batstr", "unicodeAt", STRbatWChrAt_strcst, false, "get a unicode character (as an int) from a string position.", args(1,3, batarg("",int),arg("s",str),batarg("index",int))),
 	pattern("batstr", "unicodeAt", STRbatWChrAt_strcst, false, "get a unicode character (as an int) from a string position.", args(1,4, batarg("",int),arg("s",str),batarg("index",int),batarg("s",oid))),
-	pattern("batstr", "substitute", STRbatSubstitute, false, "Substitute first occurrence of 'src' by\n'dst'. Iff repeated = true this is\nrepeated while 'src' can be found in the\nresult string. In order to prevent\nrecursion and result strings of unlimited\nsize, repeating is only done iff src is\nnot a substring of dst.", args(1,5, batarg("",str),batarg("s",str),batarg("src",str),batarg("dst",str),batarg("rep",bit))),
-	pattern("batstr", "substitute", STRbatSubstitutecst, false, "Substitute first occurrence of 'src' by\n'dst'. Iff repeated = true this is\nrepeated while 'src' can be found in the\nresult string. In order to prevent\nrecursion and result strings of unlimited\nsize, repeating is only done iff src is\nnot a substring of dst.", args(1,5, batarg("",str),batarg("s",str),arg("src",str),arg("dst",str),arg("rep",bit))),
+	pattern("batstr", "substitute", STRbatSubstitute, false, "Substitute first occurrence of 'src' by 'dst'. Iff repeated = true this is repeated while 'src' can be found in the result string. In order to prevent recursion and result strings of unlimited size, repeating is only done iff src is not a substring of dst.", args(1,5, batarg("",str),batarg("s",str),batarg("src",str),batarg("dst",str),batarg("rep",bit))),
+	pattern("batstr", "substitute", STRbatSubstitutecst, false, "Substitute first occurrence of 'src' by 'dst'. Iff repeated = true this is repeated while 'src' can be found in the result string. In order to prevent recursion and result strings of unlimited size, repeating is only done iff src is not a substring of dst.", args(1,5, batarg("",str),batarg("s",str),arg("src",str),arg("dst",str),arg("rep",bit))),
 	pattern("batstr", "stringleft", STRbatprefix, false, "", args(1,3, batarg("",str),batarg("s",str),batarg("l",int))),
 	pattern("batstr", "stringleft", STRbatprefix, false, "", args(1,5, batarg("",str),batarg("s",str),batarg("l",int),batarg("s1",oid),batarg("s2",oid))),
 	pattern("batstr", "stringleft", STRbatprefixcst, false, "", args(1,3, batarg("",str),batarg("s",str),arg("l",int))),

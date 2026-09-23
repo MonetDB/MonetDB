@@ -2,13 +2,11 @@
 .\"
 .\" This Source Code Form is subject to the terms of the Mozilla Public
 .\" License, v. 2.0.  If a copy of the MPL was not distributed with this
-.\" file, You can obtain one at http://mozilla.org/MPL/2.0/.
+.\" file, You can obtain one at https://mozilla.org/MPL/2.0/.
 .\"
-.\" Copyright 2024, 2025 MonetDB Foundation;
-.\" Copyright August 2008 - 2023 MonetDB B.V.;
-.\" Copyright 1997 - July 2008 CWI.
+.\" For copyright information, see the file debian/copyright.
 .\"
-.TH MCLIENT 1 2024-08-19 MonetDB "MonetDB Applications"
+.TH MCLIENT 1 2025-12-09 MonetDB "MonetDB Applications"
 .SH NAME
 mclient \- the MonetDB command-line tool
 .SH SYNOPSIS
@@ -119,6 +117,9 @@ Print usage information and exit.
 .TP
 \fB\-\-version\fP (\fB\-v\fP)
 Print version information and exit.
+.TP
+\fB\-\-quiet\fP (\fB\-q\fP)
+Be quiet: don't print welcome message at startup.
 .TP
 \fB\-\-encoding=\fP\fIencoding\fP (\fB\-E\fP \fIencoding\fP)
 Specify the character encoding of the input.
@@ -449,16 +450,16 @@ Dump the given
 \fB\[rs]d\fP
 Alias for \[rs]dvt.
 .TP
-\fB\[rs]d[Stvsfn]+\fP
+\fB\[rs]d[Stvmsfn]+\fP
 List database objects of the given type.
 Multiple type specifiers can be used at the same time.
-The specifiers \fIS\fP, \fIt\fP, \fIv\fP, \fIs\fP, \fIf\fP and \fIn\fP
-stand for System, table, view, sequence, function and schema
+The specifiers \fBS\fP, \fBt\fP, \fBv\fP, \fBm\fP, \fBs\fP, \fBf\fP and \fBn\fP
+stand for System, table, view, merge table, sequence, function and schema
 respectively.
-Note that \fIS\fP simply switches on viewing system catalog objects,
+Note that \fBS\fP simply switches on viewing system catalog objects,
 which is orthogonal to the other specifiers.
 .TP
-\fB\[rs]d[Stvsfn]+\fP \fIobject\fP
+\fB\[rs]d[Stvsfnm]+\fP \fIobject\fP
 Describe the given
 .I object
 in the database using SQL statements that reconstruct the object.

@@ -3,11 +3,9 @@
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024, 2025 MonetDB Foundation;
- * Copyright August 2008 - 2023 MonetDB B.V.;
- * Copyright 1997 - July 2008 CWI.
+ * For copyright information, see the file debian/copyright.
  */
 
 /* Author: Panagiotis Koutsourakis
@@ -320,8 +318,12 @@ STRMPbuildHeader(BAT *b, BAT *s, CharPair *hpairs)
 		return false;
 	}
 
+	allocator *ta = MT_thread_getallocator();
+	allocator_state ta_state = ma_open(ta);
+
 	hlen = STRIMP_HISTSIZE;
-	if ((hist = (PairHistogramElem *)GDKzalloc(hlen*sizeof(PairHistogramElem))) == NULL) {
+	if ((hist = (PairHistogramElem *)ma_zalloc(ta, hlen*sizeof(PairHistogramElem))) == NULL) {
+		ma_close(&ta_state);
 		return false;
 	}
 
@@ -329,7 +331,7 @@ STRMPbuildHeader(BAT *b, BAT *s, CharPair *hpairs)
 	bi = bat_iterator(b);
 	for (i = 0; i < ci.ncand; i++) {
 		x = canditer_next(&ci) - b->hseqbase;
-		const char *cs = BUNtvar(bi, x);
+		const char *cs = BUNtvar(&bi, x);
 		if (!strNil(cs)) {
 			pi.s = cs;
 			pi.pos = 0;
@@ -381,7 +383,7 @@ STRMPbuildHeader(BAT *b, BAT *s, CharPair *hpairs)
 		STRMPchoosePairs(hist, hlen, hpairs);
 	}
 
-	GDKfree(hist);
+	ma_close(&ta_state);
 
 	TRC_DEBUG(ACCELERATOR, LLFMT " usec\n", GDKusec() - t0);
 	if (!(res = values >= STRIMP_HEADER_SIZE))
@@ -419,14 +421,14 @@ BATcheckstrimps(BAT *b)
 		const char *nme = BBP_physical(b->batCacheid);
 		int fd;
 
-		MT_thread_setalgorithm("read strimp index from disk");
+		MT_thread_setalgorithm("read strimp index from disk", __func__);
 
 		b->tstrimps = NULL;
 		if ((hp = GDKzalloc(sizeof(Strimps))) != NULL &&
 		    (hp->strimps.farmid = BBPselectfarm(b->batRole, b->ttype, strimpheap)) >= 0) {
-			strconcat_len(hp->strimps.filename,
-				      sizeof(hp->strimps.filename),
-				      nme, ".tstrimps", NULL);
+			strtconcat(hp->strimps.filename,
+				   sizeof(hp->strimps.filename),
+				   nme, ".tstrimps", NULL);
 			hp->strimps.parentid = b->batCacheid;
 
 			/* check whether a persisted strimp can be found */
@@ -646,8 +648,8 @@ BATstrimpsync(BAT *b)
 							fsync(fd);
 #endif
 						}
-						hp->dirty = false;
 					} else {
+						hp->dirty = true;
 						perror("write strimps");
 					}
 					close(fd);
@@ -656,9 +658,9 @@ BATstrimpsync(BAT *b)
 				((uint64_t *)hp->base)[0] |= (uint64_t) 1 << 32;
 				if (!(ATOMIC_GET(&GDKdebug) & NOSYNCMASK) &&
 				    MT_msync(hp->base, sizeof(uint64_t)) < 0) {
+					hp->dirty = true;
 					((uint64_t *)hp->base)[0] &= ~((uint64_t) 1 << 32);
 				} else {
-					hp->dirty = false;
 					failed = "";
 				}
 			}
@@ -702,11 +704,15 @@ STRMPcreateStrimpHeap(BAT *b, BAT *s)
 	uint64_t descriptor;
 	size_t i;
 	uint16_t sz;
-	CharPair *hpairs = (CharPair*)GDKzalloc(sizeof(CharPair)*STRIMP_HEADER_SIZE);
+	allocator *ta = MT_thread_getallocator();
+	allocator_state ta_state = ma_open(ta);
+	CharPair *hpairs = ma_zalloc(ta, sizeof(CharPair)*STRIMP_HEADER_SIZE);
 	const char *nme;
 
-	if (!hpairs)
+	if (!hpairs) {
+		ma_close(&ta_state);
 		return NULL;
+	}
 
 	if ((r = b->tstrimps) == NULL &&
 		STRMPbuildHeader(b, s, hpairs)) { /* Find the header pairs, put
@@ -732,19 +738,19 @@ STRMPcreateStrimpHeap(BAT *b, BAT *s)
 		    (r->strimps.farmid =
 		     BBPselectfarm(b->batRole, b->ttype, strimpheap)) < 0 ||
 		    (r->strimps.parentid = b->batCacheid) <= 0 ||
-		    strconcat_len(r->strimps.filename, sizeof(r->strimps.filename),
-				  nme, ".tstrimps",
-				  NULL) >= sizeof(r->strimps.filename) ||
+		    strtconcat(r->strimps.filename, sizeof(r->strimps.filename),
+			       nme, ".tstrimps", NULL) == -1 ||
 		    HEAPalloc(&r->strimps, BATcount(b) * sizeof(uint64_t) + sz,
 			      sizeof(uint8_t)) != GDK_SUCCEED) {
 			GDKfree(r);
-			GDKfree(hpairs);
+			ma_close(&ta_state);
 			return NULL;
 		}
 
 		if ((r->masks = (strimp_masks_t *)GDKzalloc(STRIMP_HISTSIZE*sizeof(strimp_masks_t))) == NULL) {
 			HEAPfree(&r->strimps, true);
 			GDKfree(r);
+			ma_close(&ta_state);
 			return NULL;
 		}
 
@@ -770,7 +776,7 @@ STRMPcreateStrimpHeap(BAT *b, BAT *s)
 		r->rec_cnt = 0;
 		ATOMIC_INIT(&r->strimps.refs, 1);
 	}
-	GDKfree(hpairs);
+	ma_close(&ta_state);
 	return r;
 }
 
@@ -945,7 +951,7 @@ STRMPcreate(BAT *b, BAT *s)
 
 	/* At this point pb->tstrimps should be a valid strimp heap. */
 	assert(pb->tstrimps);
-	MT_thread_setalgorithm("create strimp index");
+	MT_thread_setalgorithm("create strimp index", __func__);
 	r = pb->tstrimps;
 	STRMPincref(r);
 	if (pb != b) {
@@ -958,7 +964,7 @@ STRMPcreate(BAT *b, BAT *s)
 	bi = bat_iterator(b);
 	for (i = 0; i < ci.ncand; i++) {
 		x = canditer_next(&ci) - b->hseqbase;
-		const char *cs = BUNtvar(bi, x);
+		const char *cs = BUNtvar(&bi, x);
 		if (!strNil(cs))
 			*dh++ = STRMPmakebitstring(cs, r);
 		else
@@ -1012,7 +1018,7 @@ STRMPincref(Strimps *strimps)
 void
 STRMPdestroy(BAT *b)
 {
-	if (b) {
+	if (b && b->tstrimps) {
 		MT_lock_set(&b->batIdxLock);
 		if (b->tstrimps == (Strimps *)1) {
 			b->tstrimps = NULL;

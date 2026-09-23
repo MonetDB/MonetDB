@@ -3,11 +3,9 @@
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024, 2025 MonetDB Foundation;
- * Copyright August 2008 - 2023 MonetDB B.V.;
- * Copyright 1997 - July 2008 CWI.
+ * For copyright information, see the file debian/copyright.
  */
 
 /*
@@ -118,6 +116,8 @@ do_batsample(oid hseq, BUN cnt, BUN n, random_state_engine rse, MT_Lock *lock)
 	} else {
 		oid minoid = hseq;
 		oid maxoid = hseq + cnt;
+		allocator *ta = MT_thread_getallocator();
+		allocator_state ta_state = ma_open(ta);
 
 		/* if someone samples more than half of our tree, we
 		 * do the antiset */
@@ -126,13 +126,14 @@ do_batsample(oid hseq, BUN cnt, BUN n, random_state_engine rse, MT_Lock *lock)
 		if (antiset)
 			n = cnt - n;
 
-		tree = GDKmalloc(n * sizeof(struct oidtreenode));
+		tree = ma_alloc(ta, n * sizeof(struct oidtreenode));
 		if (tree == NULL) {
+			ma_close(&ta_state);
 			return NULL;
 		}
 		bn = COLnew(0, TYPE_oid, slen, TRANSIENT);
 		if (bn == NULL) {
-			GDKfree(tree);
+			ma_close(&ta_state);
 			return NULL;
 		}
 
@@ -169,7 +170,7 @@ do_batsample(oid hseq, BUN cnt, BUN n, random_state_engine rse, MT_Lock *lock)
 		} else {
 			OIDTreeToBATAntiset(tree, bn, minoid, maxoid);
 		}
-		GDKfree(tree);
+		ma_close(&ta_state);
 
 		BATsetcount(bn, slen);
 		bn->trevsorted = bn->batCount <= 1;
@@ -200,11 +201,14 @@ BATsample(BAT *b, BUN n)
 {
 	static random_state_engine rse;
 
+	MT_lock_set(&b->theaplock);
+	BUN batcount = BATcount(b);
+	MT_lock_unset(&b->theaplock);
 	MT_lock_set(&rse_lock);
 	if (rse[0] == 0 && rse[1] == 0 && rse[2] == 0 && rse[3] == 0)
 		init_random_state_engine(rse, (uint64_t) GDKusec());
 	MT_lock_unset(&rse_lock);
-	BAT *bn = do_batsample(b->hseqbase, BATcount(b), n, rse, &rse_lock);
+	BAT *bn = do_batsample(b->hseqbase, batcount, n, rse, &rse_lock);
 	TRC_DEBUG(ALGO, ALGOBATFMT "," BUNFMT " -> " ALGOOPTBATFMT "\n",
 		  ALGOBATPAR(b), n, ALGOOPTBATPAR(bn));
 	return bn;

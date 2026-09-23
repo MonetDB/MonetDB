@@ -2,36 +2,39 @@
 #
 # This Source Code Form is subject to the terms of the Mozilla Public
 # License, v. 2.0.  If a copy of the MPL was not distributed with this
-# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+# file, You can obtain one at https://mozilla.org/MPL/2.0/.
 #
-# Copyright 2024, 2025 MonetDB Foundation;
-# Copyright August 2008 - 2023 MonetDB B.V.;
-# Copyright 1997 - July 2008 CWI.
+# For copyright information, see the file debian/copyright.
 
 import os
 import sys
-import unittest
 import pymonetdb
 import difflib
 from abc import ABCMeta, abstractmethod
 import MonetDBtesting.process as process
 import inspect
-
-TSTDB=os.getenv("TSTDB")
-MAPIPORT=os.getenv("MAPIPORT")
-
 from pathlib import Path
 from typing import Optional
+
+TSTDB = os.getenv("TSTDB")
+MAPIPORT = os.getenv("MAPIPORT")
+MAPIUSOCK = os.getenv("MAPIUSOCK")
+TIMEOUT = int(os.getenv("TIMEOUT", "0"))
+
+
 class UnsafeDirectoryHandler(pymonetdb.SafeDirectoryHandler):
     def secure_resolve(self, filename: str) -> Optional[Path]:
         return Path(filename).resolve()
 
+
 transfer_handler = UnsafeDirectoryHandler('.')
+
 
 def equals(a, b) -> bool:
     if type(a) is type(b):
-        return a==b
+        return a == b
     return False
+
 
 def sequence_match(left=[], right=[], index=0):
     right = right[index:]
@@ -46,6 +49,7 @@ def sequence_match(left=[], right=[], index=0):
             return False
     return True
 
+
 def get_index_mismatch(left=[], right=[]):
     ll = len(left)
     rl = len(right)
@@ -55,6 +59,7 @@ def get_index_mismatch(left=[], right=[]):
             index = i
             break
     return index
+
 
 def piped_representation(data=[]):
     def mapfn(next):
@@ -68,15 +73,19 @@ def piped_representation(data=[]):
     res = list(map(mapfn, data))
     return '\n'.join(res)
 
+
 def filter_junk(s: str):
     """filters empty strings and comments
     """
     s = s.strip()
-    if s.startswith('--') or s.startswith('#') or s.startswith('stdout of test'):
+    if s.startswith('--') \
+       or s.startswith('#') \
+       or s.startswith('stdout of test'):
         return False
     if s == '':
         return False
     return True
+
 
 def filter_headers(s: str):
     """filter lines prefixed with % (MAPI headers)"""
@@ -86,6 +95,7 @@ def filter_headers(s: str):
     if s == '':
         return False
     return True
+
 
 def filter_lines_starting_with(predicates=[]):
     def _fn(line:str):
@@ -100,6 +110,7 @@ def filter_lines_starting_with(predicates=[]):
 
 
 def filter_matching_blocks(a: [str] = [], b: [str] = [], ratio=0.95):
+    return a, b
     # TODO add some ctx before any mismatch lines
     ptr = 0
     red_a = []
@@ -114,31 +125,37 @@ def filter_matching_blocks(a: [str] = [], b: [str] = [], ratio=0.95):
             red_a.append(a[i])
             red_b.append(b[i])
             # keep track of last mismatch to add some ctx in between
-            ptr = i
+#            ptr = i
     # add trailing data if len(a) != len(b)
-    red_a+=a[min_size:]
-    red_b+=b[min_size:]
+    red_a += a[min_size:]
+    red_b += b[min_size:]
     return red_a, red_b
+
 
 def diff(stable_file, test_file, ratio=0.95):
     diff = None
-    filter_fn = filter_lines_starting_with(['--', '#', 'stdout of test', 'stderr of test', 'MAPI'])
+    filter_fn = filter_lines_starting_with(['--', '#', 'stdout of test',
+                                            'stderr of test', 'MAPI'])
     with open(stable_file) as fstable:
         stable = list(filter(filter_fn, fstable.read().split('\n')))
         with open(test_file) as ftest:
             test = list(filter(filter_fn, ftest.read().split('\n')))
             a, b = filter_matching_blocks(stable, test, ratio)
-            diff = list(difflib.unified_diff(a, b, fromfile='stable', tofile='test'))
+            diff = list(difflib.unified_diff(a, b,
+                                             fromfile='expected',
+                                             tofile='received'))
             if len(diff) > 0:
                 diff = '\n'.join(diff)
             else:
                 diff = None
     return diff
 
+
 class PyMonetDBConnectionContext(object):
     def __init__(self,
-            username='monetdb', password='monetdb',
-            hostname='localhost', port=MAPIPORT, database=TSTDB, language='sql'):
+                 username='monetdb', password='monetdb',
+                 hostname='localhost', port=MAPIPORT, database=TSTDB,
+                 language='sql', timeout=TIMEOUT, usock=MAPIUSOCK):
         self.username = username
         self.password = password
         self.hostname = hostname
@@ -147,6 +164,8 @@ class PyMonetDBConnectionContext(object):
         self.language = language
         self.dbh = None
         self.language = language
+        self.timeout = timeout
+        self.usock = usock
 
     def connect(self):
         if self.dbh is None:
@@ -156,11 +175,17 @@ class PyMonetDBConnectionContext(object):
                                          password=self.password,
                                          hostname=self.hostname,
                                          port=self.port,
-                                         database=self.database,
-                                         autocommit=True)
+                                         database=self.database if self.database == 'in-memory' or self.usock is None else self.usock,
+                                         autocommit=True,
+                                         connect_timeout=1.0 if self.timeout > 0 else None)
+                if self.timeout > 0:
+                    self.dbh.settimeout(self.timeout)
+                    with self.dbh.cursor() as crs:
+                        crs.execute(f'call sys.setsessiontimeout({self.timeout})')
                 self.dbh.set_uploader(transfer_handler)
                 self.dbh.set_downloader(transfer_handler)
             else:
+                import malmapi
                 self.dbh = malmapi.Connection()
                 self.dbh.connect(
                                  username=self.username,
@@ -168,7 +193,10 @@ class PyMonetDBConnectionContext(object):
                                  hostname=self.hostname,
                                  port=self.port,
                                  database=self.database,
-                                 language=self.language)
+                                 language=self.language,
+                                 connect_timeout=1.0 if self.timeout > 0 else None)
+                if self.timeout > 0:
+                    self.dbh.settimeout(self.timeout)
         return self.dbh
 
     def __enter__(self):
@@ -191,14 +219,16 @@ class PyMonetDBConnectionContext(object):
             self.dbh.close()
             self.dbh = None
 
+
 class RunnableTestResult(metaclass=ABCMeta):
     """Abstract class for sql result"""
     did_run = False
 
     @abstractmethod
-    def run(self, query:str, *args, stdin=None, lineno=None):
+    def run(self, query: str, *args, stdin=None, lineno=None):
         """Run query with specific client"""
         pass
+
 
 class TestCaseResult(object):
     """TestCase connected result"""
@@ -206,7 +236,7 @@ class TestCaseResult(object):
 
     def __init__(self, test_case, **kwargs):
         self.test_case = test_case
-        self.assertion_errors = [] # holds assertion errors
+        self.assertion_errors = []  # holds assertion errors
         self.query = None
         self.test_run_error = None
         self.err_code = None
@@ -315,7 +345,7 @@ class TestCaseResult(object):
 
         return self
 
-    def assertDataResultMatch(self, data=[], index=None):
+    def assertDataResultMatch(self, data=[], index=None, rowsort=False):
         """Assert on a match of a subset of the result. When index is provided it
         starts comparing from that row index onward.
         """
@@ -330,14 +360,17 @@ class TestCaseResult(object):
             msg = 'expected result but received empty!'
             self.fail(msg, data=self.data)
 
-        data = list(map(mapfn, data))
-        if index is None:
-            if len(data) > 0:
-                first = data[0]
-                for i, v in enumerate(self.data):
-                    if first == v:
-                        index = i
-                        break
+        if rowsort:
+            self.data = sorted(self.data, key=lambda x: (x[0] is None, x[0]))
+
+        # data = list(map(mapfn, data))
+        # if index is None:
+        #     if len(data) > 0:
+        #         first = data[0]
+        #         for i, v in enumerate(self.data):
+        #             if first == v:
+        #                 index = i
+        #                 break
         index = index or 0
         # align sequences
         idx_mis = get_index_mismatch(data, self.data[index:])
@@ -387,7 +420,7 @@ class MclientTestResult(TestCaseResult, RunnableTestResult):
             kwargs = dict(
                 host = conn_ctx.hostname,
                 port = conn_ctx.port,
-                dbname = conn_ctx.database,
+                dbname = conn_ctx.usock or conn_ctx.database,
                 user = conn_ctx.username,
                 passwd = conn_ctx.password)
             try:
@@ -431,7 +464,9 @@ class MclientTestResult(TestCaseResult, RunnableTestResult):
             data = list(filter(filter_headers, data))
         a, b = filter_matching_blocks(stable, data, ratio)
         if a or b:
-            diff = list(difflib.unified_diff(stable, data, fromfile='stable', tofile='test'))
+            diff = list(difflib.unified_diff(stable, data,
+                                             fromfile='expected',
+                                             tofile='received'))
             if len(diff) > 0:
                 err_file = self.test_case.err_file
                 msg = "expected to match stable output {} but it didn't\n".format(fout)
@@ -441,6 +476,9 @@ class MclientTestResult(TestCaseResult, RunnableTestResult):
         if os.getenv('MTEST_APPROVE'):
             with open(fout+'.newtest', 'w') as f:
                 f.write(self.output or '')
+            if os.getenv('MTEST_APPROVE') == 'REPLACE':
+                with open(os.path.join(os.getenv('TSTSRCDIR'), fout), 'w') as f:
+                    f.write(self.output or '')
         return self
 
     def assertMatchStableError(self, ferr, ignore_err_messages=False, ratio=0.95):
@@ -452,7 +490,9 @@ class MclientTestResult(TestCaseResult, RunnableTestResult):
         with open(ferr, 'r') as f:
             stable = list(filter(filter_fn, f.read().split('\n')))
         a, b = filter_matching_blocks(stable, err, ratio)
-        diff = list(difflib.unified_diff(a, b, fromfile='stable', tofile='test'))
+        diff = list(difflib.unified_diff(a, b,
+                                         fromfile='expected',
+                                         tofile='received'))
         if len(diff) > 0:
             err_file = self.test_case.err_file
             msg = "expected to match stable error {} but it didn't\n".format(ferr)
@@ -470,7 +510,9 @@ class MclientTestResult(TestCaseResult, RunnableTestResult):
         data = list(filter(filter_junk, self.output.split('\n')))
         data = list(filter(filter_headers, data))
         a, b = filter_matching_blocks(expected, data, ratio)
-        diff = list(difflib.unified_diff(a, b, fromfile='expected', tofile='test'))
+        diff = list(difflib.unified_diff(a, b,
+                                         fromfile='expected',
+                                         tofile='received'))
         if len(diff) > 0:
             err_file = self.test_case.err_file
             exp = '\n'.join(expected)
@@ -580,7 +622,9 @@ class SQLDump():
         with open(fout, 'r') as f:
             stable = list(filter(filter_junk, f.read().split('\n')))
         a, b = filter_matching_blocks(stable, dump, ratio)
-        diff = list(difflib.unified_diff(a, b, fromfile='stable', tofile='test'))
+        diff = list(difflib.unified_diff(a, b,
+                                         fromfile='expected',
+                                         tofile='received'))
         if len(diff) > 0:
             err_file = self.test_case.err_file
             msg = "sql dump expected to match stable output {} but it didn't\n".format(fout)
@@ -592,7 +636,8 @@ class SQLDump():
                 f.write(self.data or '')
 
 class SQLTestCase():
-    def __init__(self, out_file=sys.stdout, err_file=sys.stderr):
+    def __init__(self, out_file=sys.stdout, err_file=sys.stderr, server=None,
+                 username='monetdb', password='monetdb', timeout=TIMEOUT):
         self.out_file = out_file
         self.err_file = err_file
         self.test_results = []
@@ -600,6 +645,10 @@ class SQLTestCase():
         self._conn_trash = []
         self.in_memory = False
         self.client = 'pymonetdb'
+        self.server = server
+        self.username = username
+        self.password = password
+        self.timeout = timeout
 
     def __enter__(self):
         self.connect()
@@ -631,8 +680,23 @@ class SQLTestCase():
         print('', file=self.err_file)
 
     def connect(self,
-            username='monetdb', password='monetdb', port=MAPIPORT,
-            hostname='localhost', database=TSTDB, language='sql'):
+            username=None, password=None, port=None,
+            hostname='localhost', database=None, language='sql',
+            usock=None, timeout=None, server=None):
+        if server is None:
+            server = self.server  # can still be None
+        if username is None:
+            username = self.username
+        if password is None:
+            password = self.password
+        if timeout is None:
+            timeout = self.timeout
+        if port is None:
+            port = MAPIPORT if server is None or not server.dbport else server.dbport
+        if database is None:
+            database = TSTDB if server is None or not server.dbname else server.dbname
+        if usock is None:
+            usock = MAPIUSOCK if server is None or not server.usock else server.usock
         old = self._conn_ctx
         if old:
             self._conn_trash.append(old)
@@ -650,7 +714,9 @@ class SQLTestCase():
                                  hostname=hostname,
                                  port=port,
                                  database=database or 'in-memory',
-                                 language=language)
+                                 language=language,
+                                 usock=usock,
+                                 timeout=timeout)
 
     @property
     def conn_ctx(self):
@@ -724,6 +790,11 @@ class SQLTestCase():
                 crs.execute("select name from sys.users where name not in ('monetdb', '.snapshot')")
                 for row in crs.fetchall():
                     crs.execute('drop user "{}"'.format(row[0]))
+
+                # drop custom types created in test
+                crs.execute("select sqlname from sys.types where systemname is null order by id")
+                for row in crs.fetchall():
+                    crs.execute('drop type "{}"'.format(row[0]))
 
         except (pymonetdb.Error, ValueError) as e:
             pass

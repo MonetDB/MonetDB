@@ -1,0 +1,208 @@
+query IIIIII
+select
+ref_0.imprintsize as c0,
+case when (EXISTS (
+select
+ref_1.privilege_code_name as c0,
+ref_0.orderidxsize as c1,
+ref_1.privilege_code_name as c2,
+ref_1.privilege_code_id as c3,
+ref_0.storages as c4,
+99 as c5,
+ref_0.hashsize as c6,
+ref_0.storages as c7,
+ref_1.privilege_code_name as c8,
+ref_0.imprintsize as c9,
+ref_0.columnsize as c10
+from
+privilege_codes as ref_1
+where ref_0.imprintsize is NULL
+limit 111))
+and (EXISTS (
+select
+subq_0.c5 as c0,
+ref_0.orderidxsize as c1,
+ref_0.storages as c2,
+ref_2.fqn as c3,
+subq_0.c1 as c4,
+ref_2.rem as c5,
+ref_2.id as c6,
+ref_2.tpe as c7,
+ref_0.imprintsize as c8,
+ref_2.fqn as c9,
+ref_2.id as c10,
+ref_0.columnsize as c11,
+subq_0.c0 as c12,
+34 as c13,
+subq_0.c2 as c14,
+ref_2.id as c15,
+(select function_name from dump_functions limit 1 offset 3)
+as c16,
+65 as c17,
+ref_2.tpe as c18,
+ref_3.table_name as c19
+from
+describe_comments as ref_2
+left join dependency_tables_on_triggers as ref_3
+on ((false)
+or (EXISTS (
+select
+ref_2.fqn as c0,
+ref_0.columnsize as c1,
+ref_0.orderidxsize as c2
+from
+auths as ref_4
+where false))),
+lateral (select
+ref_2.id as c0,
+ref_2.fqn as c1,
+ref_3.trigger_id as c2,
+(select privileges from privileges limit 1 offset 3)
+as c3,
+ref_2.rem as c4,
+ref_0.heapsize as c5,
+(select schema_id from sequences limit 1 offset 4)
+as c6
+from
+dependencies as ref_5
+where ref_3.table_schema_id is not NULL
+limit 105) as subq_0
+where (((EXISTS (
+select
+ref_2.rem as c0,
+ref_2.tpe as c1,
+ref_3.depend_type as c2
+from
+describe_comments as ref_6
+where ((false)
+and (EXISTS (
+select
+ref_6.id as c0,
+ref_2.tpe as c1,
+97 as c2,
+ref_7.grantee as c3,
+ref_0.imprintsize as c4,
+18 as c5,
+ref_3.depend_type as c6,
+ref_7.schema_name as c7,
+ref_0.orderidxsize as c8,
+ref_7.stmt as c9,
+subq_0.c3 as c10
+from
+dump_function_grants as ref_7
+where ((false)
+and ((true)
+and ((ref_0.heapsize is not NULL)
+or (ref_0.hashsize is not NULL))))
+or (true))))
+and (false)
+limit 84))
+and (false))
+and (false))
+or (EXISTS (
+select
+ref_0.heapsize as c0,
+ref_3.table_name as c1,
+ref_0.imprintsize as c2,
+(select schema_name from dump_add_schemas_to_users limit 1 offset 1)
+as c3,
+ref_0.imprintsize as c4
+from
+dump_create_roles as ref_8
+where subq_0.c1 is NULL
+limit 101)))) then ref_0.columnsize else ref_0.columnsize end
+as c1,
+ref_0.storages as c2,
+ref_0.storages as c3,
+ref_0.heapsize as c4,
+ref_0.orderidxsize as c5
+from
+schemastorage as ref_0
+where (true)
+or (((false)
+and ((((ref_0.storages is not NULL)
+and (false))
+and ((((false)
+and (EXISTS (
+select
+ref_9.event as c0,
+ref_9.table_id as c1
+from
+triggers as ref_9
+where ((ref_9.id is NULL)
+and ((ref_0.orderidxsize is NULL)
+or (true)))
+and (ref_9.orientation is NULL)
+limit 155)))
+and ((EXISTS (
+select
+ref_10.table_schema_id as c0,
+ref_0.storages as c1,
+ref_10.table_name as c2,
+53 as c3,
+ref_0.columnsize as c4,
+ref_0.imprintsize as c5,
+ref_10.key_type as c6,
+ref_0.heapsize as c7,
+28 as c8,
+ref_0.schema as c9,
+40 as c10,
+ref_0.columnsize as c11,
+ref_10.table_id as c12,
+ref_10.table_name as c13,
+ref_10.key_type as c14
+from
+dependency_tables_on_foreignkeys as ref_10
+where ((EXISTS (
+select
+ref_11.column_id as c0
+from
+dependency_columns_on_procedures as ref_11
+where (ref_0.heapsize is NULL)
+or (false)))
+or (ref_0.heapsize is not NULL))
+and (ref_10.key_type is NULL)))
+and (true)))
+or ((EXISTS (
+select
+ref_0.heapsize as c0,
+ref_12.name as c1
+from
+_tables as ref_12
+where true
+limit 146))
+or ((false)
+and ((false)
+or (false))))))
+and (EXISTS (
+select
+ref_0.storages as c0,
+ref_13.privilege_code_id as c1,
+ref_13.privilege_code_id as c2,
+ref_0.schema as c3,
+ref_13.privilege_code_id as c4,
+ref_0.storages as c5,
+ref_0.columnsize as c6,
+ref_0.schema as c7,
+ref_0.orderidxsize as c8
+from
+privilege_codes as ref_13
+where ref_0.heapsize is not NULL))))
+or ((ref_0.orderidxsize is not NULL)
+and ((ref_0.heapsize is not NULL)
+or ((((true)
+or ((ref_0.heapsize is NULL)
+and ((select input from rejects limit 1 offset 60)
+is not NULL)))
+or (true))
+and (EXISTS (
+select
+ref_0.heapsize as c0
+from
+querylog_history as ref_14
+where ((ref_0.schema is NULL)
+or (true))
+or (true)
+limit 26))))))
+limit 49
+----

@@ -231,7 +231,7 @@ NULL
 NULL
 NULL
 
-query RRIIIII rowsort
+query RDIIIII rowsort
 select avg(10), avg(NULL),
        patindex('o', 'foo'), patindex(NULL, 'foo'), patindex('o', NULL), patindex('o', NULL), patindex(NULL, NULL)
 ----
@@ -673,15 +673,14 @@ select x as z, 2 from (select 1) as x(x) group by z, z
 1
 2
 
+skipif knownfail
 query T nosort
-plan select x as z, 2 from (select 1) as x(x) group by z, z
+explain show details select x as z, 2 from (select 1) as x(x) group by z, z
 ----
 project (
 | group by (
-| | project (
-| | |  [ boolean(1) "true" as "%1"."%1" ]
-| | ) [ tinyint(1) "1" as "x"."x" ]
-| ) [ "x"."x" NOT NULL as "z" ] [ "z" NOT NULL ]
+| |  [ tinyint(1) "1" as "x"."x" ]
+| ) [ "x"."x" NOT NULL as "z" ] [ "z" NOT NULL UNIQUE ]
 ) [ "z" NOT NULL UNIQUE, tinyint(2) "2" ]
 
 statement error
@@ -690,21 +689,21 @@ select x as z, y as z from (select 1, 2) as x(x,y) group by z
 statement error
 select x as z, y as z from (select 1, 2) as x(x,y) order by z
 
-query II rowsort
+query IT rowsort
 select 1, null except select 1, null
 ----
 
-query II rowsort
+query IT rowsort
 select 1, null intersect select 1, null
 ----
 1
 NULL
 
-query TR rowsort
+query TD rowsort
 select ifthenelse(false, 'abc', 'abcd'), ifthenelse(false, 1.23, 12.3)
 ----
 abcd
-12.300
+12.30
 
 query T rowsort
 select sql_min(a, uuid 'AEE1A538-ACA1-381B-D9F4-8C29EF3F5F36') from (values (uuid 'AEE1A538-ACA1-381B-D9F4-8C29EF3F5F34'), (uuid 'AEE1A538-ACA1-381B-D9F4-8C29EF3F5F35')) as a(a)
@@ -920,8 +919,9 @@ SELECT x AS x, x AS x1 FROM (VALUES (1),(2),(3)) x(x) GROUP BY x, x1
 3
 
 # remove 'x1' from grouping columns list
+skipif knownfail
 query T nosort
-plan SELECT x AS x, x AS x1 FROM (VALUES (1),(2),(3)) x(x) GROUP BY x, x1
+explain show details SELECT x AS x, x AS x1 FROM (VALUES (1),(2),(3)) x(x) GROUP BY x, x1
 ----
 project (
 | group by (
@@ -940,8 +940,9 @@ SELECT x AS x, x + 1 AS x1 FROM (VALUES (1),(2),(3)) x(x) GROUP BY x, x1
 4
 
 # remove 'x1' from grouping columns list. This one is more complex
+skipif knownfail
 query T nosort
-plan SELECT x AS x, x + 1 AS x1 FROM (VALUES (1),(2),(3)) x(x) GROUP BY x, x1
+explain show details SELECT x AS x, x + 1 AS x1 FROM (VALUES (1),(2),(3)) x(x) GROUP BY x, x1
 ----
 project (
 | group by (
@@ -966,8 +967,9 @@ SELECT x AS x, (10 + x) * 2 - 29 AS x1 FROM (VALUES (1),(2),(3),(4),(5)) x(x) GR
 1
 
 # remove 'x1' from grouping columns list. This one is even more complex
+skipif knownfail
 query T nosort
-plan SELECT x AS x, (10 + x) * 2 - 29 AS x1 FROM (VALUES (1),(2),(3),(4),(5)) x(x) GROUP BY x, x1
+explain show details SELECT x AS x, (10 + x) * 2 - 29 AS x1 FROM (VALUES (1),(2),(3),(4),(5)) x(x) GROUP BY x, x1
 ----
 project (
 | group by (

@@ -3,15 +3,13 @@
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024, 2025 MonetDB Foundation;
- * Copyright August 2008 - 2023 MonetDB B.V.;
- * Copyright 1997 - July 2008 CWI.
+ * For copyright information, see the file debian/copyright.
  */
 
 #include "monetdb_config.h"
-#include "sql.h"
+#include "sql_monet_backend.h"
 #include "sql_cast.h"
 #include "sql_result.h"
 #include "mal_instruction.h"
@@ -49,9 +47,9 @@ str_buf_initial_capacity(sql_class eclass, int digits)
 }
 
 static inline str
-SQLstr_cast_any_type(str *r, size_t *rlen, mvc *m, sql_class eclass, int d, int s, int has_tz, const void *p, int tpe, int len)
+SQLstr_cast_any_type(allocator *ma, str *r, size_t *rlen, mvc *m, sql_class eclass, int d, int s, int has_tz, const void *p, int tpe, int len)
 {
-	ssize_t sz = convert2str(m, eclass, d, s, has_tz, p, tpe, r, rlen);
+	ssize_t sz = convert2str(ma, m, eclass, d, s, has_tz, p, tpe, r, rlen);
 	if ((len > 0 && sz > (ssize_t) len) || sz < 0)
 		throw(SQL, "str_cast", SQLSTATE(22001) "value too long for type (var)char(%d)", len);
 	return MAL_SUCCEED;
@@ -81,17 +79,14 @@ SQLstr_cast(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			throw(SQL, "calc.str_cast", SQLSTATE(22001) "value too long for type (var)char(%d)", digits);
 	} else {
 		size_t rlen = MAX(str_buf_initial_capacity(eclass, digits), strlen(str_nil) + 1); /* don't reallocate on str_nil */
-		if (!(r = GDKmalloc(rlen)))
+		if (!(r = ma_alloc(mb->ma, rlen)))
 			throw(SQL, "calc.str_cast", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-		if ((msg = SQLstr_cast_any_type(&r, &rlen, m, eclass, d, s, has_tz, p, tpe, digits)) != MAL_SUCCEED) {
-			GDKfree(r);
+		if ((msg = SQLstr_cast_any_type(mb->ma, &r, &rlen, m, eclass, d, s, has_tz, p, tpe, digits)) != MAL_SUCCEED) {
 			return msg;
 		}
 	}
 
-	*res = GDKstrdup(r);
-	if (!from_str)
-		GDKfree(r);
+	*res = SA_STRDUP(mb->ma, r);
 	if (!*res)
 		throw(SQL, "calc.str_cast", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	return MAL_SUCCEED;
@@ -158,7 +153,7 @@ SQLbatstr_cast(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (from_str && ci.tpe == cand_dense && ci.ncand == BATcount(b)) { /* from string case, just do validation, if right, return */
 		for (BUN i = 0; i < ci.ncand; i++) {
 			oid p = (canditer_next_dense(&ci) - off);
-			const char *v = BUNtvar(bi, p);
+			const char *v = BUNtvar(&bi, p);
 
 			if (!strNil(v))
 				SQLstr_cast_str(v, digits);
@@ -177,7 +172,7 @@ SQLbatstr_cast(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	rlen = MAX(str_buf_initial_capacity(eclass, digits), strlen(str_nil) + 1); /* don't reallocate on str_nil */
 	assert(rlen > 0);
-	if (!from_str && !(r = GDKmalloc(rlen))) {
+	if (!from_str && !(r = ma_alloc(mb->ma, rlen))) {
 		msg = createException(SQL, "batcalc.str_cast", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto bailout1;
 	}
@@ -186,7 +181,7 @@ SQLbatstr_cast(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		if (from_str) { /* string to string */
 			for (BUN i = 0; i < ci.ncand; i++) {
 				oid p = (canditer_next_dense(&ci) - off);
-				const char *v = BUNtvar(bi, p);
+				const char *v = BUNtvar(&bi, p);
 
 				if (strNil(v)) {
 					if (tfastins_nocheckVAR(dst, i, str_nil) != GDK_SUCCEED) {
@@ -205,9 +200,9 @@ SQLbatstr_cast(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		} else { /* any other type to string */
 			for (BUN i = 0; i < ci.ncand; i++) {
 				oid p = (canditer_next_dense(&ci) - off);
-				const void *v = BUNtail(bi, p);
+				const void *v = BUNtail(&bi, p);
 
-				if ((msg = SQLstr_cast_any_type(&r, &rlen, m, eclass, d1, s1, has_tz, v, tpe, digits)) != MAL_SUCCEED)
+				if ((msg = SQLstr_cast_any_type(mb->ma, &r, &rlen, m, eclass, d1, s1, has_tz, v, tpe, digits)) != MAL_SUCCEED)
 					goto bailout1;
 				if (tfastins_nocheckVAR(dst, i, r) != GDK_SUCCEED) {
 					msg = createException(SQL, "batcalc.str_cast", SQLSTATE(HY013) MAL_MALLOC_FAIL);
@@ -220,7 +215,7 @@ SQLbatstr_cast(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		if (from_str) { /* string to string */
 			for (BUN i = 0; i < ci.ncand; i++) {
 				oid p = (canditer_next(&ci) - off);
-				const char *v = BUNtvar(bi, p);
+				const char *v = BUNtvar(&bi, p);
 
 				if (strNil(v)) {
 					if (tfastins_nocheckVAR(dst, i, str_nil) != GDK_SUCCEED) {
@@ -239,9 +234,9 @@ SQLbatstr_cast(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		} else { /* any other type to string */
 			for (BUN i = 0; i < ci.ncand; i++) {
 				oid p = (canditer_next(&ci) - off);
-				const void *v = BUNtail(bi, p);
+				const void *v = BUNtail(&bi, p);
 
-				if ((msg = SQLstr_cast_any_type(&r, &rlen, m, eclass, d1, s1, has_tz, v, tpe, digits)) != MAL_SUCCEED)
+				if ((msg = SQLstr_cast_any_type(mb->ma, &r, &rlen, m, eclass, d1, s1, has_tz, v, tpe, digits)) != MAL_SUCCEED)
 					goto bailout1;
 				if (tfastins_nocheckVAR(dst, i, r) != GDK_SUCCEED) {
 					msg = createException(SQL, "batcalc.str_cast", SQLSTATE(HY013) MAL_MALLOC_FAIL);
@@ -258,7 +253,6 @@ bailout1:
 	bat_iterator_end(&bi);
 
 bailout:
-	GDKfree(r);
 	BBPreclaim(b);
 	BBPreclaim(s);
 	if (dst && !msg) {

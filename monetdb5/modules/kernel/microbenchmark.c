@@ -3,11 +3,9 @@
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024, 2025 MonetDB Foundation;
- * Copyright August 2008 - 2023 MonetDB B.V.;
- * Copyright 1997 - July 2008 CWI.
+ * For copyright information, see the file debian/copyright.
  */
 
 /*
@@ -22,7 +20,7 @@
 #include "monetdb_config.h"
 #include "mal.h"
 #include "mal_exception.h"
-#include "mal.h"
+#include "mal_client.h"
 
 static gdk_return
 BATrandom(BAT **bn, const oid *base, const lng *size, const int *domain, int seed)
@@ -259,9 +257,12 @@ BATnormal(BAT **bn, const oid *base, const lng *size, const int *domain, const i
 	}
 	val = (int *) Tloc(b, 0);
 
-	abs = (unsigned int *) GDKmalloc(d * sizeof(unsigned int));
+	allocator *ta = MT_thread_getallocator();
+	allocator_state ta_state = ma_open(ta);
+	abs = ma_alloc(ta, d * sizeof(unsigned int));
 	if (abs == NULL) {
 		BBPreclaim(b);
+		ma_close(&ta_state);
 		return GDK_FAIL;
 	}
 	rel = (flt *) abs;
@@ -302,7 +303,7 @@ BATnormal(BAT **bn, const oid *base, const lng *size, const int *domain, const i
 	while (j < d && abs[j] == 0)
 		j++;
 	assert(j == d);
-	GDKfree(abs);
+	ma_close(&ta_state);
 
 
 	BATsetcount(b, n);
@@ -340,8 +341,9 @@ MBMrandom(bat *ret, const oid *base, const lng *size, const int *domain)
 }
 
 static str
-MBMuniform(bat *ret, const oid *base, const lng *size, const int *domain)
+MBMuniform(Client ctx, bat *ret, const oid *base, const lng *size, const int *domain)
 {
+	(void) ctx;
 	BAT *bn = NULL;
 
 	BATuniform(&bn, base, size, domain);
@@ -354,8 +356,9 @@ MBMuniform(bat *ret, const oid *base, const lng *size, const int *domain)
 }
 
 static str
-MBMnormal(bat *ret, const oid *base, const lng *size, const int *domain, const int *stddev, const int *mean)
+MBMnormal(Client ctx, bat *ret, const oid *base, const lng *size, const int *domain, const int *stddev, const int *mean)
 {
+	(void) ctx;
 	BAT *bn = NULL;
 	BATnormal(&bn, base, size, domain, stddev, mean);
 	if (bn) {
@@ -368,8 +371,9 @@ MBMnormal(bat *ret, const oid *base, const lng *size, const int *domain, const i
 
 
 static str
-MBMmix(bat *bn, const bat *batid)
+MBMmix(Client ctx, bat *bn, const bat *batid)
 {
+	(void) ctx;
 	BUN n, r, i;
 	BAT *b;
 
@@ -395,8 +399,9 @@ MBMmix(bat *bn, const bat *batid)
 }
 
 static str
-MBMskewed(bat *ret, const oid *base, const lng *size, const int *domain, const int *skew)
+MBMskewed(Client ctx, bat *ret, const oid *base, const lng *size, const int *domain, const int *skew)
 {
+	(void) ctx;
 	BAT *bn = NULL;
 
 	BATskewed(&bn, base, size, domain, skew);
@@ -409,9 +414,9 @@ MBMskewed(bat *ret, const oid *base, const lng *size, const int *domain, const i
 }
 
 #include "mel.h"
-mel_func microbenchmark_init_funcs[] = {
+static mel_func microbenchmark_init_funcs[] = {
  command("microbenchmark", "random", MBMrandom, false, "Create a BAT with random integer distribution; domain == nil:int ? [0:RAND_MAX] : [0,domain)", args(1,4, batarg("",int),arg("base",oid),arg("size",lng),arg("domain",int))),
- command("microbenchmark", "random", MBMrandom_seed, false, "Create a BAT with random integer distribution,\nusing given seed (seed == nil:int -> no seed used);\ndomain == nil:int ? [0:RAND_MAX] : [0,domain)", args(1,5, batarg("",int),arg("base",oid),arg("size",lng),arg("domain",int),arg("seed",int))),
+ command("microbenchmark", "random", MBMrandom_seed, false, "Create a BAT with random integer distribution, using given seed (seed == nil:int -> no seed used); domain == nil:int ? [0:RAND_MAX] : [0,domain)", args(1,5, batarg("",int),arg("base",oid),arg("size",lng),arg("domain",int),arg("seed",int))),
  command("microbenchmark", "uniform", MBMuniform, false, "Create a BAT with uniform integer distribution", args(1,4, batarg("",int),arg("base",oid),arg("size",lng),arg("domain",int))),
  command("microbenchmark", "normal", MBMnormal, false, "Create a BAT with a normal integer distribution", args(1,6, batarg("",int),arg("base",oid),arg("size",lng),arg("domain",int),arg("stddev",int),arg("mean",int))),
  command("microbenchmark", "mix", MBMmix, false, "Mix the BUNs of this BAT", args(1,2, batarg("",int),batarg("b1",int))),

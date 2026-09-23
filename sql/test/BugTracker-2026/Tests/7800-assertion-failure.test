@@ -1,0 +1,15 @@
+statement ok
+CREATE TABLE v0 ( v1 INTEGER , v2 REAL )
+
+query R nosort
+SELECT v3 . v2 FROM v0 v3 ORDER BY v2 , v2 DESC , v1 ASC
+----
+
+-- sql/server/rel_optimize_proj.c:41: rel_used_projections: Assertion `e->nid && exps_bind_nid(exps, e->nid)' failed.
+query IR nosort
+SELECT * FROM v0 ORDER BY v2 = ( SELECT v0 . v2 FROM v0 v3 ORDER BY v2 , v2 DESC , v1 ASC ) AND v2 IS NOT NULL ASC NULLS LAST
+----
+
+statement ok
+DROP TABLE v0
+

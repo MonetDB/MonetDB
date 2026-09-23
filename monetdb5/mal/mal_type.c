@@ -3,11 +3,9 @@
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024, 2025 MonetDB Foundation;
- * Copyright August 2008 - 2023 MonetDB B.V.;
- * Copyright 1997 - July 2008 CWI.
+ * For copyright information, see the file debian/copyright.
  */
 
 /*
@@ -36,13 +34,13 @@
  * the type descriptor. Including the variable references.
  */
 str
-getTypeName(malType tpe)
+getTypeName(allocator *ma, malType tpe)
 {
 	char buf[IDLENGTH + 6];
 	int k;
 
 	if (tpe == TYPE_any)
-		return GDKstrdup("any");
+		return "any";
 	if (isaBatType(tpe)) {
 		k = getTypeIndex(tpe);
 		if (k)
@@ -51,13 +49,13 @@ getTypeName(malType tpe)
 			snprintf(buf, sizeof(buf), "bat[:any]");
 		else
 			snprintf(buf, sizeof(buf), "bat[:%s]", ATOMname(getBatType(tpe)));
-		return GDKstrdup(buf);
+		return ma_strdup(ma, buf);
 	}
 	if (isAnyExpression(tpe)) {
 		snprintf(buf, sizeof(buf), "any_%d", getTypeIndex(tpe));
-		return GDKstrdup(buf);
+		return ma_strdup(ma, buf);
 	}
-	return GDKstrdup(ATOMname(tpe));
+	return ma_strdup(ma, ATOMname(tpe));
 }
 
 /*
@@ -65,10 +63,10 @@ getTypeName(malType tpe)
  * string for ease of comparison later.
  */
 str
-getTypeIdentifier(malType tpe)
+getTypeIdentifier(allocator *ma, malType tpe)
 {
 	str s, t, v;
-	s = getTypeName(tpe);
+	s = getTypeName(ma, tpe);
 	if (s == NULL)
 		return NULL;
 	for (t = s; *t; t++)
@@ -111,7 +109,9 @@ getAtomIndex(const char *nme, size_t len, int deftype)
 		/* name too long: cannot match any atom name */
 		return deftype;
 	}
-	if (len == 3)
+	/* this switch should cover all builtin GDK types */
+	switch (len) {
+	case 3:
 		switch (*nme) {
 		case 'a':
 			if (qt("any"))
@@ -135,6 +135,12 @@ getAtomIndex(const char *nme, size_t len, int deftype)
 			if (qt("flt"))
 				return TYPE_flt;
 			break;
+#ifdef HAVE_HGE
+		case 'h':
+			if (qt("hge"))
+				return TYPE_hge;
+			break;
+#endif
 		case 'l':
 			if (qt("lng"))
 				return TYPE_lng;
@@ -143,19 +149,13 @@ getAtomIndex(const char *nme, size_t len, int deftype)
 			if (qt("msk"))
 				return TYPE_msk;
 			break;
-		case 'p':
-			if (qt("ptr"))
-				return TYPE_ptr;
-			break;
-#ifdef HAVE_HGE
-		case 'h':
-			if (qt("hge"))
-				return TYPE_hge;
-			break;
-#endif
 		case 'o':
 			if (qt("oid"))
 				return TYPE_oid;
+			break;
+		case 'p':
+			if (qt("ptr"))
+				return TYPE_ptr;
 			break;
 		case 's':
 			if (qt("str"))
@@ -163,18 +163,35 @@ getAtomIndex(const char *nme, size_t len, int deftype)
 			if (qt("sht"))
 				return TYPE_sht;
 			break;
-	} else if (len == 4 && strncmp(nme, "void", len) == 0)
-		return TYPE_void;
-	else if (len == 4 && strncmp(nme, "date", len) == 0)
-		return TYPE_date;
-	else if (len == 7 && strncmp(nme, "daytime", len) == 0)
-		return TYPE_daytime;
-	else if (len == 9 && strncmp(nme, "timestamp", len) == 0)
-		return TYPE_timestamp;
-	else if (len == 4 && strncmp(nme, "uuid", len) == 0)
-		return TYPE_uuid;
-	else if (len == 4 && strncmp(nme, "blob", len) == 0)
-		return TYPE_blob;
+		}
+		break;
+	case 4:
+		if (strncmp(nme, "void", len) == 0)
+			return TYPE_void;
+		if (strncmp(nme, "date", len) == 0)
+			return TYPE_date;
+		if (strncmp(nme, "uuid", len) == 0)
+			return TYPE_uuid;
+		if (strncmp(nme, "blob", len) == 0)
+			return TYPE_blob;
+		break;
+	case 5:
+		if (strncmp(nme, "inet4", len) == 0)
+			return TYPE_inet4;
+		if (strncmp(nme, "inet6", len) == 0)
+			return TYPE_inet6;
+		break;
+	case 7:
+		if (strncmp(nme, "daytime", len) == 0)
+			return TYPE_daytime;
+		break;
+	case 9:
+		if (strncmp(nme, "timestamp", len) == 0)
+			return TYPE_timestamp;
+		break;
+	default:
+		break;
+	}
 	for (i = TYPE_str; i < GDKatomcnt; i++)
 		if (BATatoms[i].name[0] == nme[0] &&
 			strncmp(nme, BATatoms[i].name, len) == 0 &&

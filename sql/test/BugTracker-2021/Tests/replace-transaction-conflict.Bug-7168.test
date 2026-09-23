@@ -9,11 +9,11 @@ statement ok
 start transaction
 
 statement ok
-PLAN CREATE OR REPLACE FUNCTION mybooludf(a bool) RETURNS BOOL RETURN a
+EXPLAIN SHOW DETAILS CREATE OR REPLACE FUNCTION mybooludf(a bool) RETURNS BOOL RETURN a
 
 @connection(id=2)
 statement ok
-PLAN CREATE OR REPLACE FUNCTION mybooludf(a bool) RETURNS BOOL RETURN a
+EXPLAIN SHOW DETAILS CREATE OR REPLACE FUNCTION mybooludf(a bool) RETURNS BOOL RETURN a
 
 statement ok
 commit

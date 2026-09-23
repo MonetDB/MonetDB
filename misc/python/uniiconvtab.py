@@ -4,11 +4,14 @@
 #
 # This Source Code Form is subject to the terms of the Mozilla Public
 # License, v. 2.0.  If a copy of the MPL was not distributed with this
-# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+# file, You can obtain one at https://mozilla.org/MPL/2.0/.
 #
-# Copyright 2024, 2025 MonetDB Foundation;
-# Copyright August 2008 - 2023 MonetDB B.V.;
-# Copyright 1997 - July 2008 CWI.
+# For copyright information, see the file debian/copyright.
+
+# This script is used to create tables for gdk/gdk_string.c to support
+# the asciify conversion (i.e. GDKasciify and BATasciify).
+# Usage: run the script and replace the appropriate tables in
+# gdk_string.c with the output produced.
 
 import subprocess
 
@@ -25,7 +28,8 @@ def mktab(input):
             # ? is default replacement
             continue
         if 0x0370 <= codepoint <= 0x1CFF or \
-           0x1F00 <= codepoint <= 0x1FFF:
+           0x1F00 <= codepoint <= 0x1FFF or \
+           0x10000 <= codepoint:
             # skip lots of non-Latin based scripts
             continue
         if not val in valdict:

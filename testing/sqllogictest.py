@@ -4,11 +4,9 @@
 #
 # This Source Code Form is subject to the terms of the Mozilla Public
 # License, v. 2.0.  If a copy of the MPL was not distributed with this
-# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+# file, You can obtain one at https://mozilla.org/MPL/2.0/.
 #
-# Copyright 2024, 2025 MonetDB Foundation;
-# Copyright August 2008 - 2023 MonetDB B.V.;
-# Copyright 1997 - July 2008 CWI.
+# For copyright information, see the file debian/copyright.
 
 # skipif <system>
 # onlyif <system>
@@ -16,17 +14,19 @@
 # The skipif/onlyif mechanism has been slightly extended.  Recognized
 # "system"s are:
 # MonetDB, arch=<architecture>, system=<system>, bits=<bits>,
-# threads=<threads>, has-hugeint, knownfail
+# threads=<threads>, has-hugeint, knownfail, pipeline
 # where <architecture> is generally what the Python call
 # platform.machine() returns (i.e. x86_64, i686, aarch64, ppc64,
 # ppc64le, note 'AMD64' is translated to 'x86_64' and 'arm64' to
 # 'aarch64'); <system> is whatever platform.system() returns
 # (i.e. Linux, Darwin, Windows); <bits> is either 32bit or 64bit;
-# <threads> is the number of threads.
+# <threads> is the number of threads; pipeline is true when using the
+# pipeline execution engine.
 
 # statement (ok|ok rowcount|error) [arg]
-# query (I|T|R)+ (nosort|rowsort|valuesort|python)? [arg]
-#       I: integer; T: text (string); R: real (decimal)
+# query (I|D|T|R)+ (nosort|rowsort|valuesort|python)? [arg]
+#       I: integer; T: text (string); D: decimal; R: real
+#       -- note that type D is an extension
 #       nosort: do not sort
 #       rowsort: sort rows
 #       valuesort: sort individual values
@@ -50,6 +50,7 @@ import re
 import sys
 import platform
 import importlib
+import time
 import MonetDBtesting.utils as utils
 from pathlib import Path
 from typing import Optional
@@ -80,12 +81,27 @@ hashge = False                  # may get updated at start of testing
 
 skipidx = re.compile(r'create index .* \b(asc|desc)\b', re.I)
 
+# SQL/GDK types that are represented with an I column type
+inttypes = ('boolean', 'tinyint', 'smallint', 'int', 'bigint', 'hugeint',
+            'bit', 'sht', 'lng', 'hge', 'oid', 'void')
+# SQL/GDK types that are represented with a R column type
+flttypes =('double', 'real', 'flt', 'dbl')
+
+
 class UnsafeDirectoryHandler(pymonetdb.SafeDirectoryHandler):
+    def __init__(self, srcdir, data_dir:Optional[Path]=None, **kwargs):
+        self.data_dir = data_dir
+        super().__init__(srcdir, **kwargs)
+
     def secure_resolve(self, filename: str) -> Optional[Path]:
+        if self.data_dir is not None and (self.data_dir / filename).exists():
+            return (self.data_dir / filename).resolve()
         return (self.dir / filename).resolve()
+
 
 class SQLLogicSyntaxError(Exception):
     pass
+
 
 class SQLLogicConnection(object):
     def __init__(self, conn_id, dbh, crs=None, language='sql'):
@@ -93,6 +109,7 @@ class SQLLogicConnection(object):
         self.dbh = dbh
         self.crs = crs
         self.language = language
+        self.lastprepareid = None
 
     def cursor(self):
         if self.crs:
@@ -104,6 +121,7 @@ class SQLLogicConnection(object):
 
 def is_copyfrom_stmt(stmt:[str]=[]):
     return '<COPY_INTO_DATA>' in stmt
+
 
 def prepare_copyfrom_stmt(stmt:[str]=[]):
     index = stmt.index('<COPY_INTO_DATA>')
@@ -123,8 +141,10 @@ def prepare_copyfrom_stmt(stmt:[str]=[]):
     tail='\n'.join(tail)
     return head + '\n' + tail, head, stmt
 
+
 def dq(s):
     return s.replace('"', '""')
+
 
 class SQLLogic:
     def __init__(self, srcdir='.', report=None, out=sys.stdout):
@@ -140,9 +160,11 @@ class SQLLogic:
         self.port = None
         self.approve = None
         self.threshold = 100
-        self.seenerr = False
+        self.seenerr = False    # there was an error before timeout
+        self.timedout = False   # there was a timeout
         self.__last = ''
         self.srcdir = srcdir
+        self.lastprepareid = None
 
     def __enter__(self):
         return self
@@ -150,36 +172,71 @@ class SQLLogic:
     def __exit__(self, exc_type, exc_value, traceback):
         self.close()
 
+    def _remainingtime(self):
+        if self.timeout > 0:
+            t = time.time()
+            if self.starttime + self.timeout > t:
+                return int(self.starttime + self.timeout - t)
+            return 0
+        return -1
+
     def connect(self, username='monetdb', password='monetdb',
-                hostname='localhost', port=None, database='demo',
-                language='sql', timeout=None, alltests=False):
+                hostname='localhost', port=None, database=None, usock=None,
+                language='sql', data_dir: Optional[Path]=None,
+                threshold: Optional[int]=100,
+                timeout: Optional[int]=0, alltests=False,
+                server=None):
+        self.starttime = time.time()
         self.language = language
         self.hostname = hostname
+        if server is not None:
+            if port is None and database is None and usock is None and server.urls:
+                database = server.urls[0]
+            else:
+                if port is None:
+                    port = server.dbport
+                if database is None:
+                    database = server.dbname
+                if usock is None:
+                    usock = server.usock
         self.port = port
-        self.database = database
+        self.database = database or 'demo'
         self.timeout = timeout
         self.alltests = alltests
+        if threshold:
+            self.threshold = threshold
         if language == 'sql':
-            transfer_handler = UnsafeDirectoryHandler(self.srcdir)
-            self.dbh = pymonetdb.connect(username=username,
-                                     password=password,
-                                     hostname=hostname,
-                                     port=port,
-                                     database=database,
-                                     autocommit=True)
-            self.dbh.set_uploader(transfer_handler)
-            self.dbh.set_downloader(transfer_handler)
-            self.crs = self.dbh.cursor()
+            transfer_handler = UnsafeDirectoryHandler(self.srcdir,
+                                                      data_dir=data_dir)
+            dbh = pymonetdb.connect(username=username,
+                                    password=password,
+                                    hostname=hostname,
+                                    port=port,
+                                    database=usock or self.database,
+                                    autocommit=True,
+                                    connect_timeout=timeout if timeout > 0 else -1)
+            self.dbh = dbh
+            dbh.set_uploader(transfer_handler)
+            dbh.set_downloader(transfer_handler)
+            self.crs = dbh.cursor()
         else:
             dbh = malmapi.Connection()
-            dbh.connect(
-                                     database=database,
-                                     username=username,
-                                     password=password,
-                                     language=language,
-                                     hostname=hostname,
-                                     port=port)
+            if usock is not None:
+                if usock.startswith('mapi:monetdb:///'):
+                    usock = usock[15:]
+                elif usock.startsiwht('monetdb:///'):
+                    usock = usock[10:]
+            dbh.connect(database=self.database,
+                        username=username,
+                        password=password,
+                        language=language,
+                        hostname=hostname,
+                        port=port,
+                        unix_socket=usock,
+                        connect_timeout=timeout if timeout > 0 else -1)
             self.crs = MapiCursor(dbh)
+        if timeout > 0:
+            dbh.settimeout(timeout)
 
     def add_connection(self, conn_id, username='monetdb', password='monetdb'):
         if self.conn_map.get(conn_id, None) is None:
@@ -187,23 +244,34 @@ class SQLLogic:
             port = self.port
             database = self.database
             language = self.language
+            t = self._remainingtime()
+            if t == 0:
+                raise TimeoutError('timed out')
             if language == 'sql':
                 dbh  = pymonetdb.connect(username=username,
-                                     password=password,
-                                     hostname=hostname,
-                                     port=port,
-                                     database=database,
-                                     autocommit=True)
+                                         password=password,
+                                         hostname=hostname,
+                                         port=port,
+                                         database=database,
+                                         autocommit=True,
+                                         connect_timeout=t)
                 crs = dbh.cursor()
+                if t > 0:
+                    dbh.settimeout(t)
+                    crs.execute(f'call sys.setsessiontimeout({t})')
             else:
                 dbh = malmapi.Connection()
                 dbh.connect(database=database,
-                         username=username,
-                         password=password,
-                         language=language,
-                         hostname=hostname,
-                         port=port)
+                            username=username,
+                            password=password,
+                            language=language,
+                            hostname=hostname,
+                            port=port,
+                            connect_timeout=t)
                 crs = MapiCursor(dbh)
+                if t > 0:
+                    dbh.settimeout(t)
+                    crs.execute(f'clients.setsessiontimeout({t}:int)')
             conn = SQLLogicConnection(conn_id, dbh=dbh, crs=crs, language=language)
             self.conn_map[conn_id] = conn
             return conn
@@ -217,7 +285,10 @@ class SQLLogic:
             conn.dbh.close()
         self.conn_map.clear()
         if self.crs:
-            self.crs.close()
+            try:
+                self.crs.close()
+            except BrokenPipeError:
+                pass
             self.crs = None
         if self.dbh:
             self.dbh.close()
@@ -227,7 +298,7 @@ class SQLLogic:
     def drop(self):
         if self.language != 'sql':
             return
-        self.crs.execute('select s.name, t.name, case when t.type in (select table_type_id from sys.table_types where table_type_name like \'%VIEW%\') then \'VIEW\' else \'TABLE\' end from sys.tables t, sys.schemas s where not t.system and t.schema_id = s.id')
+        self.crs.execute("select s.name, t.name, case when t.type in (select table_type_id from sys.table_types where table_type_name like '%VIEW%') then 'VIEW' else 'TABLE' end from sys.tables t, sys.schemas s where not t.system and t.schema_id = s.id")
         for row in self.crs.fetchall():
             try:
                 self.crs.execute(f'drop {row[2]} "{dq(row[0])}"."{dq(row[1])}" cascade')
@@ -266,6 +337,13 @@ class SQLLogic:
                 self.crs.execute(f'drop user "{dq(row[0])}"')
             except pymonetdb.Error:
                 pass
+        # drop custom types created in test
+        self.crs.execute("select sqlname from sys.types where systemname is null order by id")
+        for row in self.crs.fetchall():
+            try:
+                self.crs.execute(f'drop type "{row[0]}"')
+            except pymonetdb.Error:
+                pass
 
     def exec_statement(self, statement, expectok,
                        err_stmt=None,
@@ -275,9 +353,14 @@ class SQLLogic:
                        conn=None,
                        verbose=False):
         crs = conn.cursor() if conn else self.crs
+        crs.description = None
         if skipidx.search(statement) is not None:
             # skip creation of ascending or descending index
             return ['statement', 'ok']
+        if '<LAST_PREPARE_ID>' in statement:
+            id = conn.lastprepareid if conn else self.lastprepareid
+            if id is not None:
+                statement = statement.replace('<LAST_PREPARE_ID>', f'{id}')
         try:
             if verbose:
                 print(f'Executing:\n{err_stmt or statement}')
@@ -328,17 +411,26 @@ class SQLLogic:
                             + f" received code {err_code_received}, message {repr(err_msg_received)}"
                     self.query_error(err_stmt or statement, str(msg), str(e))
                 return result
+        except TimeoutError as e:
+            self.query_error(err_stmt or statement, 'Timeout', str(e))
+            return ['statement', 'crash'] # should never be approved
         except ConnectionError as e:
-            self.query_error(err_stmt or statement, 'Server may have crashed', str(e))
+            self.query_error(err_stmt or statement, 'Timeout or server may have crashed', str(e))
             return ['statement', 'crash'] # should never be approved
         except KeyboardInterrupt:
             raise
-        except:
+        except Exception:
             type, value, traceback = sys.exc_info()
             self.query_error(statement, 'unexpected error from pymonetdb', str(value))
             return ['statement', 'error']
         else:
             result = ['statement', 'ok']
+            if crs.description is not None and crs.lastrowid is not None:
+                # it was a PREPARE query
+                if conn:
+                    conn.lastprepareid = crs.lastrowid
+                else:
+                    self.lastprepareid = crs.lastrowid
             if expectok:
                 if expected_rowcount is not None:
                     result.append('rowcount')
@@ -371,7 +463,7 @@ class SQLLogic:
                         elif row[i] in ('false', 'False'):
                             nrow.append('0')
                         else:
-                            nrow.append('%d' % row[i])
+                            nrow.append(f'{int(row[i]):d}')
                     elif columns[i] == 'T':
                         if row[i] == '' or row[i] == b'':
                             nrow.append('(empty)')
@@ -379,7 +471,7 @@ class SQLLogic:
                             nval = []
                             if isinstance(row[i], bytes):
                                 for c in row[i]:
-                                    c = '%02X' % c
+                                    c = f'{c:02X}'
                                     nval.append(c)
                             else:
                                 for c in str(row[i]):
@@ -395,8 +487,10 @@ class SQLLogic:
                                     else:
                                         nval.append(c)
                             nrow.append(''.join(nval))
+                    elif columns[i] == 'D':
+                        nrow.append(str(row[i]))
                     elif columns[i] == 'R':
-                        nrow.append('%.3f' % row[i])
+                        nrow.append(f'{row[i]:.3f}')
                     else:
                         self.raise_error('incorrect column type indicator')
                 except TypeError:
@@ -406,25 +500,35 @@ class SQLLogic:
         return ndata
 
     def raise_error(self, message):
-        print(f'Syntax error in test file, line {self.qline}:', file=self.out)
-        print(message, file=self.out)
+        if self.out:
+            print(f'Syntax error in test file, line {self.qline}:', file=self.out)
+            print(message, file=self.out)
         raise SQLLogicSyntaxError(message)
 
     def query_error(self, query, message, exception=None, data=None):
-        self.seenerr = True
-        if self.rpt:
-            print(self.rpt, file=self.out)
-        print(message, file=self.out)
-        if exception:
-            print(exception.rstrip('\n'), file=self.out)
-        print("query started on line %d of file %s" % (self.qline, self.name),
-              file=self.out)
-        print("query text:", file=self.out)
-        print(query, file=self.out)
+        if message == 'Timeout':
+            self.timedout = True
+        elif not self.timedout:
+            self.seenerr = True
+        if self.out:
+            if self.rpt:
+                print(self.rpt, file=self.out)
+            print(message, file=self.out)
+            if exception:
+                print(exception.rstrip('\n'), file=self.out)
+            print(f"query started on line {self.qline} of file {self.name}",
+                  file=self.out)
+            print("query text:", file=self.out)
+            print(query, file=self.out)
 
-    def exec_query(self, query, columns, sorting, pyscript, hashlabel, nresult, hash, expected, conn=None, verbose=False) -> bool:
+    def exec_query(self, query, columns, sorting, pyscript, hashlabel, nresult,
+                   hash, expected, conn=None, verbose=False) -> bool:
         err = False
         crs = conn.cursor() if conn else self.crs
+        if '<LAST_PREPARE_ID>' in query:
+            id = conn.lastprepareid if conn else self.lastprepareid
+            if id is not None:
+                query = query.replace('<LAST_PREPARE_ID>', f'{id}')
         crs.description = None
         try:
             if verbose:
@@ -435,9 +539,17 @@ class SQLLogic:
             return ['statement', 'error'], []
         except KeyboardInterrupt:
             raise
-        except:
+        except TimeoutError as e:
+            self.query_error(query, 'Timeout', str(e))
+            return ['statement', 'crash']  # should never be approved
+        except ConnectionError as e:
+            self.query_error(query, 'Timeout or server may have crashed',
+                             str(e))
+            return ['statement', 'crash']  # should never be approved
+        except Exception:
             tpe, value, traceback = sys.exc_info()
-            self.query_error(query, 'unexpected error from pymonetdb', str(value))
+            self.query_error(query, 'unexpected error from pymonetdb',
+                             str(value))
             return ['statement', 'error'], []
         if crs.description is None:
             # it's not a query, it's a statement
@@ -447,10 +559,17 @@ class SQLLogic:
             data = crs.fetchall()
         except KeyboardInterrupt:
             raise
-        except:
+        except Exception:
             tpe, value, traceback = sys.exc_info()
-            self.query_error(query, 'unexpected error from pymonetdb', str(value))
+            self.query_error(query, 'unexpected error from pymonetdb',
+                             str(value))
             return ['statement', 'error'], []
+        if crs.lastrowid is not None:
+            # it was a PREPARE query
+            if conn:
+                conn.lastprepareid = crs.lastrowid
+            else:
+                self.lastprepareid = crs.lastrowid
         ndata = []
         for row in data:
             nrow = []
@@ -473,13 +592,17 @@ class SQLLogic:
         if crs.description:
             rescols = []
             for desc in crs.description:
-                if desc.type_code in ('boolean', 'tinyint', 'smallint', 'int', 'bigint', 'hugeint', 'bit', 'sht', 'lng', 'hge', 'oid', 'void'):
+                if desc.type_code in inttypes:
                     rescols.append('I')
-                elif desc.type_code in ('decimal', 'double', 'real', 'flt', 'dbl'):
+                elif desc.type_code == 'decimal':
+                    rescols.append('D') # extension
+                elif desc.type_code in flttypes:
                     rescols.append('R')
                 else:
                     rescols.append('T')
             rescols = ''.join(rescols)
+            # if columns != rescols:
+            #     print(self.name, self.line, columns, rescols, file=sys.stderr)
             if len(crs.description) != len(columns):
                 self.query_error(query, f'received {len(crs.description)} columns, expected {len(columns)} columns', data=data)
                 columns = rescols
@@ -522,15 +645,20 @@ class SQLLogic:
             for col in ndata:
                 if expected is not None:
                     if i < len(expected) and col != expected[i]:
-                        self.query_error(query, 'unexpected value; received "%s", expected "%s"' % (col, expected[i]))
+                        self.query_error(query, f'unexpected value; received "{col}", expected "{expected[i]}"')
                         err = True
                     i += 1
                 m.update(bytes(col, encoding='utf-8'))
                 m.update(b'\n')
                 result.append(col)
-            if err and expected is not None:
+            if err and expected is not None and self.out:
                 print('Differences:', file=self.out)
-                self.out.writelines(list(difflib.ndiff([x + '\n' for x in expected], [x + '\n' for x in ndata])))
+                print('\n'.join(difflib.unified_diff(expected,
+                                                     ndata,
+                                                     fromfile='expected',
+                                                     tofile='received',
+                                                     lineterm='')),
+                      file=self.out)
             if resdata is not None:
                 result = []
                 ndata = []
@@ -572,13 +700,13 @@ class SQLLogic:
             if not err:
                 try:
                     ndata = pyfnc(data)
-                except:
+                except Exception:
                     self.query_error(query, 'filter function failed')
                     err = True
                 if resdata is not None:
                     try:
                         resdata = pyfnc(resdata)
-                    except:
+                    except Exception:
                         resdata = None
             ncols = 1
             if (len(ndata)):
@@ -590,7 +718,7 @@ class SQLLogic:
                 for col in row:
                     if expected is not None:
                         if i < len(expected) and col != expected[i]:
-                            self.query_error(query, 'unexpected value; received "%s", expected "%s"' % (col, expected[i]))
+                            self.query_error(query, f'unexpected value; received "{col}", expected "{expected[i]}"')
                             err = True
                         i += 1
                     m.update(bytes(col, encoding='utf-8'))
@@ -601,8 +729,14 @@ class SQLLogic:
                 for row in ndata:
                     for col in row:
                         recv.append(col)
-                print('Differences:', file=self.out)
-                self.out.writelines(list(difflib.ndiff([x + '\n' for x in expected], [x + '\n' for x in recv])))
+                if self.out:
+                    print('Differences:', file=self.out)
+                    print('\n'.join(difflib.unified_diff(expected,
+                                                         recv,
+                                                         fromfile='expected',
+                                                         tofile='received',
+                                                         lineterm='')),
+                          file=self.out)
             if resdata is not None:
                 result = []
                 for row in resdata:
@@ -615,25 +749,26 @@ class SQLLogic:
             if sorting == 'rowsort':
                 ndata = sorted(data)
             err_msg_buff = []
+            received = []
             for row in ndata:
                 for col in row:
-                    if expected is not None:
-                        if i < len(expected) and col != expected[i]:
-                            err_msg_buff.append('unexpected value;\nreceived "%s"\nexpected "%s"' % (col, expected[i]))
-                            #self.query_error(query, 'unexpected value; received "%s", expected "%s"' % (col, expected[i]), data=data)
-                            err = True
-                        i += 1
+                    received.append(col)
                     m.update(bytes(col, encoding='utf-8'))
                     m.update(b'\n')
                     result.append(col)
-            if err and expected is not None:
-                self.query_error(query, '\n'.join(err_msg_buff))
-                recv = []
-                for row in ndata:
-                    for col in row:
-                        recv.append(col + '\n')
-                print('Differences:', file=self.out)
-                self.out.writelines(list(difflib.ndiff([x + '\n' for x in expected], recv)))
+            if expected is not None:
+                diffs = list(difflib.unified_diff(expected,
+                                                  received,
+                                                  fromfile='expected',
+                                                  tofile='received',
+                                                  lineterm=''))
+                if diffs:
+                    if not err:
+                        self.query_error(query, 'unexpected output')
+                    err = True
+                    if self.out:
+                        print('Differences:', file=self.out)
+                        print('\n'.join(diffs), file=self.out)
             if resdata is not None:
                 if sorting == 'rowsort':
                     resdata.sort()
@@ -643,7 +778,7 @@ class SQLLogic:
                         resm.update(bytes(col, encoding='utf-8'))
                         resm.update(b'\n')
                         result.append(col)
-        if err:
+        if err and self.out:
             if data is not None:
                 if len(data) < 100:
                     print('Query result:', file=self.out)
@@ -664,10 +799,10 @@ class SQLLogic:
             resh = resm.hexdigest()
         if not err:
             if hashlabel is not None and hashlabel in self.hashes and self.hashes[hashlabel][0] != h:
-                self.query_error(query, 'query hash differs from previous query at line %d' % self.hashes[hashlabel][1], data=data)
+                self.query_error(query, f'query hash differs from previous query at line {self.hashes[hashlabel][1]}', data=data)
                 err = True
             elif hash is not None and h != hash:
-                self.query_error(query, 'hash mismatch; received: "%s", expected: "%s"' % (h, hash), data=data)
+                self.query_error(query, f'hash mismatch; received: "{h}", expected: "{hash}"', data=data)
                 err = True
         if hashlabel is not None and hashlabel not in self.hashes:
             if hash is not None:
@@ -699,14 +834,20 @@ class SQLLogic:
                 val = val.strip()
                 defs.append((re.compile(r'\$(' + key + r'\b|{' + key + '})'),
                              val, key))
-        self.defines = sorted(defs, key=lambda x: (-len(x[1]), x[1], x[2]))
+        self.defines = defs
         self.lines = []
 
     def readline(self):
+        if self.file is None:
+            return ''
         self.line += 1
         if self.run_until and self.line >= self.run_until:
             return ''
         origline = line = self.file.readline()
+        if not line:
+            self.file.close()
+            self.file = None
+            return line
         for reg, val, key in self.defines:
             line = reg.sub(val.replace('\\', r'\\'), line)
         if self.approve:
@@ -729,10 +870,10 @@ class SQLLogic:
                     # line = line.replace('\''+val.replace('\\', '\\\\'),
                     #                     '\'${Q'+key+'}')
                     # line = line.replace(val, '${'+key+'}')
+                    if key.startswith('Q') and (("r'"+val) in line or ("R'"+val) in line):
+                        continue
                     line = line.replace("r'"+val, "r'$"+key)
                     line = line.replace("R'"+val, "R'$"+key)
-                    line = line.replace("'"+val.replace('\\', '\\\\'),
-                                        "'$Q"+key)
                     line = line.replace(val, '$'+key)
             i = 0
             while i < len(self.lines):
@@ -760,13 +901,13 @@ class SQLLogic:
                 assert k in ['conn_id', 'username', 'password']
                 assert res.get(k) is None
                 res[k] = v
-            except (ValueError, AssertionError) as e:
+            except (ValueError, AssertionError):
                 self.raise_error('invalid connection parameters definition!')
         if len(res.keys()) > 1:
             try:
                 assert res.get('username')
                 assert res.get('password')
-            except AssertionError as e:
+            except AssertionError:
                 self.raise_error('invalid connection parameters definition, username or password missing!')
         return res
 
@@ -774,14 +915,20 @@ class SQLLogic:
         self.approve = approve
         self.initfile(f, defines, run_until=run_until)
         nthreads = None
+        pipeline = None
+        if self.timeout:
+            timeout = int((time.time() - self.starttime) + self.timeout)
+        else:
+            timeout = 0
         if self.language == 'sql':
-            self.crs.execute(f'call sys.setsessiontimeout({self.timeout or 0})')
+            self.crs.execute(f'call sys.setsessiontimeout({timeout})')
             global hashge
             hashge = self.crs.execute("select * from sys.types where sqlname = 'hugeint'") == 1
         else:
-            self.crs.execute(f'clients.setsessiontimeout({self.timeout or 0}:int)')
+            self.crs.execute(f'clients.setsessiontimeout({timeout}:int)')
+        skiprest = False
         while True:
-            skipping = False
+            skipping = skiprest
             line = self.readline()
             if not line:
                 break
@@ -799,47 +946,65 @@ class SQLLogic:
             # look for connection string
             if line.startswith('@connection'):
                 conn_params = self.parse_connection_string(line)
-                conn = self.get_connection(conn_params.get('conn_id')) or self.add_connection(**conn_params)
+                try:
+                    conn = self.get_connection(conn_params.get('conn_id')) or self.add_connection(**conn_params)
+                except TimeoutError as e:
+                    self.query_error(line, 'Timeout', str(e))
+                    conn = None
+                    skiprest = True
                 self.writeline(line.rstrip())
                 line = self.readline()
             words = line.split(maxsplit=2)
             if not words:
                 continue
-            while words[0] == 'skipif' or words[0] == 'onlyif':
-                if words[0] == 'skipif':
-                    if words[1] in ('MonetDB', f'arch={architecture}', f'system={system}', f'bits={bits}'):
+            if not skiprest:
+                while words[0] == 'skipif' or words[0] == 'onlyif':
+                    if words[0] == 'skipif':
+                        if words[1] in ('MonetDB', f'arch={architecture}', f'system={system}', f'bits={bits}'):
+                            skipping = True
+                        elif words[1].startswith('threads='):
+                            if nthreads is None:
+                                self.crs.execute("select value from env() where name = 'gdk_nr_threads'")
+                                nthreads = self.crs.fetchall()[0][0]
+                            if words[1] == f'threads={nthreads}':
+                                skipping = True
+                        elif words[1] == 'has-hugeint':
+                            if hashge:
+                                skipping = True
+                        elif words[1] == 'knownfail':
+                            if not self.alltests:
+                                skipping = True
+                        elif words[1] == 'pipeline':
+                            if pipeline is None:
+                                self.crs.execute("select val from sys.debugflags() where flag = 'pipeline'")
+                                pipeline = self.crs.fetchall()[0][0]
+                            if pipeline:
+                                skipping = True
+                    elif words[0] == 'onlyif':
                         skipping = True
-                    elif words[1].startswith('threads='):
-                        if nthreads is None:
-                            self.crs.execute("select value from env() where name = 'gdk_nr_threads'")
-                            nthreads = self.crs.fetchall()[0][0]
-                        if words[1] == f'threads={nthreads}':
-                            skipping = True
-                    elif words[1] == 'has-hugeint':
-                        if hashge:
-                            skipping = True
-                    elif words[1] == 'knownfail':
-                        if not self.alltests:
-                            skipping = True
-                elif words[0] == 'onlyif':
-                    skipping = True
-                    if words[1] in ('MonetDB', f'arch={architecture}', f'system={system}', f'bits={bits}'):
-                        skipping = False
-                    elif words[1].startswith('threads='):
-                        if nthreads is None:
-                            self.crs.execute("select value from env() where name = 'gdk_nr_threads'")
-                            nthreads = self.crs.fetchall()[0][0]
-                        if words[1] == f'threads={nthreads}':
+                        if words[1] in ('MonetDB', f'arch={architecture}', f'system={system}', f'bits={bits}'):
                             skipping = False
-                    elif words[1] == 'has-hugeint':
-                        if hashge:
-                            skipping = False
-                    elif words[1] == 'knownfail':
-                        if self.alltests:
-                            skipping = False
-                self.writeline(line.rstrip())
-                line = self.readline()
-                words = line.split(maxsplit=2)
+                        elif words[1].startswith('threads='):
+                            if nthreads is None:
+                                self.crs.execute("select value from env() where name = 'gdk_nr_threads'")
+                                nthreads = self.crs.fetchall()[0][0]
+                            if words[1] == f'threads={nthreads}':
+                                skipping = False
+                        elif words[1] == 'has-hugeint':
+                            if hashge:
+                                skipping = False
+                        elif words[1] == 'knownfail':
+                            if self.alltests:
+                                skipping = False
+                        elif words[1] == 'pipeline':
+                            if pipeline is None:
+                                self.crs.execute("select val from sys.debugflags() where flag = 'pipeline'")
+                                pipeline = self.crs.fetchall()[0][0]
+                            if pipeline:
+                                skipping = False
+                    self.writeline(line.rstrip())
+                    line = self.readline()
+                    words = line.split(maxsplit=2)
             hashlabel = None
             if words[0] == 'hash-threshold':
                 self.threshold = int(words[1])
@@ -874,8 +1039,12 @@ class SQLLogic:
                         if self.language == 'sql' and statement[-1].endswith(';'):
                             statement[-1] = statement[-1][:-1]
                         result = self.exec_statement('\n'.join(statement), expectok, expected_err_code=expected_err_code, expected_err_msg=expected_err_msg, expected_rowcount=expected_rowcount, conn=conn, verbose=verbose)
-                    self.writeline(' '.join(result))
-                else:
+                    if result[1] == 'crash':
+                        skiprest = True
+                        skipping = True
+                    else:
+                        self.writeline(' '.join(result))
+                if skipping:
                     self.writeline(stline)
                 dostrip = True
                 for line in statement:
@@ -923,19 +1092,34 @@ class SQLLogic:
                     hash = None
                     expected = []
                     while line and line != '\n':
-                        expected.append(line.rstrip('\n'))
+                        expected.extend(line.rstrip('\n').split('\t'))
                         line = self.readline()
                     nresult = len(expected)
                 if not skipping:
                     result1, result2 = self.exec_query('\n'.join(query), columns, sorting, pyscript, hashlabel, nresult, hash, expected, conn=conn, verbose=verbose)
-                    self.writeline(' '.join(result1))
-                    for line in query:
-                        self.writeline(line.rstrip(), replace=True)
-                    if result1[0] == 'query':
-                        self.writeline('----')
-                        for line in result2:
-                            self.writeline(line)
-                else:
+                    if result1[1] == 'crash':
+                        skiprest = True
+                        skipping = True
+                    else:
+                        self.writeline(' '.join(result1))
+                        for line in query:
+                            self.writeline(line.rstrip(), replace=True)
+                        if result1[0] == 'query':
+                            self.writeline('----')
+                            if result1[2] in ('rowsort', 'nosort'):
+                                line = []
+                                ncols = len(result1[1])
+                                for val in result2:
+                                    line.append(val)
+                                    if len(line) == ncols:
+                                        self.writeline('\t'.join(line))
+                                        line = []
+                                if line:
+                                    self.writeline('\t'.join(line))
+                            else:
+                                for line in result2:
+                                    self.writeline(line)
+                if skipping:
                     self.writeline(qrline.rstrip())
                     for line in query:
                         self.writeline(line.rstrip())
@@ -948,8 +1132,11 @@ class SQLLogic:
                 self.writeline()
             else:
                 self.raise_error(f'unrecognized command {words[0]}')
+        if approve:
+            approve.flush()
 
-if __name__ == '__main__':
+
+def main():
     import argparse
     parser = argparse.ArgumentParser(description='Run a Sqllogictest')
     parser.add_argument('--host', action='store', default='localhost',
@@ -964,8 +1151,15 @@ if __name__ == '__main__':
                         help='password to use to login to the database with')
     parser.add_argument('--language', action='store', default='sql',
                         help='language to use for testing')
+    parser.add_argument('--data-dir', action='store',
+                        type=Path,
+                        help='directory for relative paths in ON CLIENT'
+                        ' processing (default: directory of test script)')
     parser.add_argument('--nodrop', action='store_true',
                         help='do not drop tables at start of test')
+    parser.add_argument('--timeout', action='store', type=int, default=0,
+                        help='timeout in seconds (<= 0 is no timeout) after'
+                        ' which test is terminated')
     parser.add_argument('--verbose', action='store_true',
                         help='be a bit more verbose')
     parser.add_argument('--results', action='store',
@@ -977,19 +1171,30 @@ if __name__ == '__main__':
                         type=argparse.FileType('w'),
                         help='file in which to produce a new .test file '
                         'with updated results')
+    parser.add_argument('--hash-threshold', action='store',
+                        type=int, default=100,
+                        help='default hash-threshold value')
     parser.add_argument('--define', action='append',
                         help='define substitution for $var as var=replacement'
                         ' (can be repeated)')
     parser.add_argument('--alltests', action='store_true',
-                        help='also executed "knownfail" tests')
+                        help='also execute "knownfail" tests')
     parser.add_argument('--run-until', action='store', type=int,
                         help='run tests until specified line')
     parser.add_argument('tests', nargs='*', help='tests to be run')
     opts = parser.parse_args()
     args = opts.tests
-    sql = SQLLogic(report=opts.report)
+    if args:
+        srcdir = Path(args[0]).parent
+    else:
+        srcdir = '.'
+    sql = SQLLogic(srcdir=srcdir, report=opts.report)
     sql.res = opts.results
-    sql.connect(hostname=opts.host, port=opts.port, database=opts.database, language=opts.language, username=opts.user, password=opts.password, alltests=opts.alltests)
+    sql.connect(hostname=opts.host, port=opts.port, database=opts.database,
+                language=opts.language, username=opts.user,
+                password=opts.password, data_dir=opts.data_dir,
+                alltests=opts.alltests, threshold=opts.hash_threshold,
+                timeout=opts.timeout if opts.timeout > 0 else 0)
     for test in args:
         try:
             if not opts.nodrop:
@@ -1005,4 +1210,15 @@ if __name__ == '__main__':
             break
     sql.close()
     if sql.seenerr:
+        sys.exit(2)
+    if sql.timedout:
         sys.exit(1)
+
+
+if __name__ == '__main__':
+    if sys.argv[1] == '--pdb':
+        del sys.argv[1]
+        import pdb
+        pdb.run('main()')
+    else:
+        main()

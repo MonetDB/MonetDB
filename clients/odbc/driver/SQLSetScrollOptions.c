@@ -3,11 +3,9 @@
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024, 2025 MonetDB Foundation;
- * Copyright August 2008 - 2023 MonetDB B.V.;
- * Copyright 1997 - July 2008 CWI.
+ * For copyright information, see the file debian/copyright.
  */
 
 /*
@@ -45,9 +43,9 @@ SQLSetScrollOptions(SQLHSTMT StatementHandle,
 		LENCAST crowKeyset, (unsigned int) crowRowset);
 #endif
 
-	(void) fConcurrency;	/* Stefan: unused!? */
-	(void) crowKeyset;	/* Stefan: unused!? */
-	(void) crowRowset;	/* Stefan: unused!? */
+	(void) fConcurrency;
+	(void) crowKeyset;
+	(void) crowRowset;
 
 	if (!isValidStmt((ODBCStmt *) StatementHandle))
 		return SQL_INVALID_HANDLE;

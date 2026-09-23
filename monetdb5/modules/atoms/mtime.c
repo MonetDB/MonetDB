@@ -3,11 +3,9 @@
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024, 2025 MonetDB Foundation;
- * Copyright August 2008 - 2023 MonetDB B.V.;
- * Copyright 1997 - July 2008 CWI.
+ * For copyright information, see the file debian/copyright.
  */
 
 /* In this file we implement three new types with supporting code.
@@ -45,22 +43,25 @@ extern char *strptime2(const char *, const char *, struct tm *, int *);
 /* interfaces callable from MAL, not used from any C code */
 
 static str
-MTIMEcurrent_date(date *ret)
+MTIMEcurrent_date(Client ctx, date *ret)
 {
+	(void) ctx;
 	*ret = timestamp_date(timestamp_current());
 	return MAL_SUCCEED;
 }
 
 static str
-MTIMEcurrent_time(daytime *ret)
+MTIMEcurrent_time(Client ctx, daytime *ret)
 {
+	(void) ctx;
 	*ret = timestamp_daytime(timestamp_current());
 	return MAL_SUCCEED;
 }
 
 static str
-MTIMEcurrent_timestamp(timestamp *ret)
+MTIMEcurrent_timestamp(Client ctx, timestamp *ret)
 {
+	(void) ctx;
 	*ret = timestamp_current();
 	return MAL_SUCCEED;
 }
@@ -77,7 +78,7 @@ MTIMEcurrent_timestamp(timestamp *ret)
 #define DEC_ITER(TYPE, ARG)
 
 #define DEC_BUFFER(OUTTYPE, RES, MALFUNC) \
-	OUTTYPE RES = GDKmalloc(MTIME_STR_BUFFER_LENGTH); \
+	OUTTYPE RES = ma_alloc(ma, MTIME_STR_BUFFER_LENGTH); \
 	if (!res) {	\
 		msg = createException(MAL, "batmtime." MALFUNC, SQLSTATE(HY013) MAL_MALLOC_FAIL); \
 		goto bailout; \
@@ -99,7 +100,7 @@ MTIMEcurrent_timestamp(timestamp *ret)
 		break; \
 	}
 
-#define GET_NEXT_ITER(ARG, OFF) BUNtvar(b##ARG##i, OFF)
+#define GET_NEXT_ITER(ARG, OFF) BUNtvar(&b##ARG##i, OFF)
 
 #define DEC_NOTHING(TYPE, ARG)
 #define INIT_NOTHING(ARG)
@@ -107,13 +108,12 @@ MTIMEcurrent_timestamp(timestamp *ret)
 #define FINISH_BUFFER_SINGLE(MALFUNC) \
 bailout: \
 	*ret = NULL; \
-	if (!msg && res && !(*ret = GDKstrdup(res))) \
-		msg = createException(MAL, "batmtime." MALFUNC, SQLSTATE(HY013) MAL_MALLOC_FAIL); \
-	GDKfree(res)
+	if (!msg && res && !(*ret = ma_strdup(ma, res))) \
+		msg = createException(MAL, "batmtime." MALFUNC, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 
-#define FINISH_INT_SINGLE(MALFUNC) *ret = res
+#define FINISH_INT_SINGLE(MALFUNC)	do { *ret = res; } while (0)
 
-#define FINISH_BUFFER_MULTI(RES) GDKfree(RES)
+#define FINISH_BUFFER_MULTI(RES)	((void) 0)
 
 #define CLEAR_NOTHING(RES)
 
@@ -125,8 +125,10 @@ bailout: \
 			  DEC_SRC, DEC_OUTPUT,										\
 			  INIT_SRC, INIT_OUTPUT, GET_NEXT_SRC)						\
 static str																\
-NAME(OUTTYPE *ret, const INTYPE *src)									\
+NAME(Client ctx, OUTTYPE *ret, const INTYPE *src)						\
 {																		\
+	allocator *ma = ctx->curprg->def->ma;								\
+	(void) ma;															\
 	str msg = MAL_SUCCEED;												\
 	do {																\
 		FUNC_CALL(FUNC, (*ret), *src);									\
@@ -136,6 +138,9 @@ NAME(OUTTYPE *ret, const INTYPE *src)									\
 static str																\
 NAME##_bulk(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)	\
 {																		\
+	allocator *ma = cntxt->curprg->def->ma;								\
+	(void) ma;															\
+	(void) mb;															\
 	str msg = MAL_SUCCEED;												\
 	BAT *b1 = NULL, *s = NULL, *bn = NULL;								\
 	struct canditer ci = {0};											\
@@ -148,8 +153,6 @@ NAME##_bulk(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)	\
 	DEC_SRC(INTYPE, 1);													\
 	DEC_OUTPUT(OUTTYPE, n);												\
 																		\
-	(void) cntxt;														\
-	(void) mb;															\
 	if ((b1 = BATdescriptor(*bid)) == NULL)	{							\
 		msg = createException(MAL, "batmtime." MALFUNC,					\
 			  SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);					\
@@ -206,7 +209,7 @@ bailout:																\
 }
 
 #define func1_noexcept(FUNC, RET, PARAM) RET = FUNC(PARAM)
-#define func1_except(FUNC, RET, PARAM) msg = FUNC(&RET, PARAM); if (msg) break
+#define func1_except(FUNC, RET, PARAM) msg = FUNC(ma, &RET, PARAM); if (msg) break
 
 #define func2(NAME, MALFUNC,											\
 			  INTYPE1, INTYPE2, OUTTYPE, FUNC, FUNC_CALL,				\
@@ -215,8 +218,10 @@ bailout:																\
 			  GET_NEXT_SRC1, GET_NEXT_SRC2,								\
 			  APPEND_NEXT, CLEAR_EXTRA_SINGLE, CLEAR_EXTRA_MULTI)		\
 static str																\
-NAME(OUTTYPE *ret, const INTYPE1 *v1, const INTYPE2 *v2)				\
+NAME(Client ctx, OUTTYPE *ret, const INTYPE1 *v1, const INTYPE2 *v2)	\
 {																		\
+	allocator *ma = ctx->curprg->def->ma;								\
+	(void) ma;															\
 	str msg = MAL_SUCCEED;												\
 	DEC_EXTRA(OUTTYPE, res, MALFUNC);									\
 																		\
@@ -229,6 +234,9 @@ NAME(OUTTYPE *ret, const INTYPE1 *v1, const INTYPE2 *v2)				\
 static str																\
 NAME##_bulk(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)	\
 {																		\
+	allocator *ma = cntxt->curprg->def->ma;								\
+	(void) ma;															\
+	(void) mb;															\
 	str msg = MAL_SUCCEED;												\
 	BAT *b1 = NULL, *b2 = NULL, *s1 = NULL, *s2 = NULL, *bn = NULL;		\
 	oid off1, off2;														\
@@ -239,13 +247,11 @@ NAME##_bulk(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)	\
 		*bid2 = getArgReference_bat(stk, pci, 2),						\
 		*sid1 = pci->argc == 5 ? getArgReference_bat(stk, pci, 3) : NULL, \
 		*sid2 = pci->argc == 5 ? getArgReference_bat(stk, pci, 4) : NULL; \
-	BATiter b1i, b2i = (BATiter){ .vh = NULL };							\
+	BATiter b1i, b2i = { .vh = NULL };									\
 	DEC_SRC1(INTYPE1, 1);												\
 	DEC_SRC2(INTYPE2, 2);												\
 	DEC_OUTPUT(OUTTYPE, n);												\
 																		\
-	(void) cntxt;														\
-	(void) mb;															\
 	b1 = BATdescriptor(*bid1);											\
 	b2 = BATdescriptor(*bid2);											\
 	b1i = bat_iterator(b1);												\
@@ -327,6 +333,9 @@ bailout:																\
 static str																\
 NAME##_bulk_p1(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)	\
 {																		\
+	allocator *ma = cntxt->curprg->def->ma;								\
+	(void) ma;															\
+	(void) mb;															\
 	str msg = MAL_SUCCEED;												\
 	BAT *b2 = NULL, *s2 = NULL, *bn = NULL;								\
 	oid off2;															\
@@ -403,6 +412,9 @@ bailout:																\
 static str																\
 NAME##_bulk_p2(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)	\
 {																		\
+	allocator *ma = cntxt->curprg->def->ma;								\
+	(void) ma;															\
+	(void) mb;															\
 	str msg = MAL_SUCCEED;												\
 	BAT *b1 = NULL, *s1 = NULL, *bn = NULL;								\
 	oid off1;															\
@@ -488,13 +500,15 @@ bailout:																\
 			  GET_NEXT_SRC1, GET_NEXT_SRC2,								\
 			  APPEND_NEXT, CLEAR_EXTRA_SINGLE, CLEAR_EXTRA_MULTI)		\
 static str																\
-NAME(OUTTYPE *ret, const INTYPE1 *v1, const INTYPE2 *v2, const lng *extra)				\
+NAME(Client ctx, OUTTYPE *ret, const INTYPE1 *v1, const INTYPE2 *v2, const lng *extra) \
 {																		\
+	allocator *ma = ctx->curprg->def->ma;									\
+	(void) ma;															\
 	str msg = MAL_SUCCEED;												\
 	DEC_EXTRA(OUTTYPE, res, MALFUNC);									\
 																		\
 	do {																\
-		FUNC_CALL(FUNC, res, *v1, *v2, *extra);									\
+		FUNC_CALL(FUNC, res, *v1, *v2, *extra);							\
 	} while (0);														\
 	CLEAR_EXTRA_SINGLE(MALFUNC);										\
 	return msg;															\
@@ -502,6 +516,9 @@ NAME(OUTTYPE *ret, const INTYPE1 *v1, const INTYPE2 *v2, const lng *extra)				\
 static str																\
 NAME##_bulk(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)	\
 {																		\
+	allocator *ma = cntxt->curprg->def->ma;								\
+	(void) ma;															\
+	(void) mb;															\
 	str msg = MAL_SUCCEED;												\
 	BAT *b1 = NULL, *b2 = NULL, *s1 = NULL, *s2 = NULL, *bn = NULL;		\
 	oid off1, off2;														\
@@ -513,13 +530,11 @@ NAME##_bulk(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)	\
 		*sid1 = pci->argc == 6 ? getArgReference_bat(stk, pci, 3) : NULL, \
 		*sid2 = pci->argc == 6 ? getArgReference_bat(stk, pci, 4) : NULL; \
 	lng *extra = getArgReference_lng(stk, pci, pci->argc-1);						\
-	BATiter b1i, b2i = (BATiter){ .vh = NULL };							\
+	BATiter b1i, b2i = { .vh = NULL };									\
 	DEC_SRC1(INTYPE1, 1);												\
 	DEC_SRC2(INTYPE2, 2);												\
 	DEC_OUTPUT(OUTTYPE, n);												\
 																		\
-	(void) cntxt;														\
-	(void) mb;															\
 	b1 = BATdescriptor(*bid1);											\
 	b2 = BATdescriptor(*bid2);											\
 	b1i = bat_iterator(b1);												\
@@ -601,6 +616,9 @@ bailout:																\
 static str																\
 NAME##_bulk_p1(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)	\
 {																		\
+	allocator *ma = cntxt->curprg->def->ma;								\
+	(void) ma;															\
+	(void) mb;															\
 	str msg = MAL_SUCCEED;												\
 	BAT *b2 = NULL, *s2 = NULL, *bn = NULL;								\
 	oid off2;															\
@@ -678,6 +696,9 @@ bailout:																\
 static str																\
 NAME##_bulk_p2(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)	\
 {																		\
+	allocator *ma = cntxt->curprg->def->ma;								\
+	(void) ma;															\
+	(void) mb;															\
 	str msg = MAL_SUCCEED;												\
 	BAT *b1 = NULL, *s1 = NULL, *bn = NULL;								\
 	oid off1;															\
@@ -927,9 +948,9 @@ func1(MTIMEmsec_extract_epoch_ms, "epoch_ms", lng, lng, msec_since_epoch,
 	  COPYFLAGS, func1_noexcept, DEC_VAR_R, DEC_VAR_R, INIT_VARIN, INIT_VAROUT,
 	  GET_NEXT_VAR)
 static inline str
-date_fromstr_func(date *ret, const char *s)
+date_fromstr_func(allocator *ma, date *ret, const char *s)
 {
-	if (date_fromstr(s, &(size_t) { sizeof(date) }, &ret, false) < 0) {
+	if (date_fromstr(ma, s, &(size_t) { sizeof(date) }, &ret, false) < 0) {
 		if (strNil(s))
 			throw(MAL, "mtime.date_fromstr",
 				  SQLSTATE(42000) "Conversion of NULL string to date failed");
@@ -964,9 +985,9 @@ func2(MTIMEtimestamp_tz_extract_date, "date",
 	  GET_NEXT_VAR, GET_NEXT_VAR, APPEND_VAR, FINISH_INT_SINGLE, CLEAR_NOTHING)
 
 static inline str
-timestamp_fromstr_func(timestamp *ret, const char *s)
+timestamp_fromstr_func(allocator *ma, timestamp *ret, const char *s)
 {
-	if (timestamp_fromstr(s, &(size_t) { sizeof(timestamp) }, &ret, false) < 0)
+	if (timestamp_fromstr(ma, s, &(size_t) { sizeof(timestamp) }, &ret, false) < 0)
 		throw(MAL, "mtime.timestamp_fromstr", GDK_EXCEPTION);
 	return MAL_SUCCEED;
 }
@@ -1009,9 +1030,9 @@ func1(MTIMEtimestamp_frommsec, "timestamp", lng, timestamp,
 	  mktsfrommsec, COPYFLAGS, func1_noexcept,
 	  DEC_VAR_R, DEC_VAR_R, INIT_VARIN, INIT_VAROUT, GET_NEXT_VAR)
 static inline str
-daytime_fromstr_func(daytime *ret, const char *s)
+daytime_fromstr_func(allocator *ma, daytime *ret, const char *s)
 {
-	if (daytime_fromstr(s, &(size_t) { sizeof(daytime) }, &ret, false) < 0)
+	if (daytime_fromstr(ma, s, &(size_t) { sizeof(daytime) }, &ret, false) < 0)
 		throw(MAL, "mtime.daytime_fromstr", GDK_EXCEPTION);
 	return MAL_SUCCEED;
 }
@@ -1024,8 +1045,9 @@ func1(MTIMEdaytime_daytime, "daytime", daytime, daytime,
 	  daytime_daytime, COPYFLAGS, func1_noexcept,
 	  DEC_VAR_R, DEC_VAR_R, INIT_VARIN, INIT_VAROUT, GET_NEXT_VAR)
 static inline str
-daytime_fromseconds(daytime *ret, lng secs)
+daytime_fromseconds(allocator *ma, daytime *ret, lng secs)
 {
+	(void) ma;
 	if (is_lng_nil(secs))
 		*ret = daytime_nil;
 	else if (secs < 0 || secs >= 24 * 60 * 60)
@@ -1073,7 +1095,7 @@ local_timezone(int *isdstp)
 	}
 #elif defined(HAVE_TM_GMTOFF)
 	time_t t;
-	struct tm tm = (struct tm) { 0 };
+	struct tm tm = { 0 };
 
 	if ((t = time(NULL)) != (time_t) - 1 && localtime_r(&t, &tm)) {
 		tzone = (int) tm.tm_gmtoff;
@@ -1081,7 +1103,7 @@ local_timezone(int *isdstp)
 	}
 #else
 	time_t t;
-	struct tm tm = (struct tm) { 0 };
+	struct tm tm = { 0 };
 
 	if ((t = time(NULL)) != (time_t) - 1 && gmtime_r(&t, &tm)) {
 		timestamp lt, gt;
@@ -1110,8 +1132,9 @@ local_timezone(int *isdstp)
 }
 
 static str
-MTIMElocal_timezone_msec(lng *ret)
+MTIMElocal_timezone_msec(Client ctx, lng *ret)
 {
+	(void) ctx;
 	int tzone = local_timezone(NULL);
 	*ret = (lng) tzone *1000;
 	return MAL_SUCCEED;
@@ -1123,7 +1146,6 @@ timestamp_to_str_withtz(str *buf, const timestamp *d, const char *const *format,
 {
 	date dt;
 	daytime t;
-	struct tm tm;
 
 	if (is_timestamp_nil(*d) || strNil(*format)) {
 		strcpy(*buf, str_nil);
@@ -1131,7 +1153,7 @@ timestamp_to_str_withtz(str *buf, const timestamp *d, const char *const *format,
 	}
 	dt = timestamp_date(*d);
 	t = timestamp_daytime(*d);
-	tm = (struct tm) {
+	struct tm tm = {
 		.tm_year = date_year(dt) - 1900,
 		.tm_mon = date_month(dt) - 1,
 		.tm_mday = date_day(dt),
@@ -1170,7 +1192,7 @@ static str
 str_to_timestamp(timestamp *ret, const char *const *s, const char *const *format, const long gmtoff, const char *type,
 				 const char *malfunc)
 {
-	struct tm tm = (struct tm) {
+	struct tm tm = {
 		.tm_isdst = -1,
 		.tm_mday = 1,
 #ifdef HAVE_TM_GMTOFF
@@ -1729,7 +1751,7 @@ static mel_func mtime_init_funcs[] = {
  command("mtime", "month", MTIMEdate_extract_month, false, "extracts month from date", args(1,2, arg("",bte),arg("d",date))),
  pattern("batmtime", "month", MTIMEdate_extract_month_bulk, false, "", args(1,2, batarg("",bte),batarg("d",date))),
  pattern("batmtime", "month", MTIMEdate_extract_month_bulk, false, "", args(1,3, batarg("",bte),batarg("d",date),batarg("s",oid))),
- command("mtime", "day", MTIMEdate_extract_day, false, "extracts day from date ", args(1,2, arg("",bte),arg("d",date))),
+ command("mtime", "day", MTIMEdate_extract_day, false, "extracts day from date", args(1,2, arg("",bte),arg("d",date))),
  pattern("batmtime", "day", MTIMEdate_extract_day_bulk, false, "", args(1,2, batarg("",bte),batarg("d",date))),
  pattern("batmtime", "day", MTIMEdate_extract_day_bulk, false, "", args(1,3, batarg("",bte),batarg("d",date),batarg("s",oid))),
  command("mtime", "epoch_ms", MTIMEdate_extract_epoch_ms, false, "", args(1,2, arg("",lng),arg("d",date))),
@@ -1747,21 +1769,21 @@ static mel_func mtime_init_funcs[] = {
  command("mtime", "epoch_ms", MTIMEdaytime_extract_epoch_ms, false, "", args(1,2, arg("",lng),arg("d",daytime))),
  pattern("batmtime", "epoch_ms", MTIMEdaytime_extract_epoch_ms_bulk, false, "", args(1,2, batarg("",lng),batarg("d",daytime))),
  pattern("batmtime", "epoch_ms", MTIMEdaytime_extract_epoch_ms_bulk, false, "", args(1,3, batarg("",lng),batarg("d",daytime),batarg("s",oid))),
- command("mtime", "addmonths", MTIMEdate_addmonths, false, "returns the date after a number of\nmonths (possibly negative).", args(1,3, arg("",date),arg("value",date),arg("months",int))),
+ command("mtime", "addmonths", MTIMEdate_addmonths, false, "returns the date after a number of months (possibly negative).", args(1,3, arg("",date),arg("value",date),arg("months",int))),
  pattern("batmtime", "addmonths", MTIMEdate_addmonths_bulk, false, "", args(1,3, batarg("",date),batarg("value",date),batarg("months",int))),
  pattern("batmtime", "addmonths", MTIMEdate_addmonths_bulk_p1, false, "", args(1,3, batarg("",date),arg("value",date),batarg("months",int))),
  pattern("batmtime", "addmonths", MTIMEdate_addmonths_bulk_p2, false, "", args(1,3, batarg("",date),batarg("value",date),arg("months",int))),
  pattern("batmtime", "addmonths", MTIMEdate_addmonths_bulk, false, "", args(1,5, batarg("",date),batarg("value",date),batarg("months",int),batarg("s1",oid),batarg("s2",oid))),
  pattern("batmtime", "addmonths", MTIMEdate_addmonths_bulk_p1, false, "", args(1,4, batarg("",date),arg("value",date),batarg("months",int),batarg("s",oid))),
  pattern("batmtime", "addmonths", MTIMEdate_addmonths_bulk_p2, false, "", args(1,4, batarg("",date),batarg("value",date),arg("months",int),batarg("s",oid))),
- command("mtime", "diff", MTIMEdate_diff, false, "returns the number of days\nbetween 'val1' and 'val2'.", args(1,3, arg("",lng),arg("val1",date),arg("val2",date))),
+ command("mtime", "diff", MTIMEdate_diff, false, "returns the number of days between 'val1' and 'val2'.", args(1,3, arg("",lng),arg("val1",date),arg("val2",date))),
  pattern("batmtime", "diff", MTIMEdate_diff_bulk, false, "", args(1,3, batarg("",lng),batarg("val1",date),batarg("val2",date))),
  pattern("batmtime", "diff", MTIMEdate_diff_bulk_p1, false, "", args(1,3, batarg("",lng),arg("val1",date),batarg("val2",date))),
  pattern("batmtime", "diff", MTIMEdate_diff_bulk_p2, false, "", args(1,3, batarg("",lng),batarg("val1",date),arg("val2",date))),
  pattern("batmtime", "diff", MTIMEdate_diff_bulk, false, "", args(1,5, batarg("",lng),batarg("val1",date),batarg("val2",date),batarg("s1",oid),batarg("s2",oid))),
  pattern("batmtime", "diff", MTIMEdate_diff_bulk_p1, false, "", args(1,4, batarg("",lng),arg("val1",date),batarg("val2",date),batarg("s",oid))),
  pattern("batmtime", "diff", MTIMEdate_diff_bulk_p2, false, "", args(1,4, batarg("",lng),batarg("val1",date),arg("val2",date),batarg("s",oid))),
- command("mtime", "dayofyear", MTIMEdate_extract_dayofyear, false, "Returns N where d is the Nth day\nof the year (january 1 returns 1)", args(1,2, arg("",sht),arg("d",date))),
+ command("mtime", "dayofyear", MTIMEdate_extract_dayofyear, false, "Returns N where d is the Nth day of the year (january 1 returns 1)", args(1,2, arg("",sht),arg("d",date))),
  pattern("batmtime", "dayofyear", MTIMEdate_extract_dayofyear_bulk, false, "", args(1,2, batarg("",sht),batarg("d",date))),
  pattern("batmtime", "dayofyear", MTIMEdate_extract_dayofyear_bulk, false, "", args(1,3, batarg("",sht),batarg("d",date),batarg("s",oid))),
  command("mtime", "weekofyear", MTIMEdate_extract_weekofyear, false, "Returns the week number in the year.", args(1,2, arg("",bte),arg("d",date))),
@@ -1770,10 +1792,10 @@ static mel_func mtime_init_funcs[] = {
  command("mtime", "usweekofyear", MTIMEdate_extract_usweekofyear, false, "Returns the week number in the year, US style.", args(1,2, arg("",bte),arg("d",date))),
  pattern("batmtime", "usweekofyear", MTIMEdate_extract_usweekofyear_bulk, false, "", args(1,2, batarg("",bte),batarg("d",date))),
  pattern("batmtime", "usweekofyear", MTIMEdate_extract_usweekofyear_bulk, false, "", args(1,3, batarg("",bte),batarg("d",date),batarg("s",oid))),
- command("mtime", "dayofweek", MTIMEdate_extract_dayofweek, false, "Returns the current day of the week\nwhere 1=monday, .., 7=sunday", args(1,2, arg("",bte),arg("d",date))),
+ command("mtime", "dayofweek", MTIMEdate_extract_dayofweek, false, "Returns the current day of the week where 1=monday, .., 7=sunday", args(1,2, arg("",bte),arg("d",date))),
  pattern("batmtime", "dayofweek", MTIMEdate_extract_dayofweek_bulk, false, "", args(1,2, batarg("",bte),batarg("d",date))),
  pattern("batmtime", "dayofweek", MTIMEdate_extract_dayofweek_bulk, false, "", args(1,3, batarg("",bte),batarg("d",date),batarg("s",oid))),
- command("mtime", "diff", MTIMEtimestamp_diff_msec, false, "returns the number of milliseconds\nbetween 'val1' and 'val2'.", args(1,3, arg("",lng),arg("val1",timestamp),arg("val2",timestamp))),
+ command("mtime", "diff", MTIMEtimestamp_diff_msec, false, "returns the number of milliseconds between 'val1' and 'val2'.", args(1,3, arg("",lng),arg("val1",timestamp),arg("val2",timestamp))),
  pattern("batmtime", "diff", MTIMEtimestamp_diff_msec_bulk, false, "", args(1,3, batarg("",lng),batarg("val1",timestamp),batarg("val2",timestamp))),
  pattern("batmtime", "diff", MTIMEtimestamp_diff_msec_bulk_p1, false, "", args(1,3, batarg("",lng),arg("val1",timestamp),batarg("val2",timestamp))),
  pattern("batmtime", "diff", MTIMEtimestamp_diff_msec_bulk_p2, false, "", args(1,3, batarg("",lng),batarg("val1",timestamp),arg("val2",timestamp))),

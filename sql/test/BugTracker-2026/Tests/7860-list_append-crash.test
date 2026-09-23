@@ -1,0 +1,10 @@
+query I
+SELECT * FROM ( SELECT * FROM ( SELECT 291 AS x )
+   WHERE x IN ( SELECT ( row_number ( ) OVER ( ) ) FROM ( SELECT * FROM (
+    WITH x AS ( SELECT 1 ) SELECT ALL group_concat ( 971 ) FROM x GROUP BY rollup ( x , x ) ) WHERE ( x % 7 ) = 0 ) ) )
+----
+
+query R
+SELECT stddev_pop ( 606 ) OVER ( ) ORDER BY SUM ( 0 ) OVER ( )
+----
+NULL

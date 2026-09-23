@@ -3,11 +3,9 @@
 #
 # This Source Code Form is subject to the terms of the Mozilla Public
 # License, v. 2.0.  If a copy of the MPL was not distributed with this
-# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+# file, You can obtain one at https://mozilla.org/MPL/2.0/.
 #
-# Copyright 2024, 2025 MonetDB Foundation;
-# Copyright August 2008 - 2023 MonetDB B.V.;
-# Copyright 1997 - July 2008 CWI.
+# For copyright information, see the file debian/copyright.
 #]]
 
 add_library(kernel OBJECT)
@@ -27,6 +25,8 @@ target_sources(kernel
   aggr.c aggr.h
   batmmath.c
   batstr.c
+  pp_group.c
+  pp_aggr.c
   PUBLIC
   ${CMAKE_CURRENT_SOURCE_DIR}/bat5.h)
 target_sources(microbenchmark
@@ -36,6 +36,8 @@ target_sources(microbenchmark
   ${CMAKE_CURRENT_SOURCE_DIR}/bat5.h)
 
 target_include_directories(kernel
+  PRIVATE
+  ../mal
   PUBLIC
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
   $<INSTALL_INTERFACE:${INCLUDEDIR}/monetdb>)

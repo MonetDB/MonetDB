@@ -3,11 +3,9 @@
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024, 2025 MonetDB Foundation;
- * Copyright August 2008 - 2023 MonetDB B.V.;
- * Copyright 1997 - July 2008 CWI.
+ * For copyright information, see the file debian/copyright.
  */
 
 #include "monetdb_config.h"
@@ -104,6 +102,7 @@ dnode_create_string(allocator *sa, const char *data)
 	}
 	return n;
 }
+
 static dnode *
 dnode_create_list(allocator *sa, dlist *data)
 {
@@ -255,8 +254,30 @@ dlist_append_type(allocator *sa, dlist *l, sql_subtype *data)
 	return dlist_append_default(l, n);
 }
 
+static dlist *
+dlist_prepend_default(dlist *l, dnode *n)
+{
+	n->next = l->h;
+	l->h = n;
+	assert(l->cnt);
+	if (!l->cnt)
+		l->t = n;
+	l->cnt++;
+	return l;
+}
+
+dlist *
+dlist_prepend(allocator *sa, dlist *l, symbol *data)
+{
+	dnode *n = dnode_create_symbol(sa, data);
+
+	if (!n)
+		return NULL;
+	return dlist_prepend_default(l, n);
+}
+
 symbol *
-newSelectNode(allocator *sa, int distinct, struct dlist *selection, struct dlist *into, symbol *from, symbol *where, symbol *groupby, symbol *having, symbol *orderby, symbol *name, symbol *limit, symbol *offset, symbol *sample, symbol *seed, symbol *window)
+newSelectNode(allocator *sa, int distinct, struct dlist *selection, struct dlist *into, symbol *from, symbol *where, symbol *groupby, symbol *having, symbol *orderby, symbol *name, symbol *limit, symbol *offset, symbol *sample, symbol *seed, symbol *window, symbol *qualify)
 {
 	SelectNode *sn = SA_NEW(sa, SelectNode);
 	symbol *s = (symbol *) sn;
@@ -278,8 +299,41 @@ newSelectNode(allocator *sa, int distinct, struct dlist *selection, struct dlist
 		sn->orderby = orderby;
 		sn->name = name;
 		sn->window = window;
+		sn->qualify = qualify;
 	}
 	return s;
+}
+
+CopyFromNode *
+newCopyFromNode(allocator *sa, struct dlist *qname, struct dlist *column_list, struct dlist *sources, struct dlist *header_list, struct dlist *nr_offset)
+{
+	CopyFromNode *n = SA_NEW(sa, CopyFromNode);
+	if (n) {
+		*n = (CopyFromNode) {
+			.qname = qname,
+			.column_list = column_list,
+			.sources = sources,
+			.header_list = header_list,
+			.nrows = -1,
+			.offset = 0,
+			.tsep = "|",
+			.rsep = "\n",
+			.ssep = NULL,
+			.null_string = NULL,
+			.best_effort = false,
+			.fwf_widths = NULL,
+			.on_client = 0,
+			.escape = true,
+			.decsep = ".",
+			.decskip = NULL,
+		};
+		symbol_init(&n->s, SQL_COPYFROM, type_symbol);
+		if (nr_offset) {
+			n->nrows = nr_offset->h->data.l_val;
+			n->offset = nr_offset->h->next->data.l_val;
+		}
+	}
+	return n;
 }
 
 symbol *

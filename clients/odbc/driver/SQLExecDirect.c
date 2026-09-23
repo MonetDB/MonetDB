@@ -3,11 +3,9 @@
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024, 2025 MonetDB Foundation;
- * Copyright August 2008 - 2023 MonetDB B.V.;
- * Copyright 1997 - July 2008 CWI.
+ * For copyright information, see the file debian/copyright.
  */
 
 /*
@@ -79,13 +77,13 @@ ODBCExecDirect(ODBCStmt *stmt, const SQLCHAR *StatementText, SQLINTEGER TextLeng
 	    stmt->Dbc->FirstStmt == stmt &&
 	    stmt->cursorType == SQL_CURSOR_FORWARD_ONLY) {
 		/* we're the only Stmt handle, and we're only going forward */
-		if (stmt->Dbc->cachelimit != 10000)
-			mapi_cache_limit(stmt->Dbc->mid, 10000);
-		stmt->Dbc->cachelimit = 10000;
+		if (stmt->Dbc->cachelimit != LARGE_CACHE_LIMIT)
+			mapi_cache_limit(stmt->Dbc->mid, LARGE_CACHE_LIMIT);
+		stmt->Dbc->cachelimit = LARGE_CACHE_LIMIT;
 	} else {
-		if (stmt->Dbc->cachelimit != 100)
-			mapi_cache_limit(stmt->Dbc->mid, 100);
-		stmt->Dbc->cachelimit = 100;
+		if (stmt->Dbc->cachelimit != SMALL_CACHE_LIMIT)
+			mapi_cache_limit(stmt->Dbc->mid, SMALL_CACHE_LIMIT);
+		stmt->Dbc->cachelimit = SMALL_CACHE_LIMIT;
 	}
 	ret = mapi_query_handle(hdl, query);
 	free(query);

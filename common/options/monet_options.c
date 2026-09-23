@@ -3,11 +3,9 @@
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024, 2025 MonetDB Foundation;
- * Copyright August 2008 - 2023 MonetDB B.V.;
- * Copyright 1997 - July 2008 CWI.
+ * For copyright information, see the file debian/copyright.
  */
 
 /*
@@ -24,23 +22,11 @@
  */
 #include "monetdb_config.h"
 #include "monet_options.h"
-#ifndef HAVE_GETOPT_LONG
-#  include "monet_getopt.h"
-#else
-# ifdef HAVE_GETOPT_H
-#  include "getopt.h"
-# endif
-#endif
 #include <string.h>
 #include <ctype.h>
 
 #ifdef HAVE_UNISTD_H
 #include <unistd.h>
-#endif
-
-#ifndef HAVE_GETOPT_LONG
-#  include "getopt.c"
-#  include "getopt1.c"
 #endif
 
 #ifdef NATIVE_WIN32
@@ -57,7 +43,8 @@ mo_default_set(opt **Set, int setlen)
 	if (*Set == NULL) {
 		if (default_set == NULL) {
 			default_setlen = mo_builtin_settings(&default_set);
-			default_setlen = mo_system_config(&default_set, default_setlen);
+			default_setlen = mo_system_config(&default_set,
+							  default_setlen);
 		}
 		*Set = default_set;
 		setlen = default_setlen;
@@ -73,17 +60,20 @@ mo_print_options(opt *set, int setlen)
 	setlen = mo_default_set(&set, setlen);
 	for (i = 0; i < setlen; i++) {
 		if (set[i].kind == opt_builtin) {
-			fprintf(stderr, "# builtin opt \t%s = %s\n", set[i].name, set[i].value);
+			fprintf(stderr, "# builtin opt \t%s = %s\n",
+				set[i].name, set[i].value);
 		}
 	}
 	for (i = 0; i < setlen; i++) {
 		if (set[i].kind == opt_config) {
-			fprintf(stderr, "# config opt \t%s = %s\n", set[i].name, set[i].value);
+			fprintf(stderr, "# config opt \t%s = %s\n",
+				set[i].name, set[i].value);
 		}
 	}
 	for (i = 0; i < setlen; i++) {
 		if (set[i].kind == opt_cmdline) {
-			fprintf(stderr, "# cmdline opt \t%s = %s\n", set[i].name, set[i].value);
+			fprintf(stderr, "# cmdline opt \t%s = %s\n",
+				set[i].name, set[i].value);
 		}
 	}
 }
@@ -140,7 +130,9 @@ mo_config_file(opt **Set, int setlen, const char *file)
 
 		val = strchr(s, '=');
 		if (val == NULL) {
-			fprintf(stderr, "mo_config_file: syntax error in %s at %s\n", file, s);
+			fprintf(stderr,
+				"mo_config_file: syntax error in %s at %s\n",
+				file, s);
 			break;
 		}
 		*val = 0;
@@ -162,7 +154,9 @@ mo_config_file(opt **Set, int setlen, const char *file)
 				break;
 		}
 		if (quote) {
-			fprintf(stderr, "mo_config_file: wrong number of quotes in %s at %s\n", file, val);
+			fprintf(stderr,
+				"mo_config_file: wrong number of quotes in %s at %s\n",
+				file, val);
 			break;
 		}
 		/* remove trailing white space */
@@ -284,7 +278,8 @@ mo_builtin_settings(opt **Set)
 }
 
 int
-mo_add_option(opt **Set, int setlen, opt_kind kind, const char *name, const char *value)
+mo_add_option(opt **Set, int setlen, opt_kind kind,
+	      const char *name, const char *value)
 {
 	opt *set;
 

@@ -3,11 +3,9 @@
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024, 2025 MonetDB Foundation;
- * Copyright August 2008 - 2023 MonetDB B.V.;
- * Copyright 1997 - July 2008 CWI.
+ * For copyright information, see the file debian/copyright.
  */
 
 /*
@@ -40,11 +38,11 @@
 
 /* Insert the instruction immediately after a previous instruction that
  * generated an argument needed.
- * If non can be found, add it to the end.
+ * If none can be found, add it to the end.
  * Be aware of side-effect instructions, they may not be skipped.
  */
 str
-OPTreorderImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
+OPTreorderImplementation(Client ctx, MalBlkPtr mb, MalStkPtr stk,
 						 InstrPtr pci)
 {
 	int i, j, k, blkcnt = 1, pc = 0, actions = 0;
@@ -55,25 +53,21 @@ OPTreorderImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 	int top[MAXSLICES] = { 0 };
 	int barriers[MAXSLICES] = { 0 }, btop = 0, off = 0;
 
-	for (i = 0; i < MAXSLICES; i++)
-		top[i] = 0;
-	if (isOptimizerUsed(mb, pci, mitosisRef) <= 0) {
+	if (MB_LARGE(mb)) {
 		goto wrapup;
 	}
-	(void) cntxt;
 	(void) stk;
 
 	limit = mb->stop;
 	slimit = mb->ssize;
 	old = mb->stmt;
 
-	depth = (int *) GDKzalloc(mb->vtop * sizeof(int));
-	if (depth == NULL) {
-		throw(MAL, "optimizer.reorder", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-	}
+	allocator *ta = MT_thread_getallocator();
 
-	if (newMalBlkStmt(mb, mb->ssize) < 0) {
-		GDKfree(depth);
+	allocator_state ta_state = ma_open(ta);
+	depth = (int *) ma_zalloc(ta, mb->vtop * sizeof(int));
+	if (depth == NULL || newMalBlkStmt(mb, mb->ssize) < 0) {
+		ma_close(&ta_state);
 		throw(MAL, "optimizer.reorder", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 
@@ -82,7 +76,7 @@ OPTreorderImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 	for (i = 0; i < limit; i++) {
 		p = old[i];
 		if (!p) {
-			//mnstr_printf(cntxt->fdout, "empty stmt:pc %d \n", i);
+			//mnstr_printf(ctx->fdout, "empty stmt:pc %d \n", i);
 			continue;
 		}
 		if (p->token == ENDsymbol)
@@ -128,13 +122,9 @@ OPTreorderImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 		}
 
 		if (top[k] == 0) {
-			blocks[k] = GDKzalloc(limit * sizeof(InstrPtr));
+			blocks[k] = ma_zalloc(ta, limit * sizeof(InstrPtr));
 			if (blocks[k] == NULL) {
-				for (i = 0; i < blkcnt; i++)
-					if (top[i])
-						GDKfree(blocks[i]);
-				GDKfree(depth);
-				GDKfree(mb->stmt);
+				ma_close(&ta_state);
 				mb->stop = limit;
 				mb->ssize = slimit;
 				mb->stmt = old;
@@ -144,8 +134,8 @@ OPTreorderImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 		}
 		blocks[k][top[k]] = p;
 		top[k] = top[k] + 1;
-		//mnstr_printf(cntxt->fdout, "block[%d] :%d:",i, k);
-		//printInstruction(cntxt->fdout, mb, stk, p, LIST_MAL_DEBUG);
+		//mnstr_printf(ctx->fdout, "block[%d] :%d:",i, k);
+		//printInstruction(ctx->fdout, mb, stk, p, LIST_MAL_DEBUG);
 		if (k > blkcnt)
 			blkcnt = k;
 	}
@@ -165,22 +155,17 @@ OPTreorderImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 			pushInstruction(mb, old[i]);
 
 	/* Defense line against incorrect plans */
-	msg = chkTypes(cntxt->usermodule, mb, FALSE);
+	msg = chkTypes(ctx->usermodule, mb, FALSE);
 	if (!msg)
 		msg = chkFlow(mb);
 	if (!msg)
 		msg = chkDeclarations(mb);
 	/* keep all actions taken as a post block comment */
-	//mnstr_printf(cntxt->fdout,"REORDER RESULT ");
-	//printFunction(cntxt->fdout, mb, 0, LIST_MAL_ALL);
+	//mnstr_printf(ctx->fdout,"REORDER RESULT ");
+	//printFunction(ctx->fdout, mb, 0, LIST_MAL_ALL);
+	ma_close(&ta_state);
   wrapup:
-	for (i = 0; i <= blkcnt; i++)
-		if (top[i])
-			GDKfree(blocks[i]);
-
 	/* keep actions taken as a fake argument */
 	(void) pushInt(mb, pci, actions);
-	GDKfree(depth);
-	GDKfree(old);
 	return msg;
 }

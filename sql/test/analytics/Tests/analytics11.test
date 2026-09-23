@@ -10,7 +10,7 @@ INSERT INTO tbl_ProductSales VALUES (1,'Game','Mobo Game',200),(2,'Game','PKO Ga
 statement ok
 INSERT INTO another_T VALUES (1,2,3,4,5,6,7,8), (11,22,33,44,55,66,77,88), (111,222,333,444,555,666,777,888), (1111,2222,3333,4444,5555,6666,7777,8888)
 
-query I rowsort
+query I nosort
 SELECT 1
 FROM tbl_ProductSales
 GROUP BY Product_Category
@@ -18,7 +18,7 @@ GROUP BY Product_Category
 1
 1
 
-query I rowsort
+query I nosort
 SELECT 1
 FROM tbl_ProductSales
 GROUP BY ()
@@ -67,21 +67,21 @@ SELECT
     (SELECT GROUPING(t1.col1) FROM tbl_ProductSales)
 FROM another_T t1
 
-query I rowsort
+query I nosort
 SELECT
     GROUPING(Product_Name)
 FROM tbl_ProductSales
 ----
 0
 
-query I rowsort
+query I nosort
 SELECT
     GROUPING(Product_Name)
 FROM tbl_ProductSales GROUP BY ()
 ----
 0
 
-query I rowsort
+query I nosort
 SELECT
     GROUPING(Product_Category) AS myalias
 FROM tbl_ProductSales
@@ -90,7 +90,7 @@ GROUP BY Product_Category
 0
 0
 
-query I rowsort
+query I nosort
 SELECT
     GROUPING(Product_Category) myalias
 FROM tbl_ProductSales
@@ -101,7 +101,7 @@ GROUP BY Product_Category, Product_Name
 0
 0
 
-query I rowsort
+query I nosort
 SELECT
     GROUPING(Product_Name, Product_Category)
 FROM tbl_ProductSales
@@ -122,7 +122,7 @@ GROUP BY ROLLUP(Product_Category)
 0
 1
 
-query I rowsort
+query I nosort
 SELECT
     GROUPING(Product_Category) AS myalias
 FROM tbl_ProductSales
@@ -187,7 +187,7 @@ GROUP BY CUBE((Product_Category, Product_Name, ColID))
 0
 3
 
-query I nosort
+query I rowsort
 SELECT
     GROUPING(Product_Category)
 FROM tbl_ProductSales
@@ -206,7 +206,7 @@ ORDER BY GROUPING(Product_Category)
 1
 1
 
-query I rowsort
+query I nosort
 SELECT
     GROUPING(Product_Category)
 FROM tbl_ProductSales
@@ -256,11 +256,12 @@ ORDER BY GROUPING(Product_Category, Product_Name, ColID) DESC
 1
 1
 
-query IR rowsort
+query IR nosort
 SELECT
     GROUPING(Product_Category), AVG(SUM(TotalSales)) OVER (ROWS UNBOUNDED PRECEDING)
 FROM tbl_ProductSales
 GROUP BY GROUPING SETS((Product_Category), (Product_Name), (Product_Category, Product_Name), ())
+ORDER BY 1, 2
 ----
 0
 360.000
@@ -285,11 +286,12 @@ GROUP BY GROUPING SETS((Product_Category), (Product_Name), (Product_Category, Pr
 1
 466.667
 
-query II rowsort
+query II nosort
 SELECT
     GROUPING(Product_Category), RANK() OVER (PARTITION BY SUM(TotalSales))
 FROM tbl_ProductSales
 GROUP BY GROUPING SETS((Product_Category), (Product_Name), (Product_Category, Product_Name), ())
+ORDER BY 1,2
 ----
 0
 1
@@ -332,44 +334,44 @@ NULL
 NULL
 NULL
 
-query IRI rowsort
+query IRI nosort
 SELECT
-    GROUPING(Product_Category), AVG(SUM(TotalSales)) OVER (ROWS UNBOUNDED PRECEDING), RANK() OVER (PARTITION BY SUM(TotalSales))
+    GROUPING(Product_Category), AVG(SUM(TotalSales)) OVER (ORDER BY Product_Category NULLS FIRST, Product_Name NULLS FIRST ROWS UNBOUNDED PRECEDING), RANK() OVER (PARTITION BY SUM(TotalSales))
 FROM tbl_ProductSales
 GROUP BY GROUPING SETS((Product_Category), (Product_Name), (Product_Category, Product_Name), ())
-ORDER BY Product_Category, Product_Name
+ORDER BY Product_Category NULLS FIRST, Product_Name NULLS FIRST
 ----
-0
-100.000
+1
+1200.000
+1
+1
+700.000
+1
+1
+600.000
+1
+1
+575.000
+1
+1
+480.000
 1
 0
-150.000
+500.000
 1
 0
-233.333
+500.000
 1
 0
-300.000
+450.000
 1
 0
-333.333
+466.667
 1
 0
-360.000
+440.000
 1
-1
-100.000
-1
-1
-133.333
-1
-1
-200.000
-1
-1
-271.429
-1
-1
+0
 436.364
 1
 

@@ -3,11 +3,9 @@
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024, 2025 MonetDB Foundation;
- * Copyright August 2008 - 2023 MonetDB B.V.;
- * Copyright 1997 - July 2008 CWI.
+ * For copyright information, see the file debian/copyright.
  */
 
 /**
@@ -31,6 +29,7 @@
 #include "msabaoth.h"
 #include "mutils.h"
 #include "stream.h"
+#include "mstring.h"
 #include <string.h> /* strerror */
 #include <sys/stat.h> /* mkdir, stat, umask */
 #include <sys/types.h> /* mkdir, readdir */
@@ -364,14 +363,14 @@ printStatus(sabdb *stats, int mode, int dbwidth, int uriwidth)
 		switch (stats->state) {
 			case SABdbRunning:
 			case SABdbStarting:
-				secondsToString(uptime, time(NULL) - uplog.laststart, 1);
+				secondsToString(uptime, sizeof(uptime), time(NULL) - uplog.laststart, 1);
 				break;
 			case SABdbCrashed:
-				secondsToString(uptime, time(NULL) - uplog.lastcrash, 1);
+				secondsToString(uptime, sizeof(uptime), time(NULL) - uplog.lastcrash, 1);
 				break;
 			case SABdbInactive:
 				if (uplog.laststop != -1) {
-					secondsToString(uptime, time(NULL) - uplog.laststop, 1);
+					secondsToString(uptime, sizeof(uptime), time(NULL) - uplog.laststop, 1);
 					break;
 				} /* else fall through */
 			default:
@@ -391,7 +390,7 @@ printStatus(sabdb *stats, int mode, int dbwidth, int uriwidth)
 				locked ? locked : state, locked ? state : ' ', uptime);
 		free(dbname);
 		if (uplog.startcntr) {
-			secondsToString(avg, uplog.avguptime, 1);
+			secondsToString(avg, sizeof(avg), uplog.avguptime, 1);
 			printf("  %3d%% %3s",
 					100 - (uplog.crashcntr * 100 / uplog.startcntr), avg);
 		} else {
@@ -441,34 +440,34 @@ printStatus(sabdb *stats, int mode, int dbwidth, int uriwidth)
 		printf("  start count: %d\n  stop count: %d\n  crash count: %d\n",
 				uplog.startcntr, uplog.stopcntr, uplog.crashcntr);
 		if (stats->state == SABdbRunning) {
-			secondsToString(up, time(NULL) - uplog.laststart, 999);
+			secondsToString(up, sizeof(up), time(NULL) - uplog.laststart, 999);
 			printf("  current uptime: %s\n", up);
 		}
-		secondsToString(up, uplog.avguptime, 999);
+		secondsToString(up, sizeof(up), uplog.avguptime, 999);
 		printf("  average uptime: %s\n", up);
-		secondsToString(up, uplog.maxuptime, 999);
+		secondsToString(up, sizeof(up), uplog.maxuptime, 999);
 		printf("  maximum uptime: %s\n", up);
-		secondsToString(up, uplog.minuptime, 999);
+		secondsToString(up, sizeof(up), uplog.minuptime, 999);
 		printf("  minimum uptime: %s\n", up);
 		if (uplog.lastcrash != -1) {
 			t = localtime(&uplog.lastcrash);
 			strftime(up, 32, "%Y-%m-%d %H:%M:%S", t);
 		} else {
-			sprintf(up, "(unknown)");
+			snprintf(up, sizeof(up), "(unknown)");
 		}
 		printf("  last start with crash: %s\n", up);
 		if (uplog.laststart != -1) {
 			t = localtime(&uplog.laststart);
 			strftime(up, 32, "%Y-%m-%d %H:%M:%S", t);
 		} else {
-			sprintf(up, "(unknown)");
+			snprintf(up, sizeof(up), "(unknown)");
 		}
 		printf("  last start: %s\n", up);
 		if (uplog.laststop != -1) {
 			t = localtime(&uplog.laststop);
 			strftime(up, 32, "%Y-%m-%d %H:%M:%S", t);
 		} else {
-			sprintf(up, "(unknown)");
+			snprintf(up, sizeof(up), "(unknown)");
 		}
 		printf("  last stop: %s\n", up);
 		printf("  average of crashes in the last start attempt: %d\n",
@@ -496,7 +495,7 @@ printStatus(sabdb *stats, int mode, int dbwidth, int uriwidth)
 				t = localtime(&uplog.laststart);
 				off += strftime(buf + off, sizeof(buf) - off,
 								"up since %Y-%m-%d %H:%M:%S, ", t);
-				secondsToString(up, time(NULL) - uplog.laststart, 999);
+				secondsToString(up, sizeof(up), time(NULL) - uplog.laststart, 999);
 				strcpy(buf + off, up);
 			break;
 			case SABdbCrashed:
@@ -517,9 +516,9 @@ printStatus(sabdb *stats, int mode, int dbwidth, int uriwidth)
 				"in total %d crashes\n",
 				uplog.crashavg1, uplog.crashavg10, uplog.crashavg30,
 				uplog.crashcntr);
-		secondsToString(min, uplog.minuptime, 1);
-		secondsToString(avg, uplog.avguptime, 1);
-		secondsToString(max, uplog.maxuptime, 1);
+		secondsToString(min, sizeof(min), uplog.minuptime, 1);
+		secondsToString(avg, sizeof(avg), uplog.avguptime, 1);
+		secondsToString(max, sizeof(max), uplog.maxuptime, 1);
 		printf("  uptime stats (min/avg/max): %s/%s/%s over %d runs\n",
 				min, avg, max, uplog.stopcntr);
 	}
@@ -1155,6 +1154,8 @@ command_set(int argc, char *argv[], meroset type)
 	bool doall = true;
 	char *p = NULL;
 	char property[24] = "";
+	char *prop = property;
+	char *propend = &property[sizeof(property)];
 	int i;
 	int state = 0;
 	char *res;
@@ -1194,7 +1195,7 @@ command_set(int argc, char *argv[], meroset type)
 			/* make this option no longer available, for easy use
 			 * later on */
 			argv[i] = NULL;
-		} else if (property[0] == '\0') {
+		} else if (prop == property) {
 			/* first non-option is property, rest is database */
 			p = argv[i];
 			if (type == SET) {
@@ -1204,15 +1205,14 @@ command_set(int argc, char *argv[], meroset type)
 					exit(1);
 				}
 				*p = '\0';
-				snprintf(property, sizeof(property), "%s", argv[i]);
+				prop = stpecpy(prop, propend, argv[i]);
 				*p++ = '=';
 				p = argv[i];
 			} else {
-				snprintf(property, sizeof(property), "%s", argv[i]);
+				prop = stpecpy(prop, propend, argv[i]);
 			}
 			argv[i] = NULL;
-		}
-		else
+		} else
 			doall = false;
 	}
 
@@ -1268,7 +1268,7 @@ command_set(int argc, char *argv[], meroset type)
 	}
 
 	if (type == INHERIT) {
-		strncat(property, "=", sizeof(property) - strlen(property) - 1);
+		prop = stpecpy(prop, propend, "=");
 		p = property;
 	}
 
@@ -1710,8 +1710,9 @@ snapshot_create_adhoc(sabdb *databases, char *filename) {
 	assert(databases != NULL);
 	assert(databases->next == NULL);
 
-	char *merocmd = malloc(100 + strlen(filename));
-	sprintf(merocmd, "snapshot create adhoc %s", filename);
+	size_t merolen = 100 + strlen(filename);
+	char *merocmd = malloc(merolen);
+	snprintf(merocmd, merolen, "snapshot create adhoc %s", filename);
 
 	simple_argv_cmd("snapshot", databases, merocmd, NULL, "snapshotting database");
 
@@ -1824,8 +1825,9 @@ snapshot_enumerate(struct snapshot **snapshots, int *nsnapshots)
 			if (prev == NULL || strcmp(prev->dbname, cur->dbname) != 0)
 				counter = 0;
 			counter++;
-			cur->name = malloc(strlen(cur->dbname) + 10);
-			sprintf(cur->name, "%s@%d", cur->dbname, counter);
+			size_t nmlen = strlen(cur->dbname) + 10;
+			cur->name = malloc(nmlen);
+			snprintf(cur->name, nmlen, "%s@%d", cur->dbname, counter);
 			prev = cur;
 		}
 	}
@@ -1890,8 +1892,8 @@ snapshot_list(int nglobs, char *globs[]) {
 		strftime(tm_buf, sizeof(tm_buf), "%a %Y-%m-%d %H:%M:%S", &tm);
 		// format size
 		double size = snap->size;
-		char *units[] = {"B", "KiB", "MiB", "GiB", "TiB", NULL};
-		char **unit = &units[0];
+		static const char *units[] = {"B", "KiB", "MiB", "GiB", "TiB", NULL};
+		const char **unit = &units[0];
 		while (size >= 1024 && unit[1] != NULL) {
 			size /= 1024;
 			unit++;
@@ -1910,14 +1912,15 @@ snapshot_restore_file(char *sourcefile, char *dbname)
 {
 	char *ret;
 	char *out;
-	char *merocmd = malloc(100 + strlen(sourcefile));
+	size_t merolen = 100 + strlen(sourcefile);
+	char *merocmd = malloc(merolen);
 
 	if (!monetdb_quiet) {
 		printf("Restore '%s' from '%s'... ", dbname, sourcefile);
 		fflush(stdout);
 	}
 
-	sprintf(merocmd, "snapshot restore adhoc %s", sourcefile);
+	snprintf(merocmd, merolen, "snapshot restore adhoc %s", sourcefile);
 	ret = control_send(&out, mero_host, mero_port, dbname, merocmd, false, mero_pass);
 	free(merocmd);
 
@@ -1942,9 +1945,10 @@ snapshot_destroy_file(char *path)
 {
 	char *ret;
 	char *out = NULL;
-	char *merocmd = malloc(100 + strlen(path));
+	size_t merolen = 100 + strlen(path);
+	char *merocmd = malloc(merolen);
 
-	sprintf(merocmd, "snapshot destroy %s", path);
+	snprintf(merocmd, merolen, "snapshot destroy %s", path);
 	ret = control_send(&out, mero_host, mero_port, "", merocmd, false, mero_pass);
 	if (ret != NULL) {
 		fprintf(stderr, "snapshot destroy %s failed: %s", path, ret);
@@ -2044,7 +2048,7 @@ command_snapshot_list(int argc, char *argv[])
 	}
 
 	if (argc == 1) {
-		char *args[] = {"*"};
+		static /*const*/ char *args[] = {"*"};
 		snapshot_list(1, args);
 	}
 	else
@@ -2328,7 +2332,7 @@ command_snapshot_write(int argc, char *argv[])
 	}
 	msab_freeStatus(&stats);
 
-	const char merocmd[] = "snapshot stream";
+	static const char merocmd[] = "snapshot stream";
 
 	msg = control_send_callback(
 			&out, mero_host, mero_port, dbname,

@@ -1,4 +1,4 @@
-query R nosort
+query D nosort
 -- query 92
 select
    sum(ws_ext_discount_amt)  as "Excess Discount Amount"
@@ -28,5 +28,5 @@ and ws_ext_discount_amt
 order by sum(ws_ext_discount_amt)
 limit 100
 ----
-39529.710
+39529.71
 

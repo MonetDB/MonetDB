@@ -3,11 +3,9 @@
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024, 2025 MonetDB Foundation;
- * Copyright August 2008 - 2023 MonetDB B.V.;
- * Copyright 1997 - July 2008 CWI.
+ * For copyright information, see the file debian/copyright.
  */
 
 #include "monetdb_config.h"
@@ -88,7 +86,7 @@ persistRtree(BAT *b)
 			const char * filename = BBP_physical(b->batCacheid);
 			int farmid = b->theap->farmid;
 
-			FILE *file_stream = GDKfilelocate(farmid, filename, "w", "bsrt");
+			FILE *file_stream = GDKfilelocate(farmid, filename, "wb", "bsrt");
 
 			if (file_stream != NULL) {
 				int err;
@@ -130,7 +128,7 @@ BATcheckrtree(BAT *b)
 	int farmid = b->theap->farmid;
 
 	//Do we have the rtree on file?
-	FILE *file_stream = GDKfilelocate(farmid, filename, "r", "bsrt");
+	FILE *file_stream = GDKfilelocate(farmid, filename, "rb", "bsrt");
 	if (file_stream != NULL) {
 		rtree_t* rtree = rtree_bsrt_read(file_stream);
 		if (!rtree) {
@@ -243,7 +241,7 @@ BATrtree(BAT *wkb, BAT *mbrb)
 
 		for (BUN i = 0; i < ci.ncand; i++) {
 			oid p = canditer_next(&ci) - mbrb->hseqbase;
-			const mbr *inMBR = (const mbr *)BUNtail(bi, p);
+			const mbr *inMBR = (const mbr *)BUNtail(&bi, p);
 
 			rtree_id_t rtree_id = i;
 			rtree_coord_t rect[4];
@@ -338,7 +336,7 @@ f(rtree_id_t id, void *context)
 }
 
 BUN*
-RTREEsearch(BAT *b, const void *inMBRptr, int result_limit)
+RTREEsearch(allocator *ma, BAT *b, const void *inMBRptr, int result_limit)
 {
 	BAT *pb;
 	const mbr *inMBR = inMBRptr;
@@ -362,7 +360,7 @@ RTREEsearch(BAT *b, const void *inMBRptr, int result_limit)
 	if (rtree != NULL) {
 		//Increase ref, we're gonna use the index
 		RTREEincref(pb);
-		BUN *candidates = GDKmalloc((result_limit + 1) * SIZEOF_BUN);
+		BUN *candidates = ma_alloc(ma, (result_limit + 1) * SIZEOF_BUN);
 		memset(candidates, 0, (result_limit + 1) * SIZEOF_BUN);
 
 		rtree_coord_t rect[4];

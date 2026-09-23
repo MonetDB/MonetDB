@@ -1,0 +1,42 @@
+statement ok
+CREATE TABLE nth_value_dynamic_n_bug(id INT, x INT, n INT)
+
+statement ok rowcount 1
+INSERT INTO nth_value_dynamic_n_bug VALUES (5, 42, 2)
+
+query ITIIT nosort
+WITH actual AS (
+  SELECT
+    NTH_VALUE(x, n) OVER (
+      ORDER BY id
+      ROWS BETWEEN UNBOUNDED PRECEDING AND UNBOUNDED FOLLOWING
+    ) AS dynamic_n,
+    NTH_VALUE(x, 2) OVER (
+      ORDER BY id
+      ROWS BETWEEN UNBOUNDED PRECEDING AND UNBOUNDED FOLLOWING
+    ) AS fixed_n,
+    (
+      SELECT r.x
+      FROM nth_value_dynamic_n_bug AS r
+      ORDER BY r.id
+      LIMIT 1 OFFSET 1
+    ) AS reference_n
+  FROM nth_value_dynamic_n_bug
+)
+SELECT
+  dynamic_n AS actual_dynamic_n,
+  dynamic_n IS NULL AS actual_is_null,
+  fixed_n AS fixed_n_control,
+  reference_n AS non_window_reference,
+  TRUE AS expected_is_null
+FROM actual
+----
+NULL
+True
+NULL
+NULL
+True
+
+statement ok
+DROP TABLE nth_value_dynamic_n_bug
+

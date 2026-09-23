@@ -3,11 +3,9 @@
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024, 2025 MonetDB Foundation;
- * Copyright August 2008 - 2023 MonetDB B.V.;
- * Copyright 1997 - July 2008 CWI.
+ * For copyright information, see the file debian/copyright.
  */
 
 /*
@@ -830,6 +828,8 @@ GDKssortimpl(void *restrict h, void *restrict t, const void *restrict heap,
 	ms.bt = t;
 	ms.th = ms.tempstorageh;
 	ms.tt = ms.tempstoraget;
+	ms.ma = MT_thread_getallocator();
+	ms.ma_state = ma_open(ms.ma);
 	assert((size_t) hs <= sizeof(ms.tempstorageh));
 	assert((size_t) ts <= sizeof(ms.tempstoraget));
 	nremaining = (ssize_t) nitems;

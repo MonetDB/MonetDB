@@ -12,6 +12,7 @@
 #include "gdk.h"
 #include "mal.h"
 #include "mal_exception.h"
+#include "mal_interpreter.h"
 
 #define SHA256_BYTES 32
 #define SHA256_HEX 64
@@ -27,13 +28,12 @@ typedef struct sha256_t {
 354b7196c9ba5fb4b21cf615bb6ec4cd5c07503c34229feef033fc081a8c03f4
 */
 static ssize_t
-SHA256fromString(const char *src, size_t *len, void **RETVAL, bool external)
+SHA256fromString(allocator *ma, const char *src, size_t *len, void **RETVAL, bool external)
 {
 	sha256 **retval = (sha256 **) RETVAL;
 
 	if (*len < sizeof(sha256) || *retval == NULL) {
-		GDKfree(*retval);
-		*retval = GDKzalloc(sizeof(sha256));
+		*retval = ma_alloc(ma, sizeof(sha256));
 		if( *retval == NULL){
 			*len = 0;
 			return -1;
@@ -89,12 +89,11 @@ hex(unsigned char v)
 }
 
 static ssize_t
-SHA256toString(str *retval, size_t *len, const void *handle, bool external)
+SHA256toString(allocator *ma, str *retval, size_t *len, const void *handle, bool external)
 {
 	(void)external;
 	if (*len < (SHA256_HEX+1) || *retval == NULL) {
-		GDKfree(*retval);
-		*retval = GDKmalloc(sizeof(char) * (*len = (SHA256_HEX+1)));
+		*retval = ma_alloc(ma, sizeof(char) * (*len = (SHA256_HEX+1)));
 		if( *retval == NULL)
 			return -1;
 	}
@@ -137,29 +136,39 @@ SHA256hash(const void *L)
 }
 
 static str
-SHA256_fromstr(sha256 **ret, str *s)
+SHA256_fromstr(Client ctx, sha256 **ret, str *s)
 {
+	allocator *ma = ctx->curprg->def->ma;
 	size_t len = sizeof(sha256);
-	if (SHA256fromString(*s, &len, (void **) ret, false) < 0)
+	if (SHA256fromString(ma, *s, &len, (void **) ret, false) < 0)
 		throw(MAL, "calc.sha256",  GDK_EXCEPTION);
 	return MAL_SUCCEED;
 }
 
 /* read sha256 from log */
 static void *
-SHA256read(void *A, size_t *dstlen, stream *s, size_t cnt)
+SHA256read(allocator *ma, void *A, size_t *dstlen, stream *s, size_t cnt)
 {
 	unsigned char *a = A;
 
 	if (a == NULL || *dstlen < cnt * sizeof(sha256)) {
-		if ((a = GDKrealloc(a, cnt * sizeof(sha256))) == NULL)
+		if (ma) {
+			a = ma_realloc(ma, a, cnt * sizeof(sha256), *dstlen);
+		} else {
+			a = GDKmalloc(cnt * sizeof(sha256));
+		}
+		if (a == NULL)
 			return NULL;
-		*dstlen = cnt * sizeof(sha256);
 	}
-	if (mnstr_read(s, a, SHA256_BYTES, cnt) < 0) {
-		if (a != A)
+	if (mnstr_read(s, a, SHA256_BYTES, cnt) < (ssize_t) cnt) {
+		if (ma == NULL && a != (unsigned char *) A)
 			GDKfree(a);
 		return NULL;
+	}
+	if (a != (unsigned char *) A) {
+		if (ma == NULL)
+			GDKfree(A);
+		*dstlen = cnt * sizeof(inet6);
 	}
 	return a;
 }

@@ -12,11 +12,11 @@ copy 1 records into test3265 from stdin using delimiters E'\t',E'\n','"'
 <COPY_INTO_DATA>
 0.123456789
 
-query R rowsort
+query D rowsort
 select * from test3265
 ----
-0.123
-0.123
+0.123456789
+0.123456789
 
 statement ok
 rollback

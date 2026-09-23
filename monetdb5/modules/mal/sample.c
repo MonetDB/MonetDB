@@ -3,11 +3,9 @@
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024, 2025 MonetDB Foundation;
- * Copyright August 2008 - 2023 MonetDB B.V.;
- * Copyright 1997 - July 2008 CWI.
+ * For copyright information, see the file debian/copyright.
  */
 
 /*
@@ -124,7 +122,7 @@ SAMPLEuniform(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 
 #include "mel.h"
-mel_func sample_init_funcs[] = {
+static mel_func sample_init_funcs[] = {
  pattern("sample", "subuniform", SAMPLEuniform, false, "Returns the oids of a uniform sample of size s", args(1,3, batarg("",oid),batargany("b",0),arg("sample_size",lng))),
  pattern("sample", "subuniform", SAMPLEuniform, false, "Returns the oids of a uniform sample of size s and where the prg is seeded with sample_seed", args(1,4, batarg("",oid),batargany("b",0),arg("sample_size",lng),arg("sample_seed",int))),
  pattern("sample", "subuniform", SAMPLEuniform, false, "Returns the oids of a uniform sample of size = (p x count(b)), where 0 <= p <= 1.0", args(1,3, batarg("",oid),batargany("b",0),arg("p",dbl))),

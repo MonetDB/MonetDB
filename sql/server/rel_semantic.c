@@ -3,11 +3,9 @@
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024, 2025 MonetDB Foundation;
- * Copyright August 2008 - 2023 MonetDB B.V.;
- * Copyright 1997 - July 2008 CWI.
+ * For copyright information, see the file debian/copyright.
  */
 
 #include "monetdb_config.h"
@@ -20,16 +18,16 @@
 #include "rel_schema.h"
 #include "rel_psm.h"
 #include "rel_sequence.h"
-#include "rel_exp.h"
-#include "sql_privileges.h"
 
 #include <unistd.h>
 #include <string.h>
-#include <ctype.h>
 
 sql_rel *
 rel_parse(mvc *m, sql_schema *s, const char *query, char emode)
 {
+	if (mvc_highwater(m))
+		return sql_error(m, 10, SQLSTATE(42000) "Query too complex: running out of stack space");
+
 	sql_rel *rel = NULL;
 	buffer *b;
 	bstream *bs;
@@ -75,7 +73,9 @@ rel_parse(mvc *m, sql_schema *s, const char *query, char emode)
 	assert(emode == m_instantiate || emode == m_deps || emode == m_prepare);
 	m->user_id = USER_MONETDB;
 
+	allocator_state ta_state = ma_open(MT_thread_getallocator());
 	(void) sqlparse(m);     /* blindly ignore errors */
+	ma_close(&ta_state);
 	qc = query_create(m);
 	rel = rel_semantic(qc, m->sym);
 
@@ -156,6 +156,9 @@ rel_semantic(sql_query *query, symbol *s)
 
 	case SQL_CREATE_TYPE:
 	case SQL_DROP_TYPE:
+
+	case SQL_CREATE_USTR:
+	case SQL_DROP_USTR:
 		return rel_schemas(query, s);
 
 	case SQL_CREATE_SEQ:
@@ -168,8 +171,6 @@ rel_semantic(sql_query *query, symbol *s)
 	case SQL_DECLARE:
 	case SQL_CALL:
 	case SQL_SET:
-
-	case SQL_CREATE_TABLE_LOADER:
 
 	case SQL_CREATE_TRIGGER:
 	case SQL_DROP_TRIGGER:
@@ -186,7 +187,6 @@ rel_semantic(sql_query *query, symbol *s)
 	case SQL_COPYINTO:
 	case SQL_BINCOPYFROM:
 	case SQL_BINCOPYINTO:
-	case SQL_COPYLOADER:
 		return rel_updates(query, s);
 
 	case SQL_WITH:

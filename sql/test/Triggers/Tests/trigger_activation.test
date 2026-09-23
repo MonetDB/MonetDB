@@ -34,7 +34,7 @@ statement ok
 update t_5_1 set name = 'mo' where id = 11
 
 query IT rowsort
-select * from t_5_1
+select * from t_5_1 order by id
 ----
 10
 update_from_test_5_3

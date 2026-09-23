@@ -3,11 +3,9 @@
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024, 2025 MonetDB Foundation;
- * Copyright August 2008 - 2023 MonetDB B.V.;
- * Copyright 1997 - July 2008 CWI.
+ * For copyright information, see the file debian/copyright.
  */
 
 /*
@@ -225,7 +223,9 @@ MNDBGetInfo(ODBCDbc *dbc,
 			SQL_CVT_DECIMAL |
 			SQL_CVT_DOUBLE |
 			SQL_CVT_FLOAT |
+#ifdef SQL_CVT_GUID
 			SQL_CVT_GUID |
+#endif
 			SQL_CVT_INTEGER |
 			SQL_CVT_INTERVAL_DAY_TIME |
 			SQL_CVT_INTERVAL_YEAR_MONTH |
@@ -315,12 +315,14 @@ MNDBGetInfo(ODBCDbc *dbc,
 			SQL_CVT_TIMESTAMP |
 			SQL_CVT_VARCHAR;
 		break;
+#ifdef SQL_CONVERT_GUID
 	case SQL_CONVERT_GUID:
 		nValue =SQL_CVT_CHAR |
 			SQL_CVT_GUID |
 			SQL_CVT_LONGVARCHAR |
 			SQL_CVT_VARCHAR;
 		break;
+#endif
 	case SQL_CONVERT_FUNCTIONS:
 		nValue = SQL_FN_CVT_CAST | SQL_FN_CVT_CONVERT;
 		break;

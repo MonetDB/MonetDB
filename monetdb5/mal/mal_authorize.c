@@ -3,11 +3,9 @@
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024, 2025 MonetDB Foundation;
- * Copyright August 2008 - 2023 MonetDB B.V.;
- * Copyright 1997 - July 2008 CWI.
+ * For copyright information, see the file debian/copyright.
  */
 
 /*
@@ -40,7 +38,7 @@ static str vaultKey = NULL;
 /* lock to protect the above */
 static MT_RWLock rt_lock = MT_RWLOCK_INITIALIZER(rt_lock);
 
-static str AUTHdecypherValueLocked(str *ret, const char *value);
+static str AUTHdecypherValueLocked(allocator *, str *ret, const char *value);
 
 void
 AUTHreset(void)
@@ -89,7 +87,7 @@ AUTHunlockVault(const char *password)
 	vaultKey = GDKstrdup(password);
 	if (vaultKey == NULL) {
 		MT_rwlock_wrunlock(&rt_lock);
-		throw(MAL, "unlockVault", SQLSTATE(HY013) MAL_MALLOC_FAIL " vault key");
+		return "unlockVault:" SQLSTATE(HY013) MAL_MALLOC_FAIL " vault key";
 	}
 	MT_rwlock_wrunlock(&rt_lock);
 	return (MAL_SUCCEED);
@@ -99,11 +97,10 @@ AUTHunlockVault(const char *password)
  * Decyphers a given value, using the vaultKey.  The returned value
  * might be incorrect if the vaultKey is incorrect or unset.  If the
  * cypher algorithm fails or detects an invalid password, it might throw
- * an exception.  The ret string is GDKmalloced, and should be GDKfreed
- * by the caller.
+ * an exception.  The ret string is allocated using the passed allocator.
  */
 static str
-AUTHdecypherValueLocked(str *ret, const char *value)
+AUTHdecypherValueLocked(allocator *ma, str *ret, const char *value)
 {
 	/* Cyphering and decyphering can be done using many algorithms.
 	 * Future requirements might want a stronger cypher than the XOR
@@ -116,6 +113,7 @@ AUTHdecypherValueLocked(str *ret, const char *value)
 	 */
 
 	/* this is the XOR decypher implementation */
+	assert(ma);
 	str r, w;
 	const char *s = value;
 	char t = '\0';
@@ -126,7 +124,7 @@ AUTHdecypherValueLocked(str *ret, const char *value)
 
 	if (vaultKey == NULL)
 		throw(MAL, "decypherValue", "The vault is still locked!");
-	w = r = GDKmalloc(sizeof(char) * (strlen(value) + 1));
+	w = r = ma_alloc(ma, sizeof(char) * (strlen(value) + 1));
 	if (r == NULL)
 		throw(MAL, "decypherValue", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 
@@ -157,10 +155,10 @@ AUTHdecypherValueLocked(str *ret, const char *value)
 }
 
 str
-AUTHdecypherValue(str *ret, const char *value)
+AUTHdecypherValue(allocator *ma, str *ret, const char *value)
 {
 	MT_rwlock_rdlock(&rt_lock);
-	str err = AUTHdecypherValueLocked(ret, value);
+	str err = AUTHdecypherValueLocked(ma, ret, value);
 	MT_rwlock_rdunlock(&rt_lock);
 	return err;
 }
@@ -168,10 +166,10 @@ AUTHdecypherValue(str *ret, const char *value)
 /**
  * Cyphers the given string using the vaultKey.  If the cypher algorithm
  * fails or detects an invalid password, it might throw an exception.
- * The ret string is GDKmalloced, and should be GDKfreed by the caller.
+ * The ret string is allocated using the passed allocator.
  */
 static str
-AUTHcypherValueLocked(str *ret, const char *value)
+AUTHcypherValueLocked(allocator *ma, str *ret, const char *value)
 {
 	/* this is the XOR cypher implementation */
 	str r, w;
@@ -182,7 +180,7 @@ AUTHcypherValueLocked(str *ret, const char *value)
 
 	if (vaultKey == NULL)
 		throw(MAL, "cypherValue", "The vault is still locked!");
-	w = r = GDKmalloc(sizeof(char) * (strlen(value) * 2 + 1));
+	w = r = ma_alloc(ma, sizeof(char) * (strlen(value) * 2 + 1));
 	if (r == NULL)
 		throw(MAL, "cypherValue", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 
@@ -213,10 +211,10 @@ AUTHcypherValueLocked(str *ret, const char *value)
 }
 
 str
-AUTHcypherValue(str *ret, const char *value)
+AUTHcypherValue(allocator *ma, str *ret, const char *value)
 {
 	MT_rwlock_rdlock(&rt_lock);
-	str err = AUTHcypherValueLocked(ret, value);
+	str err = AUTHcypherValueLocked(ma, ret, value);
 	MT_rwlock_rdunlock(&rt_lock);
 	return err;
 }
@@ -253,7 +251,7 @@ AUTHverifyPassword(const char *passwd)
 }
 
 str
-AUTHGeneratePasswordHash(str *res, const char *value)
+AUTHGeneratePasswordHash(allocator *ma, str *res, const char *value)
 {
-	return AUTHcypherValue(res, value);
+	return AUTHcypherValue(ma, res, value);
 }

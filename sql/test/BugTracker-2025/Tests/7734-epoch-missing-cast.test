@@ -1,0 +1,13 @@
+statement ok
+set time zone interval '+02:00' hour to minute
+
+query T nosort
+select epoch(1234567890.456)
+----
+2009-02-14 01:31:30.456000+02:00
+
+query T nosort
+select epoch(1234567890.456000)
+----
+2009-02-14 01:31:30.456000+02:00
+

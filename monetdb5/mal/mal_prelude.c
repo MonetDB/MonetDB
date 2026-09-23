@@ -3,11 +3,9 @@
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024, 2025 MonetDB Foundation;
- * Copyright August 2008 - 2023 MonetDB B.V.;
- * Copyright 1997 - July 2008 CWI.
+ * For copyright information, see the file debian/copyright.
  */
 
 /* Author(s) M.L. Kersten, N. Nes
@@ -89,7 +87,7 @@ initModule(Client c, const char *name, const char *initpasswd)
 				int ret = 0;
 
 				assert(s->func != NULL);
-				msg = (*(str (*)(int *)) s->func->imp) (&ret);
+				msg = (*(str (*)(Client, int *)) s->func->imp) (c, &ret);
 				(void) ret;
 			} else if (s && s->kind == PATTERNsymbol) {
 				void *mb = NULL;
@@ -126,7 +124,7 @@ addAtom(mel_atom *atoms)
 			if (tpe < 0)
 				throw(TYPE, __func__, TYPE_NOT_SUPPORTED);
 			BATatoms[i] = BATatoms[tpe];
-			strcpy_len(BATatoms[i].name, atoms->name, sizeof(BATatoms[i].name));
+			strtcpy(BATatoms[i].name, atoms->name, sizeof(BATatoms[i].name));
 			BATatoms[i].storage = ATOMstorage(tpe);
 		} else {				/* cannot overload void atoms */
 			BATatoms[i].storage = i;
@@ -140,6 +138,8 @@ addAtom(mel_atom *atoms)
 			BATatoms[i].atomCmp = atoms->cmp;
 			BATatoms[i].linear = true;
 		}
+		if (atoms->equal)
+			BATatoms[i].atomEqual = atoms->equal;
 		if (atoms->fromstr)
 			BATatoms[i].atomFromStr = atoms->fromstr;
 		if (atoms->tostr)
@@ -306,14 +306,12 @@ melFunction(bool command, const char *mod, const char *fcn, MALfcn imp,
 	fcn = s->name;
 	s->allocated = true;
 
-	f = (mel_func*)GDKmalloc(sizeof(mel_func));
-	mel_arg *args = (mel_arg*)GDKmalloc(sizeof(mel_arg)*argc);
-	if (!f || !args) {
-		GDKfree(f);
-		GDKfree(args);
+	f = GDKmalloc(sizeof(mel_func) + argc * sizeof(mel_arg));
+	if (f == NULL) {
 		freeSymbol(s);
 		return MEL_ERR;
 	}
+	mel_arg *args = (mel_arg *) (f + 1);
 	*f = (mel_func) {
 		.mod = mod,
 		.fcn = fcn,
@@ -326,8 +324,8 @@ melFunction(bool command, const char *mod, const char *fcn, MALfcn imp,
 		.argc = argc,
 		.args = args,
 		.imp = imp,
-		.comment = comment ? GDKstrdup(comment) : NULL,
-		.cname = fname ? GDKstrdup(fname) : NULL,
+		.comment = comment,
+		.cname = fname,
 	};
 	s->def = NULL;
 	s->func = f;
@@ -402,8 +400,6 @@ malPrelude(Client c, int listing, int *sql, int *mapi)
 		const char *name = putName(mel_module[i].name);
 		if (name == NULL)
 			throw(LOADER, __func__, MAL_MALLOC_FAIL);
-		if (!malLibraryEnabled(name))
-			continue;
 		if (mel_module[i].funcs) {
 			msg = addFunctions(mel_module[i].funcs);
 			if (!msg && mel_module[i].code) /* some modules may also have some function definitions */
@@ -440,16 +436,14 @@ malPrelude(Client c, int listing, int *sql, int *mapi)
 }
 
 str
-malIncludeModules(Client c, char *modules[], int listing, bool no_mapi_server,
-				  const char *initpasswd)
+malIncludeModules(Client c, const char *const *modules, int listing,
+				  bool no_mapi_server, const char *initpasswd)
 {
 	str msg;
 	int sql = -1, mapi = -1;
 
 	for (int i = 0; modules[i]; i++) {
 		/* load library */
-		if (!malLibraryEnabled(modules[i]))
-			continue;
 		if ((msg = loadLibrary(modules[i], listing)) != NULL)
 			return msg;
 	}

@@ -3,11 +3,9 @@
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024, 2025 MonetDB Foundation;
- * Copyright August 2008 - 2023 MonetDB B.V.;
- * Copyright 1997 - July 2008 CWI.
+ * For copyright information, see the file debian/copyright.
  */
 
 #include "monetdb_config.h"
@@ -63,7 +61,7 @@ scan_unix_sockets(Mapi mid)
 			if (port < 1 || port > 65535 || *end)
 				continue;
 
-			sprintf(put_port_here, "%ld", port);
+			snprintf(put_port_here, 50 - 12, "%ld", port);
 			struct stat st;
 			if (stat(namebuf, &st) < 0 || !S_ISSOCK(st.st_mode))
 				continue;
@@ -91,13 +89,10 @@ scan_unix_sockets(Mapi mid)
 				return mapi_setError(mid, "malloc failed", __func__, MERROR);
 			}
 			msettings_error errmsg = msetting_set_long(mid->settings, MP_PORT, candidates[i].port);
-			char *allocated_errmsg = NULL;
-			if (!errmsg && !msettings_validate(mid->settings, &allocated_errmsg)) {
-				errmsg = allocated_errmsg;
-			}
+			if (!errmsg)
+				errmsg = msettings_validate(mid->settings);
 			if (errmsg) {
 				mapi_setError(mid, errmsg, __func__, MERROR);
-				free(allocated_errmsg);
 				free(namebuf);
 				msettings_destroy(mid->settings);
 				mid->settings = original;
@@ -109,6 +104,16 @@ scan_unix_sockets(Mapi mid)
 				msettings_destroy(original);
 				free(namebuf);
 				return MOK;
+			} else if (msg == MSERVER && mid->errorstr &&
+				   strstr(mid->errorstr, "no such database") == NULL) {
+				/* connecting failed, but database not
+				 * unknown (no message "no such
+				 * database"), so skip further
+				 * attempts */
+				msettings_destroy(mid->settings);
+				mid->settings = NULL;
+				round = 2; /* to break out of outer loop */
+				break;
 			} else {
 				msettings_destroy(mid->settings);
 				mid->settings = NULL;
@@ -134,8 +139,10 @@ connect_socket_unix(Mapi mid)
 
 	mapi_log_record(mid, "CONN", "Connecting to Unix domain socket %s with timeout %ld", sockname, timeout);
 
-	struct sockaddr_un userver;
-	if (strlen(sockname) >= sizeof(userver.sun_path)) {
+	struct sockaddr_un userver = {
+		.sun_family = AF_UNIX,
+	};
+	if (strtcpy(userver.sun_path, sockname, sizeof(userver.sun_path)) == -1) {
 		return mapi_printError(mid, __func__, MERROR, "path name '%s' too long", sockname);
 	}
 
@@ -172,11 +179,6 @@ connect_socket_unix(Mapi mid)
 	}
 
 	// Attempt to connect
-
-	userver = (struct sockaddr_un) {
-		.sun_family = AF_UNIX,
-	};
-	strcpy_len(userver.sun_path, sockname, sizeof(userver.sun_path));
 
 	if (connect(s, (struct sockaddr *) &userver, sizeof(struct sockaddr_un)) == SOCKET_ERROR) {
 		closesocket(s);

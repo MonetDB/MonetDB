@@ -3,11 +3,9 @@
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024, 2025 MonetDB Foundation;
- * Copyright August 2008 - 2023 MonetDB B.V.;
- * Copyright 1997 - July 2008 CWI.
+ * For copyright information, see the file debian/copyright.
  */
 
 #ifndef _SQL_STATEMENT_H_
@@ -119,7 +117,7 @@ typedef struct stmt {
 	stmtdata op4;		/* only op4 will hold other types */
 
 	unsigned int
-	 nrcols:2,
+	 nrcols:2,		/* stmt cardinality, 0: const, 1: col, >1: table */
 	 key:1,			/* key (aka all values are unique) */ // TODO make this thing a bool
 	 aggr:1,		/* aggregated */
 	 partition:1,	/* selected as mitosis candidate */
@@ -135,7 +133,6 @@ typedef struct stmt {
 	const char *tname;
 	const char *cname;
 	InstrPtr q;
-	list *extra;	/* used for merge statements, this will be cleaned out on the pushcands branch :) */
 } stmt;
 
 /* which MAL modules can push candidates */
@@ -150,8 +147,10 @@ typedef struct stmt {
 extern int stmt_key(stmt *s);
 
 extern stmt *stmt_bat_new(backend *be, sql_subtype *tpe, lng estimate);
+extern stmt *stmt_bat_new2(backend *be, sql_subtype *tpe, stmt *sz_base);
+extern stmt *stmt_bat_declare(backend *be, sql_subtype *tpe);
 
-extern stmt *stmt_none(backend *be);
+sql_export stmt *stmt_none(backend *be);
 
 extern stmt *stmt_var(backend *be, const char *sname, const char *varname, sql_subtype *t, int declare, int level);
 extern stmt *stmt_vars(backend *be, const char *varname, sql_table *t, int declare, int level);
@@ -164,10 +163,10 @@ extern stmt *stmt_bat(backend *be, sql_column *c, int access, int partition);
 extern stmt *stmt_idxbat(backend *be, sql_idx *i, int access, int partition);
 extern stmt *stmt_tid(backend *be, sql_table *t, int partition);
 
-extern stmt *stmt_claim(backend *be, sql_table *t, stmt *cnt);
+extern stmt *stmt_claim(backend *be, sql_table *t, stmt *cnt, int sync);
 extern void stmt_add_dependency_change(backend *be, sql_table *t, stmt *cnt);
 extern void stmt_add_column_predicate(backend *be, sql_column *c);
-extern stmt *stmt_append_col(backend *be, sql_column *c, stmt *offset, stmt *b, int *mvc_var_update, int locked);
+extern stmt *stmt_append_col(backend *be, sql_column *c, stmt *offset, stmt *b, int *mvc_var_update, int locked, bool first);
 extern stmt *stmt_append_idx(backend *be, sql_idx *i, stmt *offset, stmt *b);
 extern stmt *stmt_update_col(backend *be, sql_column *c, stmt *tids, stmt *upd);
 extern stmt *stmt_update_idx(backend *be, sql_idx *i, stmt *tids, stmt *upd);
@@ -192,6 +191,7 @@ extern stmt *stmt_atom_string_nil(backend *be);
 extern stmt *stmt_atom_int(backend *be, int i);
 extern stmt *stmt_atom_lng(backend *be, lng i);
 extern stmt *stmt_atom_lng_nil(backend *be);
+extern stmt *stmt_atom_dbl(backend *be, dbl d);
 extern stmt *stmt_bool(backend *be, int b);
 
 extern stmt *stmt_uselect(backend *be, stmt *op1, stmt *op2, comp_type cmptype, stmt *sub, int anti, int is_semantics);
@@ -203,13 +203,15 @@ extern stmt *stmt_uselect(backend *be, stmt *op1, stmt *op2, comp_type cmptype, 
        */
 extern stmt *stmt_uselect2(backend *be, stmt *op1, stmt *op2, stmt *op3, int cmp, stmt *sub, int anti, int symmetric, int reduce);
 extern stmt *stmt_genselect(backend *be, stmt *lops, stmt *rops, sql_subfunc *f, stmt *sub, int anti);
-extern stmt *stmt_outerselect(backend *be, stmt *g, stmt *m, stmt *p, bool any);
+extern stmt *stmt_single(backend *be, stmt *c, stmt *i);
+extern stmt *stmt_outerselect(backend *be, stmt *g, stmt *m, stmt *p, bool any, bool single);
+extern stmt *stmt_thetaselect(backend *be, stmt *op1, stmt *op2, stmt *val, const char *cmp, sql_subtype *tpe);
 extern stmt *stmt_markselect(backend *be, stmt *g, stmt *m, stmt *p, bool any);
-extern stmt *stmt_markjoin(backend *be, stmt *l, stmt *r, bool final);
+extern stmt *stmt_markjoin(backend *be, stmt *l, stmt *r, bool nil_matches, bool final);
 
 extern stmt *stmt_tunion(backend *be, stmt *op1, stmt *op2);
 extern stmt *stmt_tdiff(backend *be, stmt *op1, stmt *op2, stmt *lcand);
-extern stmt *stmt_tdiff2(backend *be, stmt *op1, stmt *op2, stmt *lcand);
+extern stmt *stmt_tdiff2(backend *be, stmt *op1, stmt *op2, stmt *lcand, bool is_semantics, bool any);
 extern stmt *stmt_tinter(backend *be, stmt *op1, stmt *op2, bool single);
 
 extern stmt *stmt_join(backend *be, stmt *op1, stmt *op2, int anti, comp_type cmptype, int need_left, int is_semantics, bool single);
@@ -225,7 +227,7 @@ extern stmt *stmt_left_project(backend *be, stmt *op1, stmt *op2, stmt *op3);
 extern stmt *stmt_dict(backend *be, stmt *op1, stmt *op2);
 extern stmt *stmt_for(backend *be, stmt *op1, stmt *minval);
 
-extern stmt *stmt_list(backend *be, list *l);
+sql_export stmt *stmt_list(backend *be, list *l);
 extern void stmt_set_nrcols(stmt *s);
 
 extern stmt *stmt_group(backend *be, stmt *op1, stmt *grp, stmt *ext, stmt *cnt, int done);
@@ -239,6 +241,7 @@ extern stmt *stmt_const(backend *be, stmt *s, stmt *val);
 extern stmt *stmt_gen_group(backend *be, stmt *gids, stmt *cnts);	/* given a gid,cnt blowup to full groups */
 extern stmt *stmt_mirror(backend *be, stmt *s);
 extern stmt *stmt_result(backend *be, stmt *s, int nr);
+extern stmt *stmt_identity(backend *be, stmt *s);
 
 /*
  * dir:      direction of the ordering, ie 1 Ascending, 0 descending
@@ -254,13 +257,13 @@ extern stmt *stmt_convert(backend *sa, stmt *v, stmt *sel, sql_subtype *from, sq
 extern stmt *stmt_unop(backend *be, stmt *op1, stmt *sel, sql_subfunc *op);
 extern stmt *stmt_binop(backend *be, stmt *op1, stmt *op2, stmt *sel, sql_subfunc *op);
 extern stmt *stmt_Nop(backend *be, stmt *ops, stmt *sel, sql_subfunc *op, stmt* rows);
-extern stmt *stmt_func(backend *be, stmt *ops, const char *name, sql_rel *imp, int f_union);
+sql_export stmt *stmt_func(backend *be, stmt *ops, const char *name, sql_rel *imp, int f_union);
 extern stmt *stmt_direct_func(backend *be, InstrPtr q);
 extern stmt *stmt_aggr(backend *be, stmt *op1, stmt *grp, stmt *ext, sql_subfunc *op, int reduce, int no_nil, int nil_if_empty);
 
-extern stmt *stmt_blackbox_result(backend *be, InstrPtr q, int retnr, sql_subtype *t);
+sql_export stmt *stmt_blackbox_result(backend *be, InstrPtr q, int retnr, sql_subtype *t);
 
-extern stmt *stmt_alias(backend *be, stmt *op1, int label, const char *tname, const char *name);
+sql_export stmt *stmt_alias(backend *be, stmt *op1, int label, const char *tname, const char *name);
 extern stmt *stmt_as(backend *be, stmt *s, stmt *org);
 
 extern int stmt_output(backend *be, stmt *l);
@@ -282,5 +285,8 @@ extern const char *schema_name(allocator *sa, stmt *st);
 extern stmt *const_column(backend *ba, stmt *val);
 extern stmt *stmt_fetch(backend *ba, stmt *val);
 extern stmt *stmt_rename(backend *ba, sql_exp *e, stmt *s);
+extern stmt *stmt_instruction(backend *ba, InstrPtr p, stmt *s);
+extern stmt *stmt_create(allocator *sa, st_type type);
 
+sql_export InstrPtr pushPtr(MalBlkPtr mb, InstrPtr q, ptr val);
 #endif /* _SQL_STATEMENT_H_ */

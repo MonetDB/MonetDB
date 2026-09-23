@@ -2,11 +2,9 @@
 --
 -- This Source Code Form is subject to the terms of the Mozilla Public
 -- License, v. 2.0.  If a copy of the MPL was not distributed with this
--- file, You can obtain one at http://mozilla.org/MPL/2.0/.
+-- file, You can obtain one at https://mozilla.org/MPL/2.0/.
 --
--- Copyright 2024, 2025 MonetDB Foundation;
--- Copyright August 2008 - 2023 MonetDB B.V.;
--- Copyright 1997 - July 2008 CWI.
+-- For copyright information, see the file debian/copyright.
 
 -- create additional tables in "sys" schema and fill them with static content
 
@@ -149,7 +147,6 @@ INSERT INTO sys.keywords (keyword) VALUES
   ('ISOLATION'),
   ('JOIN'),
   ('KEY'),
-  ('LANGUAGE'),
   ('LARGE'),
   ('LAST'),
   ('LATERAL'),
@@ -200,7 +197,6 @@ INSERT INTO sys.keywords (keyword) VALUES
   ('PARTITION'),
   ('PASSWORD'),
   ('PATH'),
-  ('PLAN'),
   ('POSITION'),
   ('PRECEDING'),
   ('PRECISION'),
@@ -345,7 +341,8 @@ INSERT INTO sys.table_types (table_type_id, table_type_name) VALUES
 -- sys._tables.type value depending on values of temporary and
 -- commit_action).
   (20, 'GLOBAL TEMPORARY TABLE'),
-  (30, 'LOCAL TEMPORARY TABLE');
+  (30, 'LOCAL TEMPORARY TABLE'),
+  (31, 'LOCAL TEMPORARY VIEW');
 
 ALTER TABLE sys.table_types SET READ ONLY;
 GRANT SELECT ON sys.table_types TO PUBLIC;
@@ -357,7 +354,7 @@ CREATE TABLE sys.function_types (
     function_type_keyword VARCHAR(30) NOT NULL);
 
 -- Values taken from sql/include/sql_catalog.h see: #define F_FUNC 1,
--- F_PROC 2, F_AGGR 3, F_FILT 4, F_UNION 5, F_ANALYTIC 6, F_LOADER 7.
+-- F_PROC 2, F_AGGR 3, F_FILT 4, F_UNION 5, F_ANALYTIC 6, F_LOADER 7, F_GROUPFILT 8.
 INSERT INTO sys.function_types (function_type_id, function_type_name, function_type_keyword) VALUES
   (1, 'Scalar function', 'FUNCTION'),
   (2, 'Procedure', 'PROCEDURE'),
@@ -365,7 +362,8 @@ INSERT INTO sys.function_types (function_type_id, function_type_name, function_t
   (4, 'Filter function', 'FILTER FUNCTION'),
   (5, 'Function returning a table', 'FUNCTION'),
   (6, 'Analytic function', 'WINDOW'),
-  (7, 'Loader function', 'LOADER');
+  (7, 'Loader function', 'LOADER'),
+  (8, 'Group filter function', 'GROUP FILTER FUNCTION');
 
 ALTER TABLE sys.function_types SET READ ONLY;
 GRANT SELECT ON sys.function_types TO PUBLIC;
@@ -378,17 +376,11 @@ CREATE TABLE sys.function_languages (
 
 -- Values taken from sql/include/sql_catalog.h see: #define
 -- FUNC_LANG_INT 0, FUNC_LANG_MAL 1, FUNC_LANG_SQL 2, FUNC_LANG_R 3,
--- FUNC_LANG_C 4, FUNC_LANG_PY 6, FUNC_LANG_PY3 10, FUNC_LANG_CPP 12.
+-- FUNC_LANG_PY 6, FUNC_LANG_PY3 10.
 INSERT INTO sys.function_languages (language_id, language_name, language_keyword) VALUES
   (0, 'Internal C', NULL),
   (1, 'MAL', NULL),
-  (2, 'SQL', NULL),
-  (3, 'R', 'R'),
-  (4, 'C', 'C'),
---  (5, 'J', 'J'), -- Javascript? not yet available for use
-  (6, 'Python', 'PYTHON'),
-  (10, 'Python3', 'PYTHON3'),
-  (12, 'C++', 'CPP');
+  (2, 'SQL', NULL);
 
 ALTER TABLE sys.function_languages SET READ ONLY;
 GRANT SELECT ON sys.function_languages TO PUBLIC;
@@ -507,8 +499,7 @@ GRANT SELECT ON sys.privilege_codes TO PUBLIC;
 
 
 -- Utility views to list the defined roles and users.
--- Note: sys.auths contains both users and roles as the names must be distinct.
-CREATE VIEW sys.roles AS SELECT id, name, grantor FROM sys.auths a WHERE a.name NOT IN (SELECT u.name FROM sys.db_user_info u);
+CREATE VIEW sys.roles AS SELECT id, name, grantor FROM sys.auths;
 GRANT SELECT ON sys.roles TO PUBLIC;
 CREATE VIEW sys.users AS SELECT name, fullname, default_schema, schema_path, max_memory, max_workers, optimizer, default_role FROM sys.db_user_info;
 GRANT SELECT ON sys.users TO PUBLIC;

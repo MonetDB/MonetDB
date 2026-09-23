@@ -3,11 +3,9 @@
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024, 2025 MonetDB Foundation;
- * Copyright August 2008 - 2023 MonetDB B.V.;
- * Copyright 1997 - July 2008 CWI.
+ * For copyright information, see the file debian/copyright.
  */
 
 /*
@@ -27,12 +25,8 @@ OPTmatpackImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 	InstrPtr *old = NULL;
 	str msg = MAL_SUCCEED;
 
-	if (isOptimizerUsed(mb, pci, mergetableRef) <= 0) {
-		goto wrapup;
-	}
-
 	(void) cntxt;
-	(void) stk;					/* to fool compilers */
+	(void) stk;
 	for (i = 1; i < mb->stop; i++)
 		if (getModuleId(getInstrPtr(mb, i)) == matRef
 			&& getFunctionId(getInstrPtr(mb, i)) == packRef
@@ -51,14 +45,14 @@ OPTmatpackImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 		p = old[i];
 		if (getModuleId(p) == matRef && getFunctionId(p) == packRef
 			&& isaBatType(getArgType(mb, p, 1))) {
-			q = newInstruction(0, matRef, packIncrementRef);
+			q = newInstruction(mb, matRef, packIncrementRef);
 			if (q == NULL) {
 				msg = createException(MAL, "optimizer.matpack",
 									  SQLSTATE(HY013) MAL_MALLOC_FAIL);
 				break;
 			}
 			if (setDestVar(q, newTmpVariable(mb, getArgType(mb, p, 1))) < 0) {
-				freeInstruction(q);
+				freeInstruction(mb, q);
 				msg = createException(MAL, "optimizer.matpack",
 									  SQLSTATE(HY013) MAL_MALLOC_FAIL);
 				break;
@@ -70,7 +64,7 @@ OPTmatpackImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 			typeChecker(cntxt->usermodule, mb, q, mb->stop - 1, TRUE);
 
 			for (j = 2; j < p->argc; j++) {
-				q = newInstruction(0, matRef, packIncrementRef);
+				q = newInstruction(mb, matRef, packIncrementRef);
 				if (q == NULL) {
 					msg = createException(MAL, "optimizer.matpack",
 										  SQLSTATE(HY013) MAL_MALLOC_FAIL);
@@ -79,7 +73,7 @@ OPTmatpackImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 				q = pushArgument(mb, q, v);
 				q = pushArgument(mb, q, getArg(p, j));
 				if (setDestVar(q, newTmpVariable(mb, getVarType(mb, v))) < 0) {
-					freeInstruction(q);
+					freeInstruction(mb, q);
 					msg = createException(MAL, "optimizer.matpack",
 										  SQLSTATE(HY013) MAL_MALLOC_FAIL);
 					break;
@@ -91,7 +85,7 @@ OPTmatpackImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 			if (msg)
 				break;
 			getArg(q, 0) = getArg(p, 0);
-			freeInstruction(p);
+			freeInstruction(mb, p);
 			actions++;
 			continue;
 		}
@@ -101,7 +95,6 @@ OPTmatpackImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 	for (; i < slimit; i++)
 		if (old[i])
 			pushInstruction(mb, old[i]);
-	GDKfree(old);
 
 	/* Defense line against incorrect plans */
 	if (msg == MAL_SUCCEED && actions > 0) {

@@ -3,11 +3,9 @@
 #
 # This Source Code Form is subject to the terms of the Mozilla Public
 # License, v. 2.0.  If a copy of the MPL was not distributed with this
-# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+# file, You can obtain one at https://mozilla.org/MPL/2.0/.
 #
-# Copyright 2024, 2025 MonetDB Foundation;
-# Copyright August 2008 - 2023 MonetDB B.V.;
-# Copyright 1997 - July 2008 CWI.
+# For copyright information, see the file debian/copyright.
 #]]
 
 if (${LINUX_DISTRO} STREQUAL "debian")
@@ -33,7 +31,7 @@ elseif (${LINUX_DISTRO} STREQUAL "ubuntu")
 elseif(${LINUX_DISTRO} STREQUAL "fedora")
   if(${LINUX_DISTRO_VERSION} VERSION_GREATER_EQUAL "30")
     assert_package_detected(
-      detect FALSE
+      detect TRUE
       legacyvariable HAVE_VALGRIND
       variablename VALGRIND_FOUND)
   endif()

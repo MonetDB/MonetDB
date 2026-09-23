@@ -3,11 +3,9 @@
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024, 2025 MonetDB Foundation;
- * Copyright August 2008 - 2023 MonetDB B.V.;
- * Copyright 1997 - July 2008 CWI.
+ * For copyright information, see the file debian/copyright.
  */
 
 /*
@@ -198,7 +196,7 @@ ODBCInitResult(ODBCStmt *stmt)
 		int concise_type;
 		char *s;
 
-		rec->sql_desc_auto_unique_value = SQL_FALSE;
+		rec->sql_desc_auto_unique_value = SQL_FALSE;	/* SQL_TRUE for serial and bigserial columns */
 		rec->sql_desc_nullable = SQL_NULLABLE_UNKNOWN;
 		rec->sql_desc_rowver = SQL_FALSE;
 		rec->sql_desc_searchable = SQL_PRED_SEARCHABLE;
@@ -222,7 +220,11 @@ ODBCInitResult(ODBCStmt *stmt)
 				goto nomem;
 		} else {
 			rec->sql_desc_unnamed = SQL_UNNAMED;
+			if (rec->sql_desc_label)
+				free(rec->sql_desc_label);
 			rec->sql_desc_label = NULL;
+			if (rec->sql_desc_name)
+				free(rec->sql_desc_name);
 			rec->sql_desc_name = NULL;
 		}
 		if (rec->sql_desc_base_column_name)
@@ -320,9 +322,12 @@ ODBCInitResult(ODBCStmt *stmt)
 		    rec->sql_desc_concise_type == SQL_LONGVARCHAR ||
 		    rec->sql_desc_concise_type == SQL_WCHAR ||
 		    rec->sql_desc_concise_type == SQL_WVARCHAR ||
-		    rec->sql_desc_concise_type == SQL_WLONGVARCHAR)
-			rec->sql_desc_case_sensitive = SQL_TRUE;
-		else
+		    rec->sql_desc_concise_type == SQL_WLONGVARCHAR) {
+			if (strcmp("inet", (char *)rec->sql_desc_type_name) == 0)
+				rec->sql_desc_case_sensitive = SQL_FALSE;
+			else
+				rec->sql_desc_case_sensitive = SQL_TRUE;
+		} else
 			rec->sql_desc_case_sensitive = SQL_FALSE;
 
 		s = mapi_get_table(hdl, i);
@@ -365,19 +370,20 @@ ODBCInitResult(ODBCStmt *stmt)
 		    (rec->sql_desc_length = mapi_get_digits(hdl, i)) == 0)
 			rec->sql_desc_length = mapi_get_len(hdl, i);
 
+		/* initialise fields */
 		rec->sql_desc_local_type_name = NULL;
 		rec->sql_desc_catalog_name = NULL;
-		rec->sql_desc_literal_prefix = NULL;
-		rec->sql_desc_literal_suffix = NULL;
-
-		/* unused fields */
 		rec->sql_desc_data_ptr = NULL;
 		rec->sql_desc_indicator_ptr = NULL;
 		rec->sql_desc_octet_length_ptr = NULL;
 		rec->sql_desc_parameter_type = 0;
 
-		/* this must come after other fields have been
-		 * initialized */
+		/* rec->sql_desc_literal_prefix and rec->sql_desc_literal_suffix
+		 * are used. Do not set to NULL. They are filled once when
+		 * SQLColAttribute(SQL_DESC_LITERAL_...FIX) or
+		 * SQLGetDescField(SQL_DESC_LITERAL_...FIX) is called */
+
+		/* this must come after other fields have been initialized */
 		if (rec->sql_desc_concise_type == SQL_CHAR ||
 		    rec->sql_desc_concise_type == SQL_VARCHAR ||
 		    rec->sql_desc_concise_type == SQL_LONGVARCHAR ||
@@ -515,13 +521,13 @@ MNDBExecute(ODBCStmt *stmt)
 	if (stmt->next == NULL && stmt->Dbc->FirstStmt == stmt &&
 	    stmt->cursorType == SQL_CURSOR_FORWARD_ONLY) {
 		/* we're the only Stmt handle, and we're only going forward */
-		if (stmt->Dbc->cachelimit != 10000)
-			mapi_cache_limit(stmt->Dbc->mid, 10000);
-		stmt->Dbc->cachelimit = 10000;
+		if (stmt->Dbc->cachelimit != LARGE_CACHE_LIMIT)
+			mapi_cache_limit(stmt->Dbc->mid, LARGE_CACHE_LIMIT);
+		stmt->Dbc->cachelimit = LARGE_CACHE_LIMIT;
 	} else {
-		if (stmt->Dbc->cachelimit != 100)
-			mapi_cache_limit(stmt->Dbc->mid, 100);
-		stmt->Dbc->cachelimit = 100;
+		if (stmt->Dbc->cachelimit != SMALL_CACHE_LIMIT)
+			mapi_cache_limit(stmt->Dbc->mid, SMALL_CACHE_LIMIT);
+		stmt->Dbc->cachelimit = SMALL_CACHE_LIMIT;
 	}
 	msg = mapi_query_handle(hdl, query);
 	free(query);

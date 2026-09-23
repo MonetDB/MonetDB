@@ -3,11 +3,9 @@
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024, 2025 MonetDB Foundation;
- * Copyright August 2008 - 2023 MonetDB B.V.;
- * Copyright 1997 - July 2008 CWI.
+ * For copyright information, see the file debian/copyright.
  */
 
 #include "monetdb_config.h"
@@ -38,7 +36,7 @@ full_column(sql_trans *tr, sql_column *c)
 	*/
 	sqlstore *store = tr->store;
 	BAT *b = store->storage_api.bind_col(tr, c, RDONLY), *ui = NULL, *uv = NULL;
-	int res = store->storage_api.bind_updates(tr, c, &ui, &uv);
+	int res = store->storage_api.bind_updates(tr, c, 0, BUN_NONE, &ui, &uv);
 
 	if (!b || !ui || !uv || res == LOG_ERR) {
 		bat_destroy(b);
@@ -131,7 +129,7 @@ column_find_value(sql_trans *tr, sql_column *c, oid rid)
 		const void *r;
 		size_t sz;
 
-		r = BUNtail(bi, q);
+		r = BUNtail(&bi, q);
 		sz = ATOMlen(b->ttype, r);
 		res = GDKmalloc(sz);
 		if (res)
@@ -159,7 +157,7 @@ column_find_##TPE(sql_trans *tr, sql_column *c, oid rid)			\
 	}																\
 	if (q != BUN_NONE) {											\
 		BATiter bi = bat_iterator(b);								\
-		res = *(TPE*)BUNtloc(bi, q);								\
+		res = *(TPE*)BUNtloc(&bi, q);								\
 		bat_iterator_end(&bi);										\
 	}																\
 	bat_destroy(b);													\
@@ -188,7 +186,7 @@ column_find_string_start(sql_trans *tr, sql_column *c, oid rid, ptr *cbat)
 	}
 	if (q != BUN_NONE) {
 		BATiter bi = bat_iterator(*b);
-		res = BUNtvar(bi, q);
+		res = BUNtvar(&bi, q);
 		bat_iterator_end(&bi);
 	}
 	return res;
@@ -207,7 +205,9 @@ column_update_value(sql_trans *tr, sql_column *c, oid rid, void *value)
 	sqlstore *store = tr->store;
 	assert(!is_oid_nil(rid));
 
-	return store->storage_api.update_col(tr, c, &rid, value, false);
+	int res = store->storage_api.update_col(tr, c, &rid, value, false);
+	tr->cnr++;
+	return res;
 }
 
 static int
@@ -248,6 +248,7 @@ table_insert(sql_trans *tr, sql_table *t, ...)
 		assert(0);
 		return LOG_ERR;
 	}
+	tr->cnr++;
 	return LOG_OK;
 }
 
@@ -257,7 +258,9 @@ table_delete(sql_trans *tr, sql_table *t, oid rid)
 	sqlstore *store = tr->store;
 	assert(!is_oid_nil(rid));
 
-	return store->storage_api.delete_tab(tr, t, &rid, false);
+	int res = store->storage_api.delete_tab(tr, t, &rid, false);
+	tr->cnr++;
+	return res;
 }
 
 static res_table *
@@ -426,7 +429,7 @@ table_orderby(sql_trans *tr, sql_table *t, sql_column *jl, sql_column *jr, sql_c
 	return rt;
 }
 
-static void *
+static const void *
 table_fetch_value(res_table *rt, sql_column *c)
 {
 	/* this function is only ever called during startup, and therefore
@@ -436,9 +439,9 @@ table_fetch_value(res_table *rt, sql_column *c)
 	BATiter bi = bat_iterator_nolock(b);
 	assert(b->ttype && b->ttype != TYPE_msk);
 	if (bi.vh)
-		return BUNtvar(bi, rt->cur_row);
-	return BUNtloc(bi, rt->cur_row);
-	//return (void*)BUNtail(bi, rt->cur_row);
+		return BUNtvar(&bi, rt->cur_row);
+	return BUNtloc(&bi, rt->cur_row);
+	//return (void*)BUNtail(&bi, rt->cur_row);
 }
 
 static void
@@ -736,7 +739,7 @@ subrids_next(subrids *r)
 {
 	if (r->pos < BATcount((BAT *) r->ids)) {
 		BATiter ii = bat_iterator((BAT *) r->ids);
-		sqlid id = *(sqlid*)BUNtloc(ii, r->pos);
+		sqlid id = *(sqlid*)BUNtloc(&ii, r->pos);
 		bat_iterator_end(&ii);
 		if (id == r->id)
 			return BUNtoid((BAT *) r->rids, r->pos++);
@@ -749,7 +752,7 @@ subrids_nextid(subrids *r)
 {
 	if (r->pos < BATcount((BAT *) r->ids)) {
 		BATiter ii = bat_iterator((BAT *) r->ids);
-		r->id = *(sqlid*)BUNtloc(ii, r->pos);
+		r->id = *(sqlid*)BUNtloc(&ii, r->pos);
 		bat_iterator_end(&ii);
 		return r->id;
 	}

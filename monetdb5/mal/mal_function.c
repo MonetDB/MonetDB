@@ -3,11 +3,9 @@
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024, 2025 MonetDB Foundation;
- * Copyright August 2008 - 2023 MonetDB B.V.;
- * Copyright 1997 - July 2008 CWI.
+ * For copyright information, see the file debian/copyright.
  */
 
 /*
@@ -42,7 +40,7 @@ newFunctionArgs(const char *mod, const char *nme, int kind, int args)
 		}
 
 		if (args > 0) {
-			InstrPtr p = newInstructionArgs(NULL, mod, nme, args);
+			InstrPtr p = newInstructionArgs(s->def, mod, nme, args);
 			if (p == NULL) {
 				freeSymbol(s);
 				return NULL;
@@ -102,12 +100,17 @@ chkFlow(MalBlkPtr mb)
 		return mb->errors;
 	sig = getInstrPtr(mb, 0);
 	lastInstruction = mb->stop - 1;
+	InstrPtr pp = NULL;
 	for (i = 0; i < mb->stop; i++) {
 		p = getInstrPtr(mb, i);
 		/* we have to keep track on the maximal arguments/block
 		   because it is needed by the interpreter */
 		switch (p->barrier) {
 		case BARRIERsymbol:
+			if (getModuleId(p) == languageRef && getFunctionId(p) == pipelinesRef) {
+				pp = p;
+			}
+			/* fall through */
 		case CATCHsymbol:
 			if (btop == DEPTH)
 				throw(MAL, "chkFlow", "%s.%s Too many nested MAL blocks",
@@ -153,8 +156,11 @@ chkFlow(MalBlkPtr mb)
 				InstrPtr p1 = getInstrPtr(mb, k);
 				if (getDestVar(p1) == v) {
 					/* handle assignments with leave/redo option */
-					if (p1->barrier == LEAVEsymbol)
+					if (p1->barrier == LEAVEsymbol) {
 						p1->jump = i;
+						if (pp)
+							pc[btop] = k; /* pipeline redo should jump back after the leave */
+					}
 					if (p1->barrier == REDOsymbol)
 						p1->jump = pc[btop] + 1;
 				}
@@ -181,14 +187,13 @@ chkFlow(MalBlkPtr mb)
 			} else if (ps->typeresolved)
 				for (e = 0; e < p->retc; e++) {
 					if (resolvedType(getArgType(mb, ps, e), getArgType(mb, p, e)) < 0) {
-						str tpname = getTypeName(getArgType(mb, p, e));
-						msg = createException(MAL,
+						str tpname = getTypeName(mb->ma, getArgType(mb, p, e));
+						msg = createException(MAL, "chkFlow",
 											  "%s.%s RETURN type mismatch at type '%s'\n",
 											  getModuleId(p) ? getModuleId(p) :
 											  "",
 											  getFunctionId(p) ?
 											  getFunctionId(p) : "", tpname);
-						GDKfree(tpname);
 						return msg;
 					}
 				}
@@ -201,6 +206,7 @@ chkFlow(MalBlkPtr mb)
 			break;
 		case ENDsymbol:
 			endseen = 1;
+			pp = NULL;
 			break;
 		default:
 			if (isaSignature(p)) {
@@ -208,9 +214,9 @@ chkFlow(MalBlkPtr mb)
 					/* do nothing */
 				} else if (i) {
 					str l = instruction2str(mb, 0, p, TRUE);
-					msg = createException(MAL, "%s.%s signature misplaced\n!%s",
+					msg = createException(MAL, "chkFlow",
+										  "%s.%s signature misplaced\n!%s",
 										  getModuleId(p), getFunctionId(p), l);
-					GDKfree(l);
 					return msg;
 				}
 			}
@@ -372,7 +378,7 @@ cloneFunction(Module scope, Symbol proc, MalBlkPtr mb, InstrPtr p)
 
 	/* check for errors after fixation , TODO */
 	/* beware, we should now ignore any cloning */
-	if (proc->def->errors == 0) {
+	if (proc->def->errors == NULL) {
 		msg = chkProgram(scope, new->def);
 		if (msg)
 			mb->errors = msg;
@@ -380,7 +386,7 @@ cloneFunction(Module scope, Symbol proc, MalBlkPtr mb, InstrPtr p)
 			assert(mb->errors == NULL);
 			mb->errors = new->def->errors;
 			mb->errors = createMalException(mb, 0, TYPE, "Error in cloned function");
-			new->def->errors = 0;
+			new->def->errors = NULL;
 		}
 	}
 
@@ -427,7 +433,6 @@ debugFunction(stream *fd, MalBlkPtr mb, MalStkPtr stk, int flg, int first,
 				}
 				mnstr_printf(fd, "\n");
 			}
-			GDKfree(ps);
 		} else
 			mnstr_printf(fd, "#failed instruction2str()\n");
 	}
@@ -463,7 +468,6 @@ listFunction(stream *fd, MalBlkPtr mb, MalStkPtr stk, int flg, int first,
 				size_t l = strlen(ps);
 				if (l > len)
 					len = l;
-				GDKfree(ps);
 			} else
 				mnstr_printf(fd, "#failed instruction2str()\n");
 		}
@@ -497,31 +501,11 @@ printFunction(stream *fd, MalBlkPtr mb, MalStkPtr stk, int flg)
 	listFunction(fd, mb, stk, flg, 0, mb->stop);
 }
 
-void
-traceFunction(component_t comp, MalBlkPtr mb, MalStkPtr stk, int flg)
-{
-	int i, j;
-	InstrPtr p;
-	// Set the used bits properly
-	for (i = 0; i < mb->vtop; i++)
-		clrVarUsed(mb, i);
-	for (i = 0; i < mb->stop; i++) {
-		p = getInstrPtr(mb, i);
-		for (j = p->retc; j < p->argc; j++)
-			setVarUsed(mb, getArg(p, j));
-		if (p->barrier)
-			for (j = 0; j < p->retc; j++)
-				setVarUsed(mb, getArg(p, j));
-	}
-	for (i = 0; i < mb->stop; i++)
-		traceInstruction(comp, mb, stk, getInstrPtr(mb, i), flg);
-}
-
 /* initialize the static scope boundaries for all variables */
 void
 setVariableScope(MalBlkPtr mb)
 {
-	int pc, k, depth = 0, dflow = -1;
+	int pc, k, depth = 0, dflow = -1, jump = 0, pp = -1;
 	InstrPtr p;
 
 	/* reset the scope admin */
@@ -542,13 +526,15 @@ setVariableScope(MalBlkPtr mb)
 		p = getInstrPtr(mb, pc);
 
 		if (blockStart(p)) {
-			if (getModuleId(p) && getFunctionId(p)
-				&& strcmp(getModuleId(p), "language") == 0
-				&& strcmp(getFunctionId(p), "dataflow") == 0) {
+			if (getModuleId(p) == languageRef && (getFunctionId(p) == dataflowRef || getFunctionId(p) == pipelinesRef)) {
 				if (dflow != -1)
 					addMalException(mb,
 									"setLifeSpan nested dataflow blocks not allowed");
 				dflow = depth;
+				if (getFunctionId(p) == pipelinesRef) {
+					pp = pc;
+					jump = p->jump;
+				}
 			} else
 				depth++;
 		}
@@ -558,14 +544,16 @@ setVariableScope(MalBlkPtr mb)
 			if (isVarConstant(mb, v) && getVarUpdated(mb, v) == 0)
 				setVarUpdated(mb, v, pc);
 
-			if (getVarDeclared(mb, v) == 0) {
+			if (getVarDeclared(mb, v) == 0 && (pp < 0 || k < p->retc)) {
 				setVarDeclared(mb, v, pc);
 				setVarScope(mb, v, depth);
 			}
 			if (k < p->retc)
 				setVarUpdated(mb, v, pc);
-			if (getVarScope(mb, v) == depth)
+			if (pp < 0 && getVarScope(mb, v) == depth)
 				setVarEolife(mb, v, pc);
+			if (pp >= 0 && getVarEolife(mb, v) < pc && (k < p->retc || getVarScope(mb, v) == depth))
+				setVarEolife(mb, v, (((k >= p->retc && getVarDeclared(mb, v) < pp) || (k >= p->inout && k < p->retc)) && jump > 0) ? jump : pc);
 
 			if (k >= p->retc && getVarScope(mb, v) < depth)
 				setVarEolife(mb, v, -1);
@@ -582,9 +570,11 @@ setVariableScope(MalBlkPtr mb)
 				else if (getVarEolife(mb, k) == -1)
 					setVarEolife(mb, k, pc);
 
-			if (dflow == depth)
+			if (dflow == depth) {
 				dflow = -1;
-			else
+				jump = -1;
+				pp = -1;
+			} else
 				depth--;
 		}
 		if (blockReturn(p)) {
@@ -699,7 +689,7 @@ chkDeclarations(MalBlkPtr mb)
 	char name[IDLENGTH];
 
 	if (mb->errors)
-		return GDKstrdup(mb->errors);
+		return ma_strdup(mb->ma, mb->errors);
 	blks[top] = blkId;
 
 	/* initialize the scope */
@@ -780,9 +770,7 @@ chkDeclarations(MalBlkPtr mb)
 						  "%s.%s too deeply nested  MAL program",
 						  getModuleId(sig), getFunctionId(sig));
 				blkId++;
-				if (getModuleId(p) && getFunctionId(p)
-					&& strcmp(getModuleId(p), "language") == 0
-					&& strcmp(getFunctionId(p), "dataflow") == 0) {
+				if (getModuleId(p) == languageRef && (getFunctionId(p) == dataflowRef || getFunctionId(p) == pipelinesRef)) {
 					if (dflow != -1)
 						throw(MAL, "chkFlow",
 							  "%s.%s setLifeSpan nested dataflow blocks not allowed",

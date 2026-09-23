@@ -3,11 +3,9 @@
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024, 2025 MonetDB Foundation;
- * Copyright August 2008 - 2023 MonetDB B.V.;
- * Copyright 1997 - July 2008 CWI.
+ * For copyright information, see the file debian/copyright.
  */
 
 /*
@@ -213,7 +211,7 @@ MNDBTables(ODBCStmt *stmt,
 			int i;
 			size_t j;
 
-			pos += strcpy_len(query + pos, " and tt.table_type_name in (", querylen - pos);
+			pos += strlcpy(query + pos, " and tt.table_type_name in (", querylen - pos);
 			for (j = 0, i = 0; i < NameLength4 + 1; i++) {
 				if (i == NameLength4 || TableType[i] == ',') {
 					if (j > 0 && buf[j - 1] == ' ')
@@ -254,7 +252,7 @@ MNDBTables(ODBCStmt *stmt,
 		}
 
 		/* add the ordering */
-		pos += strcpy_len(query + pos, " order by \"TABLE_TYPE\", \"TABLE_SCHEM\", \"TABLE_NAME\"", querylen - pos);
+		pos += strlcpy(query + pos, " order by \"TABLE_TYPE\", \"TABLE_SCHEM\", \"TABLE_NAME\"", querylen - pos);
 		assert(pos < querylen);
 	}
 

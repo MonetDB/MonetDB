@@ -3,11 +3,9 @@
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024, 2025 MonetDB Foundation;
- * Copyright August 2008 - 2023 MonetDB B.V.;
- * Copyright 1997 - July 2008 CWI.
+ * For copyright information, see the file debian/copyright.
  */
 
 /*
@@ -37,6 +35,7 @@
 #include "gdk.h"
 #include "gdk_system_private.h"
 
+#include <stdio.h>
 #include <time.h>
 
 #ifdef HAVE_FTIME
@@ -140,14 +139,16 @@ lock_isset(MT_Lock *l)
 
 /* function used for debugging */
 void
-GDKlockstatistics(int what)
+GDKlockstatistics(FILE *outf, int what)
 {
 	MT_Lock *l;
 	int n = 0;
 
-	printf("Locks:\n");
+	if (outf == NULL)
+		outf = stdout;
+	fprintf(outf, "Locks:\n");
 	if (ATOMIC_TAS(&GDKlocklistlock) != 0) {
-		printf("GDKlocklistlock is set, so cannot access lock list\n");
+		fprintf(outf, "GDKlocklistlock is set, so cannot access lock list\n");
 		return;
 	}
 	if (what == -1) {
@@ -160,28 +161,28 @@ GDKlockstatistics(int what)
 		return;
 	}
 	GDKlocklist = sortlocklist(GDKlocklist);
-	printf("%-18s\t%s\t%s\t%s\t%s\t%s\t%s\n",
-	       "lock name", "count", "content", "sleep",
-	       "locked", "locker", "thread");
+	fprintf(outf, "%-18s\t%s\t%s\t%s\t%s\t%s\t%s\n",
+		"lock name", "count", "content", "sleep",
+		"locked", "locker", "thread");
 	for (l = GDKlocklist; l; l = l->next) {
 		n++;
 		if (what == 0 ||
 		    (what == 1 && l->count) ||
 		    (what == 2 && ATOMIC_GET(&l->contention)) ||
 		    (what == 3 && lock_isset(l)))
-			printf("%-18s\t%zu\t%zu\t%zu\t%s\t%s\t%s\n",
-			       l->name, l->count,
-			       (size_t) ATOMIC_GET(&l->contention),
-			       (size_t) ATOMIC_GET(&l->sleep),
-			       lock_isset(l) ? "locked" : "",
-			       l->locker ? l->locker : "",
-			       l->thread ? l->thread : "");
+			fprintf(outf, "%-18s\t%zu\t%zu\t%zu\t%s\t%s\t%s\n",
+				l->name, l->count,
+				(size_t) ATOMIC_GET(&l->contention),
+				(size_t) ATOMIC_GET(&l->sleep),
+				lock_isset(l) ? "locked" : "",
+				l->locker ? l->locker : "",
+				l->thread ? l->thread : "");
 	}
-	printf("Number of locks: %d\n", n);
-	printf("Total lock count: %zu\n", (size_t) ATOMIC_GET(&GDKlockcnt));
-	printf("Lock contention:  %zu\n", (size_t) ATOMIC_GET(&GDKlockcontentioncnt));
-	printf("Lock sleep count: %zu\n", (size_t) ATOMIC_GET(&GDKlocksleepcnt));
-	fflush(stdout);
+	fprintf(outf, "Number of locks: %d\n", n);
+	fprintf(outf, "Total lock count: %zu\n", (size_t) ATOMIC_GET(&GDKlockcnt));
+	fprintf(outf, "Lock contention:  %zu\n", (size_t) ATOMIC_GET(&GDKlockcontentioncnt));
+	fprintf(outf, "Lock sleep count: %zu\n", (size_t) ATOMIC_GET(&GDKlocksleepcnt));
+	fflush(outf);
 	ATOMIC_CLEAR(&GDKlocklistlock);
 }
 
@@ -194,19 +195,20 @@ struct thread_funcs {
 };
 
 struct mtthread {
+	allocator *ma;
 	struct mtthread *next;
 	void (*func) (void *);	/* function to be called */
 	void *data;		/* and its data */
 	struct thread_funcs *thread_funcs; /* callback funcs */
 	int nthread_funcs;
-	MT_Lock *lockwait;	/* lock we're waiting for */
-	MT_Sema *semawait;	/* semaphore we're waiting for */
-	MT_Cond *condwait;	/* condition variable we're waiting for */
+	ATOMIC_PTR_TYPE lockwait; /* lock we're waiting for */
+	ATOMIC_PTR_TYPE semawait; /* semaphore we're waiting for */
+	ATOMIC_PTR_TYPE condwait; /* condition variable we're waiting for */
 #ifdef LOCK_OWNER
 	MT_Lock *mylocks;	/* locks we're holding */
 #endif
 	struct mtthread *joinwait; /* process we are joining with */
-	const char *working;	/* what we're currently doing */
+	ATOMIC_PTR_TYPE working;/* what we're currently doing */
 	char algorithm[512];	/* the algorithm used in the last operation */
 	size_t algolen;		/* length of string in .algorithm */
 	ATOMIC_TYPE exited;
@@ -226,12 +228,14 @@ struct mtthread {
 #endif
 	MT_Id tid;
 	uintptr_t sp;
-	char *errbuf;
+	char gdkerrbuf[GDKMAXERRLEN];
 	struct freebats freebats;
 };
 static struct mtthread mainthread = {
 	.threadname = "main-thread",
 	.exited = ATOMIC_VAR_INIT(0),
+	.working = ATOMIC_PTR_VAR_INIT(NULL),
+	.semawait = ATOMIC_PTR_VAR_INIT(NULL),
 	.refs = 1,
 	.tid = 1,
 };
@@ -291,33 +295,45 @@ THRhighwater(void)
 }
 
 void
-dump_threads(void)
+dump_threads(FILE *outf)
 {
 	char buf[1024];
+
+	if (outf == NULL)
+		outf = stdout;
+
 #if defined(HAVE_PTHREAD_MUTEX_TIMEDLOCK) && defined(HAVE_CLOCK_GETTIME)
 	struct timespec ts;
 	clock_gettime(CLOCK_REALTIME, &ts);
 	ts.tv_sec++;		/* give it a second */
 	if (pthread_mutex_timedlock(&posthread_lock, &ts) != 0) {
-		printf("Threads are currently locked, so no thread information\n");
+		fprintf(outf,
+			"Threads are currently locked, "
+			"so no thread information\n");
 		return;
 	}
 #else
 	if (!thread_lock_try()) {
 		MT_sleep_ms(1000);
 		if (!thread_lock_try()) {
-		printf("Threads are currently locked, so no thread information\n");
+			fprintf(outf,
+				"Threads are currently locked, "
+				"so no thread information\n");
 			return;
 		}
 	}
 #endif
 	if (!GDK_TRACER_TEST(M_DEBUG, THRD))
-		printf("Threads:\n");
+		fprintf(outf, "Threads:\n");
 	for (struct mtthread *t = mtthreads; t; t = t->next) {
-		MT_Lock *lk = t->lockwait;
-		MT_Sema *sm = t->semawait;
-		MT_Cond *cn = t->condwait;
+		MT_Lock *lk = ATOMIC_PTR_GET(&t->lockwait);
+		MT_Sema *sm = ATOMIC_PTR_GET(&t->semawait);
+		MT_Cond *cn = ATOMIC_PTR_GET(&t->condwait);
 		struct mtthread *jn = t->joinwait;
+		const char *working = ATOMIC_PTR_GET(&t->working);
+		char mabuf[300];
+		ma_info(t->ma, mabuf, sizeof(mabuf), ", allocator ");
+
 		int pos = snprintf(buf, sizeof(buf),
 				   "%s, tid %zu, "
 #ifdef HAVE_PTHREAD_H
@@ -326,11 +342,12 @@ dump_threads(void)
 #ifdef HAVE_GETTID
 				   "LWP %ld, "
 #endif
-				   "%"PRIu32" free bats, waiting for %s%s, working on %.200s",
+				   "%" PRIu32 " free bats, waiting for %s%s%s, "
+				   "working on %.200s",
 				   t->threadname,
 				   t->tid,
 #ifdef HAVE_PTHREAD_H
-				   (long) t->hdl,
+				   (unsigned long) t->hdl,
 #endif
 #ifdef HAVE_GETTID
 				   (long) t->lwptid,
@@ -338,8 +355,9 @@ dump_threads(void)
 				   t->freebats.nfreebats,
 				   lk ? "lock " : sm ? "semaphore " : cn ? "condvar " : jn ? "thread " : "",
 				   lk ? lk->name : sm ? sm->name : cn ? cn->name : jn ? jn->threadname : "nothing",
+				   mabuf,
 				   ATOMIC_GET(&t->exited) ? "exiting" :
-				   t->working ? t->working : "nothing");
+				   working ? working : "nothing");
 #ifdef LOCK_OWNER
 		const char *sep = ", locked: ";
 		for (MT_Lock *l = t->mylocks; l && pos < (int) sizeof(buf); l = l->nxt) {
@@ -349,9 +367,11 @@ dump_threads(void)
 		}
 #endif
 		TRC_DEBUG_IF(THRD)
-			TRC_DEBUG_ENDIF(THRD, "%s%s\n", buf, pos >= (int) sizeof(buf) ? "..." : "");
+			TRC_DEBUG_ENDIF(THRD, "%s%s\n", buf,
+					pos >= (int) sizeof(buf) ? "..." : "");
 		else
-			printf("%s%s\n", buf, pos >= (int) sizeof(buf) ? "..." : "");
+			fprintf(outf, "%s%s\n", buf,
+				pos >= (int) sizeof(buf) ? "..." : "");
 	}
 	thread_unlock();
 }
@@ -363,12 +383,15 @@ rm_mtthread(struct mtthread *t)
 
 	assert(t != &mainthread);
 	thread_lock();
+	allocator *ta = t->ma;
+	t->ma = NULL;
 	for (pt = &mtthreads; *pt && *pt != t; pt = &(*pt)->next)
 		;
 	if (*pt)
 		*pt = t->next;
 	free(t);
 	thread_unlock();
+	ma_destroy(ta);
 }
 
 bool
@@ -406,6 +429,11 @@ MT_thread_init(void)
 	}
 	InitializeCriticalSection(&winthread_cs);
 #endif
+	mainthread.ma = create_allocator(mainthread.threadname, false);
+	if (mainthread.ma == NULL) {
+		GDKerror("Creating thread-local allocator failed");
+		return false;
+	}
 	thread_initialized = true;
 	return true;
 }
@@ -441,8 +469,15 @@ MT_thread_register(void)
 		.refs = 1,
 		.tid = (MT_Id) ATOMIC_INC(&GDKthreadid),
 		.exited = ATOMIC_VAR_INIT(0),
+		.working = ATOMIC_PTR_VAR_INIT(NULL),
+		.semawait = ATOMIC_PTR_VAR_INIT(NULL),
 	};
 	snprintf(self->threadname, sizeof(self->threadname), "foreign %zu", self->tid);
+	self->ma = create_allocator(self->threadname, false);
+	if (self->ma == NULL) {
+		free(self);
+		return false;
+	}
 	thread_setself(self);
 	thread_lock();
 	self->next = mtthreads;
@@ -528,20 +563,6 @@ MT_thread_getname(void)
 	return self ? self->threadname : UNKNOWN_THREAD;
 }
 
-void
-GDKsetbuf(char *errbuf)
-{
-	struct mtthread *self;
-
-	self = thread_self();
-	if (self == NULL)
-		self = &mainthread;
-	assert(errbuf == NULL || self->errbuf == NULL);
-	self->errbuf = errbuf;
-	if (errbuf)
-		*errbuf = 0;		/* start clean */
-}
-
 char *
 GDKgetbuf(void)
 {
@@ -550,7 +571,7 @@ GDKgetbuf(void)
 	self = thread_self();
 	if (self == NULL)
 		self = &mainthread;
-	return self->errbuf;
+	return self->gdkerrbuf;
 }
 
 struct freebats *
@@ -562,6 +583,27 @@ MT_thread_getfreebats(void)
 	if (self == NULL)
 		self = &mainthread;
 	return &self->freebats;
+}
+
+void
+MT_thread_setallocator(allocator *ma)
+{
+	if (!thread_initialized)
+		return;
+	struct mtthread *self = thread_self();
+
+	if (self)
+		self->ma = ma;
+}
+
+allocator *
+MT_thread_getallocator(void)
+{
+	if (!thread_initialized)
+		return NULL;
+	struct mtthread *self = thread_self();
+
+	return self ? self->ma : NULL;
 }
 
 void
@@ -614,7 +656,7 @@ MT_thread_setlockwait(MT_Lock *lock)
 	struct mtthread *self = thread_self();
 
 	if (self)
-		self->lockwait = lock;
+		ATOMIC_PTR_SET(&self->lockwait, lock);
 }
 
 void
@@ -625,7 +667,7 @@ MT_thread_setsemawait(MT_Sema *sema)
 	struct mtthread *self = thread_self();
 
 	if (self)
-		self->semawait = sema;
+		ATOMIC_PTR_SET(&self->semawait, sema);
 }
 
 static void
@@ -636,7 +678,7 @@ MT_thread_setcondwait(MT_Cond *cond)
 	struct mtthread *self = thread_self();
 
 	if (self)
-		self->condwait = cond;
+		ATOMIC_PTR_SET(&self->condwait, cond);
 }
 
 #ifdef LOCK_OWNER
@@ -688,19 +730,25 @@ MT_thread_setworking(const char *work)
 
 	if (self) {
 		if (work == NULL)
-			self->working = NULL;
+			ATOMIC_PTR_SET(&self->working, NULL);
 		else if (strcmp(work, "store locked") == 0)
 			self->limit_override = true;
 		else if (strcmp(work, "store unlocked") == 0)
 			self->limit_override = false;
 		else
-			self->working = work;
+			ATOMIC_PTR_SET(&self->working, work);
 	}
 }
 
 void
-MT_thread_setalgorithm(const char *algo)
+MT_thread_setalgorithm(const char *algo, const char *func)
 {
+	if (algo) {
+		if (func)
+			TRC_DEBUG(ALGO, "%s: %s\n", func, algo);
+		else
+			TRC_DEBUG(ALGO, "%s\n", algo);
+	}
 	if (!thread_initialized)
 		return;
 	struct mtthread *self = thread_self();
@@ -709,9 +757,9 @@ MT_thread_setalgorithm(const char *algo)
 		if (algo) {
 			if (self->algolen > 0) {
 				if (self->algolen < sizeof(self->algorithm))
-					self->algolen += strconcat_len(self->algorithm + self->algolen, sizeof(self->algorithm) - self->algolen, "; ", algo, NULL);
+					self->algolen += strlconcat(self->algorithm + self->algolen, sizeof(self->algorithm) - self->algolen, "; ", algo, NULL);
 			} else
-				self->algolen = strcpy_len(self->algorithm, algo, sizeof(self->algorithm));
+				self->algolen = strlcpy(self->algorithm, algo, sizeof(self->algorithm));
 		} else {
 			self->algorithm[0] = 0;
 			self->algolen = 0;
@@ -786,7 +834,7 @@ thread_starter(void *arg)
 #ifdef HAVE_PTHREAD_SETNAME_NP
 	/* name can be at most 16 chars including \0 */
 	char name[16];
-	(void) strcpy_len(name, self->threadname, sizeof(name));
+	(void) strtcpy(name, self->threadname, sizeof(name));
 	pthread_setname_np(
 #ifndef __APPLE__
 		pthread_self(),
@@ -795,7 +843,8 @@ thread_starter(void *arg)
 #endif
 #else
 #ifdef HAVE_SETTHREADDESCRIPTION
-	wchar_t *wname = utf8towchar(self->threadname);
+	wchar_t *wname = utf8toutf16(self->threadname);
+	static_assert(SIZEOF_WCHAR_T == 2, "wchar_t on Windows expected to be 2 bytes");
 	if (wname != NULL) {
 		SetThreadDescription(GetCurrentThread(), wname);
 		free(wname);
@@ -937,7 +986,18 @@ MT_create_thread(MT_Id *t, void (*f) (void *), void *arg, enum MT_thr_detach d, 
 		.refs = 1,
 		.tid = (MT_Id) ATOMIC_INC(&GDKthreadid),
 		.exited = ATOMIC_VAR_INIT(0),
+		.working = ATOMIC_PTR_VAR_INIT(NULL),
+		.semawait = ATOMIC_PTR_VAR_INIT(NULL),
+		.ma = create_allocator(threadname, false),
 	};
+	if (self->ma == NULL) {
+		free(self);
+		GDKerror("Creating thread allocator failed\n");
+		return -1;
+	}
+#ifndef NDEBUG
+	self->ma->self = self->tid;
+#endif
 	MT_lock_set(&thread_init_lock);
 	/* remember the list of callback functions we need to call for
 	 * this thread (i.e. anything registered so far) */
@@ -965,13 +1025,20 @@ MT_create_thread(MT_Id *t, void (*f) (void *), void *arg, enum MT_thr_detach d, 
 	}
 	MT_lock_unset(&thread_init_lock);
 
-	strcpy_len(self->threadname, threadname, sizeof(self->threadname));
+	strtcpy(self->threadname, threadname, sizeof(self->threadname));
 	char *p;
 	if ((p = strstr(self->threadname, "XXXX")) != NULL) {
 		/* overwrite XXXX with thread ID; bottom three bits are
 		 * likely 0, so skip those */
 		char buf[5];
-		snprintf(buf, 5, "%04zu", self->tid % 9999);
+		snprintf(buf, sizeof(buf), "%04zu", self->tid % 9999);
+		memcpy(p, buf, 4);
+	}
+	if ((p = strstr(self->ma->name, "XXXX")) != NULL) {
+		/* overwrite XXXX with thread ID; bottom three bits are
+		 * likely 0, so skip those */
+		char buf[5];
+		snprintf(buf, sizeof(buf), "%04zu", self->tid % 9999);
 		memcpy(p, buf, 4);
 	}
 	TRC_DEBUG(THRD, "Create thread \"%s\"\n", self->threadname);
@@ -1035,7 +1102,7 @@ MT_exiting_thread(void)
 	self = thread_self();
 	if (self) {
 		ATOMIC_SET(&self->exited, 1);
-		self->working = NULL;
+		ATOMIC_PTR_SET(&self->working, NULL);
 	}
 }
 
@@ -1123,6 +1190,40 @@ MT_kill_threads(void)
 }
 
 int
+parse_cpuset(FILE *f)
+{
+	int ncpu = 0;
+	char buf[512];
+	char *p = fgets(buf, 512, f);
+	if (p != NULL) {
+		/* syntax is: ranges of CPU numbers separated by comma;
+		 * a range is either a single CPU id, or two IDs
+		 * separated by a minus; any deviation causes the file
+		 * to be ignored */
+		for (;;) {
+			char *q;
+			unsigned fst = strtoul(p, &q, 10);
+			if (q == p)
+				return 0;
+			ncpu++;
+			if (*q == '-') {
+				p = q + 1;
+				unsigned lst = strtoul(p, &q, 10);
+				if (q == p || lst <= fst)
+					return 0;
+				ncpu += lst - fst;
+			}
+			if (*q == '\n')
+				break;
+			if (*q != ',')
+				return 0;
+			p = q + 1;
+		}
+	}
+	return ncpu;
+}
+
+int
 MT_check_nr_cores(void)
 {
 	int ncpus = -1;
@@ -1166,38 +1267,28 @@ MT_check_nr_cores(void)
 
 #ifndef WIN32
 	/* get the number of allocated cpus from the cgroup settings */
-	FILE *f = fopen("/sys/fs/cgroup/cpuset/cpuset.cpus", "r");
+	FILE *f = fopen("/sys/fs/cgroup/cpuset/cpuset.cpus", "r"); /* v1 */
+	if (f == NULL)
+		f = fopen("/sys/fs/cgroup/cpuset.cpus.effective", "r"); /* v2 */
 	if (f != NULL) {
-		char buf[512];
-		char *p = fgets(buf, 512, f);
+		int ncpu = parse_cpuset(f);
 		fclose(f);
-		if (p != NULL) {
-			/* syntax is: ranges of CPU numbers separated
-			 * by comma; a range is either a single CPU
-			 * id, or two IDs separated by a minus; any
-			 * deviation causes the file to be ignored */
-			int ncpu = 0;
-			for (;;) {
-				char *q;
-				unsigned fst = strtoul(p, &q, 10);
-				if (q == p)
-					return ncpus;
-				ncpu++;
-				if (*q == '-') {
-					p = q + 1;
-					unsigned lst = strtoul(p, &q, 10);
-					if (q == p || lst <= fst)
-						return ncpus;
-					ncpu += lst - fst;
-				}
-				if (*q == '\n')
-					break;
-				if (*q != ',')
-					return ncpus;
-				p = q + 1;
+		if (ncpu > 0 && ncpu < ncpus)
+			ncpus = ncpu;
+	} else {
+		f = fopen("/sys/fs/cgroup/cpu.max", "r");
+		if (f != NULL) {
+			uint64_t quota, period;
+			/* there should either be two numbers, or the
+			 * word "max" followed by a number; the latter
+			 * case is ignored by the fscanf not returning
+			 * 2 */
+			if (fscanf(f, "%" SCNu64 " %" SCNu64, &quota, &period) == 2 && period > 0) {
+				int ncpu = quota / period;
+				if (ncpu < ncpus)
+					ncpus = ncpu;
 			}
-			if (ncpu < ncpus)
-				return ncpu;
+			fclose(f);
 		}
 	}
 #endif
@@ -1207,13 +1298,14 @@ MT_check_nr_cores(void)
 
 
 void
-MT_cond_init(MT_Cond *cond)
+MT_cond_init(MT_Cond *cond, const char *name)
 {
 #if !defined(HAVE_PTHREAD_H) && defined(WIN32)
 	InitializeConditionVariable(&cond->cv);
 #else
 	pthread_cond_init(&cond->cv, NULL);
 #endif
+	strtcpy(cond->name, name, sizeof(cond->name));
 }
 
 

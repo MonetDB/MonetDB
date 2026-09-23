@@ -1,0 +1,44 @@
+statement ok
+START TRANSACTION
+
+statement ok
+CREATE FUNCTION mymax(a int, b int) returns int begin if a > b then return a; else return b; end if; end
+
+statement ok
+CREATE MERGE TABLE x(a int)
+
+statement ok
+CREATE TABLE child1(a int)
+
+statement ok
+INSERT INTO child1 VALUES (0),(2),(3)
+
+statement ok
+ALTER TABLE x ADD TABLE child1
+
+query TIITTT nosort
+PREPARE SELECT mymax(a, ?) from x
+----
+int
+31
+0
+(empty)
+%1
+%1
+int
+31
+0
+NULL
+NULL
+NULL
+
+query I nosort
+exec <LAST_PREPARE_ID>(1)
+----
+1
+2
+3
+
+statement ok
+ROLLBACK
+

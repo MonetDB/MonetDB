@@ -3,11 +3,9 @@
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024, 2025 MonetDB Foundation;
- * Copyright August 2008 - 2023 MonetDB B.V.;
- * Copyright 1997 - July 2008 CWI.
+ * For copyright information, see the file debian/copyright.
  */
 
 /*
@@ -83,6 +81,13 @@ SQLRETURN MNDBAllocHandle(SQLSMALLINT nHandleType, SQLHANDLE nInputHandle, SQLHA
 SQLRETURN MNDBEndTran(SQLSMALLINT nHandleType, SQLHANDLE nHandle, SQLSMALLINT nCompletionType);
 SQLRETURN MNDBFreeHandle(SQLSMALLINT handleType, SQLHANDLE handle);
 SQLRETURN MNDBGetDiagRec(SQLSMALLINT handleType, SQLHANDLE handle, SQLSMALLINT recNumber, SQLCHAR *sqlState, SQLINTEGER *nativeErrorPtr, SQLCHAR *messageText, SQLSMALLINT bufferLength, SQLSMALLINT *textLengthPtr);
+
+#if SIZEOF_VOID_P == 4
+#define SMALL_CACHE_LIMIT	100
+#else
+#define SMALL_CACHE_LIMIT	1000
+#endif
+#define LARGE_CACHE_LIMIT	10000
 
 #ifdef ODBCDEBUG
 #ifdef NATIVE_WIN32

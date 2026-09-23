@@ -3,11 +3,9 @@
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024, 2025 MonetDB Foundation;
- * Copyright August 2008 - 2023 MonetDB B.V.;
- * Copyright 1997 - July 2008 CWI.
+ * For copyright information, see the file debian/copyright.
  */
 
 #ifndef _SEEN_PROPERTIES_H
@@ -18,8 +16,8 @@
 #define MEROPROPFILE ".merovingian_properties"
 
 confkeyval *getDefaultProps(void);
-int writeProps(confkeyval *ckv, const char *path);
-void writePropsBuf(confkeyval *ckv, char **buf);
+int writeProps(const confkeyval *ckv, const char *path);
+char *writePropsBuf(const confkeyval *ckv);
 int readProps(confkeyval *ckv, const char *path);
 int readAllProps(confkeyval *ckv, const char *path);
 void readPropsBuf(confkeyval *ckv, char *buf);

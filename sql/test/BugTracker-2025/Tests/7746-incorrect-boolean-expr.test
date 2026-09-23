@@ -1,0 +1,66 @@
+-- Setup test table
+statement ok
+CREATE TABLE t0(c0 INT)
+
+statement ok
+INSERT INTO t0 VALUES(1)
+
+-- Test 1: Basic query (baseline)
+-- Expected: [(1,)]  ✓ CORRECT
+query I nosort
+SELECT * FROM t0 WHERE TRUE
+----
+1
+
+-- Test 2: Negation of boolean expression
+-- Expected: []  ✗ INCORRECT - Returns [(1,)]
+query I nosort
+SELECT * FROM t0 WHERE (TRUE AND TRUE) AND (NOT (TRUE AND TRUE))
+----
+
+-- Test 3: NULL check on boolean expression
+-- Expected: []  ✗ INCORRECT - Returns [(1,)]
+query I nosort
+SELECT * FROM t0 WHERE (TRUE AND TRUE) AND ((TRUE AND TRUE) IS NULL)
+----
+
+-- Test 4: TLP Oracle validation (combined query)
+-- Expected: [(1,)]  ✗ INCORRECT - Returns [(1,), (1,), (1,)]
+query I nosort
+SELECT * FROM t0 WHERE TRUE AND (TRUE AND TRUE)
+UNION ALL
+SELECT * FROM t0 WHERE (TRUE AND TRUE) AND (NOT (TRUE AND TRUE))
+UNION ALL
+SELECT * FROM t0 WHERE (TRUE AND TRUE) AND ((TRUE AND TRUE) IS NULL)
+----
+1
+
+-- Verify basic boolean logic
+-- Expected: FALSE (0 or f)
+query I nosort
+SELECT NOT (TRUE AND TRUE) as test_not
+----
+0
+
+-- Expected: FALSE (0 or f)
+query I nosort
+SELECT (TRUE AND TRUE) IS NULL as test_is_null
+----
+0
+
+-- Verify truth table
+-- Expected: TRUE, FALSE, FALSE
+query III nosort
+SELECT
+    TRUE AND TRUE as and_result,
+    NOT (TRUE AND TRUE) as not_result,
+    (TRUE AND TRUE) IS NULL as is_null_result
+----
+1
+0
+0
+
+-- cleanup
+statement ok
+DROP TABLE t0
+

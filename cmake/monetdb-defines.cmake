@@ -3,11 +3,9 @@
 #
 # This Source Code Form is subject to the terms of the Mozilla Public
 # License, v. 2.0.  If a copy of the MPL was not distributed with this
-# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+# file, You can obtain one at https://mozilla.org/MPL/2.0/.
 #
-# Copyright 2024, 2025 MonetDB Foundation;
-# Copyright August 2008 - 2023 MonetDB B.V.;
-# Copyright 1997 - July 2008 CWI.
+# For copyright information, see the file debian/copyright.
 #]]
 
 # This function should only run find functions. The resulting
@@ -20,6 +18,7 @@ function(monetdb_configure_defines)
   check_include_file("fcntl.h" HAVE_FCNTL_H)
 # use find_path for getopt.h since we need the path on Windows
   find_path(HAVE_GETOPT_H "getopt.h")
+  check_include_file("glob.h" HAVE_GLOB_H)
   check_include_file("kvm.h" HAVE_KVM_H)
   check_include_file("mach/mach_init.h" HAVE_MACH_MACH_INIT_H)
   check_include_file("mach/task.h" HAVE_MACH_TASK_H)
@@ -74,10 +73,6 @@ function(monetdb_configure_defines)
   check_function_exists("getentropy" HAVE_GETENTROPY)
   check_function_exists("getexecname" HAVE_GETEXECNAME)
   check_function_exists("getlogin" HAVE_GETLOGIN)
-  cmake_push_check_state()
-    set(CMAKE_REQUIRED_INCLUDES "${HAVE_GETOPT_H}")
-    check_symbol_exists("getopt_long" "getopt.h" HAVE_GETOPT_LONG)
-  cmake_pop_check_state()
   check_function_exists("getrlimit" HAVE_GETRLIMIT)
   check_function_exists("gettid" HAVE_GETTID)
   check_function_exists("gettimeofday" HAVE_GETTIMEOFDAY)
@@ -88,6 +83,8 @@ function(monetdb_configure_defines)
   check_symbol_exists("strerror_r" "string.h" HAVE_STRERROR_R)
   check_function_exists("lockf" HAVE_LOCKF)
   check_symbol_exists("madvise" "sys/mman.h" HAVE_MADVISE)
+  check_function_exists("malloc_info" HAVE_MALLOC_INFO)
+  check_function_exists("mallinfo2" HAVE_MALLINFO2)
   check_symbol_exists("mremap" "sys/mman.h" HAVE_MREMAP)
   check_function_exists("nanosleep" HAVE_NANOSLEEP)
   check_function_exists("nl_langinfo" HAVE_NL_LANGINFO)
@@ -105,6 +102,10 @@ function(monetdb_configure_defines)
   check_function_exists("shutdown" HAVE_SHUTDOWN)
   check_function_exists("sigaction" HAVE_SIGACTION)
   check_function_exists("siglongjmp" HAVE_SIGLONGJMP)
+  check_function_exists("stpcpy" HAVE_STPCPY)
+  check_function_exists("strlcpy" HAVE_STRLCPY)
+  check_function_exists("strndup" HAVE_STRNDUP)
+  check_function_exists("strnlen" HAVE_STRNLEN)
   check_function_exists("strptime" HAVE_STRPTIME)
   check_symbol_exists("sysconf" "unistd.h" HAVE_SYSCONF)
   check_function_exists("task_info" HAVE_TASK_INFO)
@@ -135,26 +136,49 @@ macro(monetdb_macro_variables)
   set(HAVE_LIBXML ${LibXml2_FOUND})
   set(HAVE_LIBZ ${ZLIB_FOUND})
   set(HAVE_LIBLZ4 ${LZ4_FOUND})
+  set(HAVE_SNAPPY ${SNAPPY_FOUND})
+  set(HAVE_ZSTD ${ZSTD_FOUND})
+  set(HAVE_BROTLI ${BROTLI_FOUND})
   set(HAVE_PROJ ${PROJ_FOUND})
   set(HAVE_FITS ${CFITSIO_FOUND})
   set(HAVE_VALGRIND ${VALGRIND_FOUND})
   set(HAVE_NETCDF ${NETCDF_FOUND})
   set(HAVE_READLINE ${READLINE_FOUND})
   set(HAVE_ODBCINST ${ODBCinst_FOUND})
-  set(HAVE_LIBR ${LIBR_FOUND})
-  set(RHOME "${LIBR_HOME}")
   set(HAVE_GEOM ${GEOS_FOUND})
   set(HAVE_SHP ${GDAL_FOUND})
   set(SANITIZER ${SANITIZER})
   set(HAVE_RTREE ${RTREE_FOUND})
   set(HAVE_OPENSSL ${OPENSSL_FOUND})
 
-  if(PY3INTEGRATION)
-    set(HAVE_LIBPY3 "${Python3_NumPy_FOUND}")
-    set(PY3VER "${Python3_VERSION_MINOR}")
+  set(BUILD_TYPE "${CMAKE_BUILD_TYPE}")
+  if(CMAKE_BUILD_TYPE)
+    if (${CMAKE_BUILD_TYPE} STREQUAL "Debug")
+      set(EXTRA_C_FLAGS "${CMAKE_C_FLAGS_DEBUG}")
+    elseif (${CMAKE_BUILD_TYPE} STREQUAL "Release")
+      set(EXTRA_C_FLAGS "${CMAKE_C_FLAGS_RELEASE}")
+    elseif (${CMAKE_BUILD_TYPE} STREQUAL "MinSizeRel")
+      set(EXTRA_C_FLAGS "${CMAKE_C_FLAGS_MINSIZEREL}")
+    else (${CMAKE_BUILD_TYPE} STREQUAL "RelWithDebInfo")
+      set(EXTRA_C_FLAGS "${CMAKE_C_FLAGS_RELWITHDEBINFO}")
+    endif ()
+    if(NOT "${CMAKE_C_FLAGS}" STREQUAL "")
+      string(APPEND EXTRA_C_FLAGS " " ${CMAKE_C_FLAGS})
+    endif()
   else()
-    message(STATUS "Disable Py3integration, because required NumPy is missing")
+    set(EXTRA_C_FLAGS "${CMAKE_C_FLAGS}")
   endif()
+
+  if(MALLOC_FOUND)
+    if(${WITH_MALLOC} STREQUAL "jemalloc")
+      set(WITH_JEMALLOC 1)
+    elseif(${WITH_MALLOC} STREQUAL "mimalloc")
+      set(WITH_MIMALLOC 1)
+    elseif(${WITH_MALLOC} STREQUAL "tcmalloc")
+      set(WITH_TCMALLOC 1)
+    endif()
+  endif()
+
   if(Python3_Interpreter_FOUND)
     set(Python_EXECUTABLE "${Python3_EXECUTABLE}")
   endif()
@@ -169,14 +193,6 @@ macro(monetdb_macro_variables)
   endif()
   if(WIN_GETADDRINFO)
     set(HAVE_GETADDRINFO 1)
-  endif()
-  set(HAVE_CUDF
-    ${CINTEGRATION}
-    CACHE
-    INTERNAL
-    "C udfs extension is available")
-  if(HAVE_GETOPT_H)
-    set(HAVE_GETOPT 1)
   endif()
   # compiler options, profiling (google perf tools), valgrind
   # Check that posix regex is available when pcre is not found
@@ -315,7 +331,7 @@ macro(monetdb_configure_misc)
 
   if(NOT DEFINED PYTHON3_LIBDIR)
     # Used for installing testing python module (don't pass a location, else we need to strip this again)
-    execute_process(COMMAND "${Python3_EXECUTABLE}" "-c" "import sysconfig; print((sysconfig.get_path('purelib', vars={'base':''}, scheme='rpm_prefix') if 'rpm_prefix' in sysconfig.get_scheme_names() else sysconfig.get_path('purelib', vars={'base':''}))[1:])"
+    execute_process(COMMAND "${Python3_EXECUTABLE}" "-c" "import sysconfig; print((sysconfig.get_path('purelib', vars={'base':''}, scheme='rpm_prefix') if 'rpm_prefix' in sysconfig.get_scheme_names() else sysconfig.get_path('purelib', vars={'base':''}))[1:].replace('\\\\','/'))"
       RESULT_VARIABLE PY3_LIBDIR_CODE
       OUTPUT_VARIABLE PYTHON3_SITEDIR
       OUTPUT_STRIP_TRAILING_WHITESPACE)

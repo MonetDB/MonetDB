@@ -3,11 +3,9 @@
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024, 2025 MonetDB Foundation;
- * Copyright August 2008 - 2023 MonetDB B.V.;
- * Copyright 1997 - July 2008 CWI.
+ * For copyright information, see the file debian/copyright.
  */
 
 #ifndef _MAL_LINKER_H
@@ -25,10 +23,7 @@
 #endif
 
 mal_export MALfcn getAddress(const char *modname, const char *fcnname);
-mal_export char *MSP_locate_sqlscript(const char *mod_name, bit recurse);
+mal_export char *MSP_locate_sqlscript(allocator *ma, const char *mod_name);
 mal_export str loadLibrary(const char *modulename, int flag);
-mal_export char *locate_file(const char *basename, const char *ext,
-							 bit recurse);
-mal_export int malLibraryEnabled(const char *name);
-mal_export char *malLibraryHowToEnable(const char *name);
+mal_export char *locate_file(allocator *ma, const char *basename, const char *ext);
 #endif /* _MAL_LINKER_H */

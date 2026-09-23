@@ -3,11 +3,9 @@
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024, 2025 MonetDB Foundation;
- * Copyright August 2008 - 2023 MonetDB B.V.;
- * Copyright 1997 - July 2008 CWI.
+ * For copyright information, see the file debian/copyright.
  */
 
 #include "monetdb_config.h"
@@ -55,9 +53,8 @@
 #define atommem(size)					\
 	do {						\
 		if (*dst == NULL || *len < (size)) {	\
-			GDKfree(*dst);			\
 			*len = (size);			\
-			*dst = GDKmalloc(*len);		\
+			*dst = ma_alloc(ma, *len);	\
 			if (*dst == NULL) {		\
 				*len = 0;		\
 				return -1;		\
@@ -73,7 +70,7 @@ strHeap(Heap *d, size_t cap)
 	size_t size;
 
 	cap = MAX(cap, BATTINY);
-	size = GDK_STRHASHTABLE * sizeof(stridx_t) + MIN(GDK_ELIMLIMIT, cap * GDK_VARALIGN);
+	size = GDK_STRHASHSIZE + MIN(GDK_ELIMLIMIT, cap * GDK_VARALIGN);
 	return HEAPalloc(d, size, 1);
 }
 
@@ -81,7 +78,7 @@ strHeap(Heap *d, size_t cap)
 void
 strCleanHash(Heap *h, bool rebuild)
 {
-	stridx_t newhash[GDK_STRHASHTABLE];
+	var_t newhash[GDK_STRHASHTABLE];
 	size_t pad, pos;
 	BUN off, strhash;
 	const char *s;
@@ -89,8 +86,8 @@ strCleanHash(Heap *h, bool rebuild)
 	(void) rebuild;
 	if (!h->cleanhash)
 		return;
-	if (h->size < GDK_STRHASHTABLE * sizeof(stridx_t) &&
-	    HEAPextend(h, GDK_STRHASHTABLE * sizeof(stridx_t) + BATTINY * GDK_VARALIGN, true) != GDK_SUCCEED) {
+	if (h->size < GDK_STRHASHSIZE &&
+	    HEAPextend(h, GDK_STRHASHSIZE + BATTINY * GDK_VARALIGN, true) != GDK_SUCCEED) {
 		GDKclrerr();
 		if (h->size > 0)
 			memset(h->base, 0, h->size);
@@ -111,36 +108,43 @@ strCleanHash(Heap *h, bool rebuild)
 	pos = GDK_STRHASHSIZE;
 	while (pos < h->free) {
 		pad = GDK_VARALIGN - (pos & (GDK_VARALIGN - 1));
-		if (pad < sizeof(stridx_t))
+		if (pad < sizeof(var_t))
 			pad += GDK_VARALIGN;
 		pos += pad;
 		if (pos >= GDK_ELIMLIMIT)
 			break;
 		s = h->base + pos;
-		strhash = strHash(s);
+		size_t slen = strlen(s);
+		strhash = strHashLen(s, slen);
 		off = strhash & GDK_STRHASHMASK;
-		newhash[off] = (stridx_t) (pos - sizeof(stridx_t));
-		pos += strlen(s) + 1;
+		var_t *p = (var_t *) (h->base + pos - sizeof(var_t));
+		if (*p != newhash[off]) {
+			*p = newhash[off];
+			h->dirty = true;
+		}
+		newhash[off] = (var_t) (pos - sizeof(var_t));
+		pos += slen + 1;
 	}
 	/* only set dirty flag if the hash table actually changed */
 	if (memcmp(newhash, h->base, sizeof(newhash)) != 0) {
 		memcpy(h->base, newhash, sizeof(newhash));
-		if (h->storage == STORE_MMAP) {
-			if (!(ATOMIC_GET(&GDKdebug) & NOSYNCMASK))
-				(void) MT_msync(h->base, GDK_STRHASHSIZE);
-		} else
+		if (h->storage != STORE_MMAP ||
+		    ATOMIC_GET(&GDKdebug) & NOSYNCMASK ||
+		    MT_msync(h->base, GDK_STRHASHSIZE) < 0) {
 			h->dirty = true;
+		}
 	}
 #ifndef NDEBUG
 	if (GDK_ELIMDOUBLES(h)) {
 		pos = GDK_STRHASHSIZE;
 		while (pos < h->free) {
 			pad = GDK_VARALIGN - (pos & (GDK_VARALIGN - 1));
-			if (pad < sizeof(stridx_t))
+			if (pad < sizeof(var_t))
 				pad += GDK_VARALIGN;
 			pos += pad;
 			s = h->base + pos;
-			assert(strLocate(h, s) != 0);
+			if (!strNil(s))
+				assert(strLocate(h, s) != 0);
 			pos += strlen(s) + 1;
 		}
 	}
@@ -148,19 +152,324 @@ strCleanHash(Heap *h, bool rebuild)
 	h->cleanhash = false;
 }
 
+
+BUN
+countStrings(const Heap *h)
+{
+	BUN n = 0;
+	size_t pos = GDK_STRHASHSIZE;
+	size_t pad;
+	const char *s;
+
+	while (pos < h->free) {
+		pad = GDK_VARALIGN - (pos & (GDK_VARALIGN - 1));
+		if (pos + pad < GDK_ELIMLIMIT) {
+			if (pad < sizeof(var_t))
+				pad += GDK_VARALIGN;
+		} else if (pos >= GDK_ELIMLIMIT)
+			pad = 0;
+		pos += pad;
+		s = h->base + pos;
+		n++;
+		pos += strlen(s) + 1;
+	}
+	return n;
+}
+
+
+static var_t
+ustrPut(BAT *b, var_t *dst, const char *v)
+{
+	assert(b->ustr);
+
+	if (strNil(v)) {
+		*dst = 0;
+		return 0;
+	}
+
+	BAT *ustrbat = BBP_desc(b->ustr);
+
+	/* this function is the ONLY place where ustrbat may be changed
+	 * (inserted into), and we're holding the ustrbat->theaplock, so we are
+	 * totally save looking at the heaps */
+	MT_rwlock_wrlock(&ustrbat->thashlock);
+	MT_lock_set(&ustrbat->theaplock);
+	assert(ustrbat->tvkey);
+	if (ustrbat->thash == (Hash *) 1)
+		(void) BATcheckhash_locked(ustrbat); /* load hash table */
+
+	Heap *h = ustrbat->tvheap;
+	BUN p = BUN_NONE;
+	size_t slen = strlen(v);
+	BUN hsh = strHashLen(v, slen);
+	if (ustrbat->batCount != 0) {
+		BATiter ui = bat_iterator_nolock(ustrbat);
+		if (ustrbat->thash == NULL) {
+			/* don't use canditer_init since it tries to
+			 * acquire theaplock (deadlock) */
+			struct canditer cui = {
+				.tpe = cand_dense,
+				.seq = ustrbat->hseqbase,
+				.hseq = ustrbat->hseqbase,
+				.ncand = ustrbat->batCount,
+			};
+			if ((ustrbat->thash = BAThash_impl(
+				     &ui, &cui, false, "thash",
+				     sizeof(var_t))) == NULL) {
+				MT_lock_unset(&ustrbat->theaplock);
+				MT_rwlock_wrunlock(&ustrbat->thashlock);
+				return (var_t) -1;
+			}
+		}
+		for (p = HASHget(ustrbat->thash,
+				 HASHbucket(ustrbat->thash, hsh));
+		     p != BUN_NONE;
+		     p = HASHgetlink(ustrbat->thash, p))
+			if (strcmp(v,
+				   ui.vh->base + ((var_t *) ui.base)[p]) == 0)
+				break;
+       } else if (GDKupgradevarheap(ustrbat, (var_t) 1 << (4 * SIZEOF_VAR_T + 1),
+				    ustrbat->batCapacity, 0) != GDK_SUCCEED) {
+               MT_lock_unset(&ustrbat->theaplock);
+               MT_rwlock_wrunlock(&ustrbat->thashlock);
+               return (var_t) -1;
+	} else {
+		if (h->size < GDK_STRHASHSIZE + BATTINY * GDK_VARALIGN) {
+			if (HEAPgrow(&b->tvheap, GDK_STRHASHSIZE + BATTINY * GDK_VARALIGN, true) != GDK_SUCCEED) {
+				return (var_t) -1;
+			}
+			h = b->tvheap;
+		}
+		h->free = GDK_STRHASHSIZE;
+#ifdef NDEBUG
+		memset(h->base, 0, h->free);
+#else
+		/* fill should solve initialization problems within valgrind */
+		memset(h->base, 0, h->size);
+#endif
+		h->dirty = true;
+	}
+
+	if (p == BUN_NONE) {
+		/* string does not yet occur in ustrbat */
+		p = ustrbat->batCount;
+		if (p >= BATcapacity(ustrbat)) {
+			if (HEAPgrow(&ustrbat->theap, (size_t) BATgrows(ustrbat) << ustrbat->tshift, true) != GDK_SUCCEED) {
+				MT_lock_unset(&ustrbat->theaplock);
+				MT_rwlock_wrunlock(&ustrbat->thashlock);
+				return (var_t) -1;
+			}
+			ustrbat->batCapacity = (BUN) (ustrbat->theap->size >> ustrbat->tshift);
+		}
+
+#ifndef NDEBUG
+		if (!checkUTF8(v, NULL)) {
+			GDKerror("incorrectly encoded UTF-8\n");
+			return (var_t) -1;
+		}
+#endif
+
+		size_t pad;
+		size_t len = slen + 1;
+
+		if (GDK_ELIMBASE(h->free) != 0) {
+			/* no extra padding needed when no hash links needed
+			 * (but only when padding doesn't cross duplicate
+			 * elimination boundary) */
+			pad = 0;
+		} else {
+			pad = GDK_VARALIGN - (h->free & (GDK_VARALIGN - 1));
+			if (GDK_ELIMBASE(h->free + pad) == 0) {
+				/* i.e. h->free+pad < GDK_ELIMLIMIT */
+				if (pad < sizeof(var_t)) {
+					/* make room for hash link */
+					pad += GDK_VARALIGN;
+				}
+			}
+		}
+
+		/* check heap for space */
+		if (h->free + pad + len >= h->size) {
+			size_t newsize = MAX(h->size, 4096);
+
+			/* double the heap size until we have enough space */
+			do {
+				if (newsize < 4 * 1024 * 1024)
+					newsize <<= 1;
+				else
+					newsize += 4 * 1024 * 1024;
+			} while (newsize <= h->free + pad + len);
+
+			assert(newsize);
+
+			if (h->free + pad + len >= (size_t) VAR_MAX) {
+				GDKerror("string heap gets larger than %zuGiB.",
+					 (size_t) VAR_MAX >> 30);
+				return (var_t) -1;
+			}
+			TRC_DEBUG(HEAP, "HEAPextend in strPut %s %zu %zu\n",
+				  h->filename, h->size, newsize);
+			if (HEAPgrow(&ustrbat->tvheap, newsize, true) != GDK_SUCCEED)
+				return (var_t) -1;
+			h = ustrbat->tvheap;
+		}
+
+		/* insert string */
+		size_t pos = h->free + pad;
+		if (pad > 0)
+			memset(h->base + h->free, 0, pad);
+		memcpy(h->base + pos, v, len);
+		h->free += pad + len;
+		h->dirty = true;
+		if (ustrbat->tascii) {
+			for (const uint8_t *s = (const uint8_t *) v; *s; s++) {
+				if (*s & 0x80) {
+					ustrbat->tascii = false;
+					b->tascii = false;
+					break;
+				}
+			}
+		}
+
+		((var_t *) ustrbat->theap->base)[p] = (var_t) pos;
+		if (ustrbat->thash) {
+			BATiter ui = bat_iterator_nolock(ustrbat);
+			HASHappend_locked_hashval(&ui, p, v, hsh);
+		}
+		var_t *bucket = ((var_t *) h->base) + (hsh & GDK_STRHASHMASK);
+		if (GDK_ELIMBASE(pos) == 0) {
+			pos -= sizeof(var_t);
+			*(var_t *) (h->base + pos) = *bucket;
+		}
+		*bucket = (var_t) pos;
+		ustrbat->tsorted = ustrbat->trevsorted = false;
+		ustrbat->batCount++;
+		ustrbat->theap->dirty = true;
+		ustrbat->theap->free = ustrbat->batCount << ustrbat->tshift;
+		ustrbat->tunique_est = (double) ustrbat->batCount;
+	}
+
+	MT_rwlock_wrunlock(&ustrbat->thashlock);
+
+	var_t d = ((var_t *) ustrbat->theap->base)[p];
+	Heap *vh = NULL;
+
+	if (b->tvheap != ustrbat->tvheap) {
+		vh = b->tvheap;
+		b->tvheap = ustrbat->tvheap;
+		HEAPincref(b->tvheap);
+	}
+	if (b->tascii && !ustrbat->tascii) {
+		for (const uint8_t *s = (const uint8_t *) v; *s; s++) {
+			if (*s & 0x80) {
+				b->tascii = false;
+				break;
+			}
+		}
+	}
+
+	MT_lock_unset(&ustrbat->theaplock);
+	if (vh)
+		HEAPdecref(vh, false);
+	*dst = d;
+	return d;
+}
+
+gdk_return
+BATconvert2ustr(BAT *b, BAT *bu)
+{
+	TRC_DEBUG(ALGO, ALGOBATFMT ", " ALGOBATFMT "\n",
+		  ALGOBATPAR(b), ALGOBATPAR(bu));
+	MT_lock_set(&b->theaplock);
+	if (b->ustr) {
+		MT_lock_unset(&b->theaplock);
+		GDKerror("BAT is already ustr\n");
+		return GDK_FAIL;
+	}
+	if (b->batCount != 0) {
+		MT_lock_unset(&b->theaplock);
+		GDKerror("BAT must be empty to convert to ustr\n");
+		return GDK_FAIL;
+	}
+	if (b->ttype != TYPE_str) {
+		MT_lock_unset(&b->theaplock);
+		GDKerror("BAT must be a string BAT to convert to ustr\n");
+		return GDK_FAIL;
+	}
+	MT_lock_set(&bu->theaplock);
+	if (!bu->tvkey) {
+		MT_lock_unset(&b->theaplock);
+		MT_lock_unset(&bu->theaplock);
+		GDKerror("USTR BAT must have tvkey property\n");
+		return GDK_FAIL;
+	}
+	if (bu->ustr) {
+		MT_lock_unset(&b->theaplock);
+		MT_lock_unset(&bu->theaplock);
+		GDKerror("USTR BAT must not itself be ustr\n");
+		return GDK_FAIL;
+	}
+	assert(bu->tvheap->parentid == bu->batCacheid);
+	b->ustr = bu->batCacheid;
+	Heap *vh = b->tvheap;
+	b->tvheap = bu->tvheap;
+	HEAPincref(b->tvheap);
+	MT_lock_unset(&bu->theaplock);
+	MT_lock_unset(&b->theaplock);
+	BBPfix(bu->batCacheid);
+	BBPretain(bu->batCacheid);
+	if (vh)
+		HEAPdecref(vh, true);
+	return GDK_SUCCEED;
+}
+
+
 /*
  * The strPut routine. The routine strLocate can be used to identify
  * the location of a string in the heap if it exists. Otherwise it
  * returns (var_t) -2 (-1 is reserved for error).
  */
+#ifdef GDKLIBRARY_USTR
 var_t
-strLocate(Heap *h, const char *v)
+oldstrnilLocate(Heap *h)
 {
-	stridx_t *ref, *next;
+	var_t *ref, *next;
 
 	/* search hash-table, if double-elimination is still in place */
 	BUN off;
-	if (h->free == 0) {
+	if (h->free <= GDK_STRHASHSIZE) {
+		/* empty, so there are no strings */
+		return (var_t) -2;
+	}
+
+	off = strHash(str_nil);
+	off &= GDK_STRHASHMASK;
+
+	/* should only use strLocate iff fully double eliminated */
+	assert(GDK_ELIMBASE(h->free) == 0);
+
+	/* search the linked list */
+	for (ref = ((var_t *) h->base) + off; *ref; ref = next) {
+		next = (var_t *) (h->base + *ref);
+		if (strcmp(str_nil, (char *) (next + 1)) == 0)
+			return (var_t) ((sizeof(var_t) + *ref));	/* found */
+	}
+	return (var_t) -2;
+}
+#endif
+
+var_t
+strLocate(Heap *h, const char *v)
+{
+	var_t *ref, *next;
+
+	/* search hash-table, if double-elimination is still in place */
+	BUN off;
+
+	if (strNil(v))
+		return 0;
+
+	if (h->free <= GDK_STRHASHSIZE) {
 		/* empty, so there are no strings */
 		return (var_t) -2;
 	}
@@ -172,10 +481,10 @@ strLocate(Heap *h, const char *v)
 	assert(GDK_ELIMBASE(h->free) == 0);
 
 	/* search the linked list */
-	for (ref = ((stridx_t *) h->base) + off; *ref; ref = next) {
-		next = (stridx_t *) (h->base + *ref);
-		if (strcmp(v, (str) (next + 1)) == 0)
-			return (var_t) ((sizeof(stridx_t) + *ref));	/* found */
+	for (ref = ((var_t *) h->base) + off; *ref; ref = next) {
+		next = (var_t *) (h->base + *ref);
+		if (strcmp(v, (char *) (next + 1)) == 0)
+			return (var_t) ((sizeof(var_t) + *ref));	/* found */
 	}
 	return (var_t) -2;
 }
@@ -183,34 +492,43 @@ strLocate(Heap *h, const char *v)
 var_t
 strPut(BAT *b, var_t *dst, const void *V)
 {
+	if (b->ustr)
+		return ustrPut(b, dst, V);
+
 	const char *v = V;
 	Heap *h = b->tvheap;
 	size_t pad;
-	size_t pos, len = strlen(v) + 1;
-	stridx_t *bucket;
+	size_t pos;
+	size_t slen = strlen(v);
+	var_t *bucket;
 	BUN off;
 
+	/* when entering nil, just return offset 0 */
+	if (strNil(v))
+		return *dst = 0;
+
 	if (h->free == 0) {
-		if (h->size < GDK_STRHASHTABLE * sizeof(stridx_t) + BATTINY * GDK_VARALIGN) {
-			if (HEAPgrow(&b->tvheap, GDK_STRHASHTABLE * sizeof(stridx_t) + BATTINY * GDK_VARALIGN, true) != GDK_SUCCEED) {
+		if (h->size < GDK_STRHASHSIZE + BATTINY * GDK_VARALIGN) {
+			if (HEAPgrow(&b->tvheap, GDK_STRHASHSIZE + BATTINY * GDK_VARALIGN, true) != GDK_SUCCEED) {
 				return (var_t) -1;
 			}
 			h = b->tvheap;
 		}
-		h->free = GDK_STRHASHTABLE * sizeof(stridx_t);
-		h->dirty = true;
+		h->free = GDK_STRHASHSIZE;
 #ifdef NDEBUG
 		memset(h->base, 0, h->free);
 #else
 		/* fill should solve initialization problems within valgrind */
 		memset(h->base, 0, h->size);
 #endif
+		h->dirty = true;
 		b->tascii = true;
+		b->tvkey = true;
 	}
 
-	off = strHash(v);
+	off = strHashLen(v, slen);
 	off &= GDK_STRHASHMASK;
-	bucket = ((stridx_t *) h->base) + off;
+	bucket = ((var_t *) h->base) + off;
 
 	if (*bucket) {
 		assert(*bucket < h->free);
@@ -218,16 +536,16 @@ strPut(BAT *b, var_t *dst, const void *V)
 		if (*bucket < GDK_ELIMLIMIT) {
 			/* small string heap (<64KiB) -- fully double
 			 * eliminated: search the linked list */
-			const stridx_t *ref = bucket;
+			const var_t *ref = bucket;
 
 			do {
-				pos = *ref + sizeof(stridx_t);
+				pos = *ref + sizeof(var_t);
 				assert(pos < h->free);
 				if (strcmp(v, h->base + pos) == 0) {
 					/* found */
 					return *dst = (var_t) pos;
 				}
-				ref = (stridx_t *) (h->base + *ref);
+				ref = (var_t *) (h->base + *ref);
 			} while (*ref);
 		} else {
 			/* large string heap (>=64KiB) -- there is no
@@ -246,7 +564,7 @@ strPut(BAT *b, var_t *dst, const void *V)
 	 * need to do this earlier: if the string was found above, it
 	 * must have gone through here in the past */
 #ifndef NDEBUG
-	if (!checkUTF8(v)) {
+	if (!checkUTF8(v, NULL)) {
 		GDKerror("incorrectly encoded UTF-8\n");
 		return (var_t) -1;
 	}
@@ -254,7 +572,7 @@ strPut(BAT *b, var_t *dst, const void *V)
 
 	pad = GDK_VARALIGN - (h->free & (GDK_VARALIGN - 1));
 	if (GDK_ELIMBASE(h->free + pad) == 0) {	/* i.e. h->free+pad < GDK_ELIMLIMIT */
-		if (pad < sizeof(stridx_t)) {
+		if (pad < sizeof(var_t)) {
 			/* make room for hash link */
 			pad += GDK_VARALIGN;
 		}
@@ -265,6 +583,7 @@ strPut(BAT *b, var_t *dst, const void *V)
 		pad = 0;
 	}
 
+	size_t len = slen + 1;
 	/* check heap for space (limited to a certain maximum after
 	 * which nils are inserted) */
 	if (h->free + pad + len >= h->size) {
@@ -291,7 +610,7 @@ strPut(BAT *b, var_t *dst, const void *V)
 		h = b->tvheap;
 
 		/* make bucket point into the new heap */
-		bucket = ((stridx_t *) h->base) + off;
+		bucket = ((var_t *) h->base) + off;
 	}
 
 	/* insert string */
@@ -301,16 +620,18 @@ strPut(BAT *b, var_t *dst, const void *V)
 		memset(h->base + h->free, 0, pad);
 	memcpy(h->base + pos, v, len);
 	h->free += pad + len;
-	h->dirty = true;
 
 	/* maintain hash table */
 	if (GDK_ELIMBASE(pos) == 0) {	/* small string heap: link the next pointer */
-		/* the stridx_t next pointer directly precedes the
+		/* the var_t next pointer directly precedes the
 		 * string */
-		pos -= sizeof(stridx_t);
-		*(stridx_t *) (h->base + pos) = *bucket;
+		pos -= sizeof(var_t);
+		*(var_t *) (h->base + pos) = *bucket;
+	} else {
+		b->tvkey = false;	/* we no longer know for sure */
 	}
-	*bucket = (stridx_t) pos;	/* set bucket to the new string */
+	*bucket = (var_t) pos;	/* set bucket to the new string */
+	h->dirty = true;
 
 	if (b->tascii && !strNil(v)) {
 		for (const uint8_t *p = (const uint8_t *) v; *p; p++) {
@@ -555,7 +876,7 @@ GDKstrFromStr(unsigned char *restrict dst, const unsigned char *restrict src, ss
 }
 
 ssize_t
-strFromStr(const char *restrict src, size_t *restrict len, char **restrict dst, bool external)
+strFromStr(allocator *ma, const char *restrict src, size_t *restrict len, char **restrict dst, bool external)
 {
 	const char *cur = src, *start = NULL;
 	size_t l = 1;
@@ -564,7 +885,7 @@ strFromStr(const char *restrict src, size_t *restrict len, char **restrict dst, 
 	if (!external) {
 		size_t sz = strLen(src);
 		atommem(sz);
-		return (ssize_t) strcpy_len(*dst, src, sz);
+		return (ssize_t) strlcpy(*dst, src, sz);
 	}
 
 	if (strNil(src)) {
@@ -599,10 +920,9 @@ strFromStr(const char *restrict src, size_t *restrict len, char **restrict dst, 
 		}
 	}
 
-	/* alloc new memory */
+	/* allocate new memory */
 	if (*dst == NULL || *len < l) {
-		GDKfree(*dst);
-		*dst = GDKmalloc(*len = l);
+		*dst = ma_alloc(ma, *len = l);
 		if (*dst == NULL) {
 			*len = 0;
 			return -1;
@@ -705,14 +1025,15 @@ escapedStr(char *restrict dst, const char *restrict src, size_t dstlen, const ch
 }
 
 ssize_t
-strToStr(char **restrict dst, size_t *restrict len, const char *restrict src, bool external)
+strToStr(allocator *ma, char **restrict dst, size_t *restrict len, const char *restrict src, bool external)
 {
 	size_t sz;
+	assert(ma);
 
 	if (!external) {
 		sz = strLen(src);
 		atommem(sz);
-		return (ssize_t) strcpy_len(*dst, src, sz);
+		return (ssize_t) strlcpy(*dst, src, sz);
 	}
 	if (strNil(src)) {
 		atommem(4);
@@ -731,25 +1052,36 @@ strToStr(char **restrict dst, size_t *restrict len, const char *restrict src, bo
 	}
 }
 
-str
-strRead(str a, size_t *dstlen, stream *s, size_t cnt)
+char *
+strRead(allocator *ma, char *A, size_t *dstlen, stream *s, size_t cnt)
 {
 	int len;
+	char *a = A;
 
 	(void) cnt;
 	assert(cnt == 1);
 	if (mnstr_readInt(s, &len) != 1 || len < 0)
 		return NULL;
 	if (a == NULL || *dstlen < (size_t) len + 1) {
-		if ((a = GDKrealloc(a, len + 1)) == NULL)
+		if (ma) {
+			a = ma_realloc(ma, a, (size_t) len + 1, *dstlen);
+		} else {
+			a = GDKmalloc((size_t) len + 1);
+		}
+		if (a == NULL)
 			return NULL;
-		*dstlen = len + 1;
 	}
 	if (len && mnstr_read(s, a, len, 1) != 1) {
-		GDKfree(a);
+		if (ma == NULL && a != A)
+			GDKfree(a);
 		return NULL;
 	}
 	a[len] = 0;
+	if (a != A) {
+		if (ma == NULL)
+			GDKfree(A);
+		*dstlen = len + 1;
+	}
 	return a;
 }
 
@@ -760,7 +1092,7 @@ strWrite(const char *a, stream *s, size_t cnt)
 
 	(void) cnt;
 	assert(cnt == 1);
-	if (!checkUTF8(a)) {
+	if (!checkUTF8(a, NULL)) {
 		GDKerror("incorrectly encoded UTF-8\n");
 		return GDK_FAIL;
 	}
@@ -771,7 +1103,7 @@ strWrite(const char *a, stream *s, size_t cnt)
 }
 
 static gdk_return
-concat_strings(BAT **bnp, ValPtr pt, BAT *b, oid seqb,
+concat_strings(allocator *ma, BAT **bnp, ValPtr pt, BAT *b, oid seqb,
 	       BUN ngrp, struct canditer *restrict ci,
 	       const oid *restrict gids, oid min, oid max, bool skip_nils,
 	       BAT *sep, const char *restrict separator, BUN *has_nils)
@@ -779,21 +1111,28 @@ concat_strings(BAT **bnp, ValPtr pt, BAT *b, oid seqb,
 	oid gid;
 	BUN i, p, nils = 0;
 	size_t *restrict lengths = NULL, separator_length = 0, next_length;
-	str *restrict astrings = NULL;
-	BATiter bi, bis = (BATiter) {0};
+	char **restrict astrings = NULL;
+	BATiter bi, bis = {0};
 	BAT *bn = NULL;
 	gdk_return rres = GDK_FAIL;
 
 	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
 
+	allocator *ta = MT_thread_getallocator();
+	allocator_state ta_state = ma_open(ta);
+
+	assert(pt == NULL || ma != NULL);
 	/* exactly one of bnp and pt must be NULL, the other non-NULL */
 	assert((bnp == NULL) != (pt == NULL));
 	/* if pt not NULL, only a single group allowed */
 	assert(pt == NULL || ngrp == 1);
+	assert(separator == NULL || !strNil(separator));
 
 	if (bnp) {
-		if ((bn = COLnew(min, TYPE_str, ngrp, TRANSIENT)) == NULL)
+		if ((bn = COLnew(min, TYPE_str, ngrp, TRANSIENT)) == NULL) {
+			ma_close(&ta_state);
 			return GDK_FAIL;
+		}
 		*bnp = bn;
 	}
 
@@ -810,7 +1149,7 @@ concat_strings(BAT **bnp, ValPtr pt, BAT *b, oid seqb,
 			assert(sep == NULL);
 			TIMEOUT_LOOP_IDX(i, ci->ncand, qry_ctx) {
 				p = canditer_next(ci) - seqb;
-				const char *s = BUNtvar(bi, p);
+				const char *s = BUNtvar(&bi, p);
 				if (strNil(s)) {
 					if (!skip_nils) {
 						nils = 1;
@@ -827,8 +1166,8 @@ concat_strings(BAT **bnp, ValPtr pt, BAT *b, oid seqb,
 			assert(sep != NULL);
 			TIMEOUT_LOOP_IDX(i, ci->ncand, qry_ctx) {
 				p = canditer_next(ci) - seqb;
-				const char *s = BUNtvar(bi, p);
-				const char *sl = BUNtvar(bis, p);
+				const char *s = BUNtvar(&bi, p);
+				const char *sl = BUNtvar(&bis, p);
 				if (strNil(s)) {
 					if (!skip_nils) {
 						nils = 1;
@@ -836,15 +1175,8 @@ concat_strings(BAT **bnp, ValPtr pt, BAT *b, oid seqb,
 					}
 				} else {
 					single_length += strlen(s);
-					if (!empty) {
-						if (strNil(sl)) {
-							if (!skip_nils) {
-								nils = 1;
-								break;
-							}
-						} else
-							single_length += strlen(sl);
-					}
+					if (!empty && !strNil(sl))
+						single_length += strlen(sl);
 					empty = false;
 				}
 			}
@@ -855,17 +1187,18 @@ concat_strings(BAT **bnp, ValPtr pt, BAT *b, oid seqb,
 		if (nils == 0 && !empty) {
 			char *single_str = NULL;
 
-			if ((single_str = GDKmalloc(single_length + 1)) == NULL) {
+			if ((single_str = ma_alloc(ta, single_length + 1)) == NULL) {
 				bat_iterator_end(&bi);
 				bat_iterator_end(&bis);
 				BBPreclaim(bn);
+				ma_close(&ta_state);
 				return GDK_FAIL;
 			}
 			empty = true;
 			if (separator) {
 				TIMEOUT_LOOP_IDX(i, ci->ncand, qry_ctx) {
 					p = canditer_next(ci) - seqb;
-					const char *s = BUNtvar(bi, p);
+					const char *s = BUNtvar(&bi, p);
 					if (strNil(s))
 						continue;
 					if (!empty) {
@@ -881,8 +1214,8 @@ concat_strings(BAT **bnp, ValPtr pt, BAT *b, oid seqb,
 				assert(sep != NULL);
 				TIMEOUT_LOOP_IDX(i, ci->ncand, qry_ctx) {
 					p = canditer_next(ci) - seqb;
-					const char *s = BUNtvar(bi, p);
-					const char *sl = BUNtvar(bis, p);
+					const char *s = BUNtvar(&bi, p);
+					const char *sl = BUNtvar(&bis, p);
 					if (strNil(s))
 						continue;
 					if (!empty && !strNil(sl)) {
@@ -898,43 +1231,45 @@ concat_strings(BAT **bnp, ValPtr pt, BAT *b, oid seqb,
 			}
 
 			single_str[offset] = '\0';
-			TIMEOUT_CHECK(qry_ctx, do { GDKfree(single_str); GOTO_LABEL_TIMEOUT_HANDLER(bailout, qry_ctx); } while (0));
+			TIMEOUT_CHECK(qry_ctx, GOTO_LABEL_TIMEOUT_HANDLER(bailout, qry_ctx));
 			if (bn) {
 				if (BUNappend(bn, single_str, false) != GDK_SUCCEED) {
-					GDKfree(single_str);
+					ma_close(&ta_state);
 					bat_iterator_end(&bi);
 					bat_iterator_end(&bis);
 					BBPreclaim(bn);
 					return GDK_FAIL;
 				}
 			} else {
+				assert(ma != NULL);
 				pt->len = offset + 1;
-				pt->val.sval = single_str;
-				single_str = NULL;	/* don't free */
+				pt->val.sval = ma_strdup(ma, single_str);
 			}
-			GDKfree(single_str);
 		} else if (bn) {
 			if (BUNappend(bn, str_nil, false) != GDK_SUCCEED) {
 				bat_iterator_end(&bi);
 				bat_iterator_end(&bis);
 				BBPreclaim(bn);
+				ma_close(&ta_state);
 				return GDK_FAIL;
 			}
 		} else {
-			if (VALinit(pt, TYPE_str, str_nil) == NULL) {
+			if (VALinit(ma, pt, TYPE_str, str_nil) == NULL) {
 				bat_iterator_end(&bi);
 				bat_iterator_end(&bis);
+				ma_close(&ta_state);
 				return GDK_FAIL;
 			}
 		}
 		bat_iterator_end(&bi);
 		bat_iterator_end(&bis);
+		ma_close(&ta_state);
 		return GDK_SUCCEED;
 	} else {
 		/* first used to calculated the total length of
 		 * each group, then the the total offset */
-		lengths = GDKzalloc(ngrp * sizeof(*lengths));
-		astrings = GDKmalloc(ngrp * sizeof(str));
+		lengths = ma_zalloc(ta, ngrp * sizeof(*lengths));
+		astrings = ma_alloc(ta, ngrp * sizeof(char *));
 		if (lengths == NULL || astrings == NULL) {
 			goto finish;
 		}
@@ -951,7 +1286,7 @@ concat_strings(BAT **bnp, ValPtr pt, BAT *b, oid seqb,
 					gid = gids[i] - min;
 					if (lengths[gid] == (size_t) -1)
 						continue;
-					const char *s = BUNtvar(bi, i);
+					const char *s = BUNtvar(&bi, i);
 					if (!strNil(s)) {
 						lengths[gid] += strlen(s) + separator_length;
 						astrings[gid] = NULL;
@@ -970,14 +1305,12 @@ concat_strings(BAT **bnp, ValPtr pt, BAT *b, oid seqb,
 					gid = gids[i] - min;
 					if (lengths[gid] == (size_t) -1)
 						continue;
-					const char *s = BUNtvar(bi, i);
-					const char *sl = BUNtvar(bis, i);
+					const char *s = BUNtvar(&bi, i);
 					if (!strNil(s)) {
+						const char *sl = BUNtvar(&bis, i);
 						lengths[gid] += strlen(s);
-						if (!strNil(sl)) {
-							next_length = strlen(sl);
-							lengths[gid] += next_length;
-						}
+						next_length = strNil(sl) ? 0 : strlen(sl);
+						lengths[gid] += next_length;
 						astrings[gid] = NULL;
 					} else if (!skip_nils) {
 						nils++;
@@ -992,7 +1325,7 @@ concat_strings(BAT **bnp, ValPtr pt, BAT *b, oid seqb,
 		if (separator) {
 			for (i = 0; i < ngrp; i++) {
 				if (astrings[i] == NULL) {
-					if ((astrings[i] = GDKmalloc(lengths[i] + 1)) == NULL) {
+					if ((astrings[i] = ma_alloc(ta, lengths[i] + 1)) == NULL) {
 						goto finish;
 					}
 					astrings[i][0] = 0;
@@ -1004,7 +1337,7 @@ concat_strings(BAT **bnp, ValPtr pt, BAT *b, oid seqb,
 			assert(sep != NULL);
 			for (i = 0; i < ngrp; i++) {
 				if (astrings[i] == NULL) {
-					if ((astrings[i] = GDKmalloc(lengths[i] + 1)) == NULL) {
+					if ((astrings[i] = ma_alloc(ta, lengths[i] + 1)) == NULL) {
 						goto finish;
 					}
 					astrings[i][0] = 0;
@@ -1021,7 +1354,7 @@ concat_strings(BAT **bnp, ValPtr pt, BAT *b, oid seqb,
 				if (gids[i] >= min && gids[i] <= max) {
 					gid = gids[i] - min;
 					if (astrings[gid]) {
-						const char *s = BUNtvar(bi, i);
+						const char *s = BUNtvar(&bi, i);
 						if (strNil(s))
 							continue;
 						if (astrings[gid][lengths[gid]]) {
@@ -1042,14 +1375,16 @@ concat_strings(BAT **bnp, ValPtr pt, BAT *b, oid seqb,
 				if (gids[i] >= min && gids[i] <= max) {
 					gid = gids[i] - min;
 					if (astrings[gid]) {
-						const char *s = BUNtvar(bi, i);
-						const char *sl = BUNtvar(bis, i);
+						const char *s = BUNtvar(&bi, i);
 						if (strNil(s))
 							continue;
-						if (astrings[gid][lengths[gid]] && !strNil(sl)) {
-							next_length = strlen(sl);
-							memcpy(astrings[gid] + lengths[gid], sl, next_length);
-							lengths[gid] += next_length;
+						if (astrings[gid][lengths[gid]]) {
+							const char *sl = BUNtvar(&bis, i);
+							if (!strNil(sl)) {
+								next_length = strlen(sl);
+								memcpy(astrings[gid] + lengths[gid], sl, next_length);
+								lengths[gid] += next_length;
+							}
 						}
 						next_length = strlen(s);
 						memcpy(astrings[gid] + lengths[gid], s, next_length);
@@ -1079,14 +1414,7 @@ concat_strings(BAT **bnp, ValPtr pt, BAT *b, oid seqb,
 	bat_iterator_end(&bis);
 	if (has_nils)
 		*has_nils = nils;
-	GDKfree(lengths);
-	if (astrings) {
-		for (i = 0; i < ngrp; i++) {
-			if (astrings[i] != str_nil)
-				GDKfree(astrings[i]);
-		}
-		GDKfree(astrings);
-	}
+	ma_close(&ta_state);
 	if (rres != GDK_SUCCEED)
 		BBPreclaim(bn);
 
@@ -1096,45 +1424,40 @@ concat_strings(BAT **bnp, ValPtr pt, BAT *b, oid seqb,
 	bat_iterator_end(&bi);
 	bat_iterator_end(&bis);
 	BBPreclaim(bn);
+	ma_close(&ta_state);
 	return GDK_FAIL;
 }
 
 gdk_return
-BATstr_group_concat(ValPtr res, BAT *b, BAT *s, BAT *sep, bool skip_nils,
+BATstr_group_concat(allocator *ma, ValPtr res, BAT *b, BAT *s, BAT *sep, bool skip_nils,
 		    bool nil_if_empty, const char *restrict separator)
 {
 	struct canditer ci;
 	gdk_return r = GDK_SUCCEED;
-	bool free_nseparator = false;
-	char *nseparator = (char *)separator;
 
-	assert((nseparator && !sep) || (!nseparator && sep)); /* only one of them must be set */
+	assert((separator && !sep) || (!separator && sep)); /* only one of them must be set */
 	*res = (ValRecord) {.vtype = TYPE_str};
 
 	canditer_init(&ci, b, s);
 
+	BATiter bi = bat_iterator(sep);
 	if (sep && BATcount(sep) == 1) { /* Only one element in sep */
-		BATiter bi = bat_iterator(sep);
-		nseparator = GDKstrdup(BUNtvar(bi, 0));
-		bat_iterator_end(&bi);
-		if (!nseparator)
-			return GDK_FAIL;
-		free_nseparator = true;
+		separator = BUNtvar(&bi, 0);
 		sep = NULL;
 	}
+	if (separator && strNil(separator))
+		separator = "";
 
-	if (ci.ncand == 0 || (nseparator && strNil(nseparator))) {
-		if (VALinit(res, TYPE_str, nil_if_empty ? str_nil : "") == NULL)
+	if (ci.ncand == 0) {
+		if (VALinit(ma, res, TYPE_str, nil_if_empty ? str_nil : "") == NULL)
 			r = GDK_FAIL;
-		if (free_nseparator)
-			GDKfree(nseparator);
+		bat_iterator_end(&bi);
 		return r;
 	}
 
-	r = concat_strings(NULL, res, b, b->hseqbase, 1, &ci, NULL, 0, 0,
-			      skip_nils, sep, nseparator, NULL);
-	if (free_nseparator)
-		GDKfree(nseparator);
+	r = concat_strings(ma, NULL, res, b, b->hseqbase, 1, &ci, NULL, 0, 0,
+			      skip_nils, sep, separator, NULL);
+	bat_iterator_end(&bi);
 	return r;
 }
 
@@ -1148,10 +1471,8 @@ BATgroupstr_group_concat(BAT *b, BAT *g, BAT *e, BAT *s, BAT *sep, bool skip_nil
 	struct canditer ci;
 	const char *err;
 	gdk_return res;
-	bool free_nseparator = false;
-	char *nseparator = (char *)separator;
 
-	assert((nseparator && !sep) || (!nseparator && sep)); /* only one of them must be set */
+	assert((separator && !sep) || (!separator && sep)); /* only one of them must be set */
 	(void) skip_nils;
 
 	if ((err = BATgroupaggrinit(b, g, e, s, &min, &max, &ngrp,
@@ -1164,300 +1485,319 @@ BATgroupstr_group_concat(BAT *b, BAT *g, BAT *e, BAT *s, BAT *sep, bool skip_nil
 		return NULL;
 	}
 
+	BATiter bi = bat_iterator(sep);
 	if (sep && BATcount(sep) == 1) { /* Only one element in sep */
-		BATiter bi = bat_iterator(sep);
-		nseparator = GDKstrdup(BUNtvar(bi, 0));
-		bat_iterator_end(&bi);
-		if (!nseparator)
-			return NULL;
-		free_nseparator = true;
+		separator = BUNtvar(&bi, 0);
 		sep = NULL;
 	}
+	if (separator && strNil(separator))
+		separator = "";
 
-	if (ci.ncand == 0 || ngrp == 0 || (nseparator && strNil(nseparator))) {
+	if (ci.ncand == 0 || ngrp == 0) {
 		/* trivial: no strings to concat, so return bat
 		 * aligned with g with nil in the tail */
 		bn = BATconstant(ngrp == 0 ? 0 : min, TYPE_str, str_nil, ngrp, TRANSIENT);
 		goto done;
 	}
 
-	if (BATtdense(g) || (g->tkey && g->tnonil)) {
+	if (ci.ncand == ngrp && (BATtdense(g) || (g->tkey && g->tnonil))) {
 		/* trivial: singleton groups, so all results are equal
 		 * to the inputs (but possibly a different type) */
 		bn = BATconvert(b, s, TYPE_str, 0, 0, 0);
+		if (bn)
+			bn->hseqbase = min;
 		goto done;
 	}
 
-	res = concat_strings(&bn, NULL, b, b->hseqbase, ngrp, &ci,
+	res = concat_strings(NULL, &bn, NULL, b, b->hseqbase, ngrp, &ci,
 			     (const oid *) Tloc(g, 0), min, max, skip_nils, sep,
-			     nseparator, &nils);
+			     separator, &nils);
 	if (res != GDK_SUCCEED)
 		bn = NULL;
 
 done:
-	if (free_nseparator)
-		GDKfree(nseparator);
+	bat_iterator_end(&bi);
 	return bn;
 }
 
-#define compute_next_single_str(START, END)				\
-	do {								\
-		for (oid m = START; m < END; m++) {			\
-			const char *sb = BUNtvar(bi, m);		\
-									\
-			if (separator) {				\
-				if (!strNil(sb)) {			\
-					next_group_length += strlen(sb); \
-					if (!empty)			\
-						next_group_length += separator_length; \
-					empty = false;			\
-				}					\
-			} else { /* sep case */				\
-				assert(sep != NULL);			\
-				const char *sl = BUNtvar(sepi, m);	\
-									\
-				if (!strNil(sb)) {			\
-					next_group_length += strlen(sb); \
-					if (!empty && !strNil(sl))	\
-						next_group_length += strlen(sl); \
-					empty = false;			\
-				}					\
-			}						\
-		}							\
-		if (empty) {						\
-			if (single_str == NULL) { /* reuse the same buffer, resize it when needed */ \
-				max_group_length = 1;			\
-				if ((single_str = GDKmalloc(max_group_length + 1)) == NULL) \
-					goto allocation_error;		\
-			} else if (1 > max_group_length) {		\
-				max_group_length = 1;			\
-				if ((next_single_str = GDKrealloc(single_str, max_group_length + 1)) == NULL) \
-					goto allocation_error;		\
-				single_str = next_single_str;		\
-			}						\
-			strcpy(single_str, str_nil);			\
-			has_nils = true;				\
-		} else {						\
-			empty = true;					\
-			if (single_str == NULL) { /* reuse the same buffer, resize it when needed */ \
-				max_group_length = next_group_length;	\
-				if ((single_str = GDKmalloc(max_group_length + 1)) == NULL) \
-					goto allocation_error;		\
-			} else if (next_group_length > max_group_length) { \
-				max_group_length = next_group_length;	\
-				if ((next_single_str = GDKrealloc(single_str, max_group_length + 1)) == NULL) \
-					goto allocation_error;		\
-				single_str = next_single_str;		\
-			}						\
-									\
-			for (oid m = START; m < END; m++) {		\
-				const char *sb = BUNtvar(bi, m);	\
-									\
-				if (separator) {			\
-					if (strNil(sb))			\
-						continue;		\
-					if (!empty) {			\
-						memcpy(single_str + offset, separator, separator_length); \
-						offset += separator_length; \
-					}				\
-					next_length = strlen(sb);	\
-					memcpy(single_str + offset, sb, next_length); \
-					offset += next_length;		\
-					empty = false;			\
-				} else { /* sep case */			\
-					assert(sep != NULL);		\
-					const char *sl = BUNtvar(sepi, m); \
-									\
-					if (strNil(sb))			\
-						continue;		\
-					if (!empty && !strNil(sl)) {	\
-						next_length = strlen(sl); \
-						memcpy(single_str + offset, sl, next_length); \
-						offset += next_length;	\
-					}				\
-					next_length = strlen(sb);	\
-					memcpy(single_str + offset, sb, next_length); \
-					offset += next_length;		\
-					empty = false;			\
-				}					\
-			}						\
-									\
-			single_str[offset] = '\0';			\
-		}							\
-} while (0)
-
-#define ANALYTICAL_STR_GROUP_CONCAT_UNBOUNDED_TILL_CURRENT_ROW		\
-	do {								\
-		size_t slice_length = 0;				\
-		next_group_length = next_length = offset = 0;		\
-		empty = true;						\
-		compute_next_single_str(k, i); /* compute the entire string then slice it starting from the beginning */ \
-		empty = true;						\
-		for (; k < i;) {					\
-			const char *nsep;				\
-			oid m = k;					\
-			j = k;						\
-			do {						\
-				k++;					\
-			} while (k < i && !op[k]);			\
-			for (; j < k; j++) {				\
-				const char *nstr = BUNtvar(bi, j);	\
-				if (!strNil(nstr)) {			\
-					slice_length += strlen(nstr);	\
-					if (!empty) {			\
-						if (separator) {	\
-							nsep = (const char *) separator; \
-						} else { /* sep case */	\
-							assert(sep != NULL); \
-							nsep = BUNtvar(sepi, j); \
-						}			\
-						if (!strNil(nsep))	\
-							slice_length += strlen(nsep); \
-					}				\
-					empty = false;			\
-				}					\
-			}						\
-			if (empty) {					\
-				for (j = m; j < k; j++)			\
-					if (tfastins_nocheckVAR(r, j, str_nil) != GDK_SUCCEED) \
-						goto allocation_error;	\
-				has_nils = true;			\
-			} else {					\
-				char save = single_str[slice_length];	\
-				single_str[slice_length] = '\0';	\
-				for (j = m; j < k; j++)			\
-					if (tfastins_nocheckVAR(r, j, single_str) != GDK_SUCCEED) \
-						goto allocation_error;	\
-				single_str[slice_length] = save;	\
-			}						\
-		}							\
-	} while (0)
-
-#define ANALYTICAL_STR_GROUP_CONCAT_ALL_ROWS				\
-	do {								\
-		next_group_length = next_length = offset = 0;		\
-		empty = true;						\
-		compute_next_single_str(k, i);				\
-		for (; k < i; k++)					\
-			if (tfastins_nocheckVAR(r, k, single_str) != GDK_SUCCEED) \
-				goto allocation_error;			\
-	} while (0)
-
-#define ANALYTICAL_STR_GROUP_CONCAT_CURRENT_ROW				\
-	do {								\
-		for (; k < i; k++) {					\
-			const char *next = BUNtvar(bi, k);		\
-			if (tfastins_nocheckVAR(r, k, next) != GDK_SUCCEED) \
-				goto allocation_error;			\
-			has_nils |= strNil(next);			\
-		}							\
-	} while (0)
-
-#define ANALYTICAL_STR_GROUP_CONCAT_OTHERS				\
-	do {								\
-		for (; k < i; k++) {					\
-			next_group_length = next_length = offset = 0;	\
-			empty = true;					\
-			compute_next_single_str(start[k], end[k]);	\
-			if (tfastins_nocheckVAR(r, k, single_str) != GDK_SUCCEED) \
-				goto allocation_error;			\
-		}							\
-	} while (0)
-
-#define ANALYTICAL_STR_GROUP_CONCAT_PARTITIONS(IMP)	\
-	do {						\
-		if (p) {				\
-			for (; i < cnt; i++) {		\
-				if (np[i])		\
-					IMP;		\
-			}				\
-		}					\
-		i = cnt;				\
-		IMP;					\
-	} while (0)
-
-gdk_return
-GDKanalytical_str_group_concat(BAT *r, BAT *p, BAT *o, BAT *b, BAT *sep, BAT *s, BAT *e, const char *restrict separator, int frame_type)
+static gdk_return
+compute_next_single_str(size_t *mglp, char **ssp, bool *hnp,
+			allocator *ta,
+			size_t separator_length,
+			const char *restrict separator,
+			BATiter *sepi,
+			BATiter *bi,
+			oid start, oid end)
 {
-	bool has_nils = false, empty;
+	size_t max_group_length = *mglp;
+	char *single_str = *ssp;
+	bool has_nils = *hnp;
+	size_t next_group_length = 0;
+	size_t next_length = 0;
+	size_t offset = 0;
+	bool empty = true;
+	assert(separator == NULL || !strNil(separator));
+
+	for (oid m = start; m < end; m++) {
+		const char *sb = BUNtvar(bi, m);
+
+		if (!strNil(sb)) {
+			if (separator) {
+				next_group_length += strlen(sb);
+				if (!empty)
+					next_group_length += separator_length;
+			} else { /* sep case */
+				const char *sl = BUNtvar(sepi, m);
+
+				next_group_length += strlen(sb);
+				if (!empty && !strNil(sl))
+					next_group_length += strlen(sl);
+			}
+			empty = false;
+		}
+	}
+	if (empty) {
+		if (single_str == NULL) { /* reuse the same buffer, resize it when needed */
+			max_group_length = 1;
+			if ((single_str = ma_alloc(ta, max_group_length + 1)) == NULL)
+				return GDK_FAIL;
+		} else if (max_group_length < 1) {
+			max_group_length = 1;
+			if ((single_str = ma_realloc(ta, single_str, 1, max_group_length + 1)) == NULL)
+				return GDK_FAIL;
+		}
+		strcpy(single_str, str_nil);
+		has_nils = true;
+	} else {
+		empty = true;
+		if (single_str == NULL) { /* reuse the same buffer, resize it when needed */
+			max_group_length = next_group_length;
+			if ((single_str = ma_alloc(ta, max_group_length + 1)) == NULL)
+				return GDK_FAIL;
+		} else if (next_group_length > max_group_length) {
+			if ((single_str = ma_realloc(ta, single_str, next_group_length + 1, max_group_length + 1)) == NULL)
+				return GDK_FAIL;
+			max_group_length = next_group_length;
+		}
+
+		for (oid m = start; m < end; m++) {
+			const char *sb = BUNtvar(bi, m);
+
+			if (strNil(sb))
+				continue;
+			if (separator) {
+				if (!empty) {
+					memcpy(single_str + offset, separator, separator_length);
+					offset += separator_length;
+				}
+			} else { /* sep case */
+				const char *sl = BUNtvar(sepi, m);
+
+				if (!empty && !strNil(sl)) {
+					next_length = strlen(sl);
+					memcpy(single_str + offset, sl, next_length);
+					offset += next_length;
+				}
+			}
+			next_length = strlen(sb);
+			memcpy(single_str + offset, sb, next_length);
+			offset += next_length;
+			empty = false;
+		}
+
+		single_str[offset] = '\0';
+	}
+	*mglp = max_group_length;
+	*ssp = single_str;
+	*hnp = has_nils;
+	return GDK_SUCCEED;
+}
+
+/* these macros are copied from sql_catalog.h */
+#define FRAME_ROWS  0 		/* number of rows (preceding/following) */
+#define FRAME_RANGE 1		/* logical range (based on the ordering column) */
+#define FRAME_GROUPS 2
+#define FRAME_UNBOUNDED_TILL_CURRENT_ROW 3
+#define FRAME_CURRENT_ROW_TILL_UNBOUNDED 4
+#define FRAME_ALL 5
+#define FRAME_CURRENT_ROW 6
+
+BAT *
+GDKanalytical_str_group_concat(BAT *b, BAT *p, BAT *o, BAT *sep, BAT *s, BAT *e, const char *restrict separator, int frame_type)
+{
+	bool has_nils = false;
 	BATiter pi = bat_iterator(p);
-	BATiter oi = bat_iterator(o);
 	BATiter bi = bat_iterator(b);
 	BATiter sepi = bat_iterator(sep);
 	BATiter si = bat_iterator(s);
-	BATiter ei = bat_iterator(e);
-	oid i = 0, j = 0, k = 0, cnt = bi.count, *restrict start = si.base, *restrict end = ei.base;
-	bit *np = pi.base, *op = oi.base;
-	str single_str = NULL, next_single_str;
-	size_t separator_length = 0, next_group_length, max_group_length = 0, next_length, offset;
+	oid i = 0, k = 0;
+	bit *np = pi.base;
+	char *single_str = NULL;
+	size_t separator_length = 0, max_group_length = 0;
+	allocator *ta = MT_thread_getallocator();
+	allocator_state ta_state = ma_open(ta);
+	BAT *bn = NULL;
 
 	assert((sep && !separator && bi.count == sepi.count) || (!sep && separator));
-	if (b->ttype != TYPE_str || r->ttype != TYPE_str || (sep && sep->ttype != TYPE_str)) {
+	if (b->ttype != TYPE_str || (sep && sep->ttype != TYPE_str)) {
 		GDKerror("only string type is supported\n");
-		bat_iterator_end(&pi);
-		bat_iterator_end(&oi);
-		bat_iterator_end(&bi);
-		bat_iterator_end(&sepi);
-		bat_iterator_end(&si);
-		bat_iterator_end(&ei);
-		return GDK_FAIL;
+		goto bailout;
 	}
 	if (sep && sepi.count == 1) { /* Only one element in sep */
-		separator = BUNtvar(sepi, 0);
+		separator = BUNtvar(&sepi, 0);
 		sep = NULL;
 	}
-
-	if (sep == NULL)
+	if (separator) {
+		if (strNil(separator))
+			separator = "";
 		separator_length = strlen(separator);
+	}
 
-	if (cnt > 0) {
+	if ((bn = COLnew(b->hseqbase, TYPE_str, bi.count, TRANSIENT)) == NULL)
+		goto bailout;
+
+	if (bi.count > 0) {
 		switch (frame_type) {
-		case 3: /* unbounded until current row */
-			ANALYTICAL_STR_GROUP_CONCAT_PARTITIONS(ANALYTICAL_STR_GROUP_CONCAT_UNBOUNDED_TILL_CURRENT_ROW);
+		case FRAME_UNBOUNDED_TILL_CURRENT_ROW: {
+			BATiter oi = bat_iterator(o);
+			bit *op = oi.base;
+			for (i = p ? 0 : bi.count; i <= bi.count; i++) {
+				if (i == bi.count || np[i]) {
+					size_t slice_length = 0;
+					/* compute the entire string then slice it starting from the beginning */
+					if (compute_next_single_str(&max_group_length, &single_str,
+								    &has_nils, ta, separator_length,
+								    separator, &sepi, &bi,
+								    k, i) != GDK_SUCCEED) {
+						bat_iterator_end(&oi);
+						goto bailout;
+					}
+					bool empty = true;
+					while (k < i) {
+						const char *nsep;
+						oid m = k;
+						oid j = k;
+						do {
+							k++;
+						} while (k < i && !op[k]);
+						for (; j < k; j++) {
+							const char *nstr = BUNtvar(&bi, j);
+							if (!strNil(nstr)) {
+								slice_length += strlen(nstr);
+								if (!empty) {
+									if (separator) {
+										nsep = (const char *) separator;
+									} else { /* sep case */
+										assert(sep != NULL);
+										nsep = BUNtvar(&sepi, j);
+									}
+									if (!strNil(nsep))
+										slice_length += strlen(nsep);
+								}
+								empty = false;
+							}
+						}
+						if (empty) {
+							for (j = m; j < k; j++)
+								if (tfastins_nocheckVAR(bn, j, str_nil) != GDK_SUCCEED) {
+									bat_iterator_end(&oi);
+									goto bailout;
+								}
+							has_nils = true;
+						} else {
+							char save = single_str[slice_length];
+							single_str[slice_length] = '\0';
+							for (j = m; j < k; j++)
+								if (tfastins_nocheckVAR(bn, j, single_str) != GDK_SUCCEED) {
+									bat_iterator_end(&oi);
+									goto bailout;
+								}
+							single_str[slice_length] = save;
+						}
+					}
+				}
+			}
+			bat_iterator_end(&oi);
 			break;
-		case 4: /* current row until unbounded */
-			goto notimplemented;
-		case 5: /* all rows */
-			ANALYTICAL_STR_GROUP_CONCAT_PARTITIONS(ANALYTICAL_STR_GROUP_CONCAT_ALL_ROWS);
+		}
+		case FRAME_CURRENT_ROW_TILL_UNBOUNDED:
+			GDKerror("str_group_concat not yet implemented for current row until unbounded case\n");
+			goto bailout;
+		case FRAME_ALL:
+			for (i = p ? 0 : bi.count; i <= bi.count; i++) {
+				if (i == bi.count || np[i]) {
+					if (compute_next_single_str(&max_group_length, &single_str,
+								    &has_nils, ta, separator_length,
+								    separator, &sepi, &bi,
+								    k, i) != GDK_SUCCEED)
+						goto bailout;
+					for (; k < i; k++)
+						if (tfastins_nocheckVAR(bn, k, single_str) != GDK_SUCCEED)
+							goto bailout;
+				}
+			}
 			break;
-		case 6: /* current row */
-			ANALYTICAL_STR_GROUP_CONCAT_PARTITIONS(ANALYTICAL_STR_GROUP_CONCAT_CURRENT_ROW);
+		case FRAME_CURRENT_ROW:
+			for (i = p ? 0 : bi.count; i <= bi.count; i++) {
+				if (i == bi.count || np[i]) {
+					for (; k < i; k++) {
+						const char *next = BUNtvar(&bi, k);
+						if (tfastins_nocheckVAR(bn, k, next) != GDK_SUCCEED)
+							goto bailout;
+						has_nils |= strNil(next);
+					}
+				}
+			}
 			break;
+		case FRAME_ROWS:
+		case FRAME_RANGE:
+		case FRAME_GROUPS: {
+			BATiter ei = bat_iterator(e);
+			const oid *start = si.base, *end = ei.base;
+			for (i = p ? 0 : bi.count; i <= bi.count; i++) {
+				if (i == bi.count || np[i]) {
+					for (; k < i; k++) {
+						if (compute_next_single_str(&max_group_length,
+									    &single_str, &has_nils,
+									    ta, separator_length,
+									    separator, &sepi, &bi,
+									    start[k], end[k]) != GDK_SUCCEED) {
+							bat_iterator_end(&ei);
+							goto bailout;
+						}
+						if (tfastins_nocheckVAR(bn, k, single_str) != GDK_SUCCEED) {
+							bat_iterator_end(&ei);
+							goto bailout;
+						}
+					}
+				}
+			}
+			bat_iterator_end(&ei);
+			break;
+		}
 		default:
-			ANALYTICAL_STR_GROUP_CONCAT_PARTITIONS(ANALYTICAL_STR_GROUP_CONCAT_OTHERS);
-			break;
+			MT_UNREACHABLE();
 		}
 	}
 
+	BATsetcount(bn, bi.count);
 	bat_iterator_end(&pi);
-	bat_iterator_end(&oi);
 	bat_iterator_end(&bi);
 	bat_iterator_end(&sepi);
 	bat_iterator_end(&si);
-	bat_iterator_end(&ei);
-	GDKfree(single_str);
-	BATsetcount(r, cnt);
-	r->tnonil = !has_nils;
-	r->tnil = has_nils;
-	return GDK_SUCCEED;
-  allocation_error:
+	bn->tnonil = !has_nils;
+	bn->tnil = has_nils;
+	ma_close(&ta_state);
+	return bn;
+
+  bailout:
+	BBPreclaim(bn);
 	bat_iterator_end(&pi);
-	bat_iterator_end(&oi);
 	bat_iterator_end(&bi);
 	bat_iterator_end(&sepi);
 	bat_iterator_end(&si);
-	bat_iterator_end(&ei);
-	GDKfree(single_str);
-	return GDK_FAIL;
-  notimplemented:
-	bat_iterator_end(&pi);
-	bat_iterator_end(&oi);
-	bat_iterator_end(&bi);
-	bat_iterator_end(&sepi);
-	bat_iterator_end(&si);
-	bat_iterator_end(&ei);
-	GDKerror("str_group_concat not yet implemented for current row until unbounded case\n");
-	return GDK_FAIL;
+	ma_close(&ta_state);
+	return NULL;
 }
 
 /* The three case conversion tables are specially crafted from the
@@ -1634,7 +1974,7 @@ static const char *const specialcase[] = {
 	[144] = "\xCE\x97\xCD\x82\xCE\x99",
 	[145] = "\xCE\xA9\xCD\x82\xCE\x99",
 };
-static const int lowercase[4288] = {
+static const int lowercase[4416] = {
 	[0x00] = 0x0000,	/* U+0000: <control> */
 	[0x01] = 0x0001,	/* U+0001: <control> */
 	[0x02] = 0x0002,	/* U+0002: <control> */
@@ -2354,6 +2694,7 @@ static const int lowercase[4288] = {
 	[1536+0x34] = 0x13FC,	/* U+13F4: CHEROKEE LETTER YV */
 	[1536+0x35] = 0x13FD,	/* U+13F5: CHEROKEE LETTER MV */
 	[1280+0x32] = 1600 - 0x80,	/* 341 262 ... */
+	[1600+0x09] = 0x1C8A,	/* U+1C89: CYRILLIC CAPITAL LETTER TJE */
 	[1600+0x10] = 0x10D0,	/* U+1C90: GEORGIAN MTAVRULI CAPITAL LETTER AN */
 	[1600+0x11] = 0x10D1,	/* U+1C91: GEORGIAN MTAVRULI CAPITAL LETTER BAN */
 	[1600+0x12] = 0x10D2,	/* U+1C92: GEORGIAN MTAVRULI CAPITAL LETTER GAN */
@@ -2927,9 +3268,16 @@ static const int lowercase[4288] = {
 	[3200+0x06] = 0x1D8E,	/* U+A7C6: LATIN CAPITAL LETTER Z WITH PALATAL HOOK */
 	[3200+0x07] = 0xA7C8,	/* U+A7C7: LATIN CAPITAL LETTER D WITH SHORT STROKE OVERLAY */
 	[3200+0x09] = 0xA7CA,	/* U+A7C9: LATIN CAPITAL LETTER S WITH SHORT STROKE OVERLAY */
+	[3200+0x0B] = 0x0264,	/* U+A7CB: LATIN CAPITAL LETTER RAMS HORN */
+	[3200+0x0C] = 0xA7CD,	/* U+A7CC: LATIN CAPITAL LETTER S WITH DIAGONAL STROKE */
+	[3200+0x0E] = 0xA7CF,	/* U+A7CE: LATIN CAPITAL LETTER PHARYNGEAL VOICED FRICATIVE */
 	[3200+0x10] = 0xA7D1,	/* U+A7D0: LATIN CAPITAL LETTER CLOSED INSULAR G */
+	[3200+0x12] = 0xA7D3,	/* U+A7D2: LATIN CAPITAL LETTER DOUBLE THORN */
+	[3200+0x14] = 0xA7D5,	/* U+A7D4: LATIN CAPITAL LETTER DOUBLE WYNN */
 	[3200+0x16] = 0xA7D7,	/* U+A7D6: LATIN CAPITAL LETTER MIDDLE SCOTS S */
 	[3200+0x18] = 0xA7D9,	/* U+A7D8: LATIN CAPITAL LETTER SIGMOID S */
+	[3200+0x1A] = 0xA7DB,	/* U+A7DA: LATIN CAPITAL LETTER LAMBDA */
+	[3200+0x1C] = 0x019B,	/* U+A7DC: LATIN CAPITAL LETTER LAMBDA WITH STROKE */
 	[3200+0x35] = 0xA7F6,	/* U+A7F5: LATIN CAPITAL LETTER REVERSED HALF H */
 	[0xEF] = 3264 - 0x80,	/* 357 ... */
 	[3264+0x3C] = 3328 - 0x80,	/* 357 274 ... */
@@ -3129,112 +3477,161 @@ static const int lowercase[4288] = {
 	[3840+0x30] = 0x10CF0,	/* U+10CB0: OLD HUNGARIAN CAPITAL LETTER EZS */
 	[3840+0x31] = 0x10CF1,	/* U+10CB1: OLD HUNGARIAN CAPITAL LETTER ENT-SHAPED SIGN */
 	[3840+0x32] = 0x10CF2,	/* U+10CB2: OLD HUNGARIAN CAPITAL LETTER US */
-	[3392+0x11] = 3904 - 0x80,	/* 360 221 ... */
-	[3904+0x22] = 3968 - 0x80,	/* 360 221 242 ... */
-	[3968+0x20] = 0x118C0,	/* U+118A0: WARANG CITI CAPITAL LETTER NGAA */
-	[3968+0x21] = 0x118C1,	/* U+118A1: WARANG CITI CAPITAL LETTER A */
-	[3968+0x22] = 0x118C2,	/* U+118A2: WARANG CITI CAPITAL LETTER WI */
-	[3968+0x23] = 0x118C3,	/* U+118A3: WARANG CITI CAPITAL LETTER YU */
-	[3968+0x24] = 0x118C4,	/* U+118A4: WARANG CITI CAPITAL LETTER YA */
-	[3968+0x25] = 0x118C5,	/* U+118A5: WARANG CITI CAPITAL LETTER YO */
-	[3968+0x26] = 0x118C6,	/* U+118A6: WARANG CITI CAPITAL LETTER II */
-	[3968+0x27] = 0x118C7,	/* U+118A7: WARANG CITI CAPITAL LETTER UU */
-	[3968+0x28] = 0x118C8,	/* U+118A8: WARANG CITI CAPITAL LETTER E */
-	[3968+0x29] = 0x118C9,	/* U+118A9: WARANG CITI CAPITAL LETTER O */
-	[3968+0x2A] = 0x118CA,	/* U+118AA: WARANG CITI CAPITAL LETTER ANG */
-	[3968+0x2B] = 0x118CB,	/* U+118AB: WARANG CITI CAPITAL LETTER GA */
-	[3968+0x2C] = 0x118CC,	/* U+118AC: WARANG CITI CAPITAL LETTER KO */
-	[3968+0x2D] = 0x118CD,	/* U+118AD: WARANG CITI CAPITAL LETTER ENY */
-	[3968+0x2E] = 0x118CE,	/* U+118AE: WARANG CITI CAPITAL LETTER YUJ */
-	[3968+0x2F] = 0x118CF,	/* U+118AF: WARANG CITI CAPITAL LETTER UC */
-	[3968+0x30] = 0x118D0,	/* U+118B0: WARANG CITI CAPITAL LETTER ENN */
-	[3968+0x31] = 0x118D1,	/* U+118B1: WARANG CITI CAPITAL LETTER ODD */
-	[3968+0x32] = 0x118D2,	/* U+118B2: WARANG CITI CAPITAL LETTER TTE */
-	[3968+0x33] = 0x118D3,	/* U+118B3: WARANG CITI CAPITAL LETTER NUNG */
-	[3968+0x34] = 0x118D4,	/* U+118B4: WARANG CITI CAPITAL LETTER DA */
-	[3968+0x35] = 0x118D5,	/* U+118B5: WARANG CITI CAPITAL LETTER AT */
-	[3968+0x36] = 0x118D6,	/* U+118B6: WARANG CITI CAPITAL LETTER AM */
-	[3968+0x37] = 0x118D7,	/* U+118B7: WARANG CITI CAPITAL LETTER BU */
-	[3968+0x38] = 0x118D8,	/* U+118B8: WARANG CITI CAPITAL LETTER PU */
-	[3968+0x39] = 0x118D9,	/* U+118B9: WARANG CITI CAPITAL LETTER HIYO */
-	[3968+0x3A] = 0x118DA,	/* U+118BA: WARANG CITI CAPITAL LETTER HOLO */
-	[3968+0x3B] = 0x118DB,	/* U+118BB: WARANG CITI CAPITAL LETTER HORR */
-	[3968+0x3C] = 0x118DC,	/* U+118BC: WARANG CITI CAPITAL LETTER HAR */
-	[3968+0x3D] = 0x118DD,	/* U+118BD: WARANG CITI CAPITAL LETTER SSUU */
-	[3968+0x3E] = 0x118DE,	/* U+118BE: WARANG CITI CAPITAL LETTER SII */
-	[3968+0x3F] = 0x118DF,	/* U+118BF: WARANG CITI CAPITAL LETTER VIYO */
-	[3392+0x16] = 4032 - 0x80,	/* 360 226 ... */
-	[4032+0x39] = 4096 - 0x80,	/* 360 226 271 ... */
-	[4096+0x00] = 0x16E60,	/* U+16E40: MEDEFAIDRIN CAPITAL LETTER M */
-	[4096+0x01] = 0x16E61,	/* U+16E41: MEDEFAIDRIN CAPITAL LETTER S */
-	[4096+0x02] = 0x16E62,	/* U+16E42: MEDEFAIDRIN CAPITAL LETTER V */
-	[4096+0x03] = 0x16E63,	/* U+16E43: MEDEFAIDRIN CAPITAL LETTER W */
-	[4096+0x04] = 0x16E64,	/* U+16E44: MEDEFAIDRIN CAPITAL LETTER ATIU */
-	[4096+0x05] = 0x16E65,	/* U+16E45: MEDEFAIDRIN CAPITAL LETTER Z */
-	[4096+0x06] = 0x16E66,	/* U+16E46: MEDEFAIDRIN CAPITAL LETTER KP */
-	[4096+0x07] = 0x16E67,	/* U+16E47: MEDEFAIDRIN CAPITAL LETTER P */
-	[4096+0x08] = 0x16E68,	/* U+16E48: MEDEFAIDRIN CAPITAL LETTER T */
-	[4096+0x09] = 0x16E69,	/* U+16E49: MEDEFAIDRIN CAPITAL LETTER G */
-	[4096+0x0A] = 0x16E6A,	/* U+16E4A: MEDEFAIDRIN CAPITAL LETTER F */
-	[4096+0x0B] = 0x16E6B,	/* U+16E4B: MEDEFAIDRIN CAPITAL LETTER I */
-	[4096+0x0C] = 0x16E6C,	/* U+16E4C: MEDEFAIDRIN CAPITAL LETTER K */
-	[4096+0x0D] = 0x16E6D,	/* U+16E4D: MEDEFAIDRIN CAPITAL LETTER A */
-	[4096+0x0E] = 0x16E6E,	/* U+16E4E: MEDEFAIDRIN CAPITAL LETTER J */
-	[4096+0x0F] = 0x16E6F,	/* U+16E4F: MEDEFAIDRIN CAPITAL LETTER E */
-	[4096+0x10] = 0x16E70,	/* U+16E50: MEDEFAIDRIN CAPITAL LETTER B */
-	[4096+0x11] = 0x16E71,	/* U+16E51: MEDEFAIDRIN CAPITAL LETTER C */
-	[4096+0x12] = 0x16E72,	/* U+16E52: MEDEFAIDRIN CAPITAL LETTER U */
-	[4096+0x13] = 0x16E73,	/* U+16E53: MEDEFAIDRIN CAPITAL LETTER YU */
-	[4096+0x14] = 0x16E74,	/* U+16E54: MEDEFAIDRIN CAPITAL LETTER L */
-	[4096+0x15] = 0x16E75,	/* U+16E55: MEDEFAIDRIN CAPITAL LETTER Q */
-	[4096+0x16] = 0x16E76,	/* U+16E56: MEDEFAIDRIN CAPITAL LETTER HP */
-	[4096+0x17] = 0x16E77,	/* U+16E57: MEDEFAIDRIN CAPITAL LETTER NY */
-	[4096+0x18] = 0x16E78,	/* U+16E58: MEDEFAIDRIN CAPITAL LETTER X */
-	[4096+0x19] = 0x16E79,	/* U+16E59: MEDEFAIDRIN CAPITAL LETTER D */
-	[4096+0x1A] = 0x16E7A,	/* U+16E5A: MEDEFAIDRIN CAPITAL LETTER OE */
-	[4096+0x1B] = 0x16E7B,	/* U+16E5B: MEDEFAIDRIN CAPITAL LETTER N */
-	[4096+0x1C] = 0x16E7C,	/* U+16E5C: MEDEFAIDRIN CAPITAL LETTER R */
-	[4096+0x1D] = 0x16E7D,	/* U+16E5D: MEDEFAIDRIN CAPITAL LETTER O */
-	[4096+0x1E] = 0x16E7E,	/* U+16E5E: MEDEFAIDRIN CAPITAL LETTER AI */
-	[4096+0x1F] = 0x16E7F,	/* U+16E5F: MEDEFAIDRIN CAPITAL LETTER Y */
-	[3392+0x1E] = 4160 - 0x80,	/* 360 236 ... */
-	[4160+0x24] = 4224 - 0x80,	/* 360 236 244 ... */
-	[4224+0x00] = 0x1E922,	/* U+1E900: ADLAM CAPITAL LETTER ALIF */
-	[4224+0x01] = 0x1E923,	/* U+1E901: ADLAM CAPITAL LETTER DAALI */
-	[4224+0x02] = 0x1E924,	/* U+1E902: ADLAM CAPITAL LETTER LAAM */
-	[4224+0x03] = 0x1E925,	/* U+1E903: ADLAM CAPITAL LETTER MIIM */
-	[4224+0x04] = 0x1E926,	/* U+1E904: ADLAM CAPITAL LETTER BA */
-	[4224+0x05] = 0x1E927,	/* U+1E905: ADLAM CAPITAL LETTER SINNYIIYHE */
-	[4224+0x06] = 0x1E928,	/* U+1E906: ADLAM CAPITAL LETTER PE */
-	[4224+0x07] = 0x1E929,	/* U+1E907: ADLAM CAPITAL LETTER BHE */
-	[4224+0x08] = 0x1E92A,	/* U+1E908: ADLAM CAPITAL LETTER RA */
-	[4224+0x09] = 0x1E92B,	/* U+1E909: ADLAM CAPITAL LETTER E */
-	[4224+0x0A] = 0x1E92C,	/* U+1E90A: ADLAM CAPITAL LETTER FA */
-	[4224+0x0B] = 0x1E92D,	/* U+1E90B: ADLAM CAPITAL LETTER I */
-	[4224+0x0C] = 0x1E92E,	/* U+1E90C: ADLAM CAPITAL LETTER O */
-	[4224+0x0D] = 0x1E92F,	/* U+1E90D: ADLAM CAPITAL LETTER DHA */
-	[4224+0x0E] = 0x1E930,	/* U+1E90E: ADLAM CAPITAL LETTER YHE */
-	[4224+0x0F] = 0x1E931,	/* U+1E90F: ADLAM CAPITAL LETTER WAW */
-	[4224+0x10] = 0x1E932,	/* U+1E910: ADLAM CAPITAL LETTER NUN */
-	[4224+0x11] = 0x1E933,	/* U+1E911: ADLAM CAPITAL LETTER KAF */
-	[4224+0x12] = 0x1E934,	/* U+1E912: ADLAM CAPITAL LETTER YA */
-	[4224+0x13] = 0x1E935,	/* U+1E913: ADLAM CAPITAL LETTER U */
-	[4224+0x14] = 0x1E936,	/* U+1E914: ADLAM CAPITAL LETTER JIIM */
-	[4224+0x15] = 0x1E937,	/* U+1E915: ADLAM CAPITAL LETTER CHI */
-	[4224+0x16] = 0x1E938,	/* U+1E916: ADLAM CAPITAL LETTER HA */
-	[4224+0x17] = 0x1E939,	/* U+1E917: ADLAM CAPITAL LETTER QAAF */
-	[4224+0x18] = 0x1E93A,	/* U+1E918: ADLAM CAPITAL LETTER GA */
-	[4224+0x19] = 0x1E93B,	/* U+1E919: ADLAM CAPITAL LETTER NYA */
-	[4224+0x1A] = 0x1E93C,	/* U+1E91A: ADLAM CAPITAL LETTER TU */
-	[4224+0x1B] = 0x1E93D,	/* U+1E91B: ADLAM CAPITAL LETTER NHA */
-	[4224+0x1C] = 0x1E93E,	/* U+1E91C: ADLAM CAPITAL LETTER VA */
-	[4224+0x1D] = 0x1E93F,	/* U+1E91D: ADLAM CAPITAL LETTER KHA */
-	[4224+0x1E] = 0x1E940,	/* U+1E91E: ADLAM CAPITAL LETTER GBE */
-	[4224+0x1F] = 0x1E941,	/* U+1E91F: ADLAM CAPITAL LETTER ZAL */
-	[4224+0x20] = 0x1E942,	/* U+1E920: ADLAM CAPITAL LETTER KPO */
-	[4224+0x21] = 0x1E943,	/* U+1E921: ADLAM CAPITAL LETTER SHA */
+	[3456+0x35] = 3904 - 0x80,	/* 360 220 265 ... */
+	[3904+0x10] = 0x10D70,	/* U+10D50: GARAY CAPITAL LETTER A */
+	[3904+0x11] = 0x10D71,	/* U+10D51: GARAY CAPITAL LETTER CA */
+	[3904+0x12] = 0x10D72,	/* U+10D52: GARAY CAPITAL LETTER MA */
+	[3904+0x13] = 0x10D73,	/* U+10D53: GARAY CAPITAL LETTER KA */
+	[3904+0x14] = 0x10D74,	/* U+10D54: GARAY CAPITAL LETTER BA */
+	[3904+0x15] = 0x10D75,	/* U+10D55: GARAY CAPITAL LETTER JA */
+	[3904+0x16] = 0x10D76,	/* U+10D56: GARAY CAPITAL LETTER SA */
+	[3904+0x17] = 0x10D77,	/* U+10D57: GARAY CAPITAL LETTER WA */
+	[3904+0x18] = 0x10D78,	/* U+10D58: GARAY CAPITAL LETTER LA */
+	[3904+0x19] = 0x10D79,	/* U+10D59: GARAY CAPITAL LETTER GA */
+	[3904+0x1A] = 0x10D7A,	/* U+10D5A: GARAY CAPITAL LETTER DA */
+	[3904+0x1B] = 0x10D7B,	/* U+10D5B: GARAY CAPITAL LETTER XA */
+	[3904+0x1C] = 0x10D7C,	/* U+10D5C: GARAY CAPITAL LETTER YA */
+	[3904+0x1D] = 0x10D7D,	/* U+10D5D: GARAY CAPITAL LETTER TA */
+	[3904+0x1E] = 0x10D7E,	/* U+10D5E: GARAY CAPITAL LETTER RA */
+	[3904+0x1F] = 0x10D7F,	/* U+10D5F: GARAY CAPITAL LETTER NYA */
+	[3904+0x20] = 0x10D80,	/* U+10D60: GARAY CAPITAL LETTER FA */
+	[3904+0x21] = 0x10D81,	/* U+10D61: GARAY CAPITAL LETTER NA */
+	[3904+0x22] = 0x10D82,	/* U+10D62: GARAY CAPITAL LETTER PA */
+	[3904+0x23] = 0x10D83,	/* U+10D63: GARAY CAPITAL LETTER HA */
+	[3904+0x24] = 0x10D84,	/* U+10D64: GARAY CAPITAL LETTER OLD KA */
+	[3904+0x25] = 0x10D85,	/* U+10D65: GARAY CAPITAL LETTER OLD NA */
+	[3392+0x11] = 3968 - 0x80,	/* 360 221 ... */
+	[3968+0x22] = 4032 - 0x80,	/* 360 221 242 ... */
+	[4032+0x20] = 0x118C0,	/* U+118A0: WARANG CITI CAPITAL LETTER NGAA */
+	[4032+0x21] = 0x118C1,	/* U+118A1: WARANG CITI CAPITAL LETTER A */
+	[4032+0x22] = 0x118C2,	/* U+118A2: WARANG CITI CAPITAL LETTER WI */
+	[4032+0x23] = 0x118C3,	/* U+118A3: WARANG CITI CAPITAL LETTER YU */
+	[4032+0x24] = 0x118C4,	/* U+118A4: WARANG CITI CAPITAL LETTER YA */
+	[4032+0x25] = 0x118C5,	/* U+118A5: WARANG CITI CAPITAL LETTER YO */
+	[4032+0x26] = 0x118C6,	/* U+118A6: WARANG CITI CAPITAL LETTER II */
+	[4032+0x27] = 0x118C7,	/* U+118A7: WARANG CITI CAPITAL LETTER UU */
+	[4032+0x28] = 0x118C8,	/* U+118A8: WARANG CITI CAPITAL LETTER E */
+	[4032+0x29] = 0x118C9,	/* U+118A9: WARANG CITI CAPITAL LETTER O */
+	[4032+0x2A] = 0x118CA,	/* U+118AA: WARANG CITI CAPITAL LETTER ANG */
+	[4032+0x2B] = 0x118CB,	/* U+118AB: WARANG CITI CAPITAL LETTER GA */
+	[4032+0x2C] = 0x118CC,	/* U+118AC: WARANG CITI CAPITAL LETTER KO */
+	[4032+0x2D] = 0x118CD,	/* U+118AD: WARANG CITI CAPITAL LETTER ENY */
+	[4032+0x2E] = 0x118CE,	/* U+118AE: WARANG CITI CAPITAL LETTER YUJ */
+	[4032+0x2F] = 0x118CF,	/* U+118AF: WARANG CITI CAPITAL LETTER UC */
+	[4032+0x30] = 0x118D0,	/* U+118B0: WARANG CITI CAPITAL LETTER ENN */
+	[4032+0x31] = 0x118D1,	/* U+118B1: WARANG CITI CAPITAL LETTER ODD */
+	[4032+0x32] = 0x118D2,	/* U+118B2: WARANG CITI CAPITAL LETTER TTE */
+	[4032+0x33] = 0x118D3,	/* U+118B3: WARANG CITI CAPITAL LETTER NUNG */
+	[4032+0x34] = 0x118D4,	/* U+118B4: WARANG CITI CAPITAL LETTER DA */
+	[4032+0x35] = 0x118D5,	/* U+118B5: WARANG CITI CAPITAL LETTER AT */
+	[4032+0x36] = 0x118D6,	/* U+118B6: WARANG CITI CAPITAL LETTER AM */
+	[4032+0x37] = 0x118D7,	/* U+118B7: WARANG CITI CAPITAL LETTER BU */
+	[4032+0x38] = 0x118D8,	/* U+118B8: WARANG CITI CAPITAL LETTER PU */
+	[4032+0x39] = 0x118D9,	/* U+118B9: WARANG CITI CAPITAL LETTER HIYO */
+	[4032+0x3A] = 0x118DA,	/* U+118BA: WARANG CITI CAPITAL LETTER HOLO */
+	[4032+0x3B] = 0x118DB,	/* U+118BB: WARANG CITI CAPITAL LETTER HORR */
+	[4032+0x3C] = 0x118DC,	/* U+118BC: WARANG CITI CAPITAL LETTER HAR */
+	[4032+0x3D] = 0x118DD,	/* U+118BD: WARANG CITI CAPITAL LETTER SSUU */
+	[4032+0x3E] = 0x118DE,	/* U+118BE: WARANG CITI CAPITAL LETTER SII */
+	[4032+0x3F] = 0x118DF,	/* U+118BF: WARANG CITI CAPITAL LETTER VIYO */
+	[3392+0x16] = 4096 - 0x80,	/* 360 226 ... */
+	[4096+0x39] = 4160 - 0x80,	/* 360 226 271 ... */
+	[4160+0x00] = 0x16E60,	/* U+16E40: MEDEFAIDRIN CAPITAL LETTER M */
+	[4160+0x01] = 0x16E61,	/* U+16E41: MEDEFAIDRIN CAPITAL LETTER S */
+	[4160+0x02] = 0x16E62,	/* U+16E42: MEDEFAIDRIN CAPITAL LETTER V */
+	[4160+0x03] = 0x16E63,	/* U+16E43: MEDEFAIDRIN CAPITAL LETTER W */
+	[4160+0x04] = 0x16E64,	/* U+16E44: MEDEFAIDRIN CAPITAL LETTER ATIU */
+	[4160+0x05] = 0x16E65,	/* U+16E45: MEDEFAIDRIN CAPITAL LETTER Z */
+	[4160+0x06] = 0x16E66,	/* U+16E46: MEDEFAIDRIN CAPITAL LETTER KP */
+	[4160+0x07] = 0x16E67,	/* U+16E47: MEDEFAIDRIN CAPITAL LETTER P */
+	[4160+0x08] = 0x16E68,	/* U+16E48: MEDEFAIDRIN CAPITAL LETTER T */
+	[4160+0x09] = 0x16E69,	/* U+16E49: MEDEFAIDRIN CAPITAL LETTER G */
+	[4160+0x0A] = 0x16E6A,	/* U+16E4A: MEDEFAIDRIN CAPITAL LETTER F */
+	[4160+0x0B] = 0x16E6B,	/* U+16E4B: MEDEFAIDRIN CAPITAL LETTER I */
+	[4160+0x0C] = 0x16E6C,	/* U+16E4C: MEDEFAIDRIN CAPITAL LETTER K */
+	[4160+0x0D] = 0x16E6D,	/* U+16E4D: MEDEFAIDRIN CAPITAL LETTER A */
+	[4160+0x0E] = 0x16E6E,	/* U+16E4E: MEDEFAIDRIN CAPITAL LETTER J */
+	[4160+0x0F] = 0x16E6F,	/* U+16E4F: MEDEFAIDRIN CAPITAL LETTER E */
+	[4160+0x10] = 0x16E70,	/* U+16E50: MEDEFAIDRIN CAPITAL LETTER B */
+	[4160+0x11] = 0x16E71,	/* U+16E51: MEDEFAIDRIN CAPITAL LETTER C */
+	[4160+0x12] = 0x16E72,	/* U+16E52: MEDEFAIDRIN CAPITAL LETTER U */
+	[4160+0x13] = 0x16E73,	/* U+16E53: MEDEFAIDRIN CAPITAL LETTER YU */
+	[4160+0x14] = 0x16E74,	/* U+16E54: MEDEFAIDRIN CAPITAL LETTER L */
+	[4160+0x15] = 0x16E75,	/* U+16E55: MEDEFAIDRIN CAPITAL LETTER Q */
+	[4160+0x16] = 0x16E76,	/* U+16E56: MEDEFAIDRIN CAPITAL LETTER HP */
+	[4160+0x17] = 0x16E77,	/* U+16E57: MEDEFAIDRIN CAPITAL LETTER NY */
+	[4160+0x18] = 0x16E78,	/* U+16E58: MEDEFAIDRIN CAPITAL LETTER X */
+	[4160+0x19] = 0x16E79,	/* U+16E59: MEDEFAIDRIN CAPITAL LETTER D */
+	[4160+0x1A] = 0x16E7A,	/* U+16E5A: MEDEFAIDRIN CAPITAL LETTER OE */
+	[4160+0x1B] = 0x16E7B,	/* U+16E5B: MEDEFAIDRIN CAPITAL LETTER N */
+	[4160+0x1C] = 0x16E7C,	/* U+16E5C: MEDEFAIDRIN CAPITAL LETTER R */
+	[4160+0x1D] = 0x16E7D,	/* U+16E5D: MEDEFAIDRIN CAPITAL LETTER O */
+	[4160+0x1E] = 0x16E7E,	/* U+16E5E: MEDEFAIDRIN CAPITAL LETTER AI */
+	[4160+0x1F] = 0x16E7F,	/* U+16E5F: MEDEFAIDRIN CAPITAL LETTER Y */
+	[4096+0x3A] = 4224 - 0x80,	/* 360 226 272 ... */
+	[4224+0x20] = 0x16EBB,	/* U+16EA0: BERIA ERFE CAPITAL LETTER ARKAB */
+	[4224+0x21] = 0x16EBC,	/* U+16EA1: BERIA ERFE CAPITAL LETTER BASIGNA */
+	[4224+0x22] = 0x16EBD,	/* U+16EA2: BERIA ERFE CAPITAL LETTER DARBAI */
+	[4224+0x23] = 0x16EBE,	/* U+16EA3: BERIA ERFE CAPITAL LETTER EH */
+	[4224+0x24] = 0x16EBF,	/* U+16EA4: BERIA ERFE CAPITAL LETTER FITKO */
+	[4224+0x25] = 0x16EC0,	/* U+16EA5: BERIA ERFE CAPITAL LETTER GOWAY */
+	[4224+0x26] = 0x16EC1,	/* U+16EA6: BERIA ERFE CAPITAL LETTER HIRDEABO */
+	[4224+0x27] = 0x16EC2,	/* U+16EA7: BERIA ERFE CAPITAL LETTER I */
+	[4224+0x28] = 0x16EC3,	/* U+16EA8: BERIA ERFE CAPITAL LETTER DJAI */
+	[4224+0x29] = 0x16EC4,	/* U+16EA9: BERIA ERFE CAPITAL LETTER KOBO */
+	[4224+0x2A] = 0x16EC5,	/* U+16EAA: BERIA ERFE CAPITAL LETTER LAKKO */
+	[4224+0x2B] = 0x16EC6,	/* U+16EAB: BERIA ERFE CAPITAL LETTER MERI */
+	[4224+0x2C] = 0x16EC7,	/* U+16EAC: BERIA ERFE CAPITAL LETTER NINI */
+	[4224+0x2D] = 0x16EC8,	/* U+16EAD: BERIA ERFE CAPITAL LETTER GNA */
+	[4224+0x2E] = 0x16EC9,	/* U+16EAE: BERIA ERFE CAPITAL LETTER NGAY */
+	[4224+0x2F] = 0x16ECA,	/* U+16EAF: BERIA ERFE CAPITAL LETTER OI */
+	[4224+0x30] = 0x16ECB,	/* U+16EB0: BERIA ERFE CAPITAL LETTER PI */
+	[4224+0x31] = 0x16ECC,	/* U+16EB1: BERIA ERFE CAPITAL LETTER ERIGO */
+	[4224+0x32] = 0x16ECD,	/* U+16EB2: BERIA ERFE CAPITAL LETTER ERIGO TAMURA */
+	[4224+0x33] = 0x16ECE,	/* U+16EB3: BERIA ERFE CAPITAL LETTER SERI */
+	[4224+0x34] = 0x16ECF,	/* U+16EB4: BERIA ERFE CAPITAL LETTER SHEP */
+	[4224+0x35] = 0x16ED0,	/* U+16EB5: BERIA ERFE CAPITAL LETTER TATASOUE */
+	[4224+0x36] = 0x16ED1,	/* U+16EB6: BERIA ERFE CAPITAL LETTER UI */
+	[4224+0x37] = 0x16ED2,	/* U+16EB7: BERIA ERFE CAPITAL LETTER WASSE */
+	[4224+0x38] = 0x16ED3,	/* U+16EB8: BERIA ERFE CAPITAL LETTER AY */
+	[3392+0x1E] = 4288 - 0x80,	/* 360 236 ... */
+	[4288+0x24] = 4352 - 0x80,	/* 360 236 244 ... */
+	[4352+0x00] = 0x1E922,	/* U+1E900: ADLAM CAPITAL LETTER ALIF */
+	[4352+0x01] = 0x1E923,	/* U+1E901: ADLAM CAPITAL LETTER DAALI */
+	[4352+0x02] = 0x1E924,	/* U+1E902: ADLAM CAPITAL LETTER LAAM */
+	[4352+0x03] = 0x1E925,	/* U+1E903: ADLAM CAPITAL LETTER MIIM */
+	[4352+0x04] = 0x1E926,	/* U+1E904: ADLAM CAPITAL LETTER BA */
+	[4352+0x05] = 0x1E927,	/* U+1E905: ADLAM CAPITAL LETTER SINNYIIYHE */
+	[4352+0x06] = 0x1E928,	/* U+1E906: ADLAM CAPITAL LETTER PE */
+	[4352+0x07] = 0x1E929,	/* U+1E907: ADLAM CAPITAL LETTER BHE */
+	[4352+0x08] = 0x1E92A,	/* U+1E908: ADLAM CAPITAL LETTER RA */
+	[4352+0x09] = 0x1E92B,	/* U+1E909: ADLAM CAPITAL LETTER E */
+	[4352+0x0A] = 0x1E92C,	/* U+1E90A: ADLAM CAPITAL LETTER FA */
+	[4352+0x0B] = 0x1E92D,	/* U+1E90B: ADLAM CAPITAL LETTER I */
+	[4352+0x0C] = 0x1E92E,	/* U+1E90C: ADLAM CAPITAL LETTER O */
+	[4352+0x0D] = 0x1E92F,	/* U+1E90D: ADLAM CAPITAL LETTER DHA */
+	[4352+0x0E] = 0x1E930,	/* U+1E90E: ADLAM CAPITAL LETTER YHE */
+	[4352+0x0F] = 0x1E931,	/* U+1E90F: ADLAM CAPITAL LETTER WAW */
+	[4352+0x10] = 0x1E932,	/* U+1E910: ADLAM CAPITAL LETTER NUN */
+	[4352+0x11] = 0x1E933,	/* U+1E911: ADLAM CAPITAL LETTER KAF */
+	[4352+0x12] = 0x1E934,	/* U+1E912: ADLAM CAPITAL LETTER YA */
+	[4352+0x13] = 0x1E935,	/* U+1E913: ADLAM CAPITAL LETTER U */
+	[4352+0x14] = 0x1E936,	/* U+1E914: ADLAM CAPITAL LETTER JIIM */
+	[4352+0x15] = 0x1E937,	/* U+1E915: ADLAM CAPITAL LETTER CHI */
+	[4352+0x16] = 0x1E938,	/* U+1E916: ADLAM CAPITAL LETTER HA */
+	[4352+0x17] = 0x1E939,	/* U+1E917: ADLAM CAPITAL LETTER QAAF */
+	[4352+0x18] = 0x1E93A,	/* U+1E918: ADLAM CAPITAL LETTER GA */
+	[4352+0x19] = 0x1E93B,	/* U+1E919: ADLAM CAPITAL LETTER NYA */
+	[4352+0x1A] = 0x1E93C,	/* U+1E91A: ADLAM CAPITAL LETTER TU */
+	[4352+0x1B] = 0x1E93D,	/* U+1E91B: ADLAM CAPITAL LETTER NHA */
+	[4352+0x1C] = 0x1E93E,	/* U+1E91C: ADLAM CAPITAL LETTER VA */
+	[4352+0x1D] = 0x1E93F,	/* U+1E91D: ADLAM CAPITAL LETTER KHA */
+	[4352+0x1E] = 0x1E940,	/* U+1E91E: ADLAM CAPITAL LETTER GBE */
+	[4352+0x1F] = 0x1E941,	/* U+1E91F: ADLAM CAPITAL LETTER ZAL */
+	[4352+0x20] = 0x1E942,	/* U+1E920: ADLAM CAPITAL LETTER KPO */
+	[4352+0x21] = 0x1E943,	/* U+1E921: ADLAM CAPITAL LETTER SHA */
 };
-static const int uppercase[4608] = {
+static const int uppercase[4864] = {
 	[0x00] = 0x0000,	/* U+0000: <control> */
 	[0x01] = 0x0001,	/* U+0001: <control> */
 	[0x02] = 0x0002,	/* U+0002: <control> */
@@ -3474,6 +3871,7 @@ static const int uppercase[4608] = {
 	[512+0x15] = 0x01F6,	/* U+0195: LATIN SMALL LETTER HV */
 	[512+0x19] = 0x0198,	/* U+0199: LATIN SMALL LETTER K WITH HOOK */
 	[512+0x1A] = 0x023D,	/* U+019A: LATIN SMALL LETTER L WITH BAR */
+	[512+0x1B] = 0xA7DC,	/* U+019B: LATIN SMALL LETTER LAMBDA WITH STROKE */
 	[512+0x1E] = 0x0220,	/* U+019E: LATIN SMALL LETTER N WITH LONG RIGHT LEG */
 	[512+0x21] = 0x01A0,	/* U+01A1: LATIN SMALL LETTER O WITH HORN */
 	[512+0x23] = 0x01A2,	/* U+01A3: LATIN SMALL LETTER OI */
@@ -3568,6 +3966,7 @@ static const int uppercase[4608] = {
 	[704+0x20] = 0x0193,	/* U+0260: LATIN SMALL LETTER G WITH HOOK */
 	[704+0x21] = 0xA7AC,	/* U+0261: LATIN SMALL LETTER SCRIPT G */
 	[704+0x23] = 0x0194,	/* U+0263: LATIN SMALL LETTER GAMMA */
+	[704+0x24] = 0xA7CB,	/* U+0264: LATIN SMALL LETTER RAMS HORN */
 	[704+0x25] = 0xA78D,	/* U+0265: LATIN SMALL LETTER TURNED H */
 	[704+0x26] = 0xA7AA,	/* U+0266: LATIN SMALL LETTER H WITH HOOK */
 	[704+0x28] = 0x0197,	/* U+0268: LATIN SMALL LETTER I WITH STROKE */
@@ -3922,6 +4321,7 @@ static const int uppercase[4608] = {
 	[1664+0x06] = 0x042A,	/* U+1C86: CYRILLIC SMALL LETTER TALL HARD SIGN */
 	[1664+0x07] = 0x0462,	/* U+1C87: CYRILLIC SMALL LETTER TALL YAT */
 	[1664+0x08] = 0xA64A,	/* U+1C88: CYRILLIC SMALL LETTER UNBLENDED UK */
+	[1664+0x0A] = 0x1C89,	/* U+1C8A: CYRILLIC SMALL LETTER TJE */
 	[1472+0x35] = 1728 - 0x80,	/* 341 265 ... */
 	[1728+0x39] = 0xA77D,	/* U+1D79: LATIN SMALL LETTER INSULAR G */
 	[1728+0x3D] = 0x2C63,	/* U+1D7D: LATIN SMALL LETTER P WITH STROKE */
@@ -4528,9 +4928,14 @@ static const int uppercase[4608] = {
 	[3328+0x03] = 0xA7C2,	/* U+A7C3: LATIN SMALL LETTER ANGLICANA W */
 	[3328+0x08] = 0xA7C7,	/* U+A7C8: LATIN SMALL LETTER D WITH SHORT STROKE OVERLAY */
 	[3328+0x0A] = 0xA7C9,	/* U+A7CA: LATIN SMALL LETTER S WITH SHORT STROKE OVERLAY */
+	[3328+0x0D] = 0xA7CC,	/* U+A7CD: LATIN SMALL LETTER S WITH DIAGONAL STROKE */
+	[3328+0x0F] = 0xA7CE,	/* U+A7CF: LATIN SMALL LETTER PHARYNGEAL VOICED FRICATIVE */
 	[3328+0x11] = 0xA7D0,	/* U+A7D1: LATIN SMALL LETTER CLOSED INSULAR G */
+	[3328+0x13] = 0xA7D2,	/* U+A7D3: LATIN SMALL LETTER DOUBLE THORN */
+	[3328+0x15] = 0xA7D4,	/* U+A7D5: LATIN SMALL LETTER DOUBLE WYNN */
 	[3328+0x17] = 0xA7D6,	/* U+A7D7: LATIN SMALL LETTER MIDDLE SCOTS S */
 	[3328+0x19] = 0xA7D8,	/* U+A7D9: LATIN SMALL LETTER SIGMOID S */
+	[3328+0x1B] = 0xA7DA,	/* U+A7DB: LATIN SMALL LETTER LAMBDA */
 	[3328+0x36] = 0xA7F5,	/* U+A7F6: LATIN SMALL LETTER REVERSED HALF H */
 	[2944+0x2D] = 3392 - 0x80,	/* 352 255 ... */
 	[3392+0x13] = 0xA7B3,	/* U+AB53: LATIN SMALL LETTER CHI */
@@ -4825,113 +5230,164 @@ static const int uppercase[4608] = {
 	[4096+0x30] = 0x10CB0,	/* U+10CF0: OLD HUNGARIAN SMALL LETTER EZS */
 	[4096+0x31] = 0x10CB1,	/* U+10CF1: OLD HUNGARIAN SMALL LETTER ENT-SHAPED SIGN */
 	[4096+0x32] = 0x10CB2,	/* U+10CF2: OLD HUNGARIAN SMALL LETTER US */
-	[3712+0x11] = 4160 - 0x80,	/* 360 221 ... */
-	[4160+0x23] = 4224 - 0x80,	/* 360 221 243 ... */
-	[4224+0x00] = 0x118A0,	/* U+118C0: WARANG CITI SMALL LETTER NGAA */
-	[4224+0x01] = 0x118A1,	/* U+118C1: WARANG CITI SMALL LETTER A */
-	[4224+0x02] = 0x118A2,	/* U+118C2: WARANG CITI SMALL LETTER WI */
-	[4224+0x03] = 0x118A3,	/* U+118C3: WARANG CITI SMALL LETTER YU */
-	[4224+0x04] = 0x118A4,	/* U+118C4: WARANG CITI SMALL LETTER YA */
-	[4224+0x05] = 0x118A5,	/* U+118C5: WARANG CITI SMALL LETTER YO */
-	[4224+0x06] = 0x118A6,	/* U+118C6: WARANG CITI SMALL LETTER II */
-	[4224+0x07] = 0x118A7,	/* U+118C7: WARANG CITI SMALL LETTER UU */
-	[4224+0x08] = 0x118A8,	/* U+118C8: WARANG CITI SMALL LETTER E */
-	[4224+0x09] = 0x118A9,	/* U+118C9: WARANG CITI SMALL LETTER O */
-	[4224+0x0A] = 0x118AA,	/* U+118CA: WARANG CITI SMALL LETTER ANG */
-	[4224+0x0B] = 0x118AB,	/* U+118CB: WARANG CITI SMALL LETTER GA */
-	[4224+0x0C] = 0x118AC,	/* U+118CC: WARANG CITI SMALL LETTER KO */
-	[4224+0x0D] = 0x118AD,	/* U+118CD: WARANG CITI SMALL LETTER ENY */
-	[4224+0x0E] = 0x118AE,	/* U+118CE: WARANG CITI SMALL LETTER YUJ */
-	[4224+0x0F] = 0x118AF,	/* U+118CF: WARANG CITI SMALL LETTER UC */
-	[4224+0x10] = 0x118B0,	/* U+118D0: WARANG CITI SMALL LETTER ENN */
-	[4224+0x11] = 0x118B1,	/* U+118D1: WARANG CITI SMALL LETTER ODD */
-	[4224+0x12] = 0x118B2,	/* U+118D2: WARANG CITI SMALL LETTER TTE */
-	[4224+0x13] = 0x118B3,	/* U+118D3: WARANG CITI SMALL LETTER NUNG */
-	[4224+0x14] = 0x118B4,	/* U+118D4: WARANG CITI SMALL LETTER DA */
-	[4224+0x15] = 0x118B5,	/* U+118D5: WARANG CITI SMALL LETTER AT */
-	[4224+0x16] = 0x118B6,	/* U+118D6: WARANG CITI SMALL LETTER AM */
-	[4224+0x17] = 0x118B7,	/* U+118D7: WARANG CITI SMALL LETTER BU */
-	[4224+0x18] = 0x118B8,	/* U+118D8: WARANG CITI SMALL LETTER PU */
-	[4224+0x19] = 0x118B9,	/* U+118D9: WARANG CITI SMALL LETTER HIYO */
-	[4224+0x1A] = 0x118BA,	/* U+118DA: WARANG CITI SMALL LETTER HOLO */
-	[4224+0x1B] = 0x118BB,	/* U+118DB: WARANG CITI SMALL LETTER HORR */
-	[4224+0x1C] = 0x118BC,	/* U+118DC: WARANG CITI SMALL LETTER HAR */
-	[4224+0x1D] = 0x118BD,	/* U+118DD: WARANG CITI SMALL LETTER SSUU */
-	[4224+0x1E] = 0x118BE,	/* U+118DE: WARANG CITI SMALL LETTER SII */
-	[4224+0x1F] = 0x118BF,	/* U+118DF: WARANG CITI SMALL LETTER VIYO */
-	[3712+0x16] = 4288 - 0x80,	/* 360 226 ... */
-	[4288+0x39] = 4352 - 0x80,	/* 360 226 271 ... */
-	[4352+0x20] = 0x16E40,	/* U+16E60: MEDEFAIDRIN SMALL LETTER M */
-	[4352+0x21] = 0x16E41,	/* U+16E61: MEDEFAIDRIN SMALL LETTER S */
-	[4352+0x22] = 0x16E42,	/* U+16E62: MEDEFAIDRIN SMALL LETTER V */
-	[4352+0x23] = 0x16E43,	/* U+16E63: MEDEFAIDRIN SMALL LETTER W */
-	[4352+0x24] = 0x16E44,	/* U+16E64: MEDEFAIDRIN SMALL LETTER ATIU */
-	[4352+0x25] = 0x16E45,	/* U+16E65: MEDEFAIDRIN SMALL LETTER Z */
-	[4352+0x26] = 0x16E46,	/* U+16E66: MEDEFAIDRIN SMALL LETTER KP */
-	[4352+0x27] = 0x16E47,	/* U+16E67: MEDEFAIDRIN SMALL LETTER P */
-	[4352+0x28] = 0x16E48,	/* U+16E68: MEDEFAIDRIN SMALL LETTER T */
-	[4352+0x29] = 0x16E49,	/* U+16E69: MEDEFAIDRIN SMALL LETTER G */
-	[4352+0x2A] = 0x16E4A,	/* U+16E6A: MEDEFAIDRIN SMALL LETTER F */
-	[4352+0x2B] = 0x16E4B,	/* U+16E6B: MEDEFAIDRIN SMALL LETTER I */
-	[4352+0x2C] = 0x16E4C,	/* U+16E6C: MEDEFAIDRIN SMALL LETTER K */
-	[4352+0x2D] = 0x16E4D,	/* U+16E6D: MEDEFAIDRIN SMALL LETTER A */
-	[4352+0x2E] = 0x16E4E,	/* U+16E6E: MEDEFAIDRIN SMALL LETTER J */
-	[4352+0x2F] = 0x16E4F,	/* U+16E6F: MEDEFAIDRIN SMALL LETTER E */
-	[4352+0x30] = 0x16E50,	/* U+16E70: MEDEFAIDRIN SMALL LETTER B */
-	[4352+0x31] = 0x16E51,	/* U+16E71: MEDEFAIDRIN SMALL LETTER C */
-	[4352+0x32] = 0x16E52,	/* U+16E72: MEDEFAIDRIN SMALL LETTER U */
-	[4352+0x33] = 0x16E53,	/* U+16E73: MEDEFAIDRIN SMALL LETTER YU */
-	[4352+0x34] = 0x16E54,	/* U+16E74: MEDEFAIDRIN SMALL LETTER L */
-	[4352+0x35] = 0x16E55,	/* U+16E75: MEDEFAIDRIN SMALL LETTER Q */
-	[4352+0x36] = 0x16E56,	/* U+16E76: MEDEFAIDRIN SMALL LETTER HP */
-	[4352+0x37] = 0x16E57,	/* U+16E77: MEDEFAIDRIN SMALL LETTER NY */
-	[4352+0x38] = 0x16E58,	/* U+16E78: MEDEFAIDRIN SMALL LETTER X */
-	[4352+0x39] = 0x16E59,	/* U+16E79: MEDEFAIDRIN SMALL LETTER D */
-	[4352+0x3A] = 0x16E5A,	/* U+16E7A: MEDEFAIDRIN SMALL LETTER OE */
-	[4352+0x3B] = 0x16E5B,	/* U+16E7B: MEDEFAIDRIN SMALL LETTER N */
-	[4352+0x3C] = 0x16E5C,	/* U+16E7C: MEDEFAIDRIN SMALL LETTER R */
-	[4352+0x3D] = 0x16E5D,	/* U+16E7D: MEDEFAIDRIN SMALL LETTER O */
-	[4352+0x3E] = 0x16E5E,	/* U+16E7E: MEDEFAIDRIN SMALL LETTER AI */
-	[4352+0x3F] = 0x16E5F,	/* U+16E7F: MEDEFAIDRIN SMALL LETTER Y */
-	[3712+0x1E] = 4416 - 0x80,	/* 360 236 ... */
-	[4416+0x24] = 4480 - 0x80,	/* 360 236 244 ... */
-	[4480+0x22] = 0x1E900,	/* U+1E922: ADLAM SMALL LETTER ALIF */
-	[4480+0x23] = 0x1E901,	/* U+1E923: ADLAM SMALL LETTER DAALI */
-	[4480+0x24] = 0x1E902,	/* U+1E924: ADLAM SMALL LETTER LAAM */
-	[4480+0x25] = 0x1E903,	/* U+1E925: ADLAM SMALL LETTER MIIM */
-	[4480+0x26] = 0x1E904,	/* U+1E926: ADLAM SMALL LETTER BA */
-	[4480+0x27] = 0x1E905,	/* U+1E927: ADLAM SMALL LETTER SINNYIIYHE */
-	[4480+0x28] = 0x1E906,	/* U+1E928: ADLAM SMALL LETTER PE */
-	[4480+0x29] = 0x1E907,	/* U+1E929: ADLAM SMALL LETTER BHE */
-	[4480+0x2A] = 0x1E908,	/* U+1E92A: ADLAM SMALL LETTER RA */
-	[4480+0x2B] = 0x1E909,	/* U+1E92B: ADLAM SMALL LETTER E */
-	[4480+0x2C] = 0x1E90A,	/* U+1E92C: ADLAM SMALL LETTER FA */
-	[4480+0x2D] = 0x1E90B,	/* U+1E92D: ADLAM SMALL LETTER I */
-	[4480+0x2E] = 0x1E90C,	/* U+1E92E: ADLAM SMALL LETTER O */
-	[4480+0x2F] = 0x1E90D,	/* U+1E92F: ADLAM SMALL LETTER DHA */
-	[4480+0x30] = 0x1E90E,	/* U+1E930: ADLAM SMALL LETTER YHE */
-	[4480+0x31] = 0x1E90F,	/* U+1E931: ADLAM SMALL LETTER WAW */
-	[4480+0x32] = 0x1E910,	/* U+1E932: ADLAM SMALL LETTER NUN */
-	[4480+0x33] = 0x1E911,	/* U+1E933: ADLAM SMALL LETTER KAF */
-	[4480+0x34] = 0x1E912,	/* U+1E934: ADLAM SMALL LETTER YA */
-	[4480+0x35] = 0x1E913,	/* U+1E935: ADLAM SMALL LETTER U */
-	[4480+0x36] = 0x1E914,	/* U+1E936: ADLAM SMALL LETTER JIIM */
-	[4480+0x37] = 0x1E915,	/* U+1E937: ADLAM SMALL LETTER CHI */
-	[4480+0x38] = 0x1E916,	/* U+1E938: ADLAM SMALL LETTER HA */
-	[4480+0x39] = 0x1E917,	/* U+1E939: ADLAM SMALL LETTER QAAF */
-	[4480+0x3A] = 0x1E918,	/* U+1E93A: ADLAM SMALL LETTER GA */
-	[4480+0x3B] = 0x1E919,	/* U+1E93B: ADLAM SMALL LETTER NYA */
-	[4480+0x3C] = 0x1E91A,	/* U+1E93C: ADLAM SMALL LETTER TU */
-	[4480+0x3D] = 0x1E91B,	/* U+1E93D: ADLAM SMALL LETTER NHA */
-	[4480+0x3E] = 0x1E91C,	/* U+1E93E: ADLAM SMALL LETTER VA */
-	[4480+0x3F] = 0x1E91D,	/* U+1E93F: ADLAM SMALL LETTER KHA */
-	[4416+0x25] = 4544 - 0x80,	/* 360 236 245 ... */
-	[4544+0x00] = 0x1E91E,	/* U+1E940: ADLAM SMALL LETTER GBE */
-	[4544+0x01] = 0x1E91F,	/* U+1E941: ADLAM SMALL LETTER ZAL */
-	[4544+0x02] = 0x1E920,	/* U+1E942: ADLAM SMALL LETTER KPO */
-	[4544+0x03] = 0x1E921,	/* U+1E943: ADLAM SMALL LETTER SHA */
+	[3776+0x35] = 4160 - 0x80,	/* 360 220 265 ... */
+	[4160+0x30] = 0x10D50,	/* U+10D70: GARAY SMALL LETTER A */
+	[4160+0x31] = 0x10D51,	/* U+10D71: GARAY SMALL LETTER CA */
+	[4160+0x32] = 0x10D52,	/* U+10D72: GARAY SMALL LETTER MA */
+	[4160+0x33] = 0x10D53,	/* U+10D73: GARAY SMALL LETTER KA */
+	[4160+0x34] = 0x10D54,	/* U+10D74: GARAY SMALL LETTER BA */
+	[4160+0x35] = 0x10D55,	/* U+10D75: GARAY SMALL LETTER JA */
+	[4160+0x36] = 0x10D56,	/* U+10D76: GARAY SMALL LETTER SA */
+	[4160+0x37] = 0x10D57,	/* U+10D77: GARAY SMALL LETTER WA */
+	[4160+0x38] = 0x10D58,	/* U+10D78: GARAY SMALL LETTER LA */
+	[4160+0x39] = 0x10D59,	/* U+10D79: GARAY SMALL LETTER GA */
+	[4160+0x3A] = 0x10D5A,	/* U+10D7A: GARAY SMALL LETTER DA */
+	[4160+0x3B] = 0x10D5B,	/* U+10D7B: GARAY SMALL LETTER XA */
+	[4160+0x3C] = 0x10D5C,	/* U+10D7C: GARAY SMALL LETTER YA */
+	[4160+0x3D] = 0x10D5D,	/* U+10D7D: GARAY SMALL LETTER TA */
+	[4160+0x3E] = 0x10D5E,	/* U+10D7E: GARAY SMALL LETTER RA */
+	[4160+0x3F] = 0x10D5F,	/* U+10D7F: GARAY SMALL LETTER NYA */
+	[3776+0x36] = 4224 - 0x80,	/* 360 220 266 ... */
+	[4224+0x00] = 0x10D60,	/* U+10D80: GARAY SMALL LETTER FA */
+	[4224+0x01] = 0x10D61,	/* U+10D81: GARAY SMALL LETTER NA */
+	[4224+0x02] = 0x10D62,	/* U+10D82: GARAY SMALL LETTER PA */
+	[4224+0x03] = 0x10D63,	/* U+10D83: GARAY SMALL LETTER HA */
+	[4224+0x04] = 0x10D64,	/* U+10D84: GARAY SMALL LETTER OLD KA */
+	[4224+0x05] = 0x10D65,	/* U+10D85: GARAY SMALL LETTER OLD NA */
+	[3712+0x11] = 4288 - 0x80,	/* 360 221 ... */
+	[4288+0x23] = 4352 - 0x80,	/* 360 221 243 ... */
+	[4352+0x00] = 0x118A0,	/* U+118C0: WARANG CITI SMALL LETTER NGAA */
+	[4352+0x01] = 0x118A1,	/* U+118C1: WARANG CITI SMALL LETTER A */
+	[4352+0x02] = 0x118A2,	/* U+118C2: WARANG CITI SMALL LETTER WI */
+	[4352+0x03] = 0x118A3,	/* U+118C3: WARANG CITI SMALL LETTER YU */
+	[4352+0x04] = 0x118A4,	/* U+118C4: WARANG CITI SMALL LETTER YA */
+	[4352+0x05] = 0x118A5,	/* U+118C5: WARANG CITI SMALL LETTER YO */
+	[4352+0x06] = 0x118A6,	/* U+118C6: WARANG CITI SMALL LETTER II */
+	[4352+0x07] = 0x118A7,	/* U+118C7: WARANG CITI SMALL LETTER UU */
+	[4352+0x08] = 0x118A8,	/* U+118C8: WARANG CITI SMALL LETTER E */
+	[4352+0x09] = 0x118A9,	/* U+118C9: WARANG CITI SMALL LETTER O */
+	[4352+0x0A] = 0x118AA,	/* U+118CA: WARANG CITI SMALL LETTER ANG */
+	[4352+0x0B] = 0x118AB,	/* U+118CB: WARANG CITI SMALL LETTER GA */
+	[4352+0x0C] = 0x118AC,	/* U+118CC: WARANG CITI SMALL LETTER KO */
+	[4352+0x0D] = 0x118AD,	/* U+118CD: WARANG CITI SMALL LETTER ENY */
+	[4352+0x0E] = 0x118AE,	/* U+118CE: WARANG CITI SMALL LETTER YUJ */
+	[4352+0x0F] = 0x118AF,	/* U+118CF: WARANG CITI SMALL LETTER UC */
+	[4352+0x10] = 0x118B0,	/* U+118D0: WARANG CITI SMALL LETTER ENN */
+	[4352+0x11] = 0x118B1,	/* U+118D1: WARANG CITI SMALL LETTER ODD */
+	[4352+0x12] = 0x118B2,	/* U+118D2: WARANG CITI SMALL LETTER TTE */
+	[4352+0x13] = 0x118B3,	/* U+118D3: WARANG CITI SMALL LETTER NUNG */
+	[4352+0x14] = 0x118B4,	/* U+118D4: WARANG CITI SMALL LETTER DA */
+	[4352+0x15] = 0x118B5,	/* U+118D5: WARANG CITI SMALL LETTER AT */
+	[4352+0x16] = 0x118B6,	/* U+118D6: WARANG CITI SMALL LETTER AM */
+	[4352+0x17] = 0x118B7,	/* U+118D7: WARANG CITI SMALL LETTER BU */
+	[4352+0x18] = 0x118B8,	/* U+118D8: WARANG CITI SMALL LETTER PU */
+	[4352+0x19] = 0x118B9,	/* U+118D9: WARANG CITI SMALL LETTER HIYO */
+	[4352+0x1A] = 0x118BA,	/* U+118DA: WARANG CITI SMALL LETTER HOLO */
+	[4352+0x1B] = 0x118BB,	/* U+118DB: WARANG CITI SMALL LETTER HORR */
+	[4352+0x1C] = 0x118BC,	/* U+118DC: WARANG CITI SMALL LETTER HAR */
+	[4352+0x1D] = 0x118BD,	/* U+118DD: WARANG CITI SMALL LETTER SSUU */
+	[4352+0x1E] = 0x118BE,	/* U+118DE: WARANG CITI SMALL LETTER SII */
+	[4352+0x1F] = 0x118BF,	/* U+118DF: WARANG CITI SMALL LETTER VIYO */
+	[3712+0x16] = 4416 - 0x80,	/* 360 226 ... */
+	[4416+0x39] = 4480 - 0x80,	/* 360 226 271 ... */
+	[4480+0x20] = 0x16E40,	/* U+16E60: MEDEFAIDRIN SMALL LETTER M */
+	[4480+0x21] = 0x16E41,	/* U+16E61: MEDEFAIDRIN SMALL LETTER S */
+	[4480+0x22] = 0x16E42,	/* U+16E62: MEDEFAIDRIN SMALL LETTER V */
+	[4480+0x23] = 0x16E43,	/* U+16E63: MEDEFAIDRIN SMALL LETTER W */
+	[4480+0x24] = 0x16E44,	/* U+16E64: MEDEFAIDRIN SMALL LETTER ATIU */
+	[4480+0x25] = 0x16E45,	/* U+16E65: MEDEFAIDRIN SMALL LETTER Z */
+	[4480+0x26] = 0x16E46,	/* U+16E66: MEDEFAIDRIN SMALL LETTER KP */
+	[4480+0x27] = 0x16E47,	/* U+16E67: MEDEFAIDRIN SMALL LETTER P */
+	[4480+0x28] = 0x16E48,	/* U+16E68: MEDEFAIDRIN SMALL LETTER T */
+	[4480+0x29] = 0x16E49,	/* U+16E69: MEDEFAIDRIN SMALL LETTER G */
+	[4480+0x2A] = 0x16E4A,	/* U+16E6A: MEDEFAIDRIN SMALL LETTER F */
+	[4480+0x2B] = 0x16E4B,	/* U+16E6B: MEDEFAIDRIN SMALL LETTER I */
+	[4480+0x2C] = 0x16E4C,	/* U+16E6C: MEDEFAIDRIN SMALL LETTER K */
+	[4480+0x2D] = 0x16E4D,	/* U+16E6D: MEDEFAIDRIN SMALL LETTER A */
+	[4480+0x2E] = 0x16E4E,	/* U+16E6E: MEDEFAIDRIN SMALL LETTER J */
+	[4480+0x2F] = 0x16E4F,	/* U+16E6F: MEDEFAIDRIN SMALL LETTER E */
+	[4480+0x30] = 0x16E50,	/* U+16E70: MEDEFAIDRIN SMALL LETTER B */
+	[4480+0x31] = 0x16E51,	/* U+16E71: MEDEFAIDRIN SMALL LETTER C */
+	[4480+0x32] = 0x16E52,	/* U+16E72: MEDEFAIDRIN SMALL LETTER U */
+	[4480+0x33] = 0x16E53,	/* U+16E73: MEDEFAIDRIN SMALL LETTER YU */
+	[4480+0x34] = 0x16E54,	/* U+16E74: MEDEFAIDRIN SMALL LETTER L */
+	[4480+0x35] = 0x16E55,	/* U+16E75: MEDEFAIDRIN SMALL LETTER Q */
+	[4480+0x36] = 0x16E56,	/* U+16E76: MEDEFAIDRIN SMALL LETTER HP */
+	[4480+0x37] = 0x16E57,	/* U+16E77: MEDEFAIDRIN SMALL LETTER NY */
+	[4480+0x38] = 0x16E58,	/* U+16E78: MEDEFAIDRIN SMALL LETTER X */
+	[4480+0x39] = 0x16E59,	/* U+16E79: MEDEFAIDRIN SMALL LETTER D */
+	[4480+0x3A] = 0x16E5A,	/* U+16E7A: MEDEFAIDRIN SMALL LETTER OE */
+	[4480+0x3B] = 0x16E5B,	/* U+16E7B: MEDEFAIDRIN SMALL LETTER N */
+	[4480+0x3C] = 0x16E5C,	/* U+16E7C: MEDEFAIDRIN SMALL LETTER R */
+	[4480+0x3D] = 0x16E5D,	/* U+16E7D: MEDEFAIDRIN SMALL LETTER O */
+	[4480+0x3E] = 0x16E5E,	/* U+16E7E: MEDEFAIDRIN SMALL LETTER AI */
+	[4480+0x3F] = 0x16E5F,	/* U+16E7F: MEDEFAIDRIN SMALL LETTER Y */
+	[4416+0x3A] = 4544 - 0x80,	/* 360 226 272 ... */
+	[4544+0x3B] = 0x16EA0,	/* U+16EBB: BERIA ERFE SMALL LETTER ARKAB */
+	[4544+0x3C] = 0x16EA1,	/* U+16EBC: BERIA ERFE SMALL LETTER BASIGNA */
+	[4544+0x3D] = 0x16EA2,	/* U+16EBD: BERIA ERFE SMALL LETTER DARBAI */
+	[4544+0x3E] = 0x16EA3,	/* U+16EBE: BERIA ERFE SMALL LETTER EH */
+	[4544+0x3F] = 0x16EA4,	/* U+16EBF: BERIA ERFE SMALL LETTER FITKO */
+	[4416+0x3B] = 4608 - 0x80,	/* 360 226 273 ... */
+	[4608+0x00] = 0x16EA5,	/* U+16EC0: BERIA ERFE SMALL LETTER GOWAY */
+	[4608+0x01] = 0x16EA6,	/* U+16EC1: BERIA ERFE SMALL LETTER HIRDEABO */
+	[4608+0x02] = 0x16EA7,	/* U+16EC2: BERIA ERFE SMALL LETTER I */
+	[4608+0x03] = 0x16EA8,	/* U+16EC3: BERIA ERFE SMALL LETTER DJAI */
+	[4608+0x04] = 0x16EA9,	/* U+16EC4: BERIA ERFE SMALL LETTER KOBO */
+	[4608+0x05] = 0x16EAA,	/* U+16EC5: BERIA ERFE SMALL LETTER LAKKO */
+	[4608+0x06] = 0x16EAB,	/* U+16EC6: BERIA ERFE SMALL LETTER MERI */
+	[4608+0x07] = 0x16EAC,	/* U+16EC7: BERIA ERFE SMALL LETTER NINI */
+	[4608+0x08] = 0x16EAD,	/* U+16EC8: BERIA ERFE SMALL LETTER GNA */
+	[4608+0x09] = 0x16EAE,	/* U+16EC9: BERIA ERFE SMALL LETTER NGAY */
+	[4608+0x0A] = 0x16EAF,	/* U+16ECA: BERIA ERFE SMALL LETTER OI */
+	[4608+0x0B] = 0x16EB0,	/* U+16ECB: BERIA ERFE SMALL LETTER PI */
+	[4608+0x0C] = 0x16EB1,	/* U+16ECC: BERIA ERFE SMALL LETTER ERIGO */
+	[4608+0x0D] = 0x16EB2,	/* U+16ECD: BERIA ERFE SMALL LETTER ERIGO TAMURA */
+	[4608+0x0E] = 0x16EB3,	/* U+16ECE: BERIA ERFE SMALL LETTER SERI */
+	[4608+0x0F] = 0x16EB4,	/* U+16ECF: BERIA ERFE SMALL LETTER SHEP */
+	[4608+0x10] = 0x16EB5,	/* U+16ED0: BERIA ERFE SMALL LETTER TATASOUE */
+	[4608+0x11] = 0x16EB6,	/* U+16ED1: BERIA ERFE SMALL LETTER UI */
+	[4608+0x12] = 0x16EB7,	/* U+16ED2: BERIA ERFE SMALL LETTER WASSE */
+	[4608+0x13] = 0x16EB8,	/* U+16ED3: BERIA ERFE SMALL LETTER AY */
+	[3712+0x1E] = 4672 - 0x80,	/* 360 236 ... */
+	[4672+0x24] = 4736 - 0x80,	/* 360 236 244 ... */
+	[4736+0x22] = 0x1E900,	/* U+1E922: ADLAM SMALL LETTER ALIF */
+	[4736+0x23] = 0x1E901,	/* U+1E923: ADLAM SMALL LETTER DAALI */
+	[4736+0x24] = 0x1E902,	/* U+1E924: ADLAM SMALL LETTER LAAM */
+	[4736+0x25] = 0x1E903,	/* U+1E925: ADLAM SMALL LETTER MIIM */
+	[4736+0x26] = 0x1E904,	/* U+1E926: ADLAM SMALL LETTER BA */
+	[4736+0x27] = 0x1E905,	/* U+1E927: ADLAM SMALL LETTER SINNYIIYHE */
+	[4736+0x28] = 0x1E906,	/* U+1E928: ADLAM SMALL LETTER PE */
+	[4736+0x29] = 0x1E907,	/* U+1E929: ADLAM SMALL LETTER BHE */
+	[4736+0x2A] = 0x1E908,	/* U+1E92A: ADLAM SMALL LETTER RA */
+	[4736+0x2B] = 0x1E909,	/* U+1E92B: ADLAM SMALL LETTER E */
+	[4736+0x2C] = 0x1E90A,	/* U+1E92C: ADLAM SMALL LETTER FA */
+	[4736+0x2D] = 0x1E90B,	/* U+1E92D: ADLAM SMALL LETTER I */
+	[4736+0x2E] = 0x1E90C,	/* U+1E92E: ADLAM SMALL LETTER O */
+	[4736+0x2F] = 0x1E90D,	/* U+1E92F: ADLAM SMALL LETTER DHA */
+	[4736+0x30] = 0x1E90E,	/* U+1E930: ADLAM SMALL LETTER YHE */
+	[4736+0x31] = 0x1E90F,	/* U+1E931: ADLAM SMALL LETTER WAW */
+	[4736+0x32] = 0x1E910,	/* U+1E932: ADLAM SMALL LETTER NUN */
+	[4736+0x33] = 0x1E911,	/* U+1E933: ADLAM SMALL LETTER KAF */
+	[4736+0x34] = 0x1E912,	/* U+1E934: ADLAM SMALL LETTER YA */
+	[4736+0x35] = 0x1E913,	/* U+1E935: ADLAM SMALL LETTER U */
+	[4736+0x36] = 0x1E914,	/* U+1E936: ADLAM SMALL LETTER JIIM */
+	[4736+0x37] = 0x1E915,	/* U+1E937: ADLAM SMALL LETTER CHI */
+	[4736+0x38] = 0x1E916,	/* U+1E938: ADLAM SMALL LETTER HA */
+	[4736+0x39] = 0x1E917,	/* U+1E939: ADLAM SMALL LETTER QAAF */
+	[4736+0x3A] = 0x1E918,	/* U+1E93A: ADLAM SMALL LETTER GA */
+	[4736+0x3B] = 0x1E919,	/* U+1E93B: ADLAM SMALL LETTER NYA */
+	[4736+0x3C] = 0x1E91A,	/* U+1E93C: ADLAM SMALL LETTER TU */
+	[4736+0x3D] = 0x1E91B,	/* U+1E93D: ADLAM SMALL LETTER NHA */
+	[4736+0x3E] = 0x1E91C,	/* U+1E93E: ADLAM SMALL LETTER VA */
+	[4736+0x3F] = 0x1E91D,	/* U+1E93F: ADLAM SMALL LETTER KHA */
+	[4672+0x25] = 4800 - 0x80,	/* 360 236 245 ... */
+	[4800+0x00] = 0x1E91E,	/* U+1E940: ADLAM SMALL LETTER GBE */
+	[4800+0x01] = 0x1E91F,	/* U+1E941: ADLAM SMALL LETTER ZAL */
+	[4800+0x02] = 0x1E920,	/* U+1E942: ADLAM SMALL LETTER KPO */
+	[4800+0x03] = 0x1E921,	/* U+1E943: ADLAM SMALL LETTER SHA */
 };
-static const int casefold[4544] = {
+static const int casefold[4672] = {
 	[0x00] = 0x0000,	/* U+0000: <control> */
 	[0x01] = 0x0001,	/* U+0001: <control> */
 	[0x02] = 0x0002,	/* U+0002: <control> */
@@ -5598,6 +6054,7 @@ static const int casefold[4544] = {
 	[1664+0x06] = 0x044A,	/* U+1C86: CYRILLIC SMALL LETTER TALL HARD SIGN */
 	[1664+0x07] = 0x0463,	/* U+1C87: CYRILLIC SMALL LETTER TALL YAT */
 	[1664+0x08] = 0xA64B,	/* U+1C88: CYRILLIC SMALL LETTER UNBLENDED UK */
+	[1664+0x09] = 0x1C8A,	/* U+1C89: CYRILLIC CAPITAL LETTER TJE */
 	[1664+0x10] = 0x10D0,	/* U+1C90: GEORGIAN MTAVRULI CAPITAL LETTER AN */
 	[1664+0x11] = 0x10D1,	/* U+1C91: GEORGIAN MTAVRULI CAPITAL LETTER BAN */
 	[1664+0x12] = 0x10D2,	/* U+1C92: GEORGIAN MTAVRULI CAPITAL LETTER GAN */
@@ -6230,9 +6687,16 @@ static const int casefold[4544] = {
 	[3264+0x06] = 0x1D8E,	/* U+A7C6: LATIN CAPITAL LETTER Z WITH PALATAL HOOK */
 	[3264+0x07] = 0xA7C8,	/* U+A7C7: LATIN CAPITAL LETTER D WITH SHORT STROKE OVERLAY */
 	[3264+0x09] = 0xA7CA,	/* U+A7C9: LATIN CAPITAL LETTER S WITH SHORT STROKE OVERLAY */
+	[3264+0x0B] = 0x0264,	/* U+A7CB: LATIN CAPITAL LETTER RAMS HORN */
+	[3264+0x0C] = 0xA7CD,	/* U+A7CC: LATIN CAPITAL LETTER S WITH DIAGONAL STROKE */
+	[3264+0x0E] = 0xA7CF,	/* U+A7CE: LATIN CAPITAL LETTER PHARYNGEAL VOICED FRICATIVE */
 	[3264+0x10] = 0xA7D1,	/* U+A7D0: LATIN CAPITAL LETTER CLOSED INSULAR G */
+	[3264+0x12] = 0xA7D3,	/* U+A7D2: LATIN CAPITAL LETTER DOUBLE THORN */
+	[3264+0x14] = 0xA7D5,	/* U+A7D4: LATIN CAPITAL LETTER DOUBLE WYNN */
 	[3264+0x16] = 0xA7D7,	/* U+A7D6: LATIN CAPITAL LETTER MIDDLE SCOTS S */
 	[3264+0x18] = 0xA7D9,	/* U+A7D8: LATIN CAPITAL LETTER SIGMOID S */
+	[3264+0x1A] = 0xA7DB,	/* U+A7DA: LATIN CAPITAL LETTER LAMBDA */
+	[3264+0x1C] = 0x019B,	/* U+A7DC: LATIN CAPITAL LETTER LAMBDA WITH STROKE */
 	[3264+0x35] = 0xA7F6,	/* U+A7F5: LATIN CAPITAL LETTER REVERSED HALF H */
 	[2880+0x2D] = 3328 - 0x80,	/* 352 255 ... */
 	[3328+0x30] = 0x13A0,	/* U+AB70: CHEROKEE SMALL LETTER A */
@@ -6527,121 +6991,170 @@ static const int casefold[4544] = {
 	[4096+0x30] = 0x10CF0,	/* U+10CB0: OLD HUNGARIAN CAPITAL LETTER EZS */
 	[4096+0x31] = 0x10CF1,	/* U+10CB1: OLD HUNGARIAN CAPITAL LETTER ENT-SHAPED SIGN */
 	[4096+0x32] = 0x10CF2,	/* U+10CB2: OLD HUNGARIAN CAPITAL LETTER US */
-	[3648+0x11] = 4160 - 0x80,	/* 360 221 ... */
-	[4160+0x22] = 4224 - 0x80,	/* 360 221 242 ... */
-	[4224+0x20] = 0x118C0,	/* U+118A0: WARANG CITI CAPITAL LETTER NGAA */
-	[4224+0x21] = 0x118C1,	/* U+118A1: WARANG CITI CAPITAL LETTER A */
-	[4224+0x22] = 0x118C2,	/* U+118A2: WARANG CITI CAPITAL LETTER WI */
-	[4224+0x23] = 0x118C3,	/* U+118A3: WARANG CITI CAPITAL LETTER YU */
-	[4224+0x24] = 0x118C4,	/* U+118A4: WARANG CITI CAPITAL LETTER YA */
-	[4224+0x25] = 0x118C5,	/* U+118A5: WARANG CITI CAPITAL LETTER YO */
-	[4224+0x26] = 0x118C6,	/* U+118A6: WARANG CITI CAPITAL LETTER II */
-	[4224+0x27] = 0x118C7,	/* U+118A7: WARANG CITI CAPITAL LETTER UU */
-	[4224+0x28] = 0x118C8,	/* U+118A8: WARANG CITI CAPITAL LETTER E */
-	[4224+0x29] = 0x118C9,	/* U+118A9: WARANG CITI CAPITAL LETTER O */
-	[4224+0x2A] = 0x118CA,	/* U+118AA: WARANG CITI CAPITAL LETTER ANG */
-	[4224+0x2B] = 0x118CB,	/* U+118AB: WARANG CITI CAPITAL LETTER GA */
-	[4224+0x2C] = 0x118CC,	/* U+118AC: WARANG CITI CAPITAL LETTER KO */
-	[4224+0x2D] = 0x118CD,	/* U+118AD: WARANG CITI CAPITAL LETTER ENY */
-	[4224+0x2E] = 0x118CE,	/* U+118AE: WARANG CITI CAPITAL LETTER YUJ */
-	[4224+0x2F] = 0x118CF,	/* U+118AF: WARANG CITI CAPITAL LETTER UC */
-	[4224+0x30] = 0x118D0,	/* U+118B0: WARANG CITI CAPITAL LETTER ENN */
-	[4224+0x31] = 0x118D1,	/* U+118B1: WARANG CITI CAPITAL LETTER ODD */
-	[4224+0x32] = 0x118D2,	/* U+118B2: WARANG CITI CAPITAL LETTER TTE */
-	[4224+0x33] = 0x118D3,	/* U+118B3: WARANG CITI CAPITAL LETTER NUNG */
-	[4224+0x34] = 0x118D4,	/* U+118B4: WARANG CITI CAPITAL LETTER DA */
-	[4224+0x35] = 0x118D5,	/* U+118B5: WARANG CITI CAPITAL LETTER AT */
-	[4224+0x36] = 0x118D6,	/* U+118B6: WARANG CITI CAPITAL LETTER AM */
-	[4224+0x37] = 0x118D7,	/* U+118B7: WARANG CITI CAPITAL LETTER BU */
-	[4224+0x38] = 0x118D8,	/* U+118B8: WARANG CITI CAPITAL LETTER PU */
-	[4224+0x39] = 0x118D9,	/* U+118B9: WARANG CITI CAPITAL LETTER HIYO */
-	[4224+0x3A] = 0x118DA,	/* U+118BA: WARANG CITI CAPITAL LETTER HOLO */
-	[4224+0x3B] = 0x118DB,	/* U+118BB: WARANG CITI CAPITAL LETTER HORR */
-	[4224+0x3C] = 0x118DC,	/* U+118BC: WARANG CITI CAPITAL LETTER HAR */
-	[4224+0x3D] = 0x118DD,	/* U+118BD: WARANG CITI CAPITAL LETTER SSUU */
-	[4224+0x3E] = 0x118DE,	/* U+118BE: WARANG CITI CAPITAL LETTER SII */
-	[4224+0x3F] = 0x118DF,	/* U+118BF: WARANG CITI CAPITAL LETTER VIYO */
-	[3648+0x16] = 4288 - 0x80,	/* 360 226 ... */
-	[4288+0x39] = 4352 - 0x80,	/* 360 226 271 ... */
-	[4352+0x00] = 0x16E60,	/* U+16E40: MEDEFAIDRIN CAPITAL LETTER M */
-	[4352+0x01] = 0x16E61,	/* U+16E41: MEDEFAIDRIN CAPITAL LETTER S */
-	[4352+0x02] = 0x16E62,	/* U+16E42: MEDEFAIDRIN CAPITAL LETTER V */
-	[4352+0x03] = 0x16E63,	/* U+16E43: MEDEFAIDRIN CAPITAL LETTER W */
-	[4352+0x04] = 0x16E64,	/* U+16E44: MEDEFAIDRIN CAPITAL LETTER ATIU */
-	[4352+0x05] = 0x16E65,	/* U+16E45: MEDEFAIDRIN CAPITAL LETTER Z */
-	[4352+0x06] = 0x16E66,	/* U+16E46: MEDEFAIDRIN CAPITAL LETTER KP */
-	[4352+0x07] = 0x16E67,	/* U+16E47: MEDEFAIDRIN CAPITAL LETTER P */
-	[4352+0x08] = 0x16E68,	/* U+16E48: MEDEFAIDRIN CAPITAL LETTER T */
-	[4352+0x09] = 0x16E69,	/* U+16E49: MEDEFAIDRIN CAPITAL LETTER G */
-	[4352+0x0A] = 0x16E6A,	/* U+16E4A: MEDEFAIDRIN CAPITAL LETTER F */
-	[4352+0x0B] = 0x16E6B,	/* U+16E4B: MEDEFAIDRIN CAPITAL LETTER I */
-	[4352+0x0C] = 0x16E6C,	/* U+16E4C: MEDEFAIDRIN CAPITAL LETTER K */
-	[4352+0x0D] = 0x16E6D,	/* U+16E4D: MEDEFAIDRIN CAPITAL LETTER A */
-	[4352+0x0E] = 0x16E6E,	/* U+16E4E: MEDEFAIDRIN CAPITAL LETTER J */
-	[4352+0x0F] = 0x16E6F,	/* U+16E4F: MEDEFAIDRIN CAPITAL LETTER E */
-	[4352+0x10] = 0x16E70,	/* U+16E50: MEDEFAIDRIN CAPITAL LETTER B */
-	[4352+0x11] = 0x16E71,	/* U+16E51: MEDEFAIDRIN CAPITAL LETTER C */
-	[4352+0x12] = 0x16E72,	/* U+16E52: MEDEFAIDRIN CAPITAL LETTER U */
-	[4352+0x13] = 0x16E73,	/* U+16E53: MEDEFAIDRIN CAPITAL LETTER YU */
-	[4352+0x14] = 0x16E74,	/* U+16E54: MEDEFAIDRIN CAPITAL LETTER L */
-	[4352+0x15] = 0x16E75,	/* U+16E55: MEDEFAIDRIN CAPITAL LETTER Q */
-	[4352+0x16] = 0x16E76,	/* U+16E56: MEDEFAIDRIN CAPITAL LETTER HP */
-	[4352+0x17] = 0x16E77,	/* U+16E57: MEDEFAIDRIN CAPITAL LETTER NY */
-	[4352+0x18] = 0x16E78,	/* U+16E58: MEDEFAIDRIN CAPITAL LETTER X */
-	[4352+0x19] = 0x16E79,	/* U+16E59: MEDEFAIDRIN CAPITAL LETTER D */
-	[4352+0x1A] = 0x16E7A,	/* U+16E5A: MEDEFAIDRIN CAPITAL LETTER OE */
-	[4352+0x1B] = 0x16E7B,	/* U+16E5B: MEDEFAIDRIN CAPITAL LETTER N */
-	[4352+0x1C] = 0x16E7C,	/* U+16E5C: MEDEFAIDRIN CAPITAL LETTER R */
-	[4352+0x1D] = 0x16E7D,	/* U+16E5D: MEDEFAIDRIN CAPITAL LETTER O */
-	[4352+0x1E] = 0x16E7E,	/* U+16E5E: MEDEFAIDRIN CAPITAL LETTER AI */
-	[4352+0x1F] = 0x16E7F,	/* U+16E5F: MEDEFAIDRIN CAPITAL LETTER Y */
-	[3648+0x1E] = 4416 - 0x80,	/* 360 236 ... */
-	[4416+0x24] = 4480 - 0x80,	/* 360 236 244 ... */
-	[4480+0x00] = 0x1E922,	/* U+1E900: ADLAM CAPITAL LETTER ALIF */
-	[4480+0x01] = 0x1E923,	/* U+1E901: ADLAM CAPITAL LETTER DAALI */
-	[4480+0x02] = 0x1E924,	/* U+1E902: ADLAM CAPITAL LETTER LAAM */
-	[4480+0x03] = 0x1E925,	/* U+1E903: ADLAM CAPITAL LETTER MIIM */
-	[4480+0x04] = 0x1E926,	/* U+1E904: ADLAM CAPITAL LETTER BA */
-	[4480+0x05] = 0x1E927,	/* U+1E905: ADLAM CAPITAL LETTER SINNYIIYHE */
-	[4480+0x06] = 0x1E928,	/* U+1E906: ADLAM CAPITAL LETTER PE */
-	[4480+0x07] = 0x1E929,	/* U+1E907: ADLAM CAPITAL LETTER BHE */
-	[4480+0x08] = 0x1E92A,	/* U+1E908: ADLAM CAPITAL LETTER RA */
-	[4480+0x09] = 0x1E92B,	/* U+1E909: ADLAM CAPITAL LETTER E */
-	[4480+0x0A] = 0x1E92C,	/* U+1E90A: ADLAM CAPITAL LETTER FA */
-	[4480+0x0B] = 0x1E92D,	/* U+1E90B: ADLAM CAPITAL LETTER I */
-	[4480+0x0C] = 0x1E92E,	/* U+1E90C: ADLAM CAPITAL LETTER O */
-	[4480+0x0D] = 0x1E92F,	/* U+1E90D: ADLAM CAPITAL LETTER DHA */
-	[4480+0x0E] = 0x1E930,	/* U+1E90E: ADLAM CAPITAL LETTER YHE */
-	[4480+0x0F] = 0x1E931,	/* U+1E90F: ADLAM CAPITAL LETTER WAW */
-	[4480+0x10] = 0x1E932,	/* U+1E910: ADLAM CAPITAL LETTER NUN */
-	[4480+0x11] = 0x1E933,	/* U+1E911: ADLAM CAPITAL LETTER KAF */
-	[4480+0x12] = 0x1E934,	/* U+1E912: ADLAM CAPITAL LETTER YA */
-	[4480+0x13] = 0x1E935,	/* U+1E913: ADLAM CAPITAL LETTER U */
-	[4480+0x14] = 0x1E936,	/* U+1E914: ADLAM CAPITAL LETTER JIIM */
-	[4480+0x15] = 0x1E937,	/* U+1E915: ADLAM CAPITAL LETTER CHI */
-	[4480+0x16] = 0x1E938,	/* U+1E916: ADLAM CAPITAL LETTER HA */
-	[4480+0x17] = 0x1E939,	/* U+1E917: ADLAM CAPITAL LETTER QAAF */
-	[4480+0x18] = 0x1E93A,	/* U+1E918: ADLAM CAPITAL LETTER GA */
-	[4480+0x19] = 0x1E93B,	/* U+1E919: ADLAM CAPITAL LETTER NYA */
-	[4480+0x1A] = 0x1E93C,	/* U+1E91A: ADLAM CAPITAL LETTER TU */
-	[4480+0x1B] = 0x1E93D,	/* U+1E91B: ADLAM CAPITAL LETTER NHA */
-	[4480+0x1C] = 0x1E93E,	/* U+1E91C: ADLAM CAPITAL LETTER VA */
-	[4480+0x1D] = 0x1E93F,	/* U+1E91D: ADLAM CAPITAL LETTER KHA */
-	[4480+0x1E] = 0x1E940,	/* U+1E91E: ADLAM CAPITAL LETTER GBE */
-	[4480+0x1F] = 0x1E941,	/* U+1E91F: ADLAM CAPITAL LETTER ZAL */
-	[4480+0x20] = 0x1E942,	/* U+1E920: ADLAM CAPITAL LETTER KPO */
-	[4480+0x21] = 0x1E943,	/* U+1E921: ADLAM CAPITAL LETTER SHA */
+	[3712+0x35] = 4160 - 0x80,	/* 360 220 265 ... */
+	[4160+0x10] = 0x10D70,	/* U+10D50: GARAY CAPITAL LETTER A */
+	[4160+0x11] = 0x10D71,	/* U+10D51: GARAY CAPITAL LETTER CA */
+	[4160+0x12] = 0x10D72,	/* U+10D52: GARAY CAPITAL LETTER MA */
+	[4160+0x13] = 0x10D73,	/* U+10D53: GARAY CAPITAL LETTER KA */
+	[4160+0x14] = 0x10D74,	/* U+10D54: GARAY CAPITAL LETTER BA */
+	[4160+0x15] = 0x10D75,	/* U+10D55: GARAY CAPITAL LETTER JA */
+	[4160+0x16] = 0x10D76,	/* U+10D56: GARAY CAPITAL LETTER SA */
+	[4160+0x17] = 0x10D77,	/* U+10D57: GARAY CAPITAL LETTER WA */
+	[4160+0x18] = 0x10D78,	/* U+10D58: GARAY CAPITAL LETTER LA */
+	[4160+0x19] = 0x10D79,	/* U+10D59: GARAY CAPITAL LETTER GA */
+	[4160+0x1A] = 0x10D7A,	/* U+10D5A: GARAY CAPITAL LETTER DA */
+	[4160+0x1B] = 0x10D7B,	/* U+10D5B: GARAY CAPITAL LETTER XA */
+	[4160+0x1C] = 0x10D7C,	/* U+10D5C: GARAY CAPITAL LETTER YA */
+	[4160+0x1D] = 0x10D7D,	/* U+10D5D: GARAY CAPITAL LETTER TA */
+	[4160+0x1E] = 0x10D7E,	/* U+10D5E: GARAY CAPITAL LETTER RA */
+	[4160+0x1F] = 0x10D7F,	/* U+10D5F: GARAY CAPITAL LETTER NYA */
+	[4160+0x20] = 0x10D80,	/* U+10D60: GARAY CAPITAL LETTER FA */
+	[4160+0x21] = 0x10D81,	/* U+10D61: GARAY CAPITAL LETTER NA */
+	[4160+0x22] = 0x10D82,	/* U+10D62: GARAY CAPITAL LETTER PA */
+	[4160+0x23] = 0x10D83,	/* U+10D63: GARAY CAPITAL LETTER HA */
+	[4160+0x24] = 0x10D84,	/* U+10D64: GARAY CAPITAL LETTER OLD KA */
+	[4160+0x25] = 0x10D85,	/* U+10D65: GARAY CAPITAL LETTER OLD NA */
+	[3648+0x11] = 4224 - 0x80,	/* 360 221 ... */
+	[4224+0x22] = 4288 - 0x80,	/* 360 221 242 ... */
+	[4288+0x20] = 0x118C0,	/* U+118A0: WARANG CITI CAPITAL LETTER NGAA */
+	[4288+0x21] = 0x118C1,	/* U+118A1: WARANG CITI CAPITAL LETTER A */
+	[4288+0x22] = 0x118C2,	/* U+118A2: WARANG CITI CAPITAL LETTER WI */
+	[4288+0x23] = 0x118C3,	/* U+118A3: WARANG CITI CAPITAL LETTER YU */
+	[4288+0x24] = 0x118C4,	/* U+118A4: WARANG CITI CAPITAL LETTER YA */
+	[4288+0x25] = 0x118C5,	/* U+118A5: WARANG CITI CAPITAL LETTER YO */
+	[4288+0x26] = 0x118C6,	/* U+118A6: WARANG CITI CAPITAL LETTER II */
+	[4288+0x27] = 0x118C7,	/* U+118A7: WARANG CITI CAPITAL LETTER UU */
+	[4288+0x28] = 0x118C8,	/* U+118A8: WARANG CITI CAPITAL LETTER E */
+	[4288+0x29] = 0x118C9,	/* U+118A9: WARANG CITI CAPITAL LETTER O */
+	[4288+0x2A] = 0x118CA,	/* U+118AA: WARANG CITI CAPITAL LETTER ANG */
+	[4288+0x2B] = 0x118CB,	/* U+118AB: WARANG CITI CAPITAL LETTER GA */
+	[4288+0x2C] = 0x118CC,	/* U+118AC: WARANG CITI CAPITAL LETTER KO */
+	[4288+0x2D] = 0x118CD,	/* U+118AD: WARANG CITI CAPITAL LETTER ENY */
+	[4288+0x2E] = 0x118CE,	/* U+118AE: WARANG CITI CAPITAL LETTER YUJ */
+	[4288+0x2F] = 0x118CF,	/* U+118AF: WARANG CITI CAPITAL LETTER UC */
+	[4288+0x30] = 0x118D0,	/* U+118B0: WARANG CITI CAPITAL LETTER ENN */
+	[4288+0x31] = 0x118D1,	/* U+118B1: WARANG CITI CAPITAL LETTER ODD */
+	[4288+0x32] = 0x118D2,	/* U+118B2: WARANG CITI CAPITAL LETTER TTE */
+	[4288+0x33] = 0x118D3,	/* U+118B3: WARANG CITI CAPITAL LETTER NUNG */
+	[4288+0x34] = 0x118D4,	/* U+118B4: WARANG CITI CAPITAL LETTER DA */
+	[4288+0x35] = 0x118D5,	/* U+118B5: WARANG CITI CAPITAL LETTER AT */
+	[4288+0x36] = 0x118D6,	/* U+118B6: WARANG CITI CAPITAL LETTER AM */
+	[4288+0x37] = 0x118D7,	/* U+118B7: WARANG CITI CAPITAL LETTER BU */
+	[4288+0x38] = 0x118D8,	/* U+118B8: WARANG CITI CAPITAL LETTER PU */
+	[4288+0x39] = 0x118D9,	/* U+118B9: WARANG CITI CAPITAL LETTER HIYO */
+	[4288+0x3A] = 0x118DA,	/* U+118BA: WARANG CITI CAPITAL LETTER HOLO */
+	[4288+0x3B] = 0x118DB,	/* U+118BB: WARANG CITI CAPITAL LETTER HORR */
+	[4288+0x3C] = 0x118DC,	/* U+118BC: WARANG CITI CAPITAL LETTER HAR */
+	[4288+0x3D] = 0x118DD,	/* U+118BD: WARANG CITI CAPITAL LETTER SSUU */
+	[4288+0x3E] = 0x118DE,	/* U+118BE: WARANG CITI CAPITAL LETTER SII */
+	[4288+0x3F] = 0x118DF,	/* U+118BF: WARANG CITI CAPITAL LETTER VIYO */
+	[3648+0x16] = 4352 - 0x80,	/* 360 226 ... */
+	[4352+0x39] = 4416 - 0x80,	/* 360 226 271 ... */
+	[4416+0x00] = 0x16E60,	/* U+16E40: MEDEFAIDRIN CAPITAL LETTER M */
+	[4416+0x01] = 0x16E61,	/* U+16E41: MEDEFAIDRIN CAPITAL LETTER S */
+	[4416+0x02] = 0x16E62,	/* U+16E42: MEDEFAIDRIN CAPITAL LETTER V */
+	[4416+0x03] = 0x16E63,	/* U+16E43: MEDEFAIDRIN CAPITAL LETTER W */
+	[4416+0x04] = 0x16E64,	/* U+16E44: MEDEFAIDRIN CAPITAL LETTER ATIU */
+	[4416+0x05] = 0x16E65,	/* U+16E45: MEDEFAIDRIN CAPITAL LETTER Z */
+	[4416+0x06] = 0x16E66,	/* U+16E46: MEDEFAIDRIN CAPITAL LETTER KP */
+	[4416+0x07] = 0x16E67,	/* U+16E47: MEDEFAIDRIN CAPITAL LETTER P */
+	[4416+0x08] = 0x16E68,	/* U+16E48: MEDEFAIDRIN CAPITAL LETTER T */
+	[4416+0x09] = 0x16E69,	/* U+16E49: MEDEFAIDRIN CAPITAL LETTER G */
+	[4416+0x0A] = 0x16E6A,	/* U+16E4A: MEDEFAIDRIN CAPITAL LETTER F */
+	[4416+0x0B] = 0x16E6B,	/* U+16E4B: MEDEFAIDRIN CAPITAL LETTER I */
+	[4416+0x0C] = 0x16E6C,	/* U+16E4C: MEDEFAIDRIN CAPITAL LETTER K */
+	[4416+0x0D] = 0x16E6D,	/* U+16E4D: MEDEFAIDRIN CAPITAL LETTER A */
+	[4416+0x0E] = 0x16E6E,	/* U+16E4E: MEDEFAIDRIN CAPITAL LETTER J */
+	[4416+0x0F] = 0x16E6F,	/* U+16E4F: MEDEFAIDRIN CAPITAL LETTER E */
+	[4416+0x10] = 0x16E70,	/* U+16E50: MEDEFAIDRIN CAPITAL LETTER B */
+	[4416+0x11] = 0x16E71,	/* U+16E51: MEDEFAIDRIN CAPITAL LETTER C */
+	[4416+0x12] = 0x16E72,	/* U+16E52: MEDEFAIDRIN CAPITAL LETTER U */
+	[4416+0x13] = 0x16E73,	/* U+16E53: MEDEFAIDRIN CAPITAL LETTER YU */
+	[4416+0x14] = 0x16E74,	/* U+16E54: MEDEFAIDRIN CAPITAL LETTER L */
+	[4416+0x15] = 0x16E75,	/* U+16E55: MEDEFAIDRIN CAPITAL LETTER Q */
+	[4416+0x16] = 0x16E76,	/* U+16E56: MEDEFAIDRIN CAPITAL LETTER HP */
+	[4416+0x17] = 0x16E77,	/* U+16E57: MEDEFAIDRIN CAPITAL LETTER NY */
+	[4416+0x18] = 0x16E78,	/* U+16E58: MEDEFAIDRIN CAPITAL LETTER X */
+	[4416+0x19] = 0x16E79,	/* U+16E59: MEDEFAIDRIN CAPITAL LETTER D */
+	[4416+0x1A] = 0x16E7A,	/* U+16E5A: MEDEFAIDRIN CAPITAL LETTER OE */
+	[4416+0x1B] = 0x16E7B,	/* U+16E5B: MEDEFAIDRIN CAPITAL LETTER N */
+	[4416+0x1C] = 0x16E7C,	/* U+16E5C: MEDEFAIDRIN CAPITAL LETTER R */
+	[4416+0x1D] = 0x16E7D,	/* U+16E5D: MEDEFAIDRIN CAPITAL LETTER O */
+	[4416+0x1E] = 0x16E7E,	/* U+16E5E: MEDEFAIDRIN CAPITAL LETTER AI */
+	[4416+0x1F] = 0x16E7F,	/* U+16E5F: MEDEFAIDRIN CAPITAL LETTER Y */
+	[4352+0x3A] = 4480 - 0x80,	/* 360 226 272 ... */
+	[4480+0x20] = 0x16EBB,	/* U+16EA0: BERIA ERFE CAPITAL LETTER ARKAB */
+	[4480+0x21] = 0x16EBC,	/* U+16EA1: BERIA ERFE CAPITAL LETTER BASIGNA */
+	[4480+0x22] = 0x16EBD,	/* U+16EA2: BERIA ERFE CAPITAL LETTER DARBAI */
+	[4480+0x23] = 0x16EBE,	/* U+16EA3: BERIA ERFE CAPITAL LETTER EH */
+	[4480+0x24] = 0x16EBF,	/* U+16EA4: BERIA ERFE CAPITAL LETTER FITKO */
+	[4480+0x25] = 0x16EC0,	/* U+16EA5: BERIA ERFE CAPITAL LETTER GOWAY */
+	[4480+0x26] = 0x16EC1,	/* U+16EA6: BERIA ERFE CAPITAL LETTER HIRDEABO */
+	[4480+0x27] = 0x16EC2,	/* U+16EA7: BERIA ERFE CAPITAL LETTER I */
+	[4480+0x28] = 0x16EC3,	/* U+16EA8: BERIA ERFE CAPITAL LETTER DJAI */
+	[4480+0x29] = 0x16EC4,	/* U+16EA9: BERIA ERFE CAPITAL LETTER KOBO */
+	[4480+0x2A] = 0x16EC5,	/* U+16EAA: BERIA ERFE CAPITAL LETTER LAKKO */
+	[4480+0x2B] = 0x16EC6,	/* U+16EAB: BERIA ERFE CAPITAL LETTER MERI */
+	[4480+0x2C] = 0x16EC7,	/* U+16EAC: BERIA ERFE CAPITAL LETTER NINI */
+	[4480+0x2D] = 0x16EC8,	/* U+16EAD: BERIA ERFE CAPITAL LETTER GNA */
+	[4480+0x2E] = 0x16EC9,	/* U+16EAE: BERIA ERFE CAPITAL LETTER NGAY */
+	[4480+0x2F] = 0x16ECA,	/* U+16EAF: BERIA ERFE CAPITAL LETTER OI */
+	[4480+0x30] = 0x16ECB,	/* U+16EB0: BERIA ERFE CAPITAL LETTER PI */
+	[4480+0x31] = 0x16ECC,	/* U+16EB1: BERIA ERFE CAPITAL LETTER ERIGO */
+	[4480+0x32] = 0x16ECD,	/* U+16EB2: BERIA ERFE CAPITAL LETTER ERIGO TAMURA */
+	[4480+0x33] = 0x16ECE,	/* U+16EB3: BERIA ERFE CAPITAL LETTER SERI */
+	[4480+0x34] = 0x16ECF,	/* U+16EB4: BERIA ERFE CAPITAL LETTER SHEP */
+	[4480+0x35] = 0x16ED0,	/* U+16EB5: BERIA ERFE CAPITAL LETTER TATASOUE */
+	[4480+0x36] = 0x16ED1,	/* U+16EB6: BERIA ERFE CAPITAL LETTER UI */
+	[4480+0x37] = 0x16ED2,	/* U+16EB7: BERIA ERFE CAPITAL LETTER WASSE */
+	[4480+0x38] = 0x16ED3,	/* U+16EB8: BERIA ERFE CAPITAL LETTER AY */
+	[3648+0x1E] = 4544 - 0x80,	/* 360 236 ... */
+	[4544+0x24] = 4608 - 0x80,	/* 360 236 244 ... */
+	[4608+0x00] = 0x1E922,	/* U+1E900: ADLAM CAPITAL LETTER ALIF */
+	[4608+0x01] = 0x1E923,	/* U+1E901: ADLAM CAPITAL LETTER DAALI */
+	[4608+0x02] = 0x1E924,	/* U+1E902: ADLAM CAPITAL LETTER LAAM */
+	[4608+0x03] = 0x1E925,	/* U+1E903: ADLAM CAPITAL LETTER MIIM */
+	[4608+0x04] = 0x1E926,	/* U+1E904: ADLAM CAPITAL LETTER BA */
+	[4608+0x05] = 0x1E927,	/* U+1E905: ADLAM CAPITAL LETTER SINNYIIYHE */
+	[4608+0x06] = 0x1E928,	/* U+1E906: ADLAM CAPITAL LETTER PE */
+	[4608+0x07] = 0x1E929,	/* U+1E907: ADLAM CAPITAL LETTER BHE */
+	[4608+0x08] = 0x1E92A,	/* U+1E908: ADLAM CAPITAL LETTER RA */
+	[4608+0x09] = 0x1E92B,	/* U+1E909: ADLAM CAPITAL LETTER E */
+	[4608+0x0A] = 0x1E92C,	/* U+1E90A: ADLAM CAPITAL LETTER FA */
+	[4608+0x0B] = 0x1E92D,	/* U+1E90B: ADLAM CAPITAL LETTER I */
+	[4608+0x0C] = 0x1E92E,	/* U+1E90C: ADLAM CAPITAL LETTER O */
+	[4608+0x0D] = 0x1E92F,	/* U+1E90D: ADLAM CAPITAL LETTER DHA */
+	[4608+0x0E] = 0x1E930,	/* U+1E90E: ADLAM CAPITAL LETTER YHE */
+	[4608+0x0F] = 0x1E931,	/* U+1E90F: ADLAM CAPITAL LETTER WAW */
+	[4608+0x10] = 0x1E932,	/* U+1E910: ADLAM CAPITAL LETTER NUN */
+	[4608+0x11] = 0x1E933,	/* U+1E911: ADLAM CAPITAL LETTER KAF */
+	[4608+0x12] = 0x1E934,	/* U+1E912: ADLAM CAPITAL LETTER YA */
+	[4608+0x13] = 0x1E935,	/* U+1E913: ADLAM CAPITAL LETTER U */
+	[4608+0x14] = 0x1E936,	/* U+1E914: ADLAM CAPITAL LETTER JIIM */
+	[4608+0x15] = 0x1E937,	/* U+1E915: ADLAM CAPITAL LETTER CHI */
+	[4608+0x16] = 0x1E938,	/* U+1E916: ADLAM CAPITAL LETTER HA */
+	[4608+0x17] = 0x1E939,	/* U+1E917: ADLAM CAPITAL LETTER QAAF */
+	[4608+0x18] = 0x1E93A,	/* U+1E918: ADLAM CAPITAL LETTER GA */
+	[4608+0x19] = 0x1E93B,	/* U+1E919: ADLAM CAPITAL LETTER NYA */
+	[4608+0x1A] = 0x1E93C,	/* U+1E91A: ADLAM CAPITAL LETTER TU */
+	[4608+0x1B] = 0x1E93D,	/* U+1E91B: ADLAM CAPITAL LETTER NHA */
+	[4608+0x1C] = 0x1E93E,	/* U+1E91C: ADLAM CAPITAL LETTER VA */
+	[4608+0x1D] = 0x1E93F,	/* U+1E91D: ADLAM CAPITAL LETTER KHA */
+	[4608+0x1E] = 0x1E940,	/* U+1E91E: ADLAM CAPITAL LETTER GBE */
+	[4608+0x1F] = 0x1E941,	/* U+1E91F: ADLAM CAPITAL LETTER ZAL */
+	[4608+0x20] = 0x1E942,	/* U+1E920: ADLAM CAPITAL LETTER KPO */
+	[4608+0x21] = 0x1E943,	/* U+1E921: ADLAM CAPITAL LETTER SHA */
 };
 
 /* convert the case of a UTF-8 encoded string given in `s' into the
  * buffer of length `*buflen' given in `*buf'; if the buffer is not
- * large enough, it is extended using GDKrealloc; on return (with or
- * without error), the current buffer is in *buf, and the current size
- * in *buflen. */
+ * large enough, it is extended using the given allocator; on return
+ * (with or without error), the current buffer is in *buf, and the
+ * current size in *buflen. */
 static gdk_return
-	__attribute__((__access__(read_write, 1)))
 	__attribute__((__access__(read_write, 2)))
-convertcase(char **restrict buf, size_t *restrict buflen,
+	__attribute__((__access__(read_write, 3)))
+convertcase(allocator *ma, char **restrict buf, size_t *restrict buflen,
 	    const uint8_t *restrict s, int direction)
 {
 	uint8_t *dst = (uint8_t *) *buf;
@@ -6668,13 +7181,13 @@ convertcase(char **restrict buf, size_t *restrict buflen,
 			bl = 4096;
 		else
 			bl += 5;
-		dst = GDKmalloc(bl);
+		dst = ma_alloc(ma, bl);
 		if (dst == NULL)
 			return GDK_FAIL;
 		*buf = (char *) dst;
 	} else if (bl + 5 > *buflen) {
 		bl += 1024;
-		dst = GDKrealloc(*buf, bl);
+		dst = ma_alloc(ma, bl);
 		if (dst == NULL)
 			return GDK_FAIL;
 		*buf = (char *) dst;
@@ -6702,12 +7215,12 @@ convertcase(char **restrict buf, size_t *restrict buflen,
 				 * largest codepoint, i.e. 4 bytes plus
 				 * terminating NUL */
 				size_t newlen = bl + 1024;
-				dst = GDKrealloc(*buf, newlen);
+				dst = ma_realloc(ma, *buf, newlen, bl);
+				*buf = (char *) dst;
 				if (dst == NULL) {
-					*buflen = bl;
+					*buflen = 0;
 					return GDK_FAIL;
 				}
-				*buf = (char *) dst;
 				bl = newlen;
 				bl5 = bl - 5;
 			}
@@ -6750,12 +7263,12 @@ convertcase(char **restrict buf, size_t *restrict buflen,
 	}
 	if (dstoff + 1 > bl) {
 		size_t newlen = dstoff + 1;
-		dst = GDKrealloc(*buf, newlen);
+		dst = ma_realloc(ma, *buf, newlen, bl);
+		*buf = (char *) dst;
 		if (dst == NULL) {
-			*buflen = bl;
+			*buflen = 0;
 			return GDK_FAIL;
 		}
-		*buf = (char *) dst;
 		bl = newlen;
 	}
 	dst[dstoff] = '\0';
@@ -6765,23 +7278,23 @@ convertcase(char **restrict buf, size_t *restrict buflen,
 
 /* convert string to uppercase; see comment above for more information */
 gdk_return
-GDKtoupper(char **restrict buf, size_t *restrict buflen, const char *restrict s)
+GDKtoupper(allocator *ma, char **restrict buf, size_t *restrict buflen, const char *restrict s)
 {
-	return convertcase(buf, buflen, (const uint8_t *) s, 'U');
+	return convertcase(ma, buf, buflen, (const uint8_t *) s, 'U');
 }
 
 /* convert string to lowercase; see comment above for more information */
 gdk_return
-GDKtolower(char **restrict buf, size_t *restrict buflen, const char *restrict s)
+GDKtolower(allocator *ma, char **restrict buf, size_t *restrict buflen, const char *restrict s)
 {
-	return convertcase(buf, buflen, (const uint8_t *) s, 'L');
+	return convertcase(ma, buf, buflen, (const uint8_t *) s, 'L');
 }
 
 /* case fold string; see comment above for more information */
 gdk_return
-GDKcasefold(char **restrict buf, size_t *restrict buflen, const char *restrict s)
+GDKcasefold(allocator *ma, char **restrict buf, size_t *restrict buflen, const char *restrict s)
 {
-	return convertcase(buf, buflen, (const uint8_t *) s, 'F');
+	return convertcase(ma, buf, buflen, (const uint8_t *) s, 'F');
 }
 
 static BAT *
@@ -6804,15 +7317,17 @@ BATcaseconvert(BAT *b, BAT *s, int direction, const char *restrict func)
 	bi = bat_iterator(b);
 	char *buf = NULL;
 	size_t buflen = 0;
+	allocator *ta = MT_thread_getallocator();
+	allocator_state ta_state = ma_open(ta);
 	TIMEOUT_LOOP_IDX_DECL(i, ci.ncand, qry_ctx) {
 		BUN x = canditer_next(&ci) - bhseqbase;
-		if (convertcase(&buf, &buflen, BUNtvar(bi, x),
+		if (convertcase(ta, &buf, &buflen, BUNtvar(&bi, x),
 				direction) != GDK_SUCCEED ||
 		    tfastins_nocheckVAR(bn, i, buf) != GDK_SUCCEED) {
 			goto bailout;
 		}
 	}
-	GDKfree(buf);
+	ma_close(&ta_state);
 	BATsetcount(bn, ci.ncand);
 	bat_iterator_end(&bi);
 	TIMEOUT_CHECK(qry_ctx,
@@ -6831,7 +7346,7 @@ BATcaseconvert(BAT *b, BAT *s, int direction, const char *restrict func)
 	return bn;
 
   bailout:
-	GDKfree(buf);
+	ma_close(&ta_state);
 	bat_iterator_end(&bi);
 	BBPreclaim(bn);
 	return NULL;
@@ -7111,9 +7626,9 @@ GDKstrcasestr(const char *haystack, const char *needle)
 /* The asciify table uses the same technique as the case conversion
  * tables, except that the value that is calculated is not a codepoint.
  * Instead it is the index into the valtab table which contains the
- * string that is to be used to replace the asciified character.
- * This combination of tables is derived from the command
- * ``iconv -futf-8 -tASCII//TRANSLIT`` */
+ * string that is to be used to replace the asciified character. */
+
+/* These tables were created using the code in uniiconvtab.py */
 static const char *const valtab[] = {
 	NULL,
 	[1] = " ",
@@ -9492,7 +10007,7 @@ static const int16_t asciify[4544] = {
 };
 
 gdk_return
-GDKasciify(char **restrict buf, size_t *restrict buflen,
+GDKasciify(allocator *ma, char **restrict buf, size_t *restrict buflen,
 	   const char *restrict s)
 {
 	uint8_t *dst = (uint8_t *) *buf;
@@ -9505,13 +10020,13 @@ GDKasciify(char **restrict buf, size_t *restrict buflen,
 			bl = 4096;
 		else
 			bl += 8;
-		dst = GDKmalloc(bl);
+		dst = ma_alloc(ma, bl);
 		if (dst == NULL)
 			return GDK_FAIL;
 		*buf = (char *) dst;
 	} else if (bl + 8 > *buflen) {
 		bl += 1024;
-		dst = GDKrealloc(*buf, bl);
+		dst = ma_alloc(ma, bl);
 		if (dst == NULL)
 			return GDK_FAIL;
 		*buf = (char *) dst;
@@ -9539,12 +10054,12 @@ GDKasciify(char **restrict buf, size_t *restrict buflen,
 				 * the largest asciification, i.e. 7
 				 * bytes plus terminating NUL */
 				size_t newlen = bl + 1024;
-				dst = GDKrealloc(*buf, newlen);
+				dst = ma_realloc(ma, *buf, newlen, bl);
+				*buf = (char *) dst;
 				if (dst == NULL) {
-					*buflen = bl;
+					*buflen = 0;
 					return GDK_FAIL;
 				}
-				*buf = (char *) dst;
 				bl = newlen;
 				bl8 = bl - 8;
 			}
@@ -9569,12 +10084,12 @@ GDKasciify(char **restrict buf, size_t *restrict buflen,
 	}
 	if (dstoff + 1 > bl) {
 		size_t newlen = dstoff + 1;
-		dst = GDKrealloc(*buf, newlen);
+		dst = ma_realloc(ma, *buf, newlen, bl);
+		*buf = (char *) dst;
 		if (dst == NULL) {
-			*buflen = bl;
+			*buflen = 0;
 			return GDK_FAIL;
 		}
-		*buf = (char *) dst;
 		bl = newlen;
 	}
 	dst[dstoff] = '\0';
@@ -9608,14 +10123,16 @@ BATasciify(BAT *b, BAT *s)
 	bi = bat_iterator(b);
 	char *buf = NULL;
 	size_t buflen = 0;
+	allocator *ta = MT_thread_getallocator();
+	allocator_state ta_state = ma_open(ta);
 	TIMEOUT_LOOP_IDX_DECL(i, ci.ncand, qry_ctx) {
 		BUN x = canditer_next(&ci) - bhseqbase;
-		if (GDKasciify(&buf, &buflen, BUNtvar(bi, x)) != GDK_SUCCEED ||
+		if (GDKasciify(ta, &buf, &buflen, BUNtvar(&bi, x)) != GDK_SUCCEED ||
 		    tfastins_nocheckVAR(bn, i, buf) != GDK_SUCCEED) {
 			goto bailout;
 		}
 	}
-	GDKfree(buf);
+	ma_close(&ta_state);
 	BATsetcount(bn, ci.ncand);
 	bat_iterator_end(&bi);
 	TIMEOUT_CHECK(qry_ctx,
@@ -9633,8 +10150,154 @@ BATasciify(BAT *b, BAT *s)
 	return bn;
 
   bailout:
-	GDKfree(buf);
+	ma_close(&ta_state);
 	bat_iterator_end(&bi);
 	BBPreclaim(bn);
 	return NULL;
 }
+
+#ifdef HAVE_OPENSSL
+
+#include <openssl/evp.h>
+
+#if OPENSSL_VERSION_NUMBER >= 0x30000000L &&  OPENSSL_VERSION_NUMBER < 0x30000070L
+#define NEED_LEGACY
+#include <openssl/provider.h>
+static OSSL_PROVIDER *legacy, *default_;
+static MT_Lock ssl_lock = MT_LOCK_INITIALIZER(ssl_lock);
+#endif
+
+gdk_return
+BATaggrdigest(allocator *ma, BAT **bnp, char **shap, const char *digest,
+	      BAT *b, BAT *g, BAT *e, BAT *s, bool skip_nils)
+{
+	oid min, max;
+	BUN ngrp;
+	struct canditer ci;
+	const char *err;
+	const oid *gids = g ? (const oid *) Tloc(g, 0) : NULL;
+	oid gid = 0;
+	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
+	BAT *bn = NULL;
+
+	/* exactly one of bnp and shap should be non-NULL */
+	assert(bnp == NULL || shap == NULL);
+	assert(bnp != NULL || shap != NULL);
+
+	if ((err = BATgroupaggrinit(b, g, e, s, &min, &max, &ngrp, &ci)) != NULL) {
+		GDKerror("%s\n", err);
+		return GDK_FAIL;
+	}
+
+	if (bnp) {
+		if ((bn = COLnew(min, TYPE_str, ngrp, TRANSIENT)) == NULL)
+			return GDK_FAIL;
+		*bnp = bn;
+	}
+
+	BATiter bi = bat_iterator(b);
+
+	allocator *ta = MT_thread_getallocator();
+	allocator_state ta_state = ma_open(ta);
+
+#ifdef NEED_LEGACY
+	EVP_MD *md;
+	MT_lock_set(&ssl_lock);
+	if (legacy == NULL) {
+		legacy = OSSL_PROVIDER_load(NULL, "legacy");
+		default_ = OSSL_PROVIDER_load(NULL, "default");
+	}
+	MT_lock_unset(&ssl_lock);
+	md = EVP_MD_fetch(NULL, digest, NULL);
+#else
+	const EVP_MD *md;
+	md = EVP_get_digestbyname(digest);
+#endif
+	EVP_MD_CTX **mdctx = ma_zalloc(ta, ngrp * sizeof(*mdctx));
+	if (mdctx == NULL)
+		goto bailout;
+
+	TIMEOUT_LOOP(ci.ncand, qry_ctx) {
+		oid p = canditer_next(&ci) - b->hseqbase;
+		if (gids)
+			gid = gids[p];
+		else if (g)
+			gid = p;
+		const char *s = BUNtvar(&bi, p);
+		if (strNil(s)) {
+			if (!skip_nils) {
+				EVP_MD_CTX_free(mdctx[gid]);
+				mdctx[gid] = (EVP_MD_CTX *) -1;
+			}
+			continue;
+		}
+		if (mdctx[gid] == NULL) {
+			mdctx[gid] = EVP_MD_CTX_new();
+			if (mdctx[gid] == NULL || !EVP_DigestInit(mdctx[gid], md)) {
+				GDKerror("Could not initialize digest method %s\n", digest);
+				goto bailout;
+			}
+		} else if (mdctx[gid] == (EVP_MD_CTX *) -1) {
+			continue;
+		}
+		/* calculate digest including terminating NUL byte */
+		if (!EVP_DigestUpdate(mdctx[gid], s, strlen(s) + 1)) {
+			GDKerror("Could not update digest value.\n");
+			goto bailout;
+		}
+	}
+	TIMEOUT_CHECK(qry_ctx,
+		      GOTO_LABEL_TIMEOUT_HANDLER(bailout, qry_ctx));
+
+	unsigned char md_value[EVP_MAX_MD_SIZE];
+	unsigned int md_len;
+	char digestbuf[EVP_MAX_MD_SIZE * 2 + 1];
+
+	for (gid = 0; gid < ngrp; gid++) {
+		if (mdctx[gid] == NULL || mdctx[gid] == (EVP_MD_CTX *) -1) {
+			strtcpy(digestbuf, str_nil, sizeof(digestbuf));
+		} else {
+			if (!EVP_DigestFinal_ex(mdctx[gid], md_value, &md_len)) {
+				GDKerror("Could not update digest value.\n");
+				goto bailout;
+			}
+			for (unsigned int x = 0; x < md_len; x++) {
+				digestbuf[x * 2] = "0123456789abcdef"[md_value[x] >> 4];
+				digestbuf[x * 2 + 1] = "0123456789abcdef"[md_value[x] & 0xF];
+			}
+			digestbuf[2 * md_len] = 0;
+			EVP_MD_CTX_free(mdctx[gid]);
+		}
+		if (bnp) {
+			if (BUNappend(bn, digestbuf, false) != GDK_SUCCEED) {
+				goto bailout;
+			}
+		} else {
+			if ((*shap = ma_strdup(ma, digestbuf)) == NULL) {
+				goto bailout;
+			}
+		}
+	}
+#ifdef NEED_LEGACY
+	EVP_MD_free(md);
+#endif
+	bat_iterator_end(&bi);
+	ma_close(&ta_state);
+	return GDK_SUCCEED;
+
+  bailout:
+#ifdef NEED_LEGACY
+	EVP_MD_free(md);
+#endif
+	bat_iterator_end(&bi);
+	if (mdctx) {
+		for (gid = 0; gid < ngrp; gid++)
+			if (mdctx[gid] != (EVP_MD_CTX *) -1)
+				EVP_MD_CTX_free(mdctx[gid]);
+	}
+	ma_close(&ta_state);
+	BBPreclaim(bn);
+	return GDK_FAIL;
+}
+
+#endif

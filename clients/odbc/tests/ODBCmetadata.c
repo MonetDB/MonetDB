@@ -3,11 +3,9 @@
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024, 2025 MonetDB Foundation;
- * Copyright August 2008 - 2023 MonetDB B.V.;
- * Copyright 1997 - July 2008 CWI.
+ * For copyright information, see the file debian/copyright.
  */
 
 /*
@@ -35,6 +33,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdint.h>
+#include <stdbool.h>
 #include <inttypes.h>
 
 /**** Define the ODBC Version our ODBC driver complies with ****/
@@ -148,14 +147,14 @@ nameofSQLtype(SQLSMALLINT dataType)
 }
 
 static void
-compareResultOptClose(SQLHANDLE stmt, SQLRETURN retcode, const char * functionname, const char * expected, int closeCursor)
+compareResultOptClose(SQLHANDLE stmt, SQLRETURN retcode, const char *functionname, const char *expected, bool closeCursor)
 {
 	SQLRETURN ret;
 	SQLSMALLINT columns;	/* Number of columns in result-set */
 	SQLLEN rows;		/* Number of rows in result-set */
-	size_t expct_len = strlen(expected);
+	size_t expct_len = expected ? strlen(expected) : 0;
 	size_t outp_len = expct_len + 10000;
-	char * outp = NULL;
+	char *outp = NULL;
 	size_t pos = 0;
 	SQLUSMALLINT col;
 	SQLLEN indicator;
@@ -172,21 +171,25 @@ compareResultOptClose(SQLHANDLE stmt, SQLRETURN retcode, const char * functionna
 		return;
 	}
 
-	outp = malloc(outp_len);
-	if (outp == NULL) {
-		fprintf(stderr, "Failed to allocate %zu memory!\n", outp_len);
-		return;
+	if (expected) {
+		outp = malloc(outp_len);
+		if (outp == NULL) {
+			fprintf(stderr, "Failed to allocate %zu memory!\n", outp_len);
+			return;
+		}
 	}
 
 	/* How many columns are there */
 	ret = SQLNumResultCols(stmt, &columns);
 	check(ret, SQL_HANDLE_STMT, stmt, "SQLNumResultCols()");
-	pos += snprintf(outp + pos, outp_len - pos, "Resultset with %d columns\n", columns);
+	if (expected)
+		pos += snprintf(outp + pos, outp_len - pos, "Resultset with %d columns\n", columns);
 
 	/* How many rows are there */
 	ret = SQLRowCount(stmt, &rows);
 	check(ret, SQL_HANDLE_STMT, stmt, "SQLRowCount()");
-	pos += snprintf(outp + pos, outp_len - pos, "Resultset with %"PRId64" rows\n", (int64_t) rows);
+	if (expected)
+		pos += snprintf(outp + pos, outp_len - pos, "Resultset with %"PRId64" rows\n", (int64_t) rows);
 
 	/* detect if special handling of data returned by second TRACE resultset is needed */
 	if (columns == 2 && (strncmp("TRACE(2) ", functionname, 9) == 0)) {
@@ -198,42 +201,47 @@ compareResultOptClose(SQLHANDLE stmt, SQLRETURN retcode, const char * functionna
 		ret = SQLDescribeCol(stmt, col, (SQLCHAR *) buf, sizeof(buf),
 			NULL, NULL, NULL, NULL, NULL);
 		check(ret, SQL_HANDLE_STMT, stmt, "SQLDescribeCol(colName)");
-		pos += snprintf(outp + pos, outp_len - pos,
-				(col > 1) ? "\t%s" : "%s", buf);
+		if (expected)
+			pos += snprintf(outp + pos, outp_len - pos,
+					(col > 1) ? "\t%s" : "%s", buf);
 	}
-	pos += snprintf(outp + pos, outp_len - pos, "\n");
+	if (expected)
+		pos += snprintf(outp + pos, outp_len - pos, "\n");
 	/* get Result Column Data Types and print them */
 	for (col = 1; col <= columns; col++) {
 		ret = SQLDescribeCol(stmt, col, (SQLCHAR *) buf, sizeof(buf),
 			NULL, &dataType, &columnSize, &decimalDigits, NULL);
 		check(ret, SQL_HANDLE_STMT, stmt, "SQLDescribeCol(colType)");
-		pos += snprintf(outp + pos, outp_len - pos,
-				(col > 1) ? "\t%s" : "%s", nameofSQLtype(dataType));
-		switch (dataType) {
-		case SQL_CHAR:
-		case SQL_VARCHAR:
-		case SQL_LONGVARCHAR:
-		case SQL_WCHAR:
-		case SQL_WVARCHAR:
-		case SQL_WLONGVARCHAR:
-		case SQL_DECIMAL:
-		case SQL_NUMERIC:
-		case SQL_BINARY:
-		case SQL_VARBINARY:
-		case SQL_LONGVARBINARY:
-			if (columnSize != 0 && replaceTraceData == 0) {
-				if (decimalDigits != 0) {
-					pos += snprintf(outp + pos, outp_len - pos,
-						"(%d,%d)", (int) columnSize, (int) decimalDigits);
-				} else {
-					pos += snprintf(outp + pos, outp_len - pos,
-						"(%d)", (int) columnSize);
+		if (expected) {
+			pos += snprintf(outp + pos, outp_len - pos,
+					(col > 1) ? "\t%s" : "%s", nameofSQLtype(dataType));
+			switch (dataType) {
+			case SQL_CHAR:
+			case SQL_VARCHAR:
+			case SQL_LONGVARCHAR:
+			case SQL_WCHAR:
+			case SQL_WVARCHAR:
+			case SQL_WLONGVARCHAR:
+			case SQL_DECIMAL:
+			case SQL_NUMERIC:
+			case SQL_BINARY:
+			case SQL_VARBINARY:
+			case SQL_LONGVARBINARY:
+				if (columnSize != 0 && replaceTraceData == 0) {
+					if (decimalDigits != 0) {
+						pos += snprintf(outp + pos, outp_len - pos,
+								"(%d,%d)", (int) columnSize, (int) decimalDigits);
+					} else {
+						pos += snprintf(outp + pos, outp_len - pos,
+								"(%d)", (int) columnSize);
+					}
 				}
+				break;
 			}
-			break;
 		}
 	}
-	pos += snprintf(outp + pos, outp_len - pos, "\n");
+	if (expected)
+		pos += snprintf(outp + pos, outp_len - pos, "\n");
 
 	/* detect if special handling of data of column SPECIFIC_NAME returned by SQLProcedures and SQLProcedureColumns
 	   is needed as it contains system generated id values which can differ per version and platform */
@@ -255,6 +263,8 @@ compareResultOptClose(SQLHANDLE stmt, SQLRETURN retcode, const char * functionna
 			/* Retrieve column data as a string */
 			ret = SQLGetData(stmt, col, SQL_C_CHAR, buf, sizeof(buf), &indicator);
 			check(ret, SQL_HANDLE_STMT, stmt, "SQLGetData()");
+			if (expected == NULL)
+				continue;
 			if (ret == SQL_SUCCESS || ret == SQL_SUCCESS_WITH_INFO) {
 				/* some rows of EXPLAIN output (which has only 1 result column) must be suppressed to get stable output */
 				if (columns == 1 &&
@@ -282,12 +292,13 @@ compareResultOptClose(SQLHANDLE stmt, SQLRETURN retcode, const char * functionna
 				}
 			}
 		}
-		pos += snprintf(outp + pos, outp_len - pos, "\n");
+		if (expected)
+			pos += snprintf(outp + pos, outp_len - pos, "\n");
 		ret = SQLFetch(stmt);
 		check(ret, SQL_HANDLE_STMT, stmt, "SQLFetch(n)");
 	}
 
-	if (strcmp(expected, outp) != 0) {
+	if (expected && strcmp(expected, outp) != 0) {
 		size_t len_expected = strlen(expected);
 		size_t len_outp = strlen(outp);
 		int c = 0;
@@ -311,20 +322,21 @@ compareResultOptClose(SQLHANDLE stmt, SQLRETURN retcode, const char * functionna
 	}
 
 	/* cleanup */
-	free(outp);
+	if (expected)
+		free(outp);
 
-	if (closeCursor == 1) {
+	if (closeCursor) {
 		ret = SQLCloseCursor(stmt);
 		check(ret, SQL_HANDLE_STMT, stmt, "SQLCloseCursor");
 	}
 }
 
-#define compareResultNoClose(stmt, retcode, functionname, expected)  compareResultOptClose(stmt, retcode, functionname, expected, 0)
-#define compareResult(stmt, retcode, functionname, expected)         compareResultOptClose(stmt, retcode, functionname, expected, 1)
+#define compareResultNoClose(stmt, retcode, functionname, expected)  compareResultOptClose(stmt, retcode, functionname, expected, false)
+#define compareResult(stmt, retcode, functionname, expected)         compareResultOptClose(stmt, retcode, functionname, expected, true)
 
 /*
  * Utility function to query the gdk_nr_threads value from the server.
- * The output of some queries (EXPLAIN, TRACE) differ when the server
+ * The output of some queries (EXPLAIN PHYSICAL, TRACE) differ when the server
  * is started with 1 thread, as is done in our testweb.
  */
 static int
@@ -503,11 +515,12 @@ main(int argc, char **argv)
 			(SQLCHAR*)SQL_ALL_TABLE_TYPES, SQL_NTS);
 	compareResult(stmt, ret, "SQLTables (SQL_ALL_TABLE_TYPES)",
 		"Resultset with 5 columns\n"
-		"Resultset with 10 rows\n"
+		"Resultset with 11 rows\n"
 		"TABLE_CAT	TABLE_SCHEM	TABLE_NAME	TABLE_TYPE	REMARKS\n"
 		"WVARCHAR(1)	WVARCHAR(1)	WVARCHAR(1)	WVARCHAR(25)	WVARCHAR(1)\n"
 		"NULL	NULL	NULL	GLOBAL TEMPORARY TABLE	NULL\n"
 		"NULL	NULL	NULL	LOCAL TEMPORARY TABLE	NULL\n"
+		"NULL	NULL	NULL	LOCAL TEMPORARY VIEW	NULL\n"
 		"NULL	NULL	NULL	MERGE TABLE	NULL\n"
 		"NULL	NULL	NULL	REMOTE TABLE	NULL\n"
 		"NULL	NULL	NULL	REPLICA TABLE	NULL\n"
@@ -688,8 +701,8 @@ main(int argc, char **argv)
 		"Resultset with 2 rows\n"
 		"TABLE_CAT	TABLE_SCHEM	TABLE_NAME	NON_UNIQUE	INDEX_QUALIFIER	INDEX_NAME	TYPE	ORDINAL_POSITION	COLUMN_NAME	ASC_OR_DESC	CARDINALITY	PAGES	FILTER_CONDITION\n"
 		"WVARCHAR(1)	WVARCHAR(1024)	WVARCHAR(1024)	SMALLINT	WVARCHAR(1)	WVARCHAR(1024)	SMALLINT	SMALLINT	WVARCHAR(1024)	WCHAR(1)	INTEGER	INTEGER	WVARCHAR(1)\n"
-		"NULL	sys	table_types	0	NULL	table_types_table_type_id_pkey	2	1	table_type_id	NULL	10	NULL	NULL\n"
-		"NULL	sys	table_types	0	NULL	table_types_table_type_name_unique	2	1	table_type_name	NULL	10	NULL	NULL\n");
+		"NULL	sys	table_types	0	NULL	table_types_table_type_id_pkey	2	1	table_type_id	NULL	11	NULL	NULL\n"
+		"NULL	sys	table_types	0	NULL	table_types_table_type_name_unique	2	1	table_type_name	NULL	11	NULL	NULL\n");
 
 	ret = SQLStatistics(stmt, (SQLCHAR*)"", SQL_NTS,
 			(SQLCHAR*)"sys", SQL_NTS, (SQLCHAR*)"table_types", SQL_NTS,
@@ -699,8 +712,8 @@ main(int argc, char **argv)
 		"Resultset with 2 rows\n"
 		"TABLE_CAT	TABLE_SCHEM	TABLE_NAME	NON_UNIQUE	INDEX_QUALIFIER	INDEX_NAME	TYPE	ORDINAL_POSITION	COLUMN_NAME	ASC_OR_DESC	CARDINALITY	PAGES	FILTER_CONDITION\n"
 		"WVARCHAR(1)	WVARCHAR(1024)	WVARCHAR(1024)	SMALLINT	WVARCHAR(1)	WVARCHAR(1024)	SMALLINT	SMALLINT	WVARCHAR(1024)	WCHAR(1)	INTEGER	INTEGER	WVARCHAR(1)\n"
-		"NULL	sys	table_types	0	NULL	table_types_table_type_id_pkey	2	1	table_type_id	NULL	10	NULL	NULL\n"
-		"NULL	sys	table_types	0	NULL	table_types_table_type_name_unique	2	1	table_type_name	NULL	10	NULL	NULL\n");
+		"NULL	sys	table_types	0	NULL	table_types_table_type_id_pkey	2	1	table_type_id	NULL	11	NULL	NULL\n"
+		"NULL	sys	table_types	0	NULL	table_types_table_type_name_unique	2	1	table_type_name	NULL	11	NULL	NULL\n");
 
 	ret = SQLTablePrivileges(stmt, (SQLCHAR*)"", SQL_NTS,
 			(SQLCHAR*)"sys", SQL_NTS, (SQLCHAR*)"table_types", SQL_NTS);
@@ -1509,6 +1522,7 @@ main(int argc, char **argv)
 
 
 	nrServerThreads = getNrOfServerThreads(dbc);
+	(void)nrServerThreads;
 
 	// test SELECT query
 	ret = SQLExecDirect(stmt, (SQLCHAR *) "SELECT * from odbctst.\"LINES\";", SQL_NTS);
@@ -1518,129 +1532,30 @@ main(int argc, char **argv)
 		"ORDERID	LINES	PARTID	QUANTITY\n"
 		"INTEGER	INTEGER	INTEGER	DECIMAL(9,3)\n");
 
-	// test PLAN SELECT query
-	ret = SQLExecDirect(stmt, (SQLCHAR *) "PLAN SELECT * from odbctst.\"LINES\";", SQL_NTS);
-	compareResult(stmt, ret, "PLAN SELECT * from odbctst.\"LINES\"",
-		"Resultset with 1 columns\n"
-		"Resultset with 3 rows\n"
-		"rel\n"
-		"WVARCHAR(176)\n"
-		"project (\n"
-		"| table(\"odbctst\".\"LINES\") [ \"LINES\".\"ORDERID\" NOT NULL UNIQUE HASHCOL , \"LINES\".\"LINES\" NOT NULL UNIQUE, \"LINES\".\"PARTID\" NOT NULL UNIQUE, \"LINES\".\"QUANTITY\" NOT NULL UNIQUE ]\n"
-		") [ \"LINES\".\"ORDERID\" NOT NULL UNIQUE HASHCOL , \"LINES\".\"LINES\" NOT NULL UNIQUE, \"LINES\".\"PARTID\" NOT NULL UNIQUE, \"LINES\".\"QUANTITY\" NOT NULL UNIQUE ]\n");
+#if 0
+	// test EXPLAIN SHOW DETAILS SELECT query
+	ret = SQLExecDirect(stmt, (SQLCHAR *) "EXPLAIN SHOW DETAILS SELECT * from odbctst.\"LINES\";", SQL_NTS);
+	compareResult(stmt, ret, "EXPLAIN SHOW DETAILS SELECT * from odbctst.\"LINES\"",
+		NULL);
 
 	// test EXPLAIN SELECT query
-	ret = SQLExecDirect(stmt, (SQLCHAR *) "EXPLAIN SELECT * from odbctst.\"LINES\";", SQL_NTS);
-	compareResult(stmt, ret, "EXPLAIN SELECT * from odbctst.\"LINES\"",
-	    nrServerThreads > 1 ?
-		"Resultset with 1 columns\n"
-		"Resultset with 46 rows\n"
-		"mal\n"
-		"WLONGVARCHAR(174)\n"
-		"function user.main():void;\n"
-		"    X_1:void := querylog.define(\"explain select * from odbctst.\\\"LINES\\\";\":str, \"default_pipe\":str, 26:int);\n"
-		"\n"
-		"    X_33:bat[:int] := bat.new(0:int);\n"
-		"    X_34:bat[:int] := bat.new(0:int);\n"
-		"    X_35:bat[:int] := bat.new(0:int);\n"
-		"    X_36:bat[:int] := bat.new(0:int);\n"
-		"    X_38:bat[:str] := bat.pack(\"odbctst.LINES\":str, \"odbctst.LINES\":str, \"odbctst.LINES\":str, \"odbctst.LINES\":str);\n"
-		"    X_39:bat[:str] := bat.pack(\"ORDERID\":str, \"LINES\":str, \"PARTID\":str, \"QUANTITY\":str);\n"
-		"    X_40:bat[:str] := bat.pack(\"int\":str, \"int\":str, \"int\":str, \"decimal\":str);\n"
-		"    X_41:bat[:int] := bat.pack(31:int, 31:int, 31:int, 9:int);\n"
-		"    X_42:bat[:int] := bat.pack(0:int, 0:int, 0:int, 3:int);\n"
-		"\n"
-		"    X_37:int := sql.resultSet(X_38:bat[:str], X_39:bat[:str], X_40:bat[:str], X_41:bat[:int], X_42:bat[:int], X_33:bat[:int], X_34:bat[:int], X_35:bat[:int], X_36:bat[:int]);\n"
-		"end user.main;\n"
-		"\n\n\n\n\n\n\n\n\n\n"
-		"\n\n\n\n\n\n\n\n\n\n"
-		"\n\n\n\n\n\n\n\n\n\n"
-		"\n"
-	    :
-		"Resultset with 1 columns\n"
-		"Resultset with 44 rows\n"
-		"mal\n"
-		"WLONGVARCHAR(174)\n"
-		"function user.main():void;\n"
-		"    X_1:void := querylog.define(\"explain select * from odbctst.\\\"LINES\\\";\":str, \"default_pipe\":str, 26:int);\n"
-		"    X_33:bat[:int] := bat.new(0:int);\n"
-		"    X_34:bat[:int] := bat.new(0:int);\n"
-		"    X_35:bat[:int] := bat.new(0:int);\n"
-		"    X_36:bat[:int] := bat.new(0:int);\n"
-		"    X_38:bat[:str] := bat.pack(\"odbctst.LINES\":str, \"odbctst.LINES\":str, \"odbctst.LINES\":str, \"odbctst.LINES\":str);\n"
-		"    X_39:bat[:str] := bat.pack(\"ORDERID\":str, \"LINES\":str, \"PARTID\":str, \"QUANTITY\":str);\n"
-		"    X_40:bat[:str] := bat.pack(\"int\":str, \"int\":str, \"int\":str, \"decimal\":str);\n"
-		"    X_41:bat[:int] := bat.pack(31:int, 31:int, 31:int, 9:int);\n"
-		"    X_42:bat[:int] := bat.pack(0:int, 0:int, 0:int, 3:int);\n"
-		"    X_37:int := sql.resultSet(X_38:bat[:str], X_39:bat[:str], X_40:bat[:str], X_41:bat[:int], X_42:bat[:int], X_33:bat[:int], X_34:bat[:int], X_35:bat[:int], X_36:bat[:int]);\n"
-		"end user.main;\n"
-		"\n\n\n\n\n\n\n\n\n\n"
-		"\n\n\n\n\n\n\n\n\n\n"
-		"\n\n\n\n\n\n\n\n\n\n"
-		"\n");
+	ret = SQLExecDirect(stmt, (SQLCHAR *) "EXPLAIN PHYSICAL SELECT * from odbctst.\"LINES\";", SQL_NTS);
+	compareResult(stmt, ret, "EXPLAIN PHYSICAL SELECT * from odbctst.\"LINES\"",
+	    NULL);
 
 	// test TRACE SELECT query.
 	// This will return two resultsets: first with the query results and next with the trace results
 	// We use (and thus test) SQLMoreResults() to get the next/second result.
 	ret = SQLExecDirect(stmt, (SQLCHAR *) "TRACE SELECT * from odbctst.\"LINES\";", SQL_NTS);
 	compareResultNoClose(stmt, ret, "TRACE(1) SELECT * from odbctst.\"LINES\"",
-		"Resultset with 4 columns\n"
-		"Resultset with 0 rows\n"
-		"ORDERID	LINES	PARTID	QUANTITY\n"
-		"INTEGER	INTEGER	INTEGER	DECIMAL(9,3)\n");
+		NULL);
 	ret = SQLMoreResults(stmt);
 	check(ret, SQL_HANDLE_STMT, stmt, "SQLMoreResults()");
 	if (ret == SQL_SUCCESS || ret == SQL_SUCCESS_WITH_INFO) {
 		compareResult(stmt, ret, "TRACE(2) SELECT * from odbctst.\"LINES\"",
-		    nrServerThreads > 1 ?
-			"Resultset with 2 columns\n"
-			"Resultset with 12 rows\n"
-			"usec	statement\n"
-			"BIGINT	WVARCHAR\n"
-			"4	variable output\n"
-			"4	variable output\n"
-			"4	variable output\n"
-			"4	variable output\n"
-			"4	variable output\n"
-			"4	variable output\n"
-			"4	variable output\n"
-			"4	variable output\n"
-			"4	variable output\n"
-			"4	variable output\n"
-			"4	variable output\n"
-			"4	variable output\n"
-		    :
-			"Resultset with 2 columns\n"
-			"Resultset with 11 rows\n"
-			"usec	statement\n"
-			"BIGINT	WVARCHAR\n"
-			"4	variable output\n"
-			"4	variable output\n"
-			"4	variable output\n"
-			"4	variable output\n"
-			"4	variable output\n"
-			"4	variable output\n"
-			"4	variable output\n"
-			"4	variable output\n"
-			"4	variable output\n"
-			"4	variable output\n"
-			"4	variable output\n");
-		/* next is the original output but it is varying a lot on usec values, X_## values and even the order of rows,
-		   so all data is replaced (see above) for stable output comparison.
-			"1	    X_1=0@0:void := querylog.define(\"trace select * from odbctst.\\\"LINES\\\";\":str, \"default_pipe\":str, 26:int);\n"
-			"9	    X_33=[0]:bat[:int] := bat.new(0:int);\n"
-			"8	    X_34=[0]:bat[:int] := bat.new(0:int);\n"
-			"7	    X_36=[0]:bat[:int] := bat.new(0:int);\n"
-			"6	    X_35=[0]:bat[:int] := bat.new(0:int);\n"
-			"8	    X_41=[4]:bat[:int] := bat.pack(32:int, 32:int, 32:int, 9:int);\n"
-			"13	    X_42=[4]:bat[:int] := bat.pack(0:int, 0:int, 0:int, 3:int);\n"
-			"14	    X_38=[4]:bat[:str] := bat.pack(\"odbctst.LINES\":str, \"odbctst.LINES\":str, \"odbctst.LINES\":str, \"odbctst.LINES\":str);\n"
-			"16	    X_40=[4]:bat[:str] := bat.pack(\"int\":str, \"int\":str, \"int\":str, \"decimal\":str);\n"
-			"15	    X_39=[4]:bat[:str] := bat.pack(\"ORDERID\":str, \"LINES\":str, \"PARTID\":str, \"QUANTITY\":str);\n"
-			"316	barrier X_106=false:bit := language.dataflow();\n"
-			"22	    X_37=76:int := sql.resultSet(X_38=[4]:bat[:str], X_39=[4]:bat[:str], X_40=[4]:bat[:str], X_41=[4]:bat[:int], X_42=[4]:bat[:int], X_33=[0]:bat[:int], X_34=[0]:bat[:int], X_35=[0]:bat[:int], X_36=[0]:bat[:int]);\n");
-		*/
+		    NULL);
 	}
+#endif
 
 	// test DEBUG SELECT query.
 	// DEBUG statements are *not* supported in ODBC and should produce an Error

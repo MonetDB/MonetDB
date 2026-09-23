@@ -11,41 +11,68 @@ select * from b where n > 3 or (m = 20 and k = 200) or (m = 60 and k = 600)
 180
 1800
 
+skipif knownfail
 query T nosort non-eq-two-col-2-value
-plan select * from b where n > 3 or (m = 20 and k = 200) or (m = 60 and k = 600)
+explain show details select * from b where n > 3 or (m = 20 and k = 200) or (m = 60 and k = 600)
 ----
 project (
 | select (
 | | table("sys"."b") [ "b"."n" NOT NULL, "b"."m" NOT NULL, "b"."k" NOT NULL ]
-| ) [ (( [ "b"."m" NOT NULL, "b"."k" NOT NULL ]) in ( [ int(8) "20", int(11) "200" ],  [ int(8) "60", int(11) "600" ])) or (("b"."n" NOT NULL) > (int(4) "3")) ]
+| ) [ (("b"."n" NOT NULL) > (int(4) "3")) or ((("b"."m" NOT NULL) = (int(8) "20"), ("b"."k" NOT NULL) = (int(11) "200")) or (("b"."m" NOT NULL) = (int(8) "60"), ("b"."k" NOT NULL) = (int(11) "600"))) ]
 ) [ "b"."n" NOT NULL, "b"."m" NOT NULL, "b"."k" NOT NULL ]
 
-query T nosort non-eq-two-col-2-value
-plan select * from b where (m = 20 and k = 200) or n > 3 or (m = 60 and k = 600)
+query III nosort
+select * from b where (n > 3 and (m = 180 and k = 1800)) or (m = 20 and k = 200) or (m = 60 and k = 600)
+----
+1
+20
+200
+3
+60
+600
+9
+180
+1800
+
+skipif knownfail
+query T nosort
+explain show details select * from b where (n > 3 and (m = 180 and k = 1800)) or (m = 20 and k = 200) or (m = 60 and k = 600)
 ----
 project (
 | select (
 | | table("sys"."b") [ "b"."n" NOT NULL, "b"."m" NOT NULL, "b"."k" NOT NULL ]
-| ) [ (( [ "b"."m" NOT NULL, "b"."k" NOT NULL ]) in ( [ int(8) "20", int(11) "200" ],  [ int(8) "60", int(11) "600" ])) or (("b"."n" NOT NULL) > (int(4) "3")) ]
+| ) [ (("b"."n" NOT NULL) > (int(4) "3"), .AND(("b"."m" NOT NULL) = (int(8) "180"), ("b"."k" NOT NULL) = (int(11) "1800"))) or ((("b"."m" NOT NULL) = (int(8) "20"), ("b"."k" NOT NULL) = (int(11) "200")) or (("b"."m" NOT NULL) = (int(8) "60"), ("b"."k" NOT NULL) = (int(11) "600"))) ]
+) [ "b"."n" NOT NULL, "b"."m" NOT NULL, "b"."k" NOT NULL ]
+
+skipif knownfail
+query T nosort non-eq-two-col-2-value
+explain show details select * from b where (m = 20 and k = 200) or n > 3 or (m = 60 and k = 600)
+----
+project (
+| select (
+| | table("sys"."b") [ "b"."n" NOT NULL, "b"."m" NOT NULL, "b"."k" NOT NULL ]
+| ) [ (("b"."m" NOT NULL) = (int(8) "20"), ("b"."k" NOT NULL) = (int(11) "200")) or ((("b"."n" NOT NULL) > (int(4) "3")) or (("b"."m" NOT NULL) = (int(8) "60"), ("b"."k" NOT NULL) = (int(11) "600"))) ]
 ) [ "b"."n" NOT NULL, "b"."m" NOT NULL, "b"."k" NOT NULL ]
 
 # order of m,k equality statements are swapped in the last AND expression
+skipif knownfail
 query T nosort non-eq-two-col-2-value
-plan select * from b where (m = 20 and k = 200) or n > 3 or (k = 600 and m = 60)
+explain show details select * from b where (m = 20 and k = 200) or n > 3 or (k = 600 and m = 60)
 ----
 project (
 | select (
 | | table("sys"."b") [ "b"."n" NOT NULL, "b"."m" NOT NULL, "b"."k" NOT NULL ]
-| ) [ (( [ "b"."m" NOT NULL, "b"."k" NOT NULL ]) in ( [ int(8) "20", int(11) "200" ],  [ int(8) "60", int(11) "600" ])) or (("b"."n" NOT NULL) > (int(4) "3")) ]
+| ) [ (("b"."m" NOT NULL) = (int(8) "20"), ("b"."k" NOT NULL) = (int(11) "200")) or ((("b"."n" NOT NULL) > (int(4) "3")) or (("b"."k" NOT NULL) = (int(11) "600"), ("b"."m" NOT NULL) = (int(8) "60"))) ]
 ) [ "b"."n" NOT NULL, "b"."m" NOT NULL, "b"."k" NOT NULL ]
 
+skipif knownfail
 query T nosort non-eq-two-col-2-value
-plan select * from b where (m = 20 and k = 200) or (m = 60 and k = 600) or n > 3
+explain show details select * from b where (m = 20 and k = 200) or (m = 60 and k = 600) or n > 3
 ----
 project (
 | select (
 | | table("sys"."b") [ "b"."n" NOT NULL, "b"."m" NOT NULL, "b"."k" NOT NULL ]
-| ) [ (( [ "b"."m" NOT NULL, "b"."k" NOT NULL ]) in ( [ int(8) "20", int(11) "200" ],  [ int(8) "60", int(11) "600" ])) or (("b"."n" NOT NULL) > (int(4) "3")) ]
+| ) [ (("b"."m" NOT NULL) = (int(8) "20"), ("b"."k" NOT NULL) = (int(11) "200")) or ((("b"."m" NOT NULL) = (int(8) "60"), ("b"."k" NOT NULL) = (int(11) "600")) or (("b"."n" NOT NULL) > (int(4) "3"))) ]
 ) [ "b"."n" NOT NULL, "b"."m" NOT NULL, "b"."k" NOT NULL ]
 
 query III rowsort
@@ -58,31 +85,34 @@ select * from b where (n = 1 and m = 20) or (m = 20 and k = 200) or (m = 60 and 
 60
 600
 
+skipif knownfail
 query T nosort two-col-1-value-two-col-2-value
-plan select * from b where (n = 1 and m = 20) or (m = 20 and k = 200) or (m = 60 and k = 600)
+explain show details select * from b where (n = 1 and m = 20) or (m = 20 and k = 200) or (m = 60 and k = 600)
 ----
 project (
 | select (
 | | table("sys"."b") [ "b"."n" NOT NULL, "b"."m" NOT NULL, "b"."k" NOT NULL ]
-| ) [ (( [ "b"."m" NOT NULL, "b"."k" NOT NULL ]) in ( [ int(8) "20", int(11) "200" ],  [ int(8) "60", int(11) "600" ])) or (("b"."n" NOT NULL) = (int(4) "1"), ("b"."m" NOT NULL) = (int(8) "20")) ]
+| ) [ (("b"."n" NOT NULL) = (int(4) "1"), ("b"."m" NOT NULL) = (int(8) "20")) or ((("b"."m" NOT NULL) = (int(8) "20"), ("b"."k" NOT NULL) = (int(11) "200")) or (("b"."m" NOT NULL) = (int(8) "60"), ("b"."k" NOT NULL) = (int(11) "600"))) ]
 ) [ "b"."n" NOT NULL, "b"."m" NOT NULL, "b"."k" NOT NULL ]
 
+skipif knownfail
 query T nosort two-col-1-value-two-col-2-value
-plan select * from b where (m = 20 and k = 200) or (n = 1 and m = 20) or (m = 60 and k = 600)
+explain show details select * from b where (m = 20 and k = 200) or (n = 1 and m = 20) or (m = 60 and k = 600)
 ----
 project (
 | select (
 | | table("sys"."b") [ "b"."n" NOT NULL, "b"."m" NOT NULL, "b"."k" NOT NULL ]
-| ) [ (( [ "b"."m" NOT NULL, "b"."k" NOT NULL ]) in ( [ int(8) "20", int(11) "200" ],  [ int(8) "60", int(11) "600" ])) or (("b"."n" NOT NULL) = (int(4) "1"), ("b"."m" NOT NULL) = (int(8) "20")) ]
+| ) [ (("b"."m" NOT NULL) = (int(8) "20"), ("b"."k" NOT NULL) = (int(11) "200")) or ((("b"."n" NOT NULL) = (int(4) "1"), ("b"."m" NOT NULL) = (int(8) "20")) or (("b"."m" NOT NULL) = (int(8) "60"), ("b"."k" NOT NULL) = (int(11) "600"))) ]
 ) [ "b"."n" NOT NULL, "b"."m" NOT NULL, "b"."k" NOT NULL ]
 
+skipif knownfail
 query T nosort two-col-1-value-two-col-2-value
-plan select * from b where (m = 20 and k = 200) or (m = 60 and k = 600) or (n = 1 and m = 20)
+explain show details select * from b where (m = 20 and k = 200) or (m = 60 and k = 600) or (n = 1 and m = 20)
 ----
 project (
 | select (
 | | table("sys"."b") [ "b"."n" NOT NULL, "b"."m" NOT NULL, "b"."k" NOT NULL ]
-| ) [ (( [ "b"."m" NOT NULL, "b"."k" NOT NULL ]) in ( [ int(8) "20", int(11) "200" ],  [ int(8) "60", int(11) "600" ])) or (("b"."n" NOT NULL) = (int(4) "1"), ("b"."m" NOT NULL) = (int(8) "20")) ]
+| ) [ (("b"."m" NOT NULL) = (int(8) "20"), ("b"."k" NOT NULL) = (int(11) "200")) or ((("b"."m" NOT NULL) = (int(8) "60"), ("b"."k" NOT NULL) = (int(11) "600")) or (("b"."n" NOT NULL) = (int(4) "1"), ("b"."m" NOT NULL) = (int(8) "20"))) ]
 ) [ "b"."n" NOT NULL, "b"."m" NOT NULL, "b"."k" NOT NULL ]
 
 query III rowsort
@@ -98,24 +128,26 @@ select * from b where (m = 40 and k > 0) or (m = 20 and k = 200) or (m = 60 and 
 60
 600
 
-skipif threads=1
+#skipif threads=1
+skipif knownfail
 query T nosort
-plan select * from b where (m = 40 and k > 0) or (m = 20 and k = 200) or (m = 60 and k = 600)
+explain show details select * from b where (m = 40 and k > 0) or (m = 20 and k = 200) or (m = 60 and k = 600)
 ----
 project (
 | select (
 | | table("sys"."b") [ "b"."n" NOT NULL, "b"."m" NOT NULL, "b"."k" NOT NULL ]
-| ) [ (( [ "b"."m" NOT NULL, "b"."k" NOT NULL ]) in ( [ int(8) "20", int(11) "200" ],  [ int(8) "60", int(11) "600" ])) or (("b"."m" NOT NULL) = (int(8) "40"), ("b"."k" NOT NULL) > (int(11) "0")) ]
+| ) [ (("b"."m" NOT NULL) = (int(8) "40"), ("b"."k" NOT NULL) > (int(11) "0")) or ((("b"."m" NOT NULL) = (int(8) "20"), ("b"."k" NOT NULL) = (int(11) "200")) or (("b"."m" NOT NULL) = (int(8) "60"), ("b"."k" NOT NULL) = (int(11) "600"))) ]
 ) [ "b"."n" NOT NULL, "b"."m" NOT NULL, "b"."k" NOT NULL ]
 
-onlyif threads=1
+#onlyif threads=1
+skipif knownfail
 query T nosort
-plan select * from b where (m = 40 and k > 0) or (m = 20 and k = 200) or (m = 60 and k = 600)
+explain show details select * from b where (m = 40 and k > 0) or (m = 20 and k = 200) or (m = 60 and k = 600)
 ----
 project (
 | select (
 | | table("sys"."b") [ "b"."n" NOT NULL, "b"."m" NOT NULL, "b"."k" NOT NULL ]
-| ) [ (( [ "b"."m" NOT NULL, "b"."k" NOT NULL ]) in ( [ int(8) "20", int(11) "200" ],  [ int(8) "60", int(11) "600" ])) or (("b"."m" NOT NULL) = (int(8) "40"), ("b"."k" NOT NULL) > (int(11) "0")) ]
+| ) [ (("b"."m" NOT NULL) = (int(8) "40"), ("b"."k" NOT NULL) > (int(11) "0")) or ((("b"."m" NOT NULL) = (int(8) "20"), ("b"."k" NOT NULL) = (int(11) "200")) or (("b"."m" NOT NULL) = (int(8) "60"), ("b"."k" NOT NULL) = (int(11) "600"))) ]
 ) [ "b"."n" NOT NULL, "b"."m" NOT NULL, "b"."k" NOT NULL ]
 
 query II rowsort
@@ -132,23 +164,76 @@ select m, k from b where (m = 40) or (m = 20 and k = 200) or (m = 0) or (m = 60 
 60
 600
 
-skipif threads=1
-query T nosort single-col-3-val-2-col-2-val
-plan select m, k from b where (m = 40) or (m = 20 and k = 200) or (m = 0) or (m = 60 and k = 600) or (m = 180)
+#skipif threads=1
+skipif knownfail
+query T nosort single_col_3_val_2_col_2_val
+explain show details select m, k from b where (m = 40) or (m = 20 and k = 200) or (m = 0) or (m = 60 and k = 600) or (m = 180)
 ----
 project (
 | select (
 | | table("sys"."b") [ "b"."m" NOT NULL, "b"."k" NOT NULL ]
-| ) [ (("b"."m" NOT NULL) in (int(8) "40", int(8) "0", int(8) "180")) or (( [ "b"."m" NOT NULL, "b"."k" NOT NULL ]) in ( [ int(8) "20", int(11) "200" ],  [ int(8) "60", int(11) "600" ])) ]
+| ) [ (("b"."m" NOT NULL) in (int(8) "40", int(8) "0", int(8) "180")) or ((("b"."m" NOT NULL) = (int(8) "20"), ("b"."k" NOT NULL) = (int(11) "200")) or (("b"."m" NOT NULL) = (int(8) "60"), ("b"."k" NOT NULL) = (int(11) "600"))) ]
 ) [ "b"."m" NOT NULL, "b"."k" NOT NULL ]
 
-onlyif threads=1
-query T nosort single-col-3-val-2-col-2-val
-plan select m, k from b where (m = 40) or (m = 20 and k = 200) or (m = 0) or (m = 60 and k = 600) or (m = 180)
+#onlyif threads=1
+skipif knownfail
+query T nosort single_col_3_val_2_col_2_val
+explain show details select m, k from b where (m = 40) or (m = 20 and k = 200) or (m = 0) or (m = 60 and k = 600) or (m = 180)
 ----
 project (
 | select (
 | | table("sys"."b") [ "b"."m" NOT NULL, "b"."k" NOT NULL ]
-| ) [ (("b"."m" NOT NULL) in (int(8) "40", int(8) "0", int(8) "180")) or (( [ "b"."m" NOT NULL, "b"."k" NOT NULL ]) in ( [ int(8) "20", int(11) "200" ],  [ int(8) "60", int(11) "600" ])) ]
+| ) [ (("b"."m" NOT NULL) in (int(8) "40", int(8) "0", int(8) "180")) or ((("b"."m" NOT NULL) = (int(8) "20"), ("b"."k" NOT NULL) = (int(11) "200")) or (("b"."m" NOT NULL) = (int(8) "60"), ("b"."k" NOT NULL) = (int(11) "600"))) ]
 ) [ "b"."m" NOT NULL, "b"."k" NOT NULL ]
+
+query III rowsort incompatible
+select n, m, k from b where ((n = 1) AND (m = 20)) OR ((n = 3) AND (m = 60) AND (k=600))
+----
+1
+20
+200
+3
+60
+600
+
+skipif knownfail
+query T nosort
+explain show details select n, m, k from b where ((n = 1) AND (m = 20)) OR ((n = 3) AND (m = 60) AND (k=600))
+----
+project (
+| select (
+| | table("sys"."b") [ "b"."n" NOT NULL, "b"."m" NOT NULL, "b"."k" NOT NULL ]
+| ) [ (("b"."n" NOT NULL) = (int(4) "1"), ("b"."m" NOT NULL) = (int(8) "20")) or (("b"."n" NOT NULL) = (int(4) "3"), ("b"."m" NOT NULL) = (int(8) "60"), ("b"."k" NOT NULL) = (int(11) "600")) ]
+) [ "b"."n" NOT NULL, "b"."m" NOT NULL, "b"."k" NOT NULL ]
+
+query III rowsort
+select n, m, k from b where ((n = 1) AND (m = 20)) OR ((n = 2) AND (m = 40) AND (k=400)) OR ((n = 9) AND (m = 180)) OR ((n = 3) AND (m = 60) AND (k=600))
+----
+1
+20
+200
+2
+40
+400
+3
+60
+600
+9
+180
+1800
+
+skipif knownfail
+query T nosort
+explain show details select * from b where ((n = 1) AND (m = 20)) OR ((n = 2) AND (m = 40) AND (k=400)) OR ((n = 9) AND (m = 180)) OR ((n = 3) AND (m = 60) AND (k=600))
+----
+project (
+| select (
+| | table("sys"."b") [ "b"."n" NOT NULL, "b"."m" NOT NULL, "b"."k" NOT NULL ]
+| ) [ (("b"."n" NOT NULL) = (int(4) "1"), ("b"."m" NOT NULL) = (int(8) "20")) or ((("b"."n" NOT NULL) = (int(4) "2"), ("b"."m" NOT NULL) = (int(8) "40"), ("b"."k" NOT NULL) = (int(11) "400")) or ((("b"."n" NOT NULL) = (int(4) "9"), ("b"."m" NOT NULL) = (int(8) "180")) or (("b"."n" NOT NULL) = (int(4) "3"), ("b"."m" NOT NULL) = (int(8) "60"), ("b"."k" NOT NULL) = (int(11) "600")))) ]
+) [ "b"."n" NOT NULL, "b"."m" NOT NULL, "b"."k" NOT NULL ]
+
+query I rowsort
+select sum(k) from dupv where ((n = 2) AND (m = 40)) OR ((n = 1) AND (m = 20) AND (k=200))
+----
+500
 

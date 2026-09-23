@@ -3,11 +3,9 @@
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024, 2025 MonetDB Foundation;
- * Copyright August 2008 - 2023 MonetDB B.V.;
- * Copyright 1997 - July 2008 CWI.
+ * For copyright information, see the file debian/copyright.
  */
 
 /*
@@ -42,7 +40,7 @@ typedef struct {
 	BATiter bi;
 	BUN o;
 	BUN q;
-	str *s;
+	const str *s;
 } MULTIarg;
 
 typedef struct {
@@ -57,71 +55,56 @@ typedef struct {
 
 // Loop through the first BAT
 // keep the last error message received
-#define MALfcn1(Type) (str (*) (Type *, void *))
-#define MALfcn2(Type) (str (*) (Type *, void *, void *))
-#define MALfcn3(Type) (str (*) (Type *, void *, void *, void *))
-#define MALfcn4(Type) (str (*) (Type *, void *, void *, void *, void *))
-#define MALfcn5(Type) (str (*) (Type *, void *, void *, void *, void *, void *))
-#define ManifoldLoop(N, Type, ...)										\
-	do {																\
-		Type *v = (Type *) mut->args[0].first;							\
-		for (;;) {														\
-			msg = (*(MALfcn##N(Type) mut->pci->fcn))(v, __VA_ARGS__);	\
-			if (msg)													\
-				break;													\
-			if (++oo == olimit)											\
-				break;													\
-			for (i = mut->fvar; i <= mut->lvar; i++) {					\
-				if (ATOMstorage(mut->args[i].type) == TYPE_void) {		\
-					args[i] = (void *) &mut->args[i].o;					\
-					mut->args[i].o++;									\
-				} else if (mut->args[i].size == 0) {					\
-					;													\
-				} else if (ATOMstorage(mut->args[i].type) < TYPE_str) {	\
-					args[i] += mut->args[i].size;						\
-				} else if (ATOMvarsized(mut->args[i].type)) {			\
-					mut->args[i].o++;									\
-					mut->args[i].s = (str *) BUNtvar(mut->args[i].bi, mut->args[i].o); \
-					args[i] = (void *) &mut->args[i].s;					\
-				} else {												\
-					mut->args[i].o++;									\
-					mut->args[i].s = (str *) BUNtloc(mut->args[i].bi, mut->args[i].o); \
-					args[i] = (void *) &mut->args[i].s;					\
-				}														\
-			}															\
-			v++;														\
-		}																\
-	} while (0)
+#define MALfcn1 (str (*) (Client, void *, void *))
+#define MALfcn2 (str (*) (Client, void *, void *, void *))
+#define MALfcn3 (str (*) (Client, void *, void *, void *, void *))
+#define MALfcn4 (str (*) (Client, void *, void *, void *, void *, void *))
+#define MALfcn5 (str (*) (Client, void *, void *, void *, void *, void *, void *))
+#define MALfcn1ptr (str (*) (Client, void **, void *))
+#define MALfcn2ptr (str (*) (Client, void **, void *, void *))
+#define MALfcn3ptr (str (*) (Client, void **, void *, void *, void *))
+#define MALfcn4ptr (str (*) (Client, void **, void *, void *, void *, void *))
+#define MALfcn5ptr (str (*) (Client, void **, void *, void *, void *, void *, void *))
 
-// The target BAT tail type determines the result variable
-#ifdef HAVE_HGE
-#define Manifoldbody_hge(N,...)								\
-	case TYPE_hge: ManifoldLoop(N,hge,__VA_ARGS__); break
-#else
-#define Manifoldbody_hge(N,...)
-#endif
 #define Manifoldbody(N,...)												\
 	do {																\
-		switch (ATOMstorage(mut->args[0].b->ttype)) {					\
-		case TYPE_bte: ManifoldLoop(N,bte,__VA_ARGS__); break;			\
-		case TYPE_sht: ManifoldLoop(N,sht,__VA_ARGS__); break;			\
-		case TYPE_int: ManifoldLoop(N,int,__VA_ARGS__); break;			\
-		case TYPE_lng: ManifoldLoop(N,lng,__VA_ARGS__); break;			\
-		Manifoldbody_hge(N,__VA_ARGS__);								\
-		case TYPE_oid: ManifoldLoop(N,oid,__VA_ARGS__); break;			\
-		case TYPE_flt: ManifoldLoop(N,flt,__VA_ARGS__); break;			\
-		case TYPE_dbl: ManifoldLoop(N,dbl,__VA_ARGS__); break;			\
-		case TYPE_uuid: ManifoldLoop(N,uuid,__VA_ARGS__); break;		\
-		case TYPE_str:													\
-		default: {														\
+		if (ATOMextern(mut->args[0].b->ttype)) {						\
 			for (;;) {													\
-			    msg = (*(MALfcn##N(str) mut->pci->fcn))(&y, __VA_ARGS__); \
+				void *v = NULL;											\
+				msg = (*(MALfcn##N##ptr mfcn))(mut->cntxt, &v, __VA_ARGS__); \
 				if (msg)												\
-					break;												\
-				if (bunfastapp(mut->args[0].b, (void*) y) != GDK_SUCCEED) \
 					goto bunins_failed;									\
-				GDKfree(y);												\
-				y = NULL;												\
+				if (bunfastapp(mut->args[0].b, v) != GDK_SUCCEED) {		\
+					goto bunins_failed;									\
+				}														\
+				if (++oo == olimit)										\
+					break;												\
+				for (i = mut->fvar; i <= mut->lvar; i++) {				\
+					if (ATOMstorage(mut->args[i].type) == TYPE_void) {	\
+						args[i] = (void *) &mut->args[i].o;				\
+						mut->args[i].o++;								\
+					} else if(mut->args[i].size == 0) {					\
+						;												\
+					} else if (ATOMstorage(mut->args[i].type) < TYPE_str) {	\
+						args[i] += mut->args[i].size;					\
+					} else if (ATOMvarsized(mut->args[i].type)) {		\
+						mut->args[i].o++;								\
+						mut->args[i].s = (const str *) BUNtvar(&mut->args[i].bi, mut->args[i].o); \
+						args[i] = (void *) &mut->args[i].s;				\
+					} else {											\
+						mut->args[i].o++;								\
+						mut->args[i].s = (const str *) BUNtloc(&mut->args[i].bi, mut->args[i].o); \
+						args[i] = (void*) &mut->args[i].s;				\
+					}													\
+				}														\
+			}															\
+		} else {														\
+			void *v = mut->args[0].first;								\
+			size_t w = mut->args[0].b->twidth;							\
+			for (;;) {													\
+				msg = (*(MALfcn##N mfcn))(mut->cntxt, v, __VA_ARGS__);		\
+				if (msg)												\
+					goto bunins_failed;									\
 				if (++oo == olimit)										\
 					break;												\
 				for (i = mut->fvar; i <= mut->lvar; i++) {				\
@@ -134,38 +117,41 @@ typedef struct {
 						args[i] += mut->args[i].size;					\
 					} else if (ATOMvarsized(mut->args[i].type)) {		\
 						mut->args[i].o++;								\
-						mut->args[i].s = (str *) BUNtvar(mut->args[i].bi, mut->args[i].o); \
+						mut->args[i].s = (const str *) BUNtvar(&mut->args[i].bi, mut->args[i].o); \
 						args[i] = (void *) &mut->args[i].s;				\
 					} else {											\
 						mut->args[i].o++;								\
-						mut->args[i].s = (str *) BUNtloc(mut->args[i].bi, mut->args[i].o); \
+						mut->args[i].s = (const str *) BUNtloc(&mut->args[i].bi, mut->args[i].o); \
 						args[i] = (void*) &mut->args[i].s;				\
 					}													\
 				}														\
+				v = (void *) ((char *) v + w); /* v += w if v were char * */ \
 			}															\
-			break;														\
 		}																\
-		}																\
-		mut->args[0].b->theap->dirty = true;							\
-	} while (0)
+	 } while (0)
 
 // single argument is preparatory step for GDK_mapreduce
 // Only the last error message is returned, the value of
 // an erroneous call depends on the operator itself.
 static str
-MANIFOLDjob(MULTItask *mut)
+MANIFOLDjob(MULTItask *mut, MALfcn mfcn)
 {
 	int i;
 	char **args;
-	str y = NULL, msg = MAL_SUCCEED;
+	str msg = MAL_SUCCEED;
 	oid oo = 0, olimit = mut->args[mut->fvar].cnt;
 
 	if (olimit == 0)
 		return msg;				/* nothing to do */
 
-	args = (char **) GDKzalloc(sizeof(char *) * mut->pci->argc);
-	if (args == NULL)
+	allocator *ta = MT_thread_getallocator();
+	allocator_state ta_state = ma_open(ta);
+
+	args = (char **) ma_zalloc(ta, sizeof(char *) * mut->pci->argc);
+	if (args == NULL) {
+		ma_close(&ta_state);
 		throw(MAL, "mal.manifold", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+	}
 
 	// the mod.fcn arguments are ignored from the call
 	for (i = mut->pci->retc + 2; i < mut->pci->argc; i++) {
@@ -173,10 +159,10 @@ MANIFOLDjob(MULTItask *mut)
 			if (ATOMstorage(mut->args[i].type) < TYPE_str) {
 				args[i] = (char *) mut->args[i].first;
 			} else if (ATOMvarsized(mut->args[i].type)) {
-				mut->args[i].s = BUNtvar(mut->args[i].bi, mut->args[i].o);
+				mut->args[i].s = (const str *)BUNtvar(&mut->args[i].bi, mut->args[i].o);
 				args[i] = (void *) &mut->args[i].s;
 			} else {
-				mut->args[i].s = BUNtloc(mut->args[i].bi, mut->args[i].o);
+				mut->args[i].s = (const str *)BUNtloc(&mut->args[i].bi, mut->args[i].o);
 				args[i] = (void *) &mut->args[i].s;
 			}
 		} else {
@@ -206,10 +192,8 @@ MANIFOLDjob(MULTItask *mut)
 	default:
 		msg = createException(MAL, "mal.manifold", "manifold call limitation ");
 	}
-	if (ATOMextern(mut->args[0].type) && y)
-		GDKfree(y);
   bunins_failed:
-	GDKfree(args);
+	ma_close(&ta_state);
 	return msg;
 }
 
@@ -258,7 +242,7 @@ MANIFOLDtypecheck(Client cntxt, MalBlkPtr mb, InstrPtr pci, int checkprops)
 		tpe = getBatType(getArgType(mb, pci, i));
 		k = newTmpVariable(nmb, tpe);
 		if (k < 0) {
-			freeInstruction(q);
+			freeInstruction(nmb, q);
 			goto bailout;
 		}
 		q = pushArgument(nmb, q, k);
@@ -269,11 +253,6 @@ MANIFOLDtypecheck(Client cntxt, MalBlkPtr mb, InstrPtr pci, int checkprops)
 	if (nmb->errors)
 		goto bailout;
 
-/*
-	TRC_DEBUG(MAL_SERVER, "Manifold operation\n");
-	traceInstruction(MAL_SERVER, mb, 0, pci, LIST_MAL_ALL);
-	traceInstruction(MAL_SERVER, nmb, 0, q, LIST_MAL_ALL);
-*/
 	// Localize the underlying scalar operator
 	typeChecker(cntxt->usermodule, nmb, q, getPC(nmb, q), TRUE);
 	if (nmb->errors)
@@ -287,11 +266,6 @@ MANIFOLDtypecheck(Client cntxt, MalBlkPtr mb, InstrPtr pci, int checkprops)
 		if (!isVarFixed(mb, getArg(pci, 0)))
 			setVarType(mb, getArg(pci, 0), newBatType(getArgType(nmb, q, 0)));
 	}
-
-/*
-	TRC_DEBUG(MAL_SERVER, "Success? %s\n", (fcn == NULL? "no":"yes"));
-	traceInstruction(MAL_SERVER, nmb, 0, q, LIST_MAL_ALL);
-*/
 
 	freeMalBlk(nmb);
 	return fcn;
@@ -312,7 +286,6 @@ MANIFOLDtypecheck(Client cntxt, MalBlkPtr mb, InstrPtr pci, int checkprops)
 static str
 MANIFOLDevaluate(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	MULTItask mut;
 	MULTIarg *mat;
 	int i, tpe = 0;
 	BUN cnt = 0;
@@ -330,12 +303,17 @@ MANIFOLDevaluate(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		throw(MAL, "mal.manifold", "Illegal manifold function call");
 	}
 
-	mat = (MULTIarg *) GDKzalloc(sizeof(MULTIarg) * pci->argc);
-	if (mat == NULL)
+	allocator *ta = MT_thread_getallocator();
+	allocator_state ta_state = ma_open(ta);
+
+	mat = (MULTIarg *) ma_zalloc(ta, sizeof(MULTIarg) * pci->argc);
+	if (mat == NULL) {
+		ma_close(&ta_state);
 		throw(MAL, "mal.manifold", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+	}
 
 	// mr-job structure preparation
-	mut = (MULTItask) {
+	MULTItask mut = {
 		.cntxt = cntxt,
 		.mb = mb,
 		.stk = stk,
@@ -402,15 +380,7 @@ MANIFOLDevaluate(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	mat[0].first = (void *) Tloc(mat[0].b, 0);
 	mat[0].last = (void *) Tloc(mat[0].b, BATcount(mat[0].b));
 
-	mut.pci = copyInstruction(pci);
-	if (mut.pci == NULL) {
-		msg = createException(MAL, "mal.manifold",
-							  SQLSTATE(HY013) MAL_MALLOC_FAIL);
-		goto wrapup;
-	}
-	mut.pci->fcn = fcn;
-	msg = MANIFOLDjob(&mut);
-	freeInstruction(mut.pci);
+	msg = MANIFOLDjob(&mut, fcn);
 
   wrapup:
 	// restore the argument types
@@ -430,7 +400,7 @@ MANIFOLDevaluate(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		*getArgReference_bat(stk, pci, 0) = mat[0].b->batCacheid;
 		BBPkeepref(mat[0].b);
 	}
-	GDKfree(mat);
+	ma_close(&ta_state);
 	return msg;
 }
 
@@ -446,7 +416,7 @@ MANIFOLDremapMultiplex(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 }
 
 #include "mel.h"
-mel_func manifold_init_funcs[] = {
+static mel_func manifold_init_funcs[] = {
  pattern("mal", "multiplex", MANIFOLDremapMultiplex, false, "", args(1,4, varargany("",0),arg("mod",str),arg("fcn",str),varargany("a",0))),
  pattern("mal", "multiplex", MANIFOLDremapMultiplex, false, "", args(1,4, varargany("",0),arg("card", lng), arg("mod",str),arg("fcn",str))),
  pattern("mal", "multiplex", MANIFOLDremapMultiplex, false, "", args(1,5, varargany("",0),arg("card", lng), arg("mod",str),arg("fcn",str),varargany("a",0))),

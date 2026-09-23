@@ -3,11 +3,9 @@
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024, 2025 MonetDB Foundation;
- * Copyright August 2008 - 2023 MonetDB B.V.;
- * Copyright 1997 - July 2008 CWI.
+ * For copyright information, see the file debian/copyright.
  */
 
 /*
@@ -105,7 +103,7 @@ MNDBGetDiagRec(SQLSMALLINT HandleType,
 		/* copy only the first SQL_SQLSTATE_SIZE (5) chars in
 		 * the buffer and make it null terminated
 		 */
-		strcpy_len((char *) SQLState, state, SQL_SQLSTATE_SIZE + 1);
+		strtcpy((char *) SQLState, state, SQL_SQLSTATE_SIZE + 1);
 	}
 
 	if (NativeErrorPtr)
@@ -120,9 +118,9 @@ MNDBGetDiagRec(SQLSMALLINT HandleType,
 	 * and used to determine where the error originated
 	 */
 	if (dbc && dbc->dsn)
-		msgLen = (SQLSMALLINT) strconcat_len((char *) MessageText, BufferLength, ODBCErrorMsgPrefix, "[", dbc->dsn, "]", msg, NULL);
+		msgLen = (SQLSMALLINT) strlconcat((char *) MessageText, BufferLength, ODBCErrorMsgPrefix, "[", dbc->dsn, "]", msg, NULL);
 	else
-		msgLen = (SQLSMALLINT) strconcat_len((char *) MessageText, BufferLength, ODBCErrorMsgPrefix, msg, NULL);
+		msgLen = (SQLSMALLINT) strlconcat((char *) MessageText, BufferLength, ODBCErrorMsgPrefix, msg, NULL);
 
 	if (TextLengthPtr)
 		*TextLengthPtr = msgLen;

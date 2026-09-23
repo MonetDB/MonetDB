@@ -1016,206 +1016,206 @@ Cucumber (large);Produce;0.49;North Grafton;Massachusetts;United States
 Tyson roasted chicken;Meat;3.99;Eau Galle;Wisconsin;United States
 Deluxe topping pizza;Frozen;1.99;Thousandsticks;Kentucky;United States
 
-query RTTTTT rowsort
+query DTTTTT rowsort
 SELECT cast(SUM(PRICE) as NUMERIC(18,2)) as PRICE, ITEM, CATEGORY, CITY, REGION, COUNTRY
 FROM  (SELECT MAX(price) as MAXPRICE FROM SALESMART) T, SALESMART S
 WHERE T.MAXPRICE = S.PRICE
 GROUP BY ITEM, CATEGORY, CITY, REGION, COUNTRY
 ----
-3.990
+3.99
 Tyson roasted chicken
 Meat
 Athens
 Attiki
 Greece
-3.990
+3.99
 Tyson roasted chicken
 Meat
 Cattaraugus
 New York
 United States
-3.990
+3.99
 Tyson roasted chicken
 Meat
 Crooks
 South Dakota
 United States
-3.990
+3.99
 Tyson roasted chicken
 Meat
 Davos
 Graubunden
 Switzerland
-3.990
+3.99
 Tyson roasted chicken
 Meat
 Eau Galle
 Wisconsin
 United States
-3.990
+3.99
 Tyson roasted chicken
 Meat
 Fengjie
 Sichuan
 China
-3.990
+3.99
 Tyson roasted chicken
 Meat
 Franklin Springs
 New York
 United States
-3.990
+3.99
 Tyson roasted chicken
 Meat
 Jerusalem
 Yerushalayim  (Jerusalem)
 Israel
-3.990
+3.99
 Tyson roasted chicken
 Meat
 Jose Leon Suarez
 Buenos Aires
 Argentina
-3.990
+3.99
 Tyson roasted chicken
 Meat
 Mill Creek
 Oklahoma
 United States
-3.990
+3.99
 Tyson roasted chicken
 Meat
 Molodesjnaja
 Enderby Land
 Antarctica
-3.990
+3.99
 Tyson roasted chicken
 Meat
 Plymouth
 Tobago
 Trinidad and Tobago
-3.990
+3.99
 Tyson roasted chicken
 Meat
 Roma
 Texas
 United States
-3.990
+3.99
 Tyson roasted chicken
 Meat
 Scarborough
 Tobago
 Trinidad and Tobago
-3.990
+3.99
 Tyson roasted chicken
 Meat
 West Long Branch
 New Jersey
 United States
-7.980
+7.98
 Tyson roasted chicken
 Meat
 Cairo
 Illinois
 United States
 
-query RTTTTT rowsort
+query DTTTTT rowsort
 SELECT cast(SUM(PRICE) as NUMERIC(18,2)) as PRICE, ITEM, CATEGORY, CITY, REGION, COUNTRY
 FROM  SALESMART S
 WHERE S.PRICE IN (SELECT MAX(price) as MAXPRICE FROM SALESMART)
 GROUP BY ITEM, CATEGORY, CITY, REGION, COUNTRY
 ----
-3.990
+3.99
 Tyson roasted chicken
 Meat
 Athens
 Attiki
 Greece
-3.990
+3.99
 Tyson roasted chicken
 Meat
 Cattaraugus
 New York
 United States
-3.990
+3.99
 Tyson roasted chicken
 Meat
 Crooks
 South Dakota
 United States
-3.990
+3.99
 Tyson roasted chicken
 Meat
 Davos
 Graubunden
 Switzerland
-3.990
+3.99
 Tyson roasted chicken
 Meat
 Eau Galle
 Wisconsin
 United States
-3.990
+3.99
 Tyson roasted chicken
 Meat
 Fengjie
 Sichuan
 China
-3.990
+3.99
 Tyson roasted chicken
 Meat
 Franklin Springs
 New York
 United States
-3.990
+3.99
 Tyson roasted chicken
 Meat
 Jerusalem
 Yerushalayim  (Jerusalem)
 Israel
-3.990
+3.99
 Tyson roasted chicken
 Meat
 Jose Leon Suarez
 Buenos Aires
 Argentina
-3.990
+3.99
 Tyson roasted chicken
 Meat
 Mill Creek
 Oklahoma
 United States
-3.990
+3.99
 Tyson roasted chicken
 Meat
 Molodesjnaja
 Enderby Land
 Antarctica
-3.990
+3.99
 Tyson roasted chicken
 Meat
 Plymouth
 Tobago
 Trinidad and Tobago
-3.990
+3.99
 Tyson roasted chicken
 Meat
 Roma
 Texas
 United States
-3.990
+3.99
 Tyson roasted chicken
 Meat
 Scarborough
 Tobago
 Trinidad and Tobago
-3.990
+3.99
 Tyson roasted chicken
 Meat
 West Long Branch
 New Jersey
 United States
-7.980
+7.98
 Tyson roasted chicken
 Meat
 Cairo

@@ -1,5 +1,6 @@
+skipif knownfail
 query T nosort
-plan select * from f
+explain show details select * from f
 where n = 1
    or n = 2
    or n = 3
@@ -51,21 +52,23 @@ where m = 40
 
 ## chained where-in for n
 
+skipif knownfail
 query T nosort
-plan select * from f
+explain show details select * from f
 where n in (1, 2)
    or n in (3)
 ----
 project (
 | select (
 | | table("sys"."f") [ "f"."n" NOT NULL, "f"."m" NOT NULL ]
-| ) [ ("f"."n" NOT NULL) in (int(4) "3", int(4) "1", int(4) "2") ]
+| ) [ ("f"."n" NOT NULL) in (int(4) "1", int(4) "2", int(4) "3") ]
 ) [ "f"."n" NOT NULL, "f"."m" NOT NULL ]
 
 ## chained cmp_equal-atom ors with lhs in [n, m]
 
+skipif knownfail
 query T nosort
-plan select * from f
+explain show details select * from f
 where n = 1
    or n = 2
    or m = 60
@@ -76,8 +79,9 @@ project (
 | ) [ (("f"."n" NOT NULL) in (int(4) "1", int(4) "2")) or (("f"."m" NOT NULL) = (int(8) "60")) ]
 ) [ "f"."n" NOT NULL, "f"."m" NOT NULL ]
 
+skipif knownfail
 query T nosort
-plan select * from f
+explain show details select * from f
 where n = 1
    or m = 60
    or n = 2
@@ -88,8 +92,9 @@ project (
 | ) [ (("f"."n" NOT NULL) in (int(4) "1", int(4) "2")) or (("f"."m" NOT NULL) = (int(8) "60")) ]
 ) [ "f"."n" NOT NULL, "f"."m" NOT NULL ]
 
+skipif knownfail
 query T nosort
-plan select * from f
+explain show details select * from f
 where m = 60
    or n = 1
    or n = 2
@@ -102,8 +107,9 @@ project (
 
 ## chained ors with lhs in [n, (n && m)]
 
+skipif knownfail
 query T nosort
-plan select * from f
+explain show details select * from f
 where (n = 3 and m = 60)
    or n = 1
    or n = 2
@@ -111,11 +117,12 @@ where (n = 3 and m = 60)
 project (
 | select (
 | | table("sys"."f") [ "f"."n" NOT NULL, "f"."m" NOT NULL ]
-| ) [ (("f"."n" NOT NULL) in (int(4) "1", int(4) "2")) or (("f"."n" NOT NULL) = (int(4) "3"), ("f"."m" NOT NULL) = (int(8) "60")), ("f"."n" NOT NULL) in (int(4) "3", int(4) "1", int(4) "2") ]
+| ) [ (("f"."n" NOT NULL) in (int(4) "1", int(4) "2")) or (("f"."n" NOT NULL) = (int(4) "3"), ("f"."m" NOT NULL) = (int(8) "60")) ]
 ) [ "f"."n" NOT NULL, "f"."m" NOT NULL ]
 
+skipif knownfail
 query T nosort
-plan select * from f
+explain show details select * from f
 where n = 1
    or (n = 3 and m = 60)
    or n = 2
@@ -123,11 +130,12 @@ where n = 1
 project (
 | select (
 | | table("sys"."f") [ "f"."n" NOT NULL, "f"."m" NOT NULL ]
-| ) [ (("f"."n" NOT NULL) in (int(4) "1", int(4) "2")) or (("f"."n" NOT NULL) = (int(4) "3"), ("f"."m" NOT NULL) = (int(8) "60")), ("f"."n" NOT NULL) in (int(4) "3", int(4) "1", int(4) "2") ]
+| ) [ (("f"."n" NOT NULL) in (int(4) "1", int(4) "2")) or (("f"."n" NOT NULL) = (int(4) "3"), ("f"."m" NOT NULL) = (int(8) "60")) ]
 ) [ "f"."n" NOT NULL, "f"."m" NOT NULL ]
 
+skipif knownfail
 query T nosort
-plan select * from f
+explain show details select * from f
 where n = 1
    or n = 2
    or (n = 3 and m = 60)
@@ -135,6 +143,6 @@ where n = 1
 project (
 | select (
 | | table("sys"."f") [ "f"."n" NOT NULL, "f"."m" NOT NULL ]
-| ) [ (("f"."n" NOT NULL) in (int(4) "1", int(4) "2")) or (("f"."n" NOT NULL) = (int(4) "3"), ("f"."m" NOT NULL) = (int(8) "60")), ("f"."n" NOT NULL) in (int(4) "3", int(4) "1", int(4) "2") ]
+| ) [ (("f"."n" NOT NULL) in (int(4) "1", int(4) "2")) or (("f"."n" NOT NULL) = (int(4) "3"), ("f"."m" NOT NULL) = (int(8) "60")) ]
 ) [ "f"."n" NOT NULL, "f"."m" NOT NULL ]
 

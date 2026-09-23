@@ -3,17 +3,15 @@
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024, 2025 MonetDB Foundation;
- * Copyright August 2008 - 2023 MonetDB B.V.;
- * Copyright 1997 - July 2008 CWI.
+ * For copyright information, see the file debian/copyright.
  */
 
 #include "monetdb_config.h"
-#include "gdk.h"
 #include "mal_exception.h"
 #include "mal_interpreter.h"
+#include "calc.h"
 
 static str
 mythrow(enum malexception type, const char *fcn, const char *msg)
@@ -67,41 +65,39 @@ CMDvarADD(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 
 static str
-CMDvarADDstr(str *ret, const char *const *s1, const char *const *s2)
+CMDvarADDstr(Client ctx, str *ret, const char *const *s1, const char *const *s2)
 {
+	allocator *ma = ctx->curprg->def->ma;
 	str s;
 	size_t l1;
 
 	if (strNil(*s1) || strNil(*s2)) {
-		*ret = GDKstrdup(str_nil);
-		if (*ret == NULL)
-			return mythrow(MAL, "calc.+", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		*ret = (char *) str_nil;
 		return MAL_SUCCEED;
 	}
 	l1 = strlen(*s1) + strlen(*s2) + 1;
-	s = GDKmalloc(l1);
+	s = ma_alloc(ma, l1);
 	if (s == NULL)
 		return mythrow(MAL, "calc.+", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-	strconcat_len(s, l1, *s1, *s2, NULL);
+	strtconcat(s, l1, *s1, *s2, NULL);
 	*ret = s;
 	return MAL_SUCCEED;
 }
 
 
 static str
-CMDvarADDstrint(str *ret, const char *const *s1, const int *i)
+CMDvarADDstrint(Client ctx, str *ret, const char *const *s1, const int *i)
 {
+	allocator *ma = ctx->curprg->def->ma;
 	str s;
 	size_t len;
 
 	if (strNil(*s1) || is_int_nil(*i)) {
-		*ret = GDKstrdup(str_nil);
-		if (*ret == NULL)
-			return mythrow(MAL, "calc.+", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		*ret = (char *) str_nil;
 		return MAL_SUCCEED;
 	}
 	len = strlen(*s1) + 16;		/* maxint = 2147483647 which fits easily */
-	s = GDKmalloc(len);
+	s = ma_alloc(ma, len);
 	if (s == NULL)
 		return mythrow(MAL, "calc.+", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	snprintf(s, len, "%s%d", *s1, *i);
@@ -133,6 +129,29 @@ CMDvarDIV(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (VARcalcdiv(&stk->stk[getArg(pci, 0)],
 				   &stk->stk[getArg(pci, 1)],
 				   &stk->stk[getArg(pci, 2)]) != GDK_SUCCEED)
+		return mythrow(MAL, "calc./", OPERATION_FAILED);
+	return MAL_SUCCEED;
+}
+
+static str
+CMDvarDIV2(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	(void) cntxt;
+	(void) mb;
+	ValRecord v1, v2;
+
+	v1.vtype = TYPE_lng;
+	v1.val.lval = 1;
+	v2.vtype = TYPE_lng;
+	v2.val.lval = 2;
+
+	if (VARcalcsub(&v1, &stk->stk[getArg(pci, 2)], &v1) != GDK_SUCCEED)
+		return mythrow(MAL, "calc./", OPERATION_FAILED);
+	if (VARcalcdiv(&v2, &v1, &v2) != GDK_SUCCEED)
+		return mythrow(MAL, "calc./", OPERATION_FAILED);
+	if (VARcalcadd(&stk->stk[getArg(pci, 0)], &stk->stk[getArg(pci, 1)], &v2) != GDK_SUCCEED)
+		return mythrow(MAL, "calc./", OPERATION_FAILED);
+	if (VARcalcdiv(&stk->stk[getArg(pci, 0)], &stk->stk[getArg(pci, 0)], &stk->stk[getArg(pci, 2)]) != GDK_SUCCEED)
 		return mythrow(MAL, "calc./", OPERATION_FAILED);
 	return MAL_SUCCEED;
 }
@@ -345,8 +364,9 @@ CMDvarBETWEEN(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 
 static str
-CMDstrlength(int *ret, const char *const *v)
+CMDstrlength(Client ctx, int *ret, const char *const *v)
 {
+	(void) ctx;
 	size_t l = strlen(*v);
 
 	if (l > (size_t) GDK_int_max)
@@ -364,9 +384,8 @@ CMDvarCONVERT(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void) cntxt;
 	(void) mb;
 
-	if (VARconvert
-		(&stk->stk[getArg(pci, 0)], &stk->stk[getArg(pci, 1)], 0, 0,
-		 0) != GDK_SUCCEED) {
+	if (VARconvert(mb->ma, &stk->stk[getArg(pci, 0)], &stk->stk[getArg(pci, 1)],
+				   0, 0, 0) != GDK_SUCCEED) {
 		snprintf(buf, sizeof(buf), "%s.%s", pci->modname, pci->fcnname);
 		return mythrow(MAL, buf, OPERATION_FAILED);
 	}
@@ -375,8 +394,9 @@ CMDvarCONVERT(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 
 static str
-CMDvarCONVERTptr(ptr *ret, ptr *v)
+CMDvarCONVERTptr(Client ctx, ptr *ret, ptr *v)
 {
+	(void) ctx;
 	*ret = *v;
 	return MAL_SUCCEED;
 }
@@ -547,9 +567,11 @@ CALCswitchbit(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		p = getArgReference(stk, pci, 3);
 	}
 	if (ATOMextern(t1)) {
-		*(ptr **) retval = ATOMdup(t1, *(ptr **) p);
+		size_t len = ATOMlen(t1, *(ptr **)p);
+		*(ptr **) retval = ma_alloc(mb->ma, len);
 		if (*(ptr **) retval == NULL)
 			throw(MAL, "ifthenelse", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		memcpy(*(ptr **) retval, *(ptr **)p, len);
 	} else if (t1 == TYPE_void) {
 		memcpy(retval, p, sizeof(oid));
 	} else {
@@ -571,15 +593,15 @@ CALCmin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (t != getArgType(mb, pci, 2))
 		return mythrow(MAL, "calc.min", SEMANTIC_TYPE_MISMATCH);
 	nil = ATOMnilptr(t);
-	if (t >= TYPE_str && ATOMstorage(t) >= TYPE_str) {
+	if (ATOMstorage(t) >= TYPE_str) {
 		p1 = *(ptr *) p1;
 		p2 = *(ptr *) p2;
 	}
-	if (ATOMcmp(t, p1, nil) == 0 || ATOMcmp(t, p2, nil) == 0)
+	if (ATOMeq(t, p1, nil) || ATOMeq(t, p2, nil))
 		p1 = nil;
 	else if (ATOMcmp(t, p1, p2) > 0)
 		p1 = p2;
-	if (VALinit(&stk->stk[getArg(pci, 0)], t, p1) == NULL)
+	if (VALinit(mb->ma, &stk->stk[getArg(pci, 0)], t, p1) == NULL)
 		return mythrow(MAL, "calc.min", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	return MAL_SUCCEED;
 }
@@ -597,26 +619,26 @@ CALCmin_no_nil(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (t != getArgType(mb, pci, 2))
 		return mythrow(MAL, "calc.min", SEMANTIC_TYPE_MISMATCH);
 	nil = ATOMnilptr(t);
-	if (t >= TYPE_str && ATOMstorage(t) >= TYPE_str) {
+	if (ATOMstorage(t) >= TYPE_str) {
 		p1 = *(ptr *) p1;
 		p2 = *(ptr *) p2;
 	}
-	if (ATOMcmp(t, p1, nil) == 0 ||
-		(ATOMcmp(t, p2, nil) != 0 && ATOMcmp(t, p1, p2) > 0))
+	if (ATOMeq(t, p1, nil) ||
+		(!ATOMeq(t, p2, nil) && ATOMcmp(t, p1, p2) > 0))
 		p1 = p2;
 	if (pci->argc > 3) {
 		for(int i = 3; i < pci->argc; i++) {
 			if (t != getArgType(mb, pci, i))
 				return mythrow(MAL, "calc.min", SEMANTIC_TYPE_MISMATCH);
 			ptr p2 = getArgReference(stk, pci, i);
-			if (t >= TYPE_str && ATOMstorage(t) >= TYPE_str)
+			if (ATOMstorage(t) >= TYPE_str)
 				p2 = *(ptr *) p2;
-			if (ATOMcmp(t, p1, nil) == 0 ||
-				(ATOMcmp(t, p2, nil) != 0 && ATOMcmp(t, p1, p2) > 0))
+			if (ATOMeq(t, p1, nil) ||
+				(!ATOMeq(t, p2, nil) && ATOMcmp(t, p1, p2) > 0))
 				p1 = p2;
 		}
 	}
-	if (VALinit(&stk->stk[getArg(pci, 0)], t, p1) == NULL)
+	if (VALinit(mb->ma, &stk->stk[getArg(pci, 0)], t, p1) == NULL)
 		return mythrow(MAL, "calc.min", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	return MAL_SUCCEED;
 }
@@ -634,19 +656,52 @@ CALCmax(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (t != getArgType(mb, pci, 2))
 		return mythrow(MAL, "calc.max", SEMANTIC_TYPE_MISMATCH);
 	nil = ATOMnilptr(t);
-	if (t >= TYPE_str && ATOMstorage(t) >= TYPE_str) {
+	if (ATOMstorage(t) >= TYPE_str) {
 		p1 = *(ptr *) p1;
 		p2 = *(ptr *) p2;
 	}
-	if (ATOMcmp(t, p1, nil) == 0 || ATOMcmp(t, p2, nil) == 0)
+	if (ATOMeq(t, p1, nil) || ATOMeq(t, p2, nil))
 		p1 = nil;
 	else if (ATOMcmp(t, p1, p2) < 0)
 		p1 = p2;
-	if (VALinit(&stk->stk[getArg(pci, 0)], t, p1) == NULL)
+	if (VALinit(mb->ma, &stk->stk[getArg(pci, 0)], t, p1) == NULL)
 		return mythrow(MAL, "calc.max", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	return MAL_SUCCEED;
 }
 
+static str
+CALCto_hex_int(Client ctx, str *res, const int *n)
+{
+	allocator *ma = ctx->curprg->def->ma;
+	if (is_int_nil(*n)) {
+		*res = (char *) str_nil;
+		return MAL_SUCCEED;
+	}
+	const size_t size = 9;    // 32 bits -> 8 hex digits + 1 NUL
+	str buf = ma_alloc(ma, size);
+	if (buf == NULL)
+			throw(MAL, "calc.to_hex", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+	snprintf(buf, size, "%" PRIx32, (uint32_t)*n);
+	*res = buf;
+	return MAL_SUCCEED;
+}
+
+static str
+CALCto_hex_lng(Client ctx, str *res, const lng *n)
+{
+	allocator *ma = ctx->curprg->def->ma;
+	if (is_lng_nil(*n)) {
+		*res = (char *) str_nil;
+		return MAL_SUCCEED;
+	}
+	const size_t size = 17;    // 64 bits -> 16 hex digits + 1 NUL
+	str buf = ma_alloc(ma, size);
+	if (buf == NULL)
+			throw(MAL, "calc.to_hex", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+	snprintf(buf, size, "%" PRIx64, (uint64_t)*n);
+	*res = buf;
+	return MAL_SUCCEED;
+}
 
 static str
 CALCmax_no_nil(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
@@ -660,33 +715,33 @@ CALCmax_no_nil(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (t != getArgType(mb, pci, 2))
 		return mythrow(MAL, "calc.max", SEMANTIC_TYPE_MISMATCH);
 	nil = ATOMnilptr(t);
-	if (t >= TYPE_str && ATOMstorage(t) >= TYPE_str) {
+	if (ATOMstorage(t) >= TYPE_str) {
 		p1 = *(ptr *) p1;
 		p2 = *(ptr *) p2;
 	}
-	if (ATOMcmp(t, p1, nil) == 0 ||
-		(ATOMcmp(t, p2, nil) != 0 && ATOMcmp(t, p1, p2) < 0))
+	if (ATOMeq(t, p1, nil) ||
+		(!ATOMeq(t, p2, nil) && ATOMcmp(t, p1, p2) < 0))
 		p1 = p2;
 	if (pci->argc > 3) {
 		for(int i = 3; i < pci->argc; i++) {
 			if (t != getArgType(mb, pci, i))
 				return mythrow(MAL, "calc.max", SEMANTIC_TYPE_MISMATCH);
 			ptr p2 = getArgReference(stk, pci, i);
-			if (t >= TYPE_str && ATOMstorage(t) >= TYPE_str)
+			if (ATOMstorage(t) >= TYPE_str)
 				p2 = *(ptr *) p2;
-			if (ATOMcmp(t, p1, nil) == 0 ||
-				(ATOMcmp(t, p2, nil) != 0 && ATOMcmp(t, p1, p2) < 0))
+			if (ATOMeq(t, p1, nil) ||
+				(!ATOMeq(t, p2, nil) && ATOMcmp(t, p1, p2) < 0))
 				p1 = p2;
 		}
 	}
-	if (VALinit(&stk->stk[getArg(pci, 0)], t, p1) == NULL)
+	if (VALinit(mb->ma, &stk->stk[getArg(pci, 0)], t, p1) == NULL)
 		return mythrow(MAL, "calc.max", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	return MAL_SUCCEED;
 }
 
 static str
 CMDBATsumprod(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
-			  gdk_return (*sumprod)(void *, int, BAT *, BAT *, bool, bool),
+			  gdk_return (*sumprod)(void *, int, BAT *, BAT *, bool, bool, bool),
 			  const char *func)
 {
 	ValPtr ret = &stk->stk[getArg(pci, 0)];
@@ -695,6 +750,7 @@ CMDBATsumprod(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 	BAT *s = NULL;
 	bool nil_if_empty = true;
 	gdk_return r;
+	bool inout = pci->inout >= 0;
 
 	if ((b = BATdescriptor(bid)) == NULL)
 		throw(MAL, func, SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
@@ -715,7 +771,7 @@ CMDBATsumprod(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 			}
 		}
 	}
-	r = (*sumprod) (VALget(ret), ret->vtype, b, s, true, nil_if_empty);
+	r = (*sumprod) (VALget(ret), ret->vtype, b, s, true, nil_if_empty, inout);
 	BBPunfix(b->batCacheid);
 	BBPreclaim(s);
 	if (r != GDK_SUCCEED)
@@ -724,26 +780,26 @@ CMDBATsumprod(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 }
 
 
-static str
+str
 CMDBATsum(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	(void) cntxt;
 
-	return CMDBATsumprod(mb, stk, pci, BATsum, "aggr.sum");
+	return CMDBATsumprod(mb, stk, pci, BATsum, pci->inout>=0?"iaggr.sum":"aggr.sum");
 }
 
 
-static str
+str
 CMDBATprod(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	(void) cntxt;
 
-	return CMDBATsumprod(mb, stk, pci, BATprod, "aggr.prod");
+	return CMDBATsumprod(mb, stk, pci, BATprod, pci->inout>=0?"iaggr.prod":"aggr.prod");
 }
 
 #define arg_type(stk, pci, k) ((stk)->stk[pci->argv[k]].vtype)
 
-static str
+str
 CMDBATavg3(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	ValPtr ret = &stk->stk[getArg(pci, 0)];
@@ -751,6 +807,8 @@ CMDBATavg3(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	bat *bid, *sid;
 	bit *skip_nils;
 	BAT *b = NULL, *s = NULL, *avgs, *cnts, *rems;
+	bool inout = pci->inout >= 0;
+	char *func = inout?"iaggr.avg":"aggr.avg";
 
 	(void) cntxt;
 	(void) mb;
@@ -767,10 +825,22 @@ CMDBATavg3(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	s = sid != NULL && !is_bat_nil(*sid) ? BATdescriptor(*sid) : NULL;
 	if (b == NULL || (sid != NULL && !is_bat_nil(*sid) && s == NULL)) {
 		BBPreclaim(b);
-		throw(MAL, "aggr.avg", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+		throw(MAL, func, SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	}
-	if (BATgroupavg3(&avgs, &rems, &cnts, b, NULL, NULL, s, *skip_nils) != GDK_SUCCEED)
-		return mythrow(MAL, "aggr.avg", GDK_EXCEPTION);
+	inout &= !is_lng_nil((*cnt));
+	if (inout) {
+		avgs = BATconstant(0, b->ttype, getArgReference(stk, pci, 0), 1, TRANSIENT);
+		rems = BATconstant(0, TYPE_lng, rest, 1, TRANSIENT);
+		cnts = BATconstant(0, TYPE_lng, cnt, 1, TRANSIENT);
+		if (avgs == NULL || rems == NULL || cnts == NULL) {
+			BBPreclaim(avgs);
+			BBPreclaim(rems);
+			BBPreclaim(cnts);
+			throw(MAL, func, GDK_EXCEPTION);
+		}
+	}
+	if (BATgroupavg3(&avgs, &rems, &cnts, b, NULL, NULL, s, *skip_nils, inout) != GDK_SUCCEED)
+		return mythrow(MAL, func, GDK_EXCEPTION);
 	if (avgs && BATcount(avgs) == 1) {
 		/* only type bte, sht, int, lng and hge */
 		ptr res = VALget(ret);
@@ -861,73 +931,8 @@ CMDBATavg3comb(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	return MAL_SUCCEED;
 }
 
-static str
-CMDBATstr_group_concat(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
-{
-	ValPtr ret = &stk->stk[getArg(pci, 0)];
-	bat bid = *getArgReference_bat(stk, pci, 1), sid = 0;
-	BAT *b, *s = NULL, *sep = NULL;
-	bool nil_if_empty = true;
-	int next_argument = 2;
-	const char *separator = ",";
-	gdk_return r;
-
-	(void) cntxt;
-
-	if ((b = BATdescriptor(bid)) == NULL)
-		throw(MAL, "aggr.str_group_concat",
-			  SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
-
-	if (isaBatType(getArgType(mb, pci, 2))) {
-		sid = *getArgReference_bat(stk, pci, 2);
-		if ((sep = BATdescriptor(sid)) == NULL) {
-			BBPunfix(b->batCacheid);
-			throw(MAL, "aggr.str_group_concat",
-				  SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
-		}
-		if (sep->ttype == TYPE_str) {	/* the separator bat */
-			next_argument = 3;
-			separator = NULL;
-		}
-	}
-
-	if (pci->argc >= (next_argument + 1)) {
-		if (getArgType(mb, pci, next_argument) == TYPE_bit) {
-			assert(pci->argc == (next_argument + 1));
-			nil_if_empty = *getArgReference_bit(stk, pci, next_argument);
-		} else {
-			if (next_argument == 3) {
-				bat sid = *getArgReference_bat(stk, pci, next_argument);
-				if (!is_bat_nil(sid) && (s = BATdescriptor(sid)) == NULL) {
-					BBPunfix(b->batCacheid);
-					BBPunfix(sep->batCacheid);
-					throw(MAL, "aggr.str_group_concat",
-						  SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
-				}
-			} else {
-				s = sep;
-				sep = NULL;
-			}
-			if (pci->argc >= (next_argument + 2)) {
-				assert(pci->argc == (next_argument + 2));
-				assert(getArgType(mb, pci, (next_argument + 1)) == TYPE_bit);
-				nil_if_empty = *getArgReference_bit(stk, pci, (next_argument + 1));
-			}
-		}
-	}
-
-	assert((separator && !sep) || (!separator && sep));
-	r = BATstr_group_concat(ret, b, s, sep, true, nil_if_empty, separator);
-	BBPunfix(b->batCacheid);
-	BBPreclaim(sep);
-	BBPreclaim(s);
-	if (r != GDK_SUCCEED)
-		return mythrow(MAL, "aggr.str_group_concat", OPERATION_FAILED);
-	return MAL_SUCCEED;
-}
-
 #include "mel.h"
-mel_func calc_init_funcs[] = {
+static mel_func calc_init_funcs[] = {
 #ifdef HAVE_HGE
  pattern("calc", "iszero", CMDvarISZERO, false, "Unary check for zero of V", args(1,2, arg("",bit),arg("v",hge))),
  pattern("calc", "not", CMDvarNOT, false, "Unary bitwise not of V", args(1,2, arg("",hge),arg("v",hge))),
@@ -1486,6 +1491,31 @@ mel_func calc_init_funcs[] = {
  pattern("calc", "<=", CMDvarLE, false, "Return V1 <= V2", args(1,3, arg("",bit),arg("l",inet),arg("r",inet))),
  pattern("calc", ">", CMDvarGT, false, "Return V1 > V2", args(1,3, arg("",bit),arg("l",inet),arg("r",inet))),
  pattern("calc", ">=", CMDvarGE, false, "Return V1 >= V2", args(1,3, arg("",bit),arg("l",inet),arg("r",inet))),
+ /* calc ops from inet-46 */
+ pattern("calc", "==", CMDvarEQ, false, "Return V1 == V2", args(1,3, arg("",bit),arg("l",inet4),arg("r",inet4))),
+ pattern("calc", "==", CMDvarEQ, false, "Return V1 == V2", args(1,4, arg("",bit),arg("l",inet4),arg("r",inet4),arg("nil_matches",bit))),
+ pattern("calc", "!=", CMDvarNE, false, "Return V1 != V2", args(1,3, arg("",bit),arg("l",inet4),arg("r",inet4))),
+ pattern("calc", "!=", CMDvarNE, false, "Return V1 != V2", args(1,4, arg("",bit),arg("l",inet4),arg("r",inet4),arg("nil_matches",bit))),
+ pattern("calc", "<", CMDvarLT, false, "Return V1 < V2", args(1,3, arg("",bit),arg("l",inet4),arg("r",inet4))),
+ pattern("calc", "<=", CMDvarLE, false, "Return V1 <= V2", args(1,3, arg("",bit),arg("l",inet4),arg("r",inet4))),
+ pattern("calc", ">", CMDvarGT, false, "Return V1 > V2", args(1,3, arg("",bit),arg("l",inet4),arg("r",inet4))),
+ pattern("calc", ">=", CMDvarGE, false, "Return V1 >= V2", args(1,3, arg("",bit),arg("l",inet4),arg("r",inet4))),
+ pattern("calc", "==", CMDvarEQ, false, "Return V1 == V2", args(1,3, arg("",bit),arg("l",inet6),arg("r",inet6))),
+ pattern("calc", "==", CMDvarEQ, false, "Return V1 == V2", args(1,4, arg("",bit),arg("l",inet6),arg("r",inet6),arg("nil_matches",bit))),
+ pattern("calc", "!=", CMDvarNE, false, "Return V1 != V2", args(1,3, arg("",bit),arg("l",inet6),arg("r",inet6))),
+ pattern("calc", "!=", CMDvarNE, false, "Return V1 != V2", args(1,4, arg("",bit),arg("l",inet6),arg("r",inet6),arg("nil_matches",bit))),
+ pattern("calc", "<", CMDvarLT, false, "Return V1 < V2", args(1,3, arg("",bit),arg("l",inet6),arg("r",inet6))),
+ pattern("calc", "<=", CMDvarLE, false, "Return V1 <= V2", args(1,3, arg("",bit),arg("l",inet6),arg("r",inet6))),
+ pattern("calc", ">", CMDvarGT, false, "Return V1 > V2", args(1,3, arg("",bit),arg("l",inet6),arg("r",inet6))),
+ pattern("calc", ">=", CMDvarGE, false, "Return V1 >= V2", args(1,3, arg("",bit),arg("l",inet6),arg("r",inet6))),
+ pattern("calc", "not", CMDvarNOT, false, "Return the Boolean inverse", args(1,2, arg("",inet4),arg("v",inet4))),
+ pattern("calc", "and", CMDvarAND, false, "Return V1 AND V2", args(1,3, arg("",inet4),arg("v1",inet4),arg("v2",inet4))),
+ pattern("calc", "or", CMDvarOR, false, "Return V1 OR V2", args(1,3, arg("",inet4),arg("v1",inet4),arg("v2",inet4))),
+ pattern("calc", "xor", CMDvarXOR, false, "Return V1 XOR V2", args(1,3, arg("",inet4),arg("v1",inet4),arg("v2",inet4))),
+ pattern("calc", "not", CMDvarNOT, false, "Return the Boolean inverse", args(1,2, arg("",inet6),arg("v",inet6))),
+ pattern("calc", "and", CMDvarAND, false, "Return V1 AND V2", args(1,3, arg("",inet6),arg("v1",inet6),arg("v2",inet6))),
+ pattern("calc", "or", CMDvarOR, false, "Return V1 OR V2", args(1,3, arg("",inet6),arg("v1",inet6),arg("v2",inet6))),
+ pattern("calc", "xor", CMDvarXOR, false, "Return V1 XOR V2", args(1,3, arg("",inet6),arg("v1",inet6),arg("v2",inet6))),
  /* calc ops from uuid */
  pattern("calc", "==", CMDvarEQ, false, "Return V1 == V2", args(1,3, arg("",bit),arg("l",uuid),arg("r",uuid))),
  pattern("calc", "==", CMDvarEQ, false, "Return V1 == V2", args(1,4, arg("",bit),arg("l",uuid),arg("r",uuid),arg("nil_matches",bit))),
@@ -1520,6 +1550,14 @@ mel_func calc_init_funcs[] = {
  pattern("calc", "<=", CMDvarLE, false, "Equality of two timestamps", args(1,3, arg("",bit),arg("v",timestamp),arg("w",timestamp))),
  pattern("calc", ">", CMDvarGT, false, "Equality of two timestamps", args(1,3, arg("",bit),arg("v",timestamp),arg("w",timestamp))),
  pattern("calc", ">=", CMDvarGE, false, "Equality of two timestamps", args(1,3, arg("",bit),arg("v",timestamp),arg("w",timestamp))),
+ /* calc ops added for pipeline */
+#ifdef HAVE_HGE
+ pattern("calc", "num_div", CMDvarDIV2, false, "Return (V1+(V2-1)/2) / V2, nil on divide by zero", args(1,3, arg("",hge),arg("v1",hge),arg("v2",lng))),
+#endif
+ pattern("calc", "num_div", CMDvarDIV2, false, "Return (V1+(V2-1)/2) / V2, nil on divide by zero", args(1,3, arg("",lng),arg("v1",lng),arg("v2",lng))),
+ pattern("calc", "num_div", CMDvarDIV2, false, "Return (V1+(V2-1)/2) / V2, nil on divide by zero", args(1,3, arg("",int),arg("v1",int),arg("v2",lng))),
+ pattern("calc", "num_div", CMDvarDIV2, false, "Return (V1+(V2-1)/2) / V2, nil on divide by zero", args(1,3, arg("",sht),arg("v1",sht),arg("v2",lng))),
+ pattern("calc", "num_div", CMDvarDIV2, false, "Return (V1+(V2-1)/2) / V2, nil on divide by zero", args(1,3, arg("",bte),arg("v1",bte),arg("v2",lng))),
  /* calc ops from 01_calc.mal */
  pattern("calc", "iszero", CMDvarISZERO, false, "Unary check for zero of V", args(1,2, arg("",bit),arg("v",bte))),
  pattern("calc", "iszero", CMDvarISZERO, false, "Unary check for zero of V", args(1,2, arg("",bit),arg("v",sht))),
@@ -2108,7 +2146,7 @@ mel_func calc_init_funcs[] = {
  pattern("calc", "%", CMDvarMOD, false, "Return V1 % V2, signal error on divide by zero", args(1,3, arg("",dbl),arg("v1",dbl),arg("v2",flt))),
  pattern("calc", "%", CMDvarMOD, false, "Return V1 % V2, signal error on divide by zero", args(1,3, arg("",dbl),arg("v1",dbl),arg("v2",dbl))),
  pattern("mmath", "fmod", CMDvarMOD, false, "", args(1,3, arg("",flt),arg("y",flt),arg("x",flt))),
- pattern("mmath", "fmod", CMDvarMOD, false, "The fmod(x,y) function computes the remainder of dividing x by y.\nThe return value is x - n * y, where n is the quotient of x / y,\nrounded towards zero to an integer.", args(1,3, arg("",dbl),arg("y",dbl),arg("x",dbl))),
+ pattern("mmath", "fmod", CMDvarMOD, false, "The fmod(x,y) function computes the remainder of dividing x by y. The return value is x - n * y, where n is the quotient of x / y, rounded towards zero to an integer.", args(1,3, arg("",dbl),arg("y",dbl),arg("x",dbl))),
  pattern("calc", "and", CMDvarAND, false, "Return V1 AND V2", args(1,3, arg("",bit),arg("v1",bit),arg("v2",bit))),
  pattern("calc", "and", CMDvarAND, false, "Return V1 AND V2", args(1,3, arg("",bte),arg("v1",bte),arg("v2",bte))),
  pattern("calc", "and", CMDvarAND, false, "Return V1 AND V2", args(1,3, arg("",sht),arg("v1",sht),arg("v2",sht))),
@@ -2614,6 +2652,8 @@ mel_func calc_init_funcs[] = {
  command("calc", "ptr", CMDvarCONVERTptr, false, "Cast VALUE to ptr", args(1,2, arg("",ptr),arg("v",ptr))),
  pattern("calc", "ifthenelse", CALCswitchbit, false, "If VALUE is true return MIDDLE else RIGHT", args(1,4, argany("",1),arg("b",bit),argany("t",1),argany("f",1))),
  command("calc", "length", CMDstrlength, false, "Length of STRING", args(1,2, arg("",int),arg("s",str))),
+ command("calc", "to_hex", CALCto_hex_int, false, "convert to unsigned hexadecimal number representation", args(1, 2, arg("", str), arg("n", int))),
+ command("calc", "to_hex", CALCto_hex_lng, false, "convert to unsigned hexadecimal number representation", args(1, 2, arg("", str), arg("n", lng))),
  pattern("aggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B.", args(1,2, arg("",bte),batarg("b",msk))),
  pattern("aggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B.", args(1,3, arg("",bte),batarg("b",msk),arg("nil_if_empty",bit))),
  pattern("aggr", "sum", CMDBATsum, false, "Calculate aggregate sum of B with candidate list.", args(1,3, arg("",bte),batarg("b",msk),batarg("s",oid))),
@@ -2770,14 +2810,6 @@ mel_func calc_init_funcs[] = {
  pattern("aggr", "prod", CMDBATprod, false, "Calculate aggregate product of B.", args(1,3, arg("",dbl),batarg("b",dbl),arg("nil_if_empty",bit))),
  pattern("aggr", "prod", CMDBATprod, false, "Calculate aggregate product of B with candidate list.", args(1,3, arg("",dbl),batarg("b",dbl),batarg("s",oid))),
  pattern("aggr", "prod", CMDBATprod, false, "Calculate aggregate product of B with candidate list.", args(1,4, arg("",dbl),batarg("b",dbl),batarg("s",oid),arg("nil_if_empty",bit))),
- pattern("aggr", "str_group_concat", CMDBATstr_group_concat, false, "Calculate aggregate string concatenate of B.", args(1,2, arg("",str),batarg("b",str))),
- pattern("aggr", "str_group_concat", CMDBATstr_group_concat, false, "Calculate aggregate string concatenate of B.", args(1,3, arg("",str),batarg("b",str),arg("nil_if_empty",bit))),
- pattern("aggr", "str_group_concat", CMDBATstr_group_concat, false, "Calculate aggregate string concatenate of B with candidate list.", args(1,3, arg("",str),batarg("b",str),batarg("s",oid))),
- pattern("aggr", "str_group_concat", CMDBATstr_group_concat, false, "Calculate aggregate string concatenate of B with candidate list.", args(1,4, arg("",str),batarg("b",str),batarg("s",oid),arg("nil_if_empty",bit))),
- pattern("aggr", "str_group_concat", CMDBATstr_group_concat, false, "Calculate aggregate string concatenate of B with separator SEP.", args(1,3, arg("",str),batarg("b",str),batarg("sep",str))),
- pattern("aggr", "str_group_concat", CMDBATstr_group_concat, false, "Calculate aggregate string concatenate of B with separator SEP.", args(1,4, arg("",str),batarg("b",str),batarg("sep",str),arg("nil_if_empty",bit))),
- pattern("aggr", "str_group_concat", CMDBATstr_group_concat, false, "Calculate aggregate string concatenate of B with candidate list and separator SEP.", args(1,4, arg("",str),batarg("b",str),batarg("sep",str),batarg("s",oid))),
- pattern("aggr", "str_group_concat", CMDBATstr_group_concat, false, "Calculate aggregate string concatenate of B with candidate list and separator SEP.", args(1,5, arg("",str),batarg("b",str),batarg("sep",str),batarg("s",oid),arg("nil_if_empty",bit))),
  //from sql
  pattern("aggr", "anyequal", CMDvarEQ, false, "", args(1,3, arg("",bit),argany("l",1),argany("r",1))),
  pattern("aggr", "not_anyequal", CMDvarNE, false, "", args(1,3, arg("",bit),argany("l",1),argany("r",1))),

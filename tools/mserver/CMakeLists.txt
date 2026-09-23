@@ -3,11 +3,9 @@
 #
 # This Source Code Form is subject to the terms of the Mozilla Public
 # License, v. 2.0.  If a copy of the MPL was not distributed with this
-# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+# file, You can obtain one at https://mozilla.org/MPL/2.0/.
 #
-# Copyright 2024, 2025 MonetDB Foundation;
-# Copyright August 2008 - 2023 MonetDB B.V.;
-# Copyright 1997 - July 2008 CWI.
+# For copyright information, see the file debian/copyright.
 #]]
 
 add_executable(mserver5)
@@ -25,12 +23,11 @@ string(APPEND builtby "@" ${host})
 set(compilercall ${CMAKE_C_COMPILER})
 set(linkercall ${CMAKE_LINKER})
 
-if(${CMAKE_BUILD_TYPE})
+if(CMAKE_BUILD_TYPE)
   string(TOUPPER ${CMAKE_BUILD_TYPE} build_type)
-  string(APPEND compilercall " " ${CMAKE_C_FLAGS_${build_type}} ${CMAKE_C_FLAGS})
-else()
-  string(APPEND compilercall " " ${CMAKE_C_FLAGS})
+  string(APPEND compilercall " " ${CMAKE_C_FLAGS_${build_type}})
 endif()
+string(APPEND compilercall " " ${CMAKE_C_FLAGS})
 
 configure_file(monet_version.c.in
   ${CMAKE_CURRENT_BINARY_DIR}/monet_version.c
@@ -50,10 +47,12 @@ target_link_libraries(mserver5
   moptions
   bat
   monetdb5
+  mutils
   $<$<PLATFORM_ID:Windows>:${GETOPT_LIB}>
   $<$<BOOL:${PCRE_FOUND}>:PCRE::PCRE>
   $<$<BOOL:${MALLOC_FOUND}>:Malloc::Malloc>
-  Threads::Threads)
+  Threads::Threads
+  $<$<BOOL:${MALLOC_FOUND}>:Malloc::Malloc>)
 
 if(TESTING)
   add_executable(shutdowntest)
@@ -82,6 +81,7 @@ if(TESTING)
     bat
     stream
     monetdb5
+    mutils
     $<$<NOT:$<PLATFORM_ID:Windows>>:m>
     $<$<PLATFORM_ID:Windows>:${GETOPT_LIB}>
     Threads::Threads)

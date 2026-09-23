@@ -1,0 +1,3 @@
+debian/tmp/usr/lib/x86_64-linux-gnu/libmutils*.so usr/lib/x86_64-linux-gnu
+debian/tmp/usr/lib/x86_64-linux-gnu/pkgconfig/monetdb-mutils.pc usr/lib/x86_64-linux-gnu/pkgconfig
+debian/tmp/usr/share/monetdb/cmake/mutilsTargets*.cmake usr/share/monetdb/cmake

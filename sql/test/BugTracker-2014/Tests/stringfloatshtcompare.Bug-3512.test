@@ -17,7 +17,7 @@ statement ok
 INSERT INTO bug3512 (a) VALUES ('327670')
 
 query T rowsort
-SELECT * FROM bug3512 WHERE a > 8888
+SELECT * FROM bug3512 WHERE a > cast(8888 as varchar)
 ----
 9999
 
@@ -31,7 +31,7 @@ statement ok
 INSERT INTO bug3512 (a) VALUES ('9999.00')
 
 query T rowsort
-SELECT * FROM bug3512 WHERE a = 9999
+SELECT * FROM bug3512 WHERE a = cast(9999 as varchar)
 ----
 9999
 

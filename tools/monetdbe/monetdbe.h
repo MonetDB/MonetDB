@@ -3,11 +3,9 @@
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024, 2025 MonetDB Foundation;
- * Copyright August 2008 - 2023 MonetDB B.V.;
- * Copyright 1997 - July 2008 CWI.
+ * For copyright information, see the file debian/copyright.
  */
 
 #ifndef _MONETDBE_LIB_
@@ -142,7 +140,7 @@ DEFAULT_STRUCT_DEFINITION(int16_t, int16_t);
 DEFAULT_STRUCT_DEFINITION(int32_t, int32_t);
 DEFAULT_STRUCT_DEFINITION(int64_t, int64_t);
 #ifdef HAVE_HGE
-DEFAULT_STRUCT_DEFINITION(__int128, int128_t);
+DEFAULT_STRUCT_DEFINITION(int128_t, int128_t);
 #endif
 DEFAULT_STRUCT_DEFINITION(size_t, size_t);
 

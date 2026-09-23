@@ -3,11 +3,9 @@
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024, 2025 MonetDB Foundation;
- * Copyright August 2008 - 2023 MonetDB B.V.;
- * Copyright 1997 - July 2008 CWI.
+ * For copyright information, see the file debian/copyright.
  */
 
 #ifndef _MAL_IMPORT_H
@@ -22,5 +20,5 @@ mal_export str malIncludeString(Client c, const char *name, str mal,
 
 mal_export str malInclude(Client c, const char *name, int listing);
 mal_export void slash_2_dir_sep(str fname);
-mal_export str compileString(Symbol *fcn, Client c, str s);
+
 #endif /*  _MAL_IMPORT_H */

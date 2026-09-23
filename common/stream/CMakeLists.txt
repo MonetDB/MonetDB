@@ -3,11 +3,9 @@
 #
 # This Source Code Form is subject to the terms of the Mozilla Public
 # License, v. 2.0.  If a copy of the MPL was not distributed with this
-# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+# file, You can obtain one at https://mozilla.org/MPL/2.0/.
 #
-# Copyright 2024, 2025 MonetDB Foundation;
-# Copyright August 2008 - 2023 MonetDB B.V.;
-# Copyright 1997 - July 2008 CWI.
+# For copyright information, see the file debian/copyright.
 #]]
 
 set(stream_public_headers
@@ -39,7 +37,6 @@ target_sources(stream
   mapi_stream.c
   memio.c
   callback.c
-  blackhole.c
   fwf.c
   text_stream.c
   $<$<BOOL:${OPENSSL_FOUND}>:openssl_stream.c>
@@ -71,7 +68,7 @@ target_link_libraries(stream
   $<$<BOOL:${LZ4_FOUND}>:LZ4::LZ4>
   $<$<BOOL:${OPENSSL_FOUND}>:OpenSSL::SSL>
   matomic
-  mutf8
+  mutils
   monetdb_config_header
   $<$<PLATFORM_ID:Windows>:ws2_32>
   Threads::Threads)

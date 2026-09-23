@@ -3,11 +3,9 @@
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024, 2025 MonetDB Foundation;
- * Copyright August 2008 - 2023 MonetDB B.V.;
- * Copyright 1997 - July 2008 CWI.
+ * For copyright information, see the file debian/copyright.
  */
 
 /* (author) M.L. Kersten
@@ -33,41 +31,42 @@
  * The startup script is run as user Admin.
  */
 str
-malBootstrap(char *modules[], bool embedded, const char *initpasswd)
+malBootstrap(const char *const *modules, bool embedded, const char *initpasswd)
 {
 	Client c;
-	str msg = MAL_SUCCEED;
+
+	/* we cannot use errors that are handed down to us since we destroy
+	 * the error allocator when there is an error
+	 * note that our caller logs a CRITICAL error in case we return an
+	 * error, so we don't log anything */
 
 	c = MCinitClient(MAL_ADMIN, NULL, NULL);
 	if (c == NULL) {
-		throw(MAL, "malBootstrap", "Failed to initialize client");
+		return "MALException:malBootstrap:Failed to initialize client\n";
 	}
-	MT_thread_set_qry_ctx(NULL);
 	assert(c != NULL);
 	c->curmodule = c->usermodule = userModule();
 	if (c->usermodule == NULL) {
 		MCcloseClient(c);
-		throw(MAL, "malBootstrap", "Failed to initialize client MAL module");
+		return "MALException:malBootstrap:Failed to initialize client MAL module\n";
 	}
-	if ((msg = defaultScenario(c))) {
+	(void) defaultScenario(c);	/* cannot fail */
+	if (MSinitClientPrg(c, userRef, mainRef) != MAL_SUCCEED) {
 		MCcloseClient(c);
-		return msg;
-	}
-	if ((msg = MSinitClientPrg(c, userRef, mainRef)) != MAL_SUCCEED) {
-		MCcloseClient(c);
-		return msg;
+		return "MALException:malBootstrap:Failed to initialize client program\n";
 	}
 
 	if (MCinitClientThread(c) < 0) {
 		MCcloseClient(c);
-		throw(MAL, "malBootstrap", "Failed to create client thread");
+		return "MALException:malBootstrap:Failed to create client thread\n";
 	}
-	if ((msg = malIncludeModules(c, modules, 0, embedded, initpasswd)) != MAL_SUCCEED) {
+	if (malIncludeModules(c, modules, 0, embedded, initpasswd) != MAL_SUCCEED) {
 		MCcloseClient(c);
-		return msg;
+		return "MALException:malBootstrap:Failed to initialize the modules\n";
 	}
 	MCcloseClient(c);
-	return msg;
+	MT_thread_set_qry_ctx(NULL);
+	return MAL_SUCCEED;
 }
 
 /*
@@ -85,14 +84,14 @@ malBootstrap(char *modules[], bool embedded, const char *initpasswd)
  * BATs introduced.
  */
 static str
-MSresetClientPrg(Client cntxt, const char *mod, const char *fcn)
+MSresetClientPrg(Client ctx, const char *mod, const char *fcn)
 {
 	MalBlkPtr mb;
 	InstrPtr p;
 
-	mb = cntxt->curprg->def;
+	mb = ctx->curprg->def;
 	mb->stop = 1;
-	mb->errors = MAL_SUCCEED;
+	mb->errors = NULL;
 	p = mb->stmt[0];
 
 	p->gc = 0;
@@ -115,269 +114,26 @@ MSresetClientPrg(Client cntxt, const char *mod, const char *fcn)
  */
 
 str
-MSinitClientPrg(Client cntxt, const char *mod, const char *nme)
+MSinitClientPrg(Client ctx, const char *mod, const char *nme)
 {
 	int idx;
 
-	if (cntxt->curprg && idcmp(nme, cntxt->curprg->name) == 0)
-		return MSresetClientPrg(cntxt, putName(mod), putName(nme));
-	cntxt->curprg = newFunction(putName(mod), putName(nme), FUNCTIONsymbol);
-	if (cntxt->curprg == 0)
+	if (ctx->curprg && strcmp(nme, ctx->curprg->name) == 0)
+		return MSresetClientPrg(ctx, putName(mod), putName(nme));
+	ctx->curprg = newFunction(putName(mod), putName(nme), FUNCTIONsymbol);
+	if (ctx->curprg == 0)
 		throw(MAL, "initClientPrg", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-	if ((idx = findVariable(cntxt->curprg->def, mainRef)) >= 0)
-		setVarType(cntxt->curprg->def, idx, TYPE_void);
-	insertSymbol(cntxt->usermodule, cntxt->curprg);
+	if ((idx = findVariable(ctx->curprg->def, mainRef)) >= 0)
+		setVarType(ctx->curprg->def, idx, TYPE_void);
+	insertSymbol(ctx->usermodule, ctx->curprg);
 
-	if (cntxt->glb == NULL)
-		cntxt->glb = newGlobalStack(MAXGLOBALS + cntxt->curprg->def->vsize);
-	if (cntxt->glb == NULL)
+	if (ctx->glb == NULL)
+		ctx->glb = newGlobalStack(ctx->ma, MAXGLOBALS + ctx->curprg->def->vsize);
+	if (ctx->glb == NULL)
 		throw(MAL, "initClientPrg", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-	assert(cntxt->curprg->def != NULL);
-	assert(cntxt->curprg->def->vtop > 0);
+	assert(ctx->curprg->def != NULL);
+	assert(ctx->curprg->def->vtop > 0);
 	return MAL_SUCCEED;
-}
-
-/*
- * The default method to interact with the database server is to connect
- * using a port number. The first line received should contain
- * authorization information, such as user name.
- *
- * The scheduleClient receives a challenge response consisting of
- * endian:user:password:lang:database:
- */
-static void
-exit_streams(bstream *fin, stream *fout)
-{
-	if (fout && fout != GDKstdout) {
-		mnstr_flush(fout, MNSTR_FLUSH_DATA);
-		close_stream(fout);
-	}
-	if (fin)
-		bstream_destroy(fin);
-}
-
-static const char mal_enableflag[] = "mal_for_all";
-
-static bool
-is_exiting(void *data)
-{
-	(void) data;
-	return GDKexiting();
-}
-
-static str MSserveClient(Client cntxt);
-
-
-static inline void
-cleanUpScheduleClient(Client c, str *command, str *err)
-{
-	if (c) {
-		MCcloseClient(c);
-	}
-	if (command) {
-		GDKfree(*command);
-		*command = NULL;
-	}
-	if (err) {
-		freeException(*err);
-		*err = NULL;
-	}
-}
-
-
-void
-MSscheduleClient(str command, str peer, str challenge, bstream *fin, stream *fout,
-				 protocol_version protocol, size_t blocksize)
-{
-	char *user = command, *algo = NULL, *passwd = NULL, *lang = NULL,
-		*handshake_opts = NULL;
-	char *database = NULL, *s;
-	const char *dbname;
-	str msg = MAL_SUCCEED;
-	bool filetrans = false;
-	Client c;
-
-	MT_thread_set_qry_ctx(NULL);
-
-	/* decode BIG/LIT:user:{cypher}passwordchal:lang:database: line */
-
-	/* byte order */
-	s = strchr(user, ':');
-	if (s) {
-		*s = 0;
-		mnstr_set_bigendian(fin->s, strcmp(user, "BIG") == 0);
-		user = s + 1;
-	} else {
-		mnstr_printf(fout, "!incomplete challenge '%s'\n", user);
-		exit_streams(fin, fout);
-		GDKfree(command);
-		return;
-	}
-
-	/* passwd */
-	s = strchr(user, ':');
-	if (s) {
-		*s = 0;
-		passwd = s + 1;
-		/* decode algorithm, i.e. {plain}mypasswordchallenge */
-		if (*passwd != '{') {
-			mnstr_printf(fout, "!invalid password entry\n");
-			exit_streams(fin, fout);
-			GDKfree(command);
-			return;
-		}
-		algo = passwd + 1;
-		s = strchr(algo, '}');
-		if (!s) {
-			mnstr_printf(fout, "!invalid password entry\n");
-			exit_streams(fin, fout);
-			GDKfree(command);
-			return;
-		}
-		*s = 0;
-		passwd = s + 1;
-	} else {
-		mnstr_printf(fout, "!incomplete challenge '%s'\n", user);
-		exit_streams(fin, fout);
-		GDKfree(command);
-		return;
-	}
-
-	/* lang */
-	s = strchr(passwd, ':');
-	if (s) {
-		*s = 0;
-		lang = s + 1;
-	} else {
-		mnstr_printf(fout, "!incomplete challenge, missing language\n");
-		exit_streams(fin, fout);
-		GDKfree(command);
-		return;
-	}
-
-	/* database */
-	s = strchr(lang, ':');
-	if (s) {
-		*s = 0;
-		database = s + 1;
-		/* we can have stuff following, make it void */
-		s = strchr(database, ':');
-		if (s)
-			*s++ = 0;
-	}
-
-	if (s && strncmp(s, "FILETRANS:", 10) == 0) {
-		s += 10;
-		filetrans = true;
-	} else if (s && s[0] == ':') {
-		s += 1;
-		filetrans = false;
-	}
-
-	if (s && strchr(s, ':') != NULL) {
-		handshake_opts = s;
-		s = strchr(s, ':');
-		*s++ = '\0';
-	}
-	dbname = GDKgetenv("gdk_dbname");
-	if (database != NULL && database[0] != '\0' &&
-		strcmp(database, dbname) != 0) {
-		mnstr_printf(fout, "!request for database '%s', "
-					 "but this is database '%s', "
-					 "did you mean to connect to monetdbd instead?\n",
-					 database, dbname);
-		/* flush the error to the client, and abort further execution */
-		exit_streams(fin, fout);
-		GDKfree(command);
-		return;
-	} else {
-		c = MCinitClient(0, fin, fout);
-		if (c == NULL) {
-			if (MCshutdowninprogress())
-				mnstr_printf(fout,
-							 "!system shutdown in progress, please try again later\n");
-			else
-				mnstr_printf(fout, "!maximum concurrent client limit reached "
-							 "(%d), please try again later\n", MAL_MAXCLIENTS);
-			exit_streams(fin, fout);
-			GDKfree(command);
-			return;
-		}
-		c->filetrans = filetrans;
-		c->handshake_options = handshake_opts ? strdup(handshake_opts) : NULL;
-		/* move this back !! */
-		if (c->usermodule == 0) {
-			c->curmodule = c->usermodule = userModule();
-			if (c->curmodule == NULL) {
-				mnstr_printf(fout, "!could not allocate space\n");
-				cleanUpScheduleClient(c, &command, &msg);
-				return;
-			}
-		}
-
-		if ((msg = setScenario(c, lang)) != NULL) {
-			mnstr_printf(c->fdout, "!%s\n", msg);
-			mnstr_flush(c->fdout, MNSTR_FLUSH_DATA);
-			cleanUpScheduleClient(c, &command, &msg);
-			return;
-		}
-		if (!GDKgetenv_isyes(mal_enableflag)
-			&& strncasecmp("sql", lang, 3) != 0
-			&& strcmp(user, "monetdb") != 0) {
-			mnstr_printf(fout,
-						 "!only the 'monetdb' user can use non-sql languages. "
-						 "run mserver5 with --set %s=yes to change this.\n",
-						 mal_enableflag);
-			cleanUpScheduleClient(c, &command, &msg);
-			return;
-		}
-	}
-
-	if ((msg = MSinitClientPrg(c, userRef, mainRef)) != MAL_SUCCEED) {
-		mnstr_printf(fout, "!could not allocate space\n");
-		cleanUpScheduleClient(c, &command, &msg);
-		return;
-	}
-
-	// at this point username should have being verified
-	c->username = GDKstrdup(user);
-	if (peer)
-		c->peer = GDKstrdup(peer);
-
-	/* NOTE ABOUT STARTING NEW THREADS
-	 * At this point we have conducted experiments (Jun 2012) with
-	 * reusing threads.  The implementation used was a lockless array of
-	 * semaphores to wake up threads to do work.  Experimentation on
-	 * Linux, Solaris and Darwin showed no significant improvements, in
-	 * most cases no improvements at all.  Hence the following
-	 * conclusion: thread reuse doesn't save up on the costs of just
-	 * forking new threads.  Since the latter means no difficulties of
-	 * properly maintaining a pool of threads and picking the workers
-	 * out of them, it is favourable just to start new threads on
-	 * demand. */
-
-	/* fork a new thread to handle this client */
-
-	c->protocol = protocol;
-	c->blocksize = blocksize;
-
-	if (c->initClient) {
-		if ((msg = c->initClient(c, passwd, challenge, algo)) != MAL_SUCCEED) {
-			mnstr_printf(fout, "!%s\n", msg);
-			GDKfree(command);
-			if (c->exitClient)
-				c->exitClient(c);
-			cleanUpScheduleClient(c, NULL, &msg);
-			return;
-		}
-	}
-	GDKfree(command);
-
-	mnstr_settimeout(c->fdin->s, 50, is_exiting, NULL);
-	msg = MSserveClient(c);
-	if (msg != MAL_SUCCEED) {
-		freeException(msg);
-	}
 }
 
 /*
@@ -410,7 +166,7 @@ MSresetInstructions(MalBlkPtr mb, int start)
 	for (i = start; i < mb->ssize; i++) {
 		p = getInstrPtr(mb, i);
 		if (p)
-			freeInstruction(p);
+			freeInstruction(mb, p);
 		mb->stmt[i] = NULL;
 	}
 	mb->stop = start;
@@ -431,8 +187,6 @@ MSresetStack(Client cntxt, MalBlkPtr mb, MalStkPtr glb)
 	if (mb->errors == MAL_SUCCEED) {
 		for (i = sig->argc; i < mb->vtop; i++) {
 			if (glb && i < glb->stktop && isTmpVar(mb, i) && !glb->keepTmps) {
-				if (mb->var[i].name)
-					GDKfree(mb->var[i].name);
 				/* clean stack entry */
 				garbageElement(cntxt, &glb->stk[i]);
 				glb->stk[i].vtype = TYPE_int;
@@ -480,80 +234,6 @@ MSresetVariables(MalBlkPtr mb)
 }
 
 /*
- * Here we start the client.  We need to initialize and allocate space
- * for the global variables.  Thereafter it is up to the scenario
- * interpreter to process input.
- */
-static str
-MSserveClient(Client c)
-{
-	MalBlkPtr mb;
-	str msg = 0;
-
-	if (MCinitClientThread(c) < 0) {
-		MCcloseClient(c);
-		return MAL_SUCCEED;
-	}
-	/*
-	 * A stack frame is initialized to keep track of global variables.
-	 * The scenarios are run until we finally close the last one.
-	 */
-	mb = c->curprg->def;
-	if (c->glb == NULL)
-		c->glb = newGlobalStack(MAXGLOBALS + mb->vsize);
-	if (c->glb == NULL) {
-		MCcloseClient(c);
-		throw(MAL, "serveClient", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-	} else {
-		c->glb->stktop = mb->vtop;
-		c->glb->blk = mb;
-	}
-
-	if (c->scenario == 0)
-		msg = defaultScenario(c);
-	if (msg) {
-		MCcloseClient(c);
-		return msg;
-	} else {
-		do {
-			do {
-				MT_thread_setworking("running scenario");
-				msg = runScenario(c);
-				freeException(msg);
-				if (c->mode == FINISHCLIENT)
-					break;
-				resetScenario(c);
-			} while (c->scenario && !GDKexiting());
-		} while (c->scenario && c->mode != FINISHCLIENT && !GDKexiting());
-	}
-	MT_thread_setworking("exiting");
-	/* pre announce our exiting: cleaning up may take a while and we
-	 * don't want to get killed during that time for fear of
-	 * deadlocks */
-	MT_exiting_thread();
-	/*
-	 * At this stage we should clean out the MAL block
-	 */
-	if (c->backup) {
-		assert(0);
-		freeSymbol(c->backup);
-		c->backup = 0;
-	}
-
-	if (c->curprg && c->curprg->def)
-		resetMalBlk(c->curprg->def);
-	/*
-	   if (c->curprg) {
-	   freeSymbol(c->curprg);
-	   c->curprg = 0;
-	   }
-	 */
-
-	MCcloseClient(c);
-	return MAL_SUCCEED;
-}
-
-/*
  * The stages of processing user requests are controlled by a scenario.
  * The routines below are the default implementation.  The main issues
  * to deal after parsing it to clean out the Admin.main function from
@@ -565,9 +245,15 @@ MSserveClient(Client c)
  * in size.
  */
 str
-MALinitClient(Client c)
+MALinitClient(Client c, const char *d1, const char *d2, const char *d3)
 {
+	str msg = MSinitClientPrg(c, userRef, mainRef);
+	if (msg)
+		return msg;
 	(void) c;
+	(void) d1;
+	(void) d2;
+	(void) d3;
 	return MAL_SUCCEED;
 }
 
@@ -631,7 +317,7 @@ MALparser(Client c)
 	str msg = MAL_SUCCEED;
 
 	assert(c->curprg->def->errors == NULL);
-	c->curprg->def->errors = 0;
+	c->curprg->def->errors = NULL;
 
 	if (prepareMalBlk(c->curprg->def, CURRENT(c)) < 0)
 		throw(MAL, "mal.parser", "Failed to prepare");
@@ -642,6 +328,8 @@ MALparser(Client c)
 	c->yycur = 0;
 	c->qryctx.starttime = GDKusec();
 	c->qryctx.endtime = c->querytimeout ? c->qryctx.starttime + c->querytimeout : 0;
+	if (c->qryctx.endtime == 0 || c->sessiontimeout < c->qryctx.endtime)
+		c->qryctx.endtime = c->sessiontimeout;
 
 	/* check for unfinished blocks */
 	if (!c->curprg->def->errors && c->blkmode)
@@ -649,14 +337,14 @@ MALparser(Client c)
 	/* empty files should be skipped as well */
 	if (c->curprg->def->stop == 1) {
 		if ((msg = c->curprg->def->errors))
-			c->curprg->def->errors = 0;
+			c->curprg->def->errors = NULL;
 		return msg;
 	}
 
 	p = getInstrPtr(c->curprg->def, 0);
 	if (p->token != FUNCTIONsymbol) {
 		msg = c->curprg->def->errors;
-		c->curprg->def->errors = 0;
+		c->curprg->def->errors = NULL;
 		MSresetStack(c, c->curprg->def, c->glb);
 		resetMalTypes(c->curprg->def, 1);
 		return msg;
@@ -664,7 +352,7 @@ MALparser(Client c)
 	pushEndInstruction(c->curprg->def);
 	msg = chkProgram(c->usermodule, c->curprg->def);
 	if (msg != MAL_SUCCEED || (msg = c->curprg->def->errors)) {
-		c->curprg->def->errors = 0;
+		c->curprg->def->errors = NULL;
 		MSresetStack(c, c->curprg->def, c->glb);
 		resetMalTypes(c->curprg->def, 1);
 		return msg;
@@ -745,7 +433,7 @@ MALengine_(Client c)
 		return 0;				/* empty block */
 	if (c->glb) {
 		if (prg->def && c->glb->stksize < prg->def->vsize) {
-			c->glb = reallocGlobalStack(c->glb, prg->def->vsize);
+			c->glb = reallocGlobalStack(c->ma, c->glb, prg->def->vsize);
 			if (c->glb == NULL)
 				throw(MAL, "mal.engine", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		}
@@ -767,7 +455,6 @@ MALengine_(Client c)
 	if (msg) {
 		/* ignore "internal" exceptions */
 		if (strstr(msg, "client.quit")) {
-			freeException(msg);
 			msg = MAL_SUCCEED;
 		}
 	}
@@ -778,8 +465,6 @@ MALengine_(Client c)
 		c->glb->stkbot = prg->def->vtop;
 	}
 
-	if (prg->def->errors)
-		freeException(prg->def->errors);
 	prg->def->errors = NULL;
 	return msg;
 }
@@ -803,8 +488,8 @@ MALengine(Client c)
 				o++;
 			mnstr_printf(c->fdout, "!%s\n", o);
 		}
-		freeException(msg);
 	}
+	ma_reset(c->qryctx.errorallocator);
 }
 
 /* Hypothetical, optimizers may massage the plan in such a way
@@ -835,7 +520,7 @@ optimizeMALBlock(Client cntxt, MalBlkPtr mb)
 
 	// strong defense line, assure that MAL plan is initially correct
 	if (mb->errors == 0 && mb->stop > 1) {
-		resetMalTypes(mb, mb->stop);
+		//resetMalTypes(mb, mb->stop);
 		msg = chkTypes(cntxt->usermodule, mb, FALSE);
 		if (!msg)
 			msg = chkFlow(mb);
@@ -843,9 +528,9 @@ optimizeMALBlock(Client cntxt, MalBlkPtr mb)
 			msg = chkDeclarations(mb);
 		if (msg)
 			return msg;
-		if (mb->errors != MAL_SUCCEED) {
+		if (mb->errors != NULL) {
 			msg = mb->errors;
-			mb->errors = MAL_SUCCEED;
+			mb->errors = NULL;
 			return msg;
 		}
 	}
@@ -857,20 +542,21 @@ optimizeMALBlock(Client cntxt, MalBlkPtr mb)
 			actions++;
 			msg = (*(str (*)(Client, MalBlkPtr, MalStkPtr, InstrPtr)) p->fcn) (cntxt, mb, 0, p);
 			if (mb->errors) {
-				freeException(msg);
 				msg = mb->errors;
 				mb->errors = NULL;
 			}
 			if (msg) {
-				str place = getExceptionPlace(msg);
+				allocator *ma = MT_thread_getallocator();
+				allocator_state ma_state = ma_open(ma);
+				str place = getExceptionPlace(ma, msg);
 				str nmsg = NULL;
 				if (place) {
+					nmsg = ma_strdup(ma, getExceptionMessageAndState(msg));
 					nmsg = createException(getExceptionType(msg), place, "%s",
-										   getExceptionMessageAndState(msg));
-					GDKfree(place);
+										   nmsg);
 				}
+				ma_close(&ma_state);
 				if (nmsg) {
-					freeException(msg);
 					msg = nmsg;
 				}
 				goto wrapup;

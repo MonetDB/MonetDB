@@ -3,11 +3,9 @@
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024, 2025 MonetDB Foundation;
- * Copyright August 2008 - 2023 MonetDB B.V.;
- * Copyright 1997 - July 2008 CWI.
+ * For copyright information, see the file debian/copyright.
  */
 
 #ifndef SQL_CATALOG_H
@@ -17,7 +15,6 @@
 #include "sql_list.h"
 #include "sql_hash.h"
 #include "mapi_querytype.h"
-#include "stream.h"
 #include "matomic.h"
 
 #define sql_shared_module_name "sql"
@@ -66,7 +63,8 @@ typedef enum sql_dependency {
 	SEQ_DEPENDENCY = 12,
 	PROC_DEPENDENCY = 13,
 	BEDROPPED_DEPENDENCY = 14, /*The object must be dropped when the dependent object is dropped independently of the DROP type.*/
-	TYPE_DEPENDENCY = 15
+	TYPE_DEPENDENCY = 15,
+	USTR_DEPENDENCY = 16,
 } sql_dependency;
 
 #define NO_DEPENDENCY 0
@@ -95,6 +93,8 @@ typedef enum sql_dependency {
 #define RD_UPD_VAL 3
 #define QUICK  4
 #define RD_EXT 5
+
+#define CNT_ACTIVE 10
 
 /* the following list of macros are used by rel_rankop function */
 #define UNBOUNDED_PRECEDING_BOUND 0
@@ -164,9 +164,11 @@ typedef enum comp_type {
 	cmp_notequal = 5,
 
 	cmp_filter = 6,
-	cmp_or = 7,
+
 	cmp_in = 8,			/* in value list */
 	cmp_notin = 9,			/* not in value list */
+	cmp_con = 10,			/* conjunctive (and) list */
+	cmp_dis = 11,			/* disjunctive (or) list */
 
 	/* The following cmp_* are only used within stmt (not sql_exp) */
 	cmp_all = 12,			/* special case for crossproducts */
@@ -178,7 +180,7 @@ typedef enum comp_type {
 #define is_theta_exp(e) ((e) == cmp_gt || (e) == cmp_gte || (e) == cmp_lte ||\
 						 (e) == cmp_lt || (e) == cmp_equal || (e) == cmp_notequal)
 
-#define is_complex_exp(et) ((et) == cmp_or || (et) == cmp_in || (et) == cmp_notin || (et) == cmp_filter)
+#define is_complex_exp(et) ((et) == cmp_in || (et) == cmp_notin || (et) == cmp_filter || (et) == cmp_con || (et) == cmp_dis)
 
 #define is_equality_or_inequality_exp(et) ((et) == cmp_equal || (et) == cmp_notequal || (et) == cmp_in || (et) == cmp_notin)
 
@@ -303,6 +305,7 @@ typedef struct sql_schema {
 	struct objectset *idxs;		/* global, but these objects are only */
 	struct objectset *triggers;	/* useful within a table */
 	struct objectset *parts;
+	struct objectset *ustrs;
 
 	char *internal; 	/* optional internal module name */
 	sql_store store;
@@ -320,9 +323,11 @@ typedef struct sql_trans {
 
 	ulng ts;			/* transaction start timestamp */
 	ulng tid;			/* transaction id */
+	ulng cnr;			/* counter, changes with a lower number are visible, equal and up are newer */
 
 	sql_store store;	/* keep link into the global store */
 	MT_Lock lock;		/* lock protecting concurrent writes to the changes list */
+	MT_Lock localtmplock;		/* lock protecting concurrent writes to the localtmps list */
 	list *changes;		/* list of changes */
 
 	list *dropped;  	/* protection against recursive cascade action*/
@@ -423,7 +428,8 @@ typedef enum sql_ftype {
 	F_FILT = 4,
 	F_UNION = 5,
 	F_ANALYTIC = 6,
-	F_LOADER = 7
+	F_LOADER = 7,
+	F_GROUPFILT = 8
 } sql_ftype;
 
 #define IS_FUNC(f)     ((f)->type == F_FUNC)
@@ -433,6 +439,7 @@ typedef enum sql_ftype {
 #define IS_UNION(f)    ((f)->type == F_UNION)
 #define IS_ANALYTIC(f) ((f)->type == F_ANALYTIC)
 #define IS_LOADER(f)   ((f)->type == F_LOADER)
+#define IS_GROUPFILT(f)     ((f)->type == F_GROUPFILT)
 
 #define FUNC_TYPE_STR(type, F, fn) \
 	switch (type) { \
@@ -464,6 +471,10 @@ typedef enum sql_ftype {
 			F = "LOADER FUNCTION"; \
 			fn = "loader function"; \
 			break; \
+		case F_GROUPFILT: \
+			F = "GROUP FILTER FUNCTION"; \
+			fn = "group filter function"; \
+			break; \
 		default: \
 			assert(0); \
 	}
@@ -472,15 +483,13 @@ typedef enum sql_flang {
 	FUNC_LANG_INT = 0, /* internal */
 	FUNC_LANG_MAL = 1, /* create sql external mod.func */
 	FUNC_LANG_SQL = 2, /* create ... sql function/procedure */
-	FUNC_LANG_R = 3,   /* create .. language R */
-	FUNC_LANG_C = 4,   /* create .. language C */
-	FUNC_LANG_J = 5,   /* create .. language JAVASCRIPT (not implemented) */
 	/* this should probably be done in a better way */
-	FUNC_LANG_PY = 6,       /* create .. language PYTHON */
 	/* values 8 and 9 were for Python 2 */
-	FUNC_LANG_PY3 = 10,     /* create .. language PYTHON3 */
-	/* values 7 and 11 where old map python code */
-	FUNC_LANG_CPP = 12      /* create .. language CPP */
+	/* values 7 and 11 were old map python code */
+	/* values 4 and 12 were C language code */
+	/* value 3 was R language code */
+	/* value 5 was Javascript language code (never implemented) */
+	/* values 6 and 10 were Python language codes */
 } sql_flang;
 
 #define LANG_EXT(l)  ((l)>FUNC_LANG_SQL)
@@ -510,7 +519,9 @@ typedef struct sql_func {
 	instantiated:1,	/* if the function is instantiated */
 	private:1,	/* certain functions cannot be bound from user queries */
 	order_required:1,	/* some aggregate functions require an order */
-	opt_order:1;	/* some aggregate functions could have the inputs sorted */
+	opt_order:1,	/* some aggregate functions could have the inputs sorted */
+	group:1,		/* some filter functions behave like group join */
+	pipeline:1;		/* table returning function can be pipelined */
 
 	short fix_scale;
 			/*
@@ -530,6 +541,8 @@ typedef struct sql_func {
 
 typedef struct sql_subfunc {
 	sql_func *func;
+	unsigned int
+		pipeline:1;	/* run with pipeline */
 	list *res;
 	list *coltypes; /* we need this for copy into from loader */
 	list *colnames; /* we need this for copy into from loader */
@@ -570,6 +583,7 @@ typedef struct sql_idx {
 	struct list *columns;	/* list of sql_kc */
 	struct sql_table *t;
 	struct sql_key *key;	/* key */
+	MT_Lock lock;		/* lock protecting concurrent writes to the changes list */
 	ATOMIC_PTR_TYPE data;
 } sql_idx;
 
@@ -624,6 +638,7 @@ typedef struct sql_sequence {
 	bit cycle;
 	bit bedropped;		/*Drop the SEQUENCE if you are dropping the column, e.g., SERIAL COLUMN".*/
 	sql_schema *s;
+	MT_Lock lock;		/* lock protecting concurrent writes to the changes list */
 } sql_sequence;
 
 typedef struct sql_column {
@@ -641,6 +656,7 @@ typedef struct sql_column {
 	void *max;
 
 	struct sql_table *t;
+	MT_Lock lock;		/* lock protecting concurrent writes to the changes list */
 	ATOMIC_PTR_TYPE data;
 } sql_column;
 
@@ -713,6 +729,7 @@ typedef struct sql_table {
 	sht access;		/* writable, readonly, appendonly */
 	bit system;		/* system or user table */
 	bit bootstrap;		/* system table created during bootstrap */
+	bit globaltemp;		/* globaltemp is set also for instantiated version */
 	bte properties;		/* used for merge_tables */
 	temp_t persistence;	/* persistent, global or local temporary */
 	ca_t commit_action;  	/* on commit action */
@@ -727,6 +744,7 @@ typedef struct sql_table {
 	list *members;		/* member tables of merge/replica tables */
 	int drop_action;	/* only needed for alter drop table */
 
+	MT_Lock lock;		/* lock protecting concurrent writes to the changes list */
 	ATOMIC_PTR_TYPE data;
 	sql_schema *s;
 
@@ -735,6 +753,12 @@ typedef struct sql_table {
 		struct sql_expression *pexp; /* If it is partitioned by an expression */
 	} part;
 } sql_table;
+
+typedef struct sql_ustr {
+	sql_base base;
+	bat batid;
+	sql_schema *s;
+} sql_ustr;
 
 typedef struct res_col {
 	char *tn;
@@ -804,6 +828,9 @@ extern sql_table *find_sql_table_id(sql_trans *tr, sql_schema *s, sqlid id);
 extern sql_table *sql_trans_find_table(sql_trans *tr, sqlid id);
 
 extern sql_sequence *find_sql_sequence(sql_trans *tr, sql_schema *s, const char *sname);
+
+extern sql_ustr *find_sql_ustr(sql_trans *tr, sql_schema *s, const char *uname);
+extern sql_ustr *find_sql_ustr_id(sql_trans *tr, sql_schema *s, sqlid id);
 
 extern sql_schema *find_sql_schema(sql_trans *t, const char *sname);
 extern sql_schema *find_sql_schema_id(sql_trans *t, sqlid id);

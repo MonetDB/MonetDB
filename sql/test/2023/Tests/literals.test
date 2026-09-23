@@ -13,15 +13,15 @@ SELECT 1_000_000, 0x_FFFF_FFFF, 0x_FFFF_FFFF-1
 4294967295
 4294967294
 
-query R rowsort
+query D rowsort
 SELECT 10_1.34_45 + 0b_1_1_0 + 10_2.6_555
 ----
-210.000
+210.0000
 
-query R rowsort
+query D rowsort
 SELECT .25+ 0.2_5 + 0.50
 ----
-1.000
+1.00
 
 query R rowsort
 SELECT 2_0.5_0e1_0+1

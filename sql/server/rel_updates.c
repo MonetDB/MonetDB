@@ -3,16 +3,13 @@
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024, 2025 MonetDB Foundation;
- * Copyright August 2008 - 2023 MonetDB B.V.;
- * Copyright 1997 - July 2008 CWI.
+ * For copyright information, see the file debian/copyright.
  */
 
 #include "monetdb_config.h"
 #include "rel_updates.h"
-#include "rel_semantic.h"
 #include "rel_select.h"
 #include "rel_rel.h"
 #include "rel_basetable.h"
@@ -20,10 +17,8 @@
 #include "rel_schema.h"
 #include "sql_privileges.h"
 #include "sql_partition.h"
-#include "rel_dump.h"
 #include "rel_psm.h"
 #include "sql_symbol.h"
-#include "rel_prop.h"
 #include "sql_storage.h"
 
 static sql_exp *
@@ -90,7 +85,7 @@ get_basetable(sql_rel *t)
 static sql_rel *
 rel_insert_hash_idx(mvc *sql, const char* alias, sql_idx *i, sql_rel *inserts)
 {
-	char *iname = sa_strconcat( sql->sa, "%", i->base.name);
+	char *iname = ma_strconcat( sql->sa, "%", i->base.name);
 	node *m;
 	sql_subtype *it, *lng;
 	int bits = 1 + ((sizeof(lng)*8)-1)/(list_length(i->columns)+1);
@@ -110,8 +105,8 @@ rel_insert_hash_idx(mvc *sql, const char* alias, sql_idx *i, sql_rel *inserts)
 		return inserts;
 	}
 
-	it = sql_bind_localtype("int");
-	lng = sql_bind_localtype("lng");
+	it = sql_fetch_localtype(TYPE_int);
+	lng = sql_fetch_localtype(TYPE_lng);
 	for (m = i->columns->h; m; m = m->next) {
 		sql_kc *c = m->data;
 		sql_exp *e = list_fetch(ins->exps, c->c->colnr);
@@ -151,38 +146,37 @@ rel_insert_hash_idx(mvc *sql, const char* alias, sql_idx *i, sql_rel *inserts)
 static sql_rel *
 rel_insert_join_idx(mvc *sql, const char* alias, sql_idx *i, sql_rel *inserts)
 {
-	char *iname = sa_strconcat( sql->sa, "%", i->base.name);
+	char *iname = ma_strconcat( sql->sa, "%", i->base.name);
 	node *m, *o;
 	sql_trans *tr = sql->session->tr;
 	sql_key *rk = (sql_key*)os_find_id(tr->cat->objects, tr, ((sql_fkey*)i->key)->rkey);
 	sql_rel *rt = rel_basetable(sql, rk->t, rk->t->base.name), *brt = rt;
 	int selfref = (rk->t->base.id == i->t->base.id);
-	int need_nulls = 0;
 	if (selfref)
 		TRC_DEBUG(SQL_TRANS, "Self-reference index\n");
 
-	sql_subtype *bt = sql_bind_localtype("bit");
-	sql_subfunc *or = sql_bind_func_result(sql, "sys", "or", F_FUNC, true, bt, 2, bt, bt);
-
-	sql_rel *_nlls = NULL, *nnlls, *ins = inserts->r;
-	sql_exp *lnll_exps = NULL, *rnll_exps = NULL, *e;
+	sql_rel *ins = inserts->r;
+	sql_exp *e;
 	list *join_exps = new_exp_list(sql->sa), *pexps;
 
 	assert(is_project(ins->op) || ins->op == op_table);
-	for (m = i->columns->h; m; m = m->next) {
-		sql_kc *c = m->data;
-
-		if (c->c->null)
-			need_nulls = 1;
-	}
-	need_nulls = 0;
 	/* NULL and NOT NULL, for 'SIMPLE MATCH' semantics */
 	/* AND joins expressions */
+
+	/* left outer join idx.l1 = idx.r1 and .. idx.ln = idx.rn
+	 *  then
+	 *		for full match only include idx.l1 IS NULL and ... idx.ln IS NULL
+	 *		for simple match include idx.l1 IS NULL or idx.ln IS NULL
+	 *
+	 *  for partial match the left join should include all partial matches, ie
+	 *		(idx.l1 = idx.r1 or idx.l1 IS NULL) and
+	 *
+	 *	For the constraint it self to fail we need the counts from count(r) == count(idx updates).
+	 */
 	for (m = i->columns->h, o = rk->columns->h; m && o; m = m->next, o = o->next) {
 		sql_kc *c = m->data;
 		sql_kc *rc = o->data;
-		sql_subfunc *isnil = sql_bind_func(sql, "sys", "isnull", &c->c->type, NULL, F_FUNC, true, true);
-		sql_exp *_is = list_fetch(ins->exps, c->c->colnr), *lnl, *rnl, *je;
+		sql_exp *_is = list_fetch(ins->exps, c->c->colnr), *je;
 
 		if (rel_base_use(sql, brt, rc->c->colnr)) {
 			/* TODO add access error */
@@ -190,65 +184,32 @@ rel_insert_join_idx(mvc *sql, const char* alias, sql_idx *i, sql_rel *inserts)
 		}
 		int unique = list_length(i->columns) == 1 && list_length(rk->columns) == 1 && is_column_unique(rc->c);
 		sql_exp *rtc = exp_column(sql->sa, rel_name(rt), rc->c->base.name, &rc->c->type, CARD_MULTI, rc->c->null, unique, 0);
-		rtc->nid = rel_base_nid(brt, rc->c);
-		rtc->alias.label = rtc->nid;
+		rtc->alias.label = rel_base_nid(brt, rc->c);
+		rtc->nid = rtc->alias.label;
 
 		_is = exp_ref(sql, _is);
-		lnl = exp_unop(sql->sa, _is, isnil);
-		set_has_no_nil(lnl);
-		rnl = exp_unop(sql->sa, _is, isnil);
-		set_has_no_nil(rnl);
-		if (need_nulls) {
-			if (lnll_exps) {
-				lnll_exps = exp_binop(sql->sa, lnll_exps, lnl, or);
-				rnll_exps = exp_binop(sql->sa, rnll_exps, rnl, or);
-			} else {
-				lnll_exps = lnl;
-				rnll_exps = rnl;
-			}
-		}
-
 		if (rel_convert_types(sql, rt, ins, &rtc, &_is, 1, type_equal) < 0)
 			return NULL;
 		je = exp_compare(sql->sa, rtc, _is, cmp_equal);
+		if (c->c->null)
+			set_any(je);
 		append(join_exps, je);
 	}
-	if (need_nulls) {
-		_nlls = rel_select( sql->sa, rel_dup(ins),
-				exp_compare(sql->sa, lnll_exps, exp_atom_bool(sql->sa, 1), cmp_equal ));
-		set_processed(_nlls);
-		nnlls = rel_select( sql->sa, rel_dup(ins),
-				exp_compare(sql->sa, rnll_exps, exp_atom_bool(sql->sa, 0), cmp_equal ));
-		set_processed(nnlls);
-		_nlls = rel_project(sql->sa, _nlls, rel_projections(sql, _nlls, NULL, 1, 1));
-		/* add constant value for NULLS */
-		e = exp_atom(sql->sa, atom_general(sql->sa, sql_bind_localtype("oid"), NULL, 0));
-		exp_setname(sql, e, alias, iname);
-		append(_nlls->exps, e);
-	} else {
-		nnlls = ins;
-	}
 
-	pexps = rel_projections(sql, nnlls, NULL, 1, 1);
-	nnlls = rel_crossproduct(sql->sa, nnlls, rt, op_left/*op_join*/);
-	nnlls->exps = join_exps;
-	nnlls = rel_project(sql->sa, nnlls, pexps);
+	pexps = rel_projections(sql, ins, NULL, 1, 1);
+	ins = rel_crossproduct(sql->sa, ins, rt, op_left);
+	set_single(ins);
+	ins->exps = join_exps;
+	ins = rel_project(sql->sa, ins, pexps);
 	/* add row numbers */
-	e = exp_column(sql->sa, rel_name(rt), TID, sql_bind_localtype("oid"), CARD_MULTI, 0, 1, 1);
+	e = exp_column(sql->sa, rel_name(rt), TID, sql_fetch_localtype(TYPE_oid), CARD_MULTI, 0, 1, 1);
 	rel_base_use_tid(sql, brt);
 	exp_setname(sql, e, alias, iname);
 	e->nid = rel_base_nid(brt, NULL);
-	append(nnlls->exps, e);
-	set_processed(nnlls);
+	append(ins->exps, e);
+	set_processed(ins);
 
-	if (need_nulls) {
-		rel_destroy(ins);
-		rt = inserts->r = rel_setop(sql->sa, _nlls, nnlls, op_union );
-		rel_setop_set_exps(sql, rt, rel_projections(sql, nnlls, NULL, 1, 1), false);
-		set_processed(rt);
-	} else {
-		inserts->r = nnlls;
-	}
+	inserts->r = ins;
 	return inserts;
 }
 
@@ -287,8 +248,30 @@ rel_insert(mvc *sql, sql_rel *t, sql_rel *inserts)
 	r->card = inserts->card;
 	/* insert indices */
 	if (tab)
-		return rel_insert_idxs(sql, tab, rel_name(t), r);
+		r = rel_insert_idxs(sql, tab, rel_name(t), r);
+	if (r) {
+		set_processed(r);
+		r->exps = rel_projections(sql, r->r, NULL, 1, 1);
+		if (!list_empty(r->exps)) {
+			for(node *n = r->exps->h, *m = ol_first_node(tab->columns); n && m; n = n->next, m = m->next) {
+				sql_column *c = m->data;
+				exp_setname(sql, n->data, c->t->base.name, c->base.name);
+			}
+			/* TODO what to do with indices ? */
+		}
+	}
 	return r;
+}
+
+sql_rel *
+rel_update_count(mvc *sql, sql_rel *rel)
+{
+	rel = rel_groupby(sql, rel, NULL);
+	sql_subfunc *a = sql_bind_func(sql, "sys", "count", sql_fetch_localtype(TYPE_void), NULL, F_AGGR, true, true);
+    sql_exp *e = exp_aggr(sql->sa, NULL, a, false, 0, CARD_ATOM, 0);
+	set_intern(e);
+	(void) rel_groupby_add_aggr(sql, rel, e);
+	return rel;
 }
 
 static sql_rel *
@@ -296,7 +279,7 @@ rel_insert_table(sql_query *query, sql_table *t, char *name, sql_rel *inserts)
 {
 	sql_rel *rel = rel_basetable(query->sql, t, name);
 	rel_base_use_all(query->sql, rel);
-	rel = rewrite_basetable(query->sql, rel);
+	rel = rewrite_basetable(query->sql, rel, false);
 	return rel_insert(query->sql, rel, inserts);
 }
 
@@ -411,8 +394,9 @@ rel_inserts(mvc *sql, sql_table *t, sql_rel *r, list *collist, size_t rowcount, 
 				append(p->exps, list_fetch(vals, (int) j));
 			}
 			if (c) {
-				c = rel_setop(sql->sa, c, p, op_union);
-				rel_setop_set_exps(sql, c, rel_projections(sql, c->l, NULL, 1, 1), false);
+				sql_rel *ci = c;
+				c = rel_setop_n_ary(sql->sa, append(append(sa_list(sql->sa), c), p), op_munion );
+				rel_setop_n_ary_set_exps(sql, c, rel_projections(sql, ci, NULL, 1, 1), false);
 				set_processed(c);
 			} else
 				c = p;
@@ -680,14 +664,13 @@ merge_generate_inserts(sql_query *query, sql_table *t, sql_rel *r, dlist *column
 static sql_rel *
 insert_into(sql_query *query, dlist *qname, dlist *columns, symbol *val_or_q, dlist *opt_returning)
 {
-	mvc *sql = query->sql;
 	char *sname = qname_schema(qname);
 	char *tname = qname_schema_object(qname);
 	sql_table *t = NULL;
 	sql_rel *r = NULL;
 
-	t = find_table_or_view_on_scope(sql, NULL, sname, tname, "INSERT INTO", false);
-	if (insert_allowed(sql, t, tname, "INSERT INTO", "insert into") == NULL)
+	t = find_table_or_view_on_scope(query->sql, NULL, sname, tname, "INSERT INTO", false);
+	if (insert_allowed(query->sql, t, tname, "INSERT INTO", "insert into") == NULL)
 		return NULL;
 	r = insert_generate_inserts(query, t, columns, val_or_q, "INSERT INTO");
 	if(!r)
@@ -695,25 +678,19 @@ insert_into(sql_query *query, dlist *qname, dlist *columns, symbol *val_or_q, dl
 	sql_rel* ins = rel_insert_table(query, t, t->base.name, r);
 
 	if (opt_returning) {
-		mvc *sql = query->sql;
-		list *pexps = sa_list(sql->sa);
-		sql_rel* inner = ins->l;
+		list *pexps = sa_list(query->sql->sa);
 		for (dnode *n = opt_returning->h; n; n = n->next) {
-			sql_exp *ce = rel_column_exp(query, &inner, n->data.sym, sql_sel | sql_no_subquery);
+			sql_exp *ce = rel_column_exp(query, &ins, n->data.sym, sql_sel | sql_no_subquery);
 			if (ce == NULL)
 				return NULL;
 			pexps = append(pexps, ce);
 		}
-		ins->returning = 1;
-
-		if (is_groupby(inner->op)) {
-			inner->l = ins;
-			ins = rel_project(sql->sa, inner, pexps);
-		}
-		else
-			ins = rel_project(sql->sa, ins, pexps);
+		ins = rel_project(query->sql->sa, ins, pexps);
+		query->sql->type = Q_TABLE;
+	} else if (ins) {
+		ins = rel_update_count(query->sql, ins);
+		query->sql->type = Q_UPDATE;
 	}
-
 	return ins;
 }
 
@@ -742,7 +719,7 @@ is_idx_updated(sql_idx * i, list *exps)
 static sql_rel *
 rel_update_hash_idx(mvc *sql, const char* alias, sql_idx *i, sql_rel *updates)
 {
-	char *iname = sa_strconcat( sql->sa, "%", i->base.name);
+	char *iname = ma_strconcat( sql->sa, "%", i->base.name);
 	node *m;
 	sql_subtype *it, *lng = 0; /* is not set in first if below */
 	int bits = 1 + ((sizeof(lng)*8)-1)/(list_length(i->columns)+1);
@@ -753,8 +730,8 @@ rel_update_hash_idx(mvc *sql, const char* alias, sql_idx *i, sql_rel *updates)
 	if (list_length(i->columns) <= 1 || non_updatable_index(i->type)) {
 		h = exp_label(sql->sa, exp_atom_lng(sql->sa, 0), ++sql->label);
 	} else {
-		it = sql_bind_localtype("int");
-		lng = sql_bind_localtype("lng");
+		it = sql_fetch_localtype(TYPE_int);
+		lng = sql_fetch_localtype(TYPE_lng);
 		for (m = i->columns->h; m; m = m->next) {
 			sql_kc *c = m->data;
 			sql_exp *e = list_fetch(ups->exps, c->c->colnr+1);
@@ -829,33 +806,23 @@ rel_update_join_idx(mvc *sql, const char* alias, sql_idx *i, sql_rel *updates)
 {
 	int nr = ++sql->label;
 	char name[16], *nme = number2name(name, sizeof(name), nr);
-	char *iname = sa_strconcat( sql->sa, "%", i->base.name);
+	char *iname = ma_strconcat( sql->sa, "%", i->base.name);
 
-	int need_nulls = 0;
 	node *m, *o;
 	sql_trans *tr = sql->session->tr;
 	sql_key *rk = (sql_key*)os_find_id(tr->cat->objects, tr, ((sql_fkey*)i->key)->rkey);
-	sql_rel *rt = rel_basetable(sql, rk->t, sa_strdup(sql->sa, nme)), *brt = rt;
+	sql_rel *rt = rel_basetable(sql, rk->t, ma_strdup(sql->sa, nme)), *brt = rt;
 
-	sql_subtype *bt = sql_bind_localtype("bit");
-	sql_subfunc *or = sql_bind_func_result(sql, "sys", "or", F_FUNC, true, bt, 2, bt, bt);
-
-	sql_rel *_nlls = NULL, *nnlls, *ups = updates->r;
-	sql_exp *lnll_exps = NULL, *rnll_exps = NULL, *e;
+	sql_rel *ups = updates->r;
+	sql_exp *e;
 	list *join_exps = new_exp_list(sql->sa), *pexps;
 
 	assert(is_project(ups->op) || ups->op == op_table);
-	for (m = i->columns->h; m; m = m->next) {
-		sql_kc *c = m->data;
-
-		if (c->c->null)
-			need_nulls = 1;
-	}
 	for (m = i->columns->h, o = rk->columns->h; m && o; m = m->next, o = o->next) {
 		sql_kc *c = m->data;
 		sql_kc *rc = o->data;
-		sql_subfunc *isnil = sql_bind_func(sql, "sys", "isnull", &c->c->type, NULL, F_FUNC, true, true);
-		sql_exp *upd = list_fetch(ups->exps, c->c->colnr + 1), *lnl, *rnl, *je;
+		sql_exp *upd = list_fetch(ups->exps, c->c->colnr + 1), *je;
+
 		if (rel_base_use(sql, rt, rc->c->colnr)) {
 			/* TODO add access error */
 			return NULL;
@@ -868,66 +835,33 @@ rel_update_join_idx(mvc *sql, const char* alias, sql_idx *i, sql_rel *updates)
 		/* FOR MATCH FULL/SIMPLE/PARTIAL see above */
 		/* Currently only the default MATCH SIMPLE is supported */
 		upd = exp_ref(sql, upd);
-		lnl = exp_unop(sql->sa, upd, isnil);
-		set_has_no_nil(lnl);
-		rnl = exp_unop(sql->sa, upd, isnil);
-		set_has_no_nil(rnl);
-		if (need_nulls) {
-			if (lnll_exps) {
-				lnll_exps = exp_binop(sql->sa, lnll_exps, lnl, or);
-				rnll_exps = exp_binop(sql->sa, rnll_exps, rnl, or);
-			} else {
-				lnll_exps = lnl;
-				rnll_exps = rnl;
-			}
-		}
 		if (rel_convert_types(sql, rt, updates, &rtc, &upd, 1, type_equal) < 0) {
 			list_destroy(join_exps);
 			return NULL;
 		}
 		je = exp_compare(sql->sa, rtc, upd, cmp_equal);
+		if (c->c->null)
+			set_any(je);
 		append(join_exps, je);
 	}
-	if (need_nulls) {
-		_nlls = rel_select( sql->sa, rel_dup(ups),
-				exp_compare(sql->sa, lnll_exps, exp_atom_bool(sql->sa, 1), cmp_equal ));
-		set_processed(_nlls);
-		nnlls = rel_select( sql->sa, rel_dup(ups),
-				exp_compare(sql->sa, rnll_exps, exp_atom_bool(sql->sa, 0), cmp_equal ));
-		set_processed(nnlls);
-		_nlls = rel_project(sql->sa, _nlls, rel_projections(sql, _nlls, NULL, 1, 1));
-		/* add constant value for NULLS */
-		e = exp_atom(sql->sa, atom_general(sql->sa, sql_bind_localtype("oid"), NULL, 0));
-		exp_setname(sql, e, alias, iname);
-		append(_nlls->exps, e);
-	} else {
-		nnlls = ups;
-	}
 
-	pexps = rel_projections(sql, nnlls, NULL, 1, 1);
-	nnlls = rel_crossproduct(sql->sa, nnlls, rt, op_join);
-	nnlls->exps = join_exps;
-	nnlls->flag |= LEFT_JOIN;
-	nnlls = rel_project(sql->sa, nnlls, pexps);
+	pexps = rel_projections(sql, ups, NULL, 1, 1);
+	ups = rel_crossproduct(sql->sa, ups, rt, op_left);
+	set_single(ups);
+	ups->exps = join_exps;
+	ups = rel_project(sql->sa, ups, pexps);
 	/* add row numbers */
-	e = exp_column(sql->sa, rel_name(rt), TID, sql_bind_localtype("oid"), CARD_MULTI, 0, 1, 1);
+	e = exp_column(sql->sa, rel_name(rt), TID, sql_fetch_localtype(TYPE_oid), CARD_MULTI, 0, 1, 1);
 	rel_base_use_tid(sql, brt);
 	exp_setname(sql, e, alias, iname);
 	e->nid = rel_base_nid(brt, NULL);
-	append(nnlls->exps, e);
-	set_processed(nnlls);
+	append(ups->exps, e);
+	set_processed(ups);
 
-	if (need_nulls) {
-		rel_destroy(ups);
-		rt = updates->r = rel_setop(sql->sa, _nlls, nnlls, op_union );
-		rel_setop_set_exps(sql, rt, rel_projections(sql, nnlls, NULL, 1, 1), false);
-		set_processed(rt);
-	} else {
-		updates->r = nnlls;
-	}
+	updates->r = ups;
 	if (!updates->exps)
 		updates->exps = new_exp_list(sql->sa);
-	append(updates->exps, e = exp_column(sql->sa, alias, iname, sql_bind_localtype("oid"), CARD_MULTI, 0, 0, 0));
+	append(updates->exps, e = exp_column(sql->sa, alias, iname, sql_fetch_localtype(TYPE_oid), CARD_MULTI, 0, 0, 0));
 	e->alias.label = rel_base_nid(brt, NULL);
 	e->nid = e->alias.label;
 	return updates;
@@ -939,8 +873,6 @@ rel_update_join_idx(mvc *sql, const char* alias, sql_idx *i, sql_rel *updates)
 static sql_rel *
 rel_update_idxs(mvc *sql, const char *alias, sql_table *t, sql_rel *relup)
 {
-	sql_rel *p = relup->r;
-
 	if (!ol_length(t->idxs))
 		return relup;
 
@@ -963,17 +895,6 @@ rel_update_idxs(mvc *sql, const char *alias, sql_table *t, sql_rel *relup)
 		} else if (i->type == join_idx) {
 			rel_update_join_idx(sql, alias, i, relup);
 		}
-	}
-	if (relup->r != p) {
-		sql_rel *r = rel_create(sql->sa);
-		if(!r)
-			return NULL;
-		r->op = op_update;
-		r->l = rel_dup(p);
-		r->r = relup;
-		r->card = relup->card;
-		r->flag |= UPD_COMP; /* mark as special update */
-		return r;
 	}
 	return relup;
 }
@@ -1056,7 +977,7 @@ update_generate_assignments(sql_query *query, sql_table *t, sql_rel *r, sql_rel 
 	}
 
 	/* first create the project */
-	exps = list_append(new_exp_list(sql->sa), ne=exp_column(sql->sa, rname = rel_name(r), TID, sql_bind_localtype("oid"), CARD_MULTI, 0, 1, 1));
+	exps = list_append(new_exp_list(sql->sa), ne=exp_column(sql->sa, rname = rel_name(r), TID, sql_fetch_localtype(TYPE_oid), CARD_MULTI, 0, 1, 1));
 	ne->alias.label = rel_base_nid(bt, NULL);
 	ne->nid = ne->alias.label;
 
@@ -1109,9 +1030,9 @@ update_generate_assignments(sql_query *query, sql_table *t, sql_rel *r, sql_rel 
 					reset_processed(rel_val);
 				}
 				r = rel_crossproduct(sql->sa, r, rel_val, op_left);
-				r->flag |= MERGE_LEFT;
 				set_dependent(r);
 				set_processed(r);
+				set_single(r);
 				if (single) {
 					v = exp_column(sql->sa, NULL, exp_name(v), exp_subtype(v), v->card, has_nil(v), is_unique(v), is_intern(v));
 					rel_val = NULL;
@@ -1205,7 +1126,7 @@ update_generate_assignments(sql_query *query, sql_table *t, sql_rel *r, sql_rel 
 			rel_base_use(sql, bt, c->colnr);
 		}
 	}
-	sql_exp *v = exp_column(sql->sa, rname, TID, sql_bind_localtype("oid"), CARD_MULTI, 0, 1, 1);
+	sql_exp *v = exp_column(sql->sa, rname, TID, sql_fetch_localtype(TYPE_oid), CARD_MULTI, 0, 1, 1);
 	if (!v)
 		return NULL;
 	v->alias.label = rel_base_nid(bt, NULL);
@@ -1269,25 +1190,39 @@ update_table(sql_query *query, dlist *qname, str alias, dlist *assignmentlist, s
 			r = res;
 		}
 		r = update_generate_assignments(query, t, r, bt, assignmentlist, "UPDATE");
+		if (!r)
+			return NULL;
 		if (opt_returning) {
+			/* we need to lookup all columns using the first column of the update result (row ids) */
+
 			query_processed(query);
-			r->returning = 1;
+			set_processed(r);
+
+			if (ol_first_node(t->columns)) {
+				list *l = r->attr = sa_list(sql->sa);
+				for (node *n = ol_first_node(t->columns); n; n = n->next) {
+					sql_column *c = n->data;
+					sql_exp *ne = NULL;
+
+					append(l, ne = exp_column(sql->sa, t->base.name, c->base.name, &c->type, CARD_MULTI, c->null, is_column_unique(c), 0));
+					rel_base_use(sql, bt, c->colnr);
+					ne->nid = rel_base_nid(bt, c);
+					ne->alias.label = ne->nid;
+				}
+			}
 			list *pexps = sa_list(sql->sa);
-			sql_rel* inner = r->l;
 			for (dnode *n = opt_returning->h; n; n = n->next) {
-				sql_exp *ce = rel_column_exp(query, &inner, n->data.sym, sql_sel | sql_no_subquery);
+				sql_exp *ce = rel_column_exp(query, &r, n->data.sym, sql_sel | sql_no_subquery);
 				if (ce == NULL)
 					return NULL;
 				pexps = append(pexps, ce);
 			}
-			if (is_groupby(inner->op)) {
-				inner->l = r;
-				r = rel_project(sql->sa, inner, pexps);
-			}
-			else
-				r = rel_project(sql->sa, r, pexps);
+			r = rel_project(sql->sa, r, pexps);
+			sql->type = Q_TABLE;
+		} else {
+			r = rel_update_count(sql, r);
+			sql->type = Q_UPDATE;
 		}
-
 		return r;
 	}
 	return NULL;
@@ -1303,7 +1238,7 @@ rel_delete(allocator *sa, sql_rel *t, sql_rel *deletes)
 	r->op = op_delete;
 	r->l = t;
 	r->r = deletes;
-	r->card = deletes ? deletes->card : CARD_ATOM;
+	r->card = deletes ? deletes->card : CARD_MULTI;
 	return r;
 }
 
@@ -1348,31 +1283,43 @@ delete_table(sql_query *query, dlist *qname, str alias, symbol *opt_where, dlist
 
 			if (!(r = rel_logical_exp(query, r, opt_where, sql_where)))
 				return NULL;
-			e = exp_column(sql->sa, rel_name(r), TID, sql_bind_localtype("oid"), CARD_MULTI, 0, 1, 1);
+			e = exp_column(sql->sa, rel_name(r), TID, sql_fetch_localtype(TYPE_oid), CARD_MULTI, 0, 1, 1);
 			e->nid = rel_base_nid(bt, NULL);
 			e->alias.label = e->nid;
 			r = rel_project(sql->sa, r, list_append(new_exp_list(sql->sa), e));
-			r = rel_delete(sql->sa, /*rel_basetable(sql, t, alias ? alias : tname)*/rel_dup(bt), r);
+			r = rel_delete(sql->sa, rel_dup(bt), r);
 		} else {	/* delete all */
 			r = rel_delete(sql->sa, r, NULL);
 		}
+		r->exps = rel_projections(sql, r->r, NULL, 1, 1);
+		set_processed(r);
 		if (opt_returning) {
 			query_processed(query);
-			r->returning = 1;
+			if (ol_first_node(t->columns)) {
+				list *exps = r->exps;
+				for (node *n = ol_first_node(t->columns); n; n = n->next) {
+					sql_column *c = n->data;
+					sql_exp *ne = NULL;
+
+					append(exps, ne = exp_column(sql->sa, t->base.name, c->base.name, &c->type, CARD_MULTI, c->null, is_column_unique(c), 0));
+					rel_base_use(sql, bt, c->colnr);
+					ne->nid = rel_base_nid(bt, c);
+					ne->alias.label = ne->nid;
+				}
+			}
+
 			list *pexps = sa_list(sql->sa);
-			sql_rel* inner = r->l;
 			for (dnode *n = opt_returning->h; n; n = n->next) {
-				sql_exp *ce = rel_column_exp(query, &inner, n->data.sym, sql_sel | sql_no_subquery);
+				sql_exp *ce = rel_column_exp(query, &r, n->data.sym, sql_sel | sql_no_subquery);
 				if (ce == NULL)
 					return NULL;
 				pexps = append(pexps, ce);
 			}
-			if (is_groupby(inner->op)) {
-				inner->l = r;
-				r = rel_project(sql->sa, inner, pexps);
-			}
-			else
-				r = rel_project(sql->sa, r, pexps);
+			r = rel_project(sql->sa, r, pexps);
+			sql->type = Q_TABLE;
+		} else {
+			r = rel_update_count(sql, r);
+			sql->type = Q_UPDATE;
 		}
 		return r;
 	}
@@ -1393,16 +1340,71 @@ truncate_table(mvc *sql, dlist *qname, int restart_sequences, int drop_action)
 }
 
 static sql_rel *
-rel_merge(allocator *sa, sql_rel *join, sql_rel *upd1, sql_rel *upd2)
+rel_merge(mvc *sql, sql_rel *join, sql_rel *upd1, sql_rel *upd2)
 {
-	sql_rel *r = rel_create(sa);
+	sql_rel *outer1 = upd1, *outer2 = upd2;
+	if (upd2 && upd2->op == op_groupby)
+		upd2 = upd2->l;
+	if (upd1->op == op_groupby)
+		upd1 = upd1->l;
 
-	r->exps = new_exp_list(sa);
-	r->op = op_merge;
-	r->l = join;
-	r->r = rel_list(sa, upd1, upd2);
-	r->card = MAX(upd1 ? upd1->card : 0, upd2 ? upd2->card : 0);
-	return r;
+	if (!upd2) { /* just insert or just update/delete ie just not match or match */
+		if (upd1->op == op_groupby)
+			upd1 = upd1->l;
+		if (upd1->op == op_insert) {
+			sql_rel *oj = upd1->l, *r = upd1->r;
+			sql_exp *le = NULL;
+			join->op = op_right;
+			oj = rel_add_identity(sql, oj, &le);
+			assert(oj == upd1->l);
+			if (!le)
+				return NULL;
+			le = exp_ref(sql, le);
+			set_has_nil(le);	/* full outer so possibly nulls */
+			sql_exp *ce = exp_compare(sql->sa, le, exp_atom(sql->sa, atom_general(sql->sa, exp_subtype(le), NULL, 0)), cmp_equal );
+			set_semantics(ce);
+			while (r->l != join)
+				r = r->l;
+			r->l = join = rel_select( sql->sa, join, ce);
+			return outer1;
+		} else if (upd1->op == op_delete || upd1->op == op_update) { /* 2 cases (one for now, ie matched) ? */
+			join->op = op_join;
+			set_single(join);
+			return outer1;
+		}
+	} else {
+		sql_rel *oj = upd2->l, *r;
+		sql_exp *le = NULL, *ce;
+		join->op = op_right;
+		oj = rel_add_identity(sql, oj, &le);
+		assert(oj == upd2->l);
+		if (!le)
+			return NULL;
+		le = exp_ref(sql, le);
+		set_has_nil(le);
+		ce = exp_compare(sql->sa, le, exp_atom(sql->sa, atom_general(sql->sa, exp_subtype(le), NULL, 0)), cmp_equal );
+		set_semantics(ce);
+		r = upd2->r;
+		while (r->l != join)
+			r = r->l;
+		r->l = rel_select( sql->sa, join, ce);
+
+		set_single(join);
+
+		le = exp_ref(sql, le); /* matches ie select not null */
+		set_has_nil(le);
+		ce = exp_compare(sql->sa, le, exp_atom(sql->sa, atom_general(sql->sa, exp_subtype(le), NULL, 0)), cmp_notequal );
+		set_semantics(ce);
+		r = upd1->r;
+		if (r->op == op_update) /* nested update */
+			r = upd1->l;
+		while (r->l != join)
+			r = r->l;
+		r->l = rel_select( sql->sa, join, ce);
+		return rel_list(sql->sa, outer1, outer2);
+	}
+	assert (0);
+	return NULL;
 }
 
 #define MERGE_UPDATE_DELETE 1
@@ -1440,6 +1442,11 @@ merge_into_table(sql_query *query, dlist *qname, str alias, symbol *tref, symbol
 	if (rel_name(joined) && strcmp(bt_name, rel_name(joined)) == 0)
 		return sql_error(sql, 02, SQLSTATE(42000) "MERGE: '%s' on both sides of the joining condition", bt_name);
 
+	join_rel = rel_crossproduct(sql->sa, bt, joined, op_left);
+	if (!(join_rel = rel_logical_exp(query, join_rel, search_cond, sql_where | sql_join | sql_merge)))
+		return NULL;
+	set_processed(join_rel);
+
 	for (dnode *m = merge_list->h; m; m = m->next) {
 		symbol *sym = m->data.sym, *opt_search, *action;
 		tokens token = sym->token;
@@ -1447,9 +1454,7 @@ merge_into_table(sql_query *query, dlist *qname, str alias, symbol *tref, symbol
 		opt_search = dl->h->data.sym;
 		action = dl->h->next->data.sym;
 		sts = action->data.lval;
-
-		if (opt_search)
-			return sql_error(sql, 02, SQLSTATE(42000) "MERGE: search condition not supported");
+		sql_rel *sel_rel = NULL;
 
 		if (token == SQL_MERGE_MATCH) {
 			tokens uptdel = action->token;
@@ -1459,68 +1464,58 @@ merge_into_table(sql_query *query, dlist *qname, str alias, symbol *tref, symbol
 			processed |= MERGE_UPDATE_DELETE;
 
 			rel_base_use_tid(sql, bt);
+
+			if ((processed & MERGE_INSERT) == MERGE_INSERT)
+				join_rel = rel_dup(join_rel);
+
 			if (uptdel == SQL_UPDATE) {
 				if (!update_allowed(sql, t, tname, "MERGE", "update", 0))
 					return NULL;
-				if ((processed & MERGE_INSERT) == MERGE_INSERT) {
-					join_rel = rel_dup(join_rel);
-				} else {
-					join_rel = rel_crossproduct(sql->sa, bt, joined, op_left);
-					if (!(join_rel = rel_logical_exp(query, join_rel, search_cond, sql_where | sql_join | sql_merge)))
-						return NULL;
-					set_processed(join_rel);
-				}
-
-				extra_project = rel_project(sql->sa, join_rel, rel_projections(sql, join_rel, NULL, 1, 1));
-				upd_del = update_generate_assignments(query, t, extra_project, rel_dup(bt)/*rel_basetable(sql, t, bt_name)*/, sts->h->data.lval, "MERGE");
+				sel_rel = join_rel;
+				if (opt_search && !(sel_rel = rel_logical_exp(query, sel_rel, opt_search, sql_where | sql_merge)))
+					return NULL;
+				extra_project = rel_project(sql->sa, sel_rel, rel_projections(sql, join_rel, NULL, 1, 1));
+				upd_del = update_generate_assignments(query, t, extra_project, rel_dup(bt) /*rel_basetable(sql, t, bt_name)*/, sts->h->data.lval, "MERGE");
 			} else if (uptdel == SQL_DELETE) {
 				if (!update_allowed(sql, t, tname, "MERGE", "delete", 1))
 					return NULL;
-				if ((processed & MERGE_INSERT) == MERGE_INSERT) {
-					join_rel = rel_dup(join_rel);
-				} else {
-					join_rel = rel_crossproduct(sql->sa, bt, joined, op_left);
-					if (!(join_rel = rel_logical_exp(query, join_rel, search_cond, sql_where | sql_join | sql_merge)))
-						return NULL;
-					set_processed(join_rel);
-				}
-
-				sql_exp *ne = exp_column(sql->sa, bt_name, TID, sql_bind_localtype("oid"), CARD_MULTI, 0, 1, 1);
+				sql_exp *ne = exp_column(sql->sa, bt_name, TID, sql_fetch_localtype(TYPE_oid), CARD_MULTI, 0, 1, 1);
 				ne->nid = rel_base_nid(bt, NULL);
 				ne->alias.label = ne->nid;
-				extra_project = rel_project(sql->sa, join_rel, list_append(new_exp_list(sql->sa), ne));
-				upd_del = rel_delete(sql->sa, rel_dup(bt)/*rel_basetable(sql, t, bt_name)*/, extra_project);
+				sel_rel = join_rel;
+				if (opt_search && !(sel_rel = rel_logical_exp(query, sel_rel, opt_search, sql_where | sql_merge)))
+					return NULL;
+				extra_project = rel_project(sql->sa, sel_rel, list_append(new_exp_list(sql->sa), ne));
+				upd_del = rel_delete(sql->sa, rel_dup(bt), extra_project);
 			} else {
 				assert(0);
 			}
 			if (!upd_del)
 				return NULL;
+			upd_del = rel_update_count(sql, upd_del);
 		} else if (token == SQL_MERGE_NO_MATCH) {
 			if ((processed & MERGE_INSERT) == MERGE_INSERT)
 				return sql_error(sql, 02, SQLSTATE(42000) "MERGE: only one WHEN NOT MATCHED clause is allowed");
 			processed |= MERGE_INSERT;
 
+			if ((processed & MERGE_UPDATE_DELETE) == MERGE_UPDATE_DELETE)
+				join_rel = rel_dup(join_rel);
+
 			assert(action->token == SQL_INSERT);
 			if (!insert_allowed(sql, t, tname, "MERGE", "insert"))
 				return NULL;
-			if ((processed & MERGE_UPDATE_DELETE) == MERGE_UPDATE_DELETE) {
-				join_rel = rel_dup(join_rel);
-			} else {
-				join_rel = rel_crossproduct(sql->sa, bt, joined, op_left);
-				if (!(join_rel = rel_logical_exp(query, join_rel, search_cond, sql_where | sql_join | sql_merge)))
-					return NULL;
-				set_processed(join_rel);
-			}
-
-			extra_project = rel_project(sql->sa, join_rel, rel_projections(sql, joined, NULL, 1, 0));
+			sel_rel = join_rel;
+			if (opt_search && !(sel_rel = rel_logical_exp(query, sel_rel, opt_search, sql_where | sql_merge)))
+				return NULL;
+			extra_project = rel_project(sql->sa, sel_rel, rel_projections(sql, joined, NULL, 1, 0));
 			if (!(insert = merge_generate_inserts(query, t, extra_project, sts->h->data.lval, sts->h->next->data.sym)))
 				return NULL;
-
 			sql_rel *ibt = rel_dup(bt);
 			rel_base_use_all(query->sql, ibt);
-			ibt = rewrite_basetable(query->sql, ibt);
+			ibt = rewrite_basetable(query->sql, ibt, false);
 			if (!(insert = rel_insert(query->sql, ibt, insert)))
 				return NULL;
+			insert = rel_update_count(sql, insert);
 		} else {
 			assert(0);
 		}
@@ -1528,13 +1523,12 @@ merge_into_table(sql_query *query, dlist *qname, str alias, symbol *tref, symbol
 
 	if (!join_rel)
 		return sql_error(sql, 02, SQLSTATE(42000) "MERGE: an insert or update or delete clause is required");
-	join_rel->flag |= MERGE_LEFT;
 	if (processed == (MERGE_UPDATE_DELETE | MERGE_INSERT)) {
-		res = rel_merge(sql->sa, rel_dup(join_rel), upd_del, insert);
+		res = rel_merge(sql, rel_dup(join_rel), upd_del, insert);
 	} else if ((processed & MERGE_UPDATE_DELETE) == MERGE_UPDATE_DELETE) {
-		res = rel_merge(sql->sa, rel_dup(join_rel), upd_del, NULL);
+		res = rel_merge(sql, rel_dup(join_rel), upd_del, NULL);
 	} else if ((processed & MERGE_INSERT) == MERGE_INSERT) {
-		res = rel_merge(sql->sa, rel_dup(join_rel), insert, NULL);
+		res = rel_merge(sql, rel_dup(join_rel), insert, NULL);
 	} else {
 		assert(0);
 	}
@@ -1551,20 +1545,6 @@ table_column_types(allocator *sa, sql_table *t)
 		sql_column *c = n->data;
 		if (c->base.name[0] != '%')
 			append(types, &c->type);
-	}
-	return types;
-}
-
-static list *
-table_column_names_and_defaults(allocator *sa, sql_table *t)
-{
-	node *n;
-	list *types = sa_list(sa);
-
-	if (ol_first_node(t->columns)) for (n = ol_first_node(t->columns); n; n = n->next) {
-		sql_column *c = n->data;
-		append(types, &c->base.name);
-		append(types, c->def);
 	}
 	return types;
 }
@@ -1593,12 +1573,15 @@ rel_import(mvc *sql, sql_table *t, const char *tsep, const char *rsep, const cha
 	if (fwf_widths && dlist_length(fwf_widths) > 0) {
 		dnode *dn;
 		int ncol = 0;
-		char *fwf_string_cur = fwf_string = sa_alloc(sql->sa, 20 * dlist_length(fwf_widths) + 1); /* a 64 bit int needs 19 characters in decimal representation plus the separator */
+		size_t fwf_len = 20 * dlist_length(fwf_widths) + 1;
+		char *fwf_string_cur = fwf_string = ma_alloc(sql->sa, fwf_len); /* a 64 bit int needs 19 characters in decimal representation plus the separator */
 
 		if (!fwf_string)
 			return NULL;
 		for (dn = fwf_widths->h; dn; dn = dn->next) {
-			fwf_string_cur += sprintf(fwf_string_cur, LLFMT"%c", dn->data.l_val, STREAM_FWF_FIELD_SEP);
+			int l = snprintf(fwf_string_cur, fwf_len, LLFMT"%c", dn->data.l_val, STREAM_FWF_FIELD_SEP);
+			fwf_string_cur += l;
+			fwf_len -= l;
 			ncol++;
 		}
 		if (list_length(f->res) != ncol)
@@ -1648,26 +1631,22 @@ valid_decsep(const char *s)
 }
 
 static sql_rel *
-copyfrom(sql_query *query, dlist *qname, dlist *columns, dlist *files, dlist *headers, dlist *seps, dlist *nr_offset, str null_string, int best_effort, dlist *fwf_widths, int onclient, int escape, dlist *decimal_seps)
+copyfrom(sql_query *query, CopyFromNode *copy)
 {
 	mvc *sql = query->sql;
 	sql_rel *rel = NULL;
-	char *sname = qname_schema(qname);
-	char *tname = qname_schema_object(qname);
+	char *sname = qname_schema(copy->qname);
+	char *tname = qname_schema_object(copy->qname);
 	sql_table *t = NULL, *nt = NULL;
-	const char *tsep = seps->h->data.sval;
-	char *rsep = seps->h->next->data.sval; /* not const, might need adjusting */
-	const char *ssep = (seps->h->next->next)?seps->h->next->next->data.sval:NULL;
-	const char *ns = (null_string)?null_string:"null";
-	lng nr = (nr_offset)?nr_offset->h->data.l_val:-1;
-	lng offset = (nr_offset)?nr_offset->h->next->data.l_val:0;
+	const char *tsep = copy->tsep;
+	char *rsep = copy->rsep; /* not const, might need adjusting */
+	const char *ssep = copy->ssep;
+	const char *ns = copy->null_string ? copy->null_string : "NULL";
+	lng nr = copy->nrows;
+	lng offset = copy->offset;
 	list *collist;
 	int reorder = 0;
-	const char *decsep = decimal_seps->h->data.sval;
-	const char *decskip = decimal_seps->h->next ? decimal_seps->h->next->data.sval: NULL;
-
-	assert(!nr_offset || nr_offset->h->type == type_lng);
-	assert(!nr_offset || nr_offset->h->next->type == type_lng);
+	dlist *headers = copy->header_list;
 
 	if (strcmp(rsep, "\r\n") == 0) {
 		/* silently fix it */
@@ -1679,18 +1658,28 @@ copyfrom(sql_query *query, dlist *qname, dlist *columns, dlist *files, dlist *he
 				"that will never match, use '\\n' instead");
 	}
 
-	if (!valid_decsep(decsep))
+	if (
+		strcmp(rsep, tsep) == 0
+		|| (ssep && strcmp(rsep, ssep) == 0)
+		|| (ssep && strcmp(tsep, ssep) == 0)
+	) {
+		return sql_error(sql, 02, SQLSTATE(42000)
+				"COPY INTO: row separator, column separator and quote character must be distinct");
+	}
+
+
+	if (!valid_decsep(copy->decsep))
 		return sql_error(sql, 02, SQLSTATE(42000) "COPY INTO: invalid decimal separator");
-	if (decskip && !valid_decsep(decskip))
+	if (copy->decskip && !valid_decsep(copy->decskip))
 		return sql_error(sql, 02, SQLSTATE(42000) "COPY INTO: invalid thousands separator");
-	if (decskip && strcmp(decsep, decskip) == 0)
+	if (copy->decskip && strcmp(copy->decsep, copy->decskip) == 0)
 		return sql_error(sql, 02, SQLSTATE(42000) "COPY INTO: decimal separator and thousands separator must be different");
 
 	t = find_table_or_view_on_scope(sql, NULL, sname, tname, "COPY INTO", false);
 	if (insert_allowed(sql, t, tname, "COPY INTO", "copy into") == NULL)
 		return NULL;
 
-	collist = check_table_columns(sql, t, columns, "COPY INTO", tname);
+	collist = check_table_columns(sql, t, copy->column_list, "COPY INTO", tname);
 	if (!collist)
 		return NULL;
 	/* If we have a header specification use intermediate table, for
@@ -1723,16 +1712,16 @@ copyfrom(sql_query *query, dlist *qname, dlist *columns, dlist *files, dlist *he
 			if (!list_find_name(collist, cname)) {
 				char *name;
 				size_t len = strlen(cname) + 2;
-				sql_subtype *ctype = sql_bind_localtype("oid");
+				sql_subtype *ctype = sql_fetch_localtype(TYPE_oid);
 
-				name = sa_alloc(sql->sa, len);
+				name = ma_alloc(sql->sa, len);
 				snprintf(name, len, "%%cname");
 				res = mvc_create_column(&cs, sql, nt, name, ctype);
 			} else if (!format) {
 				cs = find_sql_column(t, cname);
 				res = mvc_create_column(&cs, sql, nt, cname, &cs->type);
 			} else { /* load as string, parse later */
-				sql_subtype *ctype = sql_bind_localtype("str");
+				sql_subtype *ctype = sql_fetch_localtype(TYPE_str);
 				res = mvc_create_column(&cs, sql, nt, cname, ctype);
 				has_formats = 1;
 			}
@@ -1750,10 +1739,10 @@ copyfrom(sql_query *query, dlist *qname, dlist *columns, dlist *files, dlist *he
 			headers = NULL;
 		reorder = 1;
 	}
-	if (files) {
-		dnode *n = files->h;
+	if (copy->sources) {
+		dnode *n = copy->sources->h;
 
-		if (!onclient && !copy_allowed(sql, 1)) {
+		if (!copy->on_client && !copy_allowed(sql, 1)) {
 			return sql_error(sql, 02, SQLSTATE(42000)
 					 "COPY INTO: insufficient privileges: "
 					 "COPY INTO from file(s) requires database administrator rights, "
@@ -1764,29 +1753,32 @@ copyfrom(sql_query *query, dlist *qname, dlist *columns, dlist *files, dlist *he
 			const char *fname = n->data.sval;
 			sql_rel *nrel;
 
-			if (!onclient && fname && !MT_path_absolute(fname)) {
-				char *fn = ATOMformat(TYPE_str, fname);
+			if (!copy->on_client && fname && !MT_path_absolute(fname)) {
+				allocator *ta = MT_thread_getallocator();
+				allocator_state ta_state = ma_open(ta);
+				char *fn = ATOMformat(ta, TYPE_str, fname);
 				sql_error(sql, 02, SQLSTATE(42000) "COPY INTO: filename must "
 					  "have absolute path: %s", fn);
-				GDKfree(fn);
+				ma_close(&ta_state);
 				return NULL;
 			}
 
-			nrel = rel_import(sql, nt, tsep, rsep, ssep, ns, fname, nr, offset, best_effort, fwf_widths, onclient, escape, decsep, decskip);
+			nrel = rel_import(sql, nt, tsep, rsep, ssep, ns, fname, nr, offset, copy->best_effort, copy->fwf_widths, copy->on_client, copy->escape, copy->decsep, copy->decskip);
 
 			if (!rel)
 				rel = nrel;
 			else {
-				rel = rel_setop(sql->sa, rel, nrel, op_union);
-				rel_setop_set_exps(sql, rel, rel_projections(sql, rel, NULL, 0, 1), false);
+				sql_rel *orel = rel;
+				rel = rel_setop_n_ary(sql->sa, append(append(sa_list(sql->sa), rel), nrel), op_munion );
+				rel_setop_n_ary_set_exps(sql, rel, rel_projections(sql, orel, NULL, 0, 1), false);
 				set_processed(rel);
 			}
 			if (!rel)
 				return rel;
 		}
 	} else {
-		assert(onclient == 0);
-		rel = rel_import(sql, nt, tsep, rsep, ssep, ns, NULL, nr, offset, best_effort, NULL, onclient, escape, decsep, decskip);
+		assert(copy->on_client == 0);
+		rel = rel_import(sql, nt, tsep, rsep, ssep, ns, NULL, nr, offset, copy->best_effort, NULL, copy->on_client, copy->escape, copy->decsep, copy->decskip);
 	}
 	if (headers) {
 		dnode *n;
@@ -1809,7 +1801,7 @@ copyfrom(sql_query *query, dlist *qname, dlist *columns, dlist *files, dlist *he
 				sql_subfunc *f;
 				list *args = sa_list(sql->sa);
 				size_t l = strlen(cs->type.type->base.name);
-				char *fname = sa_alloc(sql->sa, l+8);
+				char *fname = ma_alloc(sql->sa, l+8);
 
 				snprintf(fname, l+8, "str_to_%s", strcmp(cs->type.type->base.name, "timestamptz") == 0 ? "timestamp" : cs->type.type->base.name);
 				sql_find_subtype(&st, "varchar", 0, 0);
@@ -1842,6 +1834,8 @@ copyfrom(sql_query *query, dlist *qname, dlist *columns, dlist *files, dlist *he
 			return NULL;
 	}
 	rel = rel_insert_table(query, t, tname, rel);
+	if (rel)
+		rel = rel_update_count(sql, rel);
 	return rel;
 }
 
@@ -1924,48 +1918,9 @@ bincopyfrom(sql_query *query, dlist *qname, dlist *columns, dlist *files, int on
 	res = rel_project(sql->sa, res, exps);
 
 	res = rel_insert_table(query, t, t->base.name, res);
+	if (res)
+		res = rel_update_count(sql, res);
 	return res;
-}
-
-static sql_rel *
-copyfromloader(sql_query *query, dlist *qname, symbol *fcall)
-{
-	mvc *sql = query->sql;
-	char *sname = qname_schema(qname);
-	char *tname = qname_schema_object(qname);
-	sql_subfunc *loader = NULL;
-	sql_rel *rel = NULL;
-	sql_table *t;
-	list *mts;
-
-	if (!copy_allowed(sql, 1))
-		return sql_error(sql, 02, SQLSTATE(42000) "COPY LOADER INTO: insufficient privileges: "
-				"COPY LOADER INTO requires database administrator rights");
-	t = find_table_or_view_on_scope(sql, NULL, sname, tname, "COPY INTO", false);
-	//TODO the COPY LOADER INTO should return an insert relation (instead of ddl) to handle partitioned tables properly
-	if (insert_allowed(sql, t, tname, "COPY LOADER INTO", "copy loader into") == NULL)
-		return NULL;
-	if (isPartitionedByColumnTable(t) || isPartitionedByExpressionTable(t))
-		return sql_error(sql, 02, SQLSTATE(42000) "COPY LOADER INTO: not possible for partitioned tables at the moment");
-	if ((mts = partition_find_mergetables(sql, t))) {
-		for (node *n = mts->h ; n ; n = n->next) {
-			sql_part *pt = n->data;
-
-			if ((isPartitionedByColumnTable(pt->t) || isPartitionedByExpressionTable(pt->t)))
-				return sql_error(sql, 02, SQLSTATE(42000) "COPY LOADER INTO: not possible for tables child of partitioned tables at the moment");
-		}
-	}
-
-	rel = rel_loader_function(query, fcall, new_exp_list(sql->sa), &loader);
-	if (!rel || !loader)
-		return NULL;
-
-	loader->sname = t->s ? sa_strdup(sql->sa, t->s->base.name) : NULL;
-	loader->tname = tname ? sa_strdup(sql->sa, tname) : NULL;
-	loader->coltypes = table_column_types(sql->sa, t);
-	loader->colnames = table_column_names_and_defaults(sql->sa, t);
-
-	return rel;
 }
 
 static sql_rel *
@@ -2046,6 +2001,13 @@ bincopyto(sql_query *query, symbol *qry, endianness endian, dlist *filenames, in
 	/* Again, copy-pasted. copyto() uses this to check for duplicate column names
 	   but we don't care about that here. */
 	sub = rel_project(sql->sa, sub, rel_projections(sql, sub, NULL, 1, 0));
+
+	int nrcolumns = sub->nrcols;
+	int nrfilenames = filenames->cnt;
+	if (nrcolumns != nrfilenames) {
+		return sql_error(sql, 02, "COPY INTO BINARY: need %d file names, got %d",
+			nrcolumns, nrfilenames);
+	}
 
 	sql_rel *rel = rel_create(sql->sa);
 	list *exps = new_exp_list(sql->sa);
@@ -2135,7 +2097,9 @@ rel_parse_val(mvc *m, sql_schema *sch, char *query, sql_subtype *tpe, char emode
 	/* via views we give access to protected objects */
 	m->user_id = USER_MONETDB;
 
+	allocator_state ta_state = ma_open(MT_thread_getallocator());
 	(void) sqlparse(m);
+	ma_close(&ta_state);
 
 	/* get out the single value as we don't want an enclosing projection! */
 	if (m->sym && m->sym->token == SQL_SELECT) {
@@ -2181,21 +2145,8 @@ rel_updates(sql_query *query, symbol *s)
 	switch (s->token) {
 	case SQL_COPYFROM:
 	{
-		dlist *l = s->data.lval;
-
-		ret = copyfrom(query,
-				l->h->data.lval,
-				l->h->next->data.lval,
-				l->h->next->next->data.lval,
-				l->h->next->next->next->data.lval,
-				l->h->next->next->next->next->data.lval,
-				l->h->next->next->next->next->next->data.lval,
-				l->h->next->next->next->next->next->next->data.sval,
-				l->h->next->next->next->next->next->next->next->data.i_val,
-				l->h->next->next->next->next->next->next->next->next->data.lval,
-				l->h->next->next->next->next->next->next->next->next->next->data.i_val,
-				l->h->next->next->next->next->next->next->next->next->next->next->data.i_val,
-				l->h->next->next->next->next->next->next->next->next->next->next->next->data.lval);
+		CopyFromNode *copy = (CopyFromNode*)s;
+		ret = copyfrom(query, copy);
 		sql->type = Q_UPDATE;
 	}
 		break;
@@ -2205,18 +2156,6 @@ rel_updates(sql_query *query, symbol *s)
 
 		ret = bincopyfrom(query, l->h->data.lval, l->h->next->data.lval, l->h->next->next->data.lval, l->h->next->next->next->data.i_val, (endianness) l->h->next->next->next->next->data.i_val);
 		sql->type = Q_UPDATE;
-	}
-		break;
-	case SQL_COPYLOADER:
-	{
-		dlist *l = s->data.lval;
-		dlist *qname = l->h->data.lval;
-		symbol *sym = l->h->next->data.sym;
-		sql_rel *rel = copyfromloader(query, qname, sym);
-
-		if (rel)
-			ret = rel_psm_stmt(sql->sa, exp_rel(sql, rel));
-		sql->type = Q_SCHEMA;
 	}
 		break;
 	case SQL_COPYINTO:
@@ -2244,7 +2183,6 @@ rel_updates(sql_query *query, symbol *s)
 		dlist *l = s->data.lval;
 
 		ret = insert_into(query, l->h->data.lval, l->h->next->data.lval, l->h->next->next->data.sym, l->h->next->next->next->data.lval);
-		sql->type = Q_UPDATE;
 	}
 		break;
 	case SQL_UPDATE:
@@ -2253,7 +2191,6 @@ rel_updates(sql_query *query, symbol *s)
 
 		ret = update_table(query, l->h->data.lval, l->h->next->data.sval, l->h->next->next->data.lval,
 						   l->h->next->next->next->data.sym, l->h->next->next->next->next->data.sym, l->h->next->next->next->next->next->data.lval);
-		sql->type = Q_UPDATE;
 	}
 		break;
 	case SQL_DELETE:
@@ -2261,7 +2198,6 @@ rel_updates(sql_query *query, symbol *s)
 		dlist *l = s->data.lval;
 
 		ret = delete_table(query, l->h->data.lval, l->h->next->data.sval, l->h->next->next->data.sym, l->h->next->next->next->data.lval);
-		sql->type = Q_UPDATE;
 	}
 		break;
 	case SQL_TRUNCATE:

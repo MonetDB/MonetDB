@@ -17,7 +17,7 @@ insert into vouchers values(1, '20130110' , 'USD' , 1000.0)
 statement ok
 insert into vouchers values(1, '20130210' , 'USD' , 2000.0)
 
-query ITTRR rowsort
+query ITTDD rowsort
 select vid, date, cur, val,
 	(select max(price) from prices p
 	  where p.valid_from =
@@ -30,13 +30,13 @@ select vid, date, cur, val,
 1
 20130110
 USD
-1000.000
-1.200
+1000.00
+1.20
 1
 20130210
 USD
-2000.000
-1.300
+2000.00
+1.30
 
 statement ok
 drop table vouchers

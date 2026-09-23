@@ -1,10 +1,6 @@
 statement ok
 function foo();
-b:= bat.new(:int);
-barrier i:= 0:int;
-	bat.append(b,i);
-	redo i:= iterator.next(1:int,10:int);
-exit i;
+b:= generator.series(0,10);
 c:= algebra.copy(b);
 io.print(c);
 x:= batcalc.+(b,c,nil:bat,nil:bat);

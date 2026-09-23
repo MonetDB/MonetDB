@@ -1,4 +1,7 @@
 statement ok
+set time zone interval '+01:00' hour to minute
+
+statement ok
 create table isp (n int, s varchar(30), p varchar(30))
 
 statement ok

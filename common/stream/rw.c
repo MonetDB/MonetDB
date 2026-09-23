@@ -3,11 +3,9 @@
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024, 2025 MonetDB Foundation;
- * Copyright August 2008 - 2023 MonetDB B.V.;
- * Copyright 1997 - July 2008 CWI.
+ * For copyright information, see the file debian/copyright.
  */
 
 #include "monetdb_config.h"
@@ -179,7 +177,7 @@ mnstr_writeDbl(stream *s, double val)
 
 #ifdef HAVE_HGE
 int
-mnstr_readHge(stream *restrict s, hge *restrict val)
+mnstr_readHge(stream *restrict s, int128_t *restrict val)
 {
 	if (s == NULL || val == NULL)
 		return 0;
@@ -197,7 +195,7 @@ mnstr_readHge(stream *restrict s, hge *restrict val)
 }
 
 int
-mnstr_writeHge(stream *s, hge val)
+mnstr_writeHge(stream *s, int128_t val)
 {
 	if (s == NULL || s->errkind != MNSTR_NO__ERROR)
 		return 0;
@@ -332,7 +330,7 @@ mnstr_writeLngArray(stream *restrict s, const int64_t *restrict val, size_t cnt)
 
 #ifdef HAVE_HGE
 int
-mnstr_readHgeArray(stream *restrict s, hge *restrict val, size_t cnt)
+mnstr_readHgeArray(stream *restrict s, int128_t *restrict val, size_t cnt)
 {
 	if (s == NULL || val == NULL)
 		return 0;
@@ -350,7 +348,7 @@ mnstr_readHgeArray(stream *restrict s, hge *restrict val, size_t cnt)
 }
 
 int
-mnstr_writeHgeArray(stream *restrict s, const hge *restrict val, size_t cnt)
+mnstr_writeHgeArray(stream *restrict s, const int128_t *restrict val, size_t cnt)
 {
 	if (s == NULL || s->errkind != MNSTR_NO__ERROR || val == NULL)
 		return 0;

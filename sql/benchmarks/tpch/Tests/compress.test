@@ -153,7 +153,7 @@ INDIA
 2
 ss excuses cajole slyly across the packages. deposits print aroun
 
-query ITTITRT nosort
+query ITTITDT nosort
 select * from supplier order by s_suppkey   limit 9
 ----
 1
@@ -161,66 +161,66 @@ Supplier#000000001
  N kD4on9OM Ipw3,gf0JBoQDd7tgrzrddZ
 17
 27-918-335-1736
-5755.940
+5755.94
 each slyly above the careful
 2
 Supplier#000000002
 89eJ5ksX3ImxJQBvxObC,
 5
 15-679-861-2259
-4032.680
+4032.68
  slyly bold instructions. idle dependen
 3
 Supplier#000000003
 q1,G3Pj6OjIuUYfUoH18BFTKP5aU9bEV3
 1
 11-383-516-1199
-4192.400
+4192.40
 blithely silent requests after the express dependencies are sl
 4
 Supplier#000000004
 Bk7ah4CK8SYQTepEmvMkkgMwg
 15
 25-843-787-7479
-4641.080
+4641.08
 riously even requests above the exp
 5
 Supplier#000000005
 Gcdm2rJRzl5qlTVzc
 11
 21-151-690-3663
--283.840
+-283.84
 . slyly regular pinto bea
 6
 Supplier#000000006
 tQxuVm7s7CnK
 14
 24-696-997-4969
-1365.790
+1365.79
 final accounts. regular dolphins use against the furiously ironic decoys. 
 7
 Supplier#000000007
 s,4TicNGB4uO6PaSqNBUq
 23
 33-990-965-2201
-6820.350
+6820.35
 s unwind silently furiously regular courts. final requests are deposits. requests wake quietly blit
 8
 Supplier#000000008
 9Sq4bBH2FQEmaFOocY45sRTxo6yuoG
 17
 27-498-742-3860
-7627.850
+7627.85
 al pinto beans. asymptotes haggl
 9
 Supplier#000000009
 1KhUgZegwM3ua7dsYmekYBsK
 10
 20-403-398-8662
-5302.370
+5302.37
 s. unusual, even requests along the furiously regular pac
 
-query ITTITRTT nosort
+query ITTITDTT nosort
 select * from customer order by c_custkey   limit 9
 ----
 1
@@ -228,7 +228,7 @@ Customer#000000001
 IVhzIApeRb ot,c,E
 15
 25-989-741-2988
-711.560
+711.56
 BUILDING
 to the even, regular platelets. regular, ironic epitaphs nag e
 2
@@ -236,7 +236,7 @@ Customer#000000002
 XSTf4,NCwDVaWNe6tEgvwfmRchLXak
 13
 23-768-687-3665
-121.650
+121.65
 AUTOMOBILE
 l accounts. blithely ironic theodolites integrate boldly: caref
 3
@@ -244,7 +244,7 @@ Customer#000000003
 MG9kdTD2WBHm
 1
 11-719-748-3364
-7498.120
+7498.12
 AUTOMOBILE
  deposits eat slyly ironic, even instructions. express foxes detect slyly. blithely even accounts abov
 4
@@ -252,7 +252,7 @@ Customer#000000004
 XxVSJsLAGtn
 4
 14-128-190-5944
-2866.830
+2866.83
 MACHINERY
  requests. final, regular ideas sleep final accou
 5
@@ -260,7 +260,7 @@ Customer#000000005
 KvpyuHCplrB84WgAiGV6sYpZq7Tj
 3
 13-750-942-6364
-794.470
+794.47
 HOUSEHOLD
 n accounts will have to unwind. foxes cajole accor
 6
@@ -268,7 +268,7 @@ Customer#000000006
 sKZz0CsnMD7mp4Xd0YrBvx,LREYKUWAh yVn
 20
 30-114-968-4951
-7638.570
+7638.57
 AUTOMOBILE
 tions. even deposits boost according to the slyly bold packages. final accounts cajole requests. furious
 7
@@ -276,7 +276,7 @@ Customer#000000007
 TcGe5gaZNgVePxU5kRrvXBfkasDTea
 18
 28-190-982-9759
-9561.950
+9561.95
 AUTOMOBILE
 ainst the ironic, express theodolites. express, even pinto beans among the exp
 8
@@ -284,7 +284,7 @@ Customer#000000008
 I0B10bB0AymmC, 0PrRYBCP1yGJ8xcBPmWhl5
 17
 27-147-574-9335
-6819.740
+6819.74
 BUILDING
 among the slyly regular theodolites kindle blithely courts. carefully even theodolites haggle slyly along the ide
 9
@@ -292,11 +292,11 @@ Customer#000000009
 xKiAFTjUsCuxfeleNqefumTrjS
 8
 18-338-906-3675
-8324.070
+8324.07
 FURNITURE
 r theodolites according to the requests wake thinly excuses: pending requests haggle furiousl
 
-query ITTTTITRT nosort
+query ITTTTITDT nosort
 select * from part     order by p_partkey   limit 9
 ----
 1
@@ -306,7 +306,7 @@ Brand#13
 PROMO BURNISHED COPPER
 7
 JUMBO PKG
-901.000
+901.00
 ly. slyly ironi
 2
 blush thistle blue yellow saddle
@@ -315,7 +315,7 @@ Brand#13
 LARGE BRUSHED BRASS
 1
 LG CASE
-902.000
+902.00
 lar accounts amo
 3
 spring green yellow purple cornsilk
@@ -324,7 +324,7 @@ Brand#42
 STANDARD POLISHED BRASS
 21
 WRAP CASE
-903.000
+903.00
 egular deposits hag
 4
 cornflower chocolate smoke green pink
@@ -333,7 +333,7 @@ Brand#34
 SMALL PLATED BRASS
 14
 MED DRUM
-904.000
+904.00
 p furiously r
 5
 forest brown coral puff cream
@@ -342,7 +342,7 @@ Brand#32
 STANDARD POLISHED TIN
 15
 SM PKG
-905.000
+905.00
  wake carefully 
 6
 bisque cornflower lawn forest magenta
@@ -351,7 +351,7 @@ Brand#24
 PROMO PLATED STEEL
 4
 MED BAG
-906.000
+906.00
 sual a
 7
 moccasin green thistle khaki floral
@@ -360,7 +360,7 @@ Brand#11
 SMALL PLATED COPPER
 45
 SM BAG
-907.000
+907.00
 lyly. ex
 8
 misty lace thistle snow royal
@@ -369,7 +369,7 @@ Brand#44
 PROMO BURNISHED TIN
 41
 LG DRUM
-908.000
+908.00
 eposi
 9
 thistle dim navajo dark gainsboro
@@ -378,65 +378,65 @@ Brand#43
 SMALL BURNISHED STEEL
 12
 WRAP CASE
-909.000
+909.00
 ironic foxe
 
-query IIIRT nosort
+query IIIDT nosort
 select * from partsupp order by ps_partkey, ps_suppkey   limit 9
 ----
 1
 2
 3325
-771.640
+771.64
 , even theodolites. regular, final theodolites eat after the carefully pending foxes. furiously regular deposits sleep slyly. carefully bold realms above the ironic dependencies haggle careful
 1
 27
 8076
-993.490
+993.49
 ven ideas. quickly even packages print. pending multipliers must have to are fluff
 1
 52
 3956
-337.090
+337.09
 after the fluffily ironic deposits? blithely special dependencies integrate furiously even excuses. blithely silent theodolites could have to haggle pending, express requests; fu
 1
 77
 4069
-357.840
+357.84
 al, regular dependencies serve carefully after the quickly final pinto beans. furiously even deposits sleep quickly final, silent pinto beans. fluffily reg
 2
 3
 8895
-378.490
+378.49
 nic accounts. final accounts sleep furiously about the ironic, bold packages. regular, regular accounts
 2
 28
 4969
-915.270
+915.27
 ptotes. quickly pending dependencies integrate furiously. fluffily ironic ideas impress blithely above the express accounts. furiously even epitaphs need to wak
 2
 53
 8539
-438.370
+438.37
 blithely bold ideas. furiously stealthy packages sleep fluffily. slyly special deposits snooze furiously carefully regular accounts. regular deposits according to the accounts nag carefully slyl
 2
 78
 3025
-306.390
+306.39
 olites. deposits wake carefully. even, express requests cajole. carefully regular ex
 3
 4
 4651
-920.920
+920.92
 ilent foxes affix furiously quickly unusual requests. even packages across the carefully even theodolites nag above the sp
 
-query IITRTTTIT nosort
+query IITDTTTIT nosort
 select * from orders   order by o_orderkey  limit 9
 ----
 1
 370
 O
-172799.490
+172799.49
 1996-01-02
 5-LOW
 Clerk#000000951
@@ -445,7 +445,7 @@ nstructions sleep furiously among
 2
 781
 O
-38426.090
+38426.09
 1996-12-01
 1-URGENT
 Clerk#000000880
@@ -454,7 +454,7 @@ Clerk#000000880
 3
 1234
 F
-205654.300
+205654.30
 1993-10-14
 5-LOW
 Clerk#000000955
@@ -463,7 +463,7 @@ sly final accounts boost. carefully regular ideas cajole carefully. depos
 4
 1369
 O
-56000.910
+56000.91
 1995-10-11
 5-LOW
 Clerk#000000124
@@ -472,7 +472,7 @@ sits. slyly regular warthogs cajole. regular, regular theodolites acro
 5
 445
 F
-105367.670
+105367.67
 1994-07-30
 5-LOW
 Clerk#000000925
@@ -481,7 +481,7 @@ quickly. bold deposits sleep slyly. packages use slyly
 6
 557
 F
-45523.100
+45523.10
 1992-02-21
 4-NOT SPECIFIED
 Clerk#000000058
@@ -490,7 +490,7 @@ ggle. special, final requests are against the furiously specia
 7
 392
 O
-271885.660
+271885.66
 1996-01-10
 2-HIGH
 Clerk#000000470
@@ -499,7 +499,7 @@ ly special requests
 32
 1301
 O
-198665.570
+198665.57
 1995-07-16
 2-HIGH
 Clerk#000000616
@@ -508,15 +508,15 @@ ise blithely bold, regular requests. quickly unusual dep
 33
 670
 F
-146567.240
+146567.24
 1993-10-27
 3-MEDIUM
 Clerk#000000409
 0
 uriously. furiously final request
 
-query IIIIRRRRTTTTTTTT nosort
+query IIIIDDDDTTTTTTTT nosort
 select * from lineitem order by l_orderkey, l_linenumber limit 9
 ----
-144 values hashing to 2cc36dd7630bceb0a5dd86a5410847ab
+144 values hashing to ed5501a0b7cca310d6e4e196a5be71dc
 

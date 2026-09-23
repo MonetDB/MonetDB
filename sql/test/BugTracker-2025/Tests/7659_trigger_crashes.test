@@ -1,0 +1,16 @@
+# crash of issue 7659
+statement ok
+CREATE TABLE table1(column1 INT, column2 INT)
+
+statement ok
+CREATE TABLE table2(column1 INT, column2 INT)
+
+statement error
+CREATE TRIGGER trigger_truncate_conditional AFTER TRUNCATE ON table1 FOR EACH STATEMENT WHEN (EXISTS (SELECT 1 FROM table2)) CALL procedure2()
+
+statement ok
+drop table table1
+
+statement ok
+drop table table2
+

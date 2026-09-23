@@ -3,11 +3,9 @@
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024, 2025 MonetDB Foundation;
- * Copyright August 2008 - 2023 MonetDB B.V.;
- * Copyright 1997 - July 2008 CWI.
+ * For copyright information, see the file debian/copyright.
  */
 
 /*
@@ -74,19 +72,17 @@ GROUPcollect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	(void) mb;
 	(void) cntxt;
-	a = (AGGRtask *) GDKmalloc(sizeof(*a));
-	if (a == NULL)
+	allocator *ma = mb->ma;
+	a = (AGGRtask *) ma_alloc(ma, sizeof(*a));
+	if (a == NULL) {
 		return NULL;
+	}
 	*a = (AGGRtask) {
-		.bid = GDKzalloc(pci->argc * sizeof(bat)),
-		.cols = GDKzalloc(pci->argc * sizeof(BAT *)),
-		.unique = GDKzalloc(pci->argc * sizeof(BUN)),
+		.bid = ma_zalloc(ma, pci->argc * sizeof(bat)),
+		.cols = ma_zalloc(ma, pci->argc * sizeof(BAT *)),
+		.unique = ma_zalloc(ma, pci->argc * sizeof(BUN)),
 	};
 	if (a->cols == NULL || a->bid == NULL || a->unique == NULL) {
-		GDKfree(a->cols);
-		GDKfree(a->bid);
-		GDKfree(a->unique);
-		GDKfree(a);
 		return NULL;
 	}
 	for (i = pci->retc; i < pci->argc; i++, a->last++) {
@@ -95,10 +91,6 @@ GROUPcollect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		if (a->cols[a->last] == NULL) {
 			for (a->last--; a->last >= 0; a->last--)
 				BBPunfix(a->cols[a->last]->batCacheid);
-			GDKfree(a->cols);
-			GDKfree(a->bid);
-			GDKfree(a->unique);
-			GDKfree(a);
 			return NULL;
 		}
 		bs = BATsample(b, 1000);
@@ -143,18 +135,6 @@ GROUPcollectSort(AGGRtask *a, int start, int finish)
 			}
 }
 
-static void
-GROUPdelete(AGGRtask *a)
-{
-	for (a->last--; a->last >= 0; a->last--) {
-		BBPunfix(a->cols[a->last]->batCacheid);
-	}
-	GDKfree(a->bid);
-	GDKfree(a->cols);
-	GDKfree(a->unique);
-	GDKfree(a);
-}
-
 /*
  * The groups optimizer takes a grouping sequence and attempts to
  * minimize the intermediate result.  The choice depends on a good
@@ -184,7 +164,7 @@ GROUPmulticolumngroup(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	*grp = 0;
 	*ext = 0;
 	*hist = 0;
-	msg = GRPgroup1(grp, ext, hist, &aggr->bid[0]);
+	msg = GRPgroup1(cntxt, grp, ext, hist, &aggr->bid[0]);
 	i = 1;
 	if (msg == MAL_SUCCEED && aggr->last > 1)
 		do {
@@ -203,18 +183,20 @@ GROUPmulticolumngroup(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			*grp = 0;
 			*ext = 0;
 			*hist = 0;
-			msg = GRPsubgroup5(grp, ext, hist, &aggr->bid[i], NULL, &oldgrp,
+			msg = GRPsubgroup5(cntxt, grp, ext, hist, &aggr->bid[i], NULL, &oldgrp,
 							   &oldext, &oldhist);
 			BBPrelease(oldgrp);
 			BBPrelease(oldext);
 			BBPrelease(oldhist);
 		} while (msg == MAL_SUCCEED && ++i < aggr->last);
-	GROUPdelete(aggr);
+	for (aggr->last--; aggr->last >= 0; aggr->last--) {
+		BBPunfix(aggr->cols[aggr->last]->batCacheid);
+	}
 	return msg;
 }
 
 #include "mel.h"
-mel_func groupby_init_funcs[] = {
+static mel_func groupby_init_funcs[] = {
  pattern("group", "multicolumn", GROUPmulticolumngroup, false, "Derivation of a group index over multiple columns.", args(3,4, batarg("ref",oid),batarg("grp",oid),batargany("hist",0),batvarargany("b",0))),
  { .imp=NULL }
 };

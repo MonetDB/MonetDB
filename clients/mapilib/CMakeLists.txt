@@ -3,11 +3,9 @@
 #
 # This Source Code Form is subject to the terms of the Mozilla Public
 # License, v. 2.0.  If a copy of the MPL was not distributed with this
-# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+# file, You can obtain one at https://mozilla.org/MPL/2.0/.
 #
-# Copyright 2024, 2025 MonetDB Foundation;
-# Copyright August 2008 - 2023 MonetDB B.V.;
-# Copyright 1997 - July 2008 CWI.
+# For copyright information, see the file debian/copyright.
 #]]
 
 if(MONETDB_STATIC)
@@ -26,7 +24,9 @@ target_sources(mapi
   mapi.c
   connect.c
   msettings.c
+  msettings_internal.h
   parseurl.c
+  writeurl.c
   $<$<BOOL:${HAVE_SYS_UN_H}>:connect_unix.c>
   $<$<BOOL:${OPENSSL_FOUND}>:connect_openssl.c>
   $<$<BOOL:${OPENSSL_FOUND}>:$<$<BOOL:${WIN32}>:openssl_windows.c>>
@@ -48,7 +48,6 @@ target_link_libraries(mapi
   PRIVATE
   monetdb_config_header
   moptions
-  mcrypt
   stream
   mutils
   $<$<BOOL:${OPENSSL_FOUND}>:OpenSSL::SSL>

@@ -13,3 +13,7 @@ for line in out.splitlines():
         # unexpected output, dump it all
         print(out)
         break
+
+if err:
+    import sys
+    sys.stderr.write(err)

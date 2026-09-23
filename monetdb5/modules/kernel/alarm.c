@@ -3,11 +3,9 @@
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024, 2025 MonetDB Foundation;
- * Copyright August 2008 - 2023 MonetDB B.V.;
- * Copyright 1997 - July 2008 CWI.
+ * For copyright information, see the file debian/copyright.
  */
 
 /*
@@ -32,8 +30,9 @@
 #include "mal_exception.h"
 
 static str
-ALARMusec(lng *ret)
+ALARMusec(Client ctx, lng *ret)
 {
+	(void) ctx;
 	*ret = GDKusec();
 	return MAL_SUCCEED;
 }
@@ -73,8 +72,9 @@ ALARMsleep(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 
 static str
-ALARMctime(str *res)
+ALARMctime(Client ctx, str *res)
 {
+	allocator *ma = ctx->curprg->def->ma;
 	time_t t = time(0);
 	char *base;
 	char buf[26];
@@ -89,29 +89,30 @@ ALARMctime(str *res)
 		throw(MAL, "alarm.ctime", "failed to format time");
 
 	base[24] = 0;				/* squash final newline */
-	*res = GDKstrdup(base);
+	*res = ma_strdup(ma, base);
 	if (*res == NULL)
 		throw(MAL, "alarm.ctime", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	return MAL_SUCCEED;
 }
 
 static str
-ALARMepoch(int *res)
-{								/* XXX should be lng */
+ALARMepoch(Client ctx, int *res)
+{
+	(void) ctx;								/* XXX should be lng */
 	*res = (int) time(0);
 	return MAL_SUCCEED;
 }
 
 static str
-ALARMtime(int *res)
+ALARMtime(Client ctx, int *res)
 {
+	(void) ctx;
 	*res = GDKms();
 	return MAL_SUCCEED;
 }
 
 #include "mel.h"
-mel_func alarm_init_funcs[] = {
- pattern("alarm", "sleep", ALARMsleep, true, "Sleep a few milliseconds", args(1,2, arg("",void),argany("msecs",1))),
+static mel_func alarm_init_funcs[] = {
  pattern("alarm", "sleep", ALARMsleep, true, "Sleep a few milliseconds and return the slept value", args(1,2, argany("",1),argany("msecs",1))),
  command("alarm", "usec", ALARMusec, true, "Return time since Jan 1, 1970 in microseconds.", args(1,1, arg("",lng))),
  command("alarm", "time", ALARMtime, true, "Return time since program start in milliseconds.", args(1,1, arg("",int))),

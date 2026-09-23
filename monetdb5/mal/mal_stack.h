@@ -3,11 +3,9 @@
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024, 2025 MonetDB Foundation;
- * Copyright August 2008 - 2023 MonetDB B.V.;
- * Copyright 1997 - July 2008 CWI.
+ * For copyright information, see the file debian/copyright.
  */
 
 #ifndef _MAL_STACK_H_
@@ -16,8 +14,9 @@
 
 #define stackSize(CNT) (sizeof(ValRecord)*(CNT) + offsetof(MalStack, stk))
 
-mal_export MalStkPtr newGlobalStack(int size);
-mal_export MalStkPtr reallocGlobalStack(MalStkPtr s, int cnt);
+mal_export MalStkPtr newGlobalStack(allocator *ma, int size);
+mal_export MalStkPtr reallocGlobalStack(allocator *ma, MalStkPtr s, int cnt);
+mal_export void clearStack(MalStkPtr s);
 mal_export void freeStack(MalStkPtr stk);
 
 #define getStkRecord(S,P,I) &(S)->stk[(P)->argv[I]]

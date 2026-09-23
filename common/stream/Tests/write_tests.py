@@ -46,7 +46,8 @@ class TestCase:
             return False
 
         # Trial run to rule out i/o errors
-        open(filename, 'rb').read()
+        with open(filename, 'rb') as fil:
+            fil.read()
 
         try:
             output = self.tf.read()  # should decompress it

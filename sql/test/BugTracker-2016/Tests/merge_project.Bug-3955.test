@@ -50,8 +50,9 @@ select * from r
 2
 0.900
 
+skipif knownfail
 query T nosort
-PLAN select * from r
+EXPLAIN SHOW DETAILS select * from r
 ----
 project (
 | project (

@@ -3,11 +3,9 @@
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024, 2025 MonetDB Foundation;
- * Copyright August 2008 - 2023 MonetDB B.V.;
- * Copyright 1997 - July 2008 CWI.
+ * For copyright information, see the file debian/copyright.
  */
 
 #include <stdio.h>
@@ -184,7 +182,7 @@ void
 readGround()
 {
 	char filename[80];
-	sprintf(filename, "ground_%d_%d", entries, bins);
+	snprintf(filename, sizeof(filename), "ground_%d_%d", entries, bins);
 
 	FILE *fp = fopen(filename, "rb");
 	if (!fp) {
@@ -205,7 +203,7 @@ int
 main()
 {
 	data = new float[23907840];
-	sprintf(filename, "ground_%d_%d", entries, bins);
+	snprintf(filename, sizeof(filename), "ground_%d_%d", entries, bins);
 
 	startTime();
 	fillData();

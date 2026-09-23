@@ -3,19 +3,28 @@
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024, 2025 MonetDB Foundation;
- * Copyright August 2008 - 2023 MonetDB B.V.;
- * Copyright 1997 - July 2008 CWI.
+ * For copyright information, see the file debian/copyright.
  */
 
 /* monetdb_config.h must be the first include in each .c file */
 #include "monetdb_config.h"
-#include "udf.h"
+#include "sql_monet_backend.h"
 #include "str.h"
+#include <string.h>
 
 /* Reverse a string */
+
+/* using C macro for convenient type-expansion */
+#define UDFfuse_scalar_decl(in,out) \
+	static char *UDFfuse_##in##_##out(Client ctx, out *ret, const in *one, const in *two)
+UDFfuse_scalar_decl(bte, sht);
+UDFfuse_scalar_decl(sht, int);
+UDFfuse_scalar_decl(int, lng);
+#ifdef HAVE_HGE
+UDFfuse_scalar_decl(lng, hge);
+#endif
 
 /* actual implementation */
 /* all non-exported functions must be declared static */
@@ -76,24 +85,25 @@ UDFreverse_(str *buf, size_t *buflen, const char *src)
 }
 
 /* MAL wrapper */
-str
-UDFreverse(str *res, const str *arg)
+static str
+UDFreverse(Client ctx, str *res, const str *arg)
 {
+	(void) ctx;
+	allocator *ma = ctx->curprg->def->ma;
 	str msg = MAL_SUCCEED, s;
 
 	/* assert calling sanity */
 	assert(res && arg);
 	s = *arg;
 	if (strNil(s)) {
-		if (!(*res = GDKstrdup(str_nil)))
+		if (!(*res = SA_STRDUP(ma, str_nil)))
 			throw(MAL, "udf.reverse", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	} else {
 		size_t buflen = strlen(s) + 1;
 
-		if (!(*res = GDKmalloc(buflen)))
+		if (!(*res = ma_alloc(ma, buflen)))
 			throw(MAL, "udf.reverse", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		if ((msg = UDFreverse_(res, &buflen, s)) != MAL_SUCCEED) {
-			GDKfree(*res);
 			*res = NULL;
 			return msg;
 		}
@@ -145,7 +155,7 @@ UDFBATreverse_(BAT **ret, BAT *src)
 	li = bat_iterator(src);
 	/* the core of the algorithm */
 	for (p = 0; p < q ; p++) {
-		const char *x = BUNtvar(li, p);
+		const char *x = BUNtvar(&li, p);
 
 		if (strNil(x)) {
 			/* if the input string is null, then append directly */
@@ -188,9 +198,10 @@ bailout:
 }
 
 /* MAL wrapper */
-char *
-UDFBATreverse(bat *ret, const bat *arg)
+static char *
+UDFBATreverse(Client ctx, bat *ret, const bat *arg)
 {
+	(void) ctx;
 	BAT *res = NULL, *src = NULL;
 	char *msg = NULL;
 
@@ -258,7 +269,7 @@ UDFBATreverse(bat *ret, const bat *arg)
 
 /* actual implementation */
 static char *
-UDFBATfuse_(BAT **ret, BAT *bone, BAT *btwo)
+UDFBATfuse_(Client ctx, BAT **ret, BAT *bone, BAT *btwo)
 {
 	BAT *bres = NULL;
 	bit two_tail_sorted_unsigned = FALSE;
@@ -317,20 +328,20 @@ UDFBATfuse_(BAT **ret, BAT *bone, BAT *btwo)
 	/* call type-specific core algorithm */
 	switch (bone->ttype) {
 	case TYPE_bte:
-		msg = UDFBATfuse_bte_sht ( bres, bone, btwo, n,
+		msg = UDFBATfuse_bte_sht ( ctx, bres, bone, btwo, n,
 			&two_tail_sorted_unsigned, &two_tail_revsorted_unsigned );
 		break;
 	case TYPE_sht:
-		msg = UDFBATfuse_sht_int ( bres, bone, btwo, n,
+		msg = UDFBATfuse_sht_int ( ctx, bres, bone, btwo, n,
 			&two_tail_sorted_unsigned, &two_tail_revsorted_unsigned );
 		break;
 	case TYPE_int:
-		msg = UDFBATfuse_int_lng ( bres, bone, btwo, n,
+		msg = UDFBATfuse_int_lng ( ctx, bres, bone, btwo, n,
 			&two_tail_sorted_unsigned, &two_tail_revsorted_unsigned );
 		break;
 #ifdef HAVE_HGE
 	case TYPE_lng:
-		msg = UDFBATfuse_lng_hge ( bres, bone, btwo, n,
+		msg = UDFBATfuse_lng_hge ( ctx, bres, bone, btwo, n,
 			&two_tail_sorted_unsigned, &two_tail_revsorted_unsigned );
 		break;
 #endif
@@ -366,7 +377,7 @@ UDFBATfuse_(BAT **ret, BAT *bone, BAT *btwo)
 			bres->trevsorted = true;
 		else
 			bres->trevsorted = (BATcount(bres) <= 1);
-		/* result tail is key (unique), iff both input tails are */
+		/* result tail is key (unique), if both input tails are */
 		BATkey(bres, BATtkey(bone) || BATtkey(btwo));
 
 		*ret = bres;
@@ -376,9 +387,10 @@ UDFBATfuse_(BAT **ret, BAT *bone, BAT *btwo)
 }
 
 /* MAL wrapper */
-char *
-UDFBATfuse(bat *ires, const bat *ione, const bat *itwo)
+static char *
+UDFBATfuse(Client ctx, bat *ires, const bat *ione, const bat *itwo)
 {
+	(void) ctx;
 	BAT *bres = NULL, *bone = NULL, *btwo = NULL;
 	char *msg = NULL;
 
@@ -396,7 +408,7 @@ UDFBATfuse(bat *ires, const bat *ione, const bat *itwo)
 	}
 
 	/* do the work */
-	msg = UDFBATfuse_ ( &bres, bone, btwo );
+	msg = UDFBATfuse_ ( ctx, &bres, bone, btwo );
 
 	/* release input BAT-descriptors */
 	BBPunfix(bone->batCacheid);

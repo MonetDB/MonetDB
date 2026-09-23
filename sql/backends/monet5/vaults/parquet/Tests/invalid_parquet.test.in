@@ -1,0 +1,2 @@
+statement error
+SELECT * FROM file_loader('$QTSTSRCDIR/data/invalid.parquet') limit 50

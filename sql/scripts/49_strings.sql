@@ -2,11 +2,9 @@
 --
 -- This Source Code Form is subject to the terms of the Mozilla Public
 -- License, v. 2.0.  If a copy of the MPL was not distributed with this
--- file, You can obtain one at http://mozilla.org/MPL/2.0/.
+-- file, You can obtain one at https://mozilla.org/MPL/2.0/.
 --
--- Copyright 2024, 2025 MonetDB Foundation;
--- Copyright August 2008 - 2023 MonetDB B.V.;
--- Copyright 1997 - July 2008 CWI.
+-- For copyright information, see the file debian/copyright.
 
 create function asciify(x string)
 returns string external name str.asciify;
@@ -66,3 +64,42 @@ GRANT EXECUTE ON AGGREGATE sys.group_concat(string) TO PUBLIC;
 create aggregate sys.group_concat(str string, sep string) returns string with order
 	external name "aggr"."str_group_concat";
 GRANT EXECUTE ON AGGREGATE sys.group_concat(string, string) TO PUBLIC;
+
+create function sys.normalize_monetdb_url(u string)
+returns string external name sql.normalize_monetdb_url;
+grant execute on function sys.normalize_monetdb_url(string) to public;
+
+create aggregate sha1(val string)
+returns string with order external name aggr.sha1;
+grant execute on aggregate sha1 to public;
+
+create aggregate sha224(val string)
+returns string with order external name aggr.sha224;
+grant execute on aggregate sha224 to public;
+
+create aggregate sha256(val string)
+returns string with order external name aggr.sha256;
+grant execute on aggregate sha256 to public;
+
+create aggregate sha384(val string)
+returns string with order external name aggr.sha384;
+grant execute on aggregate sha384 to public;
+
+create aggregate sha512(val string)
+returns string with order external name aggr.sha512;
+grant execute on aggregate sha512 to public;
+
+create aggregate ripemd160(val string)
+returns string with order external name aggr.ripemd160;
+grant execute on aggregate ripemd160 to public;
+
+-- to_hex returns the unsigned hexadecimal representation of the given number.
+-- Compatible with Postgres.
+
+create function to_hex(n int)
+returns text external name "calc"."to_hex";
+grant execute on function to_hex(int) to public;
+
+create function to_hex(n bigint)
+returns text external name "calc"."to_hex";
+grant execute on function to_hex(bigint) to public;

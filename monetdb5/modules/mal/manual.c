@@ -3,11 +3,9 @@
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024, 2025 MonetDB Foundation;
- * Copyright August 2008 - 2023 MonetDB B.V.;
- * Copyright 1997 - July 2008 CWI.
+ * For copyright information, see the file debian/copyright.
  */
 
 /*
@@ -35,8 +33,6 @@ MANUALcreateOverview(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	bat *cx = getArgReference_bat(stk, pci, 4);
 	Module *moduleList;
 	int length;
-	int top = 0;
-	Module list[256];
 
 	mod = COLnew(0, TYPE_str, 0, TRANSIENT);
 	fcn = COLnew(0, TYPE_str, 0, TRANSIENT);
@@ -52,18 +48,14 @@ MANUALcreateOverview(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		throw(MAL, "manual.functions", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 
-	list[top++] = cntxt->usermodule;
-	getModuleList(&moduleList, &length);
+	allocator *ta = MT_thread_getallocator();
+	allocator_state ta_state = ma_open(ta);
+	getModuleList(ta, &moduleList, &length);
 	if (moduleList == NULL)
 		goto bailout;
-	while (top < 256 && top <= length) {
-		list[top] = moduleList[top - 1];
-		top++;
-	}
-	freeModuleList(moduleList);
 
-	for (int k = 0; k < top; k++) {
-		Module s = list[k];
+	for (int k = 0; k <= length; k++) {
+		Module s = k < length ? moduleList[k] : cntxt->usermodule;
 		for (int j = 0; j < MAXSCOPE; j++) {
 			if (s->space[j]) {
 				for (Symbol t = s->space[j]; t != NULL; t = t->peer) {
@@ -71,33 +63,33 @@ MANUALcreateOverview(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 						continue;
 					char buf[1024];
 					const char *comment = NULL;
+					const char *tt = NULL;
 					if (t->kind == FUNCTIONsymbol) {
 						comment = t->def->help;
-						(void) fcnDefinition(t->def, getInstrPtr(t->def, 0), buf, TRUE, buf, sizeof(buf));
+						(void) fcnDefinition(t->def, getInstrPtr(t->def, 0), buf, LIST_MAL_NOCFUNC, buf, sizeof(buf));
+						tt = t->def->binding;
 					} else {
 						assert(t->func);
 						comment = t->func->comment;
-						(void) cfcnDefinition(t, buf, TRUE, buf, sizeof(buf));
+						(void) cfcnDefinition(t, buf, sizeof(buf));
+						tt = t->func->cname;
 					}
-					char *tt = strstr(buf, " address ");
-					if (tt) {
-						*tt = 0;
-						tt += 9;
-					}
+					if (comment == NULL)
+						comment = "";
+					if (tt == NULL)
+						tt = "";
 					if (BUNappend(mod, s->name, false) != GDK_SUCCEED
-						|| BUNappend(fcn, t->name,
-									 false) != GDK_SUCCEED
-						|| BUNappend(com, comment ? comment : "",
-									 false) != GDK_SUCCEED
+						|| BUNappend(fcn, t->name, false) != GDK_SUCCEED
+						|| BUNappend(com, comment, false) != GDK_SUCCEED
 						|| BUNappend(sig, buf, false) != GDK_SUCCEED
-						|| BUNappend(adr, tt ? tt : "",
-									 false) != GDK_SUCCEED) {
+						|| BUNappend(adr, tt, false) != GDK_SUCCEED) {
 						goto bailout;
 					}
 				}
 			}
 		}
 	}
+	ma_close(&ta_state);
 
 	*mx = mod->batCacheid;
 	BBPkeepref(mod);
@@ -113,6 +105,7 @@ MANUALcreateOverview(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	return MAL_SUCCEED;
 
   bailout:
+	ma_close(&ta_state);
 	BBPreclaim(mod);
 	BBPreclaim(fcn);
 	BBPreclaim(sig);
@@ -122,7 +115,7 @@ MANUALcreateOverview(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 
 #include "mel.h"
-mel_func manual_init_funcs[] = {
+static mel_func manual_init_funcs[] = {
  pattern("manual", "functions", MANUALcreateOverview, false, "Produces a table with all MAL functions known", args(5,5, batarg("mod",str),batarg("fcn",str),batarg("sig",str),batarg("adr",str),batarg("com",str))),
  { .imp=NULL }
 };

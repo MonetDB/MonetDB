@@ -1,0 +1,84 @@
+statement ok
+CREATE TABLE v0 ( v1 BOOLEAN , v2 DOUBLE )
+
+statement error 42000!types boolean(1,0) and double(53,0) are not equal for column 'v1'
+ WITH RECURSIVE v0 AS ( SELECT v2 , ( v1 ) FROM v0 WHERE v2 > 72 UNION ALL SELECT v1 , ( v2 ) FROM v0 WHERE v1 > 19 ) INSERT INTO v0 VALUES ( 16 , 18981070.000000 ) , ( -1 , 48981446.000000 ) , ( 49 , 56166811.000000 ) , ( -1 , NULL ) , ( 80 , 81429797.000000 )
+
+query I rowsort
+ SELECT ( SELECT 11 FROM v0 t1 , v0 t2 JOIN v0 USING ( v1 , v2 ) ) = 'x' FROM v0
+----
+
+statement ok
+ CREATE TABLE v3 ( v4 INT , v5 FLOAT )
+
+statement ok
+ INSERT INTO v0 VALUES ( 8 , 78482300.000000 ) , ( -32768 , 97463370.000000 ) , ( -128 , 98961168.000000 ) , ( -1 , NULL ) , ( -1 , 96006176.000000 )
+
+query I rowsort
+ SELECT COUNT ( DISTINCT v1 ) FROM v0 WHERE v2 = 58
+----
+0
+
+statement error 42000!SELECT: no such operator 'percent_rank'(double)
+ SELECT PERCENT_RANK ( DISTINCT v2 ) FROM v0 WHERE v2 IN ( -32768 , -128 )
+
+statement ok
+ CREATE TABLE v6 ( v7 DOUBLE )
+
+statement ok
+ INSERT INTO v6 VALUES ( NULL ) , ( 59162491.000000 ) , ( 25001794.000000 ) , ( 91582435.000000 ) , ( 86978172.000000 )
+
+query R rowsort
+ SELECT STDDEV_POP ( DISTINCT v1 ) FROM v0
+----
+0.000
+
+statement ok
+ CREATE TABLE v8 ( v9 INT , v10 DOUBLE )
+
+statement ok
+ INSERT INTO v3 VALUES ( -1 , 60553450.000000 ) , ( 62 , 38903497.000000 ) , ( -1 , 97088301.000000 ) , ( 3 , 45831651.000000 )
+
+statement error 42000!SELECT: no such operator 'bit_or'(int)
+ SELECT ( SELECT BIT_OR ( DISTINCT v4 ) FROM v3 ) + -128 AS v11
+
+statement error 42000!SELECT: identifier 'v2' unknown
+ SELECT COUNT ( DISTINCT v2 ) FROM ( SELECT v4 FROM v3 WHERE v5 > 28 ) AS v12
+
+statement ok
+ CREATE TABLE v13 ( v14 INT , v15 FLOAT )
+
+statement error 42000!syntax error, unexpected sqlINTEGER, expecting CHECK or FOREIGN or PRIMARY or UNIQUE in: " create table v16 ( int"
+ CREATE TABLE v16 ( INT v17 FLOAT )
+
+statement error 21S01!INSERT INTO: number of values doesn't match number of columns of table 'v6'
+ INSERT INTO v6 VALUES ( 0 , 94384304.000000 ) , ( -2147483648 , 85804154.000000 ) , ( 27 , 82892455.000000 )
+
+statement ok
+ INSERT INTO v8 VALUES ( -1 , 30443821.000000 ) , ( -128 , NULL )
+
+statement error 42000!syntax error, unexpected WHERE in: " select std ( distinct v8 . v17 ) from v3 t1 join v16 t2 where"
+ SELECT STD ( DISTINCT v8 . v17 ) FROM v3 t1 JOIN v16 t2 WHERE v0 . v10 IS NOT NULL
+
+statement error 42000!SELECT: no such operator 'row_number'(bigint)
+ SELECT ROW_NUMBER ( DISTINCT v14 + 76 ) FROM v13
+
+statement error 42000!syntax error, unexpected SELECT in: " select dense_rank ( select"
+ SELECT DENSE_RANK ( SELECT 24 + v1 % 16 ) FROM ( SELECT VAR_SAMP ( -32768 , 40 ) AS v19 ) AS v18
+
+-- cleanup
+statement ok
+DROP TABLE v13
+
+statement ok
+DROP TABLE v8
+
+statement ok
+DROP TABLE v6
+
+statement ok
+DROP TABLE v3
+
+statement ok
+DROP TABLE v0
+

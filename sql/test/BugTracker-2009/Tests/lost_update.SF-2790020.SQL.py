@@ -19,15 +19,13 @@ class server(process.server):
 with tempfile.TemporaryDirectory() as farm_dir:
     os.mkdir(os.path.join(farm_dir, 'db1'))
     with server() as s:
-        with SQLTestCase() as tc:
-            tc.connect(username="monetdb", password="monetdb", port=s.dbport, database="db1")
+        with SQLTestCase(server=s) as tc:
             tc.execute("create table lost_update_t2 (a int);").assertSucceeded()
             tc.execute("insert into lost_update_t2 values (1);").assertSucceeded().assertRowCount(1)
             tc.execute("update lost_update_t2 set a = 2;").assertSucceeded().assertRowCount(1)
         s.server_stop()
     with server() as s:
-        with SQLTestCase() as tc:
-            tc.connect(username="monetdb", password="monetdb", port=s.dbport, database="db1")
+        with SQLTestCase(server=s) as tc:
             tc.execute("update lost_update_t2 set a = 3;").assertSucceeded().assertRowCount(1)
             tc.execute("create table lost_update_t1 (a int);").assertSucceeded()
             tc.execute("insert into lost_update_t1 values (1);").assertSucceeded().assertRowCount(1)
@@ -46,13 +44,11 @@ with tempfile.TemporaryDirectory() as farm_dir:
             tc.execute("call sys.flush_log();").assertSucceeded()
         s.server_stop()
     with server() as s:
-        with SQLTestCase() as tc:
-            tc.connect(username="monetdb", password="monetdb", port=s.dbport, database="db1")
+        with SQLTestCase(server=s) as tc:
             tc.execute("select a from lost_update_t2;").assertSucceeded().assertRowCount(1).assertDataResultMatch([(3,)])
         s.server_stop()
     with server() as s:
-        with SQLTestCase() as tc:
-            tc.connect(username="monetdb", password="monetdb", port=s.dbport, database="db1")
+        with SQLTestCase(server=s) as tc:
             tc.execute("drop table lost_update_t1;").assertSucceeded()
             tc.execute("drop table lost_update_t2;").assertSucceeded()
         s.server_stop()

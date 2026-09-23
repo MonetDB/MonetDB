@@ -3,15 +3,15 @@
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024, 2025 MonetDB Foundation;
- * Copyright August 2008 - 2023 MonetDB B.V.;
- * Copyright 1997 - July 2008 CWI.
+ * For copyright information, see the file debian/copyright.
  */
 
 #ifndef _LOGGER_H_
 #define _LOGGER_H_
+
+#include "gdk.h"
 
 #define LOGFILE "log"
 
@@ -55,7 +55,7 @@ gdk_export lng log_changes(logger *lg);
 gdk_export int log_sequence(logger *lg, int seq, lng *id);
 
 /* todo pass the transaction id */
-gdk_export gdk_return log_constant(logger *lg, int type, const void *val, log_id id, lng offset, lng cnt);
+gdk_export gdk_return log_constant(logger *lg, int type, const void *val, log_id id, lng offset, lng cnt, lng total_cnt);
 gdk_export gdk_return log_bat(logger *lg, BAT *b, log_id id, lng offset, lng cnt, lng total_cnt); /* log slice from b */
 gdk_export gdk_return log_bat_persists(logger *lg, BAT *b, log_id id);
 gdk_export gdk_return log_bat_transient(logger *lg, log_id id);
@@ -76,6 +76,8 @@ gdk_export gdk_return log_tflush(logger *lg, ulng log_file_id, ulng commit_ts); 
 gdk_export gdk_return log_tsequence(logger *lg, int seq, lng id);
 gdk_export log_bid log_find_bat(logger *lg, log_id id);
 
-gdk_export void log_printinfo(logger *lg);
+gdk_export void log_printinfo(FILE *outf, logger *lg)
+	__attribute__((__nonnull__(1)))
+	__attribute__((__nonnull__(2)));
 
 #endif /*_LOGGER_H_*/

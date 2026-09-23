@@ -3,11 +3,9 @@
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024, 2025 MonetDB Foundation;
- * Copyright August 2008 - 2023 MonetDB B.V.;
- * Copyright 1997 - July 2008 CWI.
+ * For copyright information, see the file debian/copyright.
  */
 
 #include "monetdb_config.h"
@@ -52,21 +50,20 @@ sa_list(allocator *sa)
 	return list_init(l, sa, NULL);
 }
 
-/*
-static void
-_free(void *dummy, void *data)
-{
-	(void)dummy;
-	GDKfree(data);
-}
-*/
-
 list *
 sa_list_append(allocator *sa, list *l, void *data)
 {
 	if (!l)
 		l = SA_LIST(sa, NULL);
 	return list_append(l, data);
+}
+
+list *
+sa_list_prepend(allocator *sa, list *l, void *data)
+{
+	if (!l)
+		l = SA_LIST(sa, NULL);
+	return list_prepend(l, data);
 }
 
 list *
@@ -96,11 +93,9 @@ list_new_(list *l)
 }
 
 int
-list_empty(list *l)
+list_empty(const list *l)
 {
-	if (l)
-		return list_length(l) == 0;
-	return 1;
+	return (!l || l->h == NULL);
 }
 
 static void
@@ -145,7 +140,7 @@ list_destroy(list *l)
 }
 
 int
-list_length(list *l)
+list_length(const list *l)
 {
 	if (l)
 		return l->cnt;
@@ -546,53 +541,28 @@ list_match(list *l1, list *l2, fcmp cmp)
 }
 
 list *
-list_keysort(list *l, int *keys, fdup dup)
-{
-	list *res;
-	node *n = NULL;
-	int i, cnt = list_length(l);
-	void **data;
-
-	data = GDKmalloc(cnt*sizeof(void *));
-	if (data == NULL) {
-		return NULL;
-	}
-	res = list_new_(l);
-	if (res == NULL) {
-		GDKfree(data);
-		return NULL;
-	}
-	for (n = l->h, i = 0; n; n = n->next, i++) {
-		data[i] = n->data;
-	}
-	/* sort descending */
-	GDKqsort(keys, data, NULL, cnt, sizeof(int), sizeof(void *), TYPE_int, true, true);
-	for(i=0; i<cnt; i++) {
-		list_append(res, dup?dup(data[i]):data[i]);
-	}
-	GDKfree(data);
-	return res;
-}
-
-list *
 list_sort(list *l, fkeyvalue key, fdup dup)
 {
 	list *res;
 	node *n = NULL;
 	int i, *keys, cnt = list_length(l);
 	void **data;
+	allocator *ta = MT_thread_getallocator();
+	allocator_state ta_state = {0};
+	if (l->sa != ta)
+		ta_state = ma_open(ta);
 
-	keys = GDKmalloc(cnt*sizeof(int));
-	data = GDKmalloc(cnt*sizeof(void *));
+	keys = ma_alloc(ta, cnt*sizeof(int));
+	data = ma_alloc(ta, cnt*sizeof(void *));
 	if (keys == NULL || data == NULL) {
-		GDKfree(keys);
-		GDKfree(data);
+		if (l->sa != ta)
+			ma_close(&ta_state);
 		return NULL;
 	}
 	res = list_new_(l);
 	if (res == NULL) {
-		GDKfree(keys);
-		GDKfree(data);
+		if (l->sa != ta)
+			ma_close(&ta_state);
 		return NULL;
 	}
 	for (n = l->h, i = 0; n; n = n->next, i++) {
@@ -604,8 +574,8 @@ list_sort(list *l, fkeyvalue key, fdup dup)
 	for(i=0; i<cnt; i++) {
 		list_append(res, dup?dup(data[i]):data[i]);
 	}
-	GDKfree(keys);
-	GDKfree(data);
+	if (l->sa != ta)
+		ma_close(&ta_state);
 	return res;
 }
 
@@ -679,14 +649,21 @@ list_position(list *l, void *val)
 	return -1;
 }
 
-void *
-list_fetch(list *l, int pos)
+node *
+list_fetch_node(list *l, int pos)
 {
 	node *n = NULL;
 	int i;
 
 	for (n = l->h, i=0; n && i<pos; n = n->next, i++)
 		;
+	return n;
+}
+
+void *
+list_fetch(list *l, int pos)
+{
+	node *n = list_fetch_node(l, pos);
 	if (n)
 		return n->data;
 	return NULL;
@@ -739,6 +716,29 @@ list_map(list *l, void *data, fmap map)
 		}
 	}
 	return res;
+}
+
+list *
+list_join(list *l, list *data)
+{
+	if (!l)
+		return data;
+	if (!data)
+		return l;
+	assert(data->sa);
+	assert(data->sa == l->sa);
+	assert(!l->ht);
+
+	if (!data->t) {
+		return l;
+	}
+	if (!l->h)
+		l->h = data->h;
+	else
+		l->t->next = data->h;
+	l->cnt += data->cnt;
+	l->t = data->t;
+	return l;
 }
 
 list *

@@ -3,11 +3,9 @@
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024, 2025 MonetDB Foundation;
- * Copyright August 2008 - 2023 MonetDB B.V.;
- * Copyright 1997 - July 2008 CWI.
+ * For copyright information, see the file debian/copyright.
  */
 
 /*
@@ -39,10 +37,6 @@
 
 #ifdef HAVE_ODBCINST_H
 #include <odbcinst.h>
-#endif
-
-#ifndef HAVE_SQLGETPRIVATEPROFILESTRING
-#define SQLGetPrivateProfileString(section,entry,default,buffer,bufferlen,filename)	((int) strcpy_len(buffer,default,bufferlen))
 #endif
 
 static void
@@ -124,7 +118,7 @@ MNDBBrowseConnect(ODBCDbc *dbc,
 	// note that we leave out level 1, they have already been provided
 
 	if (buf && pos) {
-		size_t n = strcpy_len((char*)OutConnectionString, buf, BufferLength);
+		size_t n = strlcpy((char*)OutConnectionString, buf, BufferLength);
 		if (StringLength2Ptr)
 			*StringLength2Ptr = (SQLSMALLINT)n;
 	}

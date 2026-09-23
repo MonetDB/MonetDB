@@ -3,11 +3,9 @@
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024, 2025 MonetDB Foundation;
- * Copyright August 2008 - 2023 MonetDB B.V.;
- * Copyright 1997 - July 2008 CWI.
+ * For copyright information, see the file debian/copyright.
  */
 
 /*
@@ -51,8 +49,6 @@ mal_export lng MALdebug;
 #define MEMORY_THRESHOLD  (0.2 * GDK_mem_maxsize > 8 * GB?  GDK_mem_maxsize - 8 * GB: 0.8 * GDK_mem_maxsize)
 
 mal_export char monet_cwd[FILENAME_MAX];
-mal_export char monet_characteristics[4096];
-mal_export stream *maleventstream;
 
 /*
    See gdk/gdk.h for the definition of all debug masks.
@@ -72,8 +68,8 @@ mal_export stream *maleventstream;
 
 mal_export MT_Lock mal_contextLock;
 
-mal_export int mal_init(char *modules[], bool embedded, const char *initpasswd,
-						const char *caller_revision);
+mal_export int mal_init(const char *const *modules, bool embedded,
+						const char *initpasswd, const char *caller_revision);
 mal_export _Noreturn void mal_exit(int status);
 mal_export void mal_reset(void);
 mal_export const char *mal_version(void);
@@ -94,6 +90,7 @@ mal_export const char *mal_version(void);
 #define LIST_MAL_REMOTE  64		/* output MAL for remote execution */
 #define LIST_MAL_FLOW   128		/* output MAL dataflow dependencies */
 #define LIST_MAL_ALGO	256		/* output algorithm used */
+#define LIST_MAL_NOCFUNC	512		/* skip C function */
 #define LIST_MAL_CALL  (LIST_MAL_NAME | LIST_MAL_VALUE )
 #define LIST_MAL_DEBUG (LIST_MAL_NAME | LIST_MAL_VALUE | LIST_MAL_TYPE | LIST_MAL_PROPS | LIST_MAL_FLOW)
 #define LIST_MAL_ALL   (LIST_MAL_NAME | LIST_MAL_VALUE | LIST_MAL_TYPE | LIST_MAL_MAPI)
@@ -158,11 +155,13 @@ typedef struct INSTR {
 	struct MALBLK *blk;			/* resolved MAL function address */
 	/* inline statistics */
 	lng wbytes;					/* number of bytes produced in last instruction */
+	lng ticks;					/* number of clock ticks this instruction has run */
 	/* the core admin */
 	const char *modname;		/* module context, reference into namespace */
 	const char *fcnname;		/* function name, reference into namespace */
 	int argc, retc, maxarg;		/* total and result argument count */
-	int argv[];					/* at least a few entries */
+	int inout;			/* starting index of the inout result arguments in argv, -1 if none*/
+	int argv[] __attribute__((__counted_by__(maxarg)));	/* at least a few entries */
 } *InstrPtr, InstrRecord;
 
 typedef struct MALBLK {
@@ -181,6 +180,8 @@ typedef struct MALBLK {
 
 	str errors;					/* left over errors */
 	int maxarg;					/* keep track on the maximal arguments used */
+	allocator *ma;				/* mal blocks are fully allocated using a single allocator */
+	allocator *instr_allocator;	/* mal instructions allocator */
 
 	/* During the run we keep track on the maximum number of concurrent threads and memory claim */
 	ATOMIC_TYPE workers;
@@ -196,6 +197,7 @@ typedef struct MALBLK {
 typedef int (*DFhook)(void *, void *, void *, void *);
 
 typedef struct MALSTK {
+	bool allocated;
 	int stksize;
 	int stktop;
 	int stkbot;					/* the first variable to be initialized */
@@ -215,7 +217,6 @@ typedef struct MALSTK {
  * It is handy to administer the timing in the stack frame
  * for use in profiling instructions.
  */
-	struct timeval clock;		/* time this stack was created */
 	char status;				/* running 'R' suspended 'S', quitting 'Q' */
 	int pcup;					/* saved pc upon a recursive all */
 	oid tag;					/* unique invocation call tag */

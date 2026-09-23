@@ -5,7 +5,7 @@ query R rowsort
 SELECT col0 + - - CAST ( NULL AS REAL ) - + col0 + + col1 FROM tab1 cor0 WHERE ( NULL ) IS NOT NULL
 ----
 
-query R rowsort
+query D rowsort
 SELECT col0 + - - CAST( NULL AS DECIMAL ) - + col0 + + col1 FROM tab1 cor0 WHERE ( NULL ) IS NOT NULL
 ----
 

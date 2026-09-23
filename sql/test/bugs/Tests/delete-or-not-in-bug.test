@@ -20,7 +20,7 @@ INSERT INTO foo VALUES (1, 9, 10, 12), (2, 9, 11, 13), (3, 10, 20, 25), (4, 10, 
 statement ok
 INSERT INTO bar VALUES (9, 120, 180), (3, 111, 134), (5, 183, 154), (9, 142, 182), (9, 102, 134)
 
-query IIII nosort
+query IIII rowsort
 select * FROM foo WHERE cid = 9 AND ((ak NOT IN (SELECT akr FROM bar WHERE cid = 9)) OR (bk NOT IN (SELECT bkr FROM bar WHERE cid = 9)))
 ----
 1

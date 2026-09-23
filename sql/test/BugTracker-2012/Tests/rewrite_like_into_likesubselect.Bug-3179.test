@@ -5,7 +5,7 @@ statement ok
 start transaction
 
 query T python .explain.function_histogram
-explain select name,func from functions where name like '%optimizers%'
+explain physical select name,func from functions where name like '%optimizers%'
 ----
 algebra.likeselect
 2
@@ -29,7 +29,7 @@ user.main
 1
 
 query T python .explain.function_histogram
-explain select name,func from functions where name not like '%optimizers%'
+explain physical select name,func from functions where name not like '%optimizers%'
 ----
 algebra.likeselect
 2
@@ -53,7 +53,7 @@ user.main
 1
 
 query T python .explain.function_histogram
-explain select name,func from functions where name ilike '%optimizers%'
+explain physical select name,func from functions where name ilike '%optimizers%'
 ----
 algebra.likeselect
 2
@@ -77,7 +77,7 @@ user.main
 1
 
 query T python .explain.function_histogram
-explain select name,func from functions where name not ilike '%optimizers%'
+explain physical select name,func from functions where name not ilike '%optimizers%'
 ----
 algebra.likeselect
 2
@@ -129,7 +129,7 @@ begin
 end
 
 query T python .explain.function_histogram
-explain select name,func from functions where mycontains(name, 'optimizers')
+explain physical select name,func from functions where mycontains(name, 'optimizers')
 ----
 algebra.likeselect
 2
@@ -153,7 +153,7 @@ user.main
 1
 
 query T python .explain.function_histogram
-explain select name,func from functions where not_mycontains(name, 'optimizers')
+explain physical select name,func from functions where not_mycontains(name, 'optimizers')
 ----
 algebra.likeselect
 2
@@ -177,7 +177,7 @@ user.main
 1
 
 query T python .explain.function_histogram
-explain select name,func from functions where imycontains(name, 'optimizers')
+explain physical select name,func from functions where imycontains(name, 'optimizers')
 ----
 algebra.likeselect
 2
@@ -201,7 +201,7 @@ user.main
 1
 
 query T python .explain.function_histogram
-explain select name,func from functions where not_imycontains(name, 'optimizers')
+explain physical select name,func from functions where not_imycontains(name, 'optimizers')
 ----
 algebra.likeselect
 2

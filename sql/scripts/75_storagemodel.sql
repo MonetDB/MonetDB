@@ -2,11 +2,9 @@
 --
 -- This Source Code Form is subject to the terms of the Mozilla Public
 -- License, v. 2.0.  If a copy of the MPL was not distributed with this
--- file, You can obtain one at http://mozilla.org/MPL/2.0/.
+-- file, You can obtain one at https://mozilla.org/MPL/2.0/.
 --
--- Copyright 2024, 2025 MonetDB Foundation;
--- Copyright August 2008 - 2023 MonetDB B.V.;
--- Copyright 1997 - July 2008 CWI.
+-- For copyright information, see the file debian/copyright.
 
 -- Author M.Kersten
 -- This script gives the database administrator insight in the actual
@@ -224,13 +222,13 @@ begin
 	if tpe = 'smallint'
 		then return 2 * count;
 	end if;
-	if tpe in ('int', 'real', 'date', 'time', 'timetz', 'sec_interval', 'day_interval', 'month_interval')
+	if tpe in ('int', 'real', 'date', 'time', 'timetz', 'sec_interval', 'day_interval', 'month_interval', 'inet4')
 		then return 4 * count;
 	end if;
 	if tpe in ('bigint', 'double', 'timestamp', 'timestamptz', 'inet', 'oid')
 		then return 8 * count;
 	end if;
-	if tpe in ('hugeint', 'decimal', 'uuid', 'mbr')
+	if tpe in ('hugeint', 'decimal', 'uuid', 'mbr', 'inet6')
 		then return 16 * count;
 	end if;
 

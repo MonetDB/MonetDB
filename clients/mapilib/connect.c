@@ -3,11 +3,9 @@
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024, 2025 MonetDB Foundation;
- * Copyright August 2008 - 2023 MonetDB B.V.;
- * Copyright 1997 - July 2008 CWI.
+ * For copyright information, see the file debian/copyright.
  */
 
 #include "monetdb_config.h"
@@ -69,12 +67,6 @@ connect_socket_unix(Mapi mid)
 	return mapi_setError(mid, "Unix domain sockets not supported", __func__, MERROR);
 }
 
-static MapiMsg
-scan_unix_sockets(Mapi mid)
-{
-	return mapi_setError(mid, "Unix domain sockets not supported", __func__, MERROR);
-}
-
 #endif
 
 
@@ -84,15 +76,15 @@ scan_unix_sockets(Mapi mid)
 MapiMsg
 mapi_reconnect(Mapi mid)
 {
-	char *err = NULL;
-	if (!msettings_validate(mid->settings, &err)) {
+	const char *err = msettings_validate(mid->settings);
+	if (err) {
 		mapi_setError(mid, err, __func__, MERROR);
-		free(err);
 		return MERROR;
 	}
 
-	// If neither host nor port are given, scan the Unix domain sockets in
-	// /tmp and see if any of them serve this database.
+	// If neither host nor port are given, scan all Unix domain sockets
+	// and then all 'localhost' TCP sockets to see if any of them
+	// serve this database.
 	// Otherwise, just try to connect to what was given.
 	if (msettings_connect_scan(mid->settings))
 		return scan_sockets(mid);
@@ -103,18 +95,24 @@ mapi_reconnect(Mapi mid)
 static MapiMsg
 scan_sockets(Mapi mid)
 {
+	msettings_error errmsg;
+
+	// If we support Unix domain sockets, scan them first
+#ifdef HAVE_SYS_UN_H
 	if (scan_unix_sockets(mid) == MOK)
 		return MOK;
+	/* if database was not unknown (no message "no such database"),
+	 * skip further attempts to connect */
+	if (mid->errorstr && strstr(mid->errorstr, "no such database") == NULL)
+		return MERROR;
+#endif
 
-	// When the Unix sockets have been scanned we can freely modify 'original'.
-	msettings_error errmsg = msetting_set_string(mid->settings, MP_HOST, "localhost");
-	char *allocated_errmsg = NULL;
-	if (!errmsg && !msettings_validate(mid->settings, &allocated_errmsg)) {
-		errmsg = allocated_errmsg;
-	}
+	// If that didn't succeed, force the connection to TCP 'localhost'.
+	errmsg = msetting_set_string(mid->settings, MP_HOST, "localhost");
+	if (!errmsg)
+		errmsg = msettings_validate(mid->settings);
 	if (errmsg) {
 		MapiMsg err = mapi_setError(mid, errmsg, __func__, MERROR);
-		free(allocated_errmsg);
 		return err;
 	}
 	return establish_connection(mid);
@@ -243,7 +241,7 @@ connect_socket_tcp(Mapi mid)
 
 	mapi_log_record(mid, "CONN", "Connecting to %s:%d", host, port);
 
-	struct addrinfo hints = (struct addrinfo) {
+	struct addrinfo hints = {
 		.ai_family = AF_UNSPEC,
 		.ai_socktype = SOCK_STREAM,
 		.ai_protocol = IPPROTO_TCP,
@@ -384,9 +382,9 @@ connect_socket_tcp_addr(Mapi mid, struct addrinfo *info)
 static const char *
 base_name(const char *file)
 {
-	char *p = strrchr(file, '/');
+	const char *p = strrchr(file, '/');
 #ifdef _MSC_VER
-	char *q = strrchr(file, '\\');
+	const char *q = strrchr(file, '\\');
 	if (q != NULL) {
 		if (p == NULL || p < q)
 			p = q;
@@ -519,7 +517,7 @@ mapi_handshake(Mapi mid)
 		close_connection(mid);
 		return mid->error;
 	}
-	char *algsv[] = {
+	static const char *algsv[] = {
 		"RIPEMD160",
 		"SHA512",
 		"SHA384",
@@ -528,12 +526,12 @@ mapi_handshake(Mapi mid)
 		"SHA1",
 		NULL
 	};
-	char **algs = algsv;
+	const char **algs = algsv;
 
 	/* rBuCQ9WTn3:mserver:9:RIPEMD160,SHA256,SHA1,MD5:LIT:SHA1: */
 
 	if (!*username || !*password) {
-		mapi_setError(mid, "username and password must be set",
+		mapi_setError(mid, "both username and password must be set",
 				__func__, MERROR);
 		close_connection(mid);
 		return mid->error;
@@ -616,13 +614,14 @@ mapi_handshake(Mapi mid)
 			return mapi_setError(mid, buf, __func__, MERROR);
 		}
 
-		char *replacement_password = malloc(1 + strlen(pwdhash) + 1);
+		size_t replpwlen = 1 + strlen(pwdhash) + 1;
+		char *replacement_password = malloc(replpwlen);
 		if (replacement_password == NULL) {
 			free(pwdhash);
 			close_connection(mid);
 			return mapi_setError(mid, "malloc failed", __func__, MERROR);
 		}
-		sprintf(replacement_password, "\1%s", pwdhash);
+		snprintf(replacement_password, replpwlen, "\1%s", pwdhash);
 		free(pwdhash);
 		msettings_error errmsg = msetting_set_string(mid->settings, MP_PASSWORD, replacement_password);
 		free(replacement_password);
@@ -823,18 +822,17 @@ mapi_handshake(Mapi mid)
 			/* we only implement following the first */
 			char *red = mid->redirects[0];
 
-			char *error_message = NULL;
-			if (!msettings_parse_url(mid->settings, red, &error_message)
-			    || !msettings_validate(mid->settings, &error_message)
+			const char *error_message = NULL;
+			if ((error_message = msettings_parse_url(mid->settings, red))
+			    || (error_message = msettings_validate(mid->settings))
 			) {
 				mapi_close_handle(hdl);
 				close_connection(mid);
 				MapiMsg err = mapi_printError(
 					mid, __func__, MERROR,
 					"%s: %s",
-					error_message ? error_message : "invalid redirect",
+					error_message,
 					red);
-				free(error_message);
 				return err;
 			}
 
@@ -866,7 +864,7 @@ mapi_handshake(Mapi mid)
 	bool autocommit = msetting_bool(mid->settings, MP_AUTOCOMMIT);
 	if (mid->handshake_options <= MAPI_HANDSHAKE_AUTOCOMMIT && autocommit != msetting_bool(msettings_default, MP_AUTOCOMMIT)) {
 		char buf[50];
-		sprintf(buf, "%d", !!autocommit);
+		snprintf(buf, sizeof(buf), "%d", !!autocommit);
 		MapiMsg result = mapi_Xcommand(mid, "auto_commit", buf);
 		if (result != MOK)
 			return mid->error;
@@ -874,14 +872,14 @@ mapi_handshake(Mapi mid)
 	long replysize = msetting_long(mid->settings, MP_REPLYSIZE);
 	if (mid->handshake_options <= MAPI_HANDSHAKE_REPLY_SIZE && replysize != msetting_long(msettings_default, MP_REPLYSIZE)) {
 		char buf[50];
-		sprintf(buf, "%ld", replysize);
+		snprintf(buf, sizeof(buf), "%ld", replysize);
 		MapiMsg result = mapi_Xcommand(mid, "reply_size", buf);
 		if (result != MOK)
 			return mid->error;
 	}
 	if (mid->handshake_options <= MAPI_HANDSHAKE_SIZE_HEADER && mid->sizeheader != MapiStructDefaults.sizeheader) {
 		char buf[50];
-		sprintf(buf, "%d", !!mid->sizeheader);
+		snprintf(buf, sizeof(buf), "%d", !!mid->sizeheader);
 		MapiMsg result = mapi_Xcommand(mid, "sizeheader", buf); // no underscore!
 		if (result != MOK)
 			return mid->error;

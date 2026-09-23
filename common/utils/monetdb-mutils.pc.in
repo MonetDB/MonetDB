@@ -1,0 +1,19 @@
+# SPDX-License-Identifier: MPL-2.0
+#
+# This Source Code Form is subject to the terms of the Mozilla Public
+# License, v. 2.0.  If a copy of the MPL was not distributed with this
+# file, You can obtain one at https://mozilla.org/MPL/2.0/.
+#
+# For copyright information, see the file debian/copyright.
+
+prefix=@CMAKE_INSTALL_PREFIX@
+libdir=@CMAKE_INSTALL_FULL_LIBDIR@
+includedir=@CMAKE_INSTALL_FULL_INCLUDEDIR@
+
+Name: monetdb-mutils
+Description: MonetDB mutils library
+URL: https://www.monetdb.org/
+Version: @MONETDB_VERSION@
+
+Libs: -L${libdir} -lmutils-@MONETDB_VERSION@
+Cflags: -I${includedir}/monetdb

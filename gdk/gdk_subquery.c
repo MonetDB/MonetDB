@@ -3,11 +3,9 @@
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024, 2025 MonetDB Foundation;
- * Copyright August 2008 - 2023 MonetDB B.V.;
- * Copyright 1997 - July 2008 CWI.
+ * For copyright information, see the file debian/copyright.
  */
 
 #include "monetdb_config.h"
@@ -75,131 +73,132 @@ BATall_grp(BAT *l, BAT *g, BAT *e, BAT *s)
 
 	if (BATcount(l) == 0 || ngrp == 0) {
 		const void *nilp = ATOMnilptr(l->ttype);
-		if ((res = BATconstant(ngrp == 0 ? 0 : min, l->ttype, nilp, ngrp, TRANSIENT)) == NULL)
-			goto alloc_fail;
-	} else {
-		BATiter li;
-
-		if ((res = COLnew(min, l->ttype, ngrp, TRANSIENT)) == NULL)
-			goto alloc_fail;
-		if ((oids = GDKmalloc(ngrp * sizeof(oid))) == NULL)
-			goto alloc_fail;
-
-		for (i = 0; i < ngrp; i++)
-			oids[i] = BUN_NONE;
-
-		if (!g || BATtdense(g))
-			gids = NULL;
-		else
-			gids = (const oid *) Tloc(g, 0);
-
-		li = bat_iterator(l);
-		switch (ATOMbasetype(l->ttype)) {
-		case TYPE_bte:
-			SQLall_grp_imp(bte);
-			break;
-		case TYPE_sht:
-			SQLall_grp_imp(sht);
-			break;
-		case TYPE_int:
-			SQLall_grp_imp(int);
-			break;
-		case TYPE_lng:
-			SQLall_grp_imp(lng);
-			break;
-#ifdef HAVE_HGE
-		case TYPE_hge:
-			SQLall_grp_imp(hge);
-			break;
-#endif
-		case TYPE_flt:
-			SQLall_grp_imp(flt);
-			break;
-		case TYPE_dbl:
-			SQLall_grp_imp(dbl);
-			break;
-		default: {
-			int (*ocmp) (const void *, const void *) = ATOMcompare(l->ttype);
-			const void *restrict nilp = ATOMnilptr(l->ttype);
-
-			for (BUN n = 0; n < ci.ncand; n++) {
-				i = canditer_next(&ci) - l->hseqbase;
-				if (gids == NULL ||
-					(gids[i] >= min && gids[i] <= max)) {
-					if (gids)
-						gid = gids[i] - min;
-					else
-						gid = (oid) i;
-					if (oids[gid] != (BUN_NONE - 1)) {
-						if (oids[gid] == BUN_NONE) {
-							if (ocmp(BUNtail(li, i), nilp) != 0)
-								oids[gid] = i;
-						} else {
-							const void *pi = BUNtail(li, oids[gid]);
-							const void *pp = BUNtail(li, i);
-							if (ocmp(pi, pp) != 0 && ocmp(pp, nilp) != 0)
-								oids[gid] = BUN_NONE - 1;
-						}
-					}
-				}
-			}
-
-			if (ATOMvarsized(l->ttype)) {
-				for (i = 0; i < ngrp; i++) { /* convert the found oids in values */
-					BUN noid = oids[i];
-					const void *next;
-					if (noid > (BUN_NONE - 2)) {
-						next = nilp;
-						hasnil = 1;
-					} else {
-						next = BUNtvar(li, noid);
-					}
-					if (tfastins_nocheckVAR(res, i, next) != GDK_SUCCEED) {
-						bat_iterator_end(&li);
-						goto alloc_fail;
-					}
-				}
-			} else {
-				uint8_t *restrict rcast = (uint8_t *) Tloc(res, 0);
-				uint16_t width = res->twidth;
-				for (i = 0; i < ngrp; i++) { /* convert the found oids in values */
-					BUN noid = oids[i];
-					const void *next;
-					if (noid > (BUN_NONE - 2)) {
-						next = nilp;
-						hasnil = 1;
-					} else {
-						next = BUNtloc(li, noid);
-					}
-					memcpy(rcast, next, width);
-					rcast += width;
-				}
-			}
-		}
-		}
-		bat_iterator_end(&li);
-		BATsetcount(res, ngrp);
-		res->tnil = hasnil != 0;
-		res->tnonil = hasnil == 0;
-		res->tkey = BATcount(res) <= 1;
-		res->tsorted = BATcount(res) <= 1;
-		res->trevsorted = BATcount(res) <= 1;
+		return BATconstant(ngrp == 0 ? 0 : min, l->ttype, nilp, ngrp, TRANSIENT);
 	}
 
-	GDKfree(oids);
+	if ((res = COLnew(min, l->ttype, ngrp, TRANSIENT)) == NULL)
+		return NULL;
+
+	allocator *ta = MT_thread_getallocator();
+	allocator_state ta_state = ma_open(ta);
+
+	if ((oids = ma_alloc(ta, ngrp * sizeof(oid))) == NULL)
+		goto alloc_fail;
+
+	for (i = 0; i < ngrp; i++)
+		oids[i] = BUN_NONE;
+
+	if (!g || BATtdense(g))
+		gids = NULL;
+	else
+		gids = (const oid *) Tloc(g, 0);
+
+	BATiter li = bat_iterator(l);
+	switch (ATOMbasetype(l->ttype)) {
+	case TYPE_bte:
+		SQLall_grp_imp(bte);
+		break;
+	case TYPE_sht:
+		SQLall_grp_imp(sht);
+		break;
+	case TYPE_int:
+		SQLall_grp_imp(int);
+		break;
+	case TYPE_lng:
+		SQLall_grp_imp(lng);
+		break;
+#ifdef HAVE_HGE
+	case TYPE_hge:
+		SQLall_grp_imp(hge);
+		break;
+#endif
+	case TYPE_flt:
+		SQLall_grp_imp(flt);
+		break;
+	case TYPE_dbl:
+		SQLall_grp_imp(dbl);
+		break;
+	default: {
+		bool (*atomeq) (const void *, const void *) = ATOMequal(l->ttype);
+		const void *restrict nilp = ATOMnilptr(l->ttype);
+
+		for (BUN n = 0; n < ci.ncand; n++) {
+			i = canditer_next(&ci) - l->hseqbase;
+			if (gids == NULL ||
+			    (gids[i] >= min && gids[i] <= max)) {
+				if (gids)
+					gid = gids[i] - min;
+				else
+					gid = (oid) i;
+				if (oids[gid] != (BUN_NONE - 1)) {
+					if (oids[gid] == BUN_NONE) {
+						if (!atomeq(BUNtail(&li, i), nilp))
+							oids[gid] = i;
+					} else {
+						const void *pi = BUNtail(&li, oids[gid]);
+						const void *pp = BUNtail(&li, i);
+						if (!atomeq(pi, pp) && !atomeq(pp, nilp))
+							oids[gid] = BUN_NONE - 1;
+					}
+				}
+			}
+		}
+
+		if (ATOMvarsized(l->ttype)) {
+			for (i = 0; i < ngrp; i++) { /* convert the found oids in values */
+				BUN noid = oids[i];
+				const void *next;
+				if (noid > (BUN_NONE - 2)) {
+					next = nilp;
+					hasnil = 1;
+				} else {
+					next = BUNtvar(&li, noid);
+				}
+				if (tfastins_nocheckVAR(res, i, next) != GDK_SUCCEED) {
+					bat_iterator_end(&li);
+					goto alloc_fail;
+				}
+			}
+		} else {
+			uint8_t *restrict rcast = (uint8_t *) Tloc(res, 0);
+			uint16_t width = res->twidth;
+			for (i = 0; i < ngrp; i++) { /* convert the found oids in values */
+				BUN noid = oids[i];
+				const void *next;
+				if (noid > (BUN_NONE - 2)) {
+					next = nilp;
+					hasnil = 1;
+				} else {
+					next = BUNtloc(&li, noid);
+				}
+				memcpy(rcast, next, width);
+				rcast += width;
+			}
+		}
+	}
+	}
+	bat_iterator_end(&li);
+	BATsetcount(res, ngrp);
+	res->tnil = hasnil != 0;
+	res->tnonil = hasnil == 0;
+	res->tkey = BATcount(res) <= 1;
+	res->tsorted = BATcount(res) <= 1;
+	res->trevsorted = BATcount(res) <= 1;
+
+	ma_close(&ta_state);
 
 	TRC_DEBUG(ALGO, "l=" ALGOBATFMT ",g=" ALGOBATFMT
 		  ",e=" ALGOOPTBATFMT ",s=" ALGOOPTBATFMT
 		  " -> " ALGOOPTBATFMT
-		  " (%s -- " LLFMT " usec)\n",
+		  " (" LLFMT " usec)\n",
 		  ALGOBATPAR(l), ALGOBATPAR(g),
 		  ALGOOPTBATPAR(e), ALGOOPTBATPAR(s),
 		  ALGOOPTBATPAR(res),
-		  __func__, GDKusec() - t0);
+		  GDKusec() - t0);
 	return res;
 alloc_fail:
 	BBPreclaim(res);
-	GDKfree(oids);
+	ma_close(&ta_state);
 	return NULL;
 }
 
@@ -287,7 +286,7 @@ BATnil_grp(BAT *l, BAT *g, BAT *e, BAT *s)
 			SQLnil_grp_imp(dbl);
 			break;
 		default: {
-			int (*ocmp) (const void *, const void *) = ATOMcompare(l->ttype);
+			bool (*atomeq) (const void *, const void *) = ATOMequal(l->ttype);
 			const void *restrict nilp = ATOMnilptr(l->ttype);
 
 			for (BUN n = 0; n < ci.ncand; n++) {
@@ -298,8 +297,8 @@ BATnil_grp(BAT *l, BAT *g, BAT *e, BAT *s)
 						gid = gids[i] - min;
 					else
 						gid = (oid) i;
-					const void *restrict lv = BUNtail(li, i);
-					if (ret[gid] != TRUE && ocmp(lv, nilp) == 0)
+					const void *restrict lv = BUNtail(&li, i);
+					if (ret[gid] != TRUE && atomeq(lv, nilp))
 						ret[gid] = TRUE;
 				}
 			}
@@ -317,11 +316,11 @@ BATnil_grp(BAT *l, BAT *g, BAT *e, BAT *s)
 	TRC_DEBUG(ALGO, "l=" ALGOBATFMT ",g=" ALGOBATFMT
 		  ",e=" ALGOOPTBATFMT ",s=" ALGOOPTBATFMT
 		  " -> " ALGOOPTBATFMT
-		  " (%s -- " LLFMT " usec)\n",
+		  " (" LLFMT " usec)\n",
 		  ALGOBATPAR(l), ALGOBATPAR(g),
 		  ALGOOPTBATPAR(e), ALGOOPTBATPAR(s),
 		  ALGOOPTBATPAR(res),
-		  __func__, GDKusec() - t0);
+		  GDKusec() - t0);
 	return res;
 alloc_fail:
 	BBPreclaim(res);
@@ -420,7 +419,7 @@ BATanyequal_grp(BAT *l, BAT *r, BAT *g, BAT *e, BAT *s)
 			SQLanyequal_or_not_grp_imp(dbl, TRUE);
 			break;
 		default: {
-			int (*ocmp) (const void *, const void *) = ATOMcompare(l->ttype);
+			bool (*atomeq) (const void *, const void *) = ATOMequal(l->ttype);
 			const void *nilp = ATOMnilptr(l->ttype);
 
 			for (BUN n = 0; n < ci.ncand; n++) {
@@ -432,12 +431,12 @@ BATanyequal_grp(BAT *l, BAT *r, BAT *g, BAT *e, BAT *s)
 					else
 						gid = (oid) i;
 					if (ret[gid] != TRUE) {
-						const void *lv = BUNtail(li, i);
-						const void *rv = BUNtail(ri, i);
-						if (ocmp(lv, nilp) == 0 || ocmp(rv, nilp) == 0) {
+						const void *lv = BUNtail(&li, i);
+						const void *rv = BUNtail(&ri, i);
+						if (atomeq(lv, nilp) || atomeq(rv, nilp)) {
 							ret[gid] = bit_nil;
 							hasnil = 1;
-						} else if (ocmp(lv, rv) == 0)
+						} else if (atomeq(lv, rv))
 							ret[gid] = TRUE;
 					}
 				}
@@ -458,11 +457,11 @@ BATanyequal_grp(BAT *l, BAT *r, BAT *g, BAT *e, BAT *s)
 	TRC_DEBUG(ALGO, "l=" ALGOBATFMT ",r=" ALGOBATFMT ",g=" ALGOBATFMT
 		  ",e=" ALGOOPTBATFMT ",s=" ALGOOPTBATFMT
 		  " -> " ALGOOPTBATFMT
-		  " (%s -- " LLFMT " usec)\n",
+		  " (" LLFMT " usec)\n",
 		  ALGOBATPAR(l), ALGOBATPAR(r), ALGOBATPAR(g),
 		  ALGOOPTBATPAR(e), ALGOOPTBATPAR(s),
 		  ALGOOPTBATPAR(res),
-		  __func__, GDKusec() - t0);
+		  GDKusec() - t0);
 	return res;
 alloc_fail:
 	BBPreclaim(res);
@@ -493,8 +492,7 @@ BATallnotequal_grp(BAT *l, BAT *r, BAT *g, BAT *e, BAT *s)
 	}
 
 	if (BATcount(l) == 0 || ngrp == 0) {
-		bit T = TRUE;
-		if ((res = BATconstant(ngrp == 0 ? 0 : min, TYPE_bit, &T, ngrp, TRANSIENT)) == NULL)
+		if ((res = BATconstant(ngrp == 0 ? 0 : min, TYPE_bit, &(bit){TRUE}, ngrp, TRANSIENT)) == NULL)
 			goto alloc_fail;
 	} else {
 		bit *restrict ret;
@@ -537,7 +535,7 @@ BATallnotequal_grp(BAT *l, BAT *r, BAT *g, BAT *e, BAT *s)
 			SQLanyequal_or_not_grp_imp(dbl, FALSE);
 			break;
 		default: {
-			int (*ocmp) (const void *, const void *) = ATOMcompare(l->ttype);
+			bool (*atomeq) (const void *, const void *) = ATOMequal(l->ttype);
 			const void *nilp = ATOMnilptr(l->ttype);
 
 			for (BUN n = 0; n < ci.ncand; n++) {
@@ -549,12 +547,12 @@ BATallnotequal_grp(BAT *l, BAT *r, BAT *g, BAT *e, BAT *s)
 					else
 						gid = (oid) i;
 					if (ret[gid] != FALSE) {
-						const void *lv = BUNtail(li, i);
-						const void *rv = BUNtail(ri, i);
-						if (ocmp(lv, nilp) == 0 || ocmp(rv, nilp) == 0) {
+						const void *lv = BUNtail(&li, i);
+						const void *rv = BUNtail(&ri, i);
+						if (atomeq(lv, nilp) || atomeq(rv, nilp)) {
 							ret[gid] = bit_nil;
 							hasnil = 1;
-						} else if (ocmp(lv, rv) == 0)
+						} else if (atomeq(lv, rv))
 							ret[gid] = FALSE;
 					}
 				}
@@ -574,11 +572,11 @@ BATallnotequal_grp(BAT *l, BAT *r, BAT *g, BAT *e, BAT *s)
 	TRC_DEBUG(ALGO, "l=" ALGOBATFMT ",r=" ALGOBATFMT ",g=" ALGOBATFMT
 		  ",e=" ALGOOPTBATFMT ",s=" ALGOOPTBATFMT
 		  " -> " ALGOOPTBATFMT
-		  " (%s -- " LLFMT " usec)\n",
+		  " (" LLFMT " usec)\n",
 		  ALGOBATPAR(l), ALGOBATPAR(r), ALGOBATPAR(g),
 		  ALGOOPTBATPAR(e), ALGOOPTBATPAR(s),
 		  ALGOOPTBATPAR(res),
-		  __func__, GDKusec() - t0);
+		  GDKusec() - t0);
 	return res;
 alloc_fail:
 	BBPreclaim(res);
@@ -598,7 +596,7 @@ alloc_fail:
 				else					\
 					gid = (oid) i;			\
 				if (ret[gid] != VAL1) {			\
-					const oid id = *(oid*)BUNtail(ii, i); \
+					const oid id = *(oid*)BUNtail(&ii, i); \
 					if (is_oid_nil(id)) {		\
 						ret[gid] = VAL2;	\
 					} else if (is_##TYPE##_nil(vals1[i]) || is_##TYPE##_nil(vals2[i])) { \
@@ -680,7 +678,7 @@ BATanyequal_grp2(BAT *l, BAT *r, BAT *rid, BAT *g, BAT *e, BAT *s)
 			SQLanyequal_or_not_grp2_imp(dbl, TRUE, FALSE);
 			break;
 		default: {
-			int (*ocmp) (const void *, const void *) = ATOMcompare(l->ttype);
+			bool (*atomeq) (const void *, const void *) = ATOMequal(l->ttype);
 			const void *nilp = ATOMnilptr(l->ttype);
 
 			for (BUN n = 0; n < ci.ncand; n++) {
@@ -692,15 +690,15 @@ BATanyequal_grp2(BAT *l, BAT *r, BAT *rid, BAT *g, BAT *e, BAT *s)
 					else
 						gid = (oid) i;
 					if (ret[gid] != TRUE) {
-						const oid id = *(oid*)BUNtail(ii, i);
+						const oid id = *(oid*)BUNtail(&ii, i);
 						if (is_oid_nil(id)) {
 							ret[gid] = FALSE;
 						} else {
-							const void *lv = BUNtail(li, i);
-							const void *rv = BUNtail(ri, i);
-							if (ocmp(lv, nilp) == 0 || ocmp(rv, nilp) == 0) {
+							const void *lv = BUNtail(&li, i);
+							const void *rv = BUNtail(&ri, i);
+							if (atomeq(lv, nilp) || atomeq(rv, nilp)) {
 								ret[gid] = bit_nil;
-							} else if (ocmp(lv, rv) == 0)
+							} else if (atomeq(lv, rv))
 								ret[gid] = TRUE;
 						}
 					}
@@ -724,11 +722,11 @@ BATanyequal_grp2(BAT *l, BAT *r, BAT *rid, BAT *g, BAT *e, BAT *s)
 	TRC_DEBUG(ALGO, "l=" ALGOBATFMT ",r=" ALGOBATFMT ",rid=" ALGOBATFMT
 		  ",g=" ALGOBATFMT ",e=" ALGOOPTBATFMT ",s=" ALGOOPTBATFMT
 		  " -> " ALGOOPTBATFMT
-		  " (%s -- " LLFMT " usec)\n",
+		  " (" LLFMT " usec)\n",
 		  ALGOBATPAR(l), ALGOBATPAR(r), ALGOBATPAR(rid),
 		  ALGOBATPAR(g), ALGOOPTBATPAR(e), ALGOOPTBATPAR(s),
 		  ALGOOPTBATPAR(res),
-		  __func__, GDKusec() - t0);
+		  GDKusec() - t0);
 	return res;
 alloc_fail:
 	BBPreclaim(res);
@@ -759,8 +757,7 @@ BATallnotequal_grp2(BAT *l, BAT *r, BAT *rid, BAT *g, BAT *e, BAT *s)
 	}
 
 	if (BATcount(l) == 0 || ngrp == 0) {
-		bit T = TRUE;
-		if ((res = BATconstant(ngrp == 0 ? 0 : min, TYPE_bit, &T, ngrp, TRANSIENT)) == NULL)
+		if ((res = BATconstant(ngrp == 0 ? 0 : min, TYPE_bit, &(bit){TRUE}, ngrp, TRANSIENT)) == NULL)
 			goto alloc_fail;
 	} else {
 		bit *restrict ret;
@@ -804,7 +801,7 @@ BATallnotequal_grp2(BAT *l, BAT *r, BAT *rid, BAT *g, BAT *e, BAT *s)
 			SQLanyequal_or_not_grp2_imp(dbl, FALSE, TRUE);
 			break;
 		default: {
-			int (*ocmp) (const void *, const void *) = ATOMcompare(l->ttype);
+			bool (*atomeq) (const void *, const void *) = ATOMequal(l->ttype);
 			const void *nilp = ATOMnilptr(l->ttype);
 
 			for (BUN n = 0; n < ci.ncand; n++) {
@@ -816,15 +813,15 @@ BATallnotequal_grp2(BAT *l, BAT *r, BAT *rid, BAT *g, BAT *e, BAT *s)
 					else
 						gid = (oid) i;
 					if (ret[gid] != FALSE) {
-						const oid id = *(oid*)BUNtail(ii, i);
+						const oid id = *(oid*)BUNtail(&ii, i);
 						if (is_oid_nil(id)) {
 							ret[gid] = TRUE;
 						} else {
-							const void *lv = BUNtail(li, i);
-							const void *rv = BUNtail(ri, i);
-							if (ocmp(lv, nilp) == 0 || ocmp(rv, nilp) == 0) {
+							const void *lv = BUNtail(&li, i);
+							const void *rv = BUNtail(&ri, i);
+							if (atomeq(lv, nilp) || atomeq(rv, nilp)) {
 								ret[gid] = bit_nil;
-							} else if (ocmp(lv, rv) == 0)
+							} else if (atomeq(lv, rv))
 								ret[gid] = FALSE;
 						}
 					}
@@ -848,11 +845,11 @@ BATallnotequal_grp2(BAT *l, BAT *r, BAT *rid, BAT *g, BAT *e, BAT *s)
 	TRC_DEBUG(ALGO, "l=" ALGOBATFMT ",r=" ALGOBATFMT ",rid=" ALGOBATFMT
 		  ",g=" ALGOBATFMT ",e=" ALGOOPTBATFMT ",s=" ALGOOPTBATFMT
 		  " -> " ALGOOPTBATFMT
-		  " (%s -- " LLFMT " usec)\n",
+		  " (" LLFMT " usec)\n",
 		  ALGOBATPAR(l), ALGOBATPAR(r), ALGOBATPAR(rid),
 		  ALGOBATPAR(g), ALGOOPTBATPAR(e), ALGOOPTBATPAR(s),
 		  ALGOOPTBATPAR(res),
-		  __func__, GDKusec() - t0);
+		  GDKusec() - t0);
 	return res;
 alloc_fail:
 	BBPreclaim(res);
@@ -921,11 +918,11 @@ BATsubexist(BAT *b, BAT *g, BAT *e, BAT *s)
 	TRC_DEBUG(ALGO, "b=" ALGOBATFMT ",g=" ALGOBATFMT
 		  ",e=" ALGOOPTBATFMT ",s=" ALGOOPTBATFMT
 		  " -> " ALGOOPTBATFMT
-		  " (%s -- " LLFMT " usec)\n",
+		  " (" LLFMT " usec)\n",
 		  ALGOBATPAR(b), ALGOBATPAR(g),
 		  ALGOOPTBATPAR(e), ALGOOPTBATPAR(s),
 		  ALGOOPTBATPAR(res),
-		  __func__, GDKusec() - t0);
+		  GDKusec() - t0);
 	return res;
 alloc_fail:
 	BBPreclaim(res);
@@ -955,8 +952,7 @@ BATsubnot_exist(BAT *b, BAT *g, BAT *e, BAT *s)
 	}
 
 	if (BATcount(b) == 0 || ngrp == 0) {
-		bit T = TRUE;
-		if ((res = BATconstant(ngrp == 0 ? 0 : min, TYPE_bit, &T, ngrp, TRANSIENT)) == NULL)
+		if ((res = BATconstant(ngrp == 0 ? 0 : min, TYPE_bit, &(bit){TRUE}, ngrp, TRANSIENT)) == NULL)
 			goto alloc_fail;
 	} else {
 		bit *restrict exists;
@@ -994,11 +990,11 @@ BATsubnot_exist(BAT *b, BAT *g, BAT *e, BAT *s)
 	TRC_DEBUG(ALGO, "b=" ALGOBATFMT ",g=" ALGOBATFMT
 		  ",e=" ALGOOPTBATFMT ",s=" ALGOOPTBATFMT
 		  " -> " ALGOOPTBATFMT
-		  " (%s -- " LLFMT " usec)\n",
+		  " (" LLFMT " usec)\n",
 		  ALGOBATPAR(b), ALGOBATPAR(g),
 		  ALGOOPTBATPAR(e), ALGOOPTBATPAR(s),
 		  ALGOOPTBATPAR(res),
-		  __func__, GDKusec() - t0);
+		  GDKusec() - t0);
 	return res;
 alloc_fail:
 	BBPreclaim(res);

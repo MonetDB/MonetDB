@@ -3,11 +3,9 @@
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024, 2025 MonetDB Foundation;
- * Copyright August 2008 - 2023 MonetDB B.V.;
- * Copyright 1997 - July 2008 CWI.
+ * For copyright information, see the file debian/copyright.
  */
 
 /*
@@ -29,7 +27,9 @@ list *types = NULL;
 list *funcs = NULL;
 
 static sql_type *BIT = NULL;
-static list *localtypes = NULL;
+#define MAX_LTYPE 64
+static sql_subtype *localtype_array[MAX_LTYPE] = {0};
+static sql_subtype *battype = NULL;
 
 sql_ref *
 sql_ref_init(sql_ref *r)
@@ -385,20 +385,15 @@ sql_bind_subtype(allocator *sa, const char *name, unsigned int digits, unsigned 
 }
 
 sql_subtype *
-sql_bind_localtype(const char *name)
+sql_fetch_localtype(int type)
 {
-	node *n = localtypes->h;
+	return localtype_array[type];
+}
 
-	while (n) {
-		sql_subtype *t = n->data;
-
-		if (strcmp(t->type->impl, name) == 0) {
-			return t;
-		}
-		n = n->next;
-	}
-	assert(0);
-	return NULL;
+sql_subtype *
+sql_fetch_battype(void)
+{
+	return battype;
 }
 
 int
@@ -483,12 +478,12 @@ sql_subtype_string(allocator *sa, sql_subtype *t)
 	char buf[BUFSIZ];
 
 	if (t->digits && t->scale)
-		snprintf(buf, BUFSIZ, "%s(%u,%u)", t->type->base.name, t->digits, t->scale);
+		snprintf(buf, sizeof(buf), "%s(%u,%u)", t->type->base.name, t->digits, t->scale);
 	else if (t->digits && t->type->radix != 2)
-		snprintf(buf, BUFSIZ, "%s(%u)", t->type->base.name, t->digits);
+		snprintf(buf, sizeof(buf), "%s(%u)", t->type->base.name, t->digits);
 	else
-		snprintf(buf, BUFSIZ, "%s", t->type->base.name);
-	return sa_strdup(sa, buf);
+		snprintf(buf, sizeof(buf), "%s", t->type->base.name);
+	return ma_strdup(sa, buf);
 }
 
 char *
@@ -498,19 +493,19 @@ subtype2string2(allocator *sa, sql_subtype *tpe) /* distinguish char(n), decimal
 
 	switch (tpe->type->eclass) {
 		case EC_SEC:
-			snprintf(buf, BUFSIZ, "INTERVAL SECOND");
+			snprintf(buf, sizeof(buf), "INTERVAL SECOND");
 			break;
 		case EC_MONTH:
-			snprintf(buf, BUFSIZ, "INTERVAL MONTH");
+			snprintf(buf, sizeof(buf), "INTERVAL MONTH");
 			break;
 		case EC_CHAR:
 		case EC_STRING:
 		case EC_DEC:
 			return sql_subtype_string(sa, tpe);
 		default:
-			snprintf(buf, BUFSIZ, "%s", tpe->type->base.name);
+			snprintf(buf, sizeof(buf), "%s", tpe->type->base.name);
 	}
-	return sa_strdup(sa, buf);
+	return ma_strdup(sa, buf);
 }
 
 int
@@ -609,7 +604,10 @@ supertype_opt_string(sql_subtype *super, sql_subtype *r, sql_subtype *i, bool su
 			tpe = lsuper.type->base.name;
 			eclass = lsuper.type->eclass;
 		}
-	} else if (((!super_string || !EC_VARCHAR(r->type->eclass)) && i->type->base.id > r->type->base.id) || (EC_VARCHAR(i->type->eclass) && !EC_VARCHAR(r->type->eclass))) {
+		/* with !super_string we follow the sql specification that for value lists and compare operators all values
+		 * should be string or we cast into the non-string super type */
+	} else if ((super_string && (EC_VARCHAR(i->type->eclass) || i->type->base.id > r->type->base.id)) ||
+			   (!super_string && ((EC_VARCHAR(r->type->eclass) && i->type->eclass != EC_ANY) || i->type->base.id > r->type->base.id))) {
 		lsuper = *i;
 		radix = i->type->radix;
 		tpe = i->type->base.name;
@@ -665,9 +663,9 @@ supertype(sql_subtype *super, sql_subtype *r, sql_subtype *i)
 }
 
 sql_subtype *
-cmp_supertype(sql_subtype *super, sql_subtype *r, sql_subtype *i)
+cmp_supertype(sql_subtype *super, sql_subtype *r, sql_subtype *i, bool opt_string)
 {
-	return supertype_opt_string(super, r, i, false);
+	return supertype_opt_string(super, r, i, opt_string);
 }
 
 sql_subfunc*
@@ -680,7 +678,7 @@ sql_dup_subfunc(allocator *sa, sql_func *f, list *ops, sql_subtype *member)
 	fres->func = f;
 	if (IS_FILT(f)) {
 		fres->res = sa_list(sa);
-		list_append(fres->res, sql_bind_localtype("bit"));
+		list_append(fres->res, sql_fetch_localtype(TYPE_bit));
 	} else if (IS_FUNC(f) || IS_UNION(f) || IS_ANALYTIC(f) || IS_AGGR(f)) { /* not needed for PROC */
 		unsigned int mscale = 0, mdigits = 0;
 
@@ -777,8 +775,10 @@ sql_create_type(allocator *sa, const char *sqlname, unsigned int digits, unsigne
 		(void) keywords_insert(t->base.name, KW_TYPE);
 	list_append(types, t);
 
-	list_append(localtypes, sql_create_subtype(sa, t, 0, 0));
-
+	if (t->localtype >= 0 && t->localtype < MAX_LTYPE && !localtype_array[t->localtype])
+		localtype_array[t->localtype] = sql_create_subtype(sa, t, 0, 0);
+	else if (strcmp(impl,"bat") == 0)
+		battype = sql_create_subtype(sa, t, 0, 0);
 	return t;
 }
 
@@ -788,7 +788,7 @@ create_arg(allocator *sa, const char *name, sql_subtype *t, char inout)
 	sql_arg *a = (sa)?SA_ZNEW(sa, sql_arg):ZNEW(sql_arg);
 
 	if(a) {
-		a->name = name?sa_strdup(sa, name):NULL;
+		a->name = name?ma_strdup(sa, name):NULL;
 		a->type = *t;
 		a->inout = inout;
 	}
@@ -1184,6 +1184,7 @@ sqltypeinit( allocator *sa)
 	for (t = floats; t < dates; t++) {
 		sql_create_aggr(sa, "sum", "aggr", "sum", FALSE, FALSE, *t, 1, *t);
 		sql_create_aggr(sa, "prod", "aggr", "prod", FALSE, FALSE, *t, 1, *t);
+		sql_create_aggr(sa, "fsum", "aggr", "sum", FALSE, FALSE, *t, 1, *t);
 	}
 	sql_create_aggr(sa, "sum", "aggr", "sum", FALSE, FALSE, MONINT, 1, MONINT);
 	sql_create_aggr(sa, "sum", "aggr", "sum", FALSE, FALSE, DAYINT, 1, DAYINT);
@@ -1368,7 +1369,7 @@ sqltypeinit( allocator *sa)
 
 	/* functions for interval types */
 	for (t = dates; *t != TME; t++) {
-		sql_subtype *lt = sql_bind_localtype((*t)->impl);
+		sql_subtype *lt = sql_fetch_localtype((*t)->localtype);
 
 		sql_create_func(sa, "sql_sub", "calc", "-", FALSE, FALSE, SCALE_NONE, 0, *t, 2, *t, *t);
 		sql_create_func(sa, "sql_add", "calc", "+", FALSE, FALSE, SCALE_NONE, 0, *t, 2, *t, *t);
@@ -1402,6 +1403,7 @@ sqltypeinit( allocator *sa)
 				sql_create_func(sa, "sql_div", "calc", "/", FALSE, FALSE, SCALE_DIV, 0, *t, 2, *t, *u);
 			}
 		}
+		sql_create_func(sa, "num_div", "calc", "num_div", FALSE, FALSE, SCALE_FIX, 0, *t, 2, *t, LNG);
 	}
 
 	/* all numericals */
@@ -1411,7 +1413,7 @@ sqltypeinit( allocator *sa)
 		if (*t == OID)
 			continue;
 
-		lt = sql_bind_localtype((*t)->impl);
+		lt = sql_fetch_localtype((*t)->localtype);
 
 		sql_create_func(sa, "sql_sub", "calc", "-", FALSE, FALSE, (t<decimals)?MAX_BITS:SCALE_FIX, 0, *t, 2, *t, *t);
 		sql_create_func(sa, "sql_add", "calc", "+", FALSE, FALSE, (t<decimals)?MAX_BITS:SCALE_FIX, 0, *t, 2, *t, *t);
@@ -1727,6 +1729,7 @@ sqltypeinit( allocator *sa)
 	/* copyfrom fname (arg 15) */
 	f = sql_create_union(sa, "copyfrom", "sql", "copy_from", TRUE, SCALE_FIX, 0, TABLE, 14, PTR, STR, STR, STR, STR, STR, LNG, LNG, INT, STR, INT, INT, STR, STR);
 	f->varres = 1;
+	f->pipeline = 1;
 
 	/* bincopyfrom */
 	f = sql_create_union(sa, "copyfrombinary", "", "", TRUE, SCALE_FIX, 0, TABLE, 3, STR, STR, INT);
@@ -1734,6 +1737,11 @@ sqltypeinit( allocator *sa)
 
 	/* file_loader */
 	f = sql_create_union(sa, "file_loader", "", "", TRUE, SCALE_FIX, 0, TABLE, 1, STR);
+	f->varres = 1;
+	f->pipeline = 1;
+
+	/* generic proto_loader which expects an URI starting with the protocol like: 'odbc:' or 'monetdb:' or 'file:' */
+	f = sql_create_union(sa, "proto_loader", "", "", TRUE, SCALE_FIX, 0, TABLE, 1, STR);
 	f->varres = 1;
 
 	/* sys_update_schemas, sys_update_tables */
@@ -1746,8 +1754,9 @@ types_init(allocator *sa)
 {
 	local_id = 4;				/* 1 to 3 are user id's */
 	types = sa_list(sa);
-	localtypes = sa_list(sa);
 	funcs = sa_list(sa);
 	funcs->ht = hash_new(sa, 64*1024, (fkeyvalue)&base_key);
+	memset(localtype_array, 0, sizeof(localtype_array));
+	battype = NULL;
 	sqltypeinit( sa );
 }

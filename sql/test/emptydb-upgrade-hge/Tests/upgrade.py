@@ -18,7 +18,7 @@ dbfarm = os.environ['GDK_DBFARM']
 db = os.path.join(dbfarm, os.environ['TSTDB'])
 archive = os.path.join(dbfarm, 'lasthgerelempty.zip')
 if not os.path.exists(archive):
-    print('file "{}" not found'.format(archive), file=sys.stderr)
+    print(f'file "{archive}" not found', file=sys.stderr)
     sys.exit(1)
 
 # unpackage database
@@ -63,7 +63,7 @@ if len(sys.argv) == 2 and sys.argv[1] == 'upgrade':
     for b in bits:
         for a in arch:
             for h in hge:
-                f = 'upgrade.stable.out{}{}{}'.format(b, a, h)
+                f = f'upgrade.stable.out{b}{a}{h}'
                 found = os.path.exists(f)
                 if found:
                     break
@@ -71,9 +71,11 @@ if len(sys.argv) == 2 and sys.argv[1] == 'upgrade':
                 break
         if found:
             break
-    stable = open(f).readlines()
+    with open(f) as fil:
+        stable = fil.readlines()
     import difflib
-    for line in difflib.unified_diff(stable, srvout, fromfile='test', tofile=f):
+    for line in difflib.unified_diff(stable, srvout,
+                                     fromfile='expected', tofile='received'):
         sys.stderr.write(line)
         xit = 1
     if len(cltout) != 3 or cltout[0] != 'START TRANSACTION;' or cltout[1] != 'SET SCHEMA "sys";' or cltout[2] != 'COMMIT;':

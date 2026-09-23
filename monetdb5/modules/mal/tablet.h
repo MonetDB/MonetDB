@@ -3,11 +3,9 @@
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024, 2025 MonetDB Foundation;
- * Copyright August 2008 - 2023 MonetDB B.V.;
- * Copyright 1997 - July 2008 CWI.
+ * For copyright information, see the file debian/copyright.
  */
 
 /*
@@ -47,9 +45,9 @@ typedef struct Column_t {
 	int fieldstart;				/* Fixed character field load positions */
 	int fieldwidth;
 	int scale, precision;
-	ssize_t (*tostr)(void *extra, char **buf, size_t *len, int type,
+	ssize_t (*tostr)(allocator *, void *extra, char **buf, size_t *len, int type,
 					 const void *a);
-	void *(*frstr)(struct Column_t *fmt, int type, const char *s);
+	void *(*frstr)(allocator *, struct Column_t *fmt, int type, const char *s);
 	void *extra;
 	void *data;
 	int skip;					/* only skip to the next field */
@@ -84,6 +82,7 @@ mal_export BUN SQLload_file(Client cntxt, Tablet *as, bstream *b, stream *out,
 mal_export str TABLETcreate_bats(Tablet *as, BUN est);
 mal_export str TABLETcollect(BAT **bats, Tablet *as);
 mal_export void TABLETdestroy_format(Tablet *as);
+mal_export void COPYrejects_create(Client cntxt);
 mal_export int TABLEToutput_file(Tablet *as, BAT *order, stream *s, bstream *in);
 mal_export str COPYrejects(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 						   InstrPtr pci);

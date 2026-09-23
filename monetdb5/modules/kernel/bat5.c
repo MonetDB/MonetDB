@@ -3,11 +3,9 @@
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024, 2025 MonetDB Foundation;
- * Copyright August 2008 - 2023 MonetDB B.V.;
- * Copyright 1997 - July 2008 CWI.
+ * For copyright information, see the file debian/copyright.
  */
 
 /*
@@ -73,21 +71,9 @@ BKCnewBAT(bat *res, const int *tt, const BUN *cap, role_t role)
 }
 
 static str
-BKCattach(bat *ret, const int *tt, const char *const *heapfile)
+BKCdensebat(Client ctx, bat *ret, const lng *size)
 {
-	BAT *bn;
-
-	bn = BATattach(*tt, *heapfile, TRANSIENT);
-	if (bn == NULL)
-		throw(MAL, "bat.attach", GDK_EXCEPTION);
-	*ret = bn->batCacheid;
-	BBPkeepref(bn);
-	return MAL_SUCCEED;
-}
-
-static str
-BKCdensebat(bat *ret, const lng *size)
-{
+	(void) ctx;
 	BAT *bn;
 	lng sz = *size;
 
@@ -104,8 +90,9 @@ BKCdensebat(bat *ret, const lng *size)
 }
 
 str
-BKCmirror(bat *ret, const bat *bid)
+BKCmirror(Client ctx, bat *ret, const bat *bid)
 {
+	(void) ctx;
 	BAT *b, *bn;
 
 	*ret = 0;
@@ -119,8 +106,9 @@ BKCmirror(bat *ret, const bat *bid)
 }
 
 static str
-BKCdelete(bat *r, const bat *bid, const oid *h)
+BKCdelete(Client ctx, bat *r, const bat *bid, const oid *h)
 {
+	(void) ctx;
 	BAT *b;
 
 	if ((b = BATdescriptor(*bid)) == NULL)
@@ -136,8 +124,9 @@ BKCdelete(bat *r, const bat *bid, const oid *h)
 }
 
 static str
-BKCdelete_multi(bat *r, const bat *bid, const bat *sid)
+BKCdelete_multi(Client ctx, bat *r, const bat *bid, const bat *sid)
 {
+	(void) ctx;
 	BAT *b, *s;
 	gdk_return ret;
 
@@ -160,8 +149,9 @@ BKCdelete_multi(bat *r, const bat *bid, const bat *sid)
 }
 
 static str
-BKCdelete_all(bat *r, const bat *bid)
+BKCdelete_all(Client ctx, bat *r, const bat *bid)
 {
+	(void) ctx;
 	BAT *b;
 
 	if ((b = BATdescriptor(*bid)) == NULL)
@@ -177,9 +167,10 @@ BKCdelete_all(bat *r, const bat *bid)
 }
 
 static str
-BKCappend_cand_force_wrap(bat *r, const bat *bid, const bat *uid,
+BKCappend_cand_force_wrap(Client ctx, bat *r, const bat *bid, const bat *uid,
 						  const bat *sid, const bit *force)
 {
+	(void) ctx;
 	BAT *b, *u, *s = NULL;
 	gdk_return ret;
 
@@ -226,27 +217,31 @@ BKCappend_cand_force_wrap(bat *r, const bat *bid, const bat *uid,
 }
 
 static str
-BKCappend_cand_wrap(bat *r, const bat *bid, const bat *uid, const bat *sid)
+BKCappend_cand_wrap(Client ctx, bat *r, const bat *bid, const bat *uid, const bat *sid)
 {
-	return BKCappend_cand_force_wrap(r, bid, uid, sid, NULL);
+	(void) ctx;
+	return BKCappend_cand_force_wrap(ctx, r, bid, uid, sid, NULL);
 }
 
 static str
-BKCappend_wrap(bat *r, const bat *bid, const bat *uid)
+BKCappend_wrap(Client ctx, bat *r, const bat *bid, const bat *uid)
 {
-	return BKCappend_cand_force_wrap(r, bid, uid, NULL, NULL);
+	(void) ctx;
+	return BKCappend_cand_force_wrap(ctx, r, bid, uid, NULL, NULL);
 }
 
 static str
-BKCappend_force_wrap(bat *r, const bat *bid, const bat *uid, const bit *force)
+BKCappend_force_wrap(Client ctx, bat *r, const bat *bid, const bat *uid, const bit *force)
 {
-	return BKCappend_cand_force_wrap(r, bid, uid, NULL, force);
+	(void) ctx;
+	return BKCappend_cand_force_wrap(ctx, r, bid, uid, NULL, force);
 }
 
 static str
-BKCappend_val_force_wrap(bat *r, const bat *bid, const void *u,
+BKCappend_val_force_wrap(Client ctx, bat *r, const bat *bid, const void *u,
 						 const bit *force)
 {
+	(void) ctx;
 	BAT *b;
 
 	if ((b = BATdescriptor(*bid)) == NULL)
@@ -272,14 +267,16 @@ BKCappend_val_force_wrap(bat *r, const bat *bid, const void *u,
 }
 
 static str
-BKCappend_val_wrap(bat *r, const bat *bid, const void *u)
+BKCappend_val_wrap(Client ctx, bat *r, const bat *bid, const void *u)
 {
-	return BKCappend_val_force_wrap(r, bid, u, NULL);
+	(void) ctx;
+	return BKCappend_val_force_wrap(ctx, r, bid, u, NULL);
 }
 
 static str
-BKCbun_inplace(bat *r, const bat *bid, const oid *id, const void *t)
+BKCbun_inplace(Client ctx, bat *r, const bat *bid, const oid *id, const void *t)
 {
+	(void) ctx;
 	BAT *b;
 
 	if ((b = BATdescriptor(*bid)) == NULL)
@@ -296,9 +293,10 @@ BKCbun_inplace(bat *r, const bat *bid, const oid *id, const void *t)
 }
 
 static str
-BKCbun_inplace_force(bat *r, const bat *bid, const oid *id, const void *t,
+BKCbun_inplace_force(Client ctx, bat *r, const bat *bid, const oid *id, const void *t,
 					 const bit *force)
 {
+	(void) ctx;
 	BAT *b;
 
 	if ((b = BATdescriptor(*bid)) == NULL)
@@ -316,9 +314,10 @@ BKCbun_inplace_force(bat *r, const bat *bid, const oid *id, const void *t,
 
 
 static str
-BKCbat_inplace_force(bat *r, const bat *bid, const bat *rid, const bat *uid,
+BKCbat_inplace_force(Client ctx, bat *r, const bat *bid, const bat *rid, const bat *uid,
 					 const bit *force)
 {
+	(void) ctx;
 	BAT *b, *p, *u;
 
 	if ((b = BATdescriptor(*bid)) == NULL)
@@ -347,18 +346,20 @@ BKCbat_inplace_force(bat *r, const bat *bid, const bat *rid, const bat *uid,
 }
 
 static str
-BKCbat_inplace(bat *r, const bat *bid, const bat *rid, const bat *uid)
+BKCbat_inplace(Client ctx, bat *r, const bat *bid, const bat *rid, const bat *uid)
 {
+	(void) ctx;
 	bit F = FALSE;
 
-	return BKCbat_inplace_force(r, bid, rid, uid, &F);
+	return BKCbat_inplace_force(ctx, r, bid, rid, uid, &F);
 }
 
 /*end of SQL enhancement */
 
 static str
-BKCgetCapacity(lng *res, const bat *bid)
+BKCgetCapacity(Client ctx, lng *res, const bat *bid)
 {
+	(void) ctx;
 	*res = lng_nil;
 	BAT *b = BBPquickdesc(*bid);
 
@@ -369,23 +370,25 @@ BKCgetCapacity(lng *res, const bat *bid)
 }
 
 static str
-BKCgetColumnType(str *res, const bat *bid)
+BKCgetColumnType(Client ctx, str *res, const bat *bid)
 {
+	allocator *ma = ctx->curprg->def->ma;
 	const char *ret = str_nil;
 	BAT *b = BBPquickdesc(*bid);
 
 	if (b == NULL)
 		throw(MAL, "bat.getColumnType", ILLEGAL_ARGUMENT);
 	ret = *bid < 0 ? ATOMname(TYPE_void) : ATOMname(b->ttype);
-	*res = GDKstrdup(ret);
+	*res = ma_strdup(ma, ret);
 	if (*res == NULL)
 		throw(MAL, "bat.getColumnType", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	return MAL_SUCCEED;
 }
 
 static str
-BKCisSorted(bit *res, const bat *bid)
+BKCisSorted(Client ctx, bit *res, const bat *bid)
 {
+	(void) ctx;
 	BAT *b;
 
 	if ((b = BATdescriptor(*bid)) == NULL) {
@@ -397,8 +400,9 @@ BKCisSorted(bit *res, const bat *bid)
 }
 
 static str
-BKCisSortedReverse(bit *res, const bat *bid)
+BKCisSortedReverse(Client ctx, bit *res, const bat *bid)
 {
+	(void) ctx;
 	BAT *b;
 
 	if ((b = BATdescriptor(*bid)) == NULL) {
@@ -416,8 +420,9 @@ BKCisSortedReverse(bit *res, const bat *bid)
  */
 
 static str
-BKCgetKey(bit *ret, const bat *bid)
+BKCgetKey(Client ctx, bit *ret, const bat *bid)
 {
+	(void) ctx;
 	BAT *b;
 
 	if ((b = BATdescriptor(*bid)) == NULL)
@@ -449,15 +454,17 @@ BKCpersists(void *r, const bat *bid, const bit *flg)
 }
 
 static str
-BKCsetPersistent(void *r, const bat *bid)
+BKCsetPersistent(Client ctx, void *r, const bat *bid)
 {
+	(void) ctx;
 	bit flag = TRUE;
 	return BKCpersists(r, bid, &flag);
 }
 
 static str
-BKCisPersistent(bit *res, const bat *bid)
+BKCisPersistent(Client ctx, bit *res, const bat *bid)
 {
+	(void) ctx;
 	BAT *b;
 
 	if ((b = BATdescriptor(*bid)) == NULL) {
@@ -472,15 +479,17 @@ BKCisPersistent(bit *res, const bat *bid)
 }
 
 static str
-BKCsetTransient(void *r, const bat *bid)
+BKCsetTransient(Client ctx, void *r, const bat *bid)
 {
+	(void) ctx;
 	bit flag = FALSE;
 	return BKCpersists(r, bid, &flag);
 }
 
 static str
-BKCisTransient(bit *res, const bat *bid)
+BKCisTransient(Client ctx, bit *res, const bat *bid)
 {
+	(void) ctx;
 	BAT *b;
 
 	if ((b = BATdescriptor(*bid)) == NULL) {
@@ -494,8 +503,9 @@ BKCisTransient(bit *res, const bat *bid)
 }
 
 static str
-BKCsetAccess(bat *res, const bat *bid, const char *const *param)
+BKCsetAccess(Client ctx, bat *res, const bat *bid, const char *const *param)
 {
+	(void) ctx;
 	BAT *b;
 	restrict_t m;
 
@@ -527,21 +537,22 @@ BKCsetAccess(bat *res, const bat *bid, const char *const *param)
 }
 
 static str
-BKCgetAccess(str *res, const bat *bid)
+BKCgetAccess(Client ctx, str *res, const bat *bid)
 {
 	BAT *b;
 
+	(void) ctx;
 	if ((b = BATdescriptor(*bid)) == NULL)
 		throw(MAL, "bat.getAccess", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	switch (BATgetaccess(b)) {
 	case BAT_READ:
-		*res = GDKstrdup("read");
+		*res = "read";
 		break;
 	case BAT_APPEND:
-		*res = GDKstrdup("append");
+		*res = "append";
 		break;
 	case BAT_WRITE:
-		*res = GDKstrdup("write");
+		*res = "write";
 		break;
 	default:
 		MT_UNREACHABLE();
@@ -559,13 +570,6 @@ BKCgetAccess(str *res, const bat *bid)
  * Where necessary use the primary view to access the properties
  */
 static inline char *
-pre(const char *s1, const char *s2, char *buf)
-{
-	snprintf(buf, 64, "%s%s", s1, s2);
-	return buf;
-}
-
-static inline char *
 local_itoa(ssize_t i, char *buf)
 {
 	snprintf(buf, 32, "%zd", i);
@@ -580,9 +584,9 @@ local_utoa(size_t i, char *buf)
 }
 
 static inline char *
-oidtostr(oid i, char *p, size_t len)
+oidtostr(allocator *ma, oid i, char *p, size_t len)
 {
-	if (OIDtoStr(&p, &len, &i, false) < 0)
+	if (OIDtoStr(ma, &p, &len, &i, false) < 0)
 		return NULL;
 	return p;
 }
@@ -590,81 +594,50 @@ oidtostr(oid i, char *p, size_t len)
 static gdk_return
 infoHeap(BAT *bk, BAT *bv, Heap *hp, const char *nme)
 {
-	char buf[1024], *p = buf;
+	char kbuf[32], vbuf[32];
 
 	if (!hp)
 		return GDK_SUCCEED;
-	while (*nme)
-		*p++ = *nme++;
-	strcpy(p, "free");
-	if (BUNappend(bk, buf, false) != GDK_SUCCEED ||
-		BUNappend(bv, local_utoa(hp->free, buf), false) != GDK_SUCCEED)
+	strtconcat(kbuf, sizeof(kbuf), nme, "free", NULL);
+	if (BUNappend(bk, kbuf, false) != GDK_SUCCEED ||
+		BUNappend(bv, local_utoa(hp->free, vbuf), false) != GDK_SUCCEED)
 		return GDK_FAIL;
-	strcpy(p, "size");
-	if (BUNappend(bk, buf, false) != GDK_SUCCEED ||
-		BUNappend(bv, local_utoa(hp->size, buf), false) != GDK_SUCCEED)
+	strtconcat(kbuf, sizeof(kbuf), nme, "size", NULL);
+	if (BUNappend(bk, kbuf, false) != GDK_SUCCEED ||
+		BUNappend(bv, local_utoa(hp->size, vbuf), false) != GDK_SUCCEED)
 		return GDK_FAIL;
-	strcpy(p, "storage");
-	if (BUNappend(bk, buf, false) != GDK_SUCCEED ||
+	strtconcat(kbuf, sizeof(kbuf), nme, "storage", NULL);
+	if (BUNappend(bk, kbuf, false) != GDK_SUCCEED ||
 		BUNappend(bv, (hp->base == NULL || hp->base == (char *) 1) ? "absent" : (hp->storage == STORE_MMAP) ? (hp-> filename [0] ? "memory mapped" : "anonymous vm") : (hp->storage == STORE_PRIV) ? "private map" : "malloced", false) != GDK_SUCCEED)
 		return GDK_FAIL;
-	strcpy(p, "newstorage");
-	if (BUNappend(bk, buf, false) != GDK_SUCCEED ||
+	strtconcat(kbuf, sizeof(kbuf), nme, "newstorage", NULL);
+	if (BUNappend(bk, kbuf, false) != GDK_SUCCEED ||
 		BUNappend(bv, (hp->newstorage == STORE_MEM) ? "malloced" : (hp->newstorage == STORE_PRIV) ? "private map" : "memory mapped", false) != GDK_SUCCEED)
 		return GDK_FAIL;
-	strcpy(p, "filename");
-	if (BUNappend(bk, buf, false) != GDK_SUCCEED ||
+	strtconcat(kbuf, sizeof(kbuf), nme, "filename", NULL);
+	if (BUNappend(bk, kbuf, false) != GDK_SUCCEED ||
 		BUNappend(bv, hp->filename[0] ? hp->filename : "no file",
 				  false) != GDK_SUCCEED)
 		return GDK_FAIL;
 	return GDK_SUCCEED;
 }
 
-#define COLLISION (8 * sizeof(size_t))
-
 static gdk_return
-HASHinfo(BAT *bk, BAT *bv, Hash *h, const char *s)
+HASHinfo(BAT *bk, BAT *bv, Hash *h)
 {
-	BUN i;
-	BUN j;
-	BUN k;
-	BUN cnt[COLLISION + 1];
-	char buf[32];
-	char prebuf[64];
-
-	if (BUNappend(bk, pre(s, "type", prebuf), false) != GDK_SUCCEED ||
+	if (BUNappend(bk, "thash->type", false) != GDK_SUCCEED ||
 		BUNappend(bv, ATOMname(h->type), false) != GDK_SUCCEED ||
-		BUNappend(bk, pre(s, "mask", prebuf), false) != GDK_SUCCEED ||
-		BUNappend(bv, local_utoa(h->nbucket, buf), false) != GDK_SUCCEED)
+		BUNappend(bk, "thash->mask", false) != GDK_SUCCEED ||
+		BUNappend(bv, local_utoa(h->nbucket, (char[32]){0}), false) != GDK_SUCCEED)
 		return GDK_FAIL;
 
-	for (i = 0; i < COLLISION + 1; i++) {
-		cnt[i] = 0;
-	}
-	for (i = 0; i < h->nbucket; i++) {
-		j = HASHlist(h, i);
-		for (k = 0; j; k++)
-			j >>= 1;
-		cnt[k]++;
-	}
-
-	for (i = 0; i < COLLISION + 1; i++)
-		if (cnt[i]) {
-			if (BUNappend(bk,
-						  pre(s, local_utoa(i ? (((size_t) 1) << (i - 1)) : 0,
-											buf),
-							  prebuf),
-						  false) != GDK_SUCCEED
-				|| BUNappend(bv, local_utoa((size_t) cnt[i], buf),
-							 false) != GDK_SUCCEED)
-				return GDK_FAIL;
-		}
 	return GDK_SUCCEED;
 }
 
 static str
-BKCinfo(bat *ret1, bat *ret2, const bat *bid)
+BKCinfo(Client ctx, bat *ret1, bat *ret2, const bat *bid)
 {
+	allocator *ma = ctx->curprg->def->ma;
 	const char *mode, *accessmode;
 	BAT *bk = NULL, *bv = NULL, *b;
 	char bf[oidStrlen];
@@ -736,13 +709,13 @@ BKCinfo(bat *ret1, bat *ret2, const bat *bid)
 		|| BUNappend(bv, BATdirtybi(bi) ? "dirty" : "clean",
 					 false) != GDK_SUCCEED
 		|| BUNappend(bk, "hseqbase", false) != GDK_SUCCEED
-		|| BUNappend(bv, oidtostr(b->hseqbase, bf, sizeof(bf)),
+		|| BUNappend(bv, oidtostr(ma, b->hseqbase, bf, sizeof(bf)),
 					 FALSE) != GDK_SUCCEED
 		|| BUNappend(bk, "tdense", false) != GDK_SUCCEED
 		|| BUNappend(bv, local_itoa((ssize_t) BATtdensebi(&bi), buf),
 					 false) != GDK_SUCCEED
 		|| BUNappend(bk, "tseqbase", false) != GDK_SUCCEED
-		|| BUNappend(bv, oidtostr(bi.tseq, bf, sizeof(bf)),
+		|| BUNappend(bv, oidtostr(ma, bi.tseq, bf, sizeof(bf)),
 					 FALSE) != GDK_SUCCEED
 		|| BUNappend(bk, "tsorted", false) != GDK_SUCCEED
 		|| BUNappend(bv, local_itoa((ssize_t) bi.sorted, buf),
@@ -777,12 +750,13 @@ BKCinfo(bat *ret1, bat *ret2, const bat *bid)
 		|| BUNappend(bk, "batCopiedtodisk", false) != GDK_SUCCEED
 		|| BUNappend(bv, local_itoa((ssize_t) bi.copiedtodisk, buf),
 					 false) != GDK_SUCCEED
-		|| BUNappend(bk, "theap.dirty", false) != GDK_SUCCEED
+		|| BUNappend(bk, "tail.dirty", false) != GDK_SUCCEED
 		|| BUNappend(bv, bi.hdirty ? "dirty" : "clean", false) != GDK_SUCCEED
 		|| infoHeap(bk, bv, bi.h, "tail.") != GDK_SUCCEED
-		|| BUNappend(bk, "tvheap->dirty", false) != GDK_SUCCEED
-		|| BUNappend(bv, bi.vhdirty ? "dirty" : "clean", false) != GDK_SUCCEED
-		|| infoHeap(bk, bv, bi.vh, "theap.") != GDK_SUCCEED) {
+		|| (bi.vh
+			&& (BUNappend(bk, "tvheap.dirty", false) != GDK_SUCCEED
+				|| BUNappend(bv, bi.vhdirty ? "dirty" : "clean", false) != GDK_SUCCEED
+				|| infoHeap(bk, bv, bi.vh, "tvheap.") != GDK_SUCCEED))) {
 		bat_iterator_end(&bi);
 		BBPreclaim(bk);
 		BBPreclaim(bv);
@@ -791,7 +765,7 @@ BKCinfo(bat *ret1, bat *ret2, const bat *bid)
 	}
 	/* dump index information */
 	MT_rwlock_rdlock(&b->thashlock);
-	if (b->thash && HASHinfo(bk, bv, b->thash, "thash->") != GDK_SUCCEED) {
+	if (b->thash && HASHinfo(bk, bv, b->thash) != GDK_SUCCEED) {
 		MT_rwlock_rdunlock(&b->thashlock);
 		bat_iterator_end(&bi);
 		BBPreclaim(bk);
@@ -814,8 +788,9 @@ BKCinfo(bat *ret1, bat *ret2, const bat *bid)
 #define ROUND_UP(x,y) ((y)*(((x)+(y)-1)/(y)))
 
 static str
-BKCgetSize(lng *tot, const bat *bid)
+BKCgetSize(Client ctx, lng *tot, const bat *bid)
 {
+	(void) ctx;
 	BAT *b;
 	lng size = 0;
 	lng blksize = (lng) MT_pagesize();
@@ -844,8 +819,9 @@ BKCgetSize(lng *tot, const bat *bid)
 }
 
 static str
-BKCgetVHeapSize(lng *tot, const bat *bid)
+BKCgetVHeapSize(Client ctx, lng *tot, const bat *bid)
 {
+	(void) ctx;
 	BAT *b;
 	lng size = 0;
 	if ((b = BATdescriptor(*bid)) == NULL) {
@@ -867,8 +843,9 @@ BKCgetVHeapSize(lng *tot, const bat *bid)
  * Synced BATs
  */
 static str
-BKCisSynced(bit *ret, const bat *bid1, const bat *bid2)
+BKCisSynced(Client ctx, bit *ret, const bat *bid1, const bat *bid2)
 {
+	(void) ctx;
 	BAT *b1, *b2;
 
 	if ((b1 = BATdescriptor(*bid1)) == NULL) {
@@ -888,8 +865,9 @@ BKCisSynced(bit *ret, const bat *bid1, const bat *bid2)
  * Role Management
  */
 static str
-BKCsetName(void *r, const bat *bid, const char *const *s)
+BKCsetName(Client ctx, void *r, const bat *bid, const char *const *s)
 {
+	(void) ctx;
 	BAT *b;
 	int ret;
 	int c;
@@ -930,14 +908,15 @@ BKCsetName(void *r, const bat *bid, const char *const *s)
 }
 
 static str
-BKCgetBBPname(str *ret, const bat *bid)
+BKCgetBBPname(Client ctx, str *ret, const bat *bid)
 {
+	allocator *ma = ctx->curprg->def->ma;
 	BAT *b;
 
 	if ((b = BATdescriptor(*bid)) == NULL) {
 		throw(MAL, "bat.getName", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	}
-	*ret = GDKstrdup(BBP_logical(b->batCacheid));
+	*ret = ma_strdup(ma, BBP_logical(b->batCacheid));
 	BBPunfix(b->batCacheid);
 	return *ret ? MAL_SUCCEED : createException(MAL, "bat.getName",
 												SQLSTATE(HY013)
@@ -945,8 +924,9 @@ BKCgetBBPname(str *ret, const bat *bid)
 }
 
 static str
-BKCsave(bit *res, const char *const *input)
+BKCsave(Client ctx, bit *res, const char *const *input)
 {
+	(void) ctx;
 	bat bid = BBPindex(*input);
 	BAT *b;
 
@@ -966,8 +946,9 @@ BKCsave(bit *res, const char *const *input)
 }
 
 static str
-BKCsave2(void *r, const bat *bid)
+BKCsave2(Client ctx, void *r, const bat *bid)
 {
+	(void) ctx;
 	BAT *b;
 
 	(void) r;
@@ -992,8 +973,9 @@ BKCsave2(void *r, const bat *bid)
  * Accelerator Control
  */
 static str
-BKCsetHash(bit *ret, const bat *bid)
+BKCsetHash(Client ctx, bit *ret, const bat *bid)
 {
+	(void) ctx;
 	BAT *b;
 
 	(void) ret;
@@ -1006,8 +988,9 @@ BKCsetHash(bit *ret, const bat *bid)
 }
 
 static str
-BKCgetSequenceBase(oid *r, const bat *bid)
+BKCgetSequenceBase(Client ctx, oid *r, const bat *bid)
 {
+	(void) ctx;
 	BAT *b;
 
 	if ((b = BATdescriptor(*bid)) == NULL) {
@@ -1020,8 +1003,9 @@ BKCgetSequenceBase(oid *r, const bat *bid)
 }
 
 static str
-BKCmergecand(bat *ret, const bat *aid, const bat *bid)
+BKCmergecand(Client ctx, bat *ret, const bat *aid, const bat *bid)
 {
+	(void) ctx;
 	BAT *a, *b, *bn;
 
 	if ((a = BATdescriptor(*aid)) == NULL) {
@@ -1042,8 +1026,9 @@ BKCmergecand(bat *ret, const bat *aid, const bat *bid)
 }
 
 static str
-BKCintersectcand(bat *ret, const bat *aid, const bat *bid)
+BKCintersectcand(Client ctx, bat *ret, const bat *aid, const bat *bid)
 {
+	(void) ctx;
 	BAT *a, *b, *bn;
 
 	if ((a = BATdescriptor(*aid)) == NULL) {
@@ -1064,8 +1049,9 @@ BKCintersectcand(bat *ret, const bat *aid, const bat *bid)
 }
 
 static str
-BKCdiffcand(bat *ret, const bat *aid, const bat *bid)
+BKCdiffcand(Client ctx, bat *ret, const bat *aid, const bat *bid)
 {
+	(void) ctx;
 	BAT *a, *b, *bn;
 
 	if ((a = BATdescriptor(*aid)) == NULL) {
@@ -1086,7 +1072,7 @@ BKCdiffcand(bat *ret, const bat *aid, const bat *bid)
 }
 
 #include "mel.h"
-mel_func bat5_init_funcs[] = {
+static mel_func bat5_init_funcs[] = {
  command("bat", "mirror", BKCmirror, false, "Returns the head-mirror image of a BAT (two head columns).", args(1,2, batarg("",oid),batargany("b",1))),
  command("bat", "delete", BKCdelete, false, "Delete BUN indicated by head value, exchanging with last BUN", args(1,3, batargany("",1),batargany("b",1),arg("h",oid))),
  command("bat", "delete", BKCdelete_multi, false, "Delete multiple BUN, shifting BUNs up", args(1,3, batargany("",1),batargany("b",1),batarg("d",oid))),
@@ -1100,30 +1086,29 @@ mel_func bat5_init_funcs[] = {
  command("bat", "append", BKCappend_cand_wrap, false, "append the content of u with candidate list s to i", args(1,4, batargany("",1),batargany("i",1),batargany("u",1),batarg("s",oid))),
  command("bat", "append", BKCappend_cand_force_wrap, false, "append the content of u with candidate list s to i", args(1,5, batargany("",1),batargany("i",1),batargany("u",1),batarg("s",oid),arg("force",bit))),
  command("bat", "append", BKCappend_val_force_wrap, false, "append the value u to i", args(1,4, batargany("",1),batargany("i",1),argany("u",1),arg("force",bit))),
- command("bat", "attach", BKCattach, false, "Returns a new BAT with dense head and tail of the given type and uses\nthe given file to initialize the tail. The file will be owned by the\nserver.", args(1,3, batargany("",1),arg("tt",int),arg("heapfile",str))),
  command("bat", "densebat", BKCdensebat, false, "Creates a new [void,void] BAT of size 'sz'.", args(1,2, batarg("",oid),arg("sz",lng))),
- command("bat", "info", BKCinfo, false, "Produce a table containing information about a BAT in [attribute,value] format. \nIt contains all properties of the BAT record. ", args(2,3, batarg("",str),batarg("",str),batargany("b",1))),
- command("bat", "getSize", BKCgetSize, false, "Calculate the actual size of the BAT descriptor, heaps, hashes in bytes\nrounded to the memory page size (see bbp.getPageSize()).", args(1,2, arg("",lng),batargany("b",1))),
+ command("bat", "info", BKCinfo, false, "Produce a table containing information about a BAT in [attribute,value] format. It contains all properties of the BAT record.", args(2,3, batarg("",str),batarg("",str),batargany("b",1))),
+ command("bat", "getSize", BKCgetSize, false, "Calculate the actual size of the BAT descriptor, heaps, hashes in bytes rounded to the memory page size (see bbp.getPageSize()).", args(1,2, arg("",lng),batargany("b",1))),
  command("bat", "getVHeapSize", BKCgetVHeapSize, false, "Calculate the vheap size for varsized bats", args(1,2, arg("",lng),batargany("b",1))),
  command("bat", "getCapacity", BKCgetCapacity, false, "Returns the current allocation size (in max number of elements) of a BAT.", args(1,2, arg("",lng),batargany("b",1))),
  command("bat", "getColumnType", BKCgetColumnType, false, "Returns the type of the tail column of a BAT, as an integer type number.", args(1,2, arg("",str),batargany("b",1))),
  command("bat", "isaKey", BKCgetKey, false, "Return whether the column tail values are unique (key).", args(1,2, arg("",bit),batargany("b",1))),
- command("bat", "setAccess", BKCsetAccess, false, "Try to change the update access privileges \nto this BAT. Mode:\nr[ead-only]      - allow only read access.\na[append-only]   - allow reads and update.\nw[riteable]      - allow all operations.\nBATs are updatable by default. On making a BAT read-only, \nall subsequent updates fail with an error message.\nReturns the BAT itself.", args(1,3, batargany("",1),batargany("b",1),arg("mode",str))),
+ command("bat", "setAccess", BKCsetAccess, false, "Try to change the update access privileges to this BAT. Mode: r[ead-only]      - allow only read access. a[append-only]   - allow reads and update. w[riteable]      - allow all operations. BATs are updatable by default. On making a BAT read-only, all subsequent updates fail with an error message. Returns the BAT itself.", args(1,3, batargany("",1),batargany("b",1),arg("mode",str))),
  command("bat", "getAccess", BKCgetAccess, false, "Return the access mode attached to this BAT as a character.", args(1,2, arg("",str),batargany("b",1))),
  command("bat", "getSequenceBase", BKCgetSequenceBase, false, "Get the sequence base for the void column of a BAT.", args(1,2, arg("",oid),batargany("b",1))),
  command("bat", "isSorted", BKCisSorted, false, "Returns true if BAT values are ordered.", args(1,2, arg("",bit),batargany("b",1))),
  command("bat", "isSortedReverse", BKCisSortedReverse, false, "Returns true if BAT values are reversely ordered.", args(1,2, arg("",bit),batargany("b",1))),
  command("bat", "append", BKCappend_val_wrap, false, "append the value u to i", args(1,3, batargany("",1),batargany("i",1),argany("u",1))),
- command("bat", "setName", BKCsetName, false, "Give a logical name to a BAT. ", args(1,3, arg("",void),batargany("b",1),arg("s",str))),
+ command("bat", "setName", BKCsetName, false, "Give a logical name to a BAT.", args(1,3, arg("",void),batargany("b",1),arg("s",str))),
  command("bat", "getName", BKCgetBBPname, false, "Gives back the logical name of a BAT.", args(1,2, arg("",str),batargany("b",1))),
  command("bat", "isTransient", BKCisTransient, false, "", args(1,2, arg("",bit),batargany("b",1))),
- command("bat", "setTransient", BKCsetTransient, false, "Make the BAT transient.  Returns \nboolean which indicates if the\nBAT administration has indeed changed.", args(1,2, arg("",void),batargany("b",1))),
+ command("bat", "setTransient", BKCsetTransient, false, "Make the BAT transient.  Returns boolean which indicates if the BAT administration has indeed changed.", args(1,2, arg("",void),batargany("b",1))),
  command("bat", "isPersistent", BKCisPersistent, false, "", args(1,2, arg("",bit),batargany("b",1))),
  command("bat", "setPersistent", BKCsetPersistent, false, "Make the BAT persistent.", args(1,2, arg("",void),batargany("b",1))),
  command("bat", "save", BKCsave2, false, "", args(1,2, arg("",void),batargany("nme",1))),
- command("bat", "save", BKCsave, false, "Save a BAT to storage, if it was loaded and dirty.  \nReturns whether IO was necessary.  Please realize that \ncalling this function violates the atomic commit protocol!!", args(1,2, arg("",bit),arg("nme",str))),
+ command("bat", "save", BKCsave, false, "Save a BAT to storage, if it was loaded and dirty. Returns whether IO was necessary.  Please realize that calling this function violates the atomic commit protocol!!", args(1,2, arg("",bit),arg("nme",str))),
  command("bat", "setHash", BKCsetHash, false, "Create a hash structure on the column", args(1,2, arg("",bit),batargany("b",1))),
- command("bat", "isSynced", BKCisSynced, false, "Tests whether two BATs are synced or not. ", args(1,3, arg("",bit),batargany("b1",1),batargany("b2",2))),
+ command("bat", "isSynced", BKCisSynced, false, "Tests whether two BATs are synced or not.", args(1,3, arg("",bit),batargany("b1",1),batargany("b2",2))),
  command("bat", "mergecand", BKCmergecand, false, "Merge two candidate lists into one", args(1,3, batarg("",oid),batarg("a",oid),batarg("b",oid))),
  command("bat", "intersectcand", BKCintersectcand, false, "Intersect two candidate lists into one", args(1,3, batarg("",oid),batarg("a",oid),batarg("b",oid))),
  command("bat", "diffcand", BKCdiffcand, false, "Calculate difference of two candidate lists", args(1,3, batarg("",oid),batarg("a",oid),batarg("b",oid))),

@@ -3,11 +3,9 @@
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024, 2025 MonetDB Foundation;
- * Copyright August 2008 - 2023 MonetDB B.V.;
- * Copyright 1997 - July 2008 CWI.
+ * For copyright information, see the file debian/copyright.
  */
 
 /*
@@ -42,7 +40,7 @@
 #endif
 
 #ifndef HAVE_SQLGETPRIVATEPROFILESTRING
-#define SQLGetPrivateProfileString(section,entry,default,buffer,bufferlen,filename)	((int) strcpy_len(buffer,default,bufferlen))
+#define SQLGetPrivateProfileString(section,entry,default,buffer,bufferlen,filename)	((void) section, (int) strlcpy(buffer,default,bufferlen))
 #endif
 
 static SQLRETURN
@@ -73,16 +71,22 @@ get_serverinfo(ODBCDbc *dbc)
 	}
 	if (mapi_error(dbc->mid))
 		goto end;
-	mapi_close_handle(hdl);
-	if ((hdl = mapi_query(dbc->mid, "select id from sys._tables where name = 'comments' and schema_id = (select id from sys.schemas where name = 'sys')")) == NULL)
-		goto end;
-	if (mapi_error(dbc->mid))
-		goto end;
-	n = NULL;
-	while (mapi_fetch_row(hdl)) {
-		n = mapi_fetch_field(hdl, 0);
+
+	/* table sys.comments should exist since Mar2018 (11.29) */
+	if (dbc->major == 11 && dbc->minor > 29) {
+		dbc->has_comment = true;
+	} else {
+		mapi_close_handle(hdl);
+		if ((hdl = mapi_query(dbc->mid, "select id from sys._tables where name = 'comments' and schema_id = (select id from sys.schemas where name = 'sys')")) == NULL)
+			goto end;
+		if (mapi_error(dbc->mid))
+			goto end;
+		n = NULL;
+		if (mapi_fetch_row(hdl)) {
+			n = mapi_fetch_field(hdl, 0);
+		}
+		dbc->has_comment = n != NULL;
 	}
-	dbc->has_comment = n != NULL;
 
 	rc = SQL_SUCCESS;
 end:
@@ -136,13 +140,13 @@ makeNulTerminated(const SQLCHAR **argument, ssize_t argument_len, void **scratch
 char*
 buildConnectionString(const char *dsn, const msettings *settings)
 {
-
 	size_t pos = 0;
 	size_t cap = 1024;
 	char *buf = malloc(cap);  // reallocprintf will deal with allocation failures
 	char *sep = "";
-	char *value = NULL;
-	char *default_value = NULL;
+	const char *value = NULL;
+	const char *default_value = NULL;
+	char scratch1[40], scratch2[40];
 	bool ok = false;
 
 	if (dsn) {
@@ -158,8 +162,7 @@ buildConnectionString(const char *dsn, const msettings *settings)
 		if (parm == MP_IGNORE || parm == MP_TABLE || parm == MP_TABLESCHEMA)
 			continue;
 
-		free(value);
-		value = msetting_as_string(settings, parm);
+		value = msetting_as_string(settings, parm, scratch1, sizeof(scratch1));
 		if (!value)
 			goto end;
 
@@ -174,8 +177,7 @@ buildConnectionString(const char *dsn, const msettings *settings)
 			show_this = true;
 		} else {
 			// skip if still default
-			free(default_value);
-			default_value = msetting_as_string(msettings_default, parm);
+			default_value = msetting_as_string(msettings_default, parm, scratch2, sizeof(scratch2));
 			if (!default_value)
 				goto end;
 			show_this = (strcmp(value, default_value) != 0);
@@ -190,8 +192,6 @@ buildConnectionString(const char *dsn, const msettings *settings)
 	ok = true;
 
 end:
-	free(value);
-	free(default_value);
 	if (ok) {
 		return buf;
 	} else {
@@ -496,9 +496,6 @@ MNDBConnectSettings(ODBCDbc *dbc, const char *dsn, msettings *settings)
 
 	return SQL_SUCCESS;
 }
-
-
-
 
 SQLRETURN SQL_API
 SQLConnect(SQLHDBC ConnectionHandle,

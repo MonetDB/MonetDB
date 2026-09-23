@@ -3,11 +3,9 @@
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024, 2025 MonetDB Foundation;
- * Copyright August 2008 - 2023 MonetDB B.V.;
- * Copyright 1997 - July 2008 CWI.
+ * For copyright information, see the file debian/copyright.
  */
 
 /* NOTE: for this file to work correctly, the random number generator
@@ -37,12 +35,12 @@ generate_uuid(char *out)
 	/* make sure this is version 4 (random UUID) */
 	u.uuid[6] = (u.uuid[6] & 0x0F) | 0x40;
 	snprintf(out, 37,
-			 "%02x%02x%02x%02x-%02x%02x-%02x%02x-%02x%02x-"
-			 "%02x%02x%02x%02x%02x%02x",
-			 u.uuid[0], u.uuid[1], u.uuid[2], u.uuid[3],
-			 u.uuid[4], u.uuid[5], u.uuid[6], u.uuid[7],
-			 u.uuid[8], u.uuid[9], u.uuid[10], u.uuid[11],
-			 u.uuid[12], u.uuid[13], u.uuid[14], u.uuid[15]);
+		 "%02x%02x%02x%02x-%02x%02x-%02x%02x-%02x%02x-"
+		 "%02x%02x%02x%02x%02x%02x",
+		 u.uuid[0], u.uuid[1], u.uuid[2], u.uuid[3],
+		 u.uuid[4], u.uuid[5], u.uuid[6], u.uuid[7],
+		 u.uuid[8], u.uuid[9], u.uuid[10], u.uuid[11],
+		 u.uuid[12], u.uuid[13], u.uuid[14], u.uuid[15]);
 	return true;
 }
 #endif
@@ -76,14 +74,18 @@ generateUUID(void)
 #ifdef __COVERITY__
 		/* avoid rand() when checking with coverity */
 		snprintf(out, sizeof(out),
-				 "00000000-0000-0000-0000-000000000000");
+			 "00000000-0000-0000-0000-000000000000");
 #else
 		snprintf(out, sizeof(out),
 			 "%04x%04x-%04x-4%03x-8%03x-%04x%04x%04x",
-			 (unsigned) rand() & 0xFFFF, (unsigned) rand() & 0xFFFF,
-			 (unsigned) rand() & 0xFFFF, (unsigned) rand() & 0x0FFF,
-			 (unsigned) rand() & 0x0FFF, (unsigned) rand() & 0xFFFF,
-			 (unsigned) rand() & 0xFFFF, (unsigned) rand() & 0xFFFF);
+			 (unsigned) rand() & 0xFFFF,
+			 (unsigned) rand() & 0xFFFF,
+			 (unsigned) rand() & 0xFFFF,
+			 (unsigned) rand() & 0x0FFF,
+			 (unsigned) rand() & 0x0FFF,
+			 (unsigned) rand() & 0xFFFF,
+			 (unsigned) rand() & 0xFFFF,
+			 (unsigned) rand() & 0xFFFF);
 #endif
 	}
 	return strdup(out);

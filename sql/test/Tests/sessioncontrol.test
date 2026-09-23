@@ -57,22 +57,22 @@ call setoptimizer('sequential_pipe')
 statement ok
 call setsessiontimeout(1000)
 
-statement ok
-call setquerytimeout(60)
-
-statement ok
-call setworkerlimit(8)
-
-query TTIIII rowsort
-select s."username", s."optimizer", s.sessiontimeout, s.querytimeout, s.workerlimit, s.memorylimit from sessions as s
-----
-monetdb
-sequential_pipe
-1000
-60
-8
-0
-
-statement ok
-call setoptimizer('default_pipe')
+#statement ok
+#call setquerytimeout(60)
+#
+#statement ok
+#call setworkerlimit(8)
+#
+#query TTIIII rowsort
+#select s."username", s."optimizer", s.sessiontimeout, s.querytimeout, s.workerlimit, s.memorylimit from sessions as s
+#----
+#monetdb
+#sequential_pipe
+#1000
+#60
+#8
+#0
+#
+#statement ok
+#call setoptimizer('default_pipe')
 

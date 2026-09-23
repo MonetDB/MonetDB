@@ -3,15 +3,13 @@
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024, 2025 MonetDB Foundation;
- * Copyright August 2008 - 2023 MonetDB B.V.;
- * Copyright 1997 - July 2008 CWI.
+ * For copyright information, see the file debian/copyright.
  */
 
 #include "monetdb_config.h"
-#include "sql.h"
+#include "sql_monet_backend.h"
 #include "mal.h"
 #include "mal_client.h"
 
@@ -145,7 +143,7 @@ FORcompress_(BAT *b, lng min_val, lng max_val, role_t role)
 }
 
 static str
-FORcompress_intern(char **comp_min_val, BAT **r, BAT *b)
+FORcompress_intern(allocator *ma, char **comp_min_val, BAT **r, BAT *b)
 {
 	BAT *o = NULL;
 	char buf[64];
@@ -184,13 +182,13 @@ FORcompress_intern(char **comp_min_val, BAT **r, BAT *b)
 		o = FORcompress_(b, min_val, max_val, PERSISTENT);
 		if (!o)
 			throw(SQL, "for.compress", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-		snprintf(buf, 64, "FOR-" LLFMT, min_val);
+		snprintf(buf, sizeof(buf), "FOR-" LLFMT, min_val);
 	} else {
 		GDKfree(mn);
 		GDKfree(mx);
 		throw(SQL, "for.compress", SQLSTATE(3F000) "for compress: type %s not yet implemented", ATOMname(tt));
 	}
-	if (!(*comp_min_val = GDKstrdup(buf))) {
+	if (!(*comp_min_val = ma_strdup(ma, buf))) {
 		bat_destroy(o);
 		throw(SQL, "for.compress", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
@@ -248,8 +246,10 @@ FORcompress_col(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if( b == NULL)
 		throw(SQL,"for.compress", SQLSTATE(HY005) "Cannot access column descriptor");
 
+	allocator *ta = MT_thread_getallocator();
+	allocator_state ta_state = ma_open(ta);
 	char *comp_min_val = NULL;
-	msg = FORcompress_intern(&comp_min_val, &o, b);
+	msg = FORcompress_intern(ta, &comp_min_val, &o, b);
 	bat_destroy(b);
 	if (msg == MAL_SUCCEED) {
 		switch (sql_trans_alter_storage(tr, c, comp_min_val)) {
@@ -278,9 +278,9 @@ FORcompress_col(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 					break;
 			}
 		}
-		GDKfree(comp_min_val);
 		bat_destroy(o);
 	}
+	ma_close(&ta_state);
 	return msg;
 }
 

@@ -3,11 +3,9 @@
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024, 2025 MonetDB Foundation;
- * Copyright August 2008 - 2023 MonetDB B.V.;
- * Copyright 1997 - July 2008 CWI.
+ * For copyright information, see the file debian/copyright.
  */
 
 #include "monetdb_config.h"
@@ -15,7 +13,6 @@
 #include "rel_basetable.h"
 #include "rel_exp.h"
 #include "rel_remote.h"
-#include "sql_privileges.h"
 
 typedef struct rmt_prop_state {
 	int depth;
@@ -72,10 +69,8 @@ has_remote_or_replica( sql_rel *rel )
 	case op_semi:
 	case op_anti:
 
-	case op_union:
 	case op_inter:
 	case op_except:
-	case op_merge:
 
 	case op_insert:
 	case op_update:
@@ -89,6 +84,9 @@ has_remote_or_replica( sql_rel *rel )
 		break;
 	case op_project:
 	case op_select:
+	case op_buildhash:
+	case op_probehash:
+	case op_partition:
 	case op_groupby:
 	case op_topn:
 	case op_sample:
@@ -124,12 +122,13 @@ do_replica_rewrite(mvc *sql, list *exps, sql_table *t, sql_table *p, int remote_
 			assert(0);
 		}
 	}
-	r = rewrite_basetable(sql, r);
+	r = rewrite_basetable(sql, r, true);
 	for (n = exps->h, m = r->exps->h; n && m; n = n->next, m = m->next) {
 		sql_exp *e = n->data;
 		sql_exp *ne = m->data;
 
 		exp_prop_alias(sql->sa, ne, e);
+		ne->nid = e->nid;
 	}
 	list_hash_clear(r->exps); /* the child table may have different column names, so clear the hash */
 
@@ -209,7 +208,7 @@ replica_rewrite(visitor *v, sql_table *t, list *exps)
 				/* if we resolved the replica to a local table we have to
 				 * go and remove the remote property from the subtree */
 				sql_rel *r = ((rps*)v->data)->orig;
-				r->p = prop_remove(r->p, rp);
+				r->p = prop_remove(v->sql->sa, r->p, rp);
 				break;
 			}
 		}
@@ -229,10 +228,10 @@ replica_rewrite(visitor *v, sql_table *t, list *exps)
 static bool
 eliminate_remote_or_replica_refs(visitor *v, sql_rel **rel)
 {
-	if (rel_is_ref(*rel) && !((*rel)->flag&MERGE_LEFT)) {
+	if (rel_is_ref(*rel)) {
  		if (has_remote_or_replica(*rel)) {
  			sql_rel *nrel = rel_copy(v->sql, *rel, 1);
- 			rel_destroy(*rel);
+ 			rel_destroy(v->sql, *rel);
  			*rel = nrel;
  			return true;
  		} else {
@@ -286,7 +285,7 @@ rel_rewrite_replica_(visitor *v, sql_rel *rel)
 				return rel;
 
 			sql_rel *r = replica_rewrite(v, t, rel->exps);
-			rel_destroy(rel);
+			rel_destroy(v->sql, rel);
 			rel = r;
 		}
 	}
@@ -390,7 +389,7 @@ rel_rewrite_remote_(visitor *v, sql_rel *rel)
 	case op_table:
 		if (IS_TABLE_PROD_FUNC(rel->flag) || rel->flag == TABLE_FROM_RELATION) {
 			if (l && (p = find_prop(l->p, PROP_REMOTE)) != NULL) {
-				l->p = prop_remove(l->p, p);
+				l->p = prop_remove(v->sql->sa, l->p, p);
 				if (!find_prop(rel->p, PROP_REMOTE)) {
 					p->p = rel->p;
 					rel->p = p;
@@ -405,17 +404,12 @@ rel_rewrite_remote_(visitor *v, sql_rel *rel)
 	case op_semi:
 	case op_anti:
 
-	case op_union:
 	case op_inter:
 	case op_except:
 
 	case op_insert:
 	case op_update:
 	case op_delete:
-	case op_merge:
-
-		if (rel->flag&MERGE_LEFT) /* search for any remote tables but don't propagate over to this relation */
-			return rel;
 
 		/* if both subtrees have REMOTE property with the common uri then pull it up */
 		if (l && (pl = find_prop(l->p, PROP_REMOTE)) != NULL &&
@@ -425,8 +419,8 @@ rel_rewrite_remote_(visitor *v, sql_rel *rel)
 
 			/* if there are common uris pull the REMOTE prop with the common uris up */
 			if (!list_empty(uris)) {
-				l->p = prop_remove(l->p, pl);
-				r->p = prop_remove(r->p, pr);
+				l->p = prop_remove(v->sql->sa, l->p, pl);
+				r->p = prop_remove(v->sql->sa, r->p, pr);
 				if (!find_prop(rel->p, PROP_REMOTE)) {
 					/* remove local tid ONLY if no subtree has local parts */
 					if (pl->id == 0 || pr->id == 0)
@@ -447,13 +441,16 @@ rel_rewrite_remote_(visitor *v, sql_rel *rel)
 		break;
 	case op_project:
 	case op_select:
+	case op_buildhash:
+	case op_probehash:
+	case op_partition:
 	case op_groupby:
 	case op_topn:
 	case op_sample:
 	case op_truncate:
 		/* if the subtree has the REMOTE property just pull it up */
 		if (l && (p = find_prop(l->p, PROP_REMOTE)) != NULL) {
-			l->p = prop_remove(l->p, p);
+			l->p = prop_remove(v->sql->sa, l->p, p);
 			if (!find_prop(rel->p, PROP_REMOTE)) {
 				p->p = rel->p;
 				rel->p = p;
@@ -463,7 +460,7 @@ rel_rewrite_remote_(visitor *v, sql_rel *rel)
 	case op_ddl:
 		if (rel->flag == ddl_output || rel->flag == ddl_create_seq || rel->flag == ddl_alter_seq /*|| rel->flag == ddl_alter_table || rel->flag == ddl_create_table || rel->flag == ddl_create_view*/) {
 			if (l && (p = find_prop(l->p, PROP_REMOTE)) != NULL) {
-				l->p = prop_remove(l->p, p);
+				l->p = prop_remove(v->sql->sa, l->p, p);
 				if (!find_prop(rel->p, PROP_REMOTE)) {
 					p->p = rel->p;
 					rel->p = p;
@@ -477,8 +474,8 @@ rel_rewrite_remote_(visitor *v, sql_rel *rel)
 
 				/* if there are common uris pull the REMOTE prop with the common uris up */
 				if (!list_empty(uris)) {
-					l->p = prop_remove(l->p, pl);
-					r->p = prop_remove(r->p, pr);
+					l->p = prop_remove(v->sql->sa, l->p, pl);
+					r->p = prop_remove(v->sql->sa, r->p, pr);
 					if (!find_prop(rel->p, PROP_REMOTE)) {
 						/* remove local tid ONLY if no subtree has local parts */
 						if (pl->id == 0 || pr->id == 0)
@@ -505,8 +502,6 @@ rel_rewrite_remote(visitor *v, global_props *gp, sql_rel *rel)
 	(void) gp;
 	rel = rel_visitor_bottomup(v, rel, &rel_rewrite_remote_);
 	v->data = NULL;
-	rel = rel_visitor_topdown(v, rel, &rel_rewrite_replica_);
-	v->data = NULL;
 	return rel;
 }
 
@@ -526,13 +521,13 @@ rel_remote_func_(visitor *v, sql_rel *rel)
 	/* Don't modify the same relation twice */
 	if (is_rel_remote_func_used(rel->used))
 		return rel;
-	rel->used |= rel_remote_func_used;
 
 	if (find_prop(rel->p, PROP_REMOTE) != NULL) {
 		list *exps = rel_projections(v->sql, rel, NULL, 1, 1);
 		rel = rel_unique_exps(v->sql, rel); /* remove any duplicate results (aliases) */
 		rel = rel_relational_func(v->sql->sa, rel, exps);
 	}
+	rel->used |= rel_remote_func_used;
 	return rel;
 }
 

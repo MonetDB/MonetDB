@@ -95,7 +95,7 @@ insert into all_types values (false, -10, -10000, -1000000,
 	'https://www.monetdb.org/Documentation/Manuals/SQLreference/URLtype',
 	'76236890-f4e2-4d4f-a02b-ec7a02c3cb50')
 
-query IIIIIRRRRRRRRTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT rowsort
+query IIIIIRRDDDRRRTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT rowsort
 select * from all_types
 ----
 0
@@ -106,7 +106,7 @@ select * from all_types
 -1000000000000000019884624838656.000
 -100000000000000000000.000
 -1.000
--123456789.000
+-123456789
 -12345.678
 -3.142
 -3.142
@@ -155,7 +155,7 @@ https://www.monetdb.org/Documentation/Manuals/SQLreference/URLtype
 1000000000000000019884624838656.000
 100000000000000000000.000
 1.000
-123456789.000
+123456789
 12345.678
 3.142
 3.142
@@ -200,10 +200,10 @@ ae106ad4-81fd-4f1a-85e8-5efface60da4
 statement ok
 insert into all_types select * from all_types
 
-query IIIIIRRRRRRRRTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT rowsort
+query IIIIIRRDDDRRRTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT rowsort
 select * from all_types
 ----
-196 values hashing to 5cf55d376197e5c814e0b0ff6807486b
+196 values hashing to 7fd4977a24a59984788e2a93aadf9ffa
 
 query TIIIIIT rowsort
 select name, schema_id, type, system, commit_action, access, query from sys._tables where name = 'all_types'
@@ -627,7 +627,7 @@ select "real" from all_types order by "real" ASC
 100000000000000000000.000
 100000000000000000000.000
 
-query R nosort
+query D nosort
 select "decimal" from all_types order by "decimal" ASC
 ----
 -1.000
@@ -635,15 +635,15 @@ select "decimal" from all_types order by "decimal" ASC
 1.000
 1.000
 
-query R nosort
+query D nosort
 select "decimal9" from all_types order by "decimal9" ASC
 ----
--123456789.000
--123456789.000
-123456789.000
-123456789.000
+-123456789
+-123456789
+123456789
+123456789
 
-query R nosort
+query D nosort
 select "decimal83" from all_types order by "decimal83" ASC
 ----
 -12345.678
@@ -1072,7 +1072,7 @@ select "real" from all_types order by "real" DESC
 -100000000000000000000.000
 -100000000000000000000.000
 
-query R nosort
+query D nosort
 select "decimal" from all_types order by "decimal" DESC
 ----
 1.000
@@ -1080,15 +1080,15 @@ select "decimal" from all_types order by "decimal" DESC
 -1.000
 -1.000
 
-query R nosort
+query D nosort
 select "decimal9" from all_types order by "decimal9" DESC
 ----
-123456789.000
-123456789.000
--123456789.000
--123456789.000
+123456789
+123456789
+-123456789
+-123456789
 
-query R nosort
+query D nosort
 select "decimal83" from all_types order by "decimal83" DESC
 ----
 12345.678
@@ -1411,10 +1411,10 @@ ae106ad4-81fd-4f1a-85e8-5efface60da4
 statement ok
 insert into all_types select * from all_types
 
-query IIIIIRRRRRRRRTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT nosort
+query IIIIIRRDDDRRRTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT nosort
 select * from all_types order by 11,12,13,14,15,16,17,18,19,20,1,2,3,4,5,6,7,8,9,10
 ----
-392 values hashing to 5fbd5da37f5732507e66ce463dd6f8af
+392 values hashing to 2a6ecc76071921908e237a9276c33141
 
 query IT nosort
 select type, name from sys.idxs where table_id in (select id from sys._tables where name = 'all_types') order by name

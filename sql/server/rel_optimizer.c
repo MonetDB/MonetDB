@@ -3,11 +3,9 @@
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024, 2025 MonetDB Foundation;
- * Copyright August 2008 - 2023 MonetDB B.V.;
- * Copyright 1997 - July 2008 CWI.
+ * For copyright information, see the file debian/copyright.
  */
 
 #include "monetdb_config.h"
@@ -17,11 +15,9 @@
 #include "rel_basetable.h"
 #include "rel_exp.h"
 #include "rel_propagate.h"
-#include "rel_statistics.h"
-#include "sql_privileges.h"
 #include "sql_storage.h"
 
-static sql_rel *
+sql_rel *
 rel_properties(visitor *v, sql_rel *rel)
 {
 	global_props *gp = (global_props*)v->data;
@@ -38,6 +34,26 @@ rel_properties(visitor *v, sql_rel *rel)
 		/* If the plan has a merge table or a child of one, then rel_merge_table_rewrite has to run */
 		gp->needs_mergetable_rewrite |= (isMergeTable(t) || (t->s && t->s->parts && (pt = partition_find_part(sql->session->tr, t, NULL))));
 		gp->needs_remote_replica_rewrite |= (isRemote(t) || isReplicaTable(t));
+		gp->has_pkey |= (t->pkey != NULL);
+	}
+	if (is_modify(rel->op)) {
+		sql_table *t = NULL;
+		sql_rel *pbt = rel->l;
+		if (pbt->op == op_basetable)
+			t = pbt->l;
+		else
+			t = rel_ddl_table_get(pbt);
+		gp->complex_modify |= ol_length(t->triggers) ||
+			(rel->op != op_insert && ol_length(t->keys)) ||
+			(rel->op == op_delete && !rel->r);
+	}
+	if (is_groupby(rel->op) && rel->exps) {
+		for(node *n = rel->exps->h; n; n = n->next) {
+			sql_exp *e = n->data;
+                        sql_subfunc *sf = e->f;
+			if (e->type == e_aggr && sf->func->type == F_AGGR && !sf->func->s && !strcmp(sf->func->base.name, "fsum"))  /* handle fsum use classic */
+				gp->complex_modify |= 1;
+		}
 	}
 	return rel;
 }
@@ -79,37 +95,6 @@ rel_wrap_select_around_mt_child(visitor *v, sql_rel *t, merge_table_prune_info *
 	return t;
 }
 
-#if 0
-static sql_rel *
-rel_unionize_mt_tables_balanced(visitor *v, sql_rel* mt, list* tables, merge_table_prune_info *info)
-{
-	/* This function is creating the union tree in the tables list calling
-	 * itself recursively until the tables list has a single entry (the union tree)
-	 */
-
-	/* base case */
-	if (tables->cnt == 1) // XXX: or/and h->next == NULL
-		return tables->h->data;
-	/* merge (via union) every *two* consecutive nodes of the list */
-	for (node *n = tables->h; n && n->next; n = n->next->next) {
-		/* first (left) node */
-		sql_rel *tl = rel_wrap_select_around_mt_child(v, n->data, info);
-		/* second (right) node */
-		sql_rel *tr = rel_wrap_select_around_mt_child(v, n->next->data, info);
-		/* create the union */
-		sql_rel *tu = rel_setop(v->sql->sa, tl, tr, op_union);
-		rel_setop_set_exps(v->sql, tu, rel_projections(v->sql, mt, NULL, 1, 1), true);
-		set_processed(tu);
-		/* replace the two nodes with the new relation */
-		list_append_before(tables, n, tu);
-		list_remove_node(tables, NULL, n);
-		list_remove_node(tables, NULL, n->next);
-		// TODO: do i need to rebuild the hash of the list?
-	}
-	return rel_unionize_mt_tables_balanced(v, mt, tables, info);
-}
-#endif
-
 static sql_rel *
 rel_unionize_mt_tables_munion(visitor *v, sql_rel* mt, list* tables, merge_table_prune_info *info)
 {
@@ -150,7 +135,7 @@ merge_table_prune_and_unionize(visitor *v, sql_rel *mt_rel, merge_table_prune_in
 			return sql_error(v->sql, 02, SQLSTATE(42000) "%s '%s'.'%s' should have at least one table associated",
 							TABLE_TYPE_DESCRIPTION(pt->type, pt->properties), pt->s->base.name, pt->base.name);
 		/* Do not include empty partitions */
-		if (isTable(pt) && pt->access == TABLE_READONLY && !store->storage_api.count_col(v->sql->session->tr, ol_first_node(pt->columns)->data, 10)) /* count active rows only */
+		if (isTable(pt) && pt->access == TABLE_READONLY && !store->storage_api.count_col(v->sql->session->tr, ol_first_node(pt->columns)->data, CNT_ACTIVE)) /* count active rows only */
 			continue;
 
 		for (node *n = mt_rel->exps->h; n && !skip; n = n->next) { /* for each column of the child table */
@@ -317,7 +302,7 @@ merge_table_prune_and_unionize(visitor *v, sql_rel *mt_rel, merge_table_prune_in
 											skip |= nskip;
 										}
 									} else { /* limit1 to limit2 (general case), limit2 is exclusive */
-										bool max_differ_min = ATOMcmp(col->type.type->localtype, &rmin->data.val, &rmax->data.val) != 0;
+										bool max_differ_min = !ATOMeq(col->type.type->localtype, &rmin->data.val, &rmax->data.val);
 
 										if (lval) {
 											if (next->flag == cmp_equal) {
@@ -446,8 +431,8 @@ merge_table_prune_and_unionize(visitor *v, sql_rel *mt_rel, merge_table_prune_in
 				}
 
 				if (nrel) {
-					nrel = rel_setop(v->sql->sa, nrel, next, op_union);
-					rel_setop_set_exps(v->sql, nrel, rel_projections(v->sql, mt_rel, NULL, 1, 1), true);
+					nrel = rel_setop_n_ary(v->sql->sa, append(append(sa_list(v->sql->sa), nrel), next), op_munion);
+					rel_setop_n_ary_set_exps(v->sql, nrel, rel_projections(v->sql, mt_rel, NULL, 1, 1), true);
 					set_processed(nrel);
 				} else {
 					nrel = next;
@@ -468,9 +453,13 @@ merge_table_prune_and_unionize(visitor *v, sql_rel *mt_rel, merge_table_prune_in
 static sql_rel *
 rel_merge_table_rewrite_(visitor *v, sql_rel *rel)
 {
+	if (is_groupby(rel->op)) {
+		sql_rel *l = rel->l;
+		if (is_modify(l->op))
+			return rel_propagate_updates(v, rel);
+	}
 	if (is_modify(rel->op)) {
-		sql_query *query = query_create(v->sql);
-		return rel_propagate(query, rel, &v->changes);
+		return rel_propagate_updates(v, rel);
 	} else {
 		sql_rel *bt = rel, *sel = NULL, *nrel = NULL;
 
@@ -547,9 +536,7 @@ rel_merge_table_rewrite_(visitor *v, sql_rel *rel)
 			if (!(nrel = merge_table_prune_and_unionize(v, bt, info)))
 				return NULL;
 			/* Always do relation inplace. If the mt relation has more than 1 reference, this is required */
-			if (is_union(nrel->op)) {
-				rel = rel_inplace_setop(v->sql, rel, nrel->l, nrel->r, op_union, nrel->exps);
-			} else if (is_munion(nrel->op)) {
+			if (is_munion(nrel->op)) {
 				rel = rel_inplace_setop_n_ary(v->sql, rel, nrel->l, op_munion, nrel->exps);
 			} else if (is_select(nrel->op)) {
 				rel = rel_inplace_select(rel, nrel->l, nrel->exps);
@@ -561,8 +548,8 @@ rel_merge_table_rewrite_(visitor *v, sql_rel *rel)
 				rel->card = exps_card(nrel->exps);
 			}
 			/* make sure that we do NOT destroy the subrels */
-			nrel->l = nrel->r = NULL;
-			rel_destroy(nrel);
+			nrel->l = nrel->r = nrel->exps = NULL;
+			rel_destroy(v->sql, nrel);
 			v->changes++;
 		}
 	}
@@ -593,20 +580,21 @@ const sql_optimizer pre_sql_optimizers[] = {
 	{ 5, "remove_redundant_join", bind_remove_redundant_join},
 	{ 6, "simplify_math", bind_simplify_math},
 	{ 7, "optimize_exps", bind_optimize_exps},
-	{ 8, "optimize_select_and_joins_bottomup", bind_optimize_select_and_joins_bottomup},
-	{ 9, "project_reduce_casts", bind_project_reduce_casts},
-	{10, "optimize_unions_bottomup", bind_optimize_unions_bottomup},
-	{11, "optimize_projections", bind_optimize_projections},
-	{12, "optimize_joins", bind_optimize_joins},
-	{13, "join_order", bind_join_order},
-	{14, "optimize_semi_and_anti", bind_optimize_semi_and_anti},
-	{15, "optimize_select_and_joins_topdown", bind_optimize_select_and_joins_topdown},
-	{16, "optimize_unions_topdown", bind_optimize_unions_topdown},
-	{17, "dce", bind_dce},
-	{18, "push_func_and_select_down", bind_push_func_and_select_down},
-	{19, "push_topn_and_sample_down", bind_push_topn_and_sample_down},
-	{20, "distinct_project2groupby", bind_distinct_project2groupby},
-	{21, "merge_table_rewrite", bind_merge_table_rewrite},
+	{ 8, "optimize_joins_topdown", bind_optimize_joins_topdown},
+	{ 9, "optimize_select_and_joins_bottomup", bind_optimize_select_and_joins_bottomup},
+	{10, "project_reduce_casts", bind_project_reduce_casts},
+	{11, "optimize_unions_bottomup", bind_optimize_unions_bottomup},
+	{12, "optimize_unions_topdown", bind_optimize_unions_topdown},
+	{13, "optimize_projections", bind_optimize_projections},
+	{14, "optimize_joins", bind_optimize_joins},
+	{15, "optimize_semi_and_anti", bind_optimize_semi_and_anti},
+	{16, "optimize_select_and_joins_topdown", bind_optimize_select_and_joins_topdown},
+	{17, "join_order", bind_join_order},
+	{18, "dce", bind_dce},
+	{19, "push_func_and_select_down", bind_push_func_and_select_down},
+	{20, "push_topn_and_sample_down", bind_push_topn_and_sample_down},
+	{21, "distinct_project2groupby", bind_distinct_project2groupby},
+	{22, "merge_table_rewrite", bind_merge_table_rewrite},
 	{ 0, NULL, NULL}
 };
 
@@ -614,12 +602,13 @@ const sql_optimizer pre_sql_optimizers[] = {
 const sql_optimizer post_sql_optimizers[] = {
 	/* Merge table rewrites may introduce remote or replica tables */
 	/* At the moment, make sure the remote table rewriters always run after the merge table one */
-	{23, "rewrite_remote", bind_rewrite_remote},
-	{24, "rewrite_replica", bind_rewrite_replica},
-	{25, "remote_func", bind_remote_func},
-	{26, "get_statistics", bind_get_statistics}, /* gather statistics */
-	{27, "join_order2", bind_join_order2}, /* run join order one more time with statistics */
-	{28, "final_optimization_loop", bind_final_optimization_loop}, /* run select and group by order with statistics gathered  */
+	{24, "rewrite_remote", bind_rewrite_remote},
+	{25, "rewrite_replica", bind_rewrite_replica},
+	{26, "remote_func", bind_remote_func},
+	{27, "get_statistics", bind_get_statistics}, /* gather statistics */
+	{28, "join_order2", bind_join_order2}, /* run join order one more time with statistics */
+	{29, "joins", bind_joins},	/* run joins optimizer (rewriting joins into semi's etc after ordering joins */
+	{23, "final_optimization_loop", bind_final_optimization_loop}, /* run select and group by order with statistics gathered  */
 	{ 0, NULL, NULL}
 	/* If an optimizer is going to be added, don't forget to update NSQLREWRITERS macro */
 };
@@ -649,11 +638,24 @@ run_optimizer_set(visitor *v, sql_optimizer_run *runs, sql_rel *rel, global_prop
 			if (runs) {
 				sql_optimizer_run *run = &(runs[set[i].index]);
 				run->name = set[i].name;
+				run->index = set[i].index;
 				int changes = v->changes;
 				lng clk = GDKusec();
+
+				if (BEFORE_LOGICAL_REWRITE(v->sql) &&
+					v->sql->rewriter_stop_idx >= 0 &&
+					set[i].index >= v->sql->rewriter_stop_idx)
+					return rel;
+
 				rel = opt(v, gp, rel);
 				run->time += (GDKusec() - clk);
 				run->nchanges += (v->changes - changes);
+
+				if (AFTER_LOGICAL_REWRITE(v->sql) &&
+					v->sql->rewriter_stop_idx >= 0 &&
+					set[i].index == v->sql->rewriter_stop_idx)
+					return rel;
+
 			} else {
 				rel = opt(v, gp, rel);
 			}
@@ -667,39 +669,65 @@ run_optimizer_set(visitor *v, sql_optimizer_run *runs, sql_rel *rel, global_prop
 static sql_rel *
 rel_optimizer_one(mvc *sql, sql_rel *rel, int profile, int instantiate, int value_based_opt, int storage_based_opt)
 {
-	global_props gp = (global_props) {.cnt = {0}, .instantiate = (uint8_t)instantiate, .opt_cycle = 0,
-									  .has_special_modify = rel && is_modify(rel->op) && rel->flag&UPD_COMP};
-	visitor v = { .sql = sql, .value_based_opt = value_based_opt, .storage_based_opt = storage_based_opt, .changes = 1, .data = &gp };
+	global_props gp = {
+		.cnt = {0},
+		.instantiate = (uint8_t)instantiate,
+		.opt_cycle = 0
+	};
 
-	sql->runs = !(ATOMIC_GET(&GDKdebug) & TESTINGMASK) && profile ? sa_zalloc(sql->sa, NSQLREWRITERS * sizeof(sql_optimizer_run)) : NULL;
-	for ( ;rel && gp.opt_cycle < 20 && v.changes; gp.opt_cycle++) {
+	visitor v = {
+		.sql = sql,
+		.value_based_opt = value_based_opt,
+		.storage_based_opt = storage_based_opt,
+		.changes = 1,
+		.data = &gp
+	};
+
+	//sql->runs = !(ATOMIC_GET(&GDKdebug) & TESTINGMASK) && profile ?
+	sql->runs = (sql->show_all_details || (!(ATOMIC_GET(&GDKdebug) & TESTINGMASK) && profile)) ?
+		ma_zalloc(sql->sa, NSQLREWRITERS * sizeof(sql_optimizer_run)) :
+		NULL;
+
+	for ( ; rel && gp.opt_cycle < 20 && v.changes; gp.opt_cycle++) {
 		v.changes = 0;
-		gp = (global_props) {.cnt = {0}, .instantiate = (uint8_t)instantiate, .opt_cycle = gp.opt_cycle, .has_special_modify = gp.has_special_modify};
-		rel = rel_visitor_topdown(&v, rel, &rel_properties); /* collect relational tree properties */
+		gp = (global_props) {
+			.cnt = {0},
+			.instantiate = (uint8_t)instantiate,
+			.opt_cycle = gp.opt_cycle
+		};
+		/* collect relational tree properties */
+		rel = rel_visitor_topdown(&v, rel, &rel_properties);
 		gp.opt_level = calculate_opt_level(sql, rel);
 		if (gp.opt_level == 0 && !gp.needs_mergetable_rewrite)
 			break;
 		sql->recursive = gp.recursive;
 		rel = run_optimizer_set(&v, sql->runs, rel, &gp, pre_sql_optimizers);
+
+		if (sql->step == S_LOGICAL_REWRITE &&
+			sql->rewriter_stop_cycle >= 0 &&
+			gp.opt_cycle == sql->rewriter_stop_cycle)
+			return rel;
 	}
+
 #ifndef NDEBUG
 	assert(gp.opt_cycle < 20);
 #endif
 
-	/* these optimizers run statistics gathered by the last optimization cycle */
+	/* these opts run statistics gathered by the last optimization cycle */
 	rel = run_optimizer_set(&v, sql->runs, rel, &gp, post_sql_optimizers);
+
 	return rel;
 }
 
 static sql_exp *
 exp_optimize_one(visitor *v, sql_rel *rel, sql_exp *e, int depth )
 {
-       (void)rel;
-       (void)depth;
-       if (e->type == e_psm && e->flag == PSM_REL && e->l) {
-               e->l = rel_optimizer_one(v->sql, e->l, 0, v->changes, v->value_based_opt, v->storage_based_opt);
-       }
-       return e;
+	(void)rel;
+	(void)depth;
+	if (e->type == e_psm && e->flag == PSM_REL && e->l) {
+		e->l = rel_optimizer_one(v->sql, e->l, 0, v->changes, v->value_based_opt, v->storage_based_opt);
+	}
+	return e;
 }
 
 sql_rel *
@@ -708,10 +736,15 @@ rel_optimizer(mvc *sql, sql_rel *rel, int profile, int instantiate, int value_ba
 	if (rel && rel->op == op_ddl && rel->flag == ddl_psm) {
 		if (!list_empty(rel->exps)) {
 			bool changed = 0;
-			visitor v = { .sql = sql, .value_based_opt = value_based_opt, .storage_based_opt = storage_based_opt, .changes = instantiate };
-			for(node *n = rel->exps->h; n; n = n->next) {
+			visitor v = {
+				.sql = sql,
+				.value_based_opt = value_based_opt,
+				.storage_based_opt = storage_based_opt,
+				.changes = instantiate
+			};
+			for (node *n = rel->exps->h; n; n = n->next) {
 				sql_exp *e = n->data;
-				exp_visitor(&v, rel, e, 1, exp_optimize_one, true, true, true, &changed);
+				n->data = exp_visitor(&v, rel, e, 1, exp_optimize_one, true, true, true, &changed);
 			}
 		}
 		return rel;

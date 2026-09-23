@@ -3,35 +3,38 @@
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024, 2025 MonetDB Foundation;
- * Copyright August 2008 - 2023 MonetDB B.V.;
- * Copyright 1997 - July 2008 CWI.
+ * For copyright information, see the file debian/copyright.
  */
 
 #include "monetdb_config.h"
+#include "gdk.h"
 #include "opt_mitosis.h"
 #include "mal_interpreter.h"
-#include "gdk_utils.h"
 
+#define MAXSLICES 128			/* to be refined */
 #define MIN_PART_SIZE 100000	/* minimal record count per partition */
-#define MAX_PARTS2THREADS_RATIO 4	/* There should be at most this multiple more of partitions then threads */
+#define MAX_PARTS2THREADS_RATIO 4	/* There should be at most this multiple more of partitions than threads */
 
 
 str
 OPTmitosisImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 						 InstrPtr pci)
 {
-	int i, j, limit, slimit, estimate = 0, pieces = 1, mito_parts = 0,
-		mito_size = 0, row_size = 0, mt = -1, nr_cols = 0, nr_aggrs = 0,
-		nr_maps = 0;
-	str schema = 0, table = 0;
-	BUN r = 0, rowcnt = 0;		/* table should be sizeable to consider parallel execution */
+	int i, j, limit, slimit, pieces = 1, mito_parts = 0;
+	int mito_size = 0, row_size = 0, mt = -1, nr_cols = 0, nr_aggrs = 0;
+	int nr_maps = 0;
+	const char *schema = NULL;
+	const char *table = NULL;
+	BUN r = 0;
+	BUN rowcnt = 0;		/* table should be sizeable to consider parallel execution */
 	InstrPtr p, q, *old, target = 0;
-	size_t argsize = 6 * sizeof(lng), m = 0;
+	size_t argsize = 6 * sizeof(lng);
+	size_t m = 0;
 	/*       estimate size per operator estimate:   4 args + 2 res */
-	int threads = GDKnr_threads ? GDKnr_threads : 1, maxparts = MAXSLICES;
+	int threads = GDKnr_threads ? GDKnr_threads : 1;
+	int maxparts = MAXSLICES;
 	str msg = MAL_SUCCEED;
 
 	/* if the user has associated limitation on the number of threads, respect it in the
@@ -50,18 +53,17 @@ OPTmitosisImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 			&& p->argc > 2 && getArgType(mb, p, 2) == TYPE_str
 			&& isVarConstant(mb, getArg(p, 2))
 			&& getVarConstant(mb, getArg(p, 2)).val.sval != NULL
-			&&
-			(strstr(getVarConstant(mb, getArg(p, 2)).val.sval,
-					"PRIMARY KEY constraint")
-			 || strstr(getVarConstant(mb, getArg(p, 2)).val.sval,
-					   "UNIQUE constraint"))) {
+			&& (strstr(getVarConstant(mb, getArg(p, 2)).val.sval,
+					   "PRIMARY KEY constraint")
+				|| strstr(getVarConstant(mb, getArg(p, 2)).val.sval,
+						  "UNIQUE constraint"))) {
 			pieces = 0;
 			goto bailout;
 		}
 
 		/* mitosis/mergetable bailout conditions */
 		/* Crude protection against self join explosion */
-		if (p->retc == 2 && isMatJoinOp(p))
+		if (p->retc == 2 && isMatJoinOp(p) && threads < maxparts)
 			maxparts = threads;
 
 		nr_aggrs += (p->argc > 2 && getModuleId(p) == aggrRef);
@@ -102,14 +104,6 @@ OPTmitosisImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 			goto bailout;
 		}
 
-		if (p->argc > 2
-			&& (getModuleId(p) == capiRef || getModuleId(p) == rapiRef
-				|| getModuleId(p) == pyapi3Ref)
-			&& getFunctionId(p) == subeval_aggrRef) {
-			pieces = 0;
-			goto bailout;
-		}
-
 		/* Mergetable cannot handle intersect/except's for now */
 		if (getModuleId(p) == algebraRef && getFunctionId(p) == groupbyRef) {
 			pieces = 0;
@@ -118,13 +112,16 @@ OPTmitosisImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 
 		/* locate the largest non-partitioned table */
 		if (getModuleId(p) != sqlRef
-			|| (getFunctionId(p) != bindRef && getFunctionId(p) != bindidxRef
+			|| (getFunctionId(p) != bindRef
+				&& getFunctionId(p) != bind_idxbatRef
 				&& getFunctionId(p) != tidRef))
 			continue;
 		/* don't split insert BATs */
 		if (p->argc > 5 && getVarConstant(mb, getArg(p, 5)).val.ival == 1)
 			continue;
 		if (p->argc > 6)
+			continue;			/* already partitioned */
+		if (getFunctionId(p) == tidRef && p->argc > 4)
 			continue;			/* already partitioned */
 		/*
 		 * The SQL optimizer already collects the counts of the base
@@ -135,12 +132,11 @@ OPTmitosisImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 		if (r == rowcnt)
 			nr_cols++;
 		if (r > rowcnt) {
-			/* the rowsize depends on the column types, assume void-headed */
+			/* the rowsize depends on the column types */
 			row_size = ATOMsize(getBatType(getArgType(mb, p, 0)));
 			rowcnt = r;
 			nr_cols = 1;
 			target = p;
-			estimate++;
 			r = 0;
 		}
 	}
@@ -162,9 +158,6 @@ OPTmitosisImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 	 * Take into account the number of client connections,
 	 * because all user together are responsible for resource contentions
 	 */
-	MT_lock_set(&mal_contextLock);
-	cntxt->idle = 0;			// this one is definitely not idle
-	MT_lock_unset(&mal_contextLock);
 
 	/* improve memory usage estimation */
 	if (nr_cols > 1 || nr_aggrs > 1 || nr_maps > 1)
@@ -192,7 +185,7 @@ OPTmitosisImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 		 * |threads| partitions at a time fit in memory,
 		 * i.e., (threads*(rowcnt/pieces) <= m),
 		 * i.e., (rowcnt/pieces <= m/threads),
-		 * i.e., (pieces => rowcnt/(m/threads))
+		 * i.e., (pieces >= rowcnt/(m/threads))
 		 * (assuming that (m > threads*MIN_PART_SIZE)) */
 		/* the number of pieces affects SF-100, going beyond 8x increases
 		 * the optimizer costs beyond the execution time
@@ -223,6 +216,12 @@ OPTmitosisImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 	mito_size = GDKgetenv_int("mito_size", 0);
 	if (mito_size > 0)
 		pieces = (int) ((rowcnt * row_size) / (mito_size * 1024));
+	mito_size = GDKgetenv_int("min_mito_rows", 0);
+	if (mito_size > 0 && pieces > 1 && rowcnt / pieces < (BUN) mito_size)
+		pieces = (int) (rowcnt / mito_size);
+	mito_parts = GDKgetenv_int("max_mito_parts", 0);
+	if (mito_parts > 0 && pieces > mito_parts)
+		pieces = mito_parts;
 
 	if (pieces <= 1) {
 		pieces = 0;
@@ -232,9 +231,8 @@ OPTmitosisImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 	/* at this stage we have identified the #chunks to be used for the largest table */
 	limit = mb->stop;
 	slimit = mb->ssize;
-	if (newMalBlkStmt(mb, mb->stop + 2 * estimate) < 0)
+	if (newMalBlkStmt(mb, mb->stop + nr_cols * pieces + 2) < 0)
 		throw(MAL, "optimizer.mitosis", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-	estimate = 0;
 
 	schema = getVarConstant(mb, getArg(target, 2)).val.sval;
 	table = getVarConstant(mb, getArg(target, 3)).val.sval;
@@ -244,7 +242,8 @@ OPTmitosisImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 		p = old[i];
 
 		if (getModuleId(p) != sqlRef
-			|| !(getFunctionId(p) == bindRef || getFunctionId(p) == bindidxRef
+			|| !(getFunctionId(p) == bindRef
+				 || getFunctionId(p) == bind_idxbatRef
 				 || getFunctionId(p) == tidRef)) {
 			pushInstruction(mb, p);
 			continue;
@@ -274,13 +273,10 @@ OPTmitosisImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 			pushInstruction(mb, p);
 			continue;
 		}
-		/* we keep the original bind operation, because it allows for
-		 * easy undo when the mergtable can not do something */
-		// pushInstruction(mb, p);
 
 		qtpe = getVarType(mb, getArg(p, 0));
 
-		matq = newInstructionArgs(NULL, matRef, newRef, pieces + 1);
+		matq = newInstructionArgs(mb, matRef, newRef, pieces + 1);
 		if (matq == NULL) {
 			msg = createException(MAL, "optimizer.mitosis",
 								  SQLSTATE(HY013) MAL_MALLOC_FAIL);
@@ -289,9 +285,9 @@ OPTmitosisImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 		getArg(matq, 0) = getArg(p, 0);
 
 		if (upd) {
-			matr = newInstructionArgs(NULL, matRef, newRef, pieces + 1);
+			matr = newInstructionArgs(mb, matRef, newRef, pieces + 1);
 			if (matr == NULL) {
-				freeInstruction(matq);
+				freeInstruction(mb, matq);
 				msg = createException(MAL, "optimizer.mitosis",
 									  SQLSTATE(HY013) MAL_MALLOC_FAIL);
 				break;
@@ -301,14 +297,13 @@ OPTmitosisImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 		}
 
 		for (j = 0; j < pieces; j++) {
-			q = copyInstruction(p);
+			q = copyInstruction(mb, p);
 			if (q == NULL) {
-				freeInstruction(matr);
-				freeInstruction(matq);
+				freeInstruction(mb, matr);
+				freeInstruction(mb, matq);
 				for (; i < limit; i++)
 					if (old[i])
 						pushInstruction(mb, old[i]);
-				GDKfree(old);
 				throw(MAL, "optimizer.mitosis",
 					  SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			}
@@ -327,12 +322,11 @@ OPTmitosisImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 		pushInstruction(mb, matq);
 		if (upd)
 			pushInstruction(mb, matr);
-		freeInstruction(p);
+		freeInstruction(mb, p);
 	}
 	for (; i < slimit; i++)
 		if (old[i])
 			pushInstruction(mb, old[i]);
-	GDKfree(old);
 
 	/* Defense line against incorrect plans */
 	if (msg == MAL_SUCCEED) {

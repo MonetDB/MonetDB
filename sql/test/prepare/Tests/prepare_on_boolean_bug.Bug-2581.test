@@ -1,0 +1,34 @@
+statement ok
+create table skycrash (id serial, boom boolean)
+
+query TIITTT nosort
+prepare select * from skycrash where boom = ? and boom = ?
+----
+int
+31
+0
+(empty)
+skycrash
+id
+boolean
+1
+0
+(empty)
+skycrash
+boom
+boolean
+1
+0
+NULL
+NULL
+NULL
+boolean
+1
+0
+NULL
+NULL
+NULL
+
+statement ok
+drop table skycrash
+

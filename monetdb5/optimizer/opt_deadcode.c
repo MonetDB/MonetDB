@@ -3,11 +3,9 @@
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024, 2025 MonetDB Foundation;
- * Copyright August 2008 - 2023 MonetDB B.V.;
- * Copyright 1997 - July 2008 CWI.
+ * For copyright information, see the file debian/copyright.
  */
 
 /* (c) Martin Kersten
@@ -16,7 +14,7 @@
 #include "opt_deadcode.h"
 
 str
-OPTdeadcodeImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
+OPTdeadcodeImplementation(Client ctx, MalBlkPtr mb, MalStkPtr stk,
 						  InstrPtr pci)
 {
 	int i, k, se, limit, slimit;
@@ -24,14 +22,16 @@ OPTdeadcodeImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 	int actions = 0;
 	int *varused = 0;
 	str msg = MAL_SUCCEED;
+	allocator *ta = MT_thread_getallocator();
 
-	(void) cntxt;
-	(void) stk;					/* to fool compilers */
+	(void) ctx;
+	(void) stk;
 
-	if (mb->inlineProp)
-		goto wrapup;
+	if (mb->inlineProp || MB_LARGE(mb))
+		goto wrapup1;
 
-	varused = GDKzalloc(mb->vtop * sizeof(int));
+	allocator_state ta_state = ma_open(ta);
+	varused = ma_zalloc(ta, mb->vtop * sizeof(int));
 	if (varused == NULL)
 		goto wrapup;
 
@@ -39,16 +39,16 @@ OPTdeadcodeImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 	limit = mb->stop;
 	slimit = mb->ssize;
 	if (newMalBlkStmt(mb, mb->ssize) < 0) {
-		GDKfree(varused);
+		ma_close(&ta_state);
 		throw(MAL, "optimizer.deadcode", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
-	//mnstr_printf(cntxt->fdout,"deadcode limit %d ssize %d vtop %d vsize %d\n", limit, (int)(mb->ssize), mb->vtop, (int)(mb->vsize));
+	//mnstr_printf(ctx->fdout,"deadcode limit %d ssize %d vtop %d vsize %d\n", limit, (int)(mb->ssize), mb->vtop, (int)(mb->vsize));
 
 	// Calculate the instructions in which a variable is used.
 	// Variables can be used multiple times in an instruction.
 	for (i = 1; i < limit; i++) {
 		p = old[i];
-		for (k = p->retc; k < p->argc; k++)
+		for (k = p->inout >= 0 ? p->inout : p->retc; k < p->argc; k++)
 			varused[getArg(p, k)]++;
 		if (blockCntrl(p))
 			for (k = 0; k < p->retc; k++)
@@ -103,7 +103,7 @@ OPTdeadcodeImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 			if (se)
 				pushInstruction(mb, p);
 			else {
-				freeInstruction(p);
+				freeInstruction(mb, p);
 				actions++;
 			}
 		}
@@ -115,19 +115,17 @@ OPTdeadcodeImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 		}
 	/* Defense line against incorrect plans */
 	/* we don't create or change existing structures */
-	// no type change msg = chkTypes(cntxt->usermodule, mb, FALSE);
+	// no type change msg = chkTypes(ctx->usermodule, mb, FALSE);
 	if (actions > 0) {
 		msg = chkFlow(mb);
 		if (!msg)
 			msg = chkDeclarations(mb);
 	}
   wrapup:
+	ma_close(&ta_state);
+  wrapup1:
 	/* keep actions taken as a fake argument */
 	(void) pushInt(mb, pci, actions);
 
-	if (old)
-		GDKfree(old);
-	if (varused)
-		GDKfree(varused);
 	return msg;
 }

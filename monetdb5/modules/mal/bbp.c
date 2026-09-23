@@ -3,11 +3,9 @@
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024, 2025 MonetDB Foundation;
- * Copyright August 2008 - 2023 MonetDB B.V.;
- * Copyright 1997 - July 2008 CWI.
+ * For copyright information, see the file debian/copyright.
  */
 
 /*
@@ -39,7 +37,7 @@ CMDbbpbind(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	BAT *b;
 
 	(void) cntxt;
-	(void) mb;					/* fool compiler */
+	(void) mb;
 	lhs = &stk->stk[pci->argv[0]];
 	name = *getArgReference_str(stk, pci, 1);
 	if (name == NULL || isIdentifier(name) < 0)
@@ -90,8 +88,9 @@ CMDbbpbind(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
  */
 
 static str
-CMDbbpNames(bat *ret)
+CMDbbpNames(Client ctx, bat *ret)
 {
+	(void) ctx;
 	BAT *b;
 	int i;
 
@@ -118,31 +117,35 @@ CMDbbpNames(bat *ret)
 }
 
 static str
-CMDbbpDiskSpace(lng *ret)
+CMDbbpDiskSpace(Client ctx, lng *ret)
 {
+	(void) ctx;
 	*ret = getDiskSpace();
 	return MAL_SUCCEED;
 }
 
 static str
-CMDgetPageSize(int *ret)
+CMDgetPageSize(Client ctx, int *ret)
 {
+	(void) ctx;
 	*ret = (int) MT_pagesize();
 	return MAL_SUCCEED;
 }
 
 static str
-CMDbbpName(str *ret, const bat *bid)
+CMDbbpName(Client ctx, str *ret, const bat *bid)
 {
-	*ret = (str) GDKstrdup(BBP_logical(*bid));
+	allocator *ma = ctx->curprg->def->ma;
+	*ret = (str) ma_strdup(ma, BBP_logical(*bid));
 	if (*ret == NULL)
 		throw(MAL, "catalog.bbpName", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	return MAL_SUCCEED;
 }
 
 static str
-CMDbbpCount(bat *ret)
+CMDbbpCount(Client ctx, bat *ret)
 {
+	(void) ctx;
 	BAT *b, *bn;
 	int i;
 	lng l;
@@ -175,8 +178,9 @@ CMDbbpCount(bat *ret)
  * The BAT status is redundantly stored in CMDbat_info.
  */
 static str
-CMDbbpLocation(bat *ret)
+CMDbbpLocation(Client ctx, bat *ret)
 {
+	(void) ctx;
 	BAT *b;
 	int i;
 	char buf[FILENAME_MAX];
@@ -193,7 +197,7 @@ CMDbbpLocation(bat *ret)
 	for (i = 1; i < getBBPsize(); i++)
 		if (i != b->batCacheid) {
 			if (BBP_logical(i) && (BBP_refs(i) || BBP_lrefs(i))) {
-				int len = snprintf(buf, FILENAME_MAX, "%s/bat/%s", cwd,
+				int len = snprintf(buf, sizeof(buf), "%s/bat/%s", cwd,
 								   BBP_physical(i));
 				if (len == -1 || len >= FILENAME_MAX) {
 					BBPunlock();
@@ -220,8 +224,9 @@ CMDbbpLocation(bat *ret)
  * The BAT dirty status:dirty => (mem != disk); diffs = not-committed
  */
 static str
-CMDbbpDirty(bat *ret)
+CMDbbpDirty(Client ctx, bat *ret)
 {
+	(void) ctx;
 	BAT *b;
 	int i;
 
@@ -252,8 +257,9 @@ CMDbbpDirty(bat *ret)
  * The BAT status is redundantly stored in CMDbat_info.
  */
 static str
-CMDbbpStatus(bat *ret)
+CMDbbpStatus(Client ctx, bat *ret)
 {
+	(void) ctx;
 	BAT *b;
 	int i;
 
@@ -281,8 +287,9 @@ CMDbbpStatus(bat *ret)
 }
 
 static str
-CMDbbpKind(bat *ret)
+CMDbbpKind(Client ctx, bat *ret)
 {
+	(void) ctx;
 	BAT *b;
 	int i;
 
@@ -314,8 +321,9 @@ CMDbbpKind(bat *ret)
 }
 
 static str
-CMDbbpRefCount(bat *ret)
+CMDbbpRefCount(Client ctx, bat *ret)
 {
+	(void) ctx;
 	BAT *b;
 	int i;
 
@@ -343,8 +351,9 @@ CMDbbpRefCount(bat *ret)
 }
 
 static str
-CMDbbpLRefCount(bat *ret)
+CMDbbpLRefCount(Client ctx, bat *ret)
 {
+	(void) ctx;
 	BAT *b;
 	int i;
 
@@ -372,15 +381,17 @@ CMDbbpLRefCount(bat *ret)
 }
 
 static str
-CMDbbpgetIndex(int *res, const bat *bid)
+CMDbbpgetIndex(Client ctx, int *res, const bat *bid)
 {
+	(void) ctx;
 	*res = *bid;
 	return MAL_SUCCEED;
 }
 
 static str
-CMDgetBATrefcnt(int *res, const bat *bid)
+CMDgetBATrefcnt(Client ctx, int *res, const bat *bid)
 {
+	(void) ctx;
 	BAT *b;
 
 	if ((b = BATdescriptor(*bid)) == NULL) {
@@ -392,8 +403,9 @@ CMDgetBATrefcnt(int *res, const bat *bid)
 }
 
 static str
-CMDgetBATlrefcnt(int *res, const bat *bid)
+CMDgetBATlrefcnt(Client ctx, int *res, const bat *bid)
 {
+	(void) ctx;
 	BAT *b;
 
 	if ((b = BATdescriptor(*bid)) == NULL) {
@@ -405,9 +417,10 @@ CMDgetBATlrefcnt(int *res, const bat *bid)
 }
 
 static str
-CMDbbp(bat *ID, bat *NS, bat *TT, bat *CNT, bat *REFCNT, bat *LREFCNT,
+CMDbbp(Client ctx, bat *ID, bat *NS, bat *TT, bat *CNT, bat *REFCNT, bat *LREFCNT,
 	   bat *LOCATION, bat *HEAT, bat *DIRTY, bat *STATUS, bat *KIND)
 {
+	(void) ctx;
 	BAT *id, *ns, *tt, *cnt, *refcnt, *lrefcnt, *location, *heat, *dirty,
 			*status, *kind, *bn;
 	bat i;
@@ -445,7 +458,7 @@ CMDbbp(bat *ID, bat *NS, bat *TT, bat *CNT, bat *REFCNT, bat *LREFCNT,
 				if ((BBP_status(i) & BBPDELETED)
 					|| !(BBP_status(i) & BBPPERSISTENT))
 					mode = "transient";
-				len = snprintf(buf, FILENAME_MAX, "%s", BBP_physical(i));
+				len = snprintf(buf, sizeof(buf), "%s", BBP_physical(i));
 				if (len == -1 || len >= FILENAME_MAX) {
 					msg = createException(MAL, "catalog.bbp",
 										  SQLSTATE(HY013)
@@ -515,8 +528,9 @@ CMDbbp(bat *ID, bat *NS, bat *TT, bat *CNT, bat *REFCNT, bat *LREFCNT,
 }
 
 static str
-CMDsetName(str *rname, const bat *bid, const char *const *name)
+CMDsetName(Client ctx, str *rname, const bat *bid, const char *const *name)
 {
+	allocator *ma = ctx->curprg->def->ma;
 	BAT *b;
 	if ((b = BATdescriptor(*bid)) == NULL) {
 		throw(MAL, "bbp.setName", INTERNAL_BAT_ACCESS);
@@ -525,7 +539,7 @@ CMDsetName(str *rname, const bat *bid, const char *const *name)
 		BBPunfix(b->batCacheid);
 		throw(MAL, "bbp.setName", GDK_EXCEPTION);
 	}
-	*rname = GDKstrdup(*name);
+	*rname = ma_strdup(ma, *name);
 	BBPunfix(b->batCacheid);
 	if (*rname == NULL)
 		throw(MAL, "bbp.setName", SQLSTATE(HY013) MAL_MALLOC_FAIL);
@@ -533,7 +547,7 @@ CMDsetName(str *rname, const bat *bid, const char *const *name)
 }
 
 #include "mel.h"
-mel_func bbp_init_funcs[] = {
+static mel_func bbp_init_funcs[] = {
  pattern("bbp", "bind", CMDbbpbind, false, "Locate the BAT using its logical name", args(1,2, batargany("",1),arg("name",str))),
  command("bbp", "getIndex", CMDbbpgetIndex, false, "Retrieve the index in the BBP", args(1,2, arg("",int),batargany("b",1))),
  command("bbp", "getNames", CMDbbpNames, false, "Map BAT into its bbp name", args(1,1, batarg("",str))),

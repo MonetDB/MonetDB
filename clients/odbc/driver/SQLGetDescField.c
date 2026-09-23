@@ -3,11 +3,9 @@
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024, 2025 MonetDB Foundation;
- * Copyright August 2008 - 2023 MonetDB B.V.;
- * Copyright 1997 - July 2008 CWI.
+ * For copyright information, see the file debian/copyright.
  */
 
 /*
@@ -167,20 +165,24 @@ MNDBGetDescField(ODBCDesc *desc,
 		WriteData(ValuePtr, (SQLUINTEGER) rec->sql_desc_length, SQLULEN);
 		return SQL_SUCCESS;
 	case SQL_DESC_LITERAL_PREFIX:		/* SQLCHAR * */
-		if (isIRD(desc))
+		if (isIRD(desc)) {
+			fillLiteralPrefixSuffix(rec);
 			copyString(rec->sql_desc_literal_prefix,
 				   strlen((char *) rec->sql_desc_literal_prefix),
 				   ValuePtr, BufferLength, StringLengthPtr,
 				   SQLINTEGER, addDescError, desc,
 				   return SQL_ERROR);
+		}
 		return desc->Error ? SQL_SUCCESS_WITH_INFO : SQL_SUCCESS;
 	case SQL_DESC_LITERAL_SUFFIX:		/* SQLCHAR * */
-		if (isIRD(desc))
+		if (isIRD(desc)) {
+			fillLiteralPrefixSuffix(rec);
 			copyString(rec->sql_desc_literal_suffix,
 				   strlen((char *) rec->sql_desc_literal_suffix),
 				   ValuePtr, BufferLength, StringLengthPtr,
 				   SQLINTEGER, addDescError, desc,
 				   return SQL_ERROR);
+		}
 		return desc->Error ? SQL_SUCCESS_WITH_INFO : SQL_SUCCESS;
 	case SQL_DESC_LOCAL_TYPE_NAME:		/* SQLCHAR * */
 		if (isID(desc))
@@ -358,6 +360,11 @@ SQLGetDescFieldW(SQLHDESC DescriptorHandle,
 	case SQL_DESC_SCHEMA_NAME:
 	case SQL_DESC_TABLE_NAME:
 	case SQL_DESC_TYPE_NAME:
+		if (BufferLength < 0) {
+			/* Invalid string or buffer length */
+			addDescError(desc, "HY090", NULL, 0);
+			return SQL_ERROR;
+		}
 		ptr = (SQLPOINTER) malloc(BufferLength);
 		if (ptr == NULL) {
 			/* Memory allocation error */

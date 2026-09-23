@@ -3,17 +3,15 @@
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024, 2025 MonetDB Foundation;
- * Copyright August 2008 - 2023 MonetDB B.V.;
- * Copyright 1997 - July 2008 CWI.
+ * For copyright information, see the file debian/copyright.
  */
 
 #ifndef _SQL2MAL_H
 #define _SQL2MAL_H
 
-#include "sql.h"
+#include "sql_monet_backend.h"
 #include "mal_backend.h"
 #include "sql_atom.h"
 #include "sql_statement.h"
@@ -37,7 +35,6 @@ extern void _rel_print(mvc *sql, sql_rel *rel);
 extern void _exp_print(mvc *sql, sql_exp *e);
 extern void _exps_print(mvc *sql, list *l);
 
-extern int constantAtom(backend *be, MalBlkPtr mb, atom *a);
 extern InstrPtr table_func_create_result(MalBlkPtr mb, InstrPtr q, sql_func *f, list *restypes);
 extern sql_rel *relational_func_create_result_part1(mvc *sql, sql_rel *r, int *nargs);
 extern InstrPtr relational_func_create_result_part2(MalBlkPtr mb, InstrPtr q, sql_rel *r);

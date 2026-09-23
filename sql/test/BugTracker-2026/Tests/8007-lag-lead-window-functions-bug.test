@@ -1,0 +1,49 @@
+statement ok
+CREATE TABLE lag_lead_default_expr_bug(g INT, id INT, x INT, d INT)
+
+statement ok rowcount 4
+INSERT INTO lag_lead_default_expr_bug VALUES
+  (1, 1, 10, 99),
+  (1, 2, 20, 88),
+  (2, 1, 30, 77),
+  (2, 2, 40, 66)
+
+query IIIIII rowsort
+SELECT
+  g,
+  id,
+  LAG(x, 1, d) OVER (PARTITION BY g ORDER BY id) AS lag_actual,
+  CASE WHEN id = 1 THEN d ELSE x - 10 END AS lag_expected,
+  LEAD(x, 1, d) OVER (PARTITION BY g ORDER BY id) AS lead_actual,
+  CASE WHEN id = 1 THEN x + 10 ELSE d END AS lead_expected
+FROM lag_lead_default_expr_bug
+ORDER BY g, id
+----
+1
+1
+99
+99
+20
+20
+1
+2
+10
+10
+88
+88
+2
+1
+77
+77
+40
+40
+2
+2
+30
+30
+66
+66
+
+statement ok
+DROP TABLE lag_lead_default_expr_bug
+

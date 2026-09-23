@@ -2,11 +2,9 @@
 ..
 .. This Source Code Form is subject to the terms of the Mozilla Public
 .. License, v. 2.0.  If a copy of the MPL was not distributed with this
-.. file, You can obtain one at http://mozilla.org/MPL/2.0/.
+.. file, You can obtain one at https://mozilla.org/MPL/2.0/.
 ..
-.. Copyright 2024, 2025 MonetDB Foundation;
-.. Copyright August 2008 - 2023 MonetDB B.V.;
-.. Copyright 1997 - July 2008 CWI.
+.. For copyright information, see the file debian/copyright.
 
 =====
 CMake
@@ -72,7 +70,7 @@ testing
 Options
 =======
 
-In cmake, options can have the value ON or OFF. In the autotools system, many configure options where called "enable_xxxx" with the value true or false. To make the sure the cmake command "sounds logical" when read from the commandline, we choose to use short descriptions for the options. For example "enable_cintegration=true" becomes "-DCINTEGRATION=ON".
+In cmake, options can have the value ON or OFF. In the autotools system, many configure options where called "enable_xxxx" with the value true or false. To make the sure the cmake command "sounds logical" when read from the commandline, we choose to use short descriptions for the options. For example "enable_geom=true" becomes "-DGEOM=ON".
 
 The idea behind the defaults for the options also has changed from the autotools build system. Previously the idea was to limit the part of the code that was build in order to speed up the compilation. Parts of the code that were not required where only build when explicitly enabled. In the cmake build system this has been reversed. Now as much as possible is build, since compiling everything is now fast enough. In the cmake build system, every optional part is build, as long as the dependent libraries are detected.
 
@@ -155,11 +153,6 @@ Unspecified
 
 ``Legacy``
 ==========
-
-Numpy detection
-===============
-
-Since the Python3::Numpy target is not available before version 3.14, we need an alternative. We use a NumPy detection function from a github project: https://raw.githubusercontent.com/fperazzi/davis-2017/master/cmake/FindNumPy.cmake This is MIT licensed, so we can include this in MonetDB. We change the python detection to detect python3, instead of python2.
 
 shp.h define conflicts
 ======================

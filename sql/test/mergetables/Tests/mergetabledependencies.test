@@ -35,14 +35,14 @@ statement ok
 create table "depend_count" ("a" bigint)
 
 statement ok
-insert into "depend_count" values ((select count(*) from dependencies))
+insert into "depend_count" values ((select count(*) from sys.dependencies))
 
 statement ok
 create function myfunc() returns table(a int) begin return select a from parent; end
 
 # only dependencies on table 'parent' should be created
 query I nosort
-select count(*) - (select "a" from "depend_count") from dependencies
+select count(*) - (select "a" from "depend_count") from sys.dependencies
 ----
 2
 
@@ -140,14 +140,14 @@ statement ok
 truncate "depend_count"
 
 statement ok
-insert into "depend_count" values ((select count(*) from dependencies))
+insert into "depend_count" values ((select count(*) from sys.dependencies))
 
 statement ok
 create view myview as (select a from parent)
 
 # only dependencies on table 'parent' should be created
 query I nosort
-select count(*) - (select "a" from "depend_count") from dependencies
+select count(*) - (select "a" from "depend_count") from sys.dependencies
 ----
 2
 
@@ -169,7 +169,7 @@ statement ok
 savepoint sp2
 
 query I nosort
-select count(*) - (select "a" from "depend_count") from dependencies
+select count(*) - (select "a" from "depend_count") from sys.dependencies
 ----
 0
 
@@ -189,7 +189,7 @@ SELECT a from myview
 8
 
 query I nosort
-select count(*) - (select "a" from "depend_count") from dependencies
+select count(*) - (select "a" from "depend_count") from sys.dependencies
 ----
 1
 

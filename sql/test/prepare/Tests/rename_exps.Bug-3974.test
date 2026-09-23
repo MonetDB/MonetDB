@@ -1,0 +1,16 @@
+statement ok
+create table foo (a int, b int)
+
+query TIITTT nosort
+prepare select count(b) from (select a,b from foo union all select null,null from foo) t
+----
+bigint
+63
+0
+(empty)
+%3
+%3
+
+statement ok
+drop table foo
+

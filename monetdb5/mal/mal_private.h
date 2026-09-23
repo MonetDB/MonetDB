@@ -3,11 +3,9 @@
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024, 2025 MonetDB Foundation;
- * Copyright August 2008 - 2023 MonetDB B.V.;
- * Copyright 1997 - July 2008 CWI.
+ * For copyright information, see the file debian/copyright.
  */
 
 /* This file should not be included in any file outside of this directory */
@@ -20,15 +18,9 @@
 /* _MAL_CLIENT_H_ is defined in the same file as Client */
 bool MCinit(void)
 	__attribute__((__visibility__("hidden")));
-int MCinitClientThread(Client c)
-	__attribute__((__visibility__("hidden")));
 void MCpopClientInput(Client c)
 	__attribute__((__visibility__("hidden")));
 int MCreadClient(Client c)
-	__attribute__((__visibility__("hidden")));
-bool MCshutdowninprogress(void)
-	__attribute__((__visibility__("hidden")));
-str defaultScenario(Client c)	/* used in src/mal/mal_session.c */
 	__attribute__((__visibility__("hidden")));
 #endif
 
@@ -50,7 +42,7 @@ MALfcn findFunctionImplementation(const char *cname)
 	__attribute__((__visibility__("hidden")));
 
 /* mal_linker.h */
-char *MSP_locate_script(const char *mod_name)
+char *MSP_locate_script(allocator *ma, const char *mod_name)
 	__attribute__((__visibility__("hidden")));
 
 /* Reset primitives */
@@ -61,6 +53,9 @@ void mal_client_reset(void)
 	__attribute__((__visibility__("hidden")));
 
 void mal_dataflow_reset(void)
+	__attribute__((__visibility__("hidden")));
+
+void mal_pipelines_reset(void)
 	__attribute__((__visibility__("hidden")));
 
 void mal_linker_reset(void)

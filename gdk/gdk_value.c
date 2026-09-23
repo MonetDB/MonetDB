@@ -3,11 +3,9 @@
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024, 2025 MonetDB Foundation;
- * Copyright August 2008 - 2023 MonetDB B.V.;
- * Copyright 1997 - July 2008 CWI.
+ * For copyright information, see the file debian/copyright.
  */
 
 /*
@@ -50,8 +48,10 @@ ValPtr
 VALset(ValPtr v, int t, ptr p)
 {
 	assert(t < TYPE_any);
-	v->bat = false;
-	switch (ATOMstorage(v->vtype = t)) {
+	*v = (ValRecord) {
+		.vtype = t,
+	};
+	switch (ATOMstorage(t)) {
 	case TYPE_void:
 		v->val.oval = *(oid *) p;
 		break;
@@ -99,6 +99,12 @@ VALset(ValPtr v, int t, ptr p)
 	case TYPE_uuid:
 		v->val.uval = *(uuid *) p;
 		break;
+	case TYPE_inet4:
+		v->val.ip4val = *(inet4 *) p;
+		break;
+	case TYPE_inet6:
+		v->val.ip6val = *(inet6 *) p;
+		break;
 	case TYPE_str:
 		v->val.sval = (str) p;
 		break;
@@ -132,6 +138,8 @@ VALget(ValPtr v)
 	case TYPE_hge: return (void *) &v->val.hval;
 #endif
 	case TYPE_uuid: return (void *) &v->val.uval;
+	case TYPE_inet4: return (void *) &v->val.ip4val;
+	case TYPE_inet6: return (void *) &v->val.ip6val;
 	case TYPE_ptr: return (void *) &v->val.pval;
 	case TYPE_str: return (void *) v->val.sval;
 	default:       return (void *) v->val.pval;
@@ -144,9 +152,9 @@ VALget(ValPtr v)
 void
 VALclear(ValPtr v)
 {
-	if (!v->bat && ATOMextern(v->vtype)) {
-		if (v->val.pval && v->val.pval != ATOMnilptr(v->vtype))
-			GDKfree(v->val.pval);
+	if (v->allocated && !v->bat && ATOMextern(v->vtype)) {
+		assert(v->val.pval != ATOMnilptr(v->vtype));
+		GDKfree(v->val.pval);
 	}
 	VALempty(v);
 }
@@ -158,6 +166,7 @@ VALempty(ValPtr v)
 {
 	*v = (ValRecord) {
 		.bat = false,
+		.allocated = false,
 		.val.oval = oid_nil,
 		.vtype = TYPE_void,
 	};
@@ -169,31 +178,45 @@ VALempty(ValPtr v)
  *
  * Returns NULL In case of (malloc) failure. */
 ValPtr
-VALcopy(ValPtr d, const ValRecord *s)
+VALcopy(allocator *ma, ValPtr d, const ValRecord *s)
 {
-	if (d == s)
+	if (d == s) {
 		return d;
-	d->bat = false;
+	}
+	*d = *s;
 	if (s->bat || !ATOMextern(s->vtype)) {
-		*d = *s;
+		//*d = *s;
+		d->allocated = false;
 	} else if (s->val.pval == NULL) {
-		return VALinit(d, s->vtype, ATOMnilptr(s->vtype));
+		return VALinit(ma, d, s->vtype, ATOMnilptr(s->vtype));
 	} else if (s->vtype == TYPE_str) {
 		const char *p = s->val.sval;
 		d->vtype = TYPE_str;
 		d->len = strLen(p);
-		d->val.sval = GDKmalloc(d->len);
-		if (d->val.sval == NULL)
-			return NULL;
-		memcpy(d->val.sval, p, d->len);
+		if (strNil(p)) {
+			d->val.sval = (char *) str_nil;
+			d->allocated = false;
+		} else {
+			d->val.sval = ma? ma_alloc(ma, d->len) : GDKmalloc(d->len);
+			if (d->val.sval == NULL)
+				return NULL;
+			memcpy(d->val.sval, p, d->len);
+			d->allocated = !ma;
+		}
 	} else {
 		const void *p = s->val.pval;
 		d->vtype = s->vtype;
 		d->len = ATOMlen(d->vtype, p);
-		d->val.pval = GDKmalloc(d->len);
-		if (d->val.pval == NULL)
-			return NULL;
-		memcpy(d->val.pval, p, d->len);
+		if (ATOMeq(d->vtype, ATOMnilptr(d->vtype), p)) {
+			d->val.pval = (void *) ATOMnilptr(d->vtype);
+			d->allocated = false;
+		} else {
+			d->val.pval = ma? ma_alloc(ma, d->len) : GDKmalloc(d->len);
+			if (d->val.pval == NULL)
+				return NULL;
+			memcpy(d->val.pval, p, d->len);
+			d->allocated = !ma;
+		}
 	}
 	return d;
 }
@@ -205,9 +228,10 @@ VALcopy(ValPtr d, const ValRecord *s)
  *
  * Returns NULL in case of (malloc) failure. */
 ValPtr
-VALinit(ValPtr d, int tpe, const void *s)
+VALinit(allocator *ma, ValPtr d, int tpe, const void *s)
 {
 	d->bat = false;
+	d->allocated = false;
 	switch (ATOMstorage(d->vtype = tpe)) {
 	case TYPE_void:
 		d->val.oval = *(const oid *) s;
@@ -256,12 +280,25 @@ VALinit(ValPtr d, int tpe, const void *s)
 	case TYPE_uuid:
 		d->val.uval = *(const uuid *) s;
 		break;
+	case TYPE_inet4:
+		d->val.ip4val = *(const inet4 *) s;
+		break;
+	case TYPE_inet6:
+		d->val.ip6val = *(const inet6 *) s;
+		break;
 	case TYPE_str:
 		d->len = strLen(s);
-		d->val.sval = GDKmalloc(d->len);
-		if (d->val.sval == NULL)
-			return NULL;
-		memcpy(d->val.sval, s, d->len);
+		if (strNil(s)) {
+			d->val.sval = (char *) str_nil;
+			d->allocated = false;
+		} else {
+			d->val.sval = ma? ma_alloc(ma, d->len) :
+				GDKmalloc(d->len);
+			if (d->val.sval == NULL)
+				return NULL;
+			memcpy(d->val.sval, s, d->len);
+			d->allocated = !ma;
+		}
 		return d;
 	case TYPE_ptr:
 		d->val.pval = *(const ptr *) s;
@@ -269,15 +306,22 @@ VALinit(ValPtr d, int tpe, const void *s)
 		return d;
 	default:
 		assert(ATOMextern(ATOMstorage(tpe)));
-		if (s) {
-			d->len = ATOMlen(tpe, s);
-			d->val.pval = GDKmalloc(d->len);
+		if (s == NULL) {
+			d->len = 0;
+			d->val.pval = NULL;
+			return d;
+		}
+		d->len = ATOMlen(tpe, s);
+		if (ATOMnilptr(tpe) && ATOMeq(tpe, ATOMnilptr(tpe), s)) {
+			d->val.pval = (void *) ATOMnilptr(tpe);
+			d->allocated = false;
+		} else {
+			d->val.pval = ma? ma_alloc(ma, d->len) :
+				GDKmalloc(d->len);
 			if (d->val.pval == NULL)
 				return NULL;
 			memcpy(d->val.pval, s, d->len);
-		} else {
-			d->len = 0;
-			d->val.pval = NULL;
+			d->allocated = !ma;
 		}
 		return d;
 	}
@@ -288,15 +332,15 @@ VALinit(ValPtr d, int tpe, const void *s)
 /* Format the value in RES in the standard way for the type of RES
  * into a newly allocated buffer.  Also see ATOMformat. */
 char *
-VALformat(const ValRecord *res)
+VALformat(allocator *ma, const ValRecord *res)
 {
 	if (res->bat) {
 		if (is_bat_nil(res->val.bval))
-			return GDKstrdup("nil");
+			return "nil";
 		else
-			return ATOMformat(TYPE_int, (const void *) &res->val.ival);
+			return ATOMformat(ma, TYPE_int, (const void *) &res->val.ival);
 	} else
-		return ATOMformat(res->vtype, VALptr(res));
+		return ATOMformat(ma, res->vtype, VALptr(res));
 }
 
 /* Convert (cast) the value in T to the type TYP, do this in place.
@@ -304,13 +348,13 @@ VALformat(const ValRecord *res)
  * didn't succeed.  If the conversion didn't succeed, the original
  * value is not modified.  Also see VARconvert. */
 ptr
-VALconvert(int typ, ValPtr t)
+VALconvert(allocator *ma, int typ, ValPtr t)
 {
 	int src_tpe = t->vtype;
 	ValRecord dst = { .vtype = typ };
 
 	/* first convert into a new location */
-	if (VARconvert(&dst, t, 0, 0, 0) != GDK_SUCCEED)
+	if (VARconvert(ma, &dst, t, 0, 0, 0) != GDK_SUCCEED)
 		return NULL;
 
 	/* then maybe free the old */
@@ -333,8 +377,7 @@ VALconvert(int typ, ValPtr t)
 int
 VALcmp(const ValRecord *p, const ValRecord *q)
 {
-
-	int (*cmp)(const void *, const void *);
+	bool (*eq)(const void *, const void *);
 	int tpe;
 	const void *nilptr, *pp, *pq;
 
@@ -345,16 +388,15 @@ VALcmp(const ValRecord *p, const ValRecord *q)
 
 	if (tpe == TYPE_ptr)
 		return 0;	/* ignore comparing C pointers */
-	cmp = ATOMcompare(tpe);
+	eq = ATOMequal(tpe);
 	nilptr = ATOMnilptr(tpe);
 	pp = VALptr(p);
 	pq = VALptr(q);
-	if ((*cmp)(pp, nilptr) == 0 && (*cmp)(pq, nilptr) == 0)
+	if ((*eq)(pp, nilptr) && (*eq)(pq, nilptr))
 		return 0;	/* eq nil val */
-	if ((*cmp)(pp, nilptr) == 0 || (*cmp)(pq, nilptr) == 0)
+	if ((*eq)(pp, nilptr) || (*eq)(pq, nilptr))
 		return -1;
-	return (*cmp)(pp, pq);
-
+	return ATOMcmp(tpe, pp, pq);
 }
 
 /* Return TRUE if the value in V is NIL. */
@@ -382,6 +424,10 @@ VALisnil(const ValRecord *v)
 #endif
 	case TYPE_uuid:
 		return is_uuid_nil(v->val.uval);
+	case TYPE_inet4:
+		return is_inet4_nil(v->val.ip4val);
+	case TYPE_inet6:
+		return is_inet6_nil(v->val.ip6val);
 	case TYPE_flt:
 		return is_flt_nil(v->val.fval);
 	case TYPE_dbl:
@@ -403,5 +449,5 @@ VALisnil(const ValRecord *v)
 	}
 	if (ATOMnilptr(v->vtype) == NULL)
 		return false;
-	return (*ATOMcompare(v->vtype))(VALptr(v), ATOMnilptr(v->vtype)) == 0;
+	return ATOMeq(v->vtype, VALptr(v), ATOMnilptr(v->vtype));
 }

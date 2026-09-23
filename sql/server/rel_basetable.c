@@ -3,11 +3,9 @@
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024, 2025 MonetDB Foundation;
- * Copyright August 2008 - 2023 MonetDB B.V.;
- * Copyright 1997 - July 2008 CWI.
+ * For copyright information, see the file debian/copyright.
  */
 
 #include "monetdb_config.h"
@@ -67,7 +65,7 @@ rel_base_idx_nid(sql_rel *r, sql_idx *i)
 		int j = ba->basenr + ol_length(b->columns) + 1;
 		for (node *in = ol_first_node(i->t->idxs); in; in = in->next, j++) {
 			if (i == in->data)
-				return -(ba->basenr + j);
+				return -j;
 		}
 	}
 	return 0;
@@ -154,7 +152,7 @@ rel_basetable(mvc *sql, sql_table *t, const char *atname)
 	allocator *sa = sql->sa;
 	sql_rel *rel = rel_create(sa);
 	int nrcols = ol_length(t->columns), end = nrcols + 1 + ol_length(t->idxs);
-	rel_base_t *ba = (rel_base_t*)sa_zalloc(sa, sizeof(rel_base_t) + sizeof(int)*USED_LEN(end));
+	rel_base_t *ba = (rel_base_t*)ma_zalloc(sa, sizeof(rel_base_t) + sizeof(int)*USED_LEN(end));
 	sqlstore *store = sql->session->tr->store;
 
 	if(!rel || !ba)
@@ -163,10 +161,10 @@ rel_basetable(mvc *sql, sql_table *t, const char *atname)
 	ba->basenr = sql->nid;
 	sql->nid += end;
 	if (isTable(t) && t->s && !isDeclaredTable(t)) /* count active rows only */
-		set_count_prop(sql->sa, rel, (BUN)store->storage_api.count_col(sql->session->tr, ol_first_node(t->columns)->data, 10));
+		set_count_prop(sql->sa, rel, (BUN)store->storage_api.count_col(sql->session->tr, ol_first_node(t->columns)->data, CNT_ACTIVE));
 	assert(atname);
 	if (strcmp(atname, t->base.name) != 0)
-		ba->name = sa_strdup(sa, atname);
+		ba->name = ma_strdup(sa, atname);
 	for(int i = nrcols; i<end; i++)
 		rel_base_set_used(ba, i);
 	rel->l = t;
@@ -187,11 +185,11 @@ rel_base_copy(mvc *sql, sql_rel *in, sql_rel *out)
 	assert(is_basetable(in->op) && is_basetable(out->op));
 	int nrcols = ol_length(t->columns), end = nrcols + 1 + ol_length(t->idxs);
 	size_t bsize = sizeof(rel_base_t) + sizeof(uint32_t)*USED_LEN(end);
-	rel_base_t *nba = (rel_base_t*)sa_alloc(sa, bsize);
+	rel_base_t *nba = (rel_base_t*)ma_alloc(sa, bsize);
 
 	memcpy(nba, ba, bsize);
 	if (ba->name)
-		nba->name = sa_strdup(sa, ba->name);
+		nba->name = ma_strdup(sa, ba->name);
 
 	out->l = t;
 	out->r = nba;
@@ -329,7 +327,7 @@ rel_base_projection( mvc *sql, sql_rel *rel, int intern)
 		}
 	}
 	if ((intern && rel_base_is_used(ba, i)) || list_empty(exps)) { /* Add TID column if no column is used */
-		sql_exp *e = exp_column(sql->sa, name, TID, sql_bind_localtype("oid"), CARD_MULTI, 0, 1, 1);
+		sql_exp *e = exp_column(sql->sa, name, TID, sql_fetch_localtype(TYPE_oid), CARD_MULTI, 0, 1, 1);
 		e->nid = -(ba->basenr + i);
 		e->alias.label = e->nid;
 		append(exps, e);
@@ -340,16 +338,16 @@ rel_base_projection( mvc *sql, sql_rel *rel, int intern)
 		for (node *in = ol_first_node(t->idxs); in; in = in->next, j++) {
 			if (rel_base_is_used(ba, j)) {
 				sql_idx *i = in->data;
-				sql_subtype *t = sql_bind_localtype("lng"); /* hash "lng" */
+				sql_subtype *t = sql_fetch_localtype(TYPE_lng); /* hash "lng" */
 				int has_nils = 0, unique;
 
 				if ((hash_index(i->type) && list_length(i->columns) <= 1) || !idx_has_column(i->type))
 					continue;
 
 				if (i->type == join_idx)
-					t = sql_bind_localtype("oid");
+					t = sql_fetch_localtype(TYPE_oid);
 
-				char *iname = sa_strconcat( sql->sa, "%", i->base.name);
+				char *iname = ma_strconcat( sql->sa, "%", i->base.name);
 				for (node *n = i->columns->h ; n && !has_nils; n = n->next) { /* check for NULL values */
 					sql_kc *kc = n->data;
 
@@ -399,7 +397,7 @@ rel_base_add_columns( mvc *sql, sql_rel *r)
 
 	r->exps = new_exp_list(sql->sa);
 	if(!r->exps) {
-		rel_destroy(r);
+		rel_destroy(sql, r);
 		return NULL;
 	}
 
@@ -414,7 +412,7 @@ rel_base_add_columns( mvc *sql, sql_rel *r)
 		sql_exp *e = exp_alias(sql, atname, c->base.name, tname, c->base.name, &c->type, CARD_MULTI, c->null, is_column_unique(c), 0);
 
 		if (e == NULL) {
-			rel_destroy(r);
+			rel_destroy(sql, r);
 			return NULL;
 		}
 		e->nid = -(ba->basenr + i);
@@ -434,7 +432,7 @@ rel_base_add_columns( mvc *sql, sql_rel *r)
 }
 
 sql_rel *
-rewrite_basetable(mvc *sql, sql_rel *rel)
+rewrite_basetable(mvc *sql, sql_rel *rel, bool stats)
 {
 	if (is_basetable(rel->op) && !rel->exps) {
 		allocator *sa = sql->sa;
@@ -443,7 +441,7 @@ rewrite_basetable(mvc *sql, sql_rel *rel)
 
 		rel->exps = new_exp_list(sa);
 		if(!rel->exps) {
-			rel_destroy(rel);
+			rel_destroy(sql, rel);
 			return NULL;
 		}
 
@@ -463,7 +461,7 @@ rewrite_basetable(mvc *sql, sql_rel *rel)
 			sql_exp *e = exp_alias(sql, atname, c->base.name, tname, c->base.name, &c->type, CARD_MULTI, c->null, is_column_unique(c), 0);
 
 			if (e == NULL) {
-				rel_destroy(rel);
+				rel_destroy(sql, rel);
 				return NULL;
 			}
 			e->nid = -(ba->basenr + i);
@@ -476,13 +474,14 @@ rewrite_basetable(mvc *sql, sql_rel *rel)
 				p->value.pval = NULL;
 			}
 			set_basecol(e);
-			sql_column_get_statistics(sql, c, e);
+			if (stats)
+				sql_column_get_statistics(sql, c, e);
 			append(rel->exps, e);
 		}
 		if (rel_base_is_used(ba, i) || list_empty(rel->exps)) { /* Add TID column if no column is used */
-			sql_exp *e = exp_alias(sql, atname, TID, tname, TID, sql_bind_localtype("oid"), CARD_MULTI, 0, 1, 1);
+			sql_exp *e = exp_alias(sql, atname, TID, tname, TID, sql_fetch_localtype(TYPE_oid), CARD_MULTI, 0, 1, 1);
 			if (e == NULL) {
-				rel_destroy(rel);
+				rel_destroy(sql, rel);
 				return NULL;
 			}
 			e->nid = -(ba->basenr + i);
@@ -505,8 +504,8 @@ rewrite_basetable(mvc *sql, sql_rel *rel)
 			if ((hash_index(i->type) && list_length(i->columns) <= 1) || !idx_has_column(i->type))
 				continue;
 
-			t = (i->type == join_idx) ? sql_bind_localtype("oid") : sql_bind_localtype("lng");
-			iname = sa_strconcat( sa, "%", i->base.name);
+			t = (i->type == join_idx) ? sql_fetch_localtype(TYPE_oid) : sql_fetch_localtype(TYPE_lng);
+			iname = ma_strconcat( sa, "%", i->base.name);
 			for (node *n = i->columns->h ; n && !has_nils; n = n->next) { /* check for NULL values */
 				sql_kc *kc = n->data;
 
@@ -516,7 +515,7 @@ rewrite_basetable(mvc *sql, sql_rel *rel)
 			unique = list_length(i->columns) == 1 && is_column_unique(((sql_kc*)i->columns->h->data)->c);
 			e = exp_alias(sql, atname, iname, tname, iname, t, CARD_MULTI, has_nils, unique, 1);
 			if (e == NULL) {
-				rel_destroy(rel);
+				rel_destroy(sql, rel);
 				return NULL;
 			}
 			/* index names are prefixed, to make them independent */
@@ -531,6 +530,21 @@ rewrite_basetable(mvc *sql, sql_rel *rel)
 			e->nid = -(ba->basenr + j);
 			e->alias.label = e->nid;
 			append(rel->exps, e);
+		}
+		if (t->pkey) {
+			p = prop_create(sql->sa, PROP_UKEY, rel->p);
+			list *exps = p->value.pval = sa_list(sql->sa);
+			for(node *n = t->pkey->k.columns->h; n; n = n->next) {
+				sql_kc *c = n->data;
+				sql_exp *e = exps_bind_column2(rel->exps, atname, c->c->base.name, NULL);
+				if (!e) {
+					p = NULL;
+					break;
+				}
+				append(exps, e);
+			}
+			if (p)
+				rel->p = p;
 		}
 	}
 	return rel;
@@ -551,14 +565,14 @@ basetable_get_tid_or_add_it(mvc *sql, sql_rel *rel)
 			tname = mapiuri_table(t->query, sql->sa, tname);
 		if (!rel->exps) { /* no exps yet, just set TID */
 			rel_base_use_tid(sql, rel);
-			res = exp_alias(sql, atname, TID, tname, TID, sql_bind_localtype("oid"), CARD_MULTI, 0, 1, 1);
+			res = exp_alias(sql, atname, TID, tname, TID, sql_fetch_localtype(TYPE_oid), CARD_MULTI, 0, 1, 1);
 			res->nid = -(ba->basenr + ol_length(t->columns));
 			res->alias.label = res->nid;
 		} else if (!rel_base_is_used(ba, ol_length(t->columns)) ||  /* exps set, but no TID, add it */
 				   !(res = exps_bind_column2(rel->exps, atname, TID, NULL))) { /* exps set with TID, but maybe rel_dce removed it */
 			node *n = NULL;
 			rel_base_use_tid(sql, rel);
-			res = exp_alias(sql, atname, TID, tname, TID, sql_bind_localtype("oid"), CARD_MULTI, 0, 1, 1);
+			res = exp_alias(sql, atname, TID, tname, TID, sql_fetch_localtype(TYPE_oid), CARD_MULTI, 0, 1, 1);
 			res->nid = -(ba->basenr + ol_length(t->columns));
 			res->alias.label = res->nid;
 
@@ -598,7 +612,7 @@ rel_rename_part(mvc *sql, sql_rel *p, sql_rel *mt_rel, const char *mtalias)
 		const char *nname = e->r;
 
 		if (nname[0] == '%' && strcmp(nname, TID) == 0) {
-			list_append(p->exps, ne=exp_alias(sql, mtalias, TID, pname, TID, sql_bind_localtype("oid"), CARD_MULTI, 0, 1, 1));
+			list_append(p->exps, ne=exp_alias(sql, mtalias, TID, pname, TID, sql_fetch_localtype(TYPE_oid), CARD_MULTI, 0, 1, 1));
 			ne->nid = e->nid;
 			ne->alias.label = e->alias.label;
 			rel_base_use_tid(sql, p);
@@ -634,8 +648,8 @@ rel_rename_part(mvc *sql, sql_rel *p, sql_rel *mt_rel, const char *mtalias)
 			}
 
 			assert((!hash_index(ri->type) || list_length(ri->columns) > 1) && idx_has_column(ri->type));
-			sql_subtype *t = (ri->type == join_idx) ? sql_bind_localtype("oid") : sql_bind_localtype("lng");
-			char *iname1 = sa_strconcat(sql->sa, "%", i->base.name), *iname2 = sa_strconcat(sql->sa, "%", ri->base.name);
+			sql_subtype *t = (ri->type == join_idx) ? sql_fetch_localtype(TYPE_oid) : sql_fetch_localtype(TYPE_lng);
+			char *iname1 = ma_strconcat(sql->sa, "%", i->base.name), *iname2 = ma_strconcat(sql->sa, "%", ri->base.name);
 
 			ne = exp_alias(sql, mtalias, iname1, pname, iname2, t, CARD_MULTI, has_nil(e), is_unique(e), 1);
 			/* index names are prefixed, to make them independent */

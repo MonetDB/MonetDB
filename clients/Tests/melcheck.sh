@@ -9,4 +9,4 @@ if [ "$hg_root" = "$TSTSRCBASE" ]; then
 elif [ "$git_root" = "$TSTSRCBASE" ]; then
 	git ls-files -- 'monetdb5/**.[ch]' 'sql/**.[ch]' 'geom/**.[ch]' ':!:**/Tests/*'
 fi \
-| python3 -c 'import MonetDBtesting.melcheck'
+| python3 -m MonetDBtesting.melcheck # --match-any

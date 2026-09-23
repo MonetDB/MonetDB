@@ -25,10 +25,10 @@ UPDATE testmeplease SET b = 'I should fail again'
 statement ok rowcount 3
 INSERT INTO testmeplease VALUES (1, '1'), (2, '2'), (3, '3')
 
-statement error 22018!conversion of string 'cannot cast me' to type int failed.
+statement error 22018!/conversion of string.*to type int failed./
 INSERT INTO testmeplease VALUES (1, 'cannot cast me')
 
-statement error 22018!conversion of string 'cannot cast me' to type int failed.
+statement error 22018!/conversion of string.*to type int failed./
 INSERT INTO sub1 VALUES (1, 'cannot cast me')
 
 statement ok rowcount 1

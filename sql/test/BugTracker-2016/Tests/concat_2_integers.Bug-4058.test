@@ -33,7 +33,7 @@ INSERT INTO "sys"."test_bug4058" VALUES
 (760,1511,'A',true)
 
 query IITI rowsort
-select * from "sys"."test_bug4058" limit 10
+select * from "sys"."test_bug4058" where f1 in (81, 303, 601, 839, 408, 665, 267, 556, 386, 831) limit 10
 ----
 267
 1604
@@ -77,7 +77,7 @@ A
 1
 
 statement ok
-create table "sys"."test_bug4058_tmp" as ( select * from "sys"."test_bug4058" limit 10)
+create table "sys"."test_bug4058_tmp" as ( select * from "sys"."test_bug4058" where f1 in (81, 303, 601, 839, 408, 665, 267, 556, 386, 831) limit 10)
 
 query IITI rowsort
 select * from (select * from "sys"."test_bug4058" where f3='V' AND f4=true) as tmp where f1||f2 NOT IN (select f1||f2 from "sys"."test_bug4058_tmp")

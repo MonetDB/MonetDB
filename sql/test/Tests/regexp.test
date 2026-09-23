@@ -1,4 +1,4 @@
-# for the regex options look into `man 3 pcreapi`
+# for the regex options look into `man 3 pcre2api`
 
 # basic
 query T rowsort
@@ -8,7 +8,7 @@ fooXYXY
 
 # regex options - capture groups
 query T rowsort
-select regexp_replace('foobarbaz', 'b(..)', R'X\1Y')
+select regexp_replace('foobarbaz', 'b(..)', 'X$1Y')
 ----
 fooXarYXazY
 
@@ -79,11 +79,11 @@ select regexp_replace('abc', 'b|k?', '-', 'e')
 -a--c-
 
 # regex option - empty match w alternative v2
-# even though you would expect -a--c- the pcre lib does not return
-# the longest match for this particular pattern in offset 1 ('b') but
-# an empty string match ¯\_(ツ)_/¯
+# even though you would expect -a--c- the pcre lib instead returns
+# both the empty string between a and b, and the string b (and the
+# empty string between what was b and c)
 query T rowsort
 select regexp_replace('abc', 'k?|b', '-', 'e')
 ----
--a-b-c-
+-a---c-
 

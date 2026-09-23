@@ -3,11 +3,9 @@
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024, 2025 MonetDB Foundation;
- * Copyright August 2008 - 2023 MonetDB B.V.;
- * Copyright 1997 - July 2008 CWI.
+ * For copyright information, see the file debian/copyright.
  */
 
 /*
@@ -38,7 +36,7 @@
 			size_t _l;					\
 			if (len < 0)					\
 				return SQL_ERROR;			\
-			_l = strcpy_len((char *) buf, str, len);	\
+			_l = buf ? strlcpy((char *) buf, str, len) : strlen(str); \
 			if (lenp)					\
 				*lenp = (SQLSMALLINT) _l;		\
 			if (buf == NULL || _l >= (size_t) len)		\
@@ -158,9 +156,9 @@ MNDBGetDiagField(SQLSMALLINT HandleType,
 		 */
 		SQLSMALLINT msgLen;
 		if (dbc && dbc->dsn)
-			msgLen = (SQLSMALLINT) strconcat_len((char *) DiagInfoPtr, BufferLength, ODBCErrorMsgPrefix, "[", dbc->dsn, "]", msg, NULL);
+			msgLen = (SQLSMALLINT) strlconcat((char *) DiagInfoPtr, BufferLength, ODBCErrorMsgPrefix, "[", dbc->dsn, "]", msg, NULL);
 		else
-			msgLen = (SQLSMALLINT) strconcat_len((char *) DiagInfoPtr, BufferLength, ODBCErrorMsgPrefix, msg, NULL);
+			msgLen = (SQLSMALLINT) strlconcat((char *) DiagInfoPtr, BufferLength, ODBCErrorMsgPrefix, msg, NULL);
 		if (StringLengthPtr)
 			*StringLengthPtr = msgLen;
 		if (DiagInfoPtr == NULL || msgLen >= BufferLength)

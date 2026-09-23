@@ -3,11 +3,9 @@
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024, 2025 MonetDB Foundation;
- * Copyright August 2008 - 2023 MonetDB B.V.;
- * Copyright 1997 - July 2008 CWI.
+ * For copyright information, see the file debian/copyright.
  */
 
 /*
@@ -38,8 +36,7 @@ newAssignmentArgs(MalBlkPtr mb, int args)
 		str msg = createException(MAL, "newAssignment",
 								  "Can not allocate variable");
 		addMalException(mb, msg);
-		freeException(msg);
-		freeInstruction(q);
+		freeInstruction(mb, q);
 		return NULL;
 	}
 	getArg(q, 0) = k;
@@ -76,8 +73,7 @@ newStmtArgs(MalBlkPtr mb, const char *module, const char *name, int args)
 		str msg = createException(MAL, "newStmtArgs",
 								  "Can not allocate variable");
 		addMalException(mb, msg);
-		freeException(msg);
-		freeInstruction(q);
+		freeInstruction(mb, q);
 		return NULL;
 	}
 	return q;
@@ -128,16 +124,15 @@ newComment(MalBlkPtr mb, const char *val)
 		return NULL;
 	q->token = REMsymbol;
 	q->barrier = 0;
-	if (VALinit(&cst, TYPE_str, val) == NULL) {
+	if (VALinit(mb->ma, &cst, TYPE_str, val) == NULL) {
 		str msg = createException(MAL, "newComment", "Can not allocate comment");
 		addMalException(mb, msg);
-		freeException(msg);
-		freeInstruction(q);
+		freeInstruction(mb, q);
 		return NULL;
 	}
 	k = defConstant(mb, TYPE_str, &cst);
 	if (k < 0) {
-		freeInstruction(q);
+		freeInstruction(mb, q);
 		return NULL;
 	}
 	getArg(q, 0) = k;
@@ -161,8 +156,7 @@ newCatchStmt(MalBlkPtr mb, const char *nme)
 			str msg = createException(MAL, "newCatchStmt",
 									  "Can not allocate variable");
 			addMalException(mb, msg);
-			freeException(msg);
-			freeInstruction(q);
+			freeInstruction(mb, q);
 			return NULL;
 		}
 	}
@@ -185,8 +179,7 @@ newRaiseStmt(MalBlkPtr mb, const char *nme)
 			str msg = createException(MAL, "newRaiseStmt",
 									  "Can not allocate variable");
 			addMalException(mb, msg);
-			freeException(msg);
-			freeInstruction(q);
+			freeInstruction(mb, q);
 			return NULL;
 		}
 	}
@@ -209,8 +202,7 @@ newExitStmt(MalBlkPtr mb, const char *nme)
 			str msg = createException(MAL, "newExitStmt",
 									  "Can not allocate variable");
 			addMalException(mb, msg);
-			freeException(msg);
-			freeInstruction(q);
+			freeInstruction(mb, q);
 			return NULL;
 		}
 	}
@@ -471,7 +463,7 @@ getStrConstant(MalBlkPtr mb, str val)
 	VALset(&cst, TYPE_str, val);
 	_t = fndConstant(mb, &cst, MAL_VAR_WINDOW);
 	if (_t < 0) {
-		if ((cst.val.sval = GDKmalloc(cst.len)) == NULL)
+		if ((cst.val.sval = ma_alloc(mb->ma, cst.len)) == NULL)
 			return -1;
 		memcpy(cst.val.sval, val, cst.len);	/* includes terminating \0 */
 		_t = defConstant(mb, TYPE_str, &cst);
@@ -487,11 +479,10 @@ pushStr(MalBlkPtr mb, InstrPtr q, const char *Val)
 
 	if (q == NULL || mb->errors)
 		return q;
-	if (VALinit(&cst, TYPE_str, Val) == NULL) {
+	if (VALinit(mb->ma, &cst, TYPE_str, Val) == NULL) {
 		str msg = createException(MAL, "pushStr",
 								  "Can not allocate string variable");
 		addMalException(mb, msg);
-		freeException(msg);
 	} else {
 		_t = defConstant(mb, TYPE_str, &cst);
 		if (_t >= 0)
@@ -554,11 +545,10 @@ pushNil(MalBlkPtr mb, InstrPtr q, int tpe)
 			cst.vtype = TYPE_void;
 			cst.val.oval = oid_nil;
 		} else {
-			if (VALinit(&cst, tpe, ATOMnilptr(tpe)) == NULL) {
+			if (VALinit(mb->ma, &cst, tpe, ATOMnilptr(tpe)) == NULL) {
 				str msg = createException(MAL, "pushNil",
 										  "Can not allocate nil variable");
 				addMalException(mb, msg);
-				freeException(msg);
 			}
 		}
 		_t = defConstant(mb, tpe, &cst);
@@ -607,7 +597,7 @@ pushNilType(MalBlkPtr mb, InstrPtr q, char *tpe)
 	} else {
 		ValRecord cst = { .vtype = TYPE_void, .val.oval = oid_nil };
 
-		msg = convertConstant(idx, &cst);
+		msg = convertConstant(mb->ma, idx, &cst);
 		if (msg == MAL_SUCCEED) {
 			_t = defConstant(mb, idx, &cst);
 			if (_t >= 0) {
@@ -617,7 +607,6 @@ pushNilType(MalBlkPtr mb, InstrPtr q, char *tpe)
 	}
 	if (msg) {
 		addMalException(mb, msg);
-		freeException(msg);
 	}
 	return q;
 }
@@ -631,10 +620,9 @@ pushType(MalBlkPtr mb, InstrPtr q, int tpe)
 	if (q == NULL || mb->errors)
 		return q;
 	ValRecord cst = { .vtype = TYPE_void, .val.oval = oid_nil };
-	//msg = convertConstant(tpe, &cst);
-	//if (msg != MAL_SUCCEED){
+	//msg = convertConstant(mb->ma, tpe, &cst);
+		//if (msg != MAL_SUCCEED) {
 		//addMalException(mb, msg);
-		//freeException(msg);
 	//} else {
 		_t = defConstant(mb, tpe, &cst);
 		if (_t >= 0) {
@@ -653,10 +641,9 @@ pushZero(MalBlkPtr mb, InstrPtr q, int tpe)
 	if (q == NULL || mb->errors)
 		return q;
 	ValRecord cst = { .vtype = TYPE_int, .val.ival = 0 };
-	msg = convertConstant(tpe, &cst);
+	msg = convertConstant(mb->ma, tpe, &cst);
 	if (msg != MAL_SUCCEED) {
 		addMalException(mb, msg);
-		freeException(msg);
 	} else {
 		_t = defConstant(mb, tpe, &cst);
 		if (_t >= 0)
@@ -673,10 +660,9 @@ pushValue(MalBlkPtr mb, InstrPtr q, const ValRecord *vr)
 
 	if (q == NULL || mb->errors)
 		return q;
-	if (VALcopy(&cst, vr) == NULL) {
+	if (VALcopy(mb->ma, &cst, vr) == NULL) {
 		str msg = createException(MAL, "pushValue", "Can not allocate variable");
 		addMalException(mb, msg);
-		freeException(msg);
 	} else {
 		int type = cst.bat?newBatType(cst.vtype):cst.vtype;
 		_t = defConstant(mb, type, &cst);

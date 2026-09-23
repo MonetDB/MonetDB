@@ -118,7 +118,8 @@ def all_tests(filename_filter):
 def read_concatenated(ext):
     tf1 = TestFile("concatenated1", ext)
     tf1.write(b"hi")
-    compressed_content = open(tf1.path(), "rb").read()
+    with open(tf1.path(), "rb") as fil:
+        compressed_content = fil.read()
 
     tf2 = TestFile("concatenated2", ext)
     tf2.write_raw(compressed_content + compressed_content)

@@ -1,0 +1,21 @@
+statement ok
+CREATE TABLE v0 ( v1 VARCHAR DEFAULT NULL )
+
+query I nosort
+SELECT ( 36 % ( SELECT 90477437.000000 e308 ) != 0 + v1 IS NOT NULL ) IS NULL FROM v0
+----
+
+-- sql/backends/monet5/sql_statement.c:4612: stmt_alias_: Assertion `label' failed.
+statement ok
+INSERT INTO v0 VALUES ( NULL ) , ( 51 ) , ( ( SELECT ( 36 % ( SELECT 90477437.000000 e308 ) != 0 + v1 IS NOT NULL ) IS NULL FROM v0 ) )
+
+query T nosort
+SELECT v1 FROM v0 ORDER BY 1
+----
+NULL
+NULL
+51
+
+statement ok
+DROP TABLE v0
+

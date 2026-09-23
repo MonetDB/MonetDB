@@ -1,0 +1,19 @@
+-- the query without the 'GROUP BY CUBE ( x , x , x )' part doesn't crash
+query I rowsort
+SELECT * FROM (
+ SELECT * FROM (
+  SELECT 1 AS x )
+ WHERE x IN ( SELECT DISTINCT - 82 * 26 - 12 * - 27 * CASE WHEN NOT NULL IN ( - 69 , 1 * CASE x * ( CAST( 1 AS REAL ) ) + 1 + 1 + 1 + 1 + 1 + 1 + 1.000000 - ( SELECT CAST( 1 AS CHAR ( 1 ) ) AS x WHERE x LIKE 1.000000 ) + 1 + 1 * x * ( SELECT 1 ) + x + 1 + 1 + 1.000000 + 1 + 1 + 1 WHEN x THEN 1 WHEN 'x' THEN 'x' END + 37 , 44 , - - 0 * 23 , - 3421 * MAX ( - 94 * 0 ) , 3 , 12 ) THEN 41 WHEN NOT - 21 / - 95 IS NOT NULL THEN 63 END AS x )
+             )
+----
+
+-- the orginal reported query
+-- it crashes in exp_match (e1=0x7f840000001c, e2=0x7f84981bef20) at sql/server/rel_exp.c:1259
+query I rowsort
+SELECT * FROM (
+ SELECT * FROM (
+  SELECT 1 AS x )
+ WHERE x IN ( SELECT DISTINCT - 82 * 26 - 12 * - 27 * CASE WHEN NOT NULL IN ( - 69 , 1 * CASE x * ( CAST( 1 AS REAL ) ) + 1 + 1 + 1 + 1 + 1 + 1 + 1.000000 - ( SELECT CAST( 1 AS CHAR ( 1 ) ) AS x WHERE x LIKE 1.000000 ) + 1 + 1 * x * ( SELECT 1 ) + x + 1 + 1 + 1.000000 + 1 + 1 + 1 WHEN x THEN 1 WHEN 'x' THEN 'x' END + 37 , 44 , - - 0 * 23 , - 3421 * MAX ( - 94 * 0 ) , 3 , 12 ) THEN 41 WHEN NOT - 21 / - 95 IS NOT NULL THEN 63 END AS x GROUP BY CUBE ( x , x , x ) )
+             )
+----
+

@@ -3,11 +3,9 @@
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024, 2025 MonetDB Foundation;
- * Copyright August 2008 - 2023 MonetDB B.V.;
- * Copyright 1997 - July 2008 CWI.
+ * For copyright information, see the file debian/copyright.
  */
 
 #ifndef SQL_TOKENS_H
@@ -40,18 +38,18 @@ typedef enum tokens {
 	SQL_COMPARE,
 	SQL_CONSTRAINT,
 	SQL_COPYFROM,
-	SQL_COPYLOADER,
 	SQL_COPYINTO,
 	SQL_CREATE_FUNC,
 	SQL_CREATE_INDEX,
 	SQL_CREATE_ROLE,
 	SQL_CREATE_SCHEMA,
+	SQL_CREATE_SCHEMA_WITH_ELEMENTS,
 	SQL_CREATE_SEQ,
 	SQL_CREATE_TABLE,
-	SQL_CREATE_TABLE_LOADER,
 	SQL_CREATE_TRIGGER,
 	SQL_CREATE_TYPE,
 	SQL_CREATE_USER,
+	SQL_CREATE_USTR,
 	SQL_CREATE_VIEW,
 	SQL_CUBE,
 	SQL_CURRENT_ROW,
@@ -72,6 +70,7 @@ typedef enum tokens {
 	SQL_DROP_TRIGGER,
 	SQL_DROP_TYPE,
 	SQL_DROP_USER,
+	SQL_DROP_USTR,
 	SQL_DROP_VIEW,
 	SQL_ELSE,
 	SQL_ESCAPE,
@@ -157,6 +156,7 @@ typedef enum tokens {
 	SQL_UNIQUE_NULLS_NOT_DISTINCT,
 	SQL_UPDATE,
 	SQL_USING,
+	SQL_USTR,
 	SQL_VALUES,
 	SQL_VIEW,
 	SQL_WHEN,

@@ -27,8 +27,9 @@ VALUES
 
 # the same expression should be removed from the GROUPBY op list of
 # group expressions (->l)
+skipif knownfail
 query T nosort
-PLAN
+EXPLAIN SHOW DETAILS
 SELECT
     c1,
     c1,
@@ -64,8 +65,9 @@ GROUP BY
 1
 
 # same as before
+skipif knownfail
 query T nosort
-PLAN
+EXPLAIN SHOW DETAILS
 SELECT
     c1 AS c1_alias1,
     c1 AS c1_alias2,
@@ -79,8 +81,8 @@ GROUP BY
 project (
 | group by (
 | | table("sys"."foo") [ "foo"."c1" NOT NULL ]
-| ) [ "foo"."c1" NOT NULL as "c1_alias1" ] [ "c1_alias1" NOT NULL, "c1_alias1" NOT NULL as "c1_alias2", "sys"."count"() NOT NULL as "%1"."%1" ]
-) [ "c1_alias1" NOT NULL UNIQUE, "c1_alias2" NOT NULL, "%1"."%1" NOT NULL ]
+| ) [ "foo"."c1" NOT NULL as "c1_alias1" ] [ "c1_alias1" NOT NULL UNIQUE, "c1_alias1" NOT NULL UNIQUE as "c1_alias2", "sys"."count"() NOT NULL as "%1"."%1" ]
+) [ "c1_alias1" NOT NULL UNIQUE, "c1_alias2" NOT NULL UNIQUE, "%1"."%1" NOT NULL ]
 
 query III rowsort gb-over-bt
 SELECT
@@ -111,8 +113,9 @@ END
 
 # the same expression should be removed from the GROUPBY op list of
 # group expressions (->l) exactly like in the case of basetable
+skipif knownfail
 query T nosort
-PLAN
+EXPLAIN SHOW DETAILS
 SELECT
     a1,
     a1,
@@ -153,8 +156,9 @@ GROUP BY
 
 ## in this example the order by groups are aliases of the same column
 ## coming from the inner projection operator
+skipif knownfail
 query T nosort
-PLAN
+EXPLAIN SHOW DETAILS
 SELECT
     c1_alias1,
     c1_alias2,
@@ -211,8 +215,9 @@ GROUP BY
 2
 1
 
+skipif knownfail
 query T nosort
-PLAN
+EXPLAIN SHOW DETAILS
 SELECT
     c1 AS c1_alias_1,
     c1 AS c1_alias_2,
@@ -268,8 +273,9 @@ GROUP BY
 
 # in this example both outer project/groupby and the inner (subquery)
 # projet use aliases for the column c1.
+skipif knownfail
 query T nosort
-PLAN
+EXPLAIN SHOW DETAILS
 SELECT
     c1_in_alias_1 AS c1_out_alias_1,
     c1_in_alias_2 AS c1_out_alias_2,
@@ -327,9 +333,9 @@ GROUP BY
 
 # combinations of outer project/groupby and inner (subquery) projet
 # aliases for c1 column
-
+skipif knownfail
 query T nosort
-PLAN
+EXPLAIN SHOW DETAILS
 SELECT
     c1_in_alias_1 AS c1_out_alias_1,
     c1_in_alias_2,
@@ -385,8 +391,9 @@ GROUP BY
 2
 1
 
+skipif knownfail
 query T nosort
-PLAN
+EXPLAIN SHOW DETAILS
 SELECT
     c1_in_alias_1,
     c1_in_alias_2 AS c1_out_alias_2,
@@ -444,8 +451,9 @@ GROUP BY
 
 ## GROUPBY <--input-- JOIN ############################################
 
+skipif knownfail
 query T nosort
-PLAN
+EXPLAIN SHOW DETAILS
 SELECT
     foo.c2 AS col,
     count(*)

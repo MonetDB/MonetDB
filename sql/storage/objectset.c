@@ -3,18 +3,16 @@
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024, 2025 MonetDB Foundation;
- * Copyright August 2008 - 2023 MonetDB B.V.;
- * Copyright 1997 - July 2008 CWI.
+ * For copyright information, see the file debian/copyright.
  */
 
 #include "monetdb_config.h"
 #include "sql_catalog.h"
 #include "sql_storage.h"
 
-#include "gdk_atoms.h"
+#include "gdk.h"
 
 struct versionhead ;
 
@@ -755,15 +753,17 @@ find_name(objectset *os, const char *name)
 }
 
 static objectversion*
-get_valid_object_name(sql_trans *tr, objectversion *ov)
+get_valid_object_name(sql_trans *tr, objectversion *ov, bool lock)
 {
 	while(ov) {
 		if (ov->ts == tr->tid || (tr->parent && tr_version_of_parent(tr, ov->ts)) || ov->ts < tr->ts)
 			return ov;
 		else {
-			lock_reader(ov->os);
+			if (lock)
+				lock_reader(ov->os);
 			objectversion* name_based_older = ov->name_based_older;
-			unlock_reader(ov->os);
+			if (lock)
+				unlock_reader(ov->os);
 			ov = name_based_older;
 		}
 	}
@@ -771,15 +771,17 @@ get_valid_object_name(sql_trans *tr, objectversion *ov)
 }
 
 static objectversion*
-get_valid_object_id(sql_trans *tr, objectversion *ov)
+get_valid_object_id(sql_trans *tr, objectversion *ov, bool lock)
 {
 	while(ov) {
 		if (ov->ts == tr->tid || (tr->parent && tr_version_of_parent(tr, ov->ts))  || ov->ts < tr->ts)
 			return ov;
 		else {
-			lock_reader(ov->os);
+			if (lock)
+				lock_reader(ov->os);
 			objectversion* id_based_older = ov->id_based_older;
-			unlock_reader(ov->os);
+			if (lock)
+				unlock_reader(ov->os);
 			ov = id_based_older;
 		}
 	}
@@ -797,9 +799,9 @@ os_add_name_based(objectset *os, struct sql_trans *tr, const char *name, objectv
 
 	if (name_based_node) {
 		objectversion *co = name_based_node->ov;
-		objectversion *oo = get_valid_object_name(tr, co);
+		objectversion *oo = get_valid_object_name(tr, co, true);
 		if (co != oo) { /* conflict ? */
-			TRC_WARNING(SQL_STORE, "%s" "if (co != oo) { /* conflict ? */", __func__);
+			TRC_WARNING(SQL_STORE, "if (co != oo) { /* conflict ? */");
 			return -3;
 		}
 
@@ -814,7 +816,7 @@ os_add_name_based(objectset *os, struct sql_trans *tr, const char *name, objectv
 			*/
 			ATOMIC_BASE_TYPE expected_deleted = deleted;
 			if (!ATOMIC_CAS(&oo->state, &expected_deleted, block_destruction)) {
-				TRC_WARNING(SQL_STORE, "%s: " "if (!ATOMIC_CAS(&oo->state, &expected_deleted, block_destruction)) { /*conflict with cleaner or write-write conflict*/ ", __func__);
+				TRC_WARNING(SQL_STORE, "if (!ATOMIC_CAS(&oo->state, &expected_deleted, block_destruction)) { /*conflict with cleaner or write-write conflict*/ ");
 				return -3; /*conflict with cleaner or write-write conflict*/
 			}
 		}
@@ -849,9 +851,9 @@ os_add_id_based(objectset *os, struct sql_trans *tr, sqlid id, objectversion *ov
 
 	if (id_based_node) {
 		objectversion *co = id_based_node->ov;
-		objectversion *oo = get_valid_object_id(tr, co);
+		objectversion *oo = get_valid_object_id(tr, co, true);
 		if (co != oo) { /* conflict ? */
-			TRC_WARNING(SQL_STORE, "%s" "if (co != oo) { /* conflict ? */", __func__);
+			TRC_WARNING(SQL_STORE, "if (co != oo) { /* conflict ? */");
 			return -3;
 		}
 
@@ -866,7 +868,7 @@ os_add_id_based(objectset *os, struct sql_trans *tr, sqlid id, objectversion *ov
 			*/
 			ATOMIC_BASE_TYPE expected_deleted = deleted;
 			if (!ATOMIC_CAS(&oo->state, &expected_deleted, block_destruction)) {
-				TRC_WARNING(SQL_STORE, "%s" "if (!ATOMIC_CAS(&oo->state, &expected_deleted, block_destruction)) { /*conflict with cleaner or write-write conflict*/", __func__);
+				TRC_WARNING(SQL_STORE, "if (!ATOMIC_CAS(&oo->state, &expected_deleted, block_destruction)) { /*conflict with cleaner or write-write conflict*/");
 				return -3; /*conflict with cleaner or write-write conflict*/
 			}
 		}
@@ -907,7 +909,7 @@ os_add_(objectset *os, struct sql_trans *tr, const char *name, sql_base *b)
 		if (os->destroy)
 			os->destroy(os->store, ov->b);
 		_DELETE(ov);
-		TRC_WARNING(SQL_STORE, "%s" "if (!os->concurrent && os_has_changes(os, tr)) { /* for object sets without concurrent support, conflict if concurrent changes are there */", __func__);
+		TRC_WARNING(SQL_STORE, "if (!os->concurrent && os_has_changes(os, tr)) { /* for object sets without concurrent support, conflict if concurrent changes are there */");
 		return -3; /* conflict */
 	}
 
@@ -919,12 +921,12 @@ os_add_(objectset *os, struct sql_trans *tr, const char *name, sql_base *b)
 	}
 
 	if ((res = os_add_name_based(os, tr, name, ov))) {
-		trans_add(tr, b, ov, &tc_gc_objectversion, &tc_commit_objectversion, NULL);
+		trans_add(tr, b, ov, &tc_gc_objectversion, &tc_commit_objectversion, NULL, false);
 		return res;
 	}
 
 	if (os->temporary) (void) os_dup(os); // TODO transaction_layer_revamp: embed into refcounting subproject
-	trans_add(tr, b, ov, &tc_gc_objectversion, &tc_commit_objectversion, NULL);
+	trans_add(tr, b, ov, &tc_gc_objectversion, &tc_commit_objectversion, NULL, false);
 	return res;
 }
 
@@ -947,10 +949,10 @@ os_del_name_based(objectset *os, struct sql_trans *tr, const char *name, objectv
 
 	if (name_based_node) {
 		objectversion *co = name_based_node->ov;
-		objectversion *oo = get_valid_object_name(tr, co);
+		objectversion *oo = get_valid_object_name(tr, co, true);
 		ov->name_based_head = oo->name_based_head;
 		if (co != oo) { /* conflict ? */
-			TRC_WARNING(SQL_STORE, "%s: " "if (co != oo) { /* conflict ? */", __func__);
+			TRC_WARNING(SQL_STORE, "if (co != oo) { /* conflict ? */");
 			return -3;
 		}
 		ov->name_based_older = oo;
@@ -981,10 +983,10 @@ os_del_id_based(objectset *os, struct sql_trans *tr, sqlid id, objectversion *ov
 
 	if (id_based_node) {
 		objectversion *co = id_based_node->ov;
-		objectversion *oo = get_valid_object_id(tr, co);
+		objectversion *oo = get_valid_object_id(tr, co, true);
 		ov->id_based_head = oo->id_based_head;
 		if (co != oo) { /* conflict ? */
-			TRC_WARNING(SQL_STORE, "%s" "if (co != oo) { /* conflict ? */", __func__);
+			TRC_WARNING(SQL_STORE, "if (co != oo) { /* conflict ? */");
 			return -3;
 		}
 		ov->id_based_older = oo;
@@ -1013,8 +1015,8 @@ os_del_(objectset *os, struct sql_trans *tr, const char *name, sql_base *b)
 		.ts = tr->tid,
 		.b = b,
 		.os = os,
+		.state = ATOMIC_VAR_INIT(deleted),
 	};
-	os_atmc_set_state(ov, deleted);
 
 	if ((res = os_del_id_based(os, tr, b->id, ov))) {
 		if (os->destroy)
@@ -1024,12 +1026,12 @@ os_del_(objectset *os, struct sql_trans *tr, const char *name, sql_base *b)
 	}
 
 	if ((res = os_del_name_based(os, tr, name, ov))) {
-		trans_add(tr, b, ov, &tc_gc_objectversion, &tc_commit_objectversion, NULL);
+		trans_add(tr, b, ov, &tc_gc_objectversion, &tc_commit_objectversion, NULL, false);
 		return res;
 	}
 
 	if (os->temporary) (void) os_dup(os); // TODO transaction_layer_revamp: embed into refcounting subproject
-	trans_add(tr, b, ov, &tc_gc_objectversion, &tc_commit_objectversion, NULL);
+	trans_add(tr, b, ov, &tc_gc_objectversion, &tc_commit_objectversion, NULL, false);
 	return res;
 }
 
@@ -1050,7 +1052,8 @@ os_size(objectset *os, struct sql_trans *tr)
 		lock_reader(os);
 		for(versionhead  *n = os->name_based_h; n; n=n->next) {
 			objectversion *ov = n->ov;
-			if ((ov=get_valid_object_name(tr, ov)) && os_atmc_get_state(ov) == active)
+			assert(os == ov->os);
+			if ((ov=get_valid_object_name(tr, ov, false)) && os_atmc_get_state(ov) == active)
 				cnt++;
 		}
 		unlock_reader(os);
@@ -1086,9 +1089,9 @@ os_find_name(objectset *os, struct sql_trans *tr, const char *name)
 	versionhead  *n = find_name(os, name);
 
 	if (n) {
-		 objectversion *ov = get_valid_object_name(tr, n->ov);
-		 if (ov && os_atmc_get_state(ov) == active)
-			 return ov->b;
+		objectversion *ov = get_valid_object_name(tr, n->ov, true);
+		if (ov && os_atmc_get_state(ov) == active)
+			return ov->b;
 	}
 	return NULL;
 }
@@ -1101,9 +1104,9 @@ os_find_id(objectset *os, struct sql_trans *tr, sqlid id)
 	versionhead  *n = find_id(os, id);
 
 	if (n) {
-		 objectversion *ov = get_valid_object_id(tr, n->ov);
-		 if (ov && os_atmc_get_state(ov) == active)
-			 return ov->b;
+		objectversion *ov = get_valid_object_id(tr, n->ov, true);
+		if (ov && os_atmc_get_state(ov) == active)
+			return ov->b;
 	}
 	return NULL;
 }
@@ -1142,7 +1145,8 @@ oi_next(struct os_iter *oi)
 				if (n->ov->b->name && strcmp(n->ov->b->name, oi->name) == 0) {
 					objectversion *ov = n->ov;
 
-					ov = get_valid_object_name(oi->tr, ov);
+					assert(oi->os == ov->os);
+					ov = get_valid_object_name(oi->tr, ov, false);
 					if (ov && os_atmc_get_state(ov) == active)
 						b = ov->b;
 				}
@@ -1157,7 +1161,8 @@ oi_next(struct os_iter *oi)
 					objectversion *ov = n->ov;
 
 					n = oi->n = n->next;
-					ov = get_valid_object_name(oi->tr, ov);
+					assert(oi->os == ov->os);
+					ov = get_valid_object_name(oi->tr, ov, false);
 					if (ov && os_atmc_get_state(ov) == active)
 						b = ov->b;
 				} else {
@@ -1174,7 +1179,8 @@ oi_next(struct os_iter *oi)
 			objectversion *ov = n->ov;
 			n = oi->n = n->next;
 
-			ov = get_valid_object_id(oi->tr, ov);
+			assert(oi->os == ov->os);
+			ov = get_valid_object_id(oi->tr, ov, false);
 			if (ov && os_atmc_get_state(ov) == active)
 				b = ov->b;
 		}
@@ -1206,7 +1212,7 @@ os_has_changes(objectset *os, struct sql_trans *tr)
 	if (n) {
 		objectversion *ov = n->ov;
 
-		if (ov && os_atmc_get_state(ov) == active && ov->ts != tr->tid && ov->ts > TRANSACTION_ID_BASE)
+		if (ov && os_atmc_get_state(ov) == active && ov->ts != tr->tid && ov->ts > TRANSACTION_ID_BASE && (!tr->parent || !tr_version_of_parent(tr, ov->ts)))
 			return true;
 	}
 	return false;

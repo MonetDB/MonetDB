@@ -3,11 +3,9 @@
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024, 2025 MonetDB Foundation;
- * Copyright August 2008 - 2023 MonetDB B.V.;
- * Copyright 1997 - July 2008 CWI.
+ * For copyright information, see the file debian/copyright.
  */
 
 /* streams working on a disk file */
@@ -15,7 +13,7 @@
 #include "monetdb_config.h"
 #include "stream.h"
 #include "stream_internal.h"
-#include "mutf8.h"
+#include "mutils.h"
 
 
 /* ------------------------------------------------------------------ */
@@ -142,7 +140,7 @@ file_fsync(stream *s)
 #endif
 #endif
 		    )) {
-		mnstr_set_error(s, MNSTR_WRITE_ERROR, "fsync failed");
+		mnstr_set_error_errno(s, MNSTR_WRITE_ERROR, "fsync failed");
 		return -1;
 	}
 	return 0;
@@ -170,65 +168,6 @@ file_fsetpos(stream *restrict s, fpos_t *restrict p)
 	return fsetpos(fp, p) ? -1 : 0;
 }
 
-/* convert a string from UTF-8 to wide characters; the return value is
- * freshly allocated */
-#ifdef NATIVE_WIN32
-static wchar_t *
-utf8towchar(const char *src)
-{
-	wchar_t *dest;
-	size_t i = 0;
-	uint32_t state = 0, codepoint = 0;
-
-	/* count how many wchar_t's we need, while also checking for
-	 * correctness of the input */
-	for (size_t j = 0; src[j]; j++) {
-		switch (decode(&state, &codepoint, (uint8_t) src[j])) {
-		case UTF8_ACCEPT:
-			i++;
-#if SIZEOF_WCHAR_T == 2
-			i += (codepoint > 0xFFFF);
-#endif
-			break;
-		case UTF8_REJECT:
-			return NULL;
-		default:
-			break;
-		}
-	}
-	dest = malloc((i + 1) * sizeof(wchar_t));
-	if (dest == NULL)
-		return NULL;
-	/* go through the source string again, this time we can skip
-	 * the correctness tests */
-	i = 0;
-	for (size_t j = 0; src[j]; j++) {
-		switch (decode(&state, &codepoint, (uint8_t) src[j])) {
-		case UTF8_ACCEPT:
-#if SIZEOF_WCHAR_T == 2
-			if (codepoint <= 0xFFFF) {
-				dest[i++] = (wchar_t) codepoint;
-			} else {
-				dest[i++] = (wchar_t) (0xD7C0 + (codepoint >> 10));
-				dest[i++] = (wchar_t) (0xDC00 + (codepoint & 0x3FF));
-			}
-#else
-			dest[i++] = (wchar_t) codepoint;
-#endif
-			break;
-		case UTF8_REJECT:
-			/* cannot happen because of first loop */
-			free(dest);
-			return NULL;
-		default:
-			break;
-		}
-	}
-	dest[i] = 0;
-	return dest;
-}
-#endif
-
 
 stream *
 open_stream(const char *restrict filename, const char *restrict flags)
@@ -242,8 +181,9 @@ open_stream(const char *restrict filename, const char *restrict flags)
 		return NULL;
 #ifdef NATIVE_WIN32
 	{
-		wchar_t *wfname = utf8towchar(filename);
-		wchar_t *wflags = utf8towchar(flags);
+		wchar_t *wfname = utf8toutf16(filename);
+		wchar_t *wflags = utf8toutf16(flags);
+		static_assert(SIZEOF_WCHAR_T == 2, "wchar_t on Windows expected to be 2 bytes");
 		if (wfname != NULL && wflags != NULL)
 			fp = _wfopen(wfname, wflags);
 		else
@@ -347,7 +287,7 @@ file_wstream(FILE *restrict fp, bool binary, const char *restrict name)
 stream *
 stdin_rastream(void)
 {
-	const char name[] = "<stdin>";
+	static const char name[] = "<stdin>";
 	// Make an attempt to skip a BOM marker.
 	// It would be nice to integrate this with with the BOM removal code
 	// in text_stream.c but that is complicated. In text_stream,
@@ -378,7 +318,7 @@ stdin_rastream(void)
 stream *
 stdout_wastream(void)
 {
-	const char name[] = "<stdout>";
+	static const char name[] = "<stdout>";
 #ifdef _MSC_VER
 	if (isatty(fileno(stdout)))
 		return win_console_out_stream(name);
@@ -389,7 +329,7 @@ stdout_wastream(void)
 stream *
 stderr_wastream(void)
 {
-	const char name[] = "<stderr>";
+	static const char name[] = "<stderr>";
 #ifdef _MSC_VER
 	if (isatty(fileno(stderr)))
 		return win_console_out_stream(name);
@@ -426,14 +366,14 @@ getFileNo(stream *s)
 	return fileno(f);
 }
 
-size_t
+int64_t
 getFileSize(stream *s)
 {
 	struct stat stb;
 	int fd = getFileNo(s);
 
 	if (fd >= 0 && fstat(fd, &stb) == 0)
-		return (size_t) stb.st_size;
+		return (int64_t) stb.st_size;
 	return 0;		/* unknown */
 }
 
@@ -443,7 +383,7 @@ file_remove(const char *filename)
 	int rc = -1;
 
 #ifdef NATIVE_WIN32
-	wchar_t *wfname = utf8towchar(filename);
+	wchar_t *wfname = utf8toutf16(filename);
 	if (wfname != NULL) {
 		rc = _wremove(wfname);
 		free(wfname);

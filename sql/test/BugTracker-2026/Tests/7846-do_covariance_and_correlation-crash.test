@@ -1,0 +1,53 @@
+query I nosort
+SELECT count(*) FROM ( SELECT 1 AS x UNION SELECT 0 AS x UNION SELECT DISTINCT * FROM generate_series ( CAST( 200 AS REAL ) , CAST( 1.900000 AS REAL ) ) AS x WHERE 625 )
+----
+200
+
+query RRIRR rowsort
+SELECT DISTINCT covar_pop ( 1 , 1 ) OVER ( ) ,
+ corr ( CASE WHEN x % 2 = 0 THEN ( 291 ^ '18' ) * x ELSE ( x + 1 ) / 2 END , 1 ) OVER ( ) ,
+ MAX ( CASE x WHEN 1 THEN x END ) OVER ( ) ,
+ covar_samp ( 1 , NULL ) OVER ( ) ,
+ corr ( 1 , NULL ) OVER ( )
+FROM ( SELECT 1 AS x UNION SELECT 0 AS x UNION SELECT DISTINCT * FROM generate_series ( CAST( 200 AS REAL ) , CAST( 1.900000 AS REAL ) ) AS x WHERE 625 )
+----
+0.000
+NULL
+1
+NULL
+NULL
+
+query R rowsort
+SELECT DISTINCT
+ corr ( 1 , 1 ) OVER ( PARTITION BY x ORDER BY ( NULL = ( SELECT 1 ORDER BY CASE WHEN NOT ( NULL ) IN ( - ( 9.100000 ) * - 1203170400 , - 41 , NULLIF ( CASE - 70 WHEN 48 + 63 THEN NULL ELSE 89 * 57 END , ( SELECT 2 WHERE FALSE ) = ANY ( FALSE ) ) + - covar_pop ( 301840612 , 1 ) OVER ( ROWS BETWEEN 2 PRECEDING AND UNBOUNDED FOLLOWING ) - - 87 * 52 ) THEN 56 ELSE sum ( x ) OVER ( PARTITION BY CAST( x AS INTEGER ) ORDER BY x , x ROWS BETWEEN 1 FOLLOWING AND UNBOUNDED FOLLOWING ) END DESC , LOWER ( x ) ) ) GROUPS BETWEEN 5 PRECEDING AND 2 FOLLOWING )
+FROM ( SELECT 1 AS x UNION SELECT 0 AS x WHERE 625 )
+----
+NULL
+
+-- next query causes Segmentation fault in do_covariance_and_correlation (cntxt=0x2d58d490, mb=0x7f70ac234980, stk=0x7f70ac2481d0, pci=0x7f70ac263f50, op=0x7f71337aa87b "sql.covariancep", func=0x7f7143062883 <GDKanalytical_covariance_pop>, minimum=0, defaultv=0, single_case=0) at sql/backends/monet5/sql_rank.c:1951
+-- 1951							COVARIANCE_AND_CORRELATION_ONE_SIDE_BRANCHES(OTHERS);
+query R rowsort
+SELECT DISTINCT
+ corr ( 1 , 1 ) OVER ( PARTITION BY x ORDER BY ( NULL = ( SELECT 1 ORDER BY CASE WHEN NOT ( NULL ) IN ( - ( 9.100000 ) * - 1203170400 , - 41 , NULLIF ( CASE - 70 WHEN 48 + 63 THEN NULL ELSE 89 * 57 END , ( SELECT 2 WHERE FALSE ) = ANY ( FALSE ) ) + - covar_pop ( 301840612 , 1 ) OVER ( ROWS BETWEEN 2 PRECEDING AND UNBOUNDED FOLLOWING ) - - 87 * 52 ) THEN 56 ELSE sum ( x ) OVER ( PARTITION BY CAST( x AS INTEGER ) ORDER BY x , x ROWS BETWEEN 1 FOLLOWING AND UNBOUNDED FOLLOWING ) END DESC , LOWER ( x ) ) ) GROUPS BETWEEN 5 PRECEDING AND 2 FOLLOWING )
+FROM ( SELECT 1 AS x UNION SELECT 0 AS x UNION SELECT DISTINCT * FROM generate_series ( CAST( 200 AS REAL ) , CAST( 1.900000 AS REAL ) ) AS x WHERE 625 )
+----
+NULL
+
+-- full query causes Segmentation fault in do_covariance_and_correlation (cntxt=0x2d58d490, mb=0x7f70ac234980, stk=0x7f70ac2481d0, pci=0x7f70ac263f50, op=0x7f71337aa87b "sql.covariancep", func=0x7f7143062883 <GDKanalytical_covariance_pop>, minimum=0, defaultv=0, single_case=0) at sql/backends/monet5/sql_rank.c:1951
+-- 1951							COVARIANCE_AND_CORRELATION_ONE_SIDE_BRANCHES(OTHERS);
+query RRRIRR rowsort
+SELECT DISTINCT covar_pop ( 1 , 1 ) OVER ( ) ,
+ corr ( 1 , 1 ) OVER ( PARTITION BY x ORDER BY ( NULL = ( SELECT 1 ORDER BY CASE WHEN NOT ( NULL ) IN ( - ( 9.100000 ) * - 1203170400 , - 41 , NULLIF ( CASE - 70 WHEN 48 + 63 THEN NULL ELSE 89 * 57 END , ( SELECT 2 WHERE FALSE ) = ANY ( FALSE ) ) + - covar_pop ( 301840612 , 1 ) OVER ( ROWS BETWEEN 2 PRECEDING AND UNBOUNDED FOLLOWING ) - - 87 * 52 ) THEN 56 ELSE sum ( x ) OVER ( PARTITION BY CAST( x AS INTEGER ) ORDER BY x , x ROWS BETWEEN 1 FOLLOWING AND UNBOUNDED FOLLOWING ) END DESC , LOWER ( x ) ) ) GROUPS BETWEEN 5 PRECEDING AND 2 FOLLOWING ) ,
+ corr ( CASE WHEN x % 2 = 0 THEN ( 291 ^ '18' ) * x ELSE ( x + 1 ) / 2 END , 1 ) OVER ( ) ,
+ MAX ( CASE x WHEN 1 THEN x END ) OVER ( ) ,
+ covar_samp ( 1 , NULL ) OVER ( ) ,
+ corr ( 1 , NULL ) OVER ( )
+FROM ( SELECT 1 AS x UNION SELECT 0 AS x UNION SELECT DISTINCT * FROM generate_series ( CAST( 200 AS REAL ) , CAST( 1.900000 AS REAL ) ) AS x WHERE 625 )
+----
+0.000
+NULL
+NULL
+1
+NULL
+NULL
+

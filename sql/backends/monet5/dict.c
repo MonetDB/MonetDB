@@ -3,15 +3,13 @@
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024, 2025 MonetDB Foundation;
- * Copyright August 2008 - 2023 MonetDB B.V.;
- * Copyright 1997 - July 2008 CWI.
+ * For copyright information, see the file debian/copyright.
  */
 
 #include "monetdb_config.h"
-#include "sql.h"
+#include "sql_monet_backend.h"
 #include "mal.h"
 #include "mal_client.h"
 
@@ -36,13 +34,14 @@ BATmaxminpos_bte(BAT *o, bte m)
 	o->tnil = m<0?true:false;
 	o->tnonil = m<=0?false:true;
 	bte *op = (bte*)Tloc(o, 0);
-	BATloop(o, p, q) {
+	q = o->batCount;
+	for (p = 0; p < q; p++) {
 		if (op[p] == minval) {
 			minpos = p;
 			break;
 		}
 	}
-	BATloop(o, p, q) {
+	for (p = 0; p < q; p++) {
 		if (op[p] == maxval) {
 			maxpos = p;
 			break;
@@ -63,13 +62,14 @@ BATmaxminpos_sht(BAT *o, sht m)
 	o->tnil = m<0?true:false;
 	o->tnonil = m<=0?false:true;
 	sht *op = (sht*)Tloc(o, 0);
-	BATloop(o, p, q) {
+	q = o->batCount;
+	for (p = 0; p < q; p++) {
 		if (op[p] == minval) {
 			minpos = p;
 			break;
 		}
 	}
-	BATloop(o, p, q) {
+	for (p = 0; p < q; p++) {
 		if (op[p] == maxval) {
 			maxpos = p;
 			break;
@@ -90,13 +90,14 @@ BATmaxminpos_int(BAT *o, int m)
 	o->tnil = m<0?true:false;
 	o->tnonil = m<=0?false:true;
 	int *op = (int*)Tloc(o, 0);
-	BATloop(o, p, q) {
+	q = o->batCount;
+	for (p = 0; p < q; p++) {
 		if (op[p] == minval) {
 			minpos = p;
 			break;
 		}
 	}
-	BATloop(o, p, q) {
+	for (p = 0; p < q; p++) {
 		if (op[p] == maxval) {
 			maxpos = p;
 			break;
@@ -163,9 +164,9 @@ DICTcompress_intern(BAT **O, BAT **U, BAT *b, bool ordered, bool persists, bool 
 	if (tt == TYPE_bte) {
 		bte *op = (bte*)Tloc(o, 0);
 		bool havenil = false;
-		BATloop(b, p, q) {
+		BATloop(&bi, p, q) {
 			BUN up = 0;
-			HASHloop(ui, ui.b->thash, up, BUNtail(bi, p)) {
+			HASHloop(&ui, ui.b->thash, up, BUNtail(&bi, p)) {
 				op[p] = (bte)up;
 				havenil |= is_bte_nil(op[p]);
 			}
@@ -182,9 +183,9 @@ DICTcompress_intern(BAT **O, BAT **U, BAT *b, bool ordered, bool persists, bool 
 	} else if (tt == TYPE_sht) {
 		sht *op = (sht*)Tloc(o, 0);
 		bool havenil = false;
-		BATloop(b, p, q) {
+		BATloop(&bi, p, q) {
 			BUN up = 0;
-			HASHloop(ui, ui.b->thash, up, BUNtail(bi, p)) {
+			HASHloop(&ui, ui.b->thash, up, BUNtail(&bi, p)) {
 				op[p] = (sht)up;
 				havenil |= is_sht_nil(op[p]);
 			}
@@ -201,9 +202,9 @@ DICTcompress_intern(BAT **O, BAT **U, BAT *b, bool ordered, bool persists, bool 
 	} else {
 		int *op = (int*)Tloc(o, 0);
 		bool havenil = false;
-		BATloop(b, p, q) {
+		BATloop(&bi, p, q) {
 			BUN up = 0;
-			HASHloop(ui, ui.b->thash, up, BUNtail(bi, p)) {
+			HASHloop(&ui, ui.b->thash, up, BUNtail(&bi, p)) {
 				op[p] = (int)up;
 				havenil |= is_int_nil(op[p]);
 			}
@@ -337,7 +338,7 @@ DICTcompress_col(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	do { \
 		TPE *up = Tloc(u, 0); \
 		TPE *restrict bp = Tloc(b, 0); \
-		BATloop(o, p, q) { \
+		BATloop(&oi, p, q) { \
 			TPE v = up[op[p]]; \
 			nils |= is_##TPE##_nil(v); \
 			bp[p] = v; \
@@ -375,9 +376,9 @@ DICTdecompress_(BAT *o, BAT *u, role_t role)
 			break;
 #endif
 		default:
-			BATloop(o, p, q) {
+			BATloop(&oi, p, q) {
 				BUN up = op[p];
-				if (BUNappend(b, BUNtail(ui, up), false) != GDK_SUCCEED) {
+				if (BUNappend(b, BUNtail(&ui, up), false) != GDK_SUCCEED) {
 					bat_iterator_end(&oi);
 					bat_destroy(b);
 					return NULL;
@@ -400,9 +401,9 @@ DICTdecompress_(BAT *o, BAT *u, role_t role)
 			break;
 #endif
 		default:
-			BATloop(o, p, q) {
+			BATloop(&oi, p, q) {
 				BUN up = op[p];
-				if (BUNappend(b, BUNtail(ui, up), false) != GDK_SUCCEED) {
+				if (BUNappend(b, BUNtail(&ui, up), false) != GDK_SUCCEED) {
 					bat_iterator_end(&oi);
 					bat_destroy(b);
 					return NULL;
@@ -425,9 +426,9 @@ DICTdecompress_(BAT *o, BAT *u, role_t role)
 			break;
 #endif
 		default:
-			BATloop(o, p, q) {
+			BATloop(&oi, p, q) {
 				BUN up = op[p];
-				if (BUNappend(b, BUNtail(ui, up), false) != GDK_SUCCEED) {
+				if (BUNappend(b, BUNtail(&ui, up), false) != GDK_SUCCEED) {
 					bat_iterator_end(&oi);
 					bat_destroy(b);
 					return NULL;
@@ -484,14 +485,14 @@ convert_oid( BAT *o, int rt)
 	if (rt == TYPE_bte) {
 		unsigned char *rp = Tloc(b, 0);
 		if (oi.type == TYPE_void) {
-			BATloop(o, p, q) {
+			BATloop(&oi, p, q) {
 				rp[p] = (unsigned char) (p+o->tseqbase);
 				brokenrange |= ((bte)rp[p] < 0);
 				nil |= ((bte)rp[p] == bte_nil);
 			}
 		} else {
 			oid *op = Tloc(o, 0);
-			BATloop(o, p, q) {
+			BATloop(&oi, p, q) {
 				rp[p] = (unsigned char) op[p];
 				brokenrange |= ((bte)rp[p] < 0);
 				nil |= ((bte)rp[p] == bte_nil);
@@ -500,14 +501,14 @@ convert_oid( BAT *o, int rt)
 	} else if (rt == TYPE_sht) {
 		unsigned short *rp = Tloc(b, 0);
 		if (oi.type == TYPE_void) {
-			BATloop(o, p, q) {
+			BATloop(&oi, p, q) {
 				rp[p] = (unsigned short) (p+o->tseqbase);
 				brokenrange |= ((short)rp[p] < 0);
 				nil |= ((short)rp[p] == sht_nil);
 			}
 		} else {
 			oid *op = Tloc(o, 0);
-			BATloop(o, p, q) {
+			BATloop(&oi, p, q) {
 				rp[p] = (unsigned short) op[p];
 				brokenrange |= ((short)rp[p] < 0);
 				nil |= ((short)rp[p] == sht_nil);
@@ -516,14 +517,14 @@ convert_oid( BAT *o, int rt)
 	} else if (rt == TYPE_int) {
 		unsigned short *rp = Tloc(b, 0);
 		if (oi.type == TYPE_void) {
-			BATloop(o, p, q) {
+			BATloop(&oi, p, q) {
 				rp[p] = (unsigned short) (p+o->tseqbase);
 				brokenrange |= ((short)rp[p] < 0);
 				nil |= ((short)rp[p] == int_nil);
 			}
 		} else {
 			oid *op = Tloc(o, 0);
-			BATloop(o, p, q) {
+			BATloop(&oi, p, q) {
 				rp[p] = (unsigned short) op[p];
 				brokenrange |= ((short)rp[p] < 0);
 				nil |= ((short)rp[p] == int_nil);
@@ -818,7 +819,7 @@ DICTthetaselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		BUN p = BUN_NONE;
 		if (ATOMextern(lvi.type))
 			v = *(ptr*)v;
-		if (ATOMcmp(lvi.type, v,  ATOMnilptr(lvi.type)) == 0) {
+		if (ATOMeq(lvi.type, v,  ATOMnilptr(lvi.type))) {
 			/* corner case, if v is NULL skip any calculations */
 			bn = BATdense(0, 0, 0);
 		} else {
@@ -827,10 +828,10 @@ DICTthetaselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			} else if (op[0] == '<' || op[0] == '>') {
 				p = SORTfndfirst(lv, v);
 				if (p != BUN_NONE && op[0] == '<' && op[1] == '=') {
-					if (ATOMcmp(lvi.type, v, BUNtail(lvi, p)) != 0)
+					if (!ATOMeq(lvi.type, v, BUNtail(&lvi, p)))
 						p--;
 				} else if (p != BUN_NONE && op[0] == '>' && !op[1]) {
-					if (ATOMcmp(lvi.type, v, BUNtail(lvi, p)) != 0)
+					if (!ATOMeq(lvi.type, v, BUNtail(&lvi, p)))
 						op = ">=";
 				}
 			}
@@ -970,15 +971,15 @@ DICTselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	/* here we don't need open ended parts with nil */
 	if (!anti) {
 		const void *nilptr = ATOMnilptr(lvi.type);
-		if (li == 1 && ATOMcmp(lvi.type, l, nilptr) == 0) {
+		if (li == 1 && ATOMeq(lvi.type, l, nilptr)) {
 			l = h;
 			li = 0;
 		}
-		if (hi == 1 && ATOMcmp(lvi.type, h, nilptr) == 0) {
+		if (hi == 1 && ATOMeq(lvi.type, h, nilptr)) {
 			h = l;
 			hi = 0;
 		}
-		if (ATOMcmp(lvi.type, l, h) == 0 && ATOMcmp(lvi.type, h, nilptr) == 0) /* ugh sql nil != nil */
+		if (ATOMeq(lvi.type, l, h) && ATOMeq(lvi.type, h, nilptr)) /* ugh sql nil != nil */
 			anti = 1;
 	}
 	BUN max_cnt = lvi.type == TYPE_bte?256:(64*1024);
@@ -1200,7 +1201,7 @@ DICTprepare4append(BAT **noffsets, BAT *vals, BAT *dict)
 		for(BUN i = 0; i<sz; i++) {
 			BUN up = 0;
 			int f = 0;
-			HASHloop(ui, ui.b->thash, up, BUNtail(bi, i)) {
+			HASHloop(&ui, ui.b->thash, up, BUNtail(&bi, i)) {
 				op[i] = (bte)up;
 				f = 1;
 			}
@@ -1233,7 +1234,7 @@ DICTprepare4append(BAT **noffsets, BAT *vals, BAT *dict)
 					tt = TYPE_sht;
 					break;
 				} else {
-					if (BUNappend(dict, BUNtail(bi, i), true) != GDK_SUCCEED ||
+					if (BUNappend(dict, BUNtail(&bi, i), true) != GDK_SUCCEED ||
 					   (!dict->thash && BAThash(dict) != GDK_SUCCEED)) {
 						bat_destroy(n);
 						bat_iterator_end(&bi);
@@ -1252,7 +1253,7 @@ DICTprepare4append(BAT **noffsets, BAT *vals, BAT *dict)
 		for(BUN i = nf; i<sz; i++) {
 			BUN up = 0;
 			int f = 0;
-			HASHloop(ui, ui.b->thash, up, BUNtail(bi, i)) {
+			HASHloop(&ui, ui.b->thash, up, BUNtail(&bi, i)) {
 				op[i] = (sht)up;
 				f = 1;
 			}
@@ -1274,7 +1275,7 @@ DICTprepare4append(BAT **noffsets, BAT *vals, BAT *dict)
 					tt = TYPE_int;
 					break;
 				} else {
-					if (BUNappend(dict, BUNtail(bi, i), true) != GDK_SUCCEED ||
+					if (BUNappend(dict, BUNtail(&bi, i), true) != GDK_SUCCEED ||
 					   (!dict->thash && BAThash(dict) != GDK_SUCCEED)) {
 						assert(0);
 						bat_destroy(n);
@@ -1294,7 +1295,7 @@ DICTprepare4append(BAT **noffsets, BAT *vals, BAT *dict)
 		for(BUN i = nf; i<sz; i++) {
 			BUN up = 0;
 			int f = 0;
-			HASHloop(ui, ui.b->thash, up, BUNtail(bi, i)) {
+			HASHloop(&ui, ui.b->thash, up, BUNtail(&bi, i)) {
 				op[i] = (int)up;
 				f = 1;
 			}
@@ -1304,7 +1305,7 @@ DICTprepare4append(BAT **noffsets, BAT *vals, BAT *dict)
 						bat_iterator_end(&bi);
 						return -2;
 				} else {
-					if (BUNappend(dict, BUNtail(bi, i), true) != GDK_SUCCEED ||
+					if (BUNappend(dict, BUNtail(&bi, i), true) != GDK_SUCCEED ||
 					   (!dict->thash && BAThash(dict) != GDK_SUCCEED)) {
 						bat_destroy(n);
 						bat_iterator_end(&bi);
@@ -1397,7 +1398,7 @@ DICTprepare4append_vals(void **noffsets, void *vals, BUN cnt, BAT *dict)
 			void *val = (void*)vp;
 			if (varsized)
 				val = *(void**)vp;
-			HASHloop(ui, ui.b->thash, up, val) {
+			HASHloop(&ui, ui.b->thash, up, val) {
 				op[i] = (bte)up;
 				f = 1;
 			}
@@ -1444,7 +1445,7 @@ DICTprepare4append_vals(void **noffsets, void *vals, BUN cnt, BAT *dict)
 			void *val = (void*)vp;
 			if (varsized)
 				val = *(void**)vp;
-			HASHloop(ui, ui.b->thash, up, val) {
+			HASHloop(&ui, ui.b->thash, up, val) {
 				op[i] = (sht)up;
 				f = 1;
 			}
@@ -1482,7 +1483,7 @@ DICTprepare4append_vals(void **noffsets, void *vals, BUN cnt, BAT *dict)
 			void *val = (void*)vp;
 			if (varsized)
 				val = *(void**)vp;
-			HASHloop(ui, ui.b->thash, up, val) {
+			HASHloop(&ui, ui.b->thash, up, val) {
 				op[i] = (int)up;
 				f = 1;
 			}

@@ -3,11 +3,9 @@
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024, 2025 MonetDB Foundation;
- * Copyright August 2008 - 2023 MonetDB B.V.;
- * Copyright 1997 - July 2008 CWI.
+ * For copyright information, see the file debian/copyright.
  */
 
 #include "monetdb_config.h"
@@ -38,8 +36,7 @@
  * row count becomes non-deterministic.
  */
 str
-OPTcostModelImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
-						   InstrPtr pci)
+OPTcostModelImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	int i;
 	BUN c1, c2;
@@ -68,7 +65,7 @@ OPTcostModelImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 					   || getFunctionId(p) == projectionpathRef) {
 				/* assume 1-1 joins */
 				newRows(1, 2, (c1 < c2 ? c1 : c2), 0);
-			} else if (getFunctionId(p) == crossRef) {
+			} else if (getFunctionId(p) == crossproductRef) {
 				newRows(1, 2,
 						((log((double) c1) + log((double) c2) >
 						  log(INT_MAX) ? INT_MAX : c1 * c2 + 1)), 0);
@@ -122,7 +119,7 @@ OPTcostModelImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 					newRows(1, 1, (c1 <= 1 ? 1 : c1 - 1), 1);
 				}
 			}
-		} else if (getModuleId(p) == groupRef) {
+		} else if (getModuleId(p) == groupRef || getModuleId(p) == igroupRef) {
 			if (getFunctionId(p) == subgroupRef || getFunctionId(p) == groupRef) {
 				newRows(1, 1, (c1 / 10 + 1), 0);
 			} else {

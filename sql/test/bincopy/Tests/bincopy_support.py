@@ -12,8 +12,10 @@ NRECS = 1_000_000
 # location generated test data files.
 BINCOPY_FILES = os.environ.get('BINCOPY_FILES', None) or os.environ['TSTTRGDIR']
 
+
 class DataMaker:
-    def __init__(self):
+    def __init__(self, nrecs):
+        self.nrecs = nrecs
         self.fixed_substitutions = dict()
         self.work_list = set()
         self.outfile_to_expected = dict()
@@ -59,11 +61,11 @@ class DataMaker:
             var = var[3:]
             ext = '.ne'
             flags.append('--native-endian')
-        base = f'bincopy_{var}{ext}.bin'
+        base = f'bincopy_{var}_{self.nrecs}{ext}.bin'
         dst_filename = os.path.join(BINCOPY_FILES, base)
         tmp_filename = os.path.join(BINCOPY_FILES, 'tmp_' + base)
         if not os.path.isfile(dst_filename):
-            cmd = ("bincopydata", *flags, var, str(NRECS), tmp_filename)
+            cmd = ("bincopydata", *flags, var, str(self.nrecs), tmp_filename)
             self.work_list.add( (cmd, tmp_filename, dst_filename))
         return dst_filename
 
@@ -85,20 +87,19 @@ class DataMaker:
         return self.outfile_to_expected.items()
 
 
-
-def run_test(side, testcase):
+def run_test(side, testcase, nrecs=NRECS):
     code, expected_result = testcase
     assert len(re.findall('@ON@', code)) == len(re.findall('COPY', code))
     assert '@ON@' in code
     # generate the query
-    data_maker = DataMaker()
+    data_maker = DataMaker(nrecs)
     data_maker.additionally('ON', 'ON ' + side.upper())
-    data_maker.additionally('NRECS', NRECS)
-    data_maker.additionally('NRECS_DIV_4', NRECS / 4)
+    data_maker.additionally('NRECS', nrecs)
     massage = lambda s: re.sub(r'@(>?(\w|!)+)@', data_maker.substitute_match, s)
     code = massage(code)
     code = f"START TRANSACTION;\n{code}\nROLLBACK;\n"
-    open(os.path.join(BINCOPY_FILES, 'test.sql'), "w").write(code)
+    with open(os.path.join(BINCOPY_FILES, 'test.sql'), "w") as fil:
+        fil.write(code)
 
     # generate the required data files
     data_maker.generate_files()
@@ -115,16 +116,26 @@ def run_test(side, testcase):
             if err_msg:
                 err_msg = massage(err_msg)
             tr.assertFailed(err_code, err_msg)
-        for outfile, expected in data_maker.outfiles():
+        for outfile, expectedfile in data_maker.outfiles():
             if not os.path.exists(outfile):
                 tr.fail(f'Output file {outfile} was not created')
-            expected_content = open(expected, 'rb').read()
-            content = open(outfile, 'rb').read()
-            if len(content) != len(expected_content):
-                tr.fail(f'Outfile {outfile} has wrong length: {len(content)}, expected {len(expected_content)}')
-            elif content != expected_content:
-                tr.fail(f'Content of outfile {outfile} differs from {expected}')
+            decoded_expected_filename, expected_content = read_decode(expectedfile)
+            decoded_actual_filename, actual_content = read_decode(outfile)
+            if len(actual_content) != len(expected_content):
+                tr.fail(f'Outfile {decoded_actual_filename} has wrong length: {len(actual_content)}, expected {len(expected_content)}')
+            elif actual_content != expected_content:
+                tr.fail(f'Content of outfile {decoded_actual_filename} differs from {decoded_expected_filename}')
 
+
+def read_decode(filename):
+    if 'string' in os.path.basename(filename):
+        # must be decoded
+        outfile = filename + '.decoded'
+        with open(filename, 'rb') as rd, open(outfile, 'wb') as wr:
+                subprocess.check_call(['backrefencode', '-d'], stdin=rd, stdout=wr)
+        filename = outfile
+    with open(filename, 'rb') as f:
+        return filename, f.read()
 
 
 INTS = ("""
@@ -145,7 +156,7 @@ STRINGS = ("""
 CREATE TABLE foo(id INT NOT NULL, s VARCHAR(20));
 COPY BINARY INTO foo(id, s) FROM @ints@, @strings@ @ON@;
 COPY SELECT id, s FROM foo INTO BINARY @>ints@, @>strings@ @ON@;
-SELECT COUNT(id) FROM foo WHERE s = ('int' || id);
+SELECT COUNT(id) FROM foo WHERE s = ('int' || id % 987);
 """, [f"{NRECS}"])
 
 NULL_INTS = ("""
@@ -176,7 +187,7 @@ COPY BINARY INTO foo(id, s) FROM @ints@, @broken_strings@ @ON@;
 NEWLINE_STRINGS = (r"""
 CREATE TABLE foo(id INT NOT NULL, s TEXT);
 COPY BINARY INTO foo(id, s) FROM @ints@, @newline_strings@ @ON@;
-SELECT COUNT(id) FROM foo WHERE s = (E'RN\r\nR\r' || id);
+SELECT COUNT(id) FROM foo WHERE s = (E'RN\r\nR\r' || id % 987);
 """, [f"{NRECS}"])
 
 NULL_STRINGS = ("""
@@ -193,24 +204,26 @@ CREATE TABLE foo(id INT NOT NULL, b BLOB);
 COPY BINARY INTO foo(id, b) FROM @ints@, @null_blobs@ @ON@;
 COPY SELECT id, b FROM foo INTO BINARY @>ints@, @>null_blobs@ @ON@;
 
-SELECT 'nulls', COUNT(*), NULL FROM foo WHERE (b IS NULL) <> (id % 3 = 2)
+select * from (
+SELECT 1 as id, 'nulls', COUNT(*), NULL FROM foo WHERE (b IS NULL) <> (id % 3 = 2)
 UNION
-SELECT 'lengths', COUNT(*), NULL FROM foo WHERE b IS NOT NULL AND id % 1000 <> length(b)
+SELECT 2 as id, 'lengths', COUNT(*), NULL FROM foo WHERE b IS NOT NULL AND id % 1000 <> length(b)
 UNION
-SELECT 'blob5', NULL, b FROM foo WHERE id = 6;
-""", ["nulls,0,", "lengths,0,", "blob5,,D3D2D1D3D2D1" ])
+SELECT 3 as id, 'blob5', NULL, b FROM foo WHERE id = 6) as r order by id ;
+""", ["1,nulls,0,", "2,lengths,0,", "3,blob5,,D3D2D1D3D2D1" ])
 
 NULL_BLOBS_LE = ("""
 CREATE TABLE foo(id INT NOT NULL, b BLOB);
 COPY LITTLE ENDIAN BINARY INTO foo(id, b) FROM @le_ints@, @le_null_blobs@ @ON@;
 COPY SELECT id, b FROM foo INTO LITTLE ENDIAN BINARY @>le_ints@, @>le_null_blobs@ @ON@;
 
-SELECT 'nulls', COUNT(*), NULL FROM foo WHERE (b IS NULL) <> (id % 3 = 2)
+select * from (
+SELECT 1 as id, 'nulls', COUNT(*), NULL FROM foo WHERE (b IS NULL) <> (id % 3 = 2)
 UNION
-SELECT 'lengths', COUNT(*), NULL FROM foo WHERE b IS NOT NULL AND id % 1000 <> length(b)
+SELECT 2 as id, 'lengths', COUNT(*), NULL FROM foo WHERE b IS NOT NULL AND id % 1000 <> length(b)
 UNION
-SELECT 'blob5', NULL, b FROM foo WHERE id = 6;
-""", ["nulls,0,", "lengths,0,", "blob5,,D3D2D1D3D2D1" ])
+SELECT 3 as id, 'blob5', NULL, b FROM foo WHERE id = 6) as r order by id ;
+""", ["1,nulls,0,", "2,lengths,0,", "3,blob5,,D3D2D1D3D2D1" ])
 
 
 NULL_BLOBS_BE = ("""
@@ -218,12 +231,13 @@ CREATE TABLE foo(id INT NOT NULL, b BLOB);
 COPY BIG ENDIAN BINARY INTO foo(id, b) FROM @be_ints@, @be_null_blobs@ @ON@;
 COPY SELECT id, b FROM foo INTO BIG ENDIAN BINARY @>be_ints@, @>be_null_blobs@ @ON@;
 
-SELECT 'nulls', COUNT(*), NULL FROM foo WHERE (b IS NULL) <> (id % 3 = 2)
+select * from (
+SELECT 1 as id, 'nulls', COUNT(*), NULL FROM foo WHERE (b IS NULL) <> (id % 3 = 2)
 UNION
-SELECT 'lengths', COUNT(*), NULL FROM foo WHERE b IS NOT NULL AND id % 1000 <> length(b)
+SELECT 2 as id, 'lengths', COUNT(*), NULL FROM foo WHERE b IS NOT NULL AND id % 1000 <> length(b)
 UNION
-SELECT 'blob5', NULL, b FROM foo WHERE id = 6;
-""", ["nulls,0,", "lengths,0,", "blob5,,D3D2D1D3D2D1" ])
+SELECT 3 as id, 'blob5', NULL, b FROM foo WHERE id = 6) as r order by id ;
+""", ["1,nulls,0,", "2,lengths,0,", "3,blob5,,D3D2D1D3D2D1" ])
 
 
 
@@ -721,3 +735,80 @@ SELECT
 FROM foo;
 """, [f"{NRECS},{42*NRECS},{(10 + NRECS+9) * NRECS // 2}"]
 )
+
+INET4 = (f"""
+CREATE TABLE foo(id INT NOT NULL, i4 inet4);
+COPY BINARY INTO foo(id, i4) FROM @ints@, @inet4@ @ON@;
+COPY SELECT id, i4 FROM foo INTO BINARY @>ints@, @>inet4@ @ON@;
+--
+WITH
+    seeds AS (
+        SELECT
+            value AS id,
+            ifthenelse(value = 3, NULL, value) AS value
+        FROM sys.generate_series(0, {NRECS})
+    ),
+    numbers AS (
+        SELECT
+            id,
+            (value+1) * 1_001_001_001 AS i
+        FROM seeds
+    ),
+    strings AS (
+        SELECT
+            id,
+            '' || (i>>24) % 256 || '.' || (i>>16) % 256 || '.' || (i>>8) % 256 || '.' || i % 256 AS i4s
+        FROM numbers
+    ),
+    refdata AS (
+        SELECT id, CAST(i4s AS inet4) AS i4 FROM strings
+    )
+SELECT COUNT(*)
+FROM foo FULL OUTER JOIN refdata ON foo.id = refdata.id
+WHERE foo.i4 = refdata.i4 OR (foo.i4 IS NULL AND refdata.i4 IS NULL);
+""", [f"{NRECS}"])
+
+INET6 = (f"""
+CREATE TABLE foo(id INT NOT NULL, i6 inet6);
+COPY BINARY INTO foo(id, i6) FROM @ints@, @inet6@ @ON@;
+COPY SELECT id, i6 FROM foo INTO BINARY @>ints@, @>inet6@ @ON@;
+--
+WITH
+    seeds AS (
+        SELECT
+            value AS id,
+            ifthenelse(value = 3, NULL, value) AS value
+        FROM sys.generate_series(0, 1_000_000)
+    ),
+    numbers AS (
+        SELECT
+            id,
+            (value + 1) * 2_142_970_729 AS i0,
+            (value + 1) * 2_011_938_419 AS i1,
+            (value + 1) * 1_616_437_157 AS i2,
+            (value + 1) * 1_271_098_355 AS i3
+        FROM seeds
+    ),
+    strings AS (
+        SELECT
+            id,
+            (
+                to_hex((i0 >> 16) & 0xFFFF) || ':' ||
+                to_hex( i0         & 0xFFFF) || ':' ||
+                to_hex((i1 >> 16) & 0xFFFF) || ':' ||
+                to_hex( i1         & 0xFFFF) || ':' ||
+                to_hex((i2 >> 16) & 0xFFFF) || ':' ||
+                to_hex( i2         & 0xFFFF) || ':' ||
+                to_hex((i3 >> 16) & 0xFFFF) || ':' ||
+                to_hex( i3         & 0xFFFF)
+            ) AS i6s
+        FROM numbers
+    ),
+    refdata AS (
+        SELECT id, CAST(i6s AS inet6) AS i6 FROM strings
+    )
+SELECT COUNT(*)
+FROM foo FULL OUTER JOIN refdata ON foo.id = refdata.id
+WHERE foo.i6 = refdata.i6 OR (foo.i6 IS NULL AND refdata.i6 IS NULL);
+""", [f"{NRECS}"])
+

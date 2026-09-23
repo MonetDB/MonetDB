@@ -1,4 +1,5 @@
-import os, sys, tempfile, pymonetdb
+from MonetDBtesting import tpymonetdb as pymonetdb
+import os, sys, tempfile
 try:
     from MonetDBtesting import process
 except ImportError:
@@ -10,7 +11,9 @@ with tempfile.TemporaryDirectory() as farm_dir:
                         dbfarm=os.path.join(farm_dir, 'db1'),
                         stdin=process.PIPE,
                         stdout=process.PIPE, stderr=process.PIPE) as s:
-        cli = pymonetdb.connect(port=s.dbport,database='db1',autocommit=True)
+        cli = pymonetdb.connect(port=s.dbport,
+                                database=s.usock or 'db1',
+                                autocommit=True)
         cur = cli.cursor()
         cur.execute('''
         start transaction;
@@ -49,7 +52,9 @@ with tempfile.TemporaryDirectory() as farm_dir:
                         dbfarm=os.path.join(farm_dir, 'db1'),
                         stdin=process.PIPE,
                         stdout=process.PIPE, stderr=process.PIPE) as s:
-        cli = pymonetdb.connect(port=s.dbport,database='db1',autocommit=True)
+        cli = pymonetdb.connect(port=s.dbport,
+                                database=s.usock or 'db1',
+                                autocommit=True)
         cur = cli.cursor()
         cur.execute('select count(*) from table3282;')
         if cur.fetchall()[0][0] != 2097152:
@@ -61,7 +66,9 @@ with tempfile.TemporaryDirectory() as farm_dir:
                         dbfarm=os.path.join(farm_dir, 'db1'),
                         stdin=process.PIPE,
                         stdout=process.PIPE, stderr=process.PIPE) as s:
-        cli = pymonetdb.connect(port=s.dbport,database='db1',autocommit=True)
+        cli = pymonetdb.connect(port=s.dbport,
+                                database=s.usock or 'db1',
+                                autocommit=True)
         cur = cli.cursor()
         cur.execute('select count(*) from table3282;')
         if cur.fetchall()[0][0] != 2097152:

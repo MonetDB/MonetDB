@@ -3,11 +3,9 @@
 #
 # This Source Code Form is subject to the terms of the Mozilla Public
 # License, v. 2.0.  If a copy of the MPL was not distributed with this
-# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+# file, You can obtain one at https://mozilla.org/MPL/2.0/.
 #
-# Copyright 2024, 2025 MonetDB Foundation;
-# Copyright August 2008 - 2023 MonetDB B.V.;
-# Copyright 1997 - July 2008 CWI.
+# For copyright information, see the file debian/copyright.
 #]]
 
 set(sql_public_headers
@@ -37,7 +35,6 @@ set(sql_public_headers
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/../../server/rel_file_loader.h>
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/../../server/rel_optimizer.h>
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/../../server/rel_rewriter.h>
-  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/../../server/rel_partition.h>
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/../../server/rel_prop.h>
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/../../server/rel_exp.h>
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/../../server/rel_rel.h>
@@ -71,7 +68,6 @@ set(sql_public_headers
   $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/monetdb/sql_parser.h>
   $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/monetdb/sql_privileges.h>
   $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/monetdb/rel_optimizer.h>
-  $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/monetdb/rel_partition.h>
   $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/monetdb/rel_prop.h>
   $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/monetdb/rel_exp.h>
   $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/monetdb/rel_rel.h>
@@ -105,9 +101,11 @@ set(include_sql_files
   25_debug
   26_sysmon
   27_rejects
+  28_copy
   39_analytics
   40_json
   42_md5sum
+  44_inet46
   45_uuid
   46_profiler
   47_regexp
@@ -136,7 +134,7 @@ create_include_object(
 
 target_sources(sql
   PRIVATE
-  sql.c sql.h
+  sql.c sql_monet_backend.h
   mal_backend.c
   sql_user.c sql_user.h
   sql_scenario.c sql_scenario.h
@@ -144,11 +142,20 @@ target_sources(sql
   sql_assert.c sql_assert.h
   sql_upgrades.c sql_upgrades.h
   rel_bin.c rel_bin.h
+  rel_copy.c rel_copy.h
+  rel_pphash.c rel_pphash.h
+  rel_pptopn.c rel_pptopn.h
   rel_physical.c rel_physical.h
   rel_predicates.c rel_predicates.h
+  rel_util.c rel_util.h
+  bin_partition.c bin_partition.h
+  bin_partition_by_slice.c bin_partition_by_slice.h
+  bin_partition_by_value.c bin_partition_by_value.h
+  rel_orderby.c rel_orderby.h
   sql_cat.c sql_cat.h
   sql_transaction.c sql_transaction.h
   sql_statement.c
+  sql_pp_statement.c sql_pp_statement.h
   sql_statistics.c sql_statistics.h
   sql_gencode.c sql_gencode.h
   sql_optimizer.c sql_optimizer.h
@@ -159,7 +166,6 @@ target_sources(sql
   sql_round_impl.h
   sql_fround.c sql_fround_impl.h
   sql_orderidx.c sql_orderidx.h
-  sql_strimps.c sql_strimps.h
   sql_time.c
   sql_bincopy.c sql_bincopyconvert.c sql_bincopyconvert.h
   sql_datetrunc.c
@@ -168,6 +174,8 @@ target_sources(sql
   opt_backend.h
   for.c for.h
   dict.c dict.h
+  copy.c copy_misc.c copy_io.c copy_scan.c copy.h
+  copy_convert.c copy_convert_num.h
   ${MONETDB_CURRENT_SQL_SOURCES}
   PUBLIC
   ${sql_public_headers})
@@ -180,6 +188,8 @@ target_include_directories(sql
   $<TARGET_PROPERTY:mal,INTERFACE_INCLUDE_DIRECTORIES>
   $<TARGET_PROPERTY:malmodules,INTERFACE_INCLUDE_DIRECTORIES>
   $<TARGET_PROPERTY:kernel,INTERFACE_INCLUDE_DIRECTORIES>
+  $<TARGET_PROPERTY:sqlcommon,INTERFACE_INCLUDE_DIRECTORIES>
+  $<TARGET_PROPERTY:sqlstorage,INTERFACE_INCLUDE_DIRECTORIES>
   PUBLIC
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
   $<INSTALL_INTERFACE:${INCLUDEDIR}/monetdb>)
@@ -187,15 +197,14 @@ target_include_directories(sql
 target_link_libraries(sql
   PRIVATE
   monetdb_config_header
-  sqlstorage
-  sqlcommon
-  batstore
   sqlserver
   sqlinclude
   copybinary
   monetdb5
   mapi
-  bat)
+  bat
+  mutils
+  ${XXHASH_LDFLAGS})
 
 set_target_properties(sql
   PROPERTIES

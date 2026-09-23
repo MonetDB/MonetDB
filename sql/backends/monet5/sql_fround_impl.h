@@ -3,11 +3,9 @@
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024, 2025 MonetDB Foundation;
- * Copyright August 2008 - 2023 MonetDB B.V.;
- * Copyright 1997 - July 2008 CWI.
+ * For copyright information, see the file debian/copyright.
  */
 
 #define dec_round_body		FUN(TYPE, dec_round_body)
@@ -31,8 +29,9 @@ dec_round_body(TYPE v, TYPE r)
 }
 
 str
-dec_round_wrap(TYPE *res, const TYPE *v, const TYPE *r)
+dec_round_wrap(Client ctx, TYPE *res, const TYPE *v, const TYPE *r)
 {
+	(void) ctx;
 	/* basic sanity checks */
 	assert(res && v);
 	TYPE rr = *r;
@@ -353,8 +352,9 @@ round_body(TYPE v, int r)
 }
 
 str
-round_wrap(TYPE *res, const TYPE *v, const bte *r)
+round_wrap(Client ctx, TYPE *res, const TYPE *v, const bte *r)
 {
+	(void) ctx;
 	/* basic sanity checks */
 	assert(res && v && r);
 	bte rr = *r;
@@ -660,8 +660,9 @@ bailout:
 }
 
 str
-trunc_wrap(TYPE *res, const TYPE *v, const int *r)
+trunc_wrap(Client ctx, TYPE *res, const TYPE *v, const int *r)
 {
+	(void) ctx;
 	int rr = *r;
 
 	if (is_int_nil(rr))

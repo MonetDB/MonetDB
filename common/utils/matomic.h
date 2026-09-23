@@ -3,11 +3,9 @@
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024, 2025 MonetDB Foundation;
- * Copyright August 2008 - 2023 MonetDB B.V.;
- * Copyright 1997 - July 2008 CWI.
+ * For copyright information, see the file debian/copyright.
  */
 
 /* This file provides interfaces to perform certain atomic operations
@@ -36,7 +34,6 @@
  *
  * Some of these are also available for pointers:
  * ATOMIC_PTR_INIT
- * ATOMIC_PTR_DESTROY
  * ATOMIC_PTR_GET
  * ATOMIC_PTR_SET
  * ATOMIC_PTR_XCG
@@ -56,6 +53,8 @@
 #ifndef _MATOMIC_H_
 #define _MATOMIC_H_
 
+#include "monetdb_config.h"
+
 /* the atomic type we export is always a 64 bit unsigned integer */
 
 /* ignore __STDC_NO_ATOMICS__ if compiling using Intel compiler on
@@ -66,23 +65,25 @@
 
 #include <atomic>
 
-#if SIZEOF_LONG_LONG == 8
-#if ATOMIC_LLONG_LOCK_FREE != 2
-#if ATOMIC_LLONG_LOCK_FREE != 1
-#error "we need _Atomic(unsigned [long] long) to be lock free"
-#endif
-typedef atomic_ulong ATOMIC_TYPE __attribute__((__aligned__(8)));
-typedef unsigned long ATOMIC_BASE_TYPE;
-#else
-typedef atomic_ullong ATOMIC_TYPE __attribute__((__aligned__(8)));
-typedef unsigned long long ATOMIC_BASE_TYPE;
-#endif
-#elif SIZEOF_LONG == 8
+#if SIZEOF_LONG == 8
 #if ATOMIC_LONG_LOCK_FREE != 2
 #error "we need _Atomic(unsigned long) to be lock free"
 #endif
-typedef atomic_ulong ATOMIC_TYPE __attribute__((__aligned__(8)));
+typedef volatile atomic_ulong ATOMIC_TYPE __attribute__((__aligned__(8)));
 typedef unsigned long ATOMIC_BASE_TYPE;
+#elif SIZEOF_LONG_LONG == 8
+#if ATOMIC_LLONG_LOCK_FREE != 2
+#if SIZEOF_SIZE_T == 4 && ATOMIC_LONG_LOCK_FREE == 2
+/* on 32 bit arch, fall back to 32 bit atomics if 64 bit is not lock free */
+typedef volatile atomic_ulong ATOMIC_TYPE __attribute__((__aligned__(4)));
+typedef unsigned long ATOMIC_BASE_TYPE;
+#else
+#error "we need _Atomic(unsigned [long] long) to be lock free"
+#endif
+#else
+typedef volatile atomic_ullong ATOMIC_TYPE __attribute__((__aligned__(8)));
+typedef unsigned long long ATOMIC_BASE_TYPE;
+#endif
 #else
 #error "we need a 64 bit atomic type"
 #endif
@@ -91,23 +92,25 @@ typedef unsigned long ATOMIC_BASE_TYPE;
 
 #include <stdatomic.h>
 
-#if SIZEOF_LONG_LONG == 8
-#if ATOMIC_LLONG_LOCK_FREE != 2
-#if ATOMIC_LLONG_LOCK_FREE != 1
-#error "we need _Atomic(unsigned [long] long) to be lock free"
-#endif
-typedef atomic_ulong ATOMIC_TYPE __attribute__((__aligned__(8)));
-typedef unsigned long ATOMIC_BASE_TYPE;
-#else
-typedef volatile atomic_ullong ATOMIC_TYPE __attribute__((__aligned__(8)));
-typedef unsigned long long ATOMIC_BASE_TYPE;
-#endif
-#elif SIZEOF_LONG == 8
+#if SIZEOF_LONG == 8
 #if ATOMIC_LONG_LOCK_FREE != 2
 #error "we need _Atomic(unsigned long) to be lock free"
 #endif
 typedef volatile atomic_ulong ATOMIC_TYPE __attribute__((__aligned__(8)));
 typedef unsigned long ATOMIC_BASE_TYPE;
+#elif SIZEOF_LONG_LONG == 8
+#if ATOMIC_LLONG_LOCK_FREE != 2
+#if SIZEOF_SIZE_T == 4 && ATOMIC_LONG_LOCK_FREE == 2
+/* on 32 bit arch, fall back to 32 bit atomics */
+typedef volatile atomic_ulong ATOMIC_TYPE __attribute__((__aligned__(4)));
+typedef unsigned long ATOMIC_BASE_TYPE;
+#else
+#error "we need _Atomic(unsigned [long] long) to be lock free"
+#endif
+#else
+typedef volatile atomic_ullong ATOMIC_TYPE __attribute__((__aligned__(8)));
+typedef unsigned long long ATOMIC_BASE_TYPE;
+#endif
 #else
 #error "we need a 64 bit atomic type"
 #endif
@@ -130,7 +133,6 @@ typedef volatile atomic_address ATOMIC_PTR_TYPE;
 typedef void *_Atomic volatile ATOMIC_PTR_TYPE;
 #endif
 #define ATOMIC_PTR_INIT(var, val)	atomic_init(var, val)
-#define ATOMIC_PTR_DESTROY(var)		((void) 0)
 #define ATOMIC_PTR_VAR_INIT(val)	ATOMIC_VAR_INIT(val)
 #define ATOMIC_PTR_GET(var)			(*(var))
 #define ATOMIC_PTR_SET(var, val)	(*(var) = (void *) (val))
@@ -239,7 +241,6 @@ ATOMIC_CAS(ATOMIC_TYPE *var, ATOMIC_BASE_TYPE *exp, ATOMIC_BASE_TYPE des)
 
 typedef PVOID volatile ATOMIC_PTR_TYPE;
 #define ATOMIC_PTR_INIT(var, val)	(*(var) = (val))
-#define ATOMIC_PTR_DESTROY(var)		((void) 0)
 #define ATOMIC_PTR_VAR_INIT(val)	(val)
 #define ATOMIC_PTR_GET(var)		(*(var))
 #define ATOMIC_PTR_SET(var, val)	_InterlockedExchangePointer(var, (PVOID) (val))
@@ -288,7 +289,6 @@ typedef volatile ATOMIC_BASE_TYPE ATOMIC_TYPE __attribute__((__aligned__ (8)));
 typedef void *volatile ATOMIC_PTR_TYPE;
 #define ATOMIC_PTR_INIT(var, val)	(*(var) = (val))
 #define ATOMIC_PTR_VAR_INIT(val)	(val)
-#define ATOMIC_PTR_DESTROY(var)		((void) 0)
 #define ATOMIC_PTR_GET(var)		__atomic_load_n(var, __ATOMIC_SEQ_CST)
 #define ATOMIC_PTR_SET(var, val)	__atomic_store_n(var, (val), __ATOMIC_SEQ_CST)
 #define ATOMIC_PTR_XCG(var, val)	__atomic_exchange_n(var, (val), __ATOMIC_SEQ_CST)

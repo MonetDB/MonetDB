@@ -3,11 +3,9 @@
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024, 2025 MonetDB Foundation;
- * Copyright August 2008 - 2023 MonetDB B.V.;
- * Copyright 1997 - July 2008 CWI.
+ * For copyright information, see the file debian/copyright.
  */
 
 #include "monetdb_config.h"
@@ -1346,8 +1344,7 @@ BATnegcands(oid tseq, BUN nr, BAT *odels)
 		.dirty = true,
 		.refs = ATOMIC_VAR_INIT(1),
 	};
-	strconcat_len(dels->filename, sizeof(dels->filename),
-		      nme, ".theap", NULL);
+	strtconcat(dels->filename, sizeof(dels->filename), nme, ".theap", NULL);
 
 	if (dels->farmid < 0 ||
 	    HEAPalloc(dels, hi - lo + (sizeof(ccand_t)/sizeof(oid)), sizeof(oid)) != GDK_SUCCEED) {
@@ -1411,8 +1408,7 @@ BATmaskedcands(oid hseq, BUN nr, BAT *masked, bool selected)
 		.dirty = true,
 		.refs = ATOMIC_VAR_INIT(1),
 	};
-	strconcat_len(msks->filename, sizeof(msks->filename),
-		      nme, ".theap", NULL);
+	strtconcat(msks->filename, sizeof(msks->filename), nme, ".theap", NULL);
 
 	nmask = (nr + 31) / 32;
 	if (msks->farmid < 0 ||
@@ -1469,6 +1465,7 @@ BATmaskedcands(oid hseq, BUN nr, BAT *masked, bool selected)
 		GDKfree(msks);
 	}
 	BATsetcount(bn, cnt);
+	bn->tunique_est = (double) cnt;
 	TRC_DEBUG(ALGO, "hseq=" OIDFMT ", masked=" ALGOBATFMT ", selected=%s"
 		  " -> " ALGOBATFMT "\n",
 		  hseq, ALGOBATPAR(masked),
@@ -1527,8 +1524,8 @@ BATunmask(BAT *b)
 			.dirty = true,
 			.refs = ATOMIC_VAR_INIT(1),
 		};
-		strconcat_len(dels->filename, sizeof(dels->filename),
-			      BBP_physical(bn->batCacheid), ".theap", NULL);
+		strtconcat(dels->filename, sizeof(dels->filename),
+			   BBP_physical(bn->batCacheid), ".theap", NULL);
 
 		if (dels->farmid < 0 ||
 		    HEAPalloc(dels, cnt * 32 - bi.count

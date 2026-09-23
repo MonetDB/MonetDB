@@ -3,11 +3,9 @@
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024, 2025 MonetDB Foundation;
- * Copyright August 2008 - 2023 MonetDB B.V.;
- * Copyright 1997 - July 2008 CWI.
+ * For copyright information, see the file debian/copyright.
  */
 
 #include "monetdb_config.h"
@@ -60,7 +58,7 @@ fractional_sep_first_opp:
 		*has_errors = 1;
 		goto end_state;
 	}
-	while (*dec == '0'){
+	while (*dec == '0' || *dec == '_'){
 		// skip leading zeros in preceding digits, e.g. '0004563.1234' => '4563.1234'
 		dec++;
 		if (*dec == '.') {
@@ -68,7 +66,9 @@ fractional_sep_first_opp:
 			goto fractional_sep_first_opp;
 		}
 	}
-	for (; *dec && (isdigit((unsigned char) *dec)); dec++) {
+	for (; *dec && (*dec == '_' || isdigit((unsigned char) *dec)); dec++) {
+		if (*dec == '_')
+			continue;
 		if (res > max0 || (res == max0 && *dec - '0' > max1)) {
 			*has_errors = 1;
 			return 0;
@@ -87,7 +87,9 @@ fractional_sep_first_opp:
 trailing_digits:
 	if (!isdigit((unsigned char) *dec))
 		goto trailing_whitespace;
-	for (; *dec && (isdigit((unsigned char) *dec)); dec++) {
+	for (; *dec && (*dec == '_' || isdigit((unsigned char) *dec)); dec++) {
+		if (*dec == '_')
+			continue;
 		if (res > max0 || (res == max0 && *dec - '0' > max1)) {
 			*has_errors = 1;
 			return 0;
@@ -148,7 +150,7 @@ decimal_to_str(allocator *sa, lng v, sql_subtype *t)
 	if (neg)
 		buf[cur--] = '-';
 	assert(cur >= -1);
-	return sa_strdup(sa, buf+cur+1);
+	return ma_strdup(sa, buf+cur+1);
 }
 
 unsigned int

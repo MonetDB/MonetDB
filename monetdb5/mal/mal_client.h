@@ -3,11 +3,9 @@
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024, 2025 MonetDB Foundation;
- * Copyright August 2008 - 2023 MonetDB B.V.;
- * Copyright 1997 - July 2008 CWI.
+ * For copyright information, see the file debian/copyright.
  */
 
 #ifndef _MAL_CLIENT_H_
@@ -68,7 +66,8 @@ typedef struct CLIENT {
 	init_client initClient;
 	exit_client exitClient;
 	/* if set to 'S' it will put the process to sleep */
-	bit sqlprofiler;			/* control off-line sql performance monitoring */
+	bool sqlprofiler;			/* control off-line sql performance monitoring */
+	bool no_mitosis;			/* don't use mitosis optimizer */
 	/*
 	 * Each session comes with resource limitations and predefined settings.
 	 */
@@ -77,8 +76,9 @@ typedef struct CLIENT {
 	int maxworkers;				/* max_workers from db_user_info table */
 	int memorylimit;			/* maximum memory currently allowed in MB */
 	lng maxmem;					/* max_memory from db_user_info table */
-	lng sessiontimeout;			/* session abort after x usec, 0 = no limit */
-	lng logical_sessiontimeout;	/* logical session timeout, client defined */
+	lng sessiontimeout;			/* GDKusec() time when session should abort, 0 = no limit */
+	int logical_sessiontimeout;	/* logical session timeout, client defined */
+	lng idletimeout;			/* idle in active transaction timeout */
 	lng querytimeout;			/* timeout per query in usec, 0 = no limit */
 	QryCtx qryctx;				/* per query limitations */
 
@@ -86,11 +86,11 @@ typedef struct CLIENT {
 	lng session;				/* usec since start of server */
 	time_t idle;				/* Time when the session became idle */
 	str peer;					/* Remote end of network connection */
-	str client_hostname;		/* Host name if reported by client, peer otherwise */
-	str client_application;		/* Application name reported by the client*/
-	str client_library;			/* MAPI client library reported by the client */
+	const char *client_hostname; /* Host name if reported by client, peer otherwise */
+	const char *client_application;	/* Application name reported by the client*/
+	const char *client_library;	/* MAPI client library reported by the client */
 	long client_pid;			/* client process id reported by the client */
-	str client_remark;					/* Other information reported by the client */
+	const char *client_remark; /* Other information reported by the client */
 
 	/*
 	 * For program debugging and performance trace we keep the actual resource claims.
@@ -146,7 +146,6 @@ typedef struct CLIENT {
 	 */
 	MT_Sema s;					/* sema to (de)activate thread */
 	const char *mythread;
-	str errbuf;					/* location of GDK exceptions */
 	struct CLIENT *father;
 	/*
 	 * Each client has a private entry point into the namespace and
@@ -159,6 +158,7 @@ typedef struct CLIENT {
 	Symbol backup;				/* saving the parser context for functions,commands/patterns */
 	MalStkPtr glb;				/* global variable stack */
 
+	allocator *ma;				/* main client memory allocator */
 	/*
 	 * Here are pointers to scenario backends contexts.  For the time
 	 * being just SQL.  We need a pointer for each of them, since they
@@ -170,6 +170,7 @@ typedef struct CLIENT {
 	/*
 	 *  Errors during copy into are collected in a user specific column set
 	 */
+	MT_Lock error_lock;
 	BAT *error_row;
 	BAT *error_fld;
 	BAT *error_msg;
@@ -184,6 +185,7 @@ typedef struct CLIENT {
 
 mal_export int MAL_MAXCLIENTS;
 mal_export ClientRec *mal_clients;
+mal_export bool default_pipeline_mode;
 
 mal_export Client MCgetClient(int id);
 mal_export Client MCinitClient(oid user, bstream *fin, stream *fout);
@@ -196,5 +198,10 @@ mal_export int MCpushClientInput(Client c, bstream *new_input, int listing,
 								 const char *prompt);
 mal_export int MCvalid(Client c);
 mal_export void MCsetClientInfo(Client c, const char *property, const char *value);
+
+#ifdef LIBMONETDB5
+extern int MCinitClientThread(Client c);
+extern bool MCshutdowninprogress(void);
+#endif
 
 #endif /* _MAL_CLIENT_H_ */

@@ -3,11 +3,9 @@
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024, 2025 MonetDB Foundation;
- * Copyright August 2008 - 2023 MonetDB B.V.;
- * Copyright 1997 - July 2008 CWI.
+ * For copyright information, see the file debian/copyright.
  */
 
 /**
@@ -52,7 +50,7 @@
 #include "msabaoth.h"
 #include "mutils.h" /* MT_lockf */
 #include "mcrypt.h" /* mcrypt_BackendSum */
-#include "mstring.h"			/* strcpy_len */
+#include "mstring.h"			/* strtcpy */
 #include "utils/utils.h"
 #include "utils/properties.h"
 #include "utils/glob.h"
@@ -151,6 +149,7 @@ logFD(dpair dp, int fd, const char *type, const char *dbname, long long pid, FIL
 	char *p, *q;
 	struct tm *tmp;
 	char mytime[20];
+	bool do_repeat = rest;
 
 	assert(fd == 0 || fd == 1);
 	do {
@@ -159,7 +158,7 @@ logFD(dpair dp, int fd, const char *type, const char *dbname, long long pid, FIL
 		  repeat:
 			n = read(dp->input[fd].fd, buf + len, sizeof(buf) - len - 1);
 			if (n <= 0) {
-				rest = false;
+				do_repeat = false;
 				break;
 			}
 			len += n;
@@ -202,7 +201,7 @@ logFD(dpair dp, int fd, const char *type, const char *dbname, long long pid, FIL
 				/* shorten message with reference to logfile */
 				*s = '\0';
 			}
-			if (dp->input[fd].cnt < 30000 && strcmp(dp->input[fd].buf, q) == 0) {
+			if (!rest && dp->input[fd].cnt < 30000 && strcmp(dp->input[fd].buf, q) == 0) {
 				/* repeat of last message */
 				dp->input[fd].cnt++;
 				dp->input[fd].ts = now;
@@ -227,7 +226,21 @@ logFD(dpair dp, int fd, const char *type, const char *dbname, long long pid, FIL
 			}
 		}
 		fflush(stream);
-	} while (rest);
+	} while (do_repeat);
+	if (rest && dp->input[fd].cnt > 0) {
+		/* last message was repeated but not all repeats reported */
+		char tmptime[20];
+		strftime(tmptime, sizeof(tmptime), "%Y-%m-%d %H:%M:%S",
+				 localtime(&dp->input[fd].ts));
+		if (dp->input[fd].cnt == 1)
+			fprintf(stream, "%s %s %s[%lld]: %s\n",
+					tmptime, type, dbname, pid, dp->input[fd].buf);
+		else
+			fprintf(stream, "%s %s %s[%lld]: message repeated %d times: %s\n",
+					tmptime, type, dbname, pid, dp->input[fd].cnt, dp->input[fd].buf);
+		dp->input[fd].cnt = 0;
+		dp->input[fd].buf[0] = 0;
+	}
 	fflush(stream);
 }
 
@@ -439,36 +452,42 @@ main(int argc, char *argv[])
 	int thret;
 	bool merodontfork = false;
 	confkeyval ckv[] = {
-		{"logfile",       strdup("merovingian.log"), 0,                STR},
-		{"pidfile",       strdup("merovingian.pid"), 0,                STR},
-		{"loglevel",      strdup("information"),   INFORMATION,        LOGLEVEL},
-
-		{"sockdir",       strdup("/tmp"),          0,                  STR},
-		{"listenaddr",    strdup("localhost"),     0,                  LADDR},
-		{"port",          strdup(MERO_PORT),       atoi(MERO_PORT),    INT},
-
-		{"exittimeout",   strdup("60"),            60,                 SINT},
-		{"forward",       strdup("proxy"),         0,                  OTHER},
-
-		{"discovery",     strdup("true"),          1,                  BOOLEAN},
-		{"discoveryttl",  strdup("600"),           600,                INT},
-
-		{"control",       strdup("false"),         0,                  BOOLEAN},
-		{"passphrase",    NULL,                    0,                  STR},
-
-		{"snapshotdir",   NULL,                    0,                  STR},
+		{"logfile",             strdup("merovingian.log"), 0,               STR},
+		{"pidfile",             strdup("merovingian.pid"), 0,               STR},
+		{"loglevel",            strdup("information"),     INFORMATION,     LOGLEVEL},
+		{"sockdir",             strdup("/tmp"),            0,               STR},
+		{"listenaddr",          strdup("localhost"),       0,               LADDR},
+		{"port",                strdup(MERO_PORT),         atoi(MERO_PORT), INT},
+		{"exittimeout",         strdup("60"),              60,              SINT},
+		{"forward",             strdup("proxy"),           0,               OTHER},
+		{"discovery",           strdup("no"),              0,               BOOLEAN},
+		{"discoveryttl",        strdup("600"),             600,             INT},
+		{"control",             strdup("no"),              0,               BOOLEAN},
+		{"passphrase",          NULL,                      0,               STR},
+		{"snapshotdir",         NULL,                      0,               STR},
 #ifdef HAVE_LIBLZ4
-		{"snapshotcompression", strdup(".tar.lz4"), 0,                 STR},
+		{"snapshotcompression", strdup(".tar.lz4"),        0,               STR},
 #else
-		{"snapshotcompression", strdup(".tar"),     0,                 STR},
+		{"snapshotcompression", strdup(".tar"),            0,               STR},
 #endif
-		{"keepalive",     strdup("60"),            60,                 INT},
-
-		{ NULL,           NULL,                    0,                  INVALID}
+		{"keepalive",           strdup("60"),              60,              INT},
+		{ NULL,                 NULL,                      0,               INVALID}
 	};
 	confkeyval *kv;
 	int retfd = -1;
 	int dup_err;
+
+	if (getuid() == 0) {
+		if (argc > 1 && strcmp(argv[1], "--accept-the-risks-running-as-root") == 0) {
+			Mlevelfprintf(WARNING, stderr, "running as root is not recommended\n");
+			argv[1] = argv[0];
+			argv++;
+			argc--;
+		} else {
+			Mlevelfprintf(ERROR, stderr, "fatal: running as root is not allowed\n");
+			exit(1);
+		}
+	}
 
 	/* seed the randomiser for when we create a database, send responses
 	 * to HELO, etc */
@@ -480,7 +499,7 @@ main(int argc, char *argv[])
 	 * hardcoded bin-dir */
 	p = get_bin_path();
 	if (p != NULL) {
-		if (strcpy_len(_mero_mserver, p, sizeof(_mero_mserver)) >= sizeof(_mero_mserver)) {
+		if (strtcpy(_mero_mserver, p, sizeof(_mero_mserver)) == -1) {
 			Mlevelfprintf(ERROR, stderr, "fatal: monetdbd full path name is too long\n");
 			exit(1);
 		}
@@ -502,12 +521,6 @@ main(int argc, char *argv[])
 	kv = findConfKey(_mero_db_props, "shared");
 	kv->val = strdup("yes");
 	kv = findConfKey(_mero_db_props, "readonly");
-	kv->val = strdup("no");
-	kv = findConfKey(_mero_db_props, "embedr");
-	kv->val = strdup("no");
-	kv = findConfKey(_mero_db_props, "embedpy3");
-	kv->val = strdup("no");
-	kv = findConfKey(_mero_db_props, "embedc");
 	kv->val = strdup("no");
 	kv = findConfKey(_mero_db_props, "nclients");
 	kv->val = strdup("64");
@@ -708,7 +721,7 @@ main(int argc, char *argv[])
 	}
 
 	if (_mero_mserver[0] == 0) {
-		if (strcpy_len(_mero_mserver, BINDIR "/mserver5", sizeof(_mero_mserver)) >= sizeof(_mero_mserver)) {
+		if (strtcpy(_mero_mserver, BINDIR "/mserver5", sizeof(_mero_mserver)) == -1) {
 			Mlevelfprintf(ERROR, stderr, "fatal: mserver5 full path name is too long\n");
 			MERO_EXIT_CLEAN(1);
 		}

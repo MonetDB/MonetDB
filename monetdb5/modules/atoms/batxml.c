@@ -3,11 +3,9 @@
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024, 2025 MonetDB Foundation;
- * Copyright August 2008 - 2023 MonetDB B.V.;
- * Copyright 1997 - July 2008 CWI.
+ * For copyright information, see the file debian/copyright.
  */
 
 /*
@@ -64,8 +62,9 @@
 	} while (0)
 
 static str
-BATXMLxml2str(bat *ret, const bat *bid)
+BATXMLxml2str(Client ctx, bat *ret, const bat *bid)
 {
+	(void) ctx;
 	BAT *b, *bn;
 	BUN p, q;
 	BATiter bi;
@@ -74,8 +73,8 @@ BATXMLxml2str(bat *ret, const bat *bid)
 		throw(MAL, "xml.str", INTERNAL_BAT_ACCESS);
 	prepareResult(bn, b, TYPE_str, "str", (void) 0);
 	bi = bat_iterator(b);
-	BATloop(b, p, q) {
-		const char *t = (const char *) BUNtvar(bi, p);
+	BATloop(&bi, p, q) {
+		const char *t = (const char *) BUNtvar(&bi, p);
 
 		if (strNil(t)) {
 			if (bunfastapp_nocheckVAR(bn, t) != GDK_SUCCEED)
@@ -98,8 +97,9 @@ BATXMLxml2str(bat *ret, const bat *bid)
 }
 
 static str
-BATXMLxmltext(bat *ret, const bat *bid)
+BATXMLxmltext(Client ctx, bat *ret, const bat *bid)
 {
+	(void) ctx;
 	BAT *b, *bn;
 	BUN p, q;
 	BATiter bi;
@@ -114,8 +114,8 @@ BATXMLxmltext(bat *ret, const bat *bid)
 		throw(MAL, "xml.text", INTERNAL_BAT_ACCESS);
 	prepareResult(bn, b, TYPE_str, "text", (void) 0);
 	bi = bat_iterator(b);
-	BATloop(b, p, q) {
-		const char *t = (const char *) BUNtvar(bi, p);
+	BATloop(&bi, p, q) {
+		const char *t = (const char *) BUNtvar(&bi, p);
 		size_t len;
 
 		if (strNil(t)) {
@@ -129,8 +129,10 @@ BATXMLxmltext(bat *ret, const bat *bid)
 		case 'D':{
 			xmlDocPtr d = xmlParseMemory(t + 1, (int) (len - 1));
 			elem = xmlDocGetRootElement(d);
-			content = (str) xmlNodeGetContent(elem);
+			xmlChar *cont = xmlNodeGetContent(elem);
 			xmlFreeDoc(d);
+			content = GDKstrdup((const char *) cont);
+			xmlFree(cont);
 			if (content == NULL) {
 				err = SQLSTATE(HY013) MAL_MALLOC_FAIL;
 				goto bunins_failed;
@@ -142,8 +144,10 @@ BATXMLxmltext(bat *ret, const bat *bid)
 				doc = xmlParseMemory("<doc/>", 6);
 			xmlParseInNodeContext(xmlDocGetRootElement(doc), t + 1,
 								  (int) (len - 1), 0, &elem);
-			content = (str) xmlNodeGetContent(elem);
+			xmlChar *cont = xmlNodeGetContent(elem);
 			xmlFreeNodeList(elem);
+			content = GDKstrdup((const char *) cont);
+			xmlFree(cont);
 			if (content == NULL) {
 				err = SQLSTATE(HY013) MAL_MALLOC_FAIL;
 				goto bunins_failed;
@@ -154,8 +158,7 @@ BATXMLxmltext(bat *ret, const bat *bid)
 
 			if (buf == NULL || size < len) {
 				size = len + 128;
-				if (buf != NULL)
-					GDKfree(buf);
+				GDKfree(buf);
 				buf = GDKmalloc(size);
 				if (buf == NULL) {
 					err = SQLSTATE(HY013) MAL_MALLOC_FAIL;
@@ -185,14 +188,12 @@ BATXMLxmltext(bat *ret, const bat *bid)
 		assert(content != NULL || buf != NULL);
 		if (bunfastapp_nocheckVAR(bn, content != NULL ? content : buf) != GDK_SUCCEED)
 			goto bunins_failed;
-		if (content != NULL)
-			GDKfree(content);
+		GDKfree(content);
 		content = NULL;
 	}
 	bat_iterator_end(&bi);
 	finalizeResult(ret, bn, b);
-	if (buf != NULL)
-		GDKfree(buf);
+	GDKfree(buf);
 	if (doc != NULL)
 		xmlFreeDoc(doc);
 	return MAL_SUCCEED;
@@ -200,12 +201,10 @@ BATXMLxmltext(bat *ret, const bat *bid)
 	bat_iterator_end(&bi);
 	BBPunfix(b->batCacheid);
 	BBPunfix(bn->batCacheid);
-	if (buf != NULL)
-		GDKfree(buf);
+	GDKfree(buf);
 	if (doc != NULL)
 		xmlFreeDoc(doc);
-	if (content != NULL)
-		GDKfree(content);
+	GDKfree(content);
 	throw(MAL, "xml.text", "%s", err);
 }
 
@@ -221,8 +220,9 @@ BATXMLxmltext(bat *ret, const bat *bid)
  * XML values are represented by strings already.
  */
 static str
-BATXMLstr2xml(bat *ret, const bat *bid)
+BATXMLstr2xml(Client ctx, bat *ret, const bat *bid)
 {
+	(void) ctx;
 	BAT *b, *bn;
 	BUN p, q;
 	size_t size = BUFSIZ;
@@ -239,8 +239,8 @@ BATXMLstr2xml(bat *ret, const bat *bid)
 	}
 	prepareResult(bn, b, TYPE_xml, "xml", GDKfree(buf));
 	bi = bat_iterator(b);
-	BATloop(b, p, q) {
-		const char *t = (const char *) BUNtvar(bi, p);
+	BATloop(&bi, p, q) {
+		const char *t = (const char *) BUNtvar(&bi, p);
 		size_t len;
 
 		if (strNil(t)) {
@@ -273,14 +273,14 @@ BATXMLstr2xml(bat *ret, const bat *bid)
 	bat_iterator_end(&bi);
 	BBPunfix(b->batCacheid);
 	BBPunfix(bn->batCacheid);
-	if (buf != NULL)
-		GDKfree(buf);
+	GDKfree(buf);
 	throw(MAL, "xml.xml", "%s", err);
 }
 
 static str
-BATXMLdocument(bat *ret, const bat *bid)
+BATXMLdocument(Client ctx, bat *ret, const bat *bid)
 {
+	(void) ctx;
 	BAT *b, *bn;
 	BUN p, q;
 	BATiter bi;
@@ -296,8 +296,8 @@ BATXMLdocument(bat *ret, const bat *bid)
 	}
 	prepareResult(bn, b, TYPE_xml, "document", GDKfree(buf));
 	bi = bat_iterator(b);
-	BATloop(b, p, q) {
-		const char *t = (const char *) BUNtvar(bi, p);
+	BATloop(&bi, p, q) {
+		const char *t = (const char *) BUNtvar(&bi, p);
 		xmlDocPtr doc;
 		int len;
 		xmlChar *s;
@@ -321,12 +321,14 @@ BATXMLdocument(bat *ret, const bat *bid)
 			size = (size_t) len + 128;
 			buf = GDKmalloc(size);
 			if (buf == NULL) {
+				xmlFree(s);
 				err = MAL_MALLOC_FAIL;
 				goto bunins_failed;
 			}
 		}
 		buf[0] = 'D';
 		strcpy(buf + 1, (char *) s);
+		xmlFree(s);
 		if (bunfastapp_nocheckVAR(bn, buf) != GDK_SUCCEED)
 			goto bunins_failed;
 	}
@@ -343,8 +345,9 @@ BATXMLdocument(bat *ret, const bat *bid)
 }
 
 static str
-BATXMLcontent(bat *ret, const bat *bid)
+BATXMLcontent(Client ctx, bat *ret, const bat *bid)
 {
+	(void) ctx;
 	BAT *b, *bn;
 	BUN p, q;
 	BATiter bi;
@@ -366,8 +369,8 @@ BATXMLcontent(bat *ret, const bat *bid)
 	prepareResult(bn, b, TYPE_xml, "content", GDKfree(buf));
 	bi = bat_iterator(b);
 	xbuf = xmlBufferCreate();
-	BATloop(b, p, q) {
-		const char *t = (const char *) BUNtvar(bi, p);
+	BATloop(&bi, p, q) {
+		const char *t = (const char *) BUNtvar(&bi, p);
 		size_t len;
 		xmlNodePtr elem;
 		xmlParserErrors xerr;
@@ -414,16 +417,16 @@ BATXMLcontent(bat *ret, const bat *bid)
 	bat_iterator_end(&bi);
 	xmlBufferFree(xbuf);
 	xmlFreeDoc(doc);
-	if (buf != NULL)
-		GDKfree(buf);
+	GDKfree(buf);
 	BBPunfix(b->batCacheid);
 	BBPunfix(bn->batCacheid);
 	throw(MAL, "xml.document", "%s", err);
 }
 
 static str
-BATXMLisdocument(bat *ret, const bat *bid)
+BATXMLisdocument(Client ctx, bat *ret, const bat *bid)
 {
+	(void) ctx;
 	BAT *b, *bn;
 	BUN p, q;
 	BATiter bi;
@@ -432,8 +435,8 @@ BATXMLisdocument(bat *ret, const bat *bid)
 		throw(MAL, "xml.isdocument", INTERNAL_BAT_ACCESS);
 	prepareResult(bn, b, TYPE_bit, "isdocument", (void) 0);
 	bi = bat_iterator(b);
-	BATloop(b, p, q) {
-		const char *t = (const char *) BUNtvar(bi, p);
+	BATloop(&bi, p, q) {
+		const char *t = (const char *) BUNtvar(&bi, p);
 		xmlDocPtr doc;
 		bit val;
 
@@ -475,22 +478,21 @@ BATXMLisdocument(bat *ret, const bat *bid)
  * most reasonable interpretation.
  */
 static str
-BATXMLoptions(bat *ret, const char *const *name, const char *const *options,
+BATXMLoptions(Client ctx, bat *ret, const char *const *name, const char *const *options,
 			  const bat *bid)
 {
+	(void) ctx;
 	BAT *b, *bn;
 	BUN p, q;
 	str buf = GDKmalloc(BUFSIZ);
 	str val = GDKmalloc(BUFSIZ);
 	size_t size = BUFSIZ, len = strlen(*name);
-	BATiter bi = (BATiter) {.b = NULL };
+	BATiter bi = {.b = NULL };
 	const char *err = OPERATION_FAILED " During bulk options analysis";
 
 	if (val == NULL || buf == NULL) {
-		if (val != NULL)
-			GDKfree(val);
-		if (buf != NULL)
-			GDKfree(buf);
+		GDKfree(val);
+		GDKfree(buf);
 		throw(MAL, "batxml.options", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 	if ((b = BATdescriptor(*bid)) == NULL) {
@@ -511,14 +513,14 @@ BATXMLoptions(bat *ret, const char *const *name, const char *const *options,
 		snprintf(buf, size, "nil");
 	else {
 		/*if(strcmp(*options,"niloncontent")==0) */
-		err = SQLSTATE(0 A000) PROGRAM_NYI;
+		err = SQLSTATE(0A000) PROGRAM_NYI;
 		goto bunins_failed;
 	}
 
 	snprintf(val, size, "<%s>", *name);
 	bi = bat_iterator(b);
-	BATloop(b, p, q) {
-		const char *t = (const char *) BUNtvar(bi, p);
+	BATloop(&bi, p, q) {
+		const char *t = (const char *) BUNtvar(&bi, p);
 
 		if (strNil(t)) {
 			if (bunfastapp_nocheckVAR(bn, buf) != GDK_SUCCEED)
@@ -549,16 +551,15 @@ BATXMLoptions(bat *ret, const char *const *name, const char *const *options,
   bunins_failed:
 	BBPunfix(b->batCacheid);
 	BBPunfix(bn->batCacheid);
-	if (buf != NULL)
-		GDKfree(buf);
-	if (val != NULL)
-		GDKfree(val);
+	GDKfree(buf);
+	GDKfree(val);
 	throw(MAL, "batxml.options", "%s", err);
 }
 
 static str
-BATXMLcomment(bat *ret, const bat *bid)
+BATXMLcomment(Client ctx, bat *ret, const bat *bid)
 {
+	(void) ctx;
 	BAT *b, *bn;
 	BUN p, q;
 	size_t size = BUFSIZ;
@@ -574,8 +575,8 @@ BATXMLcomment(bat *ret, const bat *bid)
 	}
 	prepareResult(bn, b, TYPE_xml, "comment", GDKfree(buf));
 	bi = bat_iterator(b);
-	BATloop(b, p, q) {
-		const char *t = (const char *) BUNtvar(bi, p);
+	BATloop(&bi, p, q) {
+		const char *t = (const char *) BUNtvar(&bi, p);
 		size_t len;
 
 		if (strNil(t)) {
@@ -612,27 +613,28 @@ BATXMLcomment(bat *ret, const bat *bid)
 	bat_iterator_end(&bi);
 	BBPunfix(b->batCacheid);
 	BBPunfix(bn->batCacheid);
-	if (buf != NULL)
-		GDKfree(buf);
+	GDKfree(buf);
 	throw(MAL, "xml.comment", "%s", err);
 }
 
 static str
-BATXMLparse(bat *ret, const char *const *doccont, const bat *bid,
+BATXMLparse(Client ctx, bat *ret, const char *const *doccont, const bat *bid,
 			const char *const *option)
 {
+	(void) ctx;
 	(void) option;
 	if (strcmp(*doccont, "content") == 0)
-		return BATXMLcontent(ret, bid);
+		return BATXMLcontent(ctx, ret, bid);
 	if (strcmp(*doccont, "document") == 0)
-		return BATXMLdocument(ret, bid);
+		return BATXMLdocument(ctx, ret, bid);
 	throw(MAL, "xml.parse",
 		  ILLEGAL_ARGUMENT " <document> or <content> expected");
 }
 
 static str
-BATXMLpi(bat *ret, const char *const *target, const bat *bid)
+BATXMLpi(Client ctx, bat *ret, const char *const *target, const bat *bid)
 {
+	(void) ctx;
 	BAT *b, *bn;
 	BUN p, q;
 	size_t size = BUFSIZ;
@@ -654,8 +656,8 @@ BATXMLpi(bat *ret, const char *const *target, const bat *bid)
 	}
 	prepareResult(bn, b, TYPE_xml, "pi", GDKfree(buf));
 	bi = bat_iterator(b);
-	BATloop(b, p, q) {
-		const char *t = (const char *) BUNtvar(bi, p);
+	BATloop(&bi, p, q) {
+		const char *t = (const char *) BUNtvar(&bi, p);
 		size_t len;
 
 		len = tgtlen;
@@ -690,15 +692,15 @@ BATXMLpi(bat *ret, const char *const *target, const bat *bid)
 	bat_iterator_end(&bi);
 	BBPunfix(b->batCacheid);
 	BBPunfix(bn->batCacheid);
-	if (buf != NULL)
-		GDKfree(buf);
+	GDKfree(buf);
 	throw(MAL, "xml.pi", "%s", err);
 }
 
 static str
-BATXMLroot(bat *ret, const bat *bid, const char *const *version,
+BATXMLroot(Client ctx, bat *ret, const bat *bid, const char *const *version,
 		   const char *const *standalone)
 {
+	(void) ctx;
 	BAT *b, *bn;
 	BUN p, q;
 	size_t size = BUFSIZ;
@@ -728,8 +730,8 @@ BATXMLroot(bat *ret, const bat *bid, const char *const *version,
 	}
 	prepareResult(bn, b, TYPE_xml, "pi", GDKfree(buf));
 	bi = bat_iterator(b);
-	BATloop(b, p, q) {
-		const char *t = (const char *) BUNtvar(bi, p);
+	BATloop(&bi, p, q) {
+		const char *t = (const char *) BUNtvar(&bi, p);
 		size_t len, i;
 		bit isdoc;
 
@@ -760,7 +762,7 @@ BATXMLroot(bat *ret, const bat *bid, const char *const *version,
 							  *standalone);
 			snprintf(buf + i, len - i, "?>%s", t + 1);
 			buf++;
-			XMLisdocument(&isdoc, &(const char *){buf});	/* check well-formedness */
+			XMLisdocument(ctx, &isdoc, &(const char *){buf});	/* check well-formedness */
 			buf--;
 			if (!isdoc) {
 				err = XML_NOT_WELL_FORMED;
@@ -778,14 +780,14 @@ BATXMLroot(bat *ret, const bat *bid, const char *const *version,
 	bat_iterator_end(&bi);
 	BBPunfix(b->batCacheid);
 	BBPunfix(bn->batCacheid);
-	if (buf != NULL)
-		GDKfree(buf);
+	GDKfree(buf);
 	throw(MAL, "xml.root", "%s", err);
 }
 
 static str
-BATXMLattribute(bat *ret, const char *const *name, const bat *bid)
+BATXMLattribute(Client ctx, bat *ret, const char *const *name, const bat *bid)
 {
+	(void) ctx;
 	BAT *b, *bn;
 	BUN p, q;
 	size_t size = BUFSIZ;
@@ -808,8 +810,8 @@ BATXMLattribute(bat *ret, const char *const *name, const bat *bid)
 	}
 	prepareResult(bn, b, TYPE_xml, "attribute", GDKfree(buf));
 	bi = bat_iterator(b);
-	BATloop(b, p, q) {
-		const char *t = (const char *) BUNtvar(bi, p);
+	BATloop(&bi, p, q) {
+		const char *t = (const char *) BUNtvar(&bi, p);
 		size_t len;
 
 		len = attrlen;
@@ -845,15 +847,15 @@ BATXMLattribute(bat *ret, const char *const *name, const bat *bid)
 	bat_iterator_end(&bi);
 	BBPunfix(b->batCacheid);
 	BBPunfix(bn->batCacheid);
-	if (buf != NULL)
-		GDKfree(buf);
+	GDKfree(buf);
 	throw(MAL, "xml.attribute", "%s", err);
 }
 
 static str
-BATXMLelement(bat *ret, const char *const *name, xml *nspace, xml *attr,
+BATXMLelement(Client ctx, bat *ret, const char *const *name, xml *nspace, xml *attr,
 			  const bat *bid)
 {
+	(void) ctx;
 	BAT *b, *bn;
 	BUN p, q;
 	size_t size = BUFSIZ;
@@ -889,8 +891,8 @@ BATXMLelement(bat *ret, const char *const *name, xml *nspace, xml *attr,
 	}
 	prepareResult(bn, b, TYPE_xml, "element", GDKfree(buf));
 	bi = bat_iterator(b);
-	BATloop(b, p, q) {
-		const char *t = (const char *) BUNtvar(bi, p);
+	BATloop(&bi, p, q) {
+		const char *t = (const char *) BUNtvar(&bi, p);
 		size_t len;
 
 		len = elemlen;
@@ -943,9 +945,10 @@ BATXMLelement(bat *ret, const char *const *name, xml *nspace, xml *attr,
 }
 
 static str
-BATXMLelementSmall(bat *ret, const char *const *name, const bat *bid)
+BATXMLelementSmall(Client ctx, bat *ret, const char *const *name, const bat *bid)
 {
-	return BATXMLelement(ret, name, NULL, NULL, bid);
+	(void) ctx;
+	return BATXMLelement(ctx, ret, name, NULL, NULL, bid);
 }
 
 static str
@@ -967,14 +970,10 @@ BATXMLforest(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	p = GDKmalloc(sizeof(BUN) * pci->argc);
 	q = GDKmalloc(sizeof(BUN) * pci->argc);
 	if (buf == NULL || bi == NULL || p == NULL || q == NULL) {
-		if (buf)
-			GDKfree(buf);
-		if (bi)
-			GDKfree(bi);
-		if (p)
-			GDKfree(p);
-		if (q)
-			GDKfree(q);
+		GDKfree(buf);
+		GDKfree(bi);
+		GDKfree(p);
+		GDKfree(q);
 		throw(MAL, "xml.forest", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 
@@ -1014,7 +1013,7 @@ BATXMLforest(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		for (i = pci->retc; i < pci->argc; i++) {
 			int n;
 
-			t = (const char *) BUNtvar(bi[i], p[i]);
+			t = (const char *) BUNtvar(&bi[i], p[i]);
 			if (strNil(t))
 				continue;
 
@@ -1076,8 +1075,7 @@ BATXMLforest(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		}
 	}
 	BBPunfix(bn->batCacheid);
-	if (buf != NULL)
-		GDKfree(buf);
+	GDKfree(buf);
 	GDKfree(bi);
 	GDKfree(p);
 	GDKfree(q);
@@ -1085,8 +1083,9 @@ BATXMLforest(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 
 static str
-BATXMLconcat(bat *ret, const bat *bid, const bat *rid)
+BATXMLconcat(Client ctx, bat *ret, const bat *bid, const bat *rid)
 {
+	(void) ctx;
 	BAT *b, *r = 0, *bn;
 	BUN p, q, rp = 0;
 	size_t len, size = BUFSIZ;
@@ -1114,8 +1113,8 @@ BATXMLconcat(bat *ret, const bat *bid, const bat *rid)
 	bi = bat_iterator(b);
 	ri = bat_iterator(r);
 	while (p < q) {
-		const char *t = (const char *) BUNtvar(bi, p);
-		const char *v = (const char *) BUNtvar(ri, rp);
+		const char *t = (const char *) BUNtvar(&bi, p);
+		const char *v = (const char *) BUNtvar(&ri, rp);
 
 		len = strlen(t) + strlen(v) + 1;
 
@@ -1166,49 +1165,46 @@ BATXMLconcat(bat *ret, const bat *bid, const bat *rid)
 	BBPunfix(r->batCacheid);
 	BBPunfix(b->batCacheid);
 	BBPunfix(bn->batCacheid);
-	if (buf != NULL)
-		GDKfree(buf);
+	GDKfree(buf);
 	throw(MAL, "xml.concat", "%s", err);
 }
 
 static str
-BATXMLgroup(xml *ret, const bat *bid)
+BATXMLgroup(Client ctx, xml *ret, const bat *bid)
 {
+	allocator *ma = ctx->curprg->def->ma;
 	BAT *b;
 	BUN p, q;
 	const char *t;
 	size_t len, size = BUFSIZ, offset;
-	str buf = GDKmalloc(size);
+	str buf = ma_alloc(ma, size);
 	BATiter bi;
 	const char *err = NULL;
 
 	if (buf == NULL)
-		throw(MAL, "xml.aggr", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		throw(MAL, "aggr.xmlaggr", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	if ((b = BATdescriptor(*bid)) == NULL) {
-		GDKfree(buf);
-		throw(MAL, "xml.aggr", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+		throw(MAL, "aggr.xmlaggr", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	}
 
 	strcpy(buf, str_nil);
 	offset = 0;
 	bi = bat_iterator(b);
-	BATloop(b, p, q) {
+	BATloop(&bi, p, q) {
 		int n;
 
-		t = (const char *) BUNtvar(bi, p);
+		t = (const char *) BUNtvar(&bi, p);
 
 		if (strNil(t))
 			continue;
 		len = strlen(t) + 1;
 		if (len >= size - offset) {
-			char *tmp;
-			size += len + 128;
-			tmp = GDKrealloc(buf, size);
-			if (tmp == NULL) {
+			buf = ma_realloc(ma, buf, size + len + 128, size);
+			if (buf == NULL) {
 				err = MAL_MALLOC_FAIL;
 				goto failed;
 			}
-			buf = tmp;
+			size += len + 128;
 		}
 		if (offset == 0)
 			n = snprintf(buf, size, "%s", t);
@@ -1232,16 +1228,14 @@ BATXMLgroup(xml *ret, const bat *bid)
   failed:
 	bat_iterator_end(&bi);
 	BBPunfix(b->batCacheid);
-	if (buf != NULL)
-		GDKfree(buf);
-	throw(MAL, "xml.aggr", "%s", err);
+	throw(MAL, "aggr.xmlaggr", "%s", err);
 }
 
 static const char *
 BATxmlaggr(BAT **bnp, BAT *b, BAT *g, BAT *e, BAT *s, int skip_nils)
 {
 	BAT *bn = NULL, *t1, *t2 = NULL;
-	BATiter bi = (BATiter) {.b = NULL };
+	BATiter bi = {.b = NULL };
 	oid min, max;
 	BUN ngrp;
 	BUN nils = 0;
@@ -1338,7 +1332,7 @@ BATxmlaggr(BAT **bnp, BAT *b, BAT *g, BAT *e, BAT *s, int skip_nils)
 				if (bunfastapp_nocheckVAR(bn, buf) != GDK_SUCCEED)
 					goto bunins_failed;
 				nils += strNil(buf);
-				strncpy(buf, str_nil, maxlen);
+				strtcpy(buf, str_nil, maxlen);
 				buflen = 0;
 				if (p == q)
 					break;
@@ -1347,11 +1341,11 @@ BATxmlaggr(BAT **bnp, BAT *b, BAT *g, BAT *e, BAT *s, int skip_nils)
 			}
 			if (isnil)
 				continue;
-			v = (const char *) BUNtvar(bi, (map ? (BUN) map[p] : p + mapoff));
+			v = (const char *) BUNtvar(&bi, (map ? (BUN) map[p] : p + mapoff));
 			if (strNil(v)) {
 				if (skip_nils)
 					continue;
-				strncpy(buf, str_nil, buflen);
+				strtcpy(buf, str_nil, maxlen);
 				isnil = 1;
 			} else {
 				len = strlen(v);
@@ -1365,7 +1359,7 @@ BATxmlaggr(BAT **bnp, BAT *b, BAT *g, BAT *e, BAT *s, int skip_nils)
 					buf = tmp;
 				}
 				if (buflen == 0) {
-					strncpy(buf, v, maxlen);
+					strtcpy(buf, v, maxlen);
 					buflen += len;
 				} else if (buf[0] != v[0]) {
 					err = "incompatible values in group";
@@ -1386,11 +1380,11 @@ BATxmlaggr(BAT **bnp, BAT *b, BAT *g, BAT *e, BAT *s, int skip_nils)
 		t2 = NULL;
 	} else {
 		for (p = 0, q = p + BATcount(b); p < q; p++) {
-			v = (const char *) BUNtvar(bi, p);
+			v = (const char *) BUNtvar(&bi, p);
 			if (strNil(v)) {
 				if (skip_nils)
 					continue;
-				strncpy(buf, str_nil, buflen);
+				strtcpy(buf, str_nil, maxlen);
 				nils++;
 				break;
 			}
@@ -1405,7 +1399,7 @@ BATxmlaggr(BAT **bnp, BAT *b, BAT *g, BAT *e, BAT *s, int skip_nils)
 				buf = tmp;
 			}
 			if (buflen == 0) {
-				strncpy(buf, v, maxlen);
+				strtcpy(buf, v, maxlen);
 				buflen += len;
 			} else if (buf[0] != v[0]) {
 				err = "incompatible values in group";
@@ -1439,8 +1433,7 @@ BATxmlaggr(BAT **bnp, BAT *b, BAT *g, BAT *e, BAT *s, int skip_nils)
 		BBPunfix(b->batCacheid);
 	if (freeg && g)
 		BBPunfix(g->batCacheid);
-	if (buf)
-		GDKfree(buf);
+	GDKfree(buf);
 	*bnp = bn;
 	return err;
 
@@ -1454,9 +1447,10 @@ BATxmlaggr(BAT **bnp, BAT *b, BAT *g, BAT *e, BAT *s, int skip_nils)
 }
 
 static str
-AGGRsubxmlcand(bat *retval, const bat *bid, const bat *gid, const bat *eid,
+AGGRsubxmlcand(Client ctx, bat *retval, const bat *bid, const bat *gid, const bat *eid,
 			   const bat *sid, const bit *skip_nils)
 {
+	(void) ctx;
 	BAT *b, *g, *e, *s, *bn = NULL;
 	const char *err;
 
@@ -1467,7 +1461,7 @@ AGGRsubxmlcand(bat *retval, const bat *bid, const bat *gid, const bat *eid,
 		BBPreclaim(b);
 		BBPreclaim(g);
 		BBPreclaim(e);
-		throw(MAL, "aggr.subxml", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+		throw(MAL, "aggr.subxmlaggr", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	}
 	if (sid && !is_bat_nil(*sid)) {
 		s = BATdescriptor(*sid);
@@ -1475,7 +1469,7 @@ AGGRsubxmlcand(bat *retval, const bat *bid, const bat *gid, const bat *eid,
 			BBPunfix(b->batCacheid);
 			BBPreclaim(g);
 			BBPreclaim(e);
-			throw(MAL, "aggr.subxml", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+			throw(MAL, "aggr.subxmlaggr", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		}
 	} else {
 		s = NULL;
@@ -1486,7 +1480,7 @@ AGGRsubxmlcand(bat *retval, const bat *bid, const bat *gid, const bat *eid,
 	BBPreclaim(e);
 	BBPreclaim(s);
 	if (err !=NULL)
-		throw(MAL, "aggr.subxml", "%s", err);
+		throw(MAL, "aggr.subxmlaggr", "%s", err);
 
 	*retval = bn->batCacheid;
 	BBPkeepref(bn);
@@ -1494,20 +1488,22 @@ AGGRsubxmlcand(bat *retval, const bat *bid, const bat *gid, const bat *eid,
 }
 
 static str
-AGGRsubxml(bat *retval, const bat *bid, const bat *gid, const bat *eid,
+AGGRsubxml(Client ctx, bat *retval, const bat *bid, const bat *gid, const bat *eid,
 		   const bit *skip_nils)
 {
-	return AGGRsubxmlcand(retval, bid, gid, eid, NULL, skip_nils);
+	(void) ctx;
+	return AGGRsubxmlcand(ctx, retval, bid, gid, eid, NULL, skip_nils);
 }
 
 static str
-BATXMLxquery(bat *ret, const bat *bid, const char *const *expr)
+BATXMLxquery(Client ctx, bat *ret, const bat *bid, const char *const *expr)
 {
+	(void) ctx;
 	(void) ret;
 	(void) bid;
 	(void) expr;
 	/* use external library to solve this */
-	throw(MAL, "xml.xquery", SQLSTATE(0 A000) PROGRAM_NYI);
+	throw(MAL, "xml.xquery", SQLSTATE(0A000) PROGRAM_NYI);
 }
 
 #else
@@ -1515,8 +1511,9 @@ BATXMLxquery(bat *ret, const bat *bid, const char *const *expr)
 #define NO_LIBXML_FATAL "batxml: MonetDB was built without libxml, but what you are trying to do requires it."
 
 static str
-BATXMLxml2str(bat *ret, const bat *bid)
+BATXMLxml2str(Client ctx, bat *ret, const bat *bid)
 {
+	(void) ctx;
 	(void) ret;
 	(void) bid;
 	return createException(MAL, "batxml.xml2str",
@@ -1524,8 +1521,9 @@ BATXMLxml2str(bat *ret, const bat *bid)
 }
 
 static str
-BATXMLxmltext(bat *ret, const bat *bid)
+BATXMLxmltext(Client ctx, bat *ret, const bat *bid)
 {
+	(void) ctx;
 	(void) ret;
 	(void) bid;
 	return createException(MAL, "batxml.xmltext",
@@ -1533,8 +1531,9 @@ BATXMLxmltext(bat *ret, const bat *bid)
 }
 
 static str
-BATXMLstr2xml(bat *ret, const bat *bid)
+BATXMLstr2xml(Client ctx, bat *ret, const bat *bid)
 {
+	(void) ctx;
 	(void) ret;
 	(void) bid;
 	return createException(MAL, "batxml.str2xml",
@@ -1542,8 +1541,9 @@ BATXMLstr2xml(bat *ret, const bat *bid)
 }
 
 static str
-BATXMLdocument(bat *ret, const bat *bid)
+BATXMLdocument(Client ctx, bat *ret, const bat *bid)
 {
+	(void) ctx;
 	(void) ret;
 	(void) bid;
 	return createException(MAL, "batxml.document",
@@ -1551,8 +1551,9 @@ BATXMLdocument(bat *ret, const bat *bid)
 }
 
 static str
-BATXMLcontent(bat *ret, const bat *bid)
+BATXMLcontent(Client ctx, bat *ret, const bat *bid)
 {
+	(void) ctx;
 	(void) ret;
 	(void) bid;
 	return createException(MAL, "batxml.content",
@@ -1560,8 +1561,9 @@ BATXMLcontent(bat *ret, const bat *bid)
 }
 
 static str
-BATXMLisdocument(bat *ret, const bat *bid)
+BATXMLisdocument(Client ctx, bat *ret, const bat *bid)
 {
+	(void) ctx;
 	(void) ret;
 	(void) bid;
 	return createException(MAL, "batxml.isdocument",
@@ -1569,8 +1571,9 @@ BATXMLisdocument(bat *ret, const bat *bid)
 }
 
 static str
-BATXMLelementSmall(bat *ret, const char *const *name, const bat *bid)
+BATXMLelementSmall(Client ctx, bat *ret, const char *const *name, const bat *bid)
 {
+	(void) ctx;
 	(void) ret;
 	(void) name;
 	(void) bid;
@@ -1579,9 +1582,10 @@ BATXMLelementSmall(bat *ret, const char *const *name, const bat *bid)
 }
 
 static str
-BATXMLoptions(bat *ret, const char *const *name, const char *const *options,
+BATXMLoptions(Client ctx, bat *ret, const char *const *name, const char *const *options,
 			  const bat *bid)
 {
+	(void) ctx;
 	(void) ret;
 	(void) name;
 	(void) options;
@@ -1591,8 +1595,9 @@ BATXMLoptions(bat *ret, const char *const *name, const char *const *options,
 }
 
 static str
-BATXMLcomment(bat *ret, const bat *bid)
+BATXMLcomment(Client ctx, bat *ret, const bat *bid)
 {
+	(void) ctx;
 	(void) ret;
 	(void) bid;
 	return createException(MAL, "batxml.comment",
@@ -1600,9 +1605,10 @@ BATXMLcomment(bat *ret, const bat *bid)
 }
 
 static str
-BATXMLparse(bat *ret, const char *const *doccont, const bat *bid,
+BATXMLparse(Client ctx, bat *ret, const char *const *doccont, const bat *bid,
 			const char *const *option)
 {
+	(void) ctx;
 	(void) ret;
 	(void) doccont;
 	(void) bid;
@@ -1612,8 +1618,9 @@ BATXMLparse(bat *ret, const char *const *doccont, const bat *bid,
 }
 
 static str
-BATXMLxquery(bat *ret, const bat *bid, const char *const *expr)
+BATXMLxquery(Client ctx, bat *ret, const bat *bid, const char *const *expr)
 {
+	(void) ctx;
 	(void) ret;
 	(void) bid;
 	(void) expr;
@@ -1622,8 +1629,9 @@ BATXMLxquery(bat *ret, const bat *bid, const char *const *expr)
 }
 
 static str
-BATXMLpi(bat *ret, const char *const *tgt, const bat *bid)
+BATXMLpi(Client ctx, bat *ret, const char *const *tgt, const bat *bid)
 {
+	(void) ctx;
 	(void) ret;
 	(void) tgt;
 	(void) bid;
@@ -1631,9 +1639,10 @@ BATXMLpi(bat *ret, const char *const *tgt, const bat *bid)
 }
 
 static str
-BATXMLroot(bat *ret, const bat *bid, const char *const *version,
+BATXMLroot(Client ctx, bat *ret, const bat *bid, const char *const *version,
 		   const char *const *standalone)
 {
+	(void) ctx;
 	(void) ret;
 	(void) bid;
 	(void) version;
@@ -1642,8 +1651,9 @@ BATXMLroot(bat *ret, const bat *bid, const char *const *version,
 }
 
 static str
-BATXMLattribute(bat *ret, const char *const *name, const bat *bid)
+BATXMLattribute(Client ctx, bat *ret, const char *const *name, const bat *bid)
 {
+	(void) ctx;
 	(void) ret;
 	(void) name;
 	(void) bid;
@@ -1652,9 +1662,10 @@ BATXMLattribute(bat *ret, const char *const *name, const bat *bid)
 }
 
 static str
-BATXMLelement(bat *ret, const char *const *name, xml *ns, xml *attr,
+BATXMLelement(Client ctx, bat *ret, const char *const *name, xml *ns, xml *attr,
 			  const bat *bid)
 {
+	(void) ctx;
 	(void) ret;
 	(void) name;
 	(void) ns;
@@ -1665,8 +1676,9 @@ BATXMLelement(bat *ret, const char *const *name, xml *ns, xml *attr,
 }
 
 static str
-BATXMLconcat(bat *ret, const bat *bid, const bat *rid)
+BATXMLconcat(Client ctx, bat *ret, const bat *bid, const bat *rid)
 {
+	(void) ctx;
 	(void) ret;
 	(void) bid;
 	(void) rid;
@@ -1686,8 +1698,9 @@ BATXMLforest(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 }
 
 static str
-BATXMLgroup(xml *ret, const bat *bid)
+BATXMLgroup(Client ctx, xml *ret, const bat *bid)
 {
+	(void) ctx;
 	(void) ret;
 	(void) bid;
 	return createException(MAL, "batxml.group",
@@ -1695,9 +1708,10 @@ BATXMLgroup(xml *ret, const bat *bid)
 }
 
 static str
-AGGRsubxmlcand(bat *retval, const bat *bid, const bat *gid, const bat *eid,
+AGGRsubxmlcand(Client ctx, bat *retval, const bat *bid, const bat *gid, const bat *eid,
 			   const bat *sid, const bit *skip_nils)
 {
+	(void) ctx;
 	(void) retval;
 	(void) bid;
 	(void) gid;
@@ -1709,9 +1723,10 @@ AGGRsubxmlcand(bat *retval, const bat *bid, const bat *gid, const bat *eid,
 }
 
 static str
-AGGRsubxml(bat *retval, const bat *bid, const bat *gid, const bat *eid,
+AGGRsubxml(Client ctx, bat *retval, const bat *bid, const bat *gid, const bat *eid,
 		   const bit *skip_nils)
 {
+	(void) ctx;
 	(void) retval;
 	(void) bid;
 	(void) gid;
@@ -1724,7 +1739,7 @@ AGGRsubxml(bat *retval, const bat *bid, const bat *gid, const bat *eid,
 #endif /* HAVE_LIBXML */
 
 #include "mel.h"
-mel_func batxml_init_funcs[] = {
+static mel_func batxml_init_funcs[] = {
  command("batxml", "xml", BATXMLstr2xml, false, "Cast the string to an xml compliant string.", args(1,2, batarg("",xml),batarg("src",str))),
  command("batxml", "str", BATXMLxml2str, false, "Cast the xml to a string.", args(1,2, batarg("",str),batarg("src",xml))),
  command("batxml", "document", BATXMLdocument, false, "Parse the string as an XML document.", args(1,2, batarg("",xml),batarg("src",str))),
@@ -1743,9 +1758,9 @@ mel_func batxml_init_funcs[] = {
  pattern("batxml", "forest", BATXMLforest, false, "Construct an element list.", args(1,2, batarg("",xml),batvararg("val",xml))),
  command("batxml", "root", BATXMLroot, false, "Construct the root nodes.", args(1,4, batarg("",xml),batarg("val",xml),arg("version",str),arg("standalone",str))),
  command("batxml", "isdocument", BATXMLisdocument, false, "Validate the string as a XML document.", args(1,2, batarg("",bit),batarg("val",str))),
- command("xml", "aggr", BATXMLgroup, false, "Aggregate the XML values.", args(1,2, arg("",xml),batarg("val",xml))),
- command("xml", "subaggr", AGGRsubxml, false, "Grouped aggregation of XML values.", args(1,5, batarg("",xml),batarg("val",xml),batarg("g",oid),batargany("e",1),arg("skip_nils",bit))),
- command("xml", "subaggr", AGGRsubxmlcand, false, "Grouped aggregation of XML values with candidates list.", args(1,6, batarg("",xml),batarg("val",xml),batarg("g",oid),batargany("e",1),batarg("s",oid),arg("skip_nils",bit))),
+ command("aggr", "xmlaggr", BATXMLgroup, false, "Aggregate the XML values.", args(1,2, arg("",xml),batarg("val",xml))),
+ command("aggr", "subxmlaggr", AGGRsubxml, false, "Grouped aggregation of XML values.", args(1,5, batarg("",xml),batarg("val",xml),batarg("g",oid),batargany("e",1),arg("skip_nils",bit))),
+ command("aggr", "subxmlaggr", AGGRsubxmlcand, false, "Grouped aggregation of XML values with candidates list.", args(1,6, batarg("",xml),batarg("val",xml),batarg("g",oid),batargany("e",1),batarg("s",oid),arg("skip_nils",bit))),
  command("batcalc", "xml", BATXMLstr2xml, false, "", args(1,2, batarg("",xml),batarg("src",str))),
  { .imp=NULL }
 };

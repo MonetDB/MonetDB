@@ -3,11 +3,9 @@
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024, 2025 MonetDB Foundation;
- * Copyright August 2008 - 2023 MonetDB B.V.;
- * Copyright 1997 - July 2008 CWI.
+ * For copyright information, see the file debian/copyright.
  */
 
 /*
@@ -40,204 +38,58 @@ static struct pipeline {
 	bool builtin;
 } pipes[MAXOPTPIPES] = {
 /* The minimal pipeline necessary by the server to operate correctly
- *
- * NOTE:
- * If you change the minimal pipe, please also update the man page
- * (see tools/mserver/mserver5.1) accordingly!
  */
 	{"minimal_pipe",
 	 (char *[]) {
-		 "inline",
-		 "remap",
-		 "emptybind",
-		 "deadcode",
-		 "for",
-		 "dict",
-		 "multiplex",
-		 "generator",
-		 "profiler",
-		 "garbageCollector",
+		 "minimalpipe",
 		 NULL,
 	 },
 	 true,
 	},
-	{"minimal_fast",
-	 (char *[]) {
-		 "minimalfast",
-		 NULL,
-	 },
-	 true,
-	},
-/* NOTE:
- * If you change the default pipe, please also update the no_mitosis
- * pipe and sequential pipe (see below, as well as the man page (see
- * tools/mserver/mserver5.1) accordingly!
- */
 	{"default_pipe",
 	 (char *[]) {
-		 "inline",
-		 "remap",
-		 "costModel",
-		 "coercions",
-		 "aliases",
-		 "evaluate",
-		 "emptybind",
-		 "deadcode",
-		 "pushselect",
-		 "aliases",
-		 "for",
-		 "dict",
-		 "mitosis",
-		 "mergetable",
-		 "aliases",
-		 "constants",
-		 "commonTerms",
-		 "projectionpath",
-		 "deadcode",
-		 "matpack",
-		 "reorder",
-		 "dataflow",
-		 "querylog",
-		 "multiplex",
-		 "generator",
-		 "candidates",
-		 "deadcode",
-		 "postfix",
-		 "profiler",
-		 "garbageCollector",
+		 "defaultpipe",
 		 NULL,
 	 },
 	 true,
 	},
-	{"default_fast",
-	 (char *[]) {
-		 "defaultfast",
-		 NULL,
-	 },
-	 true,
-	},
-/* The no_mitosis pipe line is (and should be kept!) identical to the
- * default pipeline, except that optimizer mitosis is omitted.  It is
- * used mainly to make some tests work deterministically, and to check
- * / debug whether "unexpected" problems are related to mitosis
- * (and/or mergetable).
- *
- * NOTE:
- * If you change the no_mitosis pipe, please also update the man page
- * (see tools/mserver/mserver5.1) accordingly!
+/* The no_mitosis pipe line is identical to the default pipeline, except
+ * that optimizer mitosis and dependent optimizers are omitted.  It is
+ * used mainly to make some tests work deterministically, and to check /
+ * debug whether "unexpected" problems are related to mitosis (and/or
+ * mergetable).
  */
 	{"no_mitosis_pipe",
+	 /* NOTE: this pipeline is automatically replaced by the
+	  * default_pipe pipeline by the SQL layer with the no_mitosis
+	  * option set, i.e. this list of optimizers isn't actually used
+	  * (look in opt_fastpath.c instead) */
 	 (char *[]) {
-		 "inline",
-		 "remap",
-		 "costModel",
-		 "coercions",
-		 "aliases",
-		 "evaluate",
-		 "emptybind",
-		 "deadcode",
-		 "pushselect",
-		 "aliases",
-		 "mergetable",
-		 "aliases",
-		 "constants",
-		 "commonTerms",
-		 "projectionpath",
-		 "deadcode",
-		 "matpack",
-		 "reorder",
-		 "dataflow",
-		 "querylog",
-		 "multiplex",
-		 "generator",
-		 "candidates",
-		 "deadcode",
-		 "postfix",
-		 "profiler",
-		 "garbageCollector",
+		 "nomitosispipe",
 		 NULL,
 	 },
 	 true,
 	},
-/* The sequential pipe line is (and should be kept!) identical to the
+/* The sequential pipe line is identical to the
  * default pipeline, except that optimizers mitosis & dataflow are
  * omitted.  It is used mainly to make some tests work
  * deterministically, i.e., avoid ambiguous output, by avoiding
  * parallelism.
- *
- * NOTE:
- * If you change the sequential pipe, please also update the man page
- * (see tools/mserver/mserver5.1) accordingly!
  */
 	{"sequential_pipe",
 	 (char *[]) {
-		 "inline",
-		 "remap",
-		 "costModel",
-		 "coercions",
-		 "aliases",
-		 "evaluate",
-		 "emptybind",
-		 "deadcode",
-		 "pushselect",
-		 "aliases",
-		 "for",
-		 "dict",
-		 "mergetable",
-		 "aliases",
-		 "constants",
-		 "commonTerms",
-		 "projectionpath",
-		 "deadcode",
-		 "matpack",
-		 "reorder",
-		 "querylog",
-		 "multiplex",
-		 "generator",
-		 "candidates",
-		 "deadcode",
-		 "postfix",
-		 "profiler",
-		 "garbageCollector",
+		 "sequentialpipe",
 		 NULL,
 	 },
 	 true,
 	},
 	{"recursive_pipe",
 	 (char *[]) {
-		 "inline",
-		 "remap",
-		 "costModel",
-		 "coercions",
-		 "aliases",
-		 "evaluate",
-		 "deadcode",
-		 "pushselect",
-		 "aliases",
-		 "for",
-		 "dict",
-		 "mergetable",
-		 "aliases",
-		 "constants",
-		 "projectionpath",
-		 "deadcode",
-		 "matpack",
-		 "querylog",
-		 "multiplex",
-		 "generator",
-		 "candidates",
-		 "deadcode",
-		 "postfix",
-		 "profiler",
-		 "garbageCollector",
+		 "recursivepipe",
 		 NULL,
 	 },
 	 true,
 	},
-/* Experimental pipelines stressing various components under
- * development.  Do not use any of these pipelines in production
- * settings!
- */
 /* sentinel */
 	{NULL, NULL, false,},
 };
@@ -251,20 +103,19 @@ validatePipe(struct pipeline *pipe)
 {
 	bool mitosis = false, deadcode = false, mergetable = false;
 	bool multiplex = false, garbage = false, generator = false, remap = false;
-	int i;
 
 	if (pipe->def == NULL || pipe->def[0] == NULL)
 		throw(MAL, "optimizer.validate", SQLSTATE(42000) "missing optimizers");
 
-	if (strcmp(pipe->def[0], "defaultfast") == 0
-		|| strcmp(pipe->def[0], "minimalfast") == 0)
+	if (strcmp(pipe->def[0], "defaultpipe") == 0
+		|| strcmp(pipe->def[0], "minimalpipe") == 0)
 		return MAL_SUCCEED;
 
 	if (strcmp(pipe->def[0], "inline") != 0)
 		throw(MAL, "optimizer.validate",
 			  SQLSTATE(42000) "'inline' should be the first\n");
 
-	for (i = 0; pipe->def[i]; i++) {
+	for (int i = 0; pipe->def[i]; i++) {
 		const char *fname = pipe->def[i];
 		if (garbage)
 			throw(MAL, "optimizer.validate",
@@ -276,8 +127,17 @@ validatePipe(struct pipeline *pipe)
 			remap = true;
 		else if (strcmp(fname, "mitosis") == 0)
 			mitosis = true;
-		else if (strcmp(fname, "mergetable") == 0)
+		else if (strcmp(fname, "mergetable") == 0) {
+			if (!mitosis)
+				throw(MAL, "optimizer.validate",
+					  SQLSTATE(42000) "'mergetable' requires 'mitosis'\n");
 			mergetable = true;
+		} else if (strcmp(fname, "matpack") == 0 && !mergetable)
+			throw(MAL, "optimizer.validate",
+				  SQLSTATE(42000) "'matpack' requires 'mergetable'\n");
+		else if (strcmp(fname, "reorder") == 0 && !mitosis)
+			throw(MAL, "optimizer.validate",
+				  SQLSTATE(42000) "'reorder' requires 'mitosis'\n");
 		else if (strcmp(fname, "multiplex") == 0)
 			multiplex = true;
 		else if (strcmp(fname, "generator") == 0)
@@ -411,12 +271,15 @@ isOptimizerPipe(const char *name)
 }
 
 str
-getPipeCatalog(bat *nme, bat *def, bat *stat)
+getPipeCatalog(Client ctx, bat *nme, bat *def, bat *stat)
 {
+	(void) ctx;
 	BAT *b, *bn, *bs;
 	int i;
 	size_t l = 2048;
-	char *buf = GDKmalloc(l);
+	allocator *ta = MT_thread_getallocator();
+	allocator_state ta_state = ma_open(ta);
+	char *buf = ma_alloc(ta, l);
 
 	b = COLnew(0, TYPE_str, 20, TRANSIENT);
 	bn = COLnew(0, TYPE_str, 20, TRANSIENT);
@@ -425,7 +288,7 @@ getPipeCatalog(bat *nme, bat *def, bat *stat)
 		BBPreclaim(b);
 		BBPreclaim(bn);
 		BBPreclaim(bs);
-		GDKfree(buf);
+		ma_close(&ta_state);
 		throw(MAL, "optimizer.getpipeDefinition",
 			  SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
@@ -435,14 +298,13 @@ getPipeCatalog(bat *nme, bat *def, bat *stat)
 		for (int j = 0; pipes[i].def[j]; j++)
 			n += strlen(pipes[i].def[j]) + 13;
 		if (n > l) {
-			GDKfree(buf);
-			buf = GDKmalloc(n);
+			buf = ma_alloc(ta, n);
 			l = n;
 			if (buf == NULL) {
 				BBPreclaim(b);
 				BBPreclaim(bn);
 				BBPreclaim(bs);
-				GDKfree(buf);
+				ma_close(&ta_state);
 				throw(MAL, "optimizer.getpipeDefinition",
 					  SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			}
@@ -460,12 +322,12 @@ getPipeCatalog(bat *nme, bat *def, bat *stat)
 			BBPreclaim(b);
 			BBPreclaim(bn);
 			BBPreclaim(bs);
-			GDKfree(buf);
+			ma_close(&ta_state);
 			throw(MAL, "optimizer.getpipeDefinition",
 				  SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		}
 	}
-	GDKfree(buf);
+	ma_close(&ta_state);
 
 	*nme = b->batCacheid;
 	BBPkeepref(b);
@@ -487,9 +349,9 @@ addOptimizerPipe(Client cntxt, MalBlkPtr mb, const char *name)
 	str msg = MAL_SUCCEED;
 
 	(void) cntxt;
-	if (strcmp(name, "default_fast") == 0 && isSimpleSQL(mb)) {
+	if (strcmp(name, "default_pipe") == 0 && isSimpleSQL(mb)) {
 		for (i = 0; i < MAXOPTPIPES && pipes[i].name; i++)
-			if (strcmp(pipes[i].name, "minimal_fast") == 0)
+			if (strcmp(pipes[i].name, "minimal_pipe") == 0)
 				break;
 	} else {
 		for (i = 0; i < MAXOPTPIPES && pipes[i].name; i++)

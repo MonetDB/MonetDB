@@ -1,0 +1,41 @@
+-- next query with commented out 'UNION SELECT - endsWith () ...' part works
+query I rowsort
+SELECT lead ( x ) OVER ( PARTITION BY ( x % 10 ) ) = 0 AS x
+ FROM ( SELECT 1 AS x
+         UNION
+        SELECT 1.500000 AS x
+--         UNION
+--        SELECT - endsWith ( 'johndoe' , 'doe' ) - 12 * - 27 * CASE WHEN NOT NULL IN
+--         ( - 69 , ( SELECT ( SELECT repeat ( 'a' , 66000 ) ) LIMIT 1 OFFSET 1 ) > ANY ( CASE - ( 0 ) WHEN 18 + - 60 THEN NULL WHEN - CASE - 67 WHEN - 79 * COUNT ( * ) OVER ( ROWS BETWEEN CURRENT ROW AND CURRENT ROW ) / 30 - 32 * 69 THEN MAX ( DISTINCT 34 ) / 0 ELSE NULL END * ( 45 ) + 19 * 552 THEN 20 WHEN SUM ( 78 ) + 69 THEN 29 * 74 ELSE NULLIF ( 82 , 72 + 26 ) * 7 END * - 92 LIKE '%d%n' ) + 37 , 44 , - - 0 * 23 , - - 86 , 3 , 'e' ) THEN 41
+--          WHEN NOT - 21 / - 95 IS NOT NULL THEN 63 END AS x
+      )
+WHERE x NOT IN ( SELECT sum ( SUBSTRING ( x , 1 + 0.100000 + 0.100000 + 0.100000 + 0.100000 + 0.100000 + 0.100000 + 0.100000 + 0.100000 + 0.100000 + 0.100000 + 0.100000 + NULLIF ( NULL , 0 ) + 0.100000 + 0.100000 + 0.100000 + 0.100000 + 0.100000 + 0.100000 + 3 ) ) OVER ( ROWS BETWEEN CURRENT ROW AND CURRENT ROW ) AS x
+                 UNION SELECT 2 AS x
+                 UNION SELECT 3 AS x )
+----
+
+-- test the crashing 'SELECT - endsWith () ...' query independently
+-- it crashes in exp_bin (be=0x7fa90c1a6180, e=0x7fa90c1b3f40, left=0x7fa90c1460f0, right=0x0, grp=0x0, ext=0x0, cnt=0x0, sel=0x0, depth=15, reduce=0, push=1) at sql/backends/monet5/rel_bin.c:1736
+query I rowsort
+SELECT - endsWith ( 'johndoe' , 'doe' ) - 12 * - 27 * CASE WHEN NOT NULL IN
+         ( - 69 , ( SELECT ( SELECT repeat ( 'a' , 66000 ) ) LIMIT 1 OFFSET 1 ) > ANY ( CASE - ( 0 ) WHEN 18 + - 60 THEN NULL WHEN - CASE - 67 WHEN - 79 * COUNT ( * ) OVER ( ROWS BETWEEN CURRENT ROW AND CURRENT ROW ) / 30 - 32 * 69 THEN MAX ( DISTINCT 34 ) / 0 ELSE NULL END * ( 45 ) + 19 * 552 THEN 20 WHEN SUM ( 78 ) + 69 THEN 29 * 74 ELSE NULLIF ( 82 , 72 + 26 ) * 7 END * - 92 LIKE '%d%n' ) + 37 , 44 , - - 0 * 23 , - - 86 , 3 , 'e' ) THEN 41
+          WHEN NOT - 21 / - 95 IS NOT NULL THEN 63 END AS x
+----
+
+-- the orginal reported query
+-- it crashes in exp_bin (be=0x7fa90c1a6180, e=0x7fa90c1b3f40, left=0x7fa90c1460f0, right=0x0, grp=0x0, ext=0x0, cnt=0x0, sel=0x0, depth=15, reduce=0, push=1) at sql/backends/monet5/rel_bin.c:1736
+query I rowsort
+SELECT lead ( x ) OVER ( PARTITION BY ( x % 10 ) ) = 0 AS x
+ FROM ( SELECT 1 AS x
+         UNION
+        SELECT 1.500000 AS x
+         UNION
+        SELECT - endsWith ( 'johndoe' , 'doe' ) - 12 * - 27 * CASE WHEN NOT NULL IN
+         ( - 69 , ( SELECT ( SELECT repeat ( 'a' , 66000 ) ) LIMIT 1 OFFSET 1 ) > ANY ( CASE - ( 0 ) WHEN 18 + - 60 THEN NULL WHEN - CASE - 67 WHEN - 79 * COUNT ( * ) OVER ( ROWS BETWEEN CURRENT ROW AND CURRENT ROW ) / 30 - 32 * 69 THEN MAX ( DISTINCT 34 ) / 0 ELSE NULL END * ( 45 ) + 19 * 552 THEN 20 WHEN SUM ( 78 ) + 69 THEN 29 * 74 ELSE NULLIF ( 82 , 72 + 26 ) * 7 END * - 92 LIKE '%d%n' ) + 37 , 44 , - - 0 * 23 , - - 86 , 3 , 'e' ) THEN 41
+          WHEN NOT - 21 / - 95 IS NOT NULL THEN 63 END AS x
+      )
+WHERE x NOT IN ( SELECT sum ( SUBSTRING ( x , 1 + 0.100000 + 0.100000 + 0.100000 + 0.100000 + 0.100000 + 0.100000 + 0.100000 + 0.100000 + 0.100000 + 0.100000 + 0.100000 + NULLIF ( NULL , 0 ) + 0.100000 + 0.100000 + 0.100000 + 0.100000 + 0.100000 + 0.100000 + 3 ) ) OVER ( ROWS BETWEEN CURRENT ROW AND CURRENT ROW ) AS x
+                 UNION SELECT 2 AS x
+                 UNION SELECT 3 AS x )
+----
+

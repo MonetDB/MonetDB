@@ -1,0 +1,482 @@
+statement ok
+create schema test
+
+statement ok
+create table test.share_daily_history (id string, timeid int, c1 int, c2 int, c3 int, c4 int, volume int)
+
+query TIITTT nosort
+prepare merge into test.share_daily_history as target
+using (select * from (values('BHP',1,1 ,1 ,1 ,1 ,1)) as a(id,timeid,c1,c2,c3,c4,volume)) as source
+on source.id=target.id and source.timeid=target.timeid
+when not matched then insert (id,timeid,c1,c2,c3,c4,volume) values(source.id,source.timeid,source.c1,source.c2,source.c3,source.c4,source.volume)
+----
+
+statement ok
+exec <LAST_PREPARE_ID>()
+
+statement ok
+exec <LAST_PREPARE_ID>()
+
+query TIITTT nosort
+prepare merge into test.share_daily_history as target
+using (select * from (values('BHP',?,?,?,?,?,?)) as a(id,timeid,c1,c2,c3,c4,volume)) as source
+on source.id=target.id and source.timeid=target.timeid
+when not matched then insert (id,timeid,c1,c2,c3,c4,volume) values(source.id,source.timeid,source.c1,source.c2,source.c3,source.c4,source.volume)
+----
+int
+1
+0
+NULL
+NULL
+NULL
+int
+31
+0
+NULL
+NULL
+NULL
+int
+31
+0
+NULL
+NULL
+NULL
+int
+31
+0
+NULL
+NULL
+NULL
+int
+31
+0
+NULL
+NULL
+NULL
+int
+31
+0
+NULL
+NULL
+NULL
+
+statement ok
+exec <LAST_PREPARE_ID>(1,2,3,4,5,6)
+
+statement error 42000!Could not determine type for argument number 2
+prepare select * from test.share_daily_history
+inner join (values('BHP',?,?,?,?,?,?)) as source(id,timeid,c1,c2,c3,c4,volume)
+on source.id=share_daily_history.id and source.timeid=share_daily_history.timeid
+
+query TIITTT nosort
+prepare select * from test.share_daily_history inner join (values('BHP',?)) as source(id,timeid)
+on source.id=share_daily_history.id and source.timeid=share_daily_history.timeid
+----
+varchar
+0
+0
+(empty)
+share_daily_history
+id
+int
+1
+0
+(empty)
+share_daily_history
+timeid
+int
+1
+0
+(empty)
+share_daily_history
+c1
+int
+1
+0
+(empty)
+share_daily_history
+c2
+int
+1
+0
+(empty)
+share_daily_history
+c3
+int
+1
+0
+(empty)
+share_daily_history
+c4
+int
+1
+0
+(empty)
+share_daily_history
+volume
+varchar
+3
+0
+(empty)
+source
+id
+int
+1
+0
+(empty)
+source
+timeid
+int
+1
+0
+NULL
+NULL
+NULL
+
+statement error 42000!EXEC called with wrong number of arguments: expected 1, got 0
+exec <LAST_PREPARE_ID>()
+
+query TIITTT nosort
+prepare select * from test.share_daily_history
+inner join (values('BHP')) as source(id)
+on source.id=share_daily_history.id
+----
+varchar
+0
+0
+(empty)
+share_daily_history
+id
+int
+1
+0
+(empty)
+share_daily_history
+timeid
+int
+1
+0
+(empty)
+share_daily_history
+c1
+int
+1
+0
+(empty)
+share_daily_history
+c2
+int
+1
+0
+(empty)
+share_daily_history
+c3
+int
+1
+0
+(empty)
+share_daily_history
+c4
+int
+1
+0
+(empty)
+share_daily_history
+volume
+varchar
+3
+0
+(empty)
+source
+id
+
+statement error 42000!EXEC called with wrong number of arguments: expected 0, got 1
+exec <LAST_PREPARE_ID>(1)
+
+query TIITTT nosort
+prepare select * from test.share_daily_history
+inner join (values(?), ('BHP')) as source(id)
+on source.id=share_daily_history.id
+----
+varchar
+0
+0
+(empty)
+share_daily_history
+id
+int
+1
+0
+(empty)
+share_daily_history
+timeid
+int
+1
+0
+(empty)
+share_daily_history
+c1
+int
+1
+0
+(empty)
+share_daily_history
+c2
+int
+1
+0
+(empty)
+share_daily_history
+c3
+int
+1
+0
+(empty)
+share_daily_history
+c4
+int
+1
+0
+(empty)
+share_daily_history
+volume
+varchar
+3
+0
+(empty)
+source
+id
+varchar
+3
+0
+NULL
+NULL
+NULL
+
+query TIIIIIIT nosort
+exec <LAST_PREPARE_ID>('a')
+----
+BHP
+1
+1
+1
+1
+1
+1
+BHP
+
+query TIITTT nosort
+prepare select * from test.share_daily_history
+inner join (values('BHP'), (?)) as source(id)
+on source.id=share_daily_history.id
+----
+varchar
+0
+0
+(empty)
+share_daily_history
+id
+int
+1
+0
+(empty)
+share_daily_history
+timeid
+int
+1
+0
+(empty)
+share_daily_history
+c1
+int
+1
+0
+(empty)
+share_daily_history
+c2
+int
+1
+0
+(empty)
+share_daily_history
+c3
+int
+1
+0
+(empty)
+share_daily_history
+c4
+int
+1
+0
+(empty)
+share_daily_history
+volume
+varchar
+3
+0
+(empty)
+source
+id
+varchar
+3
+0
+NULL
+NULL
+NULL
+
+query TIIIIIIT nosort
+exec <LAST_PREPARE_ID>('a')
+----
+BHP
+1
+1
+1
+1
+1
+1
+BHP
+
+query TIITTT nosort
+prepare select * from test.share_daily_history
+inner join (values(?)) as source(id)
+on source.id=share_daily_history.id
+----
+varchar
+0
+0
+(empty)
+share_daily_history
+id
+int
+1
+0
+(empty)
+share_daily_history
+timeid
+int
+1
+0
+(empty)
+share_daily_history
+c1
+int
+1
+0
+(empty)
+share_daily_history
+c2
+int
+1
+0
+(empty)
+share_daily_history
+c3
+int
+1
+0
+(empty)
+share_daily_history
+c4
+int
+1
+0
+(empty)
+share_daily_history
+volume
+varchar
+0
+0
+(empty)
+source
+id
+varchar
+0
+0
+NULL
+NULL
+NULL
+
+query TIIIIIIT nosort
+exec <LAST_PREPARE_ID>('a')
+----
+
+query TIITTT nosort
+prepare select * from test.share_daily_history
+inner join (values(?),(?),(?)) as source(id)
+on source.id=share_daily_history.id
+----
+varchar
+0
+0
+(empty)
+share_daily_history
+id
+int
+1
+0
+(empty)
+share_daily_history
+timeid
+int
+1
+0
+(empty)
+share_daily_history
+c1
+int
+1
+0
+(empty)
+share_daily_history
+c2
+int
+1
+0
+(empty)
+share_daily_history
+c3
+int
+1
+0
+(empty)
+share_daily_history
+c4
+int
+1
+0
+(empty)
+share_daily_history
+volume
+varchar
+0
+0
+(empty)
+source
+id
+varchar
+0
+0
+NULL
+NULL
+NULL
+varchar
+0
+0
+NULL
+NULL
+NULL
+varchar
+0
+0
+NULL
+NULL
+NULL
+
+query TIIIIIIT nosort
+exec <LAST_PREPARE_ID>('a','b','c')
+----
+
+statement ok
+drop schema test cascade
+

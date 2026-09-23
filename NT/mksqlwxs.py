@@ -2,11 +2,9 @@
 #
 # This Source Code Form is subject to the terms of the Mozilla Public
 # License, v. 2.0.  If a copy of the MPL was not distributed with this
-# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+# file, You can obtain one at https://mozilla.org/MPL/2.0/.
 #
-# Copyright 2024, 2025 MonetDB Foundation;
-# Copyright August 2008 - 2023 MonetDB B.V.;
-# Copyright 1997 - July 2008 CWI.
+# For copyright information, see the file debian/copyright.
 
 # python mksqlwxs.py VERSION BITS PREFIX > PREFIX/MonetDB-SQL-Installer.wxs
 # "c:\Program Files (x86)\WiX Toolset v3.10\bin\candle.exe" -nologo -arch x64/x86 PREFIX/MonetDB-SQL-Installer.wxs
@@ -73,7 +71,6 @@ def main():
     extend = []
     debug = []
     geom = []
-    pyapi3 = []
     print(r'<?xml version="1.0"?>')
     print(r'<Wix xmlns="http://schemas.microsoft.com/wix/2006/wi">')
     print(r'  <Product Id="*" Language="1033" Manufacturer="MonetDB" Name="MonetDB" UpgradeCode="{}" Version="{}">'.format(upgradecode[arch], version))
@@ -102,18 +99,13 @@ def main():
     print(r'      </DirectorySearch>')
     print(r'    </Property>')
     print(r'    <Property Id="GEOMMALEXISTS">')
-    print(rf'      <DirectorySearch Id="CheckFileDir3" Path="[INSTALLDIR]\lib\monetdb5-{version}" Depth="0">')
+    print(r'      <DirectorySearch Id="CheckFileDir3" Path="[INSTALLDIR]\lib\monetdb5" Depth="0">')
     print(r'        <FileSearch Id="CheckFile3" Name="geom.mal"/>')
     print(r'      </DirectorySearch>')
     print(r'    </Property>')
     print(r'    <Property Id="GEOMLIBEXISTS">')
-    print(rf'      <DirectorySearch Id="CheckFileDir4" Path="[INSTALLDIR]\lib\monetdb5-{version}" Depth="0">')
+    print(r'      <DirectorySearch Id="CheckFileDir4" Path="[INSTALLDIR]\lib\monetdb5" Depth="0">')
     print(r'        <FileSearch Id="CheckFile4" Name="_geom.dll"/>')
-    print(r'      </DirectorySearch>')
-    print(r'    </Property>')
-    print(r'    <Property Id="PYAPI3EXISTS">')
-    print(r'      <DirectorySearch Id="CheckFileDir5" Path="[INSTALLDIR]" Depth="0">')
-    print(r'        <FileSearch Id="CheckFile5" Name="pyapi_locatepython3.bat"/>')
     print(r'      </DirectorySearch>')
     print(r'    </Property>')
     # up to and including 11.29.3, the geom module can not be
@@ -159,17 +151,18 @@ def main():
                r'bin\monetdbe.dll',
                rf'bin\monetdbsql-{version}.dll',
                rf'bin\stream-{version}.dll',
-               vcpkg.format(r'bin\iconv-2.dll'),
+               rf'bin\mutils-{version}.dll',
                vcpkg.format(r'bin\bz2.dll'),
                vcpkg.format(r'bin\charset-1.dll'), # for iconv-2.dll
                vcpkg.format(r'bin\getopt.dll'),
+               vcpkg.format(r'bin\iconv-2.dll'),
                vcpkg.format(r'bin\libcrypto-3{}.dll'.format(libcrypto)),
+               vcpkg.format(r'bin\liblzma.dll'),
                vcpkg.format(r'bin\libssl-3{}.dll'.format(libcrypto)),
                vcpkg.format(r'bin\libxml2.dll'),
                vcpkg.format(r'bin\lz4.dll'),
-               vcpkg.format(r'bin\liblzma.dll'),
-               vcpkg.format(r'bin\pcre.dll'),
-               vcpkg.format(r'bin\zlib1.dll')])
+               vcpkg.format(r'bin\pcre2-8.dll'),
+               vcpkg.format(r'bin\z.dll')])
     id = comp(debug, id, 14,
               [r'bin\mclient.pdb',
                r'bin\mserver5.pdb',
@@ -178,7 +171,8 @@ def main():
                rf'lib\mapi-{version}.pdb',
                rf'lib\monetdb5-{version}.pdb',
                rf'lib\monetdbsql-{version}.pdb',
-               rf'lib\stream-{version}.pdb'])
+               rf'lib\stream-{version}.pdb',
+               rf'lib\mutils-{version}.pdb'])
     id = comp(geom, id, 14,
               [vcpkg.format(r'bin\geos_c.dll'),
                vcpkg.format(r'bin\geos.dll')])
@@ -205,13 +199,11 @@ def main():
     print(r'            <Directory Id="lib" Name="lib">')
     print(r'              <Directory Id="monetdb5" Name="monetdb5">')
     id = comp(features, id, 16,
-              [rf'lib\monetdb5-{version}\{x}' for x in sorted(filter(lambda x: x.startswith('_') and x.endswith('.dll') and ('geom' not in x) and ('pyapi' not in x) and ('opt_sql_append' not in x) and ('microbenchmark' not in x) and ('udf' not in x), os.listdir(os.path.join(sys.argv[3], 'lib', f'monetdb5-{version}'))))])
+              [rf'lib\monetdb5-{version}\{x}' for x in sorted(filter(lambda x: x.startswith('_') and x.endswith('.dll') and ('geom' not in x) and ('microbenchmark' not in x) and ('udf' not in x), os.listdir(os.path.join(sys.argv[3], 'lib', f'monetdb5-{version}'))))])
     id = comp(debug, id, 16,
-              [rf'lib\monetdb5-{version}\{x}' for x in sorted(filter(lambda x: x.startswith('_') and x.endswith('.pdb') and ('geom' not in x) and ('opt_sql_append' not in x) and ('microbenchmark' not in x) and ('udf' not in x), os.listdir(os.path.join(sys.argv[3], 'lib', f'monetdb5-{version}'))))])
+              [rf'lib\monetdb5-{version}\{x}' for x in sorted(filter(lambda x: x.startswith('_') and x.endswith('.pdb') and ('geom' not in x) and ('microbenchmark' not in x) and ('udf' not in x), os.listdir(os.path.join(sys.argv[3], 'lib', f'monetdb5-{version}'))))])
     id = comp(geom, id, 16,
               [rf'lib\monetdb5-{version}\{x}' for x in sorted(filter(lambda x: x.startswith('_') and (x.endswith('.dll') or x.endswith('.pdb')) and ('geom' in x), os.listdir(os.path.join(sys.argv[3], 'lib', f'monetdb5-{version}'))))])
-    id = comp(pyapi3, id, 16,
-              [rf'lib\monetdb5-{version}\_pyapi3.dll'])
     print(r'              </Directory>')
     id = comp(extend, id, 14,
               [rf'lib\bat-{version}.lib',
@@ -220,15 +212,16 @@ def main():
                r'lib\monetdbe.lib',
                rf'lib\monetdbsql-{version}.lib',
                rf'lib\stream-{version}.lib',
-               vcpkg.format(r'lib\iconv.lib'),
+               rf'lib\mutils-{version}.lib',
                vcpkg.format(r'lib\bz2.lib'),
                vcpkg.format(r'lib\charset.lib'),
                vcpkg.format(r'lib\getopt.lib'),
+               vcpkg.format(r'lib\iconv.lib'),
                vcpkg.format(r'lib\libxml2.lib'),
                vcpkg.format(r'lib\lz4.lib'),
                vcpkg.format(r'lib\lzma.lib'),
-               vcpkg.format(r'lib\pcre.lib'),
-               vcpkg.format(r'lib\zlib.lib')])
+               vcpkg.format(r'lib\pcre2-8.lib'),
+               vcpkg.format(r'lib\z.lib')])
     print(r'            </Directory>')
     print(r'            <Directory Id="share" Name="share">')
     print(r'              <Directory Id="doc" Name="doc">')
@@ -248,8 +241,6 @@ def main():
               [r'share\license.rtf',
                r'M5server.bat',
                r'msqldump.bat'])
-    id = comp(pyapi3, id, 12,
-              [r'pyapi_locatepython3.bat'])
     id = comp(features, id, 12,
               [r'mclient.bat'],
               name = 'MonetDB SQL Client',
@@ -277,11 +268,6 @@ def main():
     for f in features:
         print(r'        <ComponentRef Id="{}"/>'.format(f))
     print(r'        <MergeRef Id="VCRedist"/>')
-    print(r'      </Feature>')
-    print(r'      <Feature Id="PyAPI3" Level="1000" AllowAdvertise="no" Absent="allow" Title="Include embedded Python 3" Description="Files required for using embedded Python 3.">')
-    for f in pyapi3:
-        print(r'        <ComponentRef Id="{}"/>'.format(f))
-    print(r'        <Condition Level="1">PYAPI3EXISTS</Condition>')
     print(r'      </Feature>')
     print(r'      <Feature Id="Extend" Level="1000" AllowAdvertise="no" Absent="allow" Title="Extend MonetDB/SQL" Description="Files required for extending MonetDB (include files and .lib files).">')
     for f in extend:

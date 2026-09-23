@@ -3,11 +3,9 @@
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024, 2025 MonetDB Foundation;
- * Copyright August 2008 - 2023 MonetDB B.V.;
- * Copyright 1997 - July 2008 CWI.
+ * For copyright information, see the file debian/copyright.
  */
 
 #include "monetdb_config.h"
@@ -24,6 +22,8 @@ log_base2(unsigned int n)
 	return l ;
 }
 
+#define MIN_SIZE 64
+
 sql_hash *
 hash_new(allocator *sa, int size, fkeyvalue key)
 {
@@ -33,6 +33,8 @@ hash_new(allocator *sa, int size, fkeyvalue key)
 		return NULL;
 	ht->sa = sa;
 	ht->entries = 0;
+	if (size < MIN_SIZE)
+		size = MIN_SIZE;
 	ht->size = (1<<log_base2(size-1));
 	ht->key = key;
 	ht->buckets = (ht->sa)?SA_ZNEW_ARRAY(sa, sql_hash_e*, ht->size):ZNEW_ARRAY(sql_hash_e*, ht->size);

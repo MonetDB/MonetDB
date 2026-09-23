@@ -1,0 +1,52 @@
+statement ok
+start transaction
+
+statement ok
+create table pce (i int, s string)
+
+statement ok
+commit
+
+statement ok
+start transaction
+
+query TIITTT nosort
+prepare insert into pce (i,s) values (?,?)
+----
+int
+31
+0
+NULL
+NULL
+NULL
+varchar
+0
+0
+NULL
+NULL
+NULL
+
+statement ok
+exec <LAST_PREPARE_ID>(1,'test 1')
+
+statement ok
+select * from pce
+
+statement ok
+commit
+
+statement ok
+start transaction
+
+statement ok
+exec <LAST_PREPARE_ID>(2,'test 2')
+
+statement ok
+select * from pce
+
+statement ok
+commit
+
+statement ok
+drop table pce
+

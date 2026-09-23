@@ -7,6 +7,7 @@ COMMENT ON SCHEMA "testschema" IS 'a schema used for testing';
 CREATE SCHEMA "testuser2" AUTHORIZATION "testuser2";
 ALTER USER "testuser" SET SCHEMA "testschema";
 ALTER USER "testuser2" SET SCHEMA "testuser2";
+GRANT COPY FROM TO "testuser";
 CREATE SEQUENCE "testschema"."selfref_seq" AS INTEGER;
 COMMENT ON SEQUENCE "testschema"."selfref_seq" IS 'sequence number for selfref table';
 CREATE SEQUENCE "testschema"."test_seq" AS INTEGER;
@@ -101157,7 +101158,7 @@ CREATE TABLE "testschema"."typestest" (
 	"blob"           BINARY LARGE OBJECT,
 	"blob100"        BINARY LARGE OBJECT(100),
 	"clob"           CHARACTER LARGE OBJECT,
-	"clob100"        CHARACTER LARGE OBJECT(100),
+	"clob100"        VARCHAR(100),
 	"character"      CHAR(1),
 	"varchar100"     VARCHAR(100),
 	"character10"    CHAR(10),
@@ -101173,7 +101174,8 @@ CREATE TABLE "testschema"."keytest1" (
 	"key2" INTEGER       NOT NULL,
 	"key3" INTEGER,
 	CONSTRAINT "keytest1_key1_key2_pkey" PRIMARY KEY ("key1", "key2"),
-	CONSTRAINT "keytest1_key3_unique" UNIQUE ("key3")
+	CONSTRAINT "keytest1_key3_unique" UNIQUE ("key3"),
+	CONSTRAINT "keytest1_key1_key3_nndunique" UNIQUE NULLS NOT DISTINCT ("key1", "key3")
 );
 COPY 4 RECORDS INTO "testschema"."keytest1" FROM stdin USING DELIMITERS E'\t',E'\n','"';
 0	0	0
@@ -101189,6 +101191,18 @@ COPY 4 RECORDS INTO "testschema"."keytest2" FROM stdin USING DELIMITERS E'\t',E'
 0	1
 1	0
 1	1
+CREATE TABLE "testschema"."nulls_not_distinct" (
+	"id"      INTEGER       NOT NULL,
+	"unique1" INTEGER,
+	"unique2" INTEGER,
+	"check1"  INTEGER,
+	CONSTRAINT "nulls_not_distinct_id_pkey" PRIMARY KEY ("id"),
+	CONSTRAINT "nulls_not_distinct_unique1_unique" UNIQUE ("unique1"),
+	CONSTRAINT "nulls_not_distinct_unique2_nndunique" UNIQUE NULLS NOT DISTINCT ("unique2"),
+	CONSTRAINT "nulls_not_distinct_check1_check" CHECK (check1 > 0)
+);
+COPY 1 RECORDS INTO "testschema"."nulls_not_distinct" FROM stdin USING DELIMITERS E'\t',E'\n','"';
+1	1	1	1
 CREATE TABLE "testschema"."selfref" (
 	"id"       INTEGER       NOT NULL,
 	"parentid" INTEGER,
@@ -101331,9 +101345,21 @@ COPY 5 RECORDS INTO "testschema"."sublimits3" FROM stdin USING DELIMITERS E'\t',
 9	"to"
 9	"pass"
 8	"attempt"
+CREATE MERGE TABLE "testschema"."testme_exp" (
+	"a" INTEGER,
+	"b" VARCHAR(32)
+) PARTITION BY RANGE USING ("sys"."md5"("a"));
+CREATE TABLE "testschema"."subtable_exp1" (
+	"a" INTEGER,
+	"b" VARCHAR(32)
+);
+CREATE TABLE "testschema"."subtable_exp2" (
+	"a" INTEGER,
+	"b" VARCHAR(32)
+);
 CREATE REMOTE TABLE "testschema"."remotetable" (
 	"i" INTEGER
-) ON 'mapi:monetdb://remote.host.url:50000/dbname' WITH USER 'bob' ENCRYPTED PASSWORD 'f8e3183d38e6c51889582cb260ab825252f395b4ac8fb0e6b13e9a71f7c10a80d5301e4a949f2783cb0c20205f1d850f87045f4420ad2271c8fd5f0cd8944be3';
+) ON 'monetdb://remote.host.url/dbname' WITH USER 'bob' ENCRYPTED PASSWORD 'f8e3183d38e6c51889582cb260ab825252f395b4ac8fb0e6b13e9a71f7c10a80d5301e4a949f2783cb0c20205f1d850f87045f4420ad2271c8fd5f0cd8944be3';
 CREATE TABLE "testschema"."""" (
 	"""" INTEGER
 );
@@ -101437,21 +101463,23 @@ ALTER TABLE "testschema"."keytest2" ADD CONSTRAINT "keytest2_key1_key2_fkey" FOR
 ALTER TABLE "testschema"."selfref" ADD CONSTRAINT "selfref_parentid_fkey" FOREIGN KEY ("parentid") REFERENCES "testschema"."selfref" ("id");
 ALTER SEQUENCE "testschema"."selfref_seq" RESTART WITH 7 NO CYCLE;
 ALTER SEQUENCE "testschema"."test_seq" RESTART WITH 8 INCREMENT BY 3 MINVALUE 5 MAXVALUE 10 CYCLE;
+ALTER TABLE "testschema"."mt1" ADD TABLE "testschema"."t1";
+ALTER TABLE "testschema"."mt1" ADD TABLE "testschema"."t2";
+ALTER TABLE "testschema"."mt2" ADD TABLE "testschema"."t1";
+ALTER TABLE "testschema"."mt2" ADD TABLE "testschema"."t3";
+ALTER TABLE "testschema"."mt3" ADD TABLE "testschema"."mt1";
+ALTER TABLE "testschema"."mt3" ADD TABLE "testschema"."t4";
 ALTER TABLE "testschema"."testme" ADD TABLE "testschema"."subtable1" AS PARTITION FROM RANGE MINVALUE TO '11' WITH NULL VALUES;
 ALTER TABLE "testschema"."testme" ADD TABLE "testschema"."subtable2" AS PARTITION FROM '11' TO '20';
 ALTER TABLE "testschema"."testme" ADD TABLE "testschema"."subtable3" AS PARTITION FROM '21' TO RANGE MAXVALUE;
 ALTER TABLE "testschema"."testme2" ADD TABLE "testschema"."subtable4" AS PARTITION FROM RANGE MINVALUE TO RANGE MAXVALUE;
 ALTER TABLE "testschema"."testme2" ADD TABLE "testschema"."subtable5" AS PARTITION FOR NULL VALUES;
 ALTER TABLE "testschema"."testme3" ADD TABLE "testschema"."subtable6" AS PARTITION FROM RANGE MINVALUE TO RANGE MAXVALUE WITH NULL VALUES;
+ALTER TABLE "testschema"."testme_exp" ADD TABLE "testschema"."subtable_exp1" AS PARTITION FROM '00000000000000000000000000000000' TO '7fffffffffffffffffffffffffffffff';
+ALTER TABLE "testschema"."testme_exp" ADD TABLE "testschema"."subtable_exp2" AS PARTITION FROM '80000000000000000000000000000000' TO 'ffffffffffffffffffffffffffffffff';
 ALTER TABLE "testschema"."testvaluespartitions" ADD TABLE "testschema"."sublimits1" AS PARTITION IN ('1', '2', '3');
 ALTER TABLE "testschema"."testvaluespartitions" ADD TABLE "testschema"."sublimits2" AS PARTITION IN ('4', '5', '6') WITH NULL VALUES;
 ALTER TABLE "testschema"."testvaluespartitions" ADD TABLE "testschema"."sublimits3" AS PARTITION IN ('7', '8', '9');
-ALTER TABLE "testschema"."mt3" ADD TABLE "testschema"."mt1";
-ALTER TABLE "testschema"."mt3" ADD TABLE "testschema"."t4";
-ALTER TABLE "testschema"."mt2" ADD TABLE "testschema"."t1";
-ALTER TABLE "testschema"."mt2" ADD TABLE "testschema"."t3";
-ALTER TABLE "testschema"."mt1" ADD TABLE "testschema"."t1";
-ALTER TABLE "testschema"."mt1" ADD TABLE "testschema"."t2";
 GRANT SELECT("string1") ON "testschema"."smallstring" TO "testuser" WITH GRANT OPTION;
 GRANT SELECT("string3") ON "testschema"."smallstring" TO "testuser" WITH GRANT OPTION;
 GRANT EXECUTE ON FUNCTION "testschema"."keyjoin"() TO PUBLIC;

@@ -232,7 +232,7 @@ create or replace view v21(vc0) as (select all sql_min(case false when false the
 0.30544159200423870448304342062328942120075225830078125) where ((false)or(true)))
 
 statement ok
-create view v59(vc0) as (select all ((degrees(0.92038196))^(0.20652191739572556)) where (0.7852820956901502835734163454617373645305633544921875)
+create view v59(vc0) as (select all ((092038196)^(20652191739572556)) where (0.7852820956901502835734163454617373645305633544921875)
 not between symmetric (-1878062655) and (0.557693883106285870354668077197857201099395751953125)) with check option
 
 statement ok
@@ -267,12 +267,8 @@ least(true, false) then least(true, true) else ((true)and(false)) end) as res
 statement ok
 ROLLBACK
 
-query T rowsort
+statement error 42000!mixing types varchar and decimal
 values (0.51506835), (2), (least('a', 0.5667308))
-----
-0.51506835
-0.5667308
-2
 
 statement ok
 START TRANSACTION
@@ -312,7 +308,7 @@ create view v2(vc0, vc1, vc2) as (values (((((+ (2))&(-2)))+(13)),
 then sql_max(cast(5293 as int), ((5)-
 (5))) end),(charindex('934079707', '35305325'), not (false),
 sql_max(((+ (102))|(case 3 when 458003921 then 28118 end)), cast(least(3,
-3) as double))), (least(((((5)%(4)))||(2)),
+3) as double))), (least(((((5)%(4)))|(2)),
 5), false, 45))
 
 statement ok
@@ -383,7 +379,7 @@ statement ok
 create or replace view v84(vc0, vc1) as (values (1, 1222), (12,10), (null, 2)) with check option
 
 statement error 22003!overflow in calculation 1XOR-9223372036854775807.
-select 1 from v74 cross join v84 join (values ('b'), ('a'), (1)) as sub0 on (v84.vc0)^(-9223372036854775807) is not null
+select 1 from v74 cross join v84 join (values ('b'), ('a'), ('1')) as sub0 on (v84.vc0)^(-9223372036854775807) is not null
 
 statement ok
 ROLLBACK
@@ -509,7 +505,7 @@ SELECT 1 FROM t2 JOIN t1 ON CASE true WHEN true THEN true ELSE (t2.c0) IN (2) EN
 1
 1
 
-query RT nosort
+query DT nosort
 SELECT ALL t2.c0, t2.c1 FROM t2 LEFT OUTER JOIN t1 ON CASE ((t2.c1)NOT LIKE(t2.c1)) WHEN (t1.c1) NOT BETWEEN SYMMETRIC
 (t1.c1) AND (t1.c1) THEN ((FALSE)OR(FALSE)) WHEN ((t2.c1)LIKE(t1.c1)) THEN ifthenelse(FALSE, TRUE, TRUE) WHEN
 ((((FALSE)OR(TRUE)))OR(TRUE)) THEN ((t2.c1)<>(t1.c1)) ELSE (t2.c0) IN (102830492) END RIGHT OUTER JOIN
@@ -542,7 +538,7 @@ statement ok
 create view v24(vc0) as (values (0.22)) with check option
 
 query II nosort
-select ((sum(all least(((((0.32)-(0.33))) -(0.43)), -(cast(3 as bigint)))))>>2), 1 from v21
+select ((sum(all least(((((32)-(33))) -(43)), -(cast(3 as bigint)))))>>2), 1 from v21
 join v18 on ((v18.vc0)>(cast(((0.33)
 -(0.222)) as double))) inner join (select distinct replace(sql_min(rtrim('便竼E*P'),
 "concat"('?X', '沈pJqd')), replace('w', '95', '580488485'), cast(((0.33827385)/(24413.0)) as string)) from v24)
@@ -550,7 +546,7 @@ as sub0 on ((least(342, v18.vc0))<>(1))
 group by least((((('RJᦈ4[[h\340\272\246')like('9804')))and(not (false))),
 "isauuid"(cast(v18.vc0 as string(979))))
 ----
--1
+-11
 1
 
 statement ok

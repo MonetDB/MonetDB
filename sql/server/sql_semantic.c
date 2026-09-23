@@ -3,11 +3,9 @@
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024, 2025 MonetDB Foundation;
- * Copyright August 2008 - 2023 MonetDB B.V.;
- * Copyright 1997 - July 2008 CWI.
+ * For copyright information, see the file debian/copyright.
  */
 
 #include "monetdb_config.h"
@@ -41,12 +39,12 @@ sql_add_param(mvc *sql, const char *name, sql_subtype *st)
 	sql_arg *a = SA_ZNEW(sql->sa, sql_arg);
 
 	if (name)
-		a->name = sa_strdup(sql->sa, name);
+		a->name = ma_strdup(sql->sa, name);
 	if (st && st->type)
 		a->type = *st;
 	a->inout = ARG_IN;
 	if (name && strcmp(name, "*") == 0)
-		a->type = *sql_bind_localtype("int");
+		a->type = *sql_fetch_localtype(TYPE_int);
 	if (!sql->params)
 		sql->params = sa_list(sql->sa);
 	list_append(sql->params, a);
@@ -114,9 +112,8 @@ tmp_schema(mvc *sql)
 	return mvc_bind_schema(sql, "tmp");
 }
 
-#define DO_NOTHING(x) ;
+#define DO_NOTHING(x) ((void) 0)
 
-/* as we don't have OOP in C, I prefer a single macro with the search path algorithm to passing function pointers */
 #define search_object_on_path(CALL, EXTRA_CONDITION, EXTRA, ERROR_CODE, show_error) \
 	do { \
 		sql_schema *next = NULL; \
@@ -158,64 +155,122 @@ tmp_schema(mvc *sql)
 			return sql_error(sql, ERR_NOTFOUND, ERROR_CODE "%s: no such %s %s%s%s'%s'", error, objstr, sname ? "'":"", sname ? sname : "", sname ? "'.":"", name); \
 	} while (0)
 
-#define table_extra \
-	do { \
-		if (s) { \
-			next = s; /* there's a default schema to search before all others, e.g. bind a child table from a merge table */ \
-			res = mvc_bind_table(sql, next, name); \
-		} \
-		if (!res && strcmp(objstr, "table") == 0 && (res = stack_find_table(sql, name))) /* for tables, first try a declared table from the stack */ \
-			return res; \
-	} while (0)
+/* more or less the above, but as a function */
+static sql_base *
+search_object_on_path_func(mvc *sql,
+						   sql_base *(*func)(mvc *, sql_schema *, const char *),
+						   sql_schema *s, const char *sname, const char *name,
+						   const char *error_code,
+						   const char *objstr, const char *error)
+{
+	sql_schema *next = NULL;
+	sql_base *res = NULL;
+
+	if (sname) {
+		/* user has explicitly typed the schema, so either the object is
+		 * there or we return error */
+		if ((next = mvc_bind_schema(sql, sname)) == NULL)
+			return sql_error(sql, ERR_NOTFOUND,
+							 SQLSTATE(3F000) "%s: no such schema '%s'",
+							 error, sname);
+		if (res == NULL) {
+			res = func(sql, next, name);
+		}
+	} else {
+		sql_schema *cur = cur_schema(sql);
+		char *session_schema = cur->base.name;
+
+		if (s) {
+			/* s is only ever not NULL for tables/views */
+			res = func(sql, s, name);
+		}
+		if (res == NULL && strcmp(objstr, "table") == 0) {
+			res = (sql_base *) stack_find_table(sql, name);
+			if (res)
+				return res;
+		}
+		if (!res && !sql->schema_path_has_tmp && strcmp(session_schema, "tmp") != 0) {
+			/* if 'tmp' is not in the search path, search it before all
+			 * others */
+			res = func(sql, tmp_schema(sql), name);
+		}
+		if (!res) { /* then current session's schema */
+			res = func(sql, cur, name);
+		}
+		if (!res) {
+			/* object not found yet, look inside search path */
+			for (node *n = sql->schema_path->h ; n && !res ; n = n->next) {
+				str p = (str) n->data;
+				if (strcmp(session_schema, p) != 0 && (next = mvc_bind_schema(sql, p)))
+					res = func(sql, next, name);
+			}
+		}
+		if (!res && !sql->schema_path_has_sys && strcmp(session_schema, "sys") != 0) {
+			/* if 'sys' is not in the current path search it next */
+			res = func(sql, mvc_bind_schema(sql, "sys"), name);
+		}
+	}
+	if (!res)
+		return sql_error(sql, ERR_NOTFOUND, "%s%s: no such %s %s%s%s'%s'",
+						 error_code, error, objstr, sname ? "'":"",
+						 sname ? sname : "", sname ? "'.":"", name);
+	return res;
+}
 
 sql_table *
 find_table_or_view_on_scope(mvc *sql, sql_schema *s, const char *sname, const char *name, const char *error, bool isView)
 {
-	const char *objstr = isView ? "view" : "table";
-	sql_table *res = NULL;
+	return (sql_table *) search_object_on_path_func(
+		sql,
+		(sql_base *(*)(mvc *, sql_schema *, const char *)) mvc_bind_table,
+		s, sname, name, SQLSTATE(42S02), isView ? "view" : "table",
+		error);
+}
 
-	search_object_on_path(res = mvc_bind_table(sql, next, name), DO_NOTHING, table_extra, SQLSTATE(42S02), true);
-	return res;
+static sql_sequence *
+find_sequence(mvc *sql, sql_schema *s, const char *name)
+{
+	return find_sql_sequence(sql->session->tr, s, name);
 }
 
 sql_sequence *
 find_sequence_on_scope(mvc *sql, const char *sname, const char *name, const char *error)
 {
-	const char objstr[] = "sequence";
-	sql_sequence *res = NULL;
-
-	search_object_on_path(res = find_sql_sequence(sql->session->tr, next, name), DO_NOTHING, ;, SQLSTATE(42000), true);
-	return res;
+	return (sql_sequence *) search_object_on_path_func(
+		sql,
+		(sql_base *(*)(mvc *, sql_schema *, const char *)) find_sequence,
+		NULL, sname, name, SQLSTATE(42000), "sequence",
+		error);
 }
 
 sql_idx *
 find_idx_on_scope(mvc *sql, const char *sname, const char *name, const char *error)
 {
-	const char objstr[] = "index";
-	sql_idx *res = NULL;
-
-	search_object_on_path(res = mvc_bind_idx(sql, next, name), DO_NOTHING, ;, SQLSTATE(42S12), true);
-	return res;
+	return (sql_idx *) search_object_on_path_func(
+		sql,
+		(sql_base *(*)(mvc *, sql_schema *, const char *)) mvc_bind_idx,
+		NULL, sname, name, SQLSTATE(42S12), "index",
+		error);
 }
 
 sql_type *
 find_type_on_scope(mvc *sql, const char *sname, const char *name, const char *error)
 {
-	const char objstr[] = "type";
-	sql_type *res = NULL;
-
-	search_object_on_path(res = schema_bind_type(sql, next, name), DO_NOTHING, ;, SQLSTATE(42S01), true);
-	return res;
+	return (sql_type *) search_object_on_path_func(
+		sql,
+		(sql_base *(*)(mvc *, sql_schema *, const char *)) schema_bind_type,
+		NULL, sname, name, SQLSTATE(42S01), "type",
+		error);
 }
 
 sql_trigger *
 find_trigger_on_scope(mvc *sql, const char *sname, const char *name, const char *error)
 {
-	const char objstr[] = "trigger";
-	sql_trigger *res = NULL;
-
-	search_object_on_path(res = mvc_bind_trigger(sql, next, name), DO_NOTHING, ;, SQLSTATE(3F000), true);
-	return res;
+	return (sql_trigger *) search_object_on_path_func(
+		sql,
+		(sql_base *(*)(mvc *, sql_schema *, const char *)) mvc_bind_trigger,
+		NULL, sname, name, SQLSTATE(3F000), "trigger",
+		error);
 }
 
 /* A variable can be any of the following, from the innermost to the outermost:
@@ -226,6 +281,7 @@ find_trigger_on_scope(mvc *sql, const char *sname, const char *name, const char 
 #define variable_extra \
 	do { \
 		if (!res) { \
+			int nr; \
 			if ((*var = stack_find_var_frame(sql, name, level))) { /* check if variable is known from the stack */ \
 				*tpe = &((*var)->var.tpe); \
 				res = true; \
@@ -250,11 +306,9 @@ find_trigger_on_scope(mvc *sql, const char *sname, const char *name, const char 
 bool
 find_variable_on_scope(mvc *sql, const char *sname, const char *name, sql_var **var, sql_arg **a, sql_subtype **tpe, int *level, const char *error)
 {
-	const char objstr[] = "variable";
+	static const char objstr[] = "variable";
 	bool res = false;
-	int nr = 0;
 
-	(void)nr;
 	search_object_on_path(var_find_on_global, DO_NOTHING, variable_extra, SQLSTATE(42000), true);
 	return res;
 }
@@ -270,7 +324,7 @@ _dup_subaggr(allocator *sa, sql_func *a, sql_subtype *member)
 	ares->func = a;
 	if (IS_FILT(a)) {
 		ares->res = sa_list(sa);
-        list_append(ares->res, sql_bind_localtype("bit"));
+        list_append(ares->res, sql_fetch_localtype(TYPE_bit));
 	} else if (IS_FUNC(a) || IS_UNION(a) || IS_ANALYTIC(a) || IS_AGGR(a)) { /* not needed for PROC */
 		if (a->res) {
 			ares->res = sa_list(sa);
@@ -405,7 +459,7 @@ sql_subfunc *
 sql_find_func(mvc *sql, const char *sname, const char *name, int nrargs, sql_ftype type, bool private, sql_subfunc *prev)
 {
 	char *F = NULL, *objstr = NULL;
-	const char error[] = "CATALOG";
+	static const char error[] = "CATALOG";
 	sql_subfunc *res = NULL;
 
 	FUNC_TYPE_STR(type, F, objstr);
@@ -413,7 +467,7 @@ sql_find_func(mvc *sql, const char *sname, const char *name, int nrargs, sql_fty
 
 	assert(nrargs >= -1);
 
-	search_object_on_path(res = os_find_func_internal(sql, next->funcs, name, nrargs, type, private, prev), functions_without_schema, find_func_extra, "", false); //SQLSTATE(42000), true);
+	search_object_on_path(res = os_find_func_internal(sql, next->funcs, name, nrargs, type, private, prev), functions_without_schema, find_func_extra, "", false);
 	return res;
 }
 
@@ -536,11 +590,14 @@ score_func( sql_func *f, list *tl, bool exact, bool *downcast)
 			nscore = -nscore;
 		}
 		score += nscore;
-		if (EC_VARCHAR(t->type->eclass) && EC_NUMBER(a->type.type->eclass))
+		if (EC_VARCHAR(t->type->eclass) && !EC_VARCHAR(a->type.type->eclass) && a->type.type->eclass != EC_ANY)
 			nr_strconverts++;
 		if (nr_strconverts > 1)
 			return 0;
 
+		if (f->fix_scale == SCALE_NONE && a->type.type->eclass == EC_NUM && t->type->eclass == EC_DEC)
+			/* no automatic conversions into numerics for fixed (SCALE_NONE) functions */
+			return 0;
 		if (f->fix_scale == SCALE_FIX && a->type.type->eclass == EC_DEC && digits > a->type.type->digits) /* doesn't fit */
 			return 0;
 		/* sql types equal but implementation differences */
@@ -597,15 +654,19 @@ sql_bind_func__(mvc *sql, list *ff, const char *fname, list *ops, sql_ftype type
 
 				if ((f->type != type && f->type != filt) || (f->private && !private))
 					continue;
-				if (strcmp(f->base.name, fname) == 0 && ((!exact && (list_length(f->ops) == list_length(ops) || (list_length(f->ops) <= list_length(ops) && f->vararg))) || (exact && list_cmp(f->ops, ops, (fcmp) &arg_subtype_cmp) == 0))) {
+				if (strcmp(f->base.name, fname) == 0 &&
+					(exact
+					 ? list_cmp(f->ops, ops, (fcmp) &arg_subtype_cmp) == 0
+					 : (list_length(f->ops) == list_length(ops) ||
+						(list_length(f->ops) <= list_length(ops) && f->vararg)))) {
 					int npoints = score_func(f, ops, exact, &downcast);
 					if (downcast) {
-						if ((!dcand && (npoints || exact)) || (dcand && npoints > dpoints)) {
+						if (dcand ? npoints > dpoints : npoints || exact) {
 							dcand = f;
 							dpoints = npoints;
 						}
 					} else {
-						if ((!cand && (npoints || exact)) || (cand && npoints > points)) {
+						if (cand ? npoints > points : npoints || exact) {
 							cand = f;
 							points = npoints;
 						}
@@ -620,15 +681,19 @@ sql_bind_func__(mvc *sql, list *ff, const char *fname, list *ops, sql_ftype type
 
 				if ((f->type != type && f->type != filt) || (f->private && !private))
 					continue;
-				if (strcmp(f->base.name, fname) == 0 && ((!exact && (list_length(f->ops) == list_length(ops) || (list_length(f->ops) <= list_length(ops) && f->vararg))) || (exact && list_cmp(f->ops, ops, (fcmp) &arg_subtype_cmp) == 0))) {
+				if (strcmp(f->base.name, fname) == 0 &&
+					(exact
+					 ? list_cmp(f->ops, ops, (fcmp) &arg_subtype_cmp) == 0
+					 : (list_length(f->ops) == list_length(ops) ||
+						(list_length(f->ops) <= list_length(ops) && f->vararg)))) {
 					int npoints = score_func(f, ops, exact, &downcast);
 					if (downcast) {
-						if ((!dcand && (npoints || exact)) || (dcand && npoints > dpoints)) {
+						if (dcand ? npoints > dpoints : npoints || exact) {
 							dcand = f;
 							dpoints = npoints;
 						}
 					} else {
-						if ((!cand && (npoints || exact)) || (cand && npoints > points)) {
+						if (cand ? npoints > points : npoints || exact) {
 							cand = f;
 							points = npoints;
 						}
@@ -703,7 +768,7 @@ sql_subfunc *
 sql_bind_func_(mvc *sql, const char *sname, const char *name, list *ops, sql_ftype type, bool private, bool exact)
 {
 	char *F = NULL, *objstr = NULL;
-	const char error[] = "CATALOG";
+	static const char error[] = "CATALOG";
 	sql_subfunc *res = NULL;
 
 	FUNC_TYPE_STR(type, F, objstr);
@@ -716,7 +781,7 @@ sql_bind_func_(mvc *sql, const char *sname, const char *name, list *ops, sql_fty
 static sql_subfunc *
 sql_bind_func_result_internal(mvc *sql, list *ff, const char *fname, sql_ftype type, bool private, list *ops, sql_subtype *res)
 {
-	sql_subtype *tp = sql_bind_localtype("bit");
+	sql_subtype *tp = sql_fetch_localtype(TYPE_bit);
 	sql_func *cand = NULL;
 	int points = 0, npoints = 0;
 
@@ -768,7 +833,7 @@ sql_bind_func_result_internal(mvc *sql, list *ff, const char *fname, sql_ftype t
 static sql_subfunc *
 os_bind_func_result_internal(mvc *sql, struct objectset *ff, const char *fname, sql_ftype type, bool private, list *ops, sql_subtype *res)
 {
-	sql_subtype *tp = sql_bind_localtype("bit");
+	sql_subtype *tp = sql_fetch_localtype(TYPE_bit);
 	sql_func *cand = NULL;
 	int points = 0, npoints = 0;
 
@@ -808,7 +873,7 @@ sql_subfunc *
 sql_bind_func_result(mvc *sql, const char *sname, const char *name, sql_ftype type, bool private, sql_subtype *r_res, int nargs, ...)
 {
 	char *F = NULL, *objstr = NULL;
-	const char error[] = "CATALOG";
+	static const char error[] = "CATALOG";
 	sql_subfunc *res = NULL;
 	list *ops = sa_list(sql->sa);
 	va_list valist;
@@ -899,7 +964,7 @@ list *
 sql_find_funcs_by_name(mvc *sql, const char *sname, const char *name, sql_ftype type, bool private)
 {
 	char *F = NULL, *objstr = NULL;
-	const char error[] = "CATALOG";
+	static const char error[] = "CATALOG";
 	list *res = NULL;
 
 	FUNC_TYPE_STR(type, F, objstr);
@@ -1035,28 +1100,10 @@ result_datatype(sql_subtype *super, sql_subtype *l, sql_subtype *r)
 	return super;
 }
 
-char *
-toUpperCopy(char *dest, const char *src)
-{
-	size_t i, len;
-
-	if (src == NULL) {
-		*dest = '\0';
-		return(dest);
-	}
-
-	len = _strlen(src);
-	for (i = 0; i < len; i++)
-		dest[i] = (char)toupper((int)src[i]);
-
-	dest[i] = '\0';
-	return(dest);
-}
-
-static char * _symbol2string(mvc *sql, symbol *se, int expression, char **err);
+static char * _symbol2string(allocator *ta, mvc *sql, symbol *se, int expression, char **err);
 
 static char *
-dlist2string(mvc *sql, dlist *l, int expression, char **err)
+dlist2string(allocator *ta, mvc *sql, dlist *l, int expression, char **err)
 {
 	char *b = NULL;
 	dnode *n;
@@ -1065,14 +1112,14 @@ dlist2string(mvc *sql, dlist *l, int expression, char **err)
 		char *s = NULL;
 
 		if (n->type == type_string && n->data.sval)
-			s = sa_strdup(sql->ta, n->data.sval);
+			s = ma_strdup(ta, n->data.sval);
 		else if (n->type == type_symbol)
-			s = _symbol2string(sql, n->data.sym, expression, err);
+			s = _symbol2string(ta, sql, n->data.sym, expression, err);
 
 		if (!s)
 			return NULL;
 		if (b) {
-			char *o = SA_NEW_ARRAY(sql->ta, char, strlen(b) + strlen(s) + 2);
+			char *o = SA_NEW_ARRAY(ta, char, strlen(b) + strlen(s) + 2);
 			if (o)
 				stpcpy(stpcpy(stpcpy(o, b), "."), s);
 			b = o;
@@ -1104,15 +1151,15 @@ symbol_escape_ident(allocator *sa, const char *s)
 	return res;
 }
 
-char *
-_symbol2string(mvc *sql, symbol *se, int expression, char **err)
+static char *
+_symbol2string(allocator *ta, mvc *sql, symbol *se, int expression, char **err)
 {
 	/* inner symbol2string uses the temporary allocator */
 	switch (se->token) {
 	case SQL_NOP: {
 		dnode *lst = se->data.lval->h, *ops = NULL, *aux;
-		const char *op = symbol_escape_ident(sql->ta, qname_schema_object(lst->data.lval)),
-				   *sname = symbol_escape_ident(sql->ta, qname_schema(lst->data.lval));
+		const char *op = symbol_escape_ident(ta, qname_schema_object(lst->data.lval)),
+				   *sname = symbol_escape_ident(ta, qname_schema(lst->data.lval));
 		int i = 0, nargs = 0;
 		char** inputs = NULL, *res;
 		size_t inputs_length = 0, extra = sname ? strlen(sname) + 3 : 0;
@@ -1122,18 +1169,18 @@ _symbol2string(mvc *sql, symbol *se, int expression, char **err)
 
 		for (aux = ops; aux; aux = aux->next)
 			nargs++;
-		if (!(inputs = SA_ZNEW_ARRAY(sql->ta, char*, nargs)))
+		if (!(inputs = SA_ZNEW_ARRAY(ta, char*, nargs)))
 			return NULL;
 
 		for (aux = ops; aux; aux = aux->next) {
-			if (!(inputs[i] = _symbol2string(sql, aux->data.sym, expression, err))) {
+			if (!(inputs[i] = _symbol2string(ta, sql, aux->data.sym, expression, err))) {
 				return NULL;
 			}
 			inputs_length += strlen(inputs[i]);
 			i++;
 		}
 
-		if ((res = SA_NEW_ARRAY(sql->ta, char, extra + strlen(op) + inputs_length + 3 + (nargs - 1 /* commas */) + 2))) {
+		if ((res = SA_NEW_ARRAY(ta, char, extra + strlen(op) + inputs_length + 3 + (nargs - 1 /* commas */) + 2))) {
 			char *concat = res;
 			if (sname)
 				concat = stpcpy(stpcpy(stpcpy(res, "\""), sname), "\".");
@@ -1150,26 +1197,26 @@ _symbol2string(mvc *sql, symbol *se, int expression, char **err)
 		return res;
 	}
 	case SQL_PARAMETER:
-		return sa_strdup(sql->ta, "?");
+		return "?";
 	case SQL_NULL:
-		return sa_strdup(sql->ta, "NULL");
+		return "NULL";
 	case SQL_ATOM:{
 		AtomNode *an = (AtomNode *) se;
 		if (an && an->a)
-			return atom2sql(sql->ta, an->a, sql->timezone);
+			return atom2sql(ta, an->a, sql->timezone);
 		else
-			return sa_strdup(sql->ta, "NULL");
+			return "NULL";
 	}
 	case SQL_NEXT: {
-		const char *seq = symbol_escape_ident(sql->ta, qname_schema_object(se->data.lval)),
+		const char *seq = symbol_escape_ident(ta, qname_schema_object(se->data.lval)),
 				   *sname = qname_schema(se->data.lval);
 		char *res;
 
 		if (!sname)
 			sname = sql->session->schema->base.name;
-		sname = symbol_escape_ident(sql->ta, sname);
+		sname = symbol_escape_ident(ta, sname);
 
-		if ((res = SA_NEW_ARRAY(sql->ta, char, strlen("next value for \"") + strlen(sname) + strlen(seq) + 5)))
+		if ((res = SA_NEW_ARRAY(ta, char, strlen("next value for \"") + strlen(sname) + strlen(seq) + 5)))
 			stpcpy(stpcpy(stpcpy(stpcpy(stpcpy(res, "next value for \""), sname), "\".\""), seq), "\"");
 		return res;
 	}	break;
@@ -1180,24 +1227,24 @@ _symbol2string(mvc *sql, symbol *se, int expression, char **err)
 		assert(l->h->type != type_lng);
 		if (expression && dlist_length(l) == 1 && l->h->type == type_string) {
 			/* when compiling an expression, a column of a table might be present in the symbol, so we need this case */
-			const char *op = symbol_escape_ident(sql->ta, l->h->data.sval);
+			const char *op = symbol_escape_ident(ta, l->h->data.sval);
 			char *res;
 
-			if ((res = SA_NEW_ARRAY(sql->ta, char, strlen(op) + 3)))
+			if ((res = SA_NEW_ARRAY(ta, char, strlen(op) + 3)))
 				stpcpy(stpcpy(stpcpy(res, "\""), op), "\"");
 			return res;
 		} else if (expression && dlist_length(l) == 2 && l->h->type == type_string && l->h->next->type == type_string) {
-			const char *first = symbol_escape_ident(sql->ta, l->h->data.sval),
-					   *second = symbol_escape_ident(sql->ta, l->h->next->data.sval);
+			const char *first = symbol_escape_ident(ta, l->h->data.sval),
+					   *second = symbol_escape_ident(ta, l->h->next->data.sval);
 			char *res;
 
 			if (!first || !second)
 				return NULL;
-			if ((res = SA_NEW_ARRAY(sql->ta, char, strlen(first) + strlen(second) + 6)))
+			if ((res = SA_NEW_ARRAY(ta, char, strlen(first) + strlen(second) + 6)))
 				stpcpy(stpcpy(stpcpy(stpcpy(stpcpy(res, "\""), first), "\".\""), second), "\"");
 			return res;
 		} else {
-			char *e = dlist2string(sql, l, expression, err);
+			char *e = dlist2string(ta, sql, l, expression, err);
 			if (e)
 				*err = e;
 			return NULL;
@@ -1207,16 +1254,16 @@ _symbol2string(mvc *sql, symbol *se, int expression, char **err)
 		dlist *dl = se->data.lval;
 		char *val = NULL, *tpe = NULL, *res;
 
-		if (!(val = _symbol2string(sql, dl->h->data.sym, expression, err)) || !(tpe = subtype2string2(sql->ta, &dl->h->next->data.typeval)))
+		if (!(val = _symbol2string(ta, sql, dl->h->data.sym, expression, err)) || !(tpe = subtype2string2(ta, &dl->h->next->data.typeval)))
 			return NULL;
-		if ((res = SA_NEW_ARRAY(sql->ta, char, strlen(val) + strlen(tpe) + 11)))
+		if ((res = SA_NEW_ARRAY(ta, char, strlen(val) + strlen(tpe) + 11)))
 			stpcpy(stpcpy(stpcpy(stpcpy(stpcpy(res, "cast("), val), " as "), tpe), ")");
 		return res;
 	}
 	default: {
-		const char msg[] = "SQL feature not yet available for expressions and default values: ";
+		static const char msg[] = "SQL feature not yet available for expressions and default values: ";
 		char *tok_str = token2string(se->token);
-		if ((*err = SA_NEW_ARRAY(sql->ta, char, strlen(msg) + strlen(tok_str) + 1)))
+		if ((*err = SA_NEW_ARRAY(ta, char, strlen(msg) + strlen(tok_str) + 1)))
 			stpcpy(stpcpy(*err, msg), tok_str);
 	}
 	}
@@ -1226,12 +1273,14 @@ _symbol2string(mvc *sql, symbol *se, int expression, char **err)
 char *
 symbol2string(mvc *sql, symbol *se, int expression, char **err)
 {
-	char *res = _symbol2string(sql, se, expression, err);
+	allocator *ta = MT_thread_getallocator();
+	allocator_state ta_state = ma_open(ta);
+	char *res = _symbol2string(ta, sql, se, expression, err);
 
 	if (res)
-		res = sa_strdup(sql->sa, res);
+		res = ma_strdup(sql->sa, res);
 	if (*err)
-		*err = sa_strdup(sql->sa, *err);
-	sa_reset(sql->ta);
+		*err = ma_strdup(sql->sa, *err);
+	ma_close(&ta_state);
 	return res;
 }

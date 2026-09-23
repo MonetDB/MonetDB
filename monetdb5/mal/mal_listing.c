@@ -3,11 +3,9 @@
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024, 2025 MonetDB Foundation;
- * Copyright August 2008 - 2023 MonetDB B.V.;
- * Copyright 1997 - July 2008 CWI.
+ * For copyright information, see the file debian/copyright.
  */
 
 /*
@@ -66,10 +64,8 @@ renderTerm(MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int idx, int flg, char *buf,
 {
 	char *bufend = buf;
 	int nameused = 0;
-	ValRecord *val = 0;
-	char *cv = 0;
 	str tpe;
-	int showtype = 0, closequote = 0;
+	bool showtype = false, closequote = false;
 	int varid = getArg(p, idx);
 
 	// show the name when required or is used
@@ -80,7 +76,8 @@ renderTerm(MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int idx, int flg, char *buf,
 		nameused = 1;
 	}
 	// show the value when required or being a constant
-	if (((flg & LIST_MAL_VALUE) && stk != 0) || isVarConstant(mb, varid)) {
+	if (((flg & LIST_MAL_VALUE) && stk != NULL) || isVarConstant(mb, varid)) {
+		ValRecord *val = NULL;
 		if (nameused)
 			bufend = stpcpy(bufend, "=");
 		// locate value record
@@ -88,10 +85,13 @@ renderTerm(MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int idx, int flg, char *buf,
 			val = &getVarConstant(mb, varid);
 			showtype = getVarType(mb, varid) != TYPE_str
 					&& getVarType(mb, varid) != TYPE_bit;
-		} else if (stk) {
+		} else {
+			assert(stk != NULL);
 			val = &stk->stk[varid];
 		}
-		cv = VALformat(val);
+		allocator *ta = MT_thread_getallocator();
+		allocator_state ta_state = ma_open(ta);
+		char *cv = VALformat(ta, val);
 		if (cv == NULL) {
 			bufend = stpcpy(bufend, "<alloc failed...>");
 		} else if (!val->bat && strcmp(cv, "nil") == 0) {
@@ -105,7 +105,7 @@ renderTerm(MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int idx, int flg, char *buf,
 			if (!isaBatType(getVarType(mb, varid))
 				&& getBatType(getVarType(mb, varid)) >= TYPE_date
 				&& getBatType(getVarType(mb, varid)) != TYPE_str) {
-				closequote = 1;
+				closequote = true;
 				bufend = stpcpy(bufend, "\"");
 			}
 			size_t cv_len = strlen(cv);
@@ -113,9 +113,9 @@ renderTerm(MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int idx, int flg, char *buf,
 				cv_len = 100;
 				if (cv_len > (size_t) ((buf + max_len) - bufend))
 					cv_len = (buf + max_len) - bufend - 1;
-				strcpy_len(bufend, cv, cv_len + 1); /* 1 for null termination */
+				strtcpy(bufend, cv, cv_len + 1); /* 1 for null termination */
 				bufend += cv_len;
-				cv_len = strconcat_len(bufend, (buf + max_len) - bufend, "\" ..... ", NULL);
+				cv_len = strlconcat(bufend, (buf + max_len) - bufend, "\" ..... ", NULL);
 				bufend += cv_len;
 			} else {
 				bufend = stpcpy(bufend, cv);
@@ -123,7 +123,7 @@ renderTerm(MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int idx, int flg, char *buf,
 			if (closequote) {
 				bufend = stpcpy(bufend, "\"");
 			}
-			showtype = showtype || closequote > TYPE_str ||
+			showtype = showtype ||
 				((isVarTypedef(mb, varid) ||
 				  (flg & (LIST_MAL_REMOTE | LIST_MAL_TYPE))) && isVarConstant(mb, varid)) ||
 				(isaBatType(getVarType(mb, varid)) && idx < p->retc);
@@ -135,16 +135,16 @@ renderTerm(MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int idx, int flg, char *buf,
 					bufend += snprintf(bufend, (buf + max_len) - bufend, "[" BUNFMT "]", BATcount(d));
 			}
 		}
-		GDKfree(cv);
+		ma_close(&ta_state);
 	}
+	*bufend = 0;
 	// show the type when required or frozen by the user
 	// special care should be taken with constants, they may have been casted
 	if ((flg & LIST_MAL_TYPE) || (idx < p->retc) || isVarTypedef(mb, varid)
 		|| showtype) {
-		tpe = getTypeName(getVarType(mb, varid));
+		tpe = getTypeName(mb->ma, getVarType(mb, varid));
 		if (tpe) {
-			strconcat_len(bufend, (buf + max_len) - bufend, ":", tpe, NULL);
-			GDKfree(tpe);
+			strtconcat(bufend, (buf + max_len) - bufend, ":", tpe, NULL);
 		}
 	}
 }
@@ -156,15 +156,13 @@ beginning of each line.
 */
 
 str
-cfcnDefinition(Symbol s, str t, int flg, str base, size_t len)
+cfcnDefinition(Symbol s, str base, size_t len)
 {
 	unsigned int i;
 	str arg, tpe;
 	mel_func *f = s->func;
+	str t = base;
 
-	len -= t - base;
-	if (!flg && !copystring(&t, "#", &len))
-		return base;
 	if (f->unsafe && !copystring(&t, "unsafe ", &len))
 		return base;
 	if (!copystring(&t, operatorName(s->kind), &len) ||
@@ -176,7 +174,7 @@ cfcnDefinition(Symbol s, str t, int flg, str base, size_t len)
 
 	char var[16];
 	for (i = f->retc; i < f->argc; i++) {
-		if (snprintf(var, 16, "X_%d:", i-f->retc) >= 16 || !copystring(&t, var, &len))
+		if (snprintf(var, sizeof(var), "X_%u:", i-f->retc) >= 16 || !copystring(&t, var, &len))
 			return base;
 		if ((f->args[i].isbat || (f->args[i].opt == 1)) && !copystring(&t, (f->args[i].opt == 1)?"bat?[:":"bat[:", &len))
 			return base;
@@ -185,7 +183,7 @@ cfcnDefinition(Symbol s, str t, int flg, str base, size_t len)
 			return base;
 		if (!arg[0]) {
 			if (f->args[i].nr) {
-				if (snprintf(var, 16, "any_%d", f->args[i].nr ) >= 16 || !copystring(&t, var, &len))
+				if (snprintf(var, sizeof(var), "any_%d", f->args[i].nr ) >= 16 || !copystring(&t, var, &len))
 					return base;
 			} else if (!copystring(&t, "any", &len))
 				return base;
@@ -213,7 +211,7 @@ cfcnDefinition(Symbol s, str t, int flg, str base, size_t len)
 			return base;
 		if (!tpe[0]) {
 			if (f->args[0].nr) {
-				if (snprintf(var, 16, "any_%d", f->args[0].nr ) >= 16 || !copystring(&t, var, &len))
+				if (snprintf(var, sizeof(var), "any_%d", f->args[0].nr ) >= 16 || !copystring(&t, var, &len))
 					return base;
 			} else if (!copystring(&t, "any", &len))
 				return base;
@@ -226,7 +224,7 @@ cfcnDefinition(Symbol s, str t, int flg, str base, size_t len)
 		if (!copystring(&t, ") (", &len))
 			return base;
 		for (i = 0; i < f->retc; i++) {
-			if (snprintf(var, 16, "X_%d:", i+(f->argc-f->retc)) >= 16 || !copystring(&t, var, &len))
+			if (snprintf(var, sizeof(var), "X_%u:", i+(f->argc-f->retc)) >= 16 || !copystring(&t, var, &len))
 				return base;
 			if ((f->args[i].isbat || (f->args[i].opt == 1)) && !copystring(&t, (f->args[i].opt == 1)?"bat?[:":"bat[:", &len))
 				return base;
@@ -235,7 +233,7 @@ cfcnDefinition(Symbol s, str t, int flg, str base, size_t len)
 				return base;
 			if (!arg[0]) {
 				if (f->args[i].nr) {
-					if (snprintf(var, 16, "any_%d", f->args[i].nr ) >= 16 || !copystring(&t, var, &len))
+					if (snprintf(var, sizeof(var), "any_%d", f->args[i].nr ) >= 16 || !copystring(&t, var, &len))
 						return base;
 				} else if (!copystring(&t, "any", &len))
 				return base;
@@ -251,12 +249,6 @@ cfcnDefinition(Symbol s, str t, int flg, str base, size_t len)
 			return base;
 	}
 
-	if (f->cname) {
-		if (!copystring(&t, " address ", &len) ||
-			!copystring(&t, f->cname, &len))
-			return base;
-	}
-	(void) copystring(&t, ";", &len);
 	return base;
 }
 
@@ -298,12 +290,10 @@ fcnDefinition(MalBlkPtr mb, InstrPtr p, str t, int flg, str base, size_t len)
 	if (p->retc == 1) {
 		if (!copystring(&t, "):", &len))
 			return base;
-		tpe = getTypeName(getVarType(mb, getArg(p, 0)));
+		tpe = getTypeName(mb->ma, getVarType(mb, getArg(p, 0)));
 		if (!copystring(&t, tpe, &len)) {
-			GDKfree(tpe);
 			return base;
 		}
-		GDKfree(tpe);
 		if (p->varargs & VARRETS && !copystring(&t, "...", &len))
 			return base;
 	} else {
@@ -324,24 +314,26 @@ fcnDefinition(MalBlkPtr mb, InstrPtr p, str t, int flg, str base, size_t len)
 			return base;
 	}
 
-	if (mb->binding[0]) {
-		if (!copystring(&t, " address ", &len) ||
-			!copystring(&t, mb->binding, &len))
-			return base;
+	if ((flg & LIST_MAL_NOCFUNC) == 0) {
+		if (mb->binding[0]) {
+			if (!copystring(&t, " address ", &len) ||
+				!copystring(&t, mb->binding, &len))
+				return base;
+		}
+		(void) copystring(&t, ";", &len);
 	}
-	(void) copystring(&t, ";", &len);
 	/* add the extra properties for debugging */
 	if (flg & LIST_MAL_PROPS) {
 		char extra[256];
 		if (p->token == REMsymbol) {
 		} else {
-			snprintf(extra, 256, "\t#[%d] (" BUNFMT ") %s ", getPC(mb, p),
+			snprintf(extra, sizeof(extra), "\t#[%d] (" BUNFMT ") %s ", getPC(mb, p),
 					 getRowCnt(mb, getArg(p, 0)),
 					 (p->blk ? p->blk->binding : ""));
 			if (!copystring(&t, extra, &len))
 				return base;
 			for (j = 0; j < p->retc; j++) {
-				snprintf(extra, 256, "%d ", getArg(p, j));
+				snprintf(extra, sizeof(extra), "%d ", getArg(p, j));
 				if (!copystring(&t, extra, &len))
 					return base;
 			}
@@ -350,7 +342,7 @@ fcnDefinition(MalBlkPtr mb, InstrPtr p, str t, int flg, str base, size_t len)
 					return base;
 			}
 			for (; j < p->argc; j++) {
-				snprintf(extra, 256, "%d ", getArg(p, j));
+				snprintf(extra, sizeof(extra), "%d ", getArg(p, j));
 				if (!copystring(&t, extra, &len))
 					return base;
 			}
@@ -381,9 +373,9 @@ fmtRemark(MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, str t, int flg, str base,
 			long a2 = atol(arg);
 			const char *f = getFunctionId(pci);
 			if (strcmp(f, "total") == 0)
-				snprintf(aux, 128, "%d optimizers %ld usecs", a1, a2);
+				snprintf(aux, sizeof(aux), "%d optimizers %ld usecs", a1, a2);
 			else
-				snprintf(aux, 128, "%-36s %d actions %ld usecs", f, a1, a2);
+				snprintf(aux, sizeof(aux), "%-36s %d actions %ld usecs", f, a1, a2);
 			(void) copystring(&t, aux, &len);
 		}
 	} else if (pci->argc == 1) {
@@ -450,7 +442,7 @@ instruction2str(MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int flg)
 	str base, t;
 	size_t len = 512 + (p->argc * 128);	/* max realistic line length estimate */
 
-	t = base = GDKmalloc(len);
+	t = base = ma_alloc(mb->ma, len);
 	if (base == NULL)
 		return NULL;
 	if (!flg) {
@@ -463,14 +455,13 @@ instruction2str(MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int flg)
 	}
 	*t = 0;
 	if (p->token == REMsymbol
-		&& !(getModuleId(p) && strcmp(getModuleId(p), "querylog") == 0
-			 && getFunctionId(p) && strcmp(getFunctionId(p), "define") == 0)) {
+		&& !(getModuleId(p) == querylogRef && getFunctionId(p) == defineRef)) {
 		/* do nothing */
 	} else if (p->barrier) {
 		if (p->barrier == LEAVEsymbol ||
 			p->barrier == REDOsymbol ||
 			p->barrier == RETURNsymbol || p->barrier == RAISEsymbol) {
-			if (!copystring(&t, "    ", &len))
+			if (!copystring(&t, "  ", &len))
 				return base;
 		}
 		if (!copystring(&t, operatorName(p->barrier), &len) || !copystring(&t, " ", &len))
@@ -505,6 +496,8 @@ instruction2str(MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int flg)
 
 		for (i = 0; i < p->retc; i++) {
 			char arg[256];
+			if (p->inout > -1 && i >= p->inout && !copystring(&t, "!", &len))
+				return base;
 			renderTerm(mb, stk, p, i, flg, arg, sizeof(arg));
 			if (!copystring(&t, arg, &len))
 				return base;
@@ -579,13 +572,13 @@ instruction2str(MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int flg)
 		char extra[256];
 		if (p->token == REMsymbol) {
 		} else {
-			snprintf(extra, 256, "\t#[%d] (" BUNFMT ") %s ", p->pc,
+			snprintf(extra, sizeof(extra), "\t#[%d] (" BUNFMT ") %s ", p->pc,
 					 getRowCnt(mb, getArg(p, 0)),
 					 (p->blk ? p->blk->binding : ""));
 			if (!copystring(&t, extra, &len))
 				return base;
 			for (j = 0; j < p->retc; j++) {
-				snprintf(extra, 256, "%d ", getArg(p, j));
+				snprintf(extra, sizeof(extra), "%d ", getArg(p, j));
 				if (!copystring(&t, extra, &len))
 					return base;
 			}
@@ -594,7 +587,7 @@ instruction2str(MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int flg)
 					return base;
 			}
 			for (; j < p->argc; j++) {
-				snprintf(extra, 256, "%d ", getArg(p, j));
+				snprintf(extra, sizeof(extra), "%d ", getArg(p, j));
 				if (!copystring(&t, extra, &len))
 					return base;
 			}
@@ -627,16 +620,14 @@ str
 mal2str(MalBlkPtr mb, int first, int last)
 {
 	str ps = NULL, *txt;
-	int i, j;
+	int i;
 	size_t *len, totlen = 0;
 
-	txt = GDKmalloc(sizeof(str) * mb->stop);
-	len = GDKmalloc(sizeof(size_t) * mb->stop);
+	txt = ma_alloc(mb->ma, sizeof(str) * mb->stop);
+	len = ma_alloc(mb->ma, sizeof(size_t) * mb->stop);
 
 	if (txt == NULL || len == NULL) {
 		addMalException(mb, "mal2str: " MAL_MALLOC_FAIL);
-		GDKfree(txt);
-		GDKfree(len);
 		return NULL;
 	}
 	for (i = first; i < last; i++) {
@@ -653,35 +644,24 @@ mal2str(MalBlkPtr mb, int first, int last)
 			totlen += len[i] = strlen(txt[i]);
 		else {
 			addMalException(mb, "mal2str: " MAL_MALLOC_FAIL);
-			GDKfree(len);
-			for (j = first; j < i; j++)
-				GDKfree(txt[j]);
-			GDKfree(txt);
 			return NULL;
 		}
 	}
-	ps = GDKmalloc(totlen + mb->stop + 1);
+	ps = ma_alloc(mb->ma, totlen + mb->stop + 1);
 	if (ps == NULL) {
 		addMalException(mb, "mal2str: " MAL_MALLOC_FAIL);
-		GDKfree(len);
-		for (i = first; i < last; i++)
-			GDKfree(txt[i]);
-		GDKfree(txt);
 		return NULL;
 	}
 
 	totlen = 0;
+	char *p = ps;
 	for (i = first; i < last; i++) {
 		if (txt[i]) {
-			strncpy(ps + totlen, txt[i], len[i]);
-			ps[totlen + len[i]] = '\n';
-			ps[totlen + len[i] + 1] = 0;
-			totlen += len[i] + 1;
-			GDKfree(txt[i]);
+			p = stpcpy(p, txt[i]);
+			*p++ = '\n';
 		}
 	}
-	GDKfree(len);
-	GDKfree(txt);
+	*p = 0;
 	return ps;
 }
 
@@ -696,7 +676,6 @@ printInstruction(stream *fd, MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int flg)
 	/* ps[strlen(ps)-1] = 0; remove '\n' */
 	if (ps) {
 		mnstr_printf(fd, "%s%s", (flg & LIST_MAL_MAPI ? "=" : ""), ps);
-		GDKfree(ps);
 	} else {
 		mnstr_printf(fd, "#failed instruction2str()");
 	}
@@ -704,19 +683,17 @@ printInstruction(stream *fd, MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int flg)
 }
 
 void
-traceInstruction(component_t comp, MalBlkPtr mb, MalStkPtr stk, InstrPtr p,
-				 int flg)
+traceInstruction(MalBlkPtr mb, MalStkPtr stk, InstrPtr p, int flg)
 {
 	str ps;
-	TRC_DEBUG_IF(comp) {
+	TRC_DEBUG_IF(MAL_OPTIMIZER) {
 		ps = instruction2str(mb, stk, p, flg);
 		/* ps[strlen(ps)-1] = 0; remove '\n' */
 		if (ps) {
-			TRC_DEBUG_ENDIF(comp, "%s%s\n", (flg & LIST_MAL_MAPI ? "=" : ""),
-							ps);
-			GDKfree(ps);
+			TRC_DEBUG_ENDIF(MAL_OPTIMIZER, "%s%s\n",
+							(flg & LIST_MAL_MAPI ? "=" : ""), ps);
 		} else {
-			TRC_DEBUG_ENDIF(comp, "Failed instruction2str()\n");
+			TRC_DEBUG_ENDIF(MAL_OPTIMIZER, "Failed instruction2str()\n");
 		}
 	}
 }
@@ -731,12 +708,12 @@ printSignature(stream *fd, Symbol s, int flg)
 		mnstr_printf(fd, "missing definition of %s\n", s->name);
 		return;
 	}
-	txt = GDKzalloc(MAXLISTING);	/* some slack for large blocks */
+	allocator *ma = s->def->ma;
+	txt = ma_zalloc(ma, MAXLISTING);	/* some slack for large blocks */
 	if (txt) {
 		p = getSignature(s);
 		(void) fcnDefinition(s->def, p, txt, flg, txt, MAXLISTING);
 		mnstr_printf(fd, "%s\n", txt);
-		GDKfree(txt);
 	} else
 		mnstr_printf(fd, "printSignature: " MAL_MALLOC_FAIL);
 }

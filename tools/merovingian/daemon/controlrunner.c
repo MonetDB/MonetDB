@@ -3,11 +3,9 @@
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024, 2025 MonetDB Foundation;
- * Copyright August 2008 - 2023 MonetDB B.V.;
- * Copyright 1997 - July 2008 CWI.
+ * For copyright information, see the file debian/copyright.
  */
 
 #include "monetdb_config.h"
@@ -123,7 +121,7 @@ recvWithTimeout(int msgsock, stream *fdin, char *buf, size_t buflen)
 {
 	int retval;
 #ifdef HAVE_POLL
-	struct pollfd pfd = (struct pollfd) {.fd = msgsock, .events = POLLIN};
+	struct pollfd pfd = {.fd = msgsock, .events = POLLIN};
 
 	/* Wait up to 1 second.  If a client doesn't make this, it's too slow */
 	retval = poll(&pfd, 1, 1000);
@@ -135,7 +133,7 @@ recvWithTimeout(int msgsock, stream *fdin, char *buf, size_t buflen)
 	FD_SET(msgsock, &fds);
 
 	/* Wait up to 1 second.  If a client doesn't make this, it's too slow */
-	tv = struct timeval) {.tv_sec = 1};
+	tv = (struct timeval) {.tv_sec = 1};
 	retval = select(msgsock + 1, &fds, NULL, NULL, &tv);
 #endif
 	if (retval <= 0) {
@@ -966,7 +964,7 @@ static void ctl_handle_client(
 
 				if (strcmp(q, "#defaults") == 0) {
 					/* send defaults to client */
-					writePropsBuf(_mero_db_props, &pbuf);
+					pbuf = writePropsBuf(_mero_db_props);
 					send_list();
 
 					Mlevelfprintf(INFORMATION, _mero_ctlout, "%s: served default property "
@@ -1002,7 +1000,7 @@ static void ctl_handle_client(
 				/* from here we'll always succeed, even if we don't
 				 * send anything */
 				readProps(props, stats->path);
-				writePropsBuf(props, &pbuf);
+				pbuf = writePropsBuf(props);
 				send_list();
 				freeConfFile(props);
 				free(props);

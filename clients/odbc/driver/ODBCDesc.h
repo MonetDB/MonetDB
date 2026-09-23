@@ -3,11 +3,9 @@
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024, 2025 MonetDB Foundation;
- * Copyright August 2008 - 2023 MonetDB B.V.;
- * Copyright 1997 - July 2008 CWI.
+ * For copyright information, see the file debian/copyright.
  */
 
 #ifndef _H_ODBCDESC
@@ -79,7 +77,7 @@ typedef struct {
 #define isIPD(desc)	(isID(desc) && (desc)->Stmt->ImplParamDescr == (desc))
 
 ODBCDesc *newODBCDesc(ODBCDbc *dbc);
-int isValidDesc(ODBCDesc *desc);
+bool isValidDesc(ODBCDesc *desc);
 void addDescError(ODBCDesc *desc, const char *SQLState, const char *errMsg, int nativeErrCode);
 ODBCError *getDescError(ODBCDesc *desc);
 
@@ -95,6 +93,7 @@ void setODBCDescRecCount(ODBCDesc *desc, int count);
 ODBCDescRec *addODBCDescRec(ODBCDesc *desc, SQLSMALLINT recno);
 
 SQLULEN ODBCLength(ODBCDescRec *rec, int lengthtype);
+void fillLiteralPrefixSuffix(ODBCDescRec *rec);
 
 SQLRETURN MNDBGetDescField(ODBCDesc *desc, SQLSMALLINT RecordNumber, SQLSMALLINT FieldIdentifier, SQLPOINTER Value, SQLINTEGER BufferLength, SQLINTEGER *StringLength);
 SQLRETURN MNDBSetDescField(ODBCDesc *desc, SQLSMALLINT RecordNumber, SQLSMALLINT FieldIdentifier, SQLPOINTER Value, SQLINTEGER BufferLength);

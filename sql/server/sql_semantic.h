@@ -3,11 +3,9 @@
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024, 2025 MonetDB Foundation;
- * Copyright August 2008 - 2023 MonetDB B.V.;
- * Copyright 1997 - July 2008 CWI.
+ * For copyright information, see the file debian/copyright.
  */
 
 #ifndef _SQL_SEMANTIC_H_
@@ -73,7 +71,5 @@ extern sql_arg *sql_find_param(mvc *sql, char *name);
 
 extern char *symbol2string(mvc *sql, symbol *s, int expression, char **err);
 //extern char *dlist2string(mvc *sql, dlist *s, int expression, char **err);
-
-extern char * toUpperCopy(char *dest, const char *src);
 
 #endif /*_SQL_SEMANTIC_H_*/

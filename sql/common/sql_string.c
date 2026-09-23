@@ -3,18 +3,15 @@
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024, 2025 MonetDB Foundation;
- * Copyright August 2008 - 2023 MonetDB B.V.;
- * Copyright 1997 - July 2008 CWI.
+ * For copyright information, see the file debian/copyright.
  */
 
 #include "monetdb_config.h"
 #include "sql_mem.h"
 #include "gdk.h"
 #include "sql_string.h"
-#include "mal_exception.h"
 
 /*
  * some string functions.
@@ -149,5 +146,5 @@ char *sa_message( allocator *sa, const char *format, ... )
 	va_start (ap,format);
 	(void) vsnprintf( buf, BUFSIZ, format, ap);
 	va_end (ap);
-	return sa_strdup(sa, buf);
+	return ma_strdup(sa, buf);
 }

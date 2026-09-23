@@ -10,15 +10,15 @@ INSERT INTO fract_only VALUES (2, '+0.9999')
 statement ok
 INSERT INTO fract_only VALUES (3, '+.9999')
 
-query IR rowsort
+query ID rowsort
 SELECT * FROM fract_only
 ----
 1
--1.000
+-0.9999
 2
-1.000
+0.9999
 3
-1.000
+0.9999
 
 statement error
 INSERT INTO fract_only VALUES (4, '0.99995')
@@ -26,15 +26,15 @@ INSERT INTO fract_only VALUES (4, '0.99995')
 statement error
 INSERT INTO fract_only VALUES (5, '0.99999')
 
-query IR rowsort
+query ID rowsort
 SELECT * FROM fract_only
 ----
 1
--1.000
+-0.9999
 2
-1.000
+0.9999
 3
-1.000
+0.9999
 
 statement error
 INSERT INTO fract_only VALUES (6, '+0.99995')
@@ -42,15 +42,15 @@ INSERT INTO fract_only VALUES (6, '+0.99995')
 statement error
 INSERT INTO fract_only VALUES (6, '+.99995')
 
-query IR rowsort
+query ID rowsort
 SELECT * FROM fract_only
 ----
 1
--1.000
+-0.9999
 2
-1.000
+0.9999
 3
-1.000
+0.9999
 
 statement error
 INSERT INTO fract_only VALUES (7, '-0.99995')
@@ -58,15 +58,15 @@ INSERT INTO fract_only VALUES (7, '-0.99995')
 statement error
 INSERT INTO fract_only VALUES (7, '-.999998')
 
-query IR rowsort
+query ID rowsort
 SELECT * FROM fract_only
 ----
 1
--1.000
+-0.9999
 2
-1.000
+0.9999
 3
-1.000
+0.9999
 
 statement ok
 drop table fract_only

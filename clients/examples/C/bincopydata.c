@@ -3,11 +3,9 @@
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024, 2025 MonetDB Foundation;
- * Copyright August 2008 - 2023 MonetDB B.V.;
- * Copyright 1997 - July 2008 CWI.
+ * For copyright information, see the file debian/copyright.
  */
 
 #include "bincopydata.h"
@@ -62,7 +60,7 @@ gen_hugeints(FILE *f, bool byteswap, long nrecs, char *arg)
 {
 	(void)arg;
 	for (long i = 0; i < nrecs; i++) {
-		uhge v = (uhge)i;
+		uint128_t v = (uint128_t)i;
 		if (byteswap) {
 			copy_binary_convert128(&v);
 		}
@@ -164,7 +162,8 @@ gen_strings(FILE *f, bool byteswap, long nrecs, char *arg)
 	(void)arg;
 	(void)byteswap;
 	for (long i = 0; i < nrecs; i++) {
-		fprintf(f, "int%ld", i);
+		long ii = i % 987;
+		fprintf(f, "int%ld", ii);
 		fputc(0, f);
 	}
 }
@@ -177,7 +176,8 @@ gen_large_strings(FILE *f, bool byteswap, long nrecs, char *arg)
 	char *buf = malloc(n);
 	memset(buf, 'a', n);
 	for (long i = 0; i < nrecs; i++) {
-		fprintf(f, "int%06ld", i);
+		long ii = i % 987;
+		fprintf(f, "int%06ld", ii);
 		if (i % 10000 == 0)
 			fwrite(buf, n, 1, f);
 		fputc(0, f);
@@ -209,7 +209,8 @@ gen_newline_strings(FILE *f, bool byteswap, long nrecs, char *arg)
 	(void)arg;
 	(void)byteswap;
 	for (long i = 0; i < nrecs; i++) {
-		fprintf(f, "RN\r\nR\r%ld", i);
+		long ii = i % 987;
+		fprintf(f, "RN\r\nR\r%ld", ii);
 		fputc(0, f);
 	}
 }
@@ -273,6 +274,55 @@ gen_json(FILE *f, bool byteswap, long nrecs, char *arg)
 	}
 }
 
+static void
+gen_inet4(FILE *f, bool byteswap, long nrecs, char *arg)
+{
+	(void)arg;
+	(void)byteswap;
+	for (uint64_t v = 0; v < (uint64_t) nrecs; v++) {
+		uint64_t i = (v == 3) ? 0x00000000 : (v + 1) * 1001001001;
+		// always big endian
+		fputc((i >> 24) % 256, f);
+		fputc((i >> 16) % 256, f);
+		fputc((i >>  8) % 256, f);
+		fputc(i         % 256, f);
+	}
+}
+
+static void
+gen_inet6(FILE *f, bool byteswap, long nrecs, char *arg)
+{
+	(void)arg;
+	(void)byteswap;
+	for (uint64_t v = 0; v < (uint64_t) nrecs; v++) {
+		uint64_t i0 = (v + 1) * 2142970729L;
+		uint64_t i1 = (v + 1) * 2011938419L;
+		uint64_t i2 = (v + 1) * 1616437157L;
+		uint64_t i3 = (v + 1) * 1271098355L;
+		uint8_t rec[16] = {
+			(uint8_t)(i0 >> 24),
+			(uint8_t)(i0 >> 16),
+			(uint8_t)(i0 >> 8),
+			(uint8_t)(i0),
+			(uint8_t)(i1 >> 24),
+			(uint8_t)(i1 >> 16),
+			(uint8_t)(i1 >> 8),
+			(uint8_t)(i1),
+			(uint8_t)(i2 >> 24),
+			(uint8_t)(i2 >> 16),
+			(uint8_t)(i2 >> 8),
+			(uint8_t)(i2),
+			(uint8_t)(i3 >> 24),
+			(uint8_t)(i3 >> 16),
+			(uint8_t)(i3 >> 8),
+			(uint8_t)(i3),
+		};
+		if (v == 3)
+			memset(rec, 0, sizeof(rec));
+		fwrite(rec, 16, 1, f);
+	}
+}
+
 #define FUNCNAME gen_decimal_tinyints
 #define STYP int8_t
 #define UTYP uint8_t
@@ -300,8 +350,8 @@ gen_json(FILE *f, bool byteswap, long nrecs, char *arg)
 
 #ifdef HAVE_HGE
 	#define FUNCNAME gen_decimal_hugeints
-	#define STYP hge
-	#define UTYP uhge
+	#define STYP int128_t
+	#define UTYP uint128_t
 	#define CONVERT copy_binary_convert128
 	#include "bincopydecimal_impl.h"
 #endif
@@ -351,6 +401,9 @@ static struct gen {
 	{ "timestamp_days", gen_timestamp_days },
 	{ "timestamp_months", gen_timestamp_months },
 	{ "timestamp_years", gen_timestamp_years },
+
+	{ "inet4", gen_inet4 },
+	{ "inet6", gen_inet6 },
 
 	{ "json_objects", gen_json },
 

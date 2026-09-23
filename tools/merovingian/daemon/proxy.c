@@ -3,11 +3,9 @@
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024, 2025 MonetDB Foundation;
- * Copyright August 2008 - 2023 MonetDB B.V.;
- * Copyright 1997 - July 2008 CWI.
+ * For copyright information, see the file debian/copyright.
  */
 
 #include "monetdb_config.h"
@@ -97,10 +95,12 @@ proxyThread(void *d)
 }
 
 err
-startProxy(int psock, stream *cfdin, stream *cfout, char *url, char *client)
+startProxy(int psock, stream *cfdin, stream *cfout,
+		   const char *url, const char *client)
 {
 	int ssock = -1;
-	char *port, *t, *conn, *endipv6;
+	char *port, *t, *conn = NULL, *endipv6;
+	char *usock = NULL;
 	struct stat statbuf;
 	stream *sfdin, *sfout;
 	merovingian_proxy *pctos, *pstoc;
@@ -109,9 +109,12 @@ startProxy(int psock, stream *cfdin, stream *cfout, char *url, char *client)
 	int thret;
 
 	/* quick 'n' dirty parsing */
-	if (strncmp(url, "mapi:monetdb://", sizeof("mapi:monetdb://") - 1) == 0) {
-		conn = strdup(url + sizeof("mapi:monetdb://") - 1);
-
+	if (strncmp(url, "mapi:monetdb://", 15) == 0) {
+		conn = strdup(url + 15);
+	} else if (strncmp(url, "monetdb://", 10) == 0) {
+		conn = strdup(url + 10);
+	}
+	if (conn != NULL) {
 		if (*conn == '[') { /* check for an IPv6 address */
 			if ((endipv6 = strchr(conn, ']')) != NULL) {
 				if ((port = strchr(endipv6, ':')) != NULL) {
@@ -127,6 +130,11 @@ startProxy(int psock, stream *cfdin, stream *cfout, char *url, char *client)
 				free(conn);
 				return(newErr("invalid IPv6 address in redirect: %s", url));
 			}
+		} else if (strncmp(url, "monetdb://", 10) == 0 &&
+				   (t = strstr(conn, "sock=")) != NULL &&
+				   stat(t + 5, &statbuf) != -1) {
+			ssock = 0;
+			usock = t + 5;
 		} else if ((port = strchr(conn, ':')) != NULL) { /* drop anything off after the hostname */
 			*port = '\0';
 			port++;
@@ -134,6 +142,7 @@ startProxy(int psock, stream *cfdin, stream *cfout, char *url, char *client)
 				*t = '\0';
 		} else if (stat(conn, &statbuf) != -1) {
 			ssock = 0;
+			usock = conn;
 		} else {
 			free(conn);
 			return(newErr("can't find a port in redirect, "
@@ -143,7 +152,7 @@ startProxy(int psock, stream *cfdin, stream *cfout, char *url, char *client)
 		return(newErr("unsupported protocol/scheme in redirect: %s", url));
 	}
 
-	if (ssock != -1) {
+	if (usock != NULL) {
 		/* UNIX socket connect, don't proxy, but pass socket fd */
 		struct sockaddr_un server;
 		struct msghdr msg;
@@ -156,7 +165,7 @@ startProxy(int psock, stream *cfdin, stream *cfout, char *url, char *client)
 		server = (struct sockaddr_un) {
 			.sun_family = AF_UNIX,
 		};
-		strcpy_len(server.sun_path, conn, sizeof(server.sun_path));
+		strtcpy(server.sun_path, usock, sizeof(server.sun_path));
 		free(conn);
 		if ((ssock = socket(PF_UNIX, SOCK_STREAM
 #ifdef SOCK_CLOEXEC

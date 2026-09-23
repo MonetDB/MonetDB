@@ -1,4 +1,5 @@
-import os, sys, pymonetdb
+from MonetDBtesting import tpymonetdb as pymonetdb
+import os, sys
 
 
 port = int(os.environ['MAPIPORT'])

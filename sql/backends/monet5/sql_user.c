@@ -3,11 +3,9 @@
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024, 2025 MonetDB Foundation;
- * Copyright August 2008 - 2023 MonetDB B.V.;
- * Copyright 1997 - July 2008 CWI.
+ * For copyright information, see the file debian/copyright.
  */
 
 /*
@@ -27,6 +25,7 @@
 #include "mal_authorize.h"
 #include "mcrypt.h"
 #include "sql_execute.h"
+#include "opt_pipes.h"
 
 static inline sql_table*
 getUsersTbl(mvc *m)
@@ -78,22 +77,22 @@ setUserPassword(mvc *m, oid rid, str value)
 	str hash = NULL;
 	int res;
 	if (is_oid_nil(rid)) {
-		(void) sql_error(m, 02, SQLSTATE(42000) "setUserPassword: invalid user");
+		(void) sql_error(m, 02, SQLSTATE(22023) "setUserPassword: invalid user");
 		return LOG_ERR;
 	}
 	if (strNil(value)) {
-		(void) sql_error(m, 02, SQLSTATE(42000) "setUserPassword: password cannot be nil");
+		(void) sql_error(m, 02, SQLSTATE(22004) "setUserPassword: password cannot be NULL");
 		return LOG_ERR;
 	}
 	if ((err = AUTHverifyPassword(value)) != MAL_SUCCEED) {
-		(void) sql_error(m, 02, SQLSTATE(42000) "setUserPassword: %s", getExceptionMessage(err));
-		freeException(err);
+		(void) sql_error(m, 02, SQLSTATE(28000) "setUserPassword: %s", getExceptionMessage(err));
 		return LOG_ERR;
 	}
-	if ((err = AUTHcypherValue(&hash, value)) != MAL_SUCCEED) {
+	allocator *ta = MT_thread_getallocator();
+	allocator_state ta_state = ma_open(ta);
+	if ((err = AUTHcypherValue(ta, &hash, value)) != MAL_SUCCEED) {
 		(void) sql_error(m, 02, SQLSTATE(42000) "setUserPassword: %s", getExceptionMessage(err));
-		freeException(err);
-		GDKfree(hash);
+		ma_close(&ta_state);
 		return LOG_ERR;
 	}
 
@@ -101,7 +100,7 @@ setUserPassword(mvc *m, oid rid, str value)
 	sqlstore *store = m->session->tr->store;
 	sql_table *users = getUsersTbl(m);
 	res = store->table_api.column_update_value(tr, find_sql_column(users, USER_PASSWORD_COLUMN), rid, hash);
-	GDKfree(hash);
+	ma_close(&ta_state);
 	return res;
 }
 
@@ -113,28 +112,25 @@ changeUserPassword(mvc *m, oid rid, str oldpass, str newpass)
 	str hash = NULL;
 	str passValue = NULL;
 	if (is_oid_nil(rid)) {
-		(void) sql_error(m, 02, SQLSTATE(42000) "changeUserPassword: invalid user");
+		(void) sql_error(m, 02, SQLSTATE(22023) "changeUserPassword: invalid user");
 		return LOG_ERR;
 	}
 	if (strNil(newpass)) {
-		(void) sql_error(m, 02, SQLSTATE(42000) "changeUserPassword: password cannot be nil");
+		(void) sql_error(m, 02, SQLSTATE(22004) "changeUserPassword: password cannot be NULL");
 		return LOG_ERR;
 	}
 	if (oldpass) {
 		// validate old password match
-		if ((err = AUTHdecypherValue(&hash, passValue=getUserPassword(m, rid))) != MAL_SUCCEED) {
-			(void) sql_error(m, 02, SQLSTATE(42000) "changeUserPassword: %s", getExceptionMessage(err));
-			freeException(err);
+		if ((err = AUTHdecypherValue(m->sa, &hash, passValue=getUserPassword(m, rid))) != MAL_SUCCEED) {
+			(void) sql_error(m, 02, SQLSTATE(28000) "changeUserPassword: %s", getExceptionMessage(err));
 			GDKfree(passValue);
 			return LOG_ERR;
 		}
 		GDKfree(passValue);
 		if (strcmp(oldpass, hash) != 0) {
-			(void) sql_error(m, 02, SQLSTATE(42000) "changeUserPassword: password mismatch");
-			GDKfree(hash);
+			(void) sql_error(m, 02, SQLSTATE(28000) "changeUserPassword: password mismatch");
 			return LOG_ERR;
 		}
-		GDKfree(hash);
 	}
 	return setUserPassword(m, rid, newpass);
 }
@@ -170,7 +166,7 @@ monet5_drop_user(ptr _mvc, str user)
 
 	rid = store->table_api.column_find_row(m->session->tr, users_name, user, NULL);
 	if (!is_oid_nil(rid) && (log_res = store->table_api.table_delete(m->session->tr, users, rid)) != LOG_OK) {
-		(void) sql_error(m, 02, "DROP USER: failed%s", log_res == LOG_CONFLICT ? " due to conflict with another transaction" : "");
+		(void) sql_error(m, 02, SQLSTATE(25000) "DROP USER: failed%s", log_res == LOG_CONFLICT ? " due to conflict with another transaction" : "");
 		return FALSE;
 	}
 
@@ -193,7 +189,7 @@ parse_schema_path_str(mvc *m, str schema_path, bool build) /* this function for 
 	size_t bp = 0;
 
 	if (strNil(schema_path))
-		throw(SQL, "sql.schema_path", SQLSTATE(42000) "A schema path cannot be NULL");
+		throw(SQL, "sql.schema_path", SQLSTATE(22004) "A schema path cannot be NULL");
 
 	if (build) {
 		while (l->t) /* if building, empty schema_path list */
@@ -202,6 +198,7 @@ parse_schema_path_str(mvc *m, str schema_path, bool build) /* this function for 
 		m->schema_path_has_tmp = false;
 	}
 
+	/* SQLSTATE(0E000) = invalid schema name list specification */
 	for (size_t i = 0; schema_path[i]; i++) {
 		char next = schema_path[i];
 
@@ -211,9 +208,9 @@ parse_schema_path_str(mvc *m, str schema_path, bool build) /* this function for 
 				i++; /* has to advance two positions */
 			} else if (status == inside_str) {
 				if (bp == 0)
-					throw(SQL, "sql.schema_path", SQLSTATE(42000) "A schema name cannot be empty");
+					throw(SQL, "sql.schema_path", SQLSTATE(0E000) "A schema name cannot be empty");
 				if (bp == 1023)
-					throw(SQL, "sql.schema_path", SQLSTATE(42000) "A schema has up to 1023 characters");
+					throw(SQL, "sql.schema_path", SQLSTATE(0E000) "A schema has up to 1023 characters");
 
 				if (build) {
 					char *val = NULL;
@@ -240,24 +237,24 @@ parse_schema_path_str(mvc *m, str schema_path, bool build) /* this function for 
 				i++; /* has to advance two positions */
 			} else if (status == inside_str) {
 				if (bp == 1023)
-					throw(SQL, "sql.schema_path", SQLSTATE(42000) "A schema has up to 1023 characters");
+					throw(SQL, "sql.schema_path", SQLSTATE(0E000) "A schema has up to 1023 characters");
 				next_schema[bp++] = ','; /* used inside a schema name */
 			} else if (status == outside_str) {
-				throw(SQL, "sql.schema_path", SQLSTATE(42000) "The '\"' character is expected after the comma separator");
+				throw(SQL, "sql.schema_path", SQLSTATE(0E000) "The '\"' character is expected after the comma separator");
 			}
 		} else if (status == inside_str) {
 			if (bp == 1023)
-				throw(SQL, "sql.schema_path", SQLSTATE(42000) "A schema has up to 1023 characters");
+				throw(SQL, "sql.schema_path", SQLSTATE(0E000) "A schema has up to 1023 characters");
 			if (bp == 0 && next == '%')
-				throw(SQL, "sql.schema_path", SQLSTATE(42000) "The character '%%' is not allowed as the first schema character");
+				throw(SQL, "sql.schema_path", SQLSTATE(0E000) "The character '%%' is not allowed as the first schema character");
 			next_schema[bp++] = next;
 		} else {
 			assert(status == outside_str);
-			throw(SQL, "sql.schema_path", SQLSTATE(42000) "A schema in the path must be within '\"'");
+			throw(SQL, "sql.schema_path", SQLSTATE(0E000) "A schema in the path must be within '\"'");
 		}
 	}
 	if (status == inside_str)
-		throw(SQL, "sql.schema_path", SQLSTATE(42000) "A schema path cannot end inside inside a schema name");
+		throw(SQL, "sql.schema_path", SQLSTATE(0E000) "A schema path cannot end inside a schema name");
 	return MAL_SUCCEED;
 }
 
@@ -266,12 +263,13 @@ monet5_create_user(ptr _mvc, str user, str passwd, bool enc, str fullname, sqlid
 {
 	mvc *m = (mvc *) _mvc;
 	oid rid;
-	str ret, err, pwd, hash, schema_buf = NULL;
+	str ret, err, pwd, hash;
+//	str schema_buf = NULL;
 	sqlid user_id;
 	sql_schema *s = find_sql_schema(m->session->tr, "sys");
 	sql_table *db_user_info = find_sql_table(m->session->tr, s, "db_user_info"),
-			  *auths = find_sql_table(m->session->tr, s, "auths"),
-			  *schemas_tbl = find_sql_table(m->session->tr, s, "schemas");
+			*auths = find_sql_table(m->session->tr, s, "auths"),
+			*schemas_tbl = find_sql_table(m->session->tr, s, "schemas");
 	// Client c = MCgetClient(m->clientid);
 	sqlstore *store = m->session->tr->store;
 	int log_res = 0;
@@ -284,7 +282,7 @@ monet5_create_user(ptr _mvc, str user, str passwd, bool enc, str fullname, sqlid
 				throw(SQL,"sql.create_user",SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			case -2:
 			case -3:
-				throw(SQL,"sql.create_user",SQLSTATE(42000) "Create user schema failed due to transaction conflict");
+				throw(SQL,"sql.create_user",SQLSTATE(25000) "Create user schema failed due to transaction conflict");
 			default:
 				break;
 		}
@@ -293,75 +291,62 @@ monet5_create_user(ptr _mvc, str user, str passwd, bool enc, str fullname, sqlid
 	assert(schema_id);
 
 	if (is_oid_nil(rid = store->table_api.column_find_row(m->session->tr, find_sql_column(schemas_tbl, "id"), &schema_id, NULL)))
-		throw(SQL,"sql.create_user",SQLSTATE(42000) "User schema not found");
+		throw(SQL,"sql.create_user",SQLSTATE(22023) "User schema not found");
 
 	if (!schema_path) {
-		// schema_name = store->table_api.column_find_value(m->session->tr, find_sql_column(schemas_tbl, "name"), rid);
-		// if (schema_name) {
-		// 	// "\"$schema_name\"\0"
-		// 	if ((strlen(schema_name) + 4) > MAX_SCHEMA_SIZE) {
-		// 		if (schema_name)
-		// 			GDKfree(schema_name);
-		// 		throw(SQL, "sql.schema_path", SQLSTATE(42000) "A schema has up to 1023 characters");
-		// 	}
-		// 	schema_buf = GDKmalloc(MAX_SCHEMA_SIZE);
-		// 	snprintf(schema_buf, MAX_SCHEMA_SIZE, "\"%s\"", schema_name);
-		// 	schema_path = schema_buf;
-		// 	GDKfree(schema_name);
-		// } else {
-		// 	schema_path = default_schema_path;
-		// }
 		schema_path = default_schema_path;
 	}
 
 	if ((ret = parse_schema_path_str(m, schema_path, false)) != MAL_SUCCEED) {
-		GDKfree(schema_buf);
 		return ret;
 	}
 
 	if (!optimizer)
 		optimizer = default_optimizer;
+	if (!isOptimizerPipe(optimizer)) {
+		throw(MAL, "sql.create_user", SQLSTATE(22023) "Optimizer pipe '%s' unknown", optimizer);
+	}
+
 
 	if (!enc) {
 		if (!(pwd = mcrypt_BackendSum(passwd, strlen(passwd)))) {
-			GDKfree(schema_buf);
-			throw(MAL, "sql.create_user", SQLSTATE(42000) "Crypt backend hash not found");
+			throw(MAL, "sql.create_user", SQLSTATE(28000) "Crypt backend hash not found");
 		}
 	} else {
 		pwd = passwd;
 	}
 
-	err = AUTHGeneratePasswordHash(&hash, pwd);
+	allocator *ta = MT_thread_getallocator();
+	allocator_state ta_state = ma_open(ta);
+	err = AUTHGeneratePasswordHash(ta, &hash, pwd);
 	if (!enc)
 		free(pwd);
 	if (err != MAL_SUCCEED) {
-		GDKfree(schema_buf);
+		ma_close(&ta_state);
 		throw(MAL, "sql.create_user", SQLSTATE(42000) "create backend hash failure");
 	}
 
 	user_id = store_next_oid(m->session->tr->store);
 	sqlid default_role_id = role_id > 0 ? role_id : user_id;
 	if ((log_res = store->table_api.table_insert(m->session->tr, db_user_info, &user, &fullname, &schema_id, &schema_path, &max_memory, &max_workers, &optimizer, &default_role_id, &hash))) {
-		GDKfree(schema_buf);
-		GDKfree(hash);
-		throw(SQL, "sql.create_user", SQLSTATE(42000) "Create user failed%s", log_res == LOG_CONFLICT ? " due to conflict with another transaction" : "");
+		ma_close(&ta_state);
+		throw(SQL, "sql.create_user", SQLSTATE(25000) "Create user failed%s", log_res == LOG_CONFLICT ? " due to conflict with another transaction" : "");
 	}
 	// clean up
-	GDKfree(schema_buf);
-	GDKfree(hash);
+	ma_close(&ta_state);
 
 	if ((log_res = store->table_api.table_insert(m->session->tr, auths, &user_id, &user, &grantorid))) {
-		throw(SQL, "sql.create_user", SQLSTATE(42000) "Create user failed%s", log_res == LOG_CONFLICT ? " due to conflict with another transaction" : "");
+		throw(SQL, "sql.create_user", SQLSTATE(25000) "Create user failed%s", log_res == LOG_CONFLICT ? " due to conflict with another transaction" : "");
 	}
 
 	if (new_schema) {
 		// update schema authorization to be default_role_id
 		switch (sql_trans_change_schema_authorization(m->session->tr, schema_id, default_role_id)) {
 			case -1:
-				throw(SQL,"sql.create_user",SQLSTATE(HY013) MAL_MALLOC_FAIL);
+				throw(SQL, "sql.create_user", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			case -2:
 			case -3:
-				throw(SQL,"sql.create_user",SQLSTATE(42000) "Update schema authorization failed due to transaction conflict");
+				throw(SQL, "sql.create_user", SQLSTATE(25000) "Update schema authorization failed due to transaction conflict");
 			default:
 				break;
 		}
@@ -383,11 +368,10 @@ monet5_password_hash(mvc *m, const char *username)
 	oid rid = getUserOIDByName(m, username);
 	str password = getUserPassword(m, rid);
 	if (password) {
-		msg = AUTHdecypherValue(&hash, password);
+		msg = AUTHdecypherValue(m->sa, &hash, password);
 		GDKfree(password);
 		if (msg) {
-			(void) sql_error(m, 02, SQLSTATE(42000) "monet5_password_hash: %s", getExceptionMessage(msg));
-			freeException(msg);
+			(void) sql_error(m, 02, SQLSTATE(28000) "monet5_password_hash: %s", getExceptionMessage(msg));
 		}
 	}
 	return hash;
@@ -413,7 +397,7 @@ monet5_create_privileges(ptr _mvc, sql_schema *s, const char *initpasswd)
 	mvc_create_table(&t, m, s, "db_user_info", tt_table, 1, SQL_PERSIST, 0, -1, 0);
 	mvc_create_column_(&col, m, t, "name", "varchar", 1024);
 	mvc_create_column_(&col, m, t, "fullname", "varchar", 2048);
-	mvc_create_column_(&col, m, t, "default_schema", "int", 9);
+	mvc_create_column_(&col, m, t, "default_schema", "int", 32);
 	mvc_create_column_(&col, m, t, "schema_path", "varchar", 0);
 	mvc_create_column_(&col, m, t, "max_memory", "bigint", 64);
 	mvc_create_column_(&col, m, t, "max_workers", "int", 32);
@@ -426,15 +410,17 @@ monet5_create_privileges(ptr _mvc, sql_schema *s, const char *initpasswd)
 	schema_id = sys->base.id;
 	assert(schema_id == 2000);
 
+	allocator *ta = MT_thread_getallocator();
+	allocator_state ta_state = ma_open(ta);
 	sqlstore *store = m->session->tr->store;
 	const char *username = "monetdb";
 	char *password = initpasswd ? mcrypt_BackendSum(initpasswd, strlen(initpasswd)) : mcrypt_BackendSum("monetdb", strlen("monetdb"));
 	char *hash = NULL;
 	if (password == NULL ||
-		(err = AUTHGeneratePasswordHash(&hash, password)) != MAL_SUCCEED) {
+		(err = AUTHGeneratePasswordHash(ta, &hash, password)) != MAL_SUCCEED) {
 		TRC_CRITICAL(SQL_TRANS, "generate password hash failure");
-		freeException(err);
 		free(password);
+		ma_close(&ta_state);
 		return ;
 	}
 	free(password);
@@ -449,7 +435,7 @@ monet5_create_privileges(ptr _mvc, sql_schema *s, const char *initpasswd)
 
 	store->table_api.table_insert(m->session->tr, uinfo, &username, &fullname, &schema_id, &schema_path, &max_memory,
 		&max_workers, &optimizer, &default_role_id, &hash);
-	GDKfree(hash);
+	ma_close(&ta_state);
 }
 
 static int
@@ -470,8 +456,8 @@ monet5_schema_has_user(ptr _mvc, sql_schema *s)
 }
 
 static int
-monet5_alter_user(ptr _mvc, str user, str passwd, bool enc, sqlid schema_id, str schema_path, str oldpasswd, sqlid
-		role_id, lng max_memory, int max_workers)
+monet5_alter_user(ptr _mvc, str user, str passwd, bool enc, sqlid schema_id, str schema_path, str oldpasswd,
+		sqlid role_id, lng max_memory, int max_workers, str optimizer)
 {
 	mvc *m = (mvc *) _mvc;
 	Client c = MCgetClient(m->clientid);
@@ -484,12 +470,12 @@ monet5_alter_user(ptr _mvc, str user, str passwd, bool enc, sqlid schema_id, str
 	sql_table *info = find_sql_table(m->session->tr, sys, "db_user_info");
 	sql_column *users_name = find_sql_column(info, "name");
 
-	if (schema_id || schema_path || role_id || max_memory > -1 || max_workers > -1) {
+	if (schema_id || schema_path || role_id || max_memory > -1 || max_workers > -1 || optimizer) {
 		rid = store->table_api.column_find_row(m->session->tr, users_name, user, NULL);
 		// user should be checked here since the way `ALTER USER ident ...` stmt is
 		if (is_oid_nil(rid)) {
-			(void) sql_error(m, 02, "ALTER USER: local inconsistency, "
-				 "your database is damaged, auth not found in SQL catalog");
+			(void) sql_error(m, 02, SQLSTATE(42000) "ALTER USER: local inconsistency, "
+				"your database is damaged, db_user_info.name not found in SQL catalog");
 			return FALSE;
 		}
 	}
@@ -501,14 +487,14 @@ monet5_alter_user(ptr _mvc, str user, str passwd, bool enc, sqlid schema_id, str
 		if (!enc) {
 			pwd = mcrypt_BackendSum(passwd, strlen(passwd));
 			if (pwd == NULL) {
-				(void) sql_error(m, 02, SQLSTATE(42000) "ALTER USER: crypt backend hash not found");
+				(void) sql_error(m, 02, SQLSTATE(28000) "ALTER USER: crypt backend hash not found");
 				return FALSE;
 			}
 			if (oldpasswd != NULL) {
 				opwd = mcrypt_BackendSum(oldpasswd, strlen(oldpasswd));
 				if (opwd == NULL) {
 					free(pwd);
-					(void) sql_error(m, 02, SQLSTATE(42000) "ALTER USER: crypt backend hash not found");
+					(void) sql_error(m, 02, SQLSTATE(28000) "ALTER USER: crypt backend hash not found");
 					return FALSE;
 				}
 			}
@@ -525,7 +511,7 @@ monet5_alter_user(ptr _mvc, str user, str passwd, bool enc, sqlid schema_id, str
 					free(pwd);
 					free(opwd);
 				}
-				(void) sql_error(m, 02, "ALTER USER: invalid user");
+				(void) sql_error(m, 02, SQLSTATE(22023) "ALTER USER: invalid user");
 				return (FALSE);
 			}
 			if (strcmp(username, user) == 0) {
@@ -534,7 +520,7 @@ monet5_alter_user(ptr _mvc, str user, str passwd, bool enc, sqlid schema_id, str
 					free(pwd);
 					free(opwd);
 				}
-				(void) sql_error(m, 02, "ALTER USER: "
+				(void) sql_error(m, 02, SQLSTATE(22023) "ALTER USER: "
 					"use 'ALTER USER SET [ ENCRYPTED ] PASSWORD xxx "
 					"USING OLD PASSWORD yyy' "
 					"when changing your own password");
@@ -543,8 +529,7 @@ monet5_alter_user(ptr _mvc, str user, str passwd, bool enc, sqlid schema_id, str
 			GDKfree(username);
 			// verify current user is MAL_ADMIN ?
 			if ((err = AUTHrequireAdmin(c)) != MAL_SUCCEED) {
-				(void) sql_error(m, 02, "ALTER USER: %s", getExceptionMessage(err));
-				freeException(err);
+				(void) sql_error(m, 02, SQLSTATE(28000) "ALTER USER: %s", getExceptionMessage(err));
 				if (!enc) {
 					free(pwd);
 					free(opwd);
@@ -578,8 +563,8 @@ monet5_alter_user(ptr _mvc, str user, str passwd, bool enc, sqlid schema_id, str
 		sql_column *users_schema = find_sql_column(info, "default_schema");
 
 		if ((res = store->table_api.column_update_value(m->session->tr, users_schema, rid, &schema_id))) {
-			(void) sql_error(m, 02, SQLSTATE(42000) "ALTER USER: failed%s",
-							res == LOG_CONFLICT ? " due to conflict with another transaction" : "");
+			(void) sql_error(m, 02, SQLSTATE(25000) "ALTER USER: failed%s",
+						res == LOG_CONFLICT ? " due to conflict with another transaction" : "");
 			return (FALSE);
 		}
 	}
@@ -588,14 +573,13 @@ monet5_alter_user(ptr _mvc, str user, str passwd, bool enc, sqlid schema_id, str
 		sql_column *sp = find_sql_column(info, "schema_path");
 
 		if ((err = parse_schema_path_str(m, schema_path, false)) != MAL_SUCCEED) {
-			(void) sql_error(m, 02, "ALTER USER: %s", getExceptionMessage(err));
-			freeException(err);
+			(void) sql_error(m, 02, SQLSTATE(0E000) "ALTER USER: %s", getExceptionMessage(err));
 			return (FALSE);
 		}
 
 		if ((res = store->table_api.column_update_value(m->session->tr, sp, rid, schema_path))) {
-			(void) sql_error(m, 02, SQLSTATE(42000) "ALTER USER: failed%s",
-							res == LOG_CONFLICT ? " due to conflict with another transaction" : "");
+			(void) sql_error(m, 02, SQLSTATE(25000) "ALTER USER: failed%s",
+						res == LOG_CONFLICT ? " due to conflict with another transaction" : "");
 			return (FALSE);
 		}
 	}
@@ -604,8 +588,8 @@ monet5_alter_user(ptr _mvc, str user, str passwd, bool enc, sqlid schema_id, str
 		sql_column *users_role = find_sql_column(info, "default_role");
 
 		if ((res = store->table_api.column_update_value(m->session->tr, users_role, rid, &role_id))) {
-			(void) sql_error(m, 02, SQLSTATE(42000) "ALTER USER: failed%s",
-							res == LOG_CONFLICT ? " due to conflict with another transaction" : "");
+			(void) sql_error(m, 02, SQLSTATE(25000) "ALTER USER: failed%s",
+						res == LOG_CONFLICT ? " due to conflict with another transaction" : "");
 			return (FALSE);
 		}
 	}
@@ -614,8 +598,8 @@ monet5_alter_user(ptr _mvc, str user, str passwd, bool enc, sqlid schema_id, str
 		sql_column *users_max_memory = find_sql_column(info, "max_memory");
 
 		if ((res = store->table_api.column_update_value(m->session->tr, users_max_memory, rid, &max_memory))) {
-			(void) sql_error(m, 02, SQLSTATE(42000) "ALTER USER: failed%s",
-							res == LOG_CONFLICT ? " due to conflict with another transaction" : "");
+			(void) sql_error(m, 02, SQLSTATE(25000) "ALTER USER: failed%s",
+						res == LOG_CONFLICT ? " due to conflict with another transaction" : "");
 			return (FALSE);
 		}
 	}
@@ -624,9 +608,24 @@ monet5_alter_user(ptr _mvc, str user, str passwd, bool enc, sqlid schema_id, str
 		sql_column *users_max_workers = find_sql_column(info, "max_workers");
 
 		if ((res = store->table_api.column_update_value(m->session->tr, users_max_workers, rid, &max_workers))) {
-			(void) sql_error(m, 02, SQLSTATE(42000) "ALTER USER: failed%s",
-							res == LOG_CONFLICT ? " due to conflict with another transaction" : "");
+			(void) sql_error(m, 02, SQLSTATE(25000) "ALTER USER: failed%s",
+						res == LOG_CONFLICT ? " due to conflict with another transaction" : "");
 			return (FALSE);
+		}
+	}
+
+	if (optimizer) {
+		sql_column *users_optimizer = find_sql_column(info, "optimizer");
+
+		if (!isOptimizerPipe(optimizer)) {
+			(void) sql_error(m, 02, SQLSTATE(22023) "ALTER USER: failed. Optimizer pipe '%s' unknown", optimizer);
+			return FALSE;
+		}
+
+		if ((res = store->table_api.column_update_value(m->session->tr, users_optimizer, rid, optimizer))) {
+			(void) sql_error(m, 02, SQLSTATE(25000) "ALTER USER: failed%s",
+						res == LOG_CONFLICT ? " due to conflict with another transaction" : "");
+			return FALSE;
 		}
 	}
 
@@ -648,25 +647,25 @@ monet5_rename_user(ptr _mvc, str olduser, str newuser)
 	sqlstore *store = m->session->tr->store;
 	rid = store->table_api.column_find_row(m->session->tr, users_name, olduser, NULL);
 	if (is_oid_nil(rid)) {
-		(void) sql_error(m, 02, "ALTER USER: local inconsistency, "
-				 "your database is damaged, user not found in SQL catalog");
+		(void) sql_error(m, 02, SQLSTATE(42000) "ALTER USER: local inconsistency, "
+				"your database is damaged, db_user_info.name not found in SQL catalog");
 		return (FALSE);
 	}
 	if ((res = store->table_api.column_update_value(m->session->tr, users_name, rid, newuser))) {
-		(void) sql_error(m, 02, SQLSTATE(42000) "ALTER USER: failed%s",
-						 res == LOG_CONFLICT ? " due to conflict with another transaction" : "");
+		(void) sql_error(m, 02, SQLSTATE(25000) "ALTER USER: failed%s",
+					res == LOG_CONFLICT ? " due to conflict with another transaction" : "");
 		return (FALSE);
 	}
 
 	rid = store->table_api.column_find_row(m->session->tr, auths_name, olduser, NULL);
 	if (is_oid_nil(rid)) {
-		(void) sql_error(m, 02, "ALTER USER: local inconsistency, "
-				 "your database is damaged, auth not found in SQL catalog");
+		(void) sql_error(m, 02, SQLSTATE(42000) "ALTER USER: local inconsistency, "
+				"your database is damaged, auths.name not found in SQL catalog");
 		return (FALSE);
 	}
 	if ((res = store->table_api.column_update_value(m->session->tr, auths_name, rid, newuser))) {
-		(void) sql_error(m, 02, SQLSTATE(42000) "ALTER USER: failed%s",
-						 res == LOG_CONFLICT ? " due to conflict with another transaction" : "");
+		(void) sql_error(m, 02, SQLSTATE(25000) "ALTER USER: failed%s",
+					res == LOG_CONFLICT ? " due to conflict with another transaction" : "");
 		return (FALSE);
 	}
 	return (TRUE);
@@ -698,6 +697,15 @@ monet5_schema_user_dependencies(ptr _trans, int schema_id)
 	return A;
 }
 
+static void
+SQLsetIdle(int clientid, time_t t)
+{
+	Client c = mal_clients + clientid;
+	MT_lock_set(&mal_contextLock);
+	c->idle = t;
+	MT_lock_unset(&mal_contextLock);
+}
+
 void
 monet5_user_init(backend_functions *be_funcs)
 {
@@ -710,6 +718,7 @@ monet5_user_init(backend_functions *be_funcs)
 	be_funcs->fauser = &monet5_alter_user;
 	be_funcs->fruser = &monet5_rename_user;
 	be_funcs->fschuserdep = &monet5_schema_user_dependencies;
+	be_funcs->setIdle = SQLsetIdle;
 }
 
 int
@@ -747,7 +756,7 @@ monet5_user_get_def_schema(mvc *m, int user, str *schema)
 
 	if (!(sname = store->table_api.column_find_value(m->session->tr, find_sql_column(schemas, "name"), rid)))
 		return -1;
-	*schema = sa_strdup(m->session->sa, sname);
+	*schema = ma_strdup(m->session->sa, sname);
 	_DELETE(sname);
 	return *schema ? 0 : -1;
 }
@@ -769,7 +778,7 @@ monet5_user_set_def_schema(mvc *m, oid user, str username)
 	sql_table *auths = NULL;
 	sql_column *auths_id = NULL;
 	sql_column *auths_name = NULL;
-	str path_err = NULL, other = NULL, schema = NULL, schema_cpy, schema_path = NULL, userrole = NULL;
+	str path_err = NULL, schema = NULL, schema_cpy, schema_path = NULL, userrole = NULL;
 	int ok = 1, res = 0;
 
 	TRC_DEBUG(SQL_TRANS, OIDFMT "\n", user);
@@ -784,14 +793,14 @@ monet5_user_set_def_schema(mvc *m, oid user, str username)
 	sqlstore *store = m->session->tr->store;
 	rid = store->table_api.column_find_row(m->session->tr, users_name, username, NULL);
 	if (is_oid_nil(rid)) {
-		if (m->session->tr->active && (other = mvc_rollback(m, 0, NULL, false)) != MAL_SUCCEED)
-			freeException(other);
+		if (m->session->tr->active)
+			(void) mvc_rollback(m, 0, NULL, false);
 		return -2;
 	}
 	schema_id = store->table_api.column_find_sqlid(m->session->tr, users_schema, rid);
 	if (!(schema_path = store->table_api.column_find_value(m->session->tr, users_schema_path, rid))) {
-		if (m->session->tr->active && (other = mvc_rollback(m, 0, NULL, false)) != MAL_SUCCEED)
-			freeException(other);
+		if (m->session->tr->active)
+			(void) mvc_rollback(m, 0, NULL, false);
 		return -1;
 	}
 
@@ -806,26 +815,26 @@ monet5_user_set_def_schema(mvc *m, oid user, str username)
 
 	rid = store->table_api.column_find_row(m->session->tr, schemas_id, &schema_id, NULL);
 	if (is_oid_nil(rid)) {
-		if (m->session->tr->active && (other = mvc_rollback(m, 0, NULL, false)) != MAL_SUCCEED)
-			freeException(other);
+		if (m->session->tr->active)
+			(void) mvc_rollback(m, 0, NULL, false);
 		_DELETE(schema_path);
 		return -3;
 	}
 	if (!(schema = store->table_api.column_find_value(m->session->tr, schemas_name, rid))) {
-		if (m->session->tr->active && (other = mvc_rollback(m, 0, NULL, false)) != MAL_SUCCEED)
-			freeException(other);
+		if (m->session->tr->active)
+			(void) mvc_rollback(m, 0, NULL, false);
 		_DELETE(schema_path);
 		return -1;
 	}
 	schema_cpy = schema;
-	schema = sa_strdup(m->session->sa, schema);
+	schema = ma_strdup(m->session->sa, schema);
 	_DELETE(schema_cpy);
 
 	/* check if username exists */
 	rid = store->table_api.column_find_row(m->session->tr, auths_name, username, NULL);
 	if (is_oid_nil(rid)) {
-		if (m->session->tr->active && (other = mvc_rollback(m, 0, NULL, false)) != MAL_SUCCEED)
-			freeException(other);
+		if (m->session->tr->active)
+			(void) mvc_rollback(m, 0, NULL, false);
 		_DELETE(schema_path);
 		return -2;
 	}
@@ -835,15 +844,15 @@ monet5_user_set_def_schema(mvc *m, oid user, str username)
 	/* check if role exists */
 	rid = store->table_api.column_find_row(m->session->tr, auths_id, &default_role_id, NULL);
 	if (is_oid_nil(rid)) {
-		if (m->session->tr->active && (other = mvc_rollback(m, 0, NULL, false)) != MAL_SUCCEED)
-			freeException(other);
+		if (m->session->tr->active)
+			(void) mvc_rollback(m, 0, NULL, false);
 		_DELETE(schema_path);
 		return -4;
 	}
 	m->role_id = default_role_id;
 	if (!(userrole = store->table_api.column_find_value(m->session->tr, auths_name, rid))) {
-		if (m->session->tr->active && (other = mvc_rollback(m, 0, NULL, false)) != MAL_SUCCEED)
-			freeException(other);
+		if (m->session->tr->active)
+			(void) mvc_rollback(m, 0, NULL, false);
 		_DELETE(schema_path);
 		return -1;
 	}
@@ -852,19 +861,18 @@ monet5_user_set_def_schema(mvc *m, oid user, str username)
 	/* new default schema */
 	m->session->def_schema_name = schema;
 	if (!(ok = mvc_set_schema(m, schema)) || (path_err = parse_schema_path_str(m, schema_path, true)) != MAL_SUCCEED) {
-		if (m->session->tr->active && (other = mvc_rollback(m, 0, NULL, false)) != MAL_SUCCEED)
-			freeException(other);
+		if (m->session->tr->active)
+			(void) mvc_rollback(m, 0, NULL, false);
 		_DELETE(schema_path);
 		_DELETE(userrole);
-		freeException(path_err);
 		return ok == 0 ? -3 : -1;
 	}
 
 
 	/* reset the user and schema names */
-	if (!sqlvar_set_string(find_global_var(m, sys, "current_schema"), schema) ||
-		!sqlvar_set_string(find_global_var(m, sys, "current_user"), username) ||
-		!sqlvar_set_string(find_global_var(m, sys, "current_role"), userrole)) {
+	if (!sqlvar_set_string(m->session->sa, find_global_var(m, sys, "current_schema"), schema) ||
+		!sqlvar_set_string(m->session->sa, find_global_var(m, sys, "current_user"), username) ||
+		!sqlvar_set_string(m->session->sa, find_global_var(m, sys, "current_role"), userrole)) {
 		res = -1;
 	}
 	_DELETE(schema_path);
@@ -922,31 +930,33 @@ remote_create(mvc *m, sqlid id, const char *username, const char *password, int 
 	char *pwhash = NULL, *cypher = NULL;
 	if (!pw_encrypted) {
 		if((pwhash = mcrypt_BackendSum(password, strlen(password))) == NULL)
-			throw(MAL, "addRemoteTableCredentials", SQLSTATE(42000) "Crypt backend hash not found");
+			throw(MAL, "addRemoteTableCredentials", SQLSTATE(28000) "Crypt backend hash not found");
 	}
 	if (strNil(password)) {
 		oid rid = getUserOIDByName(m, username);
 		str cypher = getUserPassword(m, rid);
-		str err = AUTHdecypherValue(&pwhash, cypher);
+		str err = AUTHdecypherValue(m->sa, &pwhash, cypher);
 		GDKfree(cypher);
 		if (err) {
 			GDKfree(err);
-			throw(MAL, "addRemoteTableCredentials", SQLSTATE(42000) "Crypt backend hash not found");
+			throw(MAL, "addRemoteTableCredentials", SQLSTATE(28000) "Crypt backend hash not found");
 		}
 	}
-	str msg = AUTHcypherValue(&cypher, pwhash ? pwhash : password);
+	allocator *ta = MT_thread_getallocator();
+	allocator_state ta_state = ma_open(ta);
+	str msg = AUTHcypherValue(ta, &cypher, pwhash ? pwhash : password);
 	if (pwhash != NULL) {
 		if (!pw_encrypted)
 			free(pwhash);
-		else
-			GDKfree(pwhash);
 	}
-	if (msg != MAL_SUCCEED)
+	if (msg != MAL_SUCCEED) {
+		ma_close(&ta_state);
 		return msg;
+	}
 	log_res = store->table_api.table_insert(m->session->tr, remote_user_info, &id, &username, &cypher, NULL);
-	GDKfree(cypher);
+	ma_close(&ta_state);
 	if (log_res != 0)
-		throw(SQL, "sql.create_table", SQLSTATE(42000) "Create table failed%s", log_res == LOG_CONFLICT ? " due to conflict with another transaction" : "");
+		throw(SQL, "sql.create_table", SQLSTATE(25000) "Create table failed%s", log_res == LOG_CONFLICT ? " due to conflict with another transaction" : "");
 	return MAL_SUCCEED;
 }
 
@@ -968,7 +978,7 @@ remote_get(mvc *m, sqlid id, str *username, str *pwhash)
 		*username = GDKstrdup("");
 	}
 	str cypher = store->table_api.column_find_value(tr, find_sql_column(remote_user_info, "password"), rid);
-	str err = AUTHdecypherValue(pwhash, cypher);
+	str err = AUTHdecypherValue(m->sa, pwhash, cypher);
 	GDKfree(cypher);
 	if (err)
 		return err;

@@ -3,11 +3,9 @@
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024, 2025 MonetDB Foundation;
- * Copyright August 2008 - 2023 MonetDB B.V.;
- * Copyright 1997 - July 2008 CWI.
+ * For copyright information, see the file debian/copyright.
  */
 
 /*
@@ -47,12 +45,15 @@ filterSelectRTree(bat* outid, const bat *bid , const bat *sid, GEOSGeom const_ge
 	}
 
 	//Get a candidate list from searching on the rtree with the constant mbr
-	BUN* results_rtree = RTREEsearch(b, const_mbr, b->batCount);
+	allocator *ta = MT_thread_getallocator();
+	allocator_state ta_state = ma_open(ta);
+	BUN* results_rtree = RTREEsearch(ta, b, const_mbr, b->batCount);
 	if (results_rtree == NULL) {
 		BBPunfix(b->batCacheid);
 		if (s)
 			BBPunfix(s->batCacheid);
 		BBPreclaim(out);
+		ma_close(&ta_state);
 		throw(MAL, name, "RTreesearch failed, returned NULL candidates");
 	}
 
@@ -67,9 +68,11 @@ filterSelectRTree(bat* outid, const bat *bid , const bat *sid, GEOSGeom const_ge
 			if (!canditer_contains(&ci,cand))
 				continue;
 		}
-		const wkb *col_wkb = BUNtvar(b_iter, cand - b->hseqbase);
-		if ((col_geom = wkb2geos(col_wkb)) == NULL)
+		const wkb *col_wkb = BUNtvar(&b_iter, cand - b->hseqbase);
+		if ((col_geom = wkb2geos(col_wkb)) == NULL) {
+			ma_close(&ta_state);
 			throw(MAL, name, SQLSTATE(38000) "WKB2Geos operation failed");
+		}
 		if (GEOSGetSRID_r(geoshandle, col_geom) != GEOSGetSRID_r(geoshandle, const_geom)) {
 			GEOSGeom_destroy_r(geoshandle, col_geom);
 			GEOSGeom_destroy_r(geoshandle, const_geom);
@@ -78,6 +81,7 @@ filterSelectRTree(bat* outid, const bat *bid , const bat *sid, GEOSGeom const_ge
 			if (s)
 				BBPunfix(s->batCacheid);
 			BBPreclaim(out);
+			ma_close(&ta_state);
 			throw(MAL, name, SQLSTATE(38000) "Geometries of different SRID");
 		}
 		//GEOS function returns 1 on true, 0 on false and 2 on exception
@@ -91,6 +95,7 @@ filterSelectRTree(bat* outid, const bat *bid , const bat *sid, GEOSGeom const_ge
 				if (s)
 					BBPunfix(s->batCacheid);
 				BBPreclaim(out);
+				ma_close(&ta_state);
 				throw(MAL, name, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			}
 		}
@@ -103,6 +108,7 @@ filterSelectRTree(bat* outid, const bat *bid , const bat *sid, GEOSGeom const_ge
 		BBPunfix(s->batCacheid);
 	*outid = out->batCacheid;
 	BBPkeepref(out);
+	ma_close(&ta_state);
 	return MAL_SUCCEED;
 }
 #endif
@@ -144,7 +150,7 @@ filterSelectNoIndex(bat* outid, const bat *bid , const bat *sid, wkb *wkb_const,
 
 	for (BUN i = 0; i < ci.ncand; i++) {
 		BUN cand = canditer_next(&ci);
-		const wkb *col_wkb = BUNtvar(b_iter, cand - b->hseqbase);
+		const wkb *col_wkb = BUNtvar(&b_iter, cand - b->hseqbase);
 		if ((col_geom = wkb2geos(col_wkb)) == NULL)
 			throw(MAL, name, SQLSTATE(38000) "WKB2Geos operation failed");
 		if (GEOSGetSRID_r(geoshandle, col_geom) != GEOSGetSRID_r(geoshandle, const_geom)) {
@@ -187,7 +193,8 @@ filterSelectNoIndex(bat* outid, const bat *bid , const bat *sid, wkb *wkb_const,
 }
 
 str
-wkbIntersectsSelectRTree(bat* outid, const bat *bid , const bat *sid, wkb **wkb_const, bit *anti) {
+wkbIntersectsSelectRTree(Client ctx, bat* outid, const bat *bid , const bat *sid, wkb **wkb_const, bit *anti) {
+	(void) ctx;
 #ifdef HAVE_RTREE
 	//If there is an RTree on memory or on file, use the RTree method. Otherwise, use the no index version.
 	if (RTREEexists_bid(*bid)) {
@@ -203,7 +210,7 @@ wkbIntersectsSelectRTree(bat* outid, const bat *bid , const bat *sid, wkb **wkb_
 		}
 		//Calculate the MBR for the constant geometry
 		mbr *const_mbr = NULL;
-		wkbMBR(&const_mbr,wkb_const);
+		wkbMBR(ctx, &const_mbr,wkb_const);
 
 		return filterSelectRTree(outid,bid,sid,const_geom,const_mbr,0,*anti,GEOSDistanceWithin_r,"geom.wkbIntersectsSelectRTree");
 	}
@@ -215,7 +222,8 @@ wkbIntersectsSelectRTree(bat* outid, const bat *bid , const bat *sid, wkb **wkb_
 }
 
 str
-wkbDWithinSelectRTree(bat* outid, const bat *bid , const bat *sid, wkb **wkb_const, dbl* distance, bit *anti) {
+wkbDWithinSelectRTree(Client ctx, bat* outid, const bat *bid , const bat *sid, wkb **wkb_const, dbl* distance, bit *anti) {
+	(void) ctx;
 #ifdef HAVE_RTREE
 	//If there is an RTree on memory or on file, use the RTree method. Otherwise, use the no index version.
 	if (RTREEexists_bid(*bid)) {
@@ -231,7 +239,7 @@ wkbDWithinSelectRTree(bat* outid, const bat *bid , const bat *sid, wkb **wkb_con
 		}
 		//Calculate the MBR for the constant geometry
 		mbr *const_mbr = NULL;
-		wkbMBR(&const_mbr,wkb_const);
+		wkbMBR(ctx, &const_mbr,wkb_const);
 
 		//We expand the bounding box to cover the "distance within" area
 		//And use GEOSIntersects with the expanded bounding box
@@ -252,7 +260,8 @@ wkbDWithinSelectRTree(bat* outid, const bat *bid , const bat *sid, wkb **wkb_con
 }
 
 str
-wkbIntersectsSelectNoIndex(bat* outid, const bat *bid , const bat *sid, wkb **wkb_const, bit *anti) {
+wkbIntersectsSelectNoIndex(Client ctx, bat* outid, const bat *bid , const bat *sid, wkb **wkb_const, bit *anti) {
+	(void) ctx;
 	return filterSelectNoIndex(outid,bid,sid,*wkb_const,0,*anti,GEOSDistanceWithin_r,"geom.wkbIntersectsSelectNoIndex");
 }
 
@@ -271,6 +280,8 @@ filterJoinNoIndex(bat *lres_id, bat *rres_id, const bat *l_id, const bat *r_id, 
 	struct canditer l_ci, r_ci;
 	GEOSGeom l_geom, r_geom;
 	GEOSGeom *l_geoms = NULL, *r_geoms = NULL;
+	allocator *ma = MT_thread_getallocator();
+	assert(ma);
 
 	//get the input BATs
 	if ((l = BATdescriptor(*l_id)) == NULL || (r = BATdescriptor(*r_id)) == NULL) {
@@ -312,7 +323,7 @@ filterJoinNoIndex(bat *lres_id, bat *rres_id, const bat *l_id, const bat *r_id, 
 	}
 
 	//Allocate arrays for reutilizing GEOS type conversion
-	if ((l_geoms = GDKmalloc(l_ci.ncand * sizeof(GEOSGeometry *))) == NULL || (r_geoms = GDKmalloc(r_ci.ncand * sizeof(GEOSGeometry *))) == NULL) {
+	if ((l_geoms = ma_alloc(ma, l_ci.ncand * sizeof(GEOSGeometry *))) == NULL || (r_geoms = ma_alloc(ma, r_ci.ncand * sizeof(GEOSGeometry *))) == NULL) {
 		msg = createException(MAL, name, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto free;
 	}
@@ -323,11 +334,11 @@ filterJoinNoIndex(bat *lres_id, bat *rres_id, const bat *l_id, const bat *r_id, 
 	//Convert wkb to GEOS only once
 	for (BUN i = 0; i < l_ci.ncand; i++) {
 		oid l_oid = canditer_next(&l_ci);
-		l_geoms[i] = wkb2geos((const wkb*) BUNtvar(l_iter, l_oid - l->hseqbase));
+		l_geoms[i] = wkb2geos((const wkb*) BUNtvar(&l_iter, l_oid - l->hseqbase));
 	}
 	for (BUN j = 0; j < r_ci.ncand; j++) {
 		oid r_oid = canditer_next(&r_ci);
-		r_geoms[j] = wkb2geos((const wkb*)BUNtvar(r_iter, r_oid - r->hseqbase));
+		r_geoms[j] = wkb2geos((const wkb*)BUNtvar(&r_iter, r_oid - r->hseqbase));
 	}
 
 	canditer_reset(&l_ci);
@@ -375,13 +386,11 @@ filterJoinNoIndex(bat *lres_id, bat *rres_id, const bat *l_id, const bat *r_id, 
 		for (BUN i = 0; i < l_ci.ncand; i++) {
 			GEOSGeom_destroy_r(geoshandle, l_geoms[i]);
 		}
-		GDKfree(l_geoms);
 	}
 	if (r_geoms) {
 		for (BUN i = 0; i < r_ci.ncand; i++) {
 			GEOSGeom_destroy_r(geoshandle, r_geoms[i]);
 		}
-		GDKfree(r_geoms);
 	}
 	bat_iterator_end(&l_iter);
 	bat_iterator_end(&r_iter);
@@ -401,13 +410,11 @@ free:
 		for (BUN i = 0; i < l_ci.ncand; i++) {
 			GEOSGeom_destroy_r(geoshandle, l_geoms[i]);
 		}
-		GDKfree(l_geoms);
 	}
 	if (r_geoms) {
 		for (BUN i = 0; i < r_ci.ncand; i++) {
 			GEOSGeom_destroy_r(geoshandle, r_geoms[i]);
 		}
-		GDKfree(r_geoms);
 	}
 	BBPunfix(l->batCacheid);
 	BBPunfix(r->batCacheid);
@@ -432,6 +439,9 @@ filterJoinRTree(bat *lres_id, bat *rres_id, const bat *l_id, const bat *r_id, do
 	struct canditer l_ci, r_ci, outer_ci, inner_ci;
 	GEOSGeom outer_geom, inner_geom;
 	GEOSGeom *l_geoms = NULL, *r_geoms = NULL, *outer_geoms = NULL, *inner_geoms = NULL;
+	allocator *ta = MT_thread_getallocator();
+	allocator_state ta_state = ma_open(ta);
+	assert(ta);
 
 	//get the input BATs
 	if ((l = BATdescriptor(*l_id)) == NULL || (r = BATdescriptor(*r_id)) == NULL) {
@@ -439,6 +449,7 @@ filterJoinRTree(bat *lres_id, bat *rres_id, const bat *l_id, const bat *r_id, do
 			BBPunfix(l->batCacheid);
 		if (r)
 			BBPunfix(r->batCacheid);
+		ma_close(&ta_state);
 		throw(MAL, name, SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	}
 	//get the candidate lists
@@ -473,7 +484,7 @@ filterJoinRTree(bat *lres_id, bat *rres_id, const bat *l_id, const bat *r_id, do
 	}
 
 	//Allocate arrays for reutilizing GEOS type conversion
-	if ((l_geoms = GDKmalloc(l_ci.ncand * sizeof(GEOSGeometry *))) == NULL || (r_geoms = GDKmalloc(r_ci.ncand * sizeof(GEOSGeometry *))) == NULL) {
+	if ((l_geoms = ma_alloc(ta, l_ci.ncand * sizeof(GEOSGeometry *))) == NULL || (r_geoms = ma_alloc(ta, r_ci.ncand * sizeof(GEOSGeometry *))) == NULL) {
 		msg = createException(MAL, name, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto free;
 	}
@@ -484,11 +495,11 @@ filterJoinRTree(bat *lres_id, bat *rres_id, const bat *l_id, const bat *r_id, do
 	//Convert wkb to GEOS only once
 	for (BUN i = 0; i < l_ci.ncand; i++) {
 		oid l_oid = canditer_next(&l_ci);
-		l_geoms[i] = wkb2geos((const wkb*) BUNtvar(l_iter, l_oid - l->hseqbase));
+		l_geoms[i] = wkb2geos((const wkb*) BUNtvar(&l_iter, l_oid - l->hseqbase));
 	}
 	for (BUN j = 0; j < r_ci.ncand; j++) {
 		oid r_oid = canditer_next(&r_ci);
-		r_geoms[j] = wkb2geos((const wkb*)BUNtvar(r_iter, r_oid - r->hseqbase));
+		r_geoms[j] = wkb2geos((const wkb*)BUNtvar(&r_iter, r_oid - r->hseqbase));
 	}
 
 	bat_iterator_end(&l_iter);
@@ -521,8 +532,8 @@ filterJoinRTree(bat *lres_id, bat *rres_id, const bat *l_id, const bat *r_id, do
 			continue;
 
 		//Calculate the MBR for the constant geometry
-		mbr *outer_mbr = mbrFromGeos(outer_geom);
-		BUN* results_rtree = RTREEsearch(inner_b, outer_mbr, outer_ci.ncand);
+		mbr *outer_mbr = mbrFromGeos(ta, outer_geom);
+		BUN* results_rtree = RTREEsearch(ta, inner_b, outer_mbr, outer_ci.ncand);
 		if (results_rtree == NULL) {
 			msg = createException(MAL, name, "RTreesearch failed, returned NULL candidates");
 			goto free;
@@ -569,13 +580,11 @@ filterJoinRTree(bat *lres_id, bat *rres_id, const bat *l_id, const bat *r_id, do
 		for (BUN i = 0; i < l_ci.ncand; i++) {
 			GEOSGeom_destroy_r(geoshandle, l_geoms[i]);
 		}
-		GDKfree(l_geoms);
 	}
 	if (r_geoms) {
 		for (BUN i = 0; i < r_ci.ncand; i++) {
 			GEOSGeom_destroy_r(geoshandle, r_geoms[i]);
 		}
-		GDKfree(r_geoms);
 	}
 	BBPunfix(l->batCacheid);
 	BBPunfix(r->batCacheid);
@@ -587,19 +596,18 @@ filterJoinRTree(bat *lres_id, bat *rres_id, const bat *l_id, const bat *r_id, do
 	BBPkeepref(lres);
 	*rres_id = rres->batCacheid;
 	BBPkeepref(rres);
+	ma_close(&ta_state);
 	return MAL_SUCCEED;
 free:
 	if (l_geoms) {
 		for (BUN i = 0; i < l_ci.ncand; i++) {
 			GEOSGeom_destroy_r(geoshandle, l_geoms[i]);
 		}
-		GDKfree(l_geoms);
 	}
 	if (r_geoms) {
 		for (BUN i = 0; i < r_ci.ncand; i++) {
 			GEOSGeom_destroy_r(geoshandle, r_geoms[i]);
 		}
-		GDKfree(r_geoms);
 	}
 	BBPunfix(l->batCacheid);
 	BBPunfix(r->batCacheid);
@@ -611,12 +619,14 @@ free:
 		BBPreclaim(lres);
 	if (rres)
 		BBPreclaim(rres);
+	ma_close(&ta_state);
 	return msg;
 }
 #endif
 
 str
-wkbIntersectsJoinRTree(bat *lres_id, bat *rres_id, const bat *l_id, const bat *r_id, const bat *ls_id, const bat *rs_id, bit *nil_matches, lng *estimate, bit *anti) {
+wkbIntersectsJoinRTree(Client ctx, bat *lres_id, bat *rres_id, const bat *l_id, const bat *r_id, const bat *ls_id, const bat *rs_id, bit *nil_matches, lng *estimate, bit *anti) {
+	(void) ctx;
 #ifdef HAVE_RTREE
 	//If there is an RTree on memory or on file, use the RTree method. Otherwise, use the no index version.
 	if (RTREEexists_bid(*l_id) && RTREEexists_bid(*r_id))
@@ -630,7 +640,8 @@ wkbIntersectsJoinRTree(bat *lres_id, bat *rres_id, const bat *l_id, const bat *r
 }
 
 str
-wkbDWithinJoinRTree(bat *lres_id, bat *rres_id, const bat *l_id, const bat *r_id, const bat *ls_id, const bat *rs_id, dbl *distance, bit *nil_matches, lng *estimate, bit *anti) {
+wkbDWithinJoinRTree(Client ctx, bat *lres_id, bat *rres_id, const bat *l_id, const bat *r_id, const bat *ls_id, const bat *rs_id, dbl *distance, bit *nil_matches, lng *estimate, bit *anti) {
+	(void) ctx;
 #ifdef HAVE_RTREE
 	if (RTREEexists_bid(*l_id) && RTREEexists_bid(*r_id))
 		return filterJoinRTree(lres_id,rres_id,l_id,r_id,*distance,ls_id,rs_id,*nil_matches,*estimate,*anti,GEOSDistanceWithin_r,"geom.wkbDWithinJoinRTree");
@@ -642,7 +653,8 @@ wkbDWithinJoinRTree(bat *lres_id, bat *rres_id, const bat *l_id, const bat *r_id
 }
 
 str
-wkbIntersectsJoinNoIndex(bat *lres_id, bat *rres_id, const bat *l_id, const bat *r_id, const bat *ls_id, const bat *rs_id, bit *nil_matches, lng *estimate, bit *anti) {
+wkbIntersectsJoinNoIndex(Client ctx, bat *lres_id, bat *rres_id, const bat *l_id, const bat *r_id, const bat *ls_id, const bat *rs_id, bit *nil_matches, lng *estimate, bit *anti) {
+	(void) ctx;
 	return filterJoinNoIndex(lres_id,rres_id,l_id,r_id,0,ls_id,rs_id,*nil_matches,*estimate,*anti,GEOSDistanceWithin_r,"geom.wkbIntersectsJoinNoIndex");
 }
 
@@ -655,8 +667,9 @@ wkbDWithinJoinNoIndex(bat *lres_id, bat *rres_id, const bat *l_id, const bat *r_
 //Creates the BAT with MBRs from the input BAT with WKB geometries
 //Also creates the RTree structure and saves it on the WKB input BAT
 str
-wkbMBR_bat(bat *outBAT_id, bat *inBAT_id)
+wkbMBR_bat(Client ctx, bat *outBAT_id, bat *inBAT_id)
 {
+	(void) ctx;
 	BAT *outBAT = NULL, *inBAT = NULL;
 	wkb *inWKB = NULL;
 	mbr *outMBR = NULL;
@@ -672,11 +685,11 @@ wkbMBR_bat(bat *outBAT_id, bat *inBAT_id)
 	}
 
 	inBAT_iter = bat_iterator(inBAT);
-	BATloop(inBAT, p, q) {
+	BATloop(&inBAT_iter, p, q) {
 		str err = NULL;
 
-		inWKB = (wkb *) BUNtvar(inBAT_iter, p);
-		if ((err = wkbMBR(&outMBR, &inWKB)) != MAL_SUCCEED) {
+		inWKB = (wkb *) BUNtvar(&inBAT_iter, p);
+		if ((err = wkbMBR(ctx, &outMBR, &inWKB)) != MAL_SUCCEED) {
 			bat_iterator_end(&inBAT_iter);
 			BBPunfix(inBAT->batCacheid);
 			BBPunfix(outBAT->batCacheid);
@@ -686,10 +699,8 @@ wkbMBR_bat(bat *outBAT_id, bat *inBAT_id)
 			bat_iterator_end(&inBAT_iter);
 			BBPunfix(inBAT->batCacheid);
 			BBPunfix(outBAT->batCacheid);
-			GDKfree(outMBR);
 			throw(MAL, "batgeom.mbr", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		}
-		GDKfree(outMBR);
 		outMBR = NULL;
 	}
 	bat_iterator_end(&inBAT_iter);
@@ -707,8 +718,9 @@ wkbMBR_bat(bat *outBAT_id, bat *inBAT_id)
 
 /* ST_Transform Bulk function */
 str
-wkbTransform_bat(bat *outBAT_id, bat *inBAT_id, int *srid_src, int *srid_dst, char **proj4_src_str, char **proj4_dst_str)
+wkbTransform_bat(Client ctx, bat *outBAT_id, bat *inBAT_id, int *srid_src, int *srid_dst, char **proj4_src_str, char **proj4_dst_str)
 {
+	(void) ctx;
 	return wkbTransform_bat_cand(outBAT_id,inBAT_id,NULL,srid_src,srid_dst,proj4_src_str,proj4_dst_str);
 }
 
@@ -787,7 +799,7 @@ wkbTransform_bat_cand(bat *outBAT_id, bat *inBAT_id, bat *s_id, int *srid_src, i
 	inBAT_iter = bat_iterator(inBAT);
 	for (BUN i = 0; i < ci.ncand && err == MAL_SUCCEED; i++) {
 		oid p = (canditer_next(&ci) - inBAT->hseqbase);
-		geomWKB = (wkb *) BUNtvar(inBAT_iter, p);
+		geomWKB = (wkb *) BUNtvar(&inBAT_iter, p);
 
 		/* get the geosGeometry from the wkb */
 		geosGeometry = wkb2geos(geomWKB);
@@ -819,16 +831,19 @@ wkbTransform_bat_cand(bat *outBAT_id, bat *inBAT_id, bat *s_id, int *srid_src, i
 		}
 
 		if (err == MAL_SUCCEED && transformedGeosGeometry) {
+			allocator *ta = MT_thread_getallocator();
+			allocator_state ta_state = ma_open(ta);
 			/* set the new srid */
 			GEOSSetSRID_r(geoshandle, transformedGeosGeometry, *srid_dst);
 			/* get the wkb */
-			if ((transformedWKB = geos2wkb(transformedGeosGeometry)) == NULL)
+			if ((transformedWKB = geos2wkb(ta, &(wkb*){NULL}, &(size_t){0}, transformedGeosGeometry)) == NULL)
 				err = createException(MAL, "batgeom.Transform", SQLSTATE(38000) "Geos operation geos2wkb failed");
 			else {
 				if (BUNappend(outBAT, transformedWKB, false) != GDK_SUCCEED) {
 					err = createException(MAL, "batgeom.Transform", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 				}
 			}
+			ma_close(&ta_state);
 
 			/* destroy the geos geometries */
 			GEOSGeom_destroy_r(geoshandle, transformedGeosGeometry);
@@ -855,14 +870,16 @@ wkbTransform_bat_cand(bat *outBAT_id, bat *inBAT_id, bat *s_id, int *srid_src, i
 
 /* ST_DistanceGeographic Bulk function */
 str
-wkbDistanceGeographic_bat(bat *out_id, const bat *a_id, const bat *b_id)
+wkbDistanceGeographic_bat(Client ctx, bat *out_id, const bat *a_id, const bat *b_id)
 {
-	return wkbDistanceGeographic_bat_cand(out_id,a_id,b_id,NULL,NULL);
+	(void) ctx;
+	return wkbDistanceGeographic_bat_cand(ctx, out_id,a_id,b_id,NULL,NULL);
 }
 
 str
-wkbDistanceGeographic_bat_cand(bat *out_id, const bat *a_id, const bat *b_id, const bat *s1_id, const bat *s2_id)
+wkbDistanceGeographic_bat_cand(Client ctx, bat *out_id, const bat *a_id, const bat *b_id, const bat *s1_id, const bat *s2_id)
 {
+	(void) ctx;
 	BAT *out = NULL, *a = NULL, *b = NULL, *s1 = NULL, *s2 = NULL;
 	BATiter a_iter, b_iter;
 	str msg = MAL_SUCCEED;
@@ -909,10 +926,10 @@ wkbDistanceGeographic_bat_cand(bat *out_id, const bat *a_id, const bat *b_id, co
 		double distanceVal = 0;
 		oid p1 = (canditer_next(&ci1) - a->hseqbase);
 		oid p2 = (canditer_next(&ci2) - b->hseqbase);
-		wkb *aWKB = (wkb *) BUNtvar(a_iter, p1);
-		wkb *bWKB = (wkb *) BUNtvar(b_iter, p2);
+		wkb *aWKB = (wkb *) BUNtvar(&a_iter, p1);
+		wkb *bWKB = (wkb *) BUNtvar(&b_iter, p2);
 
-		if ((msg = wkbDistanceGeographic(&distanceVal, &aWKB, &bWKB)) != MAL_SUCCEED) {
+		if ((msg = wkbDistanceGeographic(ctx, &distanceVal, &aWKB, &bWKB)) != MAL_SUCCEED) {
 			BBPreclaim(out);
 			goto bailout;
 		}
@@ -943,8 +960,9 @@ clean:
 /*******************************/
 
 str
-geom_2_geom_bat(bat *outBAT_id, bat *inBAT_id, bat *cand, int *columnType, int *columnSRID)
+geom_2_geom_bat(Client ctx, bat *outBAT_id, bat *inBAT_id, bat *cand, int *columnType, int *columnSRID)
 {
+	(void) ctx;
 	BAT *b = NULL, *s = NULL, *dst = NULL;
 	BATiter bi;
 	str msg = MAL_SUCCEED;
@@ -974,33 +992,29 @@ geom_2_geom_bat(bat *outBAT_id, bat *inBAT_id, bat *cand, int *columnType, int *
 	if (ci.tpe == cand_dense) {
 		for (BUN i = 0; i < ci.ncand; i++) {
 			oid p = (canditer_next_dense(&ci) - off);
-			inWKB = (wkb *) BUNtvar(bi, p);
+			inWKB = (wkb *) BUNtvar(&bi, p);
 
-			if ((msg = geom_2_geom(&outWKB, &inWKB, columnType, columnSRID)) != MAL_SUCCEED)	//check type
+			if ((msg = geom_2_geom(ctx, &outWKB, &inWKB, columnType, columnSRID)) != MAL_SUCCEED)	//check type
 				goto bailout;
 			if (tfastins_nocheckVAR(dst, i, outWKB) != GDK_SUCCEED) {
-				GDKfree(outWKB);
 				msg = createException(MAL, "batcalc.wkb", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 				goto bailout;
 			}
 			nils |= is_wkb_nil(outWKB);
-			GDKfree(outWKB);
 			outWKB = NULL;
 		}
 	} else {
 		for (BUN i = 0; i < ci.ncand; i++) {
 			oid p = (canditer_next(&ci) - off);
-			inWKB = (wkb *) BUNtvar(bi, p);
+			inWKB = (wkb *) BUNtvar(&bi, p);
 
-			if ((msg = geom_2_geom(&outWKB, &inWKB, columnType, columnSRID)) != MAL_SUCCEED)	//check type
+			if ((msg = geom_2_geom(ctx, &outWKB, &inWKB, columnType, columnSRID)) != MAL_SUCCEED)	//check type
 				goto bailout;
 			if (tfastins_nocheckVAR(dst, i, outWKB) != GDK_SUCCEED) {
-				GDKfree(outWKB);
 				msg = createException(MAL, "batcalc.wkb", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 				goto bailout;
 			}
 			nils |= is_wkb_nil(outWKB);
-			GDKfree(outWKB);
 			outWKB = NULL;
 		}
 	}
@@ -1027,14 +1041,16 @@ bailout:
 
 /*create WKB from WKT */
 str
-wkbFromText_bat(bat *outBAT_id, bat *inBAT_id, int *srid, int *tpe)
+wkbFromText_bat(Client ctx, bat *outBAT_id, bat *inBAT_id, int *srid, int *tpe)
 {
-	return wkbFromText_bat_cand(outBAT_id, inBAT_id, NULL, srid, tpe);
+	(void) ctx;
+	return wkbFromText_bat_cand(ctx, outBAT_id, inBAT_id, NULL, srid, tpe);
 }
 
 str
-wkbFromText_bat_cand(bat *outBAT_id, bat *inBAT_id, bat *cand, int *srid, int *tpe)
+wkbFromText_bat_cand(Client ctx, bat *outBAT_id, bat *inBAT_id, bat *cand, int *srid, int *tpe)
 {
+	(void) ctx;
 	BAT *b = NULL, *s = NULL, *dst = NULL;
 	BATiter bi;
 	str msg = MAL_SUCCEED;
@@ -1063,35 +1079,31 @@ wkbFromText_bat_cand(bat *outBAT_id, bat *inBAT_id, bat *cand, int *srid, int *t
 	if (ci.tpe == cand_dense) {
 		for (BUN i = 0; i < ci.ncand; i++) {
 			oid p = (canditer_next_dense(&ci) - off);
-			str inWKB = (str) BUNtvar(bi, p);
+			str inWKB = (str) BUNtvar(&bi, p);
 			wkb *outSingle;
 
-			if ((msg = wkbFromText(&outSingle, &inWKB, srid, tpe)) != MAL_SUCCEED)
+			if ((msg = wkbFromText(ctx, &outSingle, &inWKB, srid, tpe)) != MAL_SUCCEED)
 				goto bailout;
 			if (tfastins_nocheckVAR(dst, i, outSingle) != GDK_SUCCEED) {
-				GDKfree(outSingle);
 				msg = createException(MAL, "batgeom.wkbFromText", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 				goto bailout;
 			}
 			nils |= is_wkb_nil(outSingle);
-			GDKfree(outSingle);
 			outSingle = NULL;
 		}
 	} else {
 		for (BUN i = 0; i < ci.ncand; i++) {
 			oid p = (canditer_next(&ci) - off);
-			str inWKB = (str) BUNtvar(bi, p);
+			str inWKB = (str) BUNtvar(&bi, p);
 			wkb *outSingle;
 
-			if ((msg = wkbFromText(&outSingle, &inWKB, srid, tpe)) != MAL_SUCCEED)
+			if ((msg = wkbFromText(ctx, &outSingle, &inWKB, srid, tpe)) != MAL_SUCCEED)
 				goto bailout;
 			if (tfastins_nocheckVAR(dst, i, outSingle) != GDK_SUCCEED) {
-				GDKfree(outSingle);
 				msg = createException(MAL, "batgeom.wkbFromText", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 				goto bailout;
 			}
 			nils |= is_wkb_nil(outSingle);
-			GDKfree(outSingle);
 			outSingle = NULL;
 		}
 	}
@@ -1120,8 +1132,9 @@ bailout:
 /********************* IN: mbr - OUT: double - FLAG :int *********************/
 /*****************************************************************************/
 str
-wkbCoordinateFromMBR_bat(bat *outBAT_id, bat *inBAT_id, int *coordinateIdx)
+wkbCoordinateFromMBR_bat(Client ctx, bat *outBAT_id, bat *inBAT_id, int *coordinateIdx)
 {
+	(void) ctx;
 	BAT *outBAT = NULL, *inBAT = NULL;
 	mbr *inMBR = NULL;
 	double outDbl = 0.0;
@@ -1141,11 +1154,11 @@ wkbCoordinateFromMBR_bat(bat *outBAT_id, bat *inBAT_id, int *coordinateIdx)
 
 	//iterator over the BAT
 	inBAT_iter = bat_iterator(inBAT);
-	BATloop(inBAT, p, q) {	//iterate over all valid elements
+	BATloop(&inBAT_iter, p, q) {	//iterate over all valid elements
 		str err = NULL;
 
-		inMBR = (mbr *) BUNtloc(inBAT_iter, p);
-		if ((err = wkbCoordinateFromMBR(&outDbl, &inMBR, coordinateIdx)) != MAL_SUCCEED) {
+		inMBR = (mbr *) BUNtloc(&inBAT_iter, p);
+		if ((err = wkbCoordinateFromMBR(ctx, &outDbl, &inMBR, coordinateIdx)) != MAL_SUCCEED) {
 			bat_iterator_end(&inBAT_iter);
 			BBPunfix(inBAT->batCacheid);
 			BBPunfix(outBAT->batCacheid);
@@ -1171,7 +1184,7 @@ wkbCoordinateFromMBR_bat(bat *outBAT_id, bat *inBAT_id, int *coordinateIdx)
 /********************* IN: wkb - OUT: str - FLAG :int *********************/
 /**************************************************************************/
 static str
-WKBtoSTRflagINT_bat(bat *outBAT_id, bat *inBAT_id, int *flag, str (*func) (char **, wkb **, int *), const char *name)
+WKBtoSTRflagINT_bat(Client ctx, bat *outBAT_id, bat *inBAT_id, int *flag, str (*func) (Client, char **, wkb **, int *), const char *name)
 {
 	BAT *outBAT = NULL, *inBAT = NULL;
 	wkb *inWKB = NULL;
@@ -1191,12 +1204,12 @@ WKBtoSTRflagINT_bat(bat *outBAT_id, bat *inBAT_id, int *flag, str (*func) (char 
 
 	//iterator over the input BAT
 	inBAT_iter = bat_iterator(inBAT);
-	BATloop(inBAT, p, q) {	//iterate over all valid elements
+	BATloop(&inBAT_iter, p, q) {	//iterate over all valid elements
 		str err = NULL;
 		char *outSingle;
 
-		inWKB = (wkb *) BUNtvar(inBAT_iter, p);
-		if ((err = (*func) (&outSingle, &inWKB, flag)) != MAL_SUCCEED) {
+		inWKB = (wkb *) BUNtvar(&inBAT_iter, p);
+		if ((err = (*func) (ctx, &outSingle, &inWKB, flag)) != MAL_SUCCEED) {
 			bat_iterator_end(&inBAT_iter);
 			BBPunfix(inBAT->batCacheid);
 			BBPunfix(outBAT->batCacheid);
@@ -1206,10 +1219,8 @@ WKBtoSTRflagINT_bat(bat *outBAT_id, bat *inBAT_id, int *flag, str (*func) (char 
 			bat_iterator_end(&inBAT_iter);
 			BBPunfix(inBAT->batCacheid);
 			BBPunfix(outBAT->batCacheid);
-			GDKfree(outSingle);
 			throw(MAL, name, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		}
-		GDKfree(outSingle);
 		outSingle = NULL;
 	}
 	bat_iterator_end(&inBAT_iter);
@@ -1226,15 +1237,17 @@ WKBtoSTRflagINT_bat(bat *outBAT_id, bat *inBAT_id, int *flag, str (*func) (char 
 
 /*create textual representation of the wkb */
 str
-wkbAsText_bat(bat *outBAT_id, bat *inBAT_id, int *withSRID)
+wkbAsText_bat(Client ctx, bat *outBAT_id, bat *inBAT_id, int *withSRID)
 {
-	return WKBtoSTRflagINT_bat(outBAT_id, inBAT_id, withSRID, wkbAsText, "batgeom.wkbAsText");
+	(void) ctx;
+	return WKBtoSTRflagINT_bat(ctx, outBAT_id, inBAT_id, withSRID, wkbAsText, "batgeom.wkbAsText");
 }
 
 str
-wkbGeometryType_bat(bat *outBAT_id, bat *inBAT_id, int *flag)
+wkbGeometryType_bat(Client ctx, bat *outBAT_id, bat *inBAT_id, int *flag)
 {
-	return WKBtoSTRflagINT_bat(outBAT_id, inBAT_id, flag, wkbGeometryType, "batgeom.wkbGeometryType");
+	(void) ctx;
+	return WKBtoSTRflagINT_bat(ctx, outBAT_id, inBAT_id, flag, wkbGeometryType, "batgeom.wkbGeometryType");
 }
 
 /***************************************************************************/
@@ -1242,7 +1255,7 @@ wkbGeometryType_bat(bat *outBAT_id, bat *inBAT_id, int *flag)
 /***************************************************************************/
 
 static str
-WKBtoWKB_bat(bat *outBAT_id, bat *inBAT_id, str (*func) (wkb **, wkb **), const char *name)
+WKBtoWKB_bat(Client ctx, bat *outBAT_id, bat *inBAT_id, str (*func) (Client, wkb **, wkb **), const char *name)
 {
 	BAT *outBAT = NULL, *inBAT = NULL;
 	wkb *inWKB = NULL;
@@ -1262,12 +1275,12 @@ WKBtoWKB_bat(bat *outBAT_id, bat *inBAT_id, str (*func) (wkb **, wkb **), const 
 
 	//iterator over the input BAT
 	inBAT_iter = bat_iterator(inBAT);
-	BATloop(inBAT, p, q) {	//iterate over all valid elements
+	BATloop(&inBAT_iter, p, q) {	//iterate over all valid elements
 		str err = NULL;
 		wkb *outSingle;
 
-		inWKB = (wkb *) BUNtvar(inBAT_iter, p);
-		if ((err = (*func) (&outSingle, &inWKB)) != MAL_SUCCEED) {
+		inWKB = (wkb *) BUNtvar(&inBAT_iter, p);
+		if ((err = (*func) (ctx, &outSingle, &inWKB)) != MAL_SUCCEED) {
 			bat_iterator_end(&inBAT_iter);
 			BBPunfix(inBAT->batCacheid);
 			BBPunfix(outBAT->batCacheid);
@@ -1277,10 +1290,8 @@ WKBtoWKB_bat(bat *outBAT_id, bat *inBAT_id, str (*func) (wkb **, wkb **), const 
 			bat_iterator_end(&inBAT_iter);
 			BBPunfix(inBAT->batCacheid);
 			BBPunfix(outBAT->batCacheid);
-			GDKfree(outSingle);
 			throw(MAL, name, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		}
-		GDKfree(outSingle);
 		outSingle = NULL;
 	}
 	bat_iterator_end(&inBAT_iter);
@@ -1296,9 +1307,10 @@ WKBtoWKB_bat(bat *outBAT_id, bat *inBAT_id, str (*func) (wkb **, wkb **), const 
 }
 
 str
-wkbBoundary_bat(bat *outBAT_id, bat *inBAT_id)
+wkbBoundary_bat(Client ctx, bat *outBAT_id, bat *inBAT_id)
 {
-	return WKBtoWKB_bat(outBAT_id, inBAT_id, wkbBoundary, "batgeom.wkbBoundary");
+	(void) ctx;
+	return WKBtoWKB_bat(ctx, outBAT_id, inBAT_id, wkbBoundary, "batgeom.wkbBoundary");
 }
 
 
@@ -1307,7 +1319,7 @@ wkbBoundary_bat(bat *outBAT_id, bat *inBAT_id)
 /**************************************************************************************/
 
 static str
-WKBtoWKBflagINT_bat(bat *outBAT_id, bat *inBAT_id, const int *flag, str (*func) (wkb **, wkb **, const int *), const char *name)
+WKBtoWKBflagINT_bat(Client ctx, bat *outBAT_id, bat *inBAT_id, const int *flag, str (*func) (Client, wkb **, wkb **, const int *), const char *name)
 {
 	BAT *outBAT = NULL, *inBAT = NULL;
 	wkb *inWKB = NULL;
@@ -1327,12 +1339,12 @@ WKBtoWKBflagINT_bat(bat *outBAT_id, bat *inBAT_id, const int *flag, str (*func) 
 
 	//iterator over the input BAT
 	inBAT_iter = bat_iterator(inBAT);
-	BATloop(inBAT, p, q) {	//iterate over all valid elements
+	BATloop(&inBAT_iter, p, q) {	//iterate over all valid elements
 		str err = NULL;
 		wkb *outSingle;
 
-		inWKB = (wkb *) BUNtvar(inBAT_iter, p);
-		if ((err = (*func) (&outSingle, &inWKB, flag)) != MAL_SUCCEED) {
+		inWKB = (wkb *) BUNtvar(&inBAT_iter, p);
+		if ((err = (*func) (ctx, &outSingle, &inWKB, flag)) != MAL_SUCCEED) {
 			bat_iterator_end(&inBAT_iter);
 			BBPunfix(inBAT->batCacheid);
 			BBPunfix(outBAT->batCacheid);
@@ -1342,10 +1354,8 @@ WKBtoWKBflagINT_bat(bat *outBAT_id, bat *inBAT_id, const int *flag, str (*func) 
 			bat_iterator_end(&inBAT_iter);
 			BBPunfix(inBAT->batCacheid);
 			BBPunfix(outBAT->batCacheid);
-			GDKfree(outSingle);
 			throw(MAL, name, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		}
-		GDKfree(outSingle);
 		outSingle = NULL;
 	}
 	bat_iterator_end(&inBAT_iter);
@@ -1361,9 +1371,10 @@ WKBtoWKBflagINT_bat(bat *outBAT_id, bat *inBAT_id, const int *flag, str (*func) 
 }
 
 str
-wkbGeometryN_bat(bat *outBAT_id, bat *inBAT_id, const int *flag)
+wkbGeometryN_bat(Client ctx, bat *outBAT_id, bat *inBAT_id, const int *flag)
 {
-	return WKBtoWKBflagINT_bat(outBAT_id, inBAT_id, flag, wkbGeometryN, "batgeom.wkbGeometryN");
+	(void) ctx;
+	return WKBtoWKBflagINT_bat(ctx, outBAT_id, inBAT_id, flag, wkbGeometryN, "batgeom.wkbGeometryN");
 }
 
 /***************************************************************************/
@@ -1371,7 +1382,7 @@ wkbGeometryN_bat(bat *outBAT_id, bat *inBAT_id, const int *flag)
 /***************************************************************************/
 
 static str
-WKBtoBIT_bat(bat *outBAT_id, bat *inBAT_id, str (*func) (bit *, wkb **), const char *name)
+WKBtoBIT_bat(Client ctx, bat *outBAT_id, bat *inBAT_id, str (*func) (Client, bit *, wkb **), const char *name)
 {
 	BAT *outBAT = NULL, *inBAT = NULL;
 	wkb *inWKB = NULL;
@@ -1391,12 +1402,12 @@ WKBtoBIT_bat(bat *outBAT_id, bat *inBAT_id, str (*func) (bit *, wkb **), const c
 
 	//iterator over the input BAT
 	inBAT_iter = bat_iterator(inBAT);
-	BATloop(inBAT, p, q) {	//iterate over all valid elements
+	BATloop(&inBAT_iter, p, q) {	//iterate over all valid elements
 		str err = NULL;
 		bit outSingle;
 
-		inWKB = (wkb *) BUNtvar(inBAT_iter, p);
-		if ((err = (*func) (&outSingle, &inWKB)) != MAL_SUCCEED) {
+		inWKB = (wkb *) BUNtvar(&inBAT_iter, p);
+		if ((err = (*func) (ctx, &outSingle, &inWKB)) != MAL_SUCCEED) {
 			bat_iterator_end(&inBAT_iter);
 			BBPunfix(inBAT->batCacheid);
 			BBPunfix(outBAT->batCacheid);
@@ -1423,33 +1434,38 @@ WKBtoBIT_bat(bat *outBAT_id, bat *inBAT_id, str (*func) (bit *, wkb **), const c
 }
 
 str
-wkbIsClosed_bat(bat *outBAT_id, bat *inBAT_id)
+wkbIsClosed_bat(Client ctx, bat *outBAT_id, bat *inBAT_id)
 {
-	return WKBtoBIT_bat(outBAT_id, inBAT_id, wkbIsClosed, "batgeom.wkbIsClosed");
+	(void) ctx;
+	return WKBtoBIT_bat(ctx, outBAT_id, inBAT_id, wkbIsClosed, "batgeom.wkbIsClosed");
 }
 
 str
-wkbIsEmpty_bat(bat *outBAT_id, bat *inBAT_id)
+wkbIsEmpty_bat(Client ctx, bat *outBAT_id, bat *inBAT_id)
 {
-	return WKBtoBIT_bat(outBAT_id, inBAT_id, wkbIsEmpty, "batgeom.wkbIsEmpty");
+	(void) ctx;
+	return WKBtoBIT_bat(ctx, outBAT_id, inBAT_id, wkbIsEmpty, "batgeom.wkbIsEmpty");
 }
 
 str
-wkbIsSimple_bat(bat *outBAT_id, bat *inBAT_id)
+wkbIsSimple_bat(Client ctx, bat *outBAT_id, bat *inBAT_id)
 {
-	return WKBtoBIT_bat(outBAT_id, inBAT_id, wkbIsSimple, "batgeom.wkbIsSimple");
+	(void) ctx;
+	return WKBtoBIT_bat(ctx, outBAT_id, inBAT_id, wkbIsSimple, "batgeom.wkbIsSimple");
 }
 
 str
-wkbIsRing_bat(bat *outBAT_id, bat *inBAT_id)
+wkbIsRing_bat(Client ctx, bat *outBAT_id, bat *inBAT_id)
 {
-	return WKBtoBIT_bat(outBAT_id, inBAT_id, wkbIsRing, "batgeom.wkbIsRing");
+	(void) ctx;
+	return WKBtoBIT_bat(ctx, outBAT_id, inBAT_id, wkbIsRing, "batgeom.wkbIsRing");
 }
 
 str
-wkbIsValid_bat(bat *outBAT_id, bat *inBAT_id)
+wkbIsValid_bat(Client ctx, bat *outBAT_id, bat *inBAT_id)
 {
-	return WKBtoBIT_bat(outBAT_id, inBAT_id, wkbIsValid, "batgeom.wkbIsValid");
+	(void) ctx;
+	return WKBtoBIT_bat(ctx, outBAT_id, inBAT_id, wkbIsValid, "batgeom.wkbIsValid");
 }
 
 
@@ -1458,7 +1474,7 @@ wkbIsValid_bat(bat *outBAT_id, bat *inBAT_id)
 /***************************************************************************/
 
 static str
-WKBtoINT_bat(bat *outBAT_id, bat *inBAT_id, str (*func) (int *, wkb **), const char *name)
+WKBtoINT_bat(Client ctx, bat *outBAT_id, bat *inBAT_id, str (*func) (Client, int *, wkb **), const char *name)
 {
 	BAT *outBAT = NULL, *inBAT = NULL;
 	wkb *inWKB = NULL;
@@ -1478,12 +1494,12 @@ WKBtoINT_bat(bat *outBAT_id, bat *inBAT_id, str (*func) (int *, wkb **), const c
 
 	//iterator over the input BAT
 	inBAT_iter = bat_iterator(inBAT);
-	BATloop(inBAT, p, q) {	//iterate over all valid elements
+	BATloop(&inBAT_iter, p, q) {	//iterate over all valid elements
 		str err = NULL;
 		int outSingle;
 
-		inWKB = (wkb *) BUNtvar(inBAT_iter, p);
-		if ((err = (*func) (&outSingle, &inWKB)) != MAL_SUCCEED) {
+		inWKB = (wkb *) BUNtvar(&inBAT_iter, p);
+		if ((err = (*func) (ctx, &outSingle, &inWKB)) != MAL_SUCCEED) {
 			bat_iterator_end(&inBAT_iter);
 			BBPunfix(inBAT->batCacheid);
 			BBPunfix(outBAT->batCacheid);
@@ -1510,15 +1526,17 @@ WKBtoINT_bat(bat *outBAT_id, bat *inBAT_id, str (*func) (int *, wkb **), const c
 }
 
 str
-wkbDimension_bat(bat *outBAT_id, bat *inBAT_id)
+wkbDimension_bat(Client ctx, bat *outBAT_id, bat *inBAT_id)
 {
-	return WKBtoINT_bat(outBAT_id, inBAT_id, wkbDimension, "batgeom.wkbDimension");
+	(void) ctx;
+	return WKBtoINT_bat(ctx, outBAT_id, inBAT_id, wkbDimension, "batgeom.wkbDimension");
 }
 
 str
-wkbNumGeometries_bat(bat *outBAT_id, bat *inBAT_id)
+wkbNumGeometries_bat(Client ctx, bat *outBAT_id, bat *inBAT_id)
 {
-	return WKBtoINT_bat(outBAT_id, inBAT_id, wkbNumGeometries, "batgeom.wkbNumGeometries");
+	(void) ctx;
+	return WKBtoINT_bat(ctx, outBAT_id, inBAT_id, wkbNumGeometries, "batgeom.wkbNumGeometries");
 }
 
 /***************************************************************************************/
@@ -1526,7 +1544,7 @@ wkbNumGeometries_bat(bat *outBAT_id, bat *inBAT_id)
 /***************************************************************************************/
 
 static str
-WKBtoINTflagINT_bat(bat *outBAT_id, bat *inBAT_id, int *flag, str (*func) (int *, wkb **, int *), const char *name)
+WKBtoINTflagINT_bat(Client ctx, bat *outBAT_id, bat *inBAT_id, int *flag, str (*func) (Client, int *, wkb **, int *), const char *name)
 {
 	BAT *outBAT = NULL, *inBAT = NULL;
 	wkb *inWKB = NULL;
@@ -1546,12 +1564,12 @@ WKBtoINTflagINT_bat(bat *outBAT_id, bat *inBAT_id, int *flag, str (*func) (int *
 
 	//iterator over the input BAT
 	inBAT_iter = bat_iterator(inBAT);
-	BATloop(inBAT, p, q) {	//iterate over all valid elements
+	BATloop(&inBAT_iter, p, q) {	//iterate over all valid elements
 		str err = NULL;
 		int outSingle;
 
-		inWKB = (wkb *) BUNtvar(inBAT_iter, p);
-		if ((err = (*func) (&outSingle, &inWKB, flag)) != MAL_SUCCEED) {
+		inWKB = (wkb *) BUNtvar(&inBAT_iter, p);
+		if ((err = (*func) (ctx, &outSingle, &inWKB, flag)) != MAL_SUCCEED) {
 			bat_iterator_end(&inBAT_iter);
 			BBPunfix(inBAT->batCacheid);
 			BBPunfix(outBAT->batCacheid);
@@ -1578,15 +1596,17 @@ WKBtoINTflagINT_bat(bat *outBAT_id, bat *inBAT_id, int *flag, str (*func) (int *
 }
 
 str
-wkbNumPoints_bat(bat *outBAT_id, bat *inBAT_id, int *flag)
+wkbNumPoints_bat(Client ctx, bat *outBAT_id, bat *inBAT_id, int *flag)
 {
-	return WKBtoINTflagINT_bat(outBAT_id, inBAT_id, flag, wkbNumPoints, "batgeom.wkbNumPoints");
+	(void) ctx;
+	return WKBtoINTflagINT_bat(ctx, outBAT_id, inBAT_id, flag, wkbNumPoints, "batgeom.wkbNumPoints");
 }
 
 str
-wkbNumRings_bat(bat *outBAT_id, bat *inBAT_id, int *flag)
+wkbNumRings_bat(Client ctx, bat *outBAT_id, bat *inBAT_id, int *flag)
 {
-	return WKBtoINTflagINT_bat(outBAT_id, inBAT_id, flag, wkbNumRings, "batgeom.wkbNumRings");
+	(void) ctx;
+	return WKBtoINTflagINT_bat(ctx, outBAT_id, inBAT_id, flag, wkbNumRings, "batgeom.wkbNumRings");
 }
 
 /******************************************************************************************/
@@ -1594,8 +1614,9 @@ wkbNumRings_bat(bat *outBAT_id, bat *inBAT_id, int *flag)
 /******************************************************************************************/
 
 str
-wkbGetCoordinate_bat(bat *outBAT_id, bat *inBAT_id, int *flag)
+wkbGetCoordinate_bat(Client ctx, bat *outBAT_id, bat *inBAT_id, int *flag)
 {
+	(void) ctx;
 	BAT *outBAT = NULL, *inBAT = NULL;
 	wkb *inWKB = NULL;
 	BUN p = 0, q = 0;
@@ -1614,12 +1635,12 @@ wkbGetCoordinate_bat(bat *outBAT_id, bat *inBAT_id, int *flag)
 
 	//iterator over the input BAT
 	inBAT_iter = bat_iterator(inBAT);
-	BATloop(inBAT, p, q) {	//iterate over all valid elements
+	BATloop(&inBAT_iter, p, q) {	//iterate over all valid elements
 		str err = NULL;
 		double outSingle;
 
-		inWKB = (wkb *) BUNtvar(inBAT_iter, p);
-		if ((err = wkbGetCoordinate(&outSingle, &inWKB, flag)) != MAL_SUCCEED) {
+		inWKB = (wkb *) BUNtvar(&inBAT_iter, p);
+		if ((err = wkbGetCoordinate(ctx, &outSingle, &inWKB, flag)) != MAL_SUCCEED) {
 			bat_iterator_end(&inBAT_iter);
 			BBPunfix(inBAT->batCacheid);
 			BBPunfix(outBAT->batCacheid);
@@ -1650,8 +1671,9 @@ wkbGetCoordinate_bat(bat *outBAT_id, bat *inBAT_id, int *flag)
 /*******************************/
 
 str
-wkbBox2D_bat(bat *outBAT_id, bat *aBAT_id, bat *bBAT_id)
+wkbBox2D_bat(Client ctx, bat *outBAT_id, bat *aBAT_id, bat *bBAT_id)
 {
+	(void) ctx;
 	BAT *outBAT = NULL, *aBAT = NULL, *bBAT = NULL;
 	BATiter aBAT_iter, bBAT_iter;
 	BUN i = 0;
@@ -1680,20 +1702,18 @@ wkbBox2D_bat(bat *outBAT_id, bat *aBAT_id, bat *bBAT_id)
 	for (i = 0; i < BATcount(aBAT); i++) {
 		mbr *outSingle;
 
-		wkb *aWKB = (wkb *) BUNtvar(aBAT_iter, i);
-		wkb *bWKB = (wkb *) BUNtvar(bBAT_iter, i);
+		wkb *aWKB = (wkb *) BUNtvar(&aBAT_iter, i);
+		wkb *bWKB = (wkb *) BUNtvar(&bBAT_iter, i);
 
-		if ((ret = wkbBox2D(&outSingle, &aWKB, &bWKB)) != MAL_SUCCEED) {
+		if ((ret = wkbBox2D(ctx, &outSingle, &aWKB, &bWKB)) != MAL_SUCCEED) {
 			BBPreclaim(outBAT);
 			goto bailout;
 		}
 		if (BUNappend(outBAT, outSingle, false) != GDK_SUCCEED) {
 			BBPreclaim(outBAT);
-			GDKfree(outSingle);
 			ret = createException(MAL, "batgeom.wkbBox2D", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			goto bailout;
 		}
-		GDKfree(outSingle);
 	}
 
 	*outBAT_id = outBAT->batCacheid;
@@ -1710,8 +1730,9 @@ wkbBox2D_bat(bat *outBAT_id, bat *aBAT_id, bat *bBAT_id)
 }
 
 str
-wkbContains_bat(bat *outBAT_id, bat *aBAT_id, bat *bBAT_id)
+wkbContains_bat(Client ctx, bat *outBAT_id, bat *aBAT_id, bat *bBAT_id)
 {
+	(void) ctx;
 	BAT *outBAT = NULL, *aBAT = NULL, *bBAT = NULL;
 	BATiter aBAT_iter, bBAT_iter;
 	BUN i = 0;
@@ -1740,10 +1761,10 @@ wkbContains_bat(bat *outBAT_id, bat *aBAT_id, bat *bBAT_id)
 	for (i = 0; i < BATcount(aBAT); i++) {
 		bit outBIT;
 
-		wkb *aWKB = (wkb *) BUNtvar(aBAT_iter, i);
-		wkb *bWKB = (wkb *) BUNtvar(bBAT_iter, i);
+		wkb *aWKB = (wkb *) BUNtvar(&aBAT_iter, i);
+		wkb *bWKB = (wkb *) BUNtvar(&bBAT_iter, i);
 
-		if ((ret = wkbContains(&outBIT, &aWKB, &bWKB)) != MAL_SUCCEED) {
+		if ((ret = wkbContains(ctx, &outBIT, &aWKB, &bWKB)) != MAL_SUCCEED) {
 			BBPreclaim(outBAT);
 			goto bailout;
 		}
@@ -1769,8 +1790,9 @@ wkbContains_bat(bat *outBAT_id, bat *aBAT_id, bat *bBAT_id)
 }
 
 str
-wkbContains_geom_bat(bat *outBAT_id, wkb **geomWKB, bat *inBAT_id)
+wkbContains_geom_bat(Client ctx, bat *outBAT_id, wkb **geomWKB, bat *inBAT_id)
 {
+	(void) ctx;
 	BAT *outBAT = NULL, *inBAT = NULL;
 	BATiter inBAT_iter;
 	BUN p = 0, q = 0;
@@ -1788,13 +1810,13 @@ wkbContains_geom_bat(bat *outBAT_id, wkb **geomWKB, bat *inBAT_id)
 
 	//iterator over the BATs
 	inBAT_iter = bat_iterator(inBAT);
-	BATloop(inBAT, p, q) {
+	BATloop(&inBAT_iter, p, q) {
 		str err = NULL;
 		bit outBIT;
 
-		wkb *inWKB = (wkb *) BUNtvar(inBAT_iter, p);
+		wkb *inWKB = (wkb *) BUNtvar(&inBAT_iter, p);
 
-		if ((err = wkbContains(&outBIT, geomWKB, &inWKB)) != MAL_SUCCEED) {
+		if ((err = wkbContains(ctx, &outBIT, geomWKB, &inWKB)) != MAL_SUCCEED) {
 			bat_iterator_end(&inBAT_iter);
 			BBPunfix(inBAT->batCacheid);
 			BBPunfix(outBAT->batCacheid);
@@ -1818,8 +1840,9 @@ wkbContains_geom_bat(bat *outBAT_id, wkb **geomWKB, bat *inBAT_id)
 }
 
 str
-wkbContains_bat_geom(bat *outBAT_id, bat *inBAT_id, wkb **geomWKB)
+wkbContains_bat_geom(Client ctx, bat *outBAT_id, bat *inBAT_id, wkb **geomWKB)
 {
+	(void) ctx;
 	BAT *outBAT = NULL, *inBAT = NULL;
 	BATiter inBAT_iter;
 	BUN p = 0, q = 0;
@@ -1837,13 +1860,13 @@ wkbContains_bat_geom(bat *outBAT_id, bat *inBAT_id, wkb **geomWKB)
 
 	//iterator over the BATs
 	inBAT_iter = bat_iterator(inBAT);
-	BATloop(inBAT, p, q) {
+	BATloop(&inBAT_iter, p, q) {
 		str err = NULL;
 		bit outBIT;
 
-		wkb *inWKB = (wkb *) BUNtvar(inBAT_iter, p);
+		wkb *inWKB = (wkb *) BUNtvar(&inBAT_iter, p);
 
-		if ((err = wkbContains(&outBIT, &inWKB, geomWKB)) != MAL_SUCCEED) {
+		if ((err = wkbContains(ctx, &outBIT, &inWKB, geomWKB)) != MAL_SUCCEED) {
 			bat_iterator_end(&inBAT_iter);
 			BBPunfix(inBAT->batCacheid);
 			BBPunfix(outBAT->batCacheid);
@@ -1891,7 +1914,7 @@ wkbFromWKB_bat(bat *outBAT_id, bat *inBAT_id)
 	inWKB = (wkb **) inBATi.base;
 	for (i = 0; i < BATcount(inBAT); i++) {	//iterate over all valid elements
 		str err = NULL;
-		if ((err = wkbFromWKB(&outWKB, &inWKB[i])) != MAL_SUCCEED) {
+		if ((err = wkbFromWKB(ctx, &outWKB, &inWKB[i])) != MAL_SUCCEED) {
 			BBPunfix(inBAT->batCacheid);
 			BBPunfix(outBAT->batCacheid);
 			return err;
@@ -1899,10 +1922,8 @@ wkbFromWKB_bat(bat *outBAT_id, bat *inBAT_id)
 		if (BUNappend(outBAT, outWKB, false) != GDK_SUCCEED) {
 			BBPunfix(inBAT->batCacheid);
 			BBPunfix(outBAT->batCacheid);
-			GDKfree(outWKB);
 			throw(MAL, "batgeom.wkb", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		}
-		GDKfree(outWKB);
 		outWKB = NULL;
 	}
 	bat_iterator_end(&inBATi);
@@ -1919,8 +1940,9 @@ wkbFromWKB_bat(bat *outBAT_id, bat *inBAT_id)
 /********* Multiple inputs **********/
 /************************************/
 str
-wkbMakePoint_bat(bat *outBAT_id, bat *xBAT_id, bat *yBAT_id, bat *zBAT_id, bat *mBAT_id, int *zmFlag)
+wkbMakePoint_bat(Client ctx, bat *outBAT_id, bat *xBAT_id, bat *yBAT_id, bat *zBAT_id, bat *mBAT_id, int *zmFlag)
 {
+	(void) ctx;
 	BAT *outBAT = NULL, *xBAT = NULL, *yBAT = NULL, *zBAT = NULL, *mBAT = NULL;
 	BATiter xBAT_iter, yBAT_iter, zBAT_iter, mBAT_iter;
 	BUN i;
@@ -1961,28 +1983,26 @@ wkbMakePoint_bat(bat *outBAT_id, bat *xBAT_id, bat *yBAT_id, bat *zBAT_id, bat *
 	for (i = 0; i < BATcount(xBAT); i++) {
 		wkb *pointWKB = NULL;
 
-		double x = *((double *) BUNtloc(xBAT_iter, i));
-		double y = *((double *) BUNtloc(yBAT_iter, i));
+		double x = *((double *) BUNtloc(&xBAT_iter, i));
+		double y = *((double *) BUNtloc(&yBAT_iter, i));
 		double z = 0.0;
 		double m = 0.0;
 
 		if (zBAT)
-			z = *((double *) BUNtloc(zBAT_iter, i));
+			z = *((double *) BUNtloc(&zBAT_iter, i));
 		if (mBAT)
-			m = *((double *) BUNtloc(mBAT_iter, i));
+			m = *((double *) BUNtloc(&mBAT_iter, i));
 
-		if ((ret = wkbMakePoint(&pointWKB, &x, &y, &z, &m, zmFlag)) != MAL_SUCCEED) {	//check
+		if ((ret = wkbMakePoint(ctx, &pointWKB, &x, &y, &z, &m, zmFlag)) != MAL_SUCCEED) {	//check
 
 			BBPreclaim(outBAT);
 			goto bailout;
 		}
 		if (BUNappend(outBAT, pointWKB, false) != GDK_SUCCEED) {
 			BBPreclaim(outBAT);
-			GDKfree(pointWKB);
 			ret = createException(MAL, "batgeom.WkbMakePoint", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			goto bailout;
 		}
-		GDKfree(pointWKB);
 	}
 
 	*outBAT_id = outBAT->batCacheid;
@@ -2007,8 +2027,9 @@ wkbMakePoint_bat(bat *outBAT_id, bat *xBAT_id, bat *yBAT_id, bat *zBAT_id, bat *
 
 /* sets the srid of the geometry - BULK version*/
 str
-wkbSetSRID_bat(bat *outBAT_id, bat *inBAT_id, int *srid)
+wkbSetSRID_bat(Client ctx, bat *outBAT_id, bat *inBAT_id, int *srid)
 {
+	(void) ctx;
 	BAT *outBAT = NULL, *inBAT = NULL;
 	BUN p = 0, q = 0;
 	BATiter inBAT_iter;
@@ -2026,13 +2047,13 @@ wkbSetSRID_bat(bat *outBAT_id, bat *inBAT_id, int *srid)
 
 	//iterator over the BATs
 	inBAT_iter = bat_iterator(inBAT);
-	BATloop(inBAT, p, q) {
+	BATloop(&inBAT_iter, p, q) {
 		str err = NULL;
 		wkb *outWKB = NULL;
 
-		wkb *inWKB = (wkb *) BUNtvar(inBAT_iter, p);
+		wkb *inWKB = (wkb *) BUNtvar(&inBAT_iter, p);
 
-		if ((err = wkbSetSRID(&outWKB, &inWKB, srid)) != MAL_SUCCEED) {	//set SRID
+		if ((err = wkbSetSRID(ctx, &outWKB, &inWKB, srid)) != MAL_SUCCEED) {	//set SRID
 			bat_iterator_end(&inBAT_iter);
 			BBPunfix(inBAT->batCacheid);
 			BBPunfix(outBAT->batCacheid);
@@ -2042,10 +2063,8 @@ wkbSetSRID_bat(bat *outBAT_id, bat *inBAT_id, int *srid)
 			bat_iterator_end(&inBAT_iter);
 			BBPunfix(inBAT->batCacheid);
 			BBPunfix(outBAT->batCacheid);
-			GDKfree(outWKB);
 			throw(MAL, "batgeom.SetSRID", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		}
-		GDKfree(outWKB);
 		outWKB = NULL;
 	}
 	bat_iterator_end(&inBAT_iter);
@@ -2058,8 +2077,9 @@ wkbSetSRID_bat(bat *outBAT_id, bat *inBAT_id, int *srid)
 }
 
 str
-wkbDistance_bat(bat *outBAT_id, bat *aBAT_id, bat *bBAT_id)
+wkbDistance_bat(Client ctx, bat *outBAT_id, bat *aBAT_id, bat *bBAT_id)
 {
+	(void) ctx;
 	BAT *outBAT = NULL, *aBAT = NULL, *bBAT = NULL;
 	BATiter aBAT_iter, bBAT_iter;
 	BUN i = 0;
@@ -2088,8 +2108,8 @@ wkbDistance_bat(bat *outBAT_id, bat *aBAT_id, bat *bBAT_id)
 	for (i = 0; i < BATcount(aBAT); i++) {
 		double distanceVal = 0;
 
-		wkb *aWKB = (wkb *) BUNtvar(aBAT_iter, i);
-		wkb *bWKB = (wkb *) BUNtvar(bBAT_iter, i);
+		wkb *aWKB = (wkb *) BUNtvar(&aBAT_iter, i);
+		wkb *bWKB = (wkb *) BUNtvar(&bBAT_iter, i);
 
 		if ((ret = wkbDistance(&distanceVal, &aWKB, &bWKB)) != MAL_SUCCEED) {	//check
 
@@ -2118,8 +2138,9 @@ wkbDistance_bat(bat *outBAT_id, bat *aBAT_id, bat *bBAT_id)
 }
 
 str
-wkbDistance_geom_bat(bat *outBAT_id, wkb **geomWKB, bat *inBAT_id)
+wkbDistance_geom_bat(Client ctx, bat *outBAT_id, wkb **geomWKB, bat *inBAT_id)
 {
+	(void) ctx;
 	BAT *outBAT = NULL, *inBAT = NULL;
 	BATiter inBAT_iter;
 	BUN p = 0, q = 0;
@@ -2137,11 +2158,11 @@ wkbDistance_geom_bat(bat *outBAT_id, wkb **geomWKB, bat *inBAT_id)
 
 	//iterator over the BAT
 	inBAT_iter = bat_iterator(inBAT);
-	BATloop(inBAT, p, q) {
+	BATloop(&inBAT_iter, p, q) {
 		str err = NULL;
 		double distanceVal = 0;
 
-		wkb *inWKB = (wkb *) BUNtvar(inBAT_iter, p);
+		wkb *inWKB = (wkb *) BUNtvar(&inBAT_iter, p);
 
 		if ((err = wkbDistance(&distanceVal, geomWKB, &inWKB)) != MAL_SUCCEED) {	//check
 			bat_iterator_end(&inBAT_iter);
@@ -2166,9 +2187,10 @@ wkbDistance_geom_bat(bat *outBAT_id, wkb **geomWKB, bat *inBAT_id)
 }
 
 str
-wkbDistance_bat_geom(bat *outBAT_id, bat *inBAT_id, wkb **geomWKB)
+wkbDistance_bat_geom(Client ctx, bat *outBAT_id, bat *inBAT_id, wkb **geomWKB)
 {
-	return wkbDistance_geom_bat(outBAT_id, geomWKB, inBAT_id);
+	(void) ctx;
+	return wkbDistance_geom_bat(ctx, outBAT_id, geomWKB, inBAT_id);
 }
 
 /**
@@ -2217,11 +2239,11 @@ wkbFilter_bat(bat *aBATfiltered_id, bat *bBATfiltered_id, bat *aBAT_id, bat *bBA
 
 	for (i = 0; i < BATcount(aBAT); i++) {
 		str err = NULL;
-		aWKB = (wkb *) BUNtvar(aBAT_iter, i);
-		bWKB = (wkb *) BUNtvar(bBAT_iter, i);
+		aWKB = (wkb *) BUNtvar(&aBAT_iter, i);
+		bWKB = (wkb *) BUNtvar(&bBAT_iter, i);
 
 		//check the containment of the MBRs
-		if ((err = mbrOverlaps_wkb(&outBIT, &aWKB, &bWKB)) != MAL_SUCCEED) {
+		if ((err = mbrOverlaps_wkb(ctx, &outBIT, &aWKB, &bWKB)) != MAL_SUCCEED) {
 			bat_iterator_end(&aBAT_iter);
 			bat_iterator_end(&bBAT_iter);
 			BBPunfix(aBAT->batCacheid);
@@ -2263,8 +2285,9 @@ wkbFilter_bat(bat *aBATfiltered_id, bat *bBATfiltered_id, bat *aBAT_id, bat *bBA
  * It filters the geometry in the second BAT with respect to the MBR of the geometry in the first BAT.
  **/
 str
-wkbFilter_geom_bat(bat *BATfiltered_id, wkb **geomWKB, bat *BAToriginal_id)
+wkbFilter_geom_bat(Client ctx, bat *BATfiltered_id, wkb **geomWKB, bat *BAToriginal_id)
 {
+	(void) ctx;
 	BAT *BATfiltered = NULL, *BAToriginal = NULL;
 	wkb *WKBoriginal = NULL;
 	BATiter BAToriginal_iter;
@@ -2284,7 +2307,7 @@ wkbFilter_geom_bat(bat *BATfiltered_id, wkb **geomWKB, bat *BAToriginal_id)
 	}
 
 	//create the MBR of the geom
-	if ((err = wkbMBR(&geomMBR, geomWKB)) != MAL_SUCCEED) {
+	if ((err = wkbMBR(ctx, &geomMBR, geomWKB)) != MAL_SUCCEED) {
 		BBPunfix(BAToriginal->batCacheid);
 		BBPunfix(BATfiltered->batCacheid);
 		return err;
@@ -2298,23 +2321,20 @@ wkbFilter_geom_bat(bat *BATfiltered_id, wkb **geomWKB, bat *BAToriginal_id)
 		mbr *MBRoriginal;
 		bit outBIT = 0;
 
-		WKBoriginal = (wkb *) BUNtvar(BAToriginal_iter, i);
+		WKBoriginal = (wkb *) BUNtvar(&BAToriginal_iter, i);
 
 		//create the MBR for each geometry in the BAT
-		if ((err = wkbMBR(&MBRoriginal, &WKBoriginal)) != MAL_SUCCEED) {
+		if ((err = wkbMBR(ctx, &MBRoriginal, &WKBoriginal)) != MAL_SUCCEED) {
 			bat_iterator_end(&BAToriginal_iter);
 			BBPunfix(BAToriginal->batCacheid);
 			BBPunfix(BATfiltered->batCacheid);
-			GDKfree(geomMBR);
 			return err;
 		}
 		//check the containment of the MBRs
-		if ((err = mbrOverlaps(&outBIT, &geomMBR, &MBRoriginal)) != MAL_SUCCEED) {
+		if ((err = mbrOverlaps(ctx, &outBIT, &geomMBR, &MBRoriginal)) != MAL_SUCCEED) {
 			bat_iterator_end(&BAToriginal_iter);
 			BBPunfix(BAToriginal->batCacheid);
 			BBPunfix(BATfiltered->batCacheid);
-			GDKfree(geomMBR);
-			GDKfree(MBRoriginal);
 			return err;
 		}
 
@@ -2323,17 +2343,13 @@ wkbFilter_geom_bat(bat *BATfiltered_id, wkb **geomWKB, bat *BAToriginal_id)
 				bat_iterator_end(&BAToriginal_iter);
 				BBPunfix(BAToriginal->batCacheid);
 				BBPunfix(BATfiltered->batCacheid);
-				GDKfree(geomMBR);
-				GDKfree(MBRoriginal);
 				throw(MAL, "batgeom.MBRfilter", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			}
 		}
 
-		GDKfree(MBRoriginal);
 	}
 	bat_iterator_end(&BAToriginal_iter);
 
-	GDKfree(geomMBR);
 	BBPunfix(BAToriginal->batCacheid);
 	*BATfiltered_id = BATfiltered->batCacheid;
 	BBPkeepref(BATfiltered);
@@ -2343,30 +2359,33 @@ wkbFilter_geom_bat(bat *BATfiltered_id, wkb **geomWKB, bat *BAToriginal_id)
 }
 
 str
-wkbFilter_bat_geom(bat *BATfiltered_id, bat *BAToriginal_id, wkb **geomWKB)
+wkbFilter_bat_geom(Client ctx, bat *BATfiltered_id, bat *BAToriginal_id, wkb **geomWKB)
 {
-	return wkbFilter_geom_bat(BATfiltered_id, geomWKB, BAToriginal_id);
+	(void) ctx;
+	return wkbFilter_geom_bat(ctx, BATfiltered_id, geomWKB, BAToriginal_id);
 }
 
 /* MBR */
 str
-wkbCoordinateFromWKB_bat(bat *outBAT_id, bat *inBAT_id, int *coordinateIdx)
+wkbCoordinateFromWKB_bat(Client ctx, bat *outBAT_id, bat *inBAT_id, int *coordinateIdx)
 {
+	(void) ctx;
 	str err = NULL;
 	bat inBAT_mbr_id = 0;	//the id of the bat with the mbrs
 
-	if ((err = wkbMBR_bat(&inBAT_mbr_id, inBAT_id)) != MAL_SUCCEED) {
+	if ((err = wkbMBR_bat(ctx, &inBAT_mbr_id, inBAT_id)) != MAL_SUCCEED) {
 		return err;
 	}
 	//call the bulk version of wkbCoordinateFromMBR
-	err = wkbCoordinateFromMBR_bat(outBAT_id, &inBAT_mbr_id, coordinateIdx);
+	err = wkbCoordinateFromMBR_bat(ctx, outBAT_id, &inBAT_mbr_id, coordinateIdx);
 	BBPrelease(inBAT_mbr_id);
 	return err;
 }
 
 str
-wkbMakeLine_bat(bat *outBAT_id, bat *aBAT_id, bat *bBAT_id)
+wkbMakeLine_bat(Client ctx, bat *outBAT_id, bat *aBAT_id, bat *bBAT_id)
 {
+	(void) ctx;
 	BAT *outBAT = NULL, *aBAT = NULL, *bBAT = NULL;
 	BATiter aBAT_iter, bBAT_iter;
 	BUN i;
@@ -2400,10 +2419,10 @@ wkbMakeLine_bat(bat *outBAT_id, bat *aBAT_id, bat *bBAT_id)
 		str err = NULL;
 		wkb *aWKB = NULL, *bWKB = NULL, *outWKB = NULL;
 
-		aWKB = (wkb *) BUNtvar(aBAT_iter, i);
-		bWKB = (wkb *) BUNtvar(bBAT_iter, i);
+		aWKB = (wkb *) BUNtvar(&aBAT_iter, i);
+		bWKB = (wkb *) BUNtvar(&bBAT_iter, i);
 
-		if ((err = wkbMakeLine(&outWKB, &aWKB, &bWKB)) != MAL_SUCCEED) {	//check
+		if ((err = wkbMakeLine(ctx, &outWKB, &aWKB, &bWKB)) != MAL_SUCCEED) {	//check
 			bat_iterator_end(&aBAT_iter);
 			bat_iterator_end(&bBAT_iter);
 			BBPunfix(outBAT->batCacheid);
@@ -2417,10 +2436,8 @@ wkbMakeLine_bat(bat *outBAT_id, bat *aBAT_id, bat *bBAT_id)
 			BBPunfix(outBAT->batCacheid);
 			BBPunfix(aBAT->batCacheid);
 			BBPunfix(bBAT->batCacheid);
-			GDKfree(outWKB);
 			throw(MAL, "batgeom.MakeLine", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		}
-		GDKfree(outWKB);
 		outWKB = NULL;
 	}
 	bat_iterator_end(&aBAT_iter);
@@ -2435,8 +2452,9 @@ wkbMakeLine_bat(bat *outBAT_id, bat *aBAT_id, bat *bBAT_id)
 }
 
 str
-wkbUnion_bat(bat *outBAT_id, bat *aBAT_id, bat *bBAT_id)
+wkbUnion_bat(Client ctx, bat *outBAT_id, bat *aBAT_id, bat *bBAT_id)
 {
+	(void) ctx;
 	BAT *outBAT = NULL, *aBAT = NULL, *bBAT = NULL;
 	BATiter aBAT_iter, bBAT_iter;
 	BUN i;
@@ -2470,10 +2488,10 @@ wkbUnion_bat(bat *outBAT_id, bat *aBAT_id, bat *bBAT_id)
 		str err = NULL;
 		wkb *aWKB = NULL, *bWKB = NULL, *outWKB = NULL;
 
-		aWKB = (wkb *) BUNtvar(aBAT_iter, i);
-		bWKB = (wkb *) BUNtvar(bBAT_iter, i);
+		aWKB = (wkb *) BUNtvar(&aBAT_iter, i);
+		bWKB = (wkb *) BUNtvar(&bBAT_iter, i);
 
-		if ((err = wkbUnion(&outWKB, &aWKB, &bWKB)) != MAL_SUCCEED) {	//check
+		if ((err = wkbUnion(ctx, &outWKB, &aWKB, &bWKB)) != MAL_SUCCEED) {	//check
 			bat_iterator_end(&aBAT_iter);
 			bat_iterator_end(&bBAT_iter);
 			BBPunfix(outBAT->batCacheid);
@@ -2487,10 +2505,8 @@ wkbUnion_bat(bat *outBAT_id, bat *aBAT_id, bat *bBAT_id)
 			BBPunfix(outBAT->batCacheid);
 			BBPunfix(aBAT->batCacheid);
 			BBPunfix(bBAT->batCacheid);
-			GDKfree(outWKB);
 			throw(MAL, "batgeom.Union", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		}
-		GDKfree(outWKB);
 		outWKB = NULL;
 	}
 	bat_iterator_end(&aBAT_iter);

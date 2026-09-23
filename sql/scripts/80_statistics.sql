@@ -2,11 +2,9 @@
 --
 -- This Source Code Form is subject to the terms of the Mozilla Public
 -- License, v. 2.0.  If a copy of the MPL was not distributed with this
--- file, You can obtain one at http://mozilla.org/MPL/2.0/.
+-- file, You can obtain one at https://mozilla.org/MPL/2.0/.
 --
--- Copyright 2024, 2025 MonetDB Foundation;
--- Copyright August 2008 - 2023 MonetDB B.V.;
--- Copyright 1997 - July 2008 CWI.
+-- For copyright information, see the file debian/copyright.
 
 -- Author M.Kersten
 -- This script gives the database administrator insight in the actual
@@ -113,3 +111,15 @@ returns table (
 )
 external name sql."statistics";
 grant execute on function sys."statistics"(varchar(1024),varchar(1024),varchar(1024)) to public;
+
+create aggregate uniques_guess(c integer)
+returns bigint external name aggr.uniques_guess;
+grant execute on aggregate uniques_guess(integer) to public;
+
+create aggregate uniques_guess(c bigint)
+returns bigint external name aggr.uniques_guess;
+grant execute on aggregate uniques_guess(bigint) to public;
+
+create aggregate uniques_guess(c varchar)
+returns bigint external name aggr.uniques_guess;
+grant execute on aggregate uniques_guess(varchar) to public;

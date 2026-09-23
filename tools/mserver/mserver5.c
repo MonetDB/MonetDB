@@ -3,11 +3,9 @@
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024, 2025 MonetDB Foundation;
- * Copyright August 2008 - 2023 MonetDB B.V.;
- * Copyright 1997 - July 2008 CWI.
+ * For copyright information, see the file debian/copyright.
  */
 
 #include "monetdb_config.h"
@@ -24,12 +22,8 @@
 #include "msabaoth.h"
 #include "mutils.h"
 
-#ifndef HAVE_GETOPT_LONG
-#  include "monet_getopt.h"
-#else
-# ifdef HAVE_GETOPT_H
-#  include "getopt.h"
-# endif
+#ifdef HAVE_GETOPT_H
+#include "getopt.h"
 #endif
 
 #ifdef _MSC_VER
@@ -80,15 +74,18 @@ static void
 usage(char *prog, int xit)
 {
 	fprintf(stderr, "Usage: %s [options]\n", prog);
-	fprintf(stderr, "    --dbpath=<directory>      Specify database location\n");
-	fprintf(stderr, "    --dbextra=<directory>     Directory for transient BATs\n");
-	fprintf(stderr, "    --dbtrace=<file>          File for produced traces\n");
+	fprintf(stderr, "    --dbpath <directory>      Specify database location\n");
+	fprintf(stderr, "    --dbextra <directory>     Directory for transient BATs\n");
+	fprintf(stderr, "    --dbtrace <file>          File for produced traces\n");
 	fprintf(stderr, "    --in-memory               Run database in-memory only\n");
-	fprintf(stderr, "    --config=<config_file>    Use config_file to read options from\n");
+	fprintf(stderr, "    --config <config_file>    Use config_file to read options from\n");
 	fprintf(stderr, "    --single-user             Allow only one user at a time\n");
 	fprintf(stderr, "    --readonly                Safeguard database\n");
 	fprintf(stderr, "    --set <option>=<value>    Set configuration option\n");
-	fprintf(stderr, "    --loadmodule=<module>     Load extra <module> from lib/monetdb5\n");
+	fprintf(stderr, "    --loadmodule <module>     Load extra <module> from lib/monetdb5\n");
+	fprintf(stderr, "    --without-geom            Do not enable geom module\n");
+	fprintf(stderr, "    --logging <comp>=<level>  Set logging level for component\n");
+	fprintf(stderr, "    --process-wal-and-exit    Only process the write-ahead log\n");
 	fprintf(stderr, "    --help                    Print this list of options\n");
 	fprintf(stderr, "    --version                 Print version and compile time info\n");
 
@@ -115,23 +112,24 @@ static void
 monet_hello(void)
 {
 	double sz_mem_h;
-	const char qc[] = " kMGTPE";
+	static const char qc[] = " kMGTPE";
 	int qi = 0;
+	char buf[64] = "";
 
-	printf("# MonetDB 5 server v%s", GDKversion());
 	{
 #ifdef MONETDB_RELEASE
-		printf(" (%s)", MONETDB_RELEASE);
+		snprintf(buf, sizeof(buf), " (%s)", MONETDB_RELEASE);
 #else
 		const char *rev = mercurial_revision();
 		if (strcmp(rev, "Unknown") != 0)
-			printf(" (hg id: %s)", rev);
+			snprintf(buf, sizeof(buf), " (hg id: %s)", rev);
 #endif
 	}
+	printf("# MonetDB 5 server v%s%s\n", GDKversion(false), buf);
 #ifndef MONETDB_RELEASE
-	printf("\n# This is an unreleased version");
+	printf("# This is an unreleased version\n");
 #endif
-	printf("\n# Serving database '%s', using %d thread%s\n",
+	printf("# Serving database '%s', using %d thread%s\n",
 		   GDKgetenv("gdk_dbname"), GDKnr_threads,
 		   (GDKnr_threads != 1) ? "s" : "");
 	printf("# Compiled for %s/%zubit%s\n", HOST, sizeof(ptr) * 8,
@@ -146,14 +144,15 @@ monet_hello(void)
 		sz_mem_h /= 1024.0;
 		qi++;
 	}
-	printf("# Found %.3f %ciB available main-memory", sz_mem_h, qc[qi]);
+	snprintf(buf, sizeof(buf),
+			 "# Found %.3f %ciB available main-memory", sz_mem_h, qc[qi]);
 	sz_mem_h = (double) GDK_mem_maxsize;
 	qi = 0;
 	while (sz_mem_h >= 1000.0 && qi < 6) {
 		sz_mem_h /= 1024.0;
 		qi++;
 	}
-	printf(" of which we use %.3f %ciB\n", sz_mem_h, qc[qi]);
+	printf("%s of which we use %.3f %ciB\n", buf, sz_mem_h, qc[qi]);
 	if (GDK_vm_maxsize < GDK_VM_MAXSIZE) {
 		sz_mem_h = (double) GDK_vm_maxsize;
 		qi = 0;
@@ -168,25 +167,10 @@ monet_hello(void)
 	printf("# Database path:%s\n", GDKgetenv("gdk_dbpath"));
 	printf("# Module path:%s\n", GDKgetenv("monet_mod_path"));
 #endif
-	printf("# Copyright (c) 2024, 2025 MonetDB Foundation, all rights reserved\n");
+	printf("# Copyright (c) %s MonetDB Foundation, all rights reserved\n",
+		   &__DATE__[7]);
 	printf("# Visit https://www.monetdb.org/ for further information\n");
 
-	// The properties shipped through the performance profiler
-	(void) snprintf(monet_characteristics, sizeof(monet_characteristics),
-					"{\n" "\"version\":\"%s\",\n" "\"release\":\"%s\",\n"
-					"\"host\":\"%s\",\n" "\"threads\":\"%d\",\n"
-					"\"memory\":\"%.3f %cB\",\n" "\"oid\":\"%zu\",\n"
-					"\"packages\":["
-#ifdef HAVE_HGE
-					"\"huge\""
-#endif
-					"]\n}", GDKversion(),
-#ifdef MONETDB_RELEASE
-					MONETDB_RELEASE,
-#else
-					"unreleased",
-#endif
-					HOST, GDKnr_threads, sz_mem_h, qc[qi], sizeof(oid) * 8);
 	fflush(stdout);
 }
 
@@ -194,10 +178,11 @@ static str
 absolute_path(const char *s)
 {
 	if (!MT_path_absolute(s)) {
-		str ret = (str) GDKmalloc(strlen(s) + strlen(monet_cwd) + 2);
+		size_t l = strlen(s) + strlen(monet_cwd) + 2;
+		str ret = (str) GDKmalloc(l);
 
 		if (ret)
-			sprintf(ret, "%s%c%s", monet_cwd, DIR_SEP, s);
+			snprintf(ret, l, "%s%c%s", monet_cwd, DIR_SEP, s);
 		return ret;
 	}
 	return GDKstrdup(s);
@@ -249,6 +234,21 @@ emergencyBreakpoint(void)
 
 static volatile sig_atomic_t interrupted = 0;
 static volatile sig_atomic_t usr1_interrupted = 0;
+static volatile sig_atomic_t usr2_interrupted = 0;
+
+static void
+handler_usr1(int sig)
+{
+	(void) sig;
+	usr1_interrupted = 1;
+}
+
+static void
+usr1trigger(void)
+{
+	handler_usr1(0);
+	MT_sleep_ms(150); /* sleep slightly longer than delay for handling usr1 */
+}
 
 #ifdef _MSC_VER
 static BOOL WINAPI
@@ -266,10 +266,27 @@ handler(int sig)
 	interrupted = 1;
 }
 static void
-handler_usr1(int sig)
+handler_usr2(int sig)
 {
 	(void) sig;
-	usr1_interrupted = 1;
+	usr2_interrupted = 1;
+}
+#endif
+
+#ifdef WITH_JEMALLOC
+static void
+writecb(void *data, const char *msg)
+{
+	(void) data;
+	printf("%s\n", msg);
+}
+#endif
+#ifdef WITH_MIMALLOC
+static void
+writecb(const char *msg, void *arg)
+{
+	(void) arg;
+	printf("mimalloc stats\n%s\nmimalloc stats end\n", msg);
 }
 #endif
 
@@ -292,7 +309,7 @@ main(int argc, char **av)
 		exit(1);
 	}
 	for (int i = 0; i < argc; i++) {
-		if ((av[i] = wchartoutf8(argv[i])) == NULL) {
+		if ((av[i] = utf16toutf8(argv[i])) == NULL) {
 			fprintf(stderr, "cannot convert argument to UTF-8\n");
 			exit(1);
 		}
@@ -325,6 +342,8 @@ main(int argc, char **av)
 		{"single-user", no_argument, NULL, 0},
 		{"version", no_argument, NULL, 0},
 
+		{"logging", required_argument, NULL, 0},
+
 		{"algorithms", no_argument, NULL, 0},
 		{"forcemito", no_argument, NULL, 0},
 		{"heaps", no_argument, NULL, 0},
@@ -338,33 +357,27 @@ main(int argc, char **av)
 
 		{"loadmodule", required_argument, NULL, 0},
 		{"without-geom", no_argument, NULL, 0},
+		{"pipeline", no_argument, NULL, 0},
 
 		{"read-password-initialize-and-exit", no_argument, NULL, 0},
 		{"process-wal-and-exit", no_argument, NULL, 0},
 		{"clean-BBP", no_argument, NULL, 0},
 
+#ifdef HAVE_GETUID
+		{"accept-the-risks-running-as-root", no_argument, NULL, 0},
+#endif
+
 		{NULL, 0, NULL, 0}
 	};
 
 #define MAX_MODULES 32
-	char *modules[MAX_MODULES + 1];
+	const char *modules[MAX_MODULES + 1];
 	int mods = 0;
 
 	modules[mods++] = "sql";
 	modules[mods++] = "generator";
 #ifdef HAVE_GEOM
 	modules[mods++] = "geom";
-#endif
-#ifdef HAVE_LIBR
-	/* TODO check for used */
-	modules[mods++] = "rapi";
-#endif
-#ifdef HAVE_LIBPY3
-	/* TODO check for used */
-	modules[mods++] = "pyapi3";
-#endif
-#ifdef HAVE_CUDF
-	modules[mods++] = "capi";
 #endif
 #ifdef HAVE_FITS
 	modules[mods++] = "fits";
@@ -373,6 +386,8 @@ main(int argc, char **av)
 	modules[mods++] = "netcdf";
 #endif
 	modules[mods++] = "csv";
+	modules[mods++] = "parquet";
+	modules[mods++] = "monetdb_loader";
 #ifdef HAVE_SHP
 	modules[mods++] = "shp";
 #endif
@@ -407,10 +422,14 @@ main(int argc, char **av)
 	if (!(setlen = mo_builtin_settings(&set)))
 		usage(prog, -1);
 
+#ifdef HAVE_GETUID
+	bool allow_root = false;
+#endif
+
 	for (;;) {
 		int option_index = 0;
 
-		int c = getopt_long(argc, av, "c:d::rs:t::v::?",
+		int c = getopt_long(argc, av, "c:d::rs:?",
 							long_options, &option_index);
 
 		if (c == -1)
@@ -418,6 +437,12 @@ main(int argc, char **av)
 
 		switch (c) {
 		case 0:
+#ifdef HAVE_GETUID
+			if (strcmp(long_options[option_index].name, "accept-the-risks-running-as-root") == 0) {
+				allow_root = true;
+				break;
+			}
+#endif
 			if (strcmp(long_options[option_index].name, "in-memory") == 0) {
 				inmemory = true;
 				break;
@@ -430,20 +455,41 @@ main(int argc, char **av)
 						   || optarg[optarglen - 1] == '\\'))
 					optarg[--optarglen] = '\0';
 				dbpath = absolute_path(optarg);
-				if (dbpath == NULL)
+				if (dbpath == NULL) {
 					fprintf(stderr,
 							"#error: can not allocate memory for dbpath\n");
-				else
-					setlen = mo_add_option(&set, setlen, opt_cmdline,
-										   "gdk_dbpath", dbpath);
+					exit(1);
+				}
+				if (strlen(dbpath) >= FILENAME_MAX - 45) {
+					fprintf(stderr, "#error: dbpath name too long\n");
+					exit(1);
+				}
+				setlen = mo_add_option(&set, setlen, opt_cmdline,
+									   "gdk_dbpath", dbpath);
 				break;
 			}
 			if (strcmp(long_options[option_index].name, "dbextra") == 0) {
-				if (dbextra)
+				if (dbextra) {
 					fprintf(stderr,
 							"#warning: ignoring multiple --dbextra arguments\n");
-				else
-					dbextra = optarg;
+					break;
+				}
+				size_t optarglen = strlen(optarg);
+				/* remove trailing directory separator */
+				while (optarglen > 0
+					   && (optarg[optarglen - 1] == '/'
+						   || optarg[optarglen - 1] == '\\'))
+					optarg[--optarglen] = '\0';
+				dbextra = absolute_path(optarg);
+				if (dbextra == NULL) {
+					fprintf(stderr,
+							"#error: can not allocate memory for dbextra\n");
+					exit(1);
+				}
+				if (strlen(dbextra) >= FILENAME_MAX - 45) {
+					fprintf(stderr, "#error: dbextra name too long\n");
+					exit(1);
+				}
 				break;
 			}
 
@@ -454,7 +500,10 @@ main(int argc, char **av)
 					   && (optarg[optarglen - 1] == '/'
 						   || optarg[optarglen - 1] == '\\'))
 					optarg[--optarglen] = '\0';
-				dbtrace = absolute_path(optarg);
+				if (strcmp(optarg, "stdout") == 0)
+					dbtrace = optarg;
+				else
+					dbtrace = absolute_path(optarg);
 				if (dbtrace == NULL)
 					fprintf(stderr,
 							"#error: can not allocate memory for dbtrace\n");
@@ -473,7 +522,24 @@ main(int argc, char **av)
 				monet_version();
 				exit(0);
 			}
+			if (strcmp(long_options[option_index].name, "logging") == 0) {
+				char *tmp = strchr(optarg, '=');
+				if (tmp) {
+					*tmp = 0;
+					if (GDKtracer_set_component_level(optarg, tmp + 1) != GDK_SUCCEED) {
+						fprintf(stderr, "WARNING: could not set logging component %s to %s\n",
+								optarg, tmp + 1);
+					}
+				} else {
+					fprintf(stderr, "ERROR: --logging flag requires component=level argument\n");
+				}
+				break;
+			}
 			/* debugging options */
+			if (strcmp(long_options[option_index].name, "pipeline") == 0) {
+				default_pipeline_mode = true;
+				break;
+			}
 			if (strcmp(long_options[option_index].name, "algorithms") == 0) {
 				grpdebug |= GRPalgorithms;
 				break;
@@ -583,8 +649,8 @@ main(int argc, char **av)
 									   tmp + 1);
 			} else
 				fprintf(stderr, "ERROR: wrong format %s\n", optarg);
-		}
 			break;
+		}
 		case '?':
 			/* a bit of a hack: look at the option that the
 			   current `c' is based on and see if we recognize
@@ -599,11 +665,27 @@ main(int argc, char **av)
 		}
 	}
 
+#ifdef HAVE_GETUID
+	if (getuid() == 0) {
+		if (allow_root) {
+			fprintf(stderr, "WARNING: running as root is not recommended\n");
+		} else {
+			fprintf(stderr, "ERROR: running as root is not allowed\n");
+			exit(1);
+		}
+	}
+#endif
+
 	if (optind < argc)
 		usage(prog, -1);
 
 	if (!(setlen = mo_system_config(&set, setlen)))
 		usage(prog, -1);
+
+	if (debug & (1U << 19)) {
+		debug &= ~(1U << 19);
+		default_pipeline_mode = true;
+	}
 
 	if (debug)
 		mo_print_options(set, setlen);
@@ -621,7 +703,7 @@ main(int argc, char **av)
 	}
 
 	if (inmemory) {
-		if (BBPaddfarm(NULL, (1U << PERSISTENT) | (1U << TRANSIENT), true) !=
+		if (BBPaddfarm(NULL, (1U << PERSISTENT) | (1U << TRANSIENT) | (1U << SYSTRANS), true) !=
 			GDK_SUCCEED) {
 			fprintf(stderr, "!ERROR: cannot add in-memory farm\n");
 			exit(1);
@@ -644,7 +726,7 @@ main(int argc, char **av)
 		GDKfree(dbpath);
 	}
 
-	if (dbtrace) {
+	if (dbtrace && strcmp(dbtrace, "stdout") != 0) {
 		/* GDKcreatedir makes sure that all parent directories of dbtrace exist */
 		if (!inmemory && GDKcreatedir(dbtrace) != GDK_SUCCEED) {
 			fprintf(stderr, "!ERROR: cannot create directory for %s\n",
@@ -654,7 +736,8 @@ main(int argc, char **av)
 		GDKfree(dbtrace);
 	}
 
-	GDKsetdebug(debug | grpdebug);	/* add the algorithm tracers */
+	GDKsetdebug(GDKgetdebug() | debug | grpdebug);
+
 	if (monet_init(set, setlen, false) == 0) {
 		mo_free_options(set, setlen);
 		if (GDKerrbuf && *GDKerrbuf)
@@ -663,7 +746,9 @@ main(int argc, char **av)
 	}
 	mo_free_options(set, setlen);
 
-	if (GDKsetenv("monet_version", GDKversion()) != GDK_SUCCEED
+	if (GDKsetenv("monet_version", GDKversion(true)) != GDK_SUCCEED
+		|| GDKsetenv("monet_build_type", BUILD_TYPE) != GDK_SUCCEED
+		|| GDKsetenv("monet_extra_c_flags", EXTRA_C_FLAGS) != GDK_SUCCEED
 		|| GDKsetenv("monet_release",
 #ifdef MONETDB_RELEASE
 					 MONETDB_RELEASE
@@ -696,6 +781,10 @@ main(int argc, char **av)
 		};
 		struct stat sb;
 		if (binpath != NULL) {
+			if (MT_stat(binpath, &sb) != 0 &&
+				MT_stat(av[0], &sb) == 0 &&
+				MT_path_absolute(av[0]))
+				binpath = av[0];
 			char *p = strrchr(binpath, DIR_SEP);
 			if (p != NULL)
 				*p = '\0';
@@ -777,6 +866,12 @@ main(int argc, char **av)
 		if (sigaction(SIGUSR1, &sa, NULL) == -1) {
 			fprintf(stderr, "!unable to create signal handler for SIGUSR1\n");
 		}
+		(void) sigemptyset(&sa.sa_mask);
+		sa.sa_flags = 0;
+		sa.sa_handler = handler_usr2;
+		if (sigaction(SIGUSR2, &sa, NULL) == -1) {
+			fprintf(stderr, "!unable to create signal handler for SIGUSR2\n");
+		}
 	}
 #else
 #ifdef _MSC_VER
@@ -793,6 +888,8 @@ main(int argc, char **av)
 		fprintf(stderr, "!unable to create signal handlers\n");
 	if (signal(SIGUSR1, handler_usr1) == SIG_ERR)
 		fprintf(stderr, "!unable to create signal handler for SIGUSR1\n");
+	if (signal(SIGUSR2, handler_usr2) == SIG_ERR)
+		fprintf(stderr, "!unable to create signal handler for SIGUSR2\n");
 #endif
 #endif
 
@@ -844,7 +941,6 @@ main(int argc, char **av)
 			if (!GDKinmemory(0))
 				msab_registerStop();
 			fprintf(stderr, "%s\n", err);
-			freeException(err);
 			exit(1);
 		}
 		if (readpwdxit) {
@@ -860,16 +956,20 @@ main(int argc, char **av)
 			*secretp = '\0';
 		}
 	}
-
+	assert(MT_thread_getallocator() != NULL);
 	modules[mods++] = 0;
 	if (mal_init(modules, false, readpwdxit ? secret : NULL, mercurial_revision())) {
 		/* don't show this as a crash */
 		if (!GDKinmemory(0))
 			msab_registerStop();
+		ma_destroy(MT_thread_getallocator());
+		MT_thread_setallocator(NULL);
 		return 1;
 	}
 	if (readpwdxit) {
 		msab_registerStop();
+		ma_destroy(MT_thread_getallocator());
+		MT_thread_setallocator(NULL);
 		return 0;
 	}
 
@@ -884,6 +984,8 @@ main(int argc, char **av)
 	/* return all our free bats to global pool */
 	BBPrelinquishbats();
 
+	GDKusr1triggerCB(usr1trigger);
+
 #ifdef _MSC_VER
 	printf("# MonetDB server is started. To stop server press Ctrl-C.\n");
 	fflush(stdout);
@@ -895,6 +997,19 @@ main(int argc, char **av)
 			/* print some useful information */
 			GDKprintinfo();
 			fflush(stdout);
+		}
+		if (usr2_interrupted) {
+			usr2_interrupted = 0;
+#ifdef WITH_MALLOC
+#ifdef WITH_JEMALLOC
+			malloc_stats_print(writecb, NULL, "");
+#endif
+#ifdef WITH_MIMALLOC
+			mi_stats_print_out(writecb, NULL);
+#endif
+#elif defined(HAVE_MALLOC_INFO)
+			malloc_info(0, stdout);
+#endif
 		}
 		MT_sleep_ms(100);		/* pause(), except for sys.shutdown() */
 	}

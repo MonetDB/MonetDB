@@ -3,11 +3,9 @@
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024, 2025 MonetDB Foundation;
- * Copyright August 2008 - 2023 MonetDB B.V.;
- * Copyright 1997 - July 2008 CWI.
+ * For copyright information, see the file debian/copyright.
  */
 
 #include "monetdb_config.h"
@@ -37,10 +35,14 @@ const uint8_t utf8d[] = {
 
 	// The second part is a transition table that maps a combination
 	// of a state of the automaton and a character class to a state.
-	 0,12,24,36,60,96,84,12,12,12,48,72, 12,12,12,12,12,12,12,12,12,12,12,12,
-	12, 0,12,12,12,12,12, 0,12, 0,12,12, 12,24,12,12,12,12,12,24,12,24,12,12,
-	12,12,12,12,12,12,12,24,12,12,12,12, 12,24,12,12,12,12,12,12,12,24,12,12,
-	12,12,12,12,12,12,12,36,12,36,12,12, 12,36,12,12,12,12,12,36,12,36,12,12,
+	 0,12,24,36,60,96,84,12,12,12,48,72,
+	12,12,12,12,12,12,12,12,12,12,12,12,
+	12, 0,12,12,12,12,12, 0,12, 0,12,12,
+	12,24,12,12,12,12,12,24,12,24,12,12,
+	12,12,12,12,12,12,12,24,12,12,12,12,
+	12,24,12,12,12,12,12,12,12,24,12,12,
+	12,12,12,12,12,12,12,36,12,36,12,12,
+	12,36,12,12,12,12,12,36,12,36,12,12,
 	12,36,12,12,12,12,12,12,12,12,12,12,
 };
 /* end code copyright by Bjoern Hoehrmann */

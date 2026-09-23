@@ -3,11 +3,9 @@
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024, 2025 MonetDB Foundation;
- * Copyright August 2008 - 2023 MonetDB B.V.;
- * Copyright 1997 - July 2008 CWI.
+ * For copyright information, see the file debian/copyright.
  */
 
 #ifndef _MAL_FCN_H
@@ -22,8 +20,7 @@
 #define getBeginScope(L,I)	((L)->var[I].declared)
 
 mal_export Symbol newFunction(const char *mod, const char *nme, int kind);
-mal_export Symbol newFunctionArgs(const char *mod, const char *nme, int kind,
-								  int args);
+mal_export Symbol newFunctionArgs(const char *mod, const char *nme, int kind, int args);
 mal_export int getPC(MalBlkPtr mb, InstrPtr p);
 
 mal_export str chkFlow(MalBlkPtr mb);
@@ -35,8 +32,6 @@ mal_export int getBlockBegin(MalBlkPtr mb, int pc);
 mal_export void setVariableScope(MalBlkPtr mb);
 
 mal_export void printFunction(stream *fd, MalBlkPtr mb, MalStkPtr stk, int flg);
-mal_export void traceFunction(component_t comp, MalBlkPtr mb, MalStkPtr stk,
-							  int flg);
 mal_export void debugFunction(stream *fd, MalBlkPtr mb, MalStkPtr stk, int flg,
 							  int first, int size);
 

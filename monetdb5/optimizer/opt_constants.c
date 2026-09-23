@@ -3,11 +3,9 @@
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024, 2025 MonetDB Foundation;
- * Copyright August 2008 - 2023 MonetDB B.V.;
- * Copyright 1997 - July 2008 CWI.
+ * For copyright information, see the file debian/copyright.
  */
 
 /*
@@ -33,7 +31,7 @@
 #include "opt_constants.h"
 
 str
-OPTconstantsImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
+OPTconstantsImplementation(Client ctx, MalBlkPtr mb, MalStkPtr stk,
 						   InstrPtr pci)
 {
 	int i, j, k = 1, n = 0, fnd = 0, actions = 0, limit = 0;
@@ -41,14 +39,16 @@ OPTconstantsImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 	VarPtr x, y, *cst = NULL;
 	str msg = MAL_SUCCEED;
 	InstrPtr p, q;
+	allocator *ta = MT_thread_getallocator();
 
-	if (isSimpleSQL(mb)) {
-		goto wrapup;
+	if (isSimpleSQL(mb) || MB_LARGE(mb)) {
+		goto wrapup1;
 	}
-	alias = (int *) GDKzalloc(sizeof(int) * mb->vtop);
-	cand = (int *) GDKzalloc(sizeof(int) * mb->vtop);
-	cst = (VarPtr *) GDKzalloc(sizeof(VarPtr) * mb->vtop);
-	index = (int *) GDKzalloc(sizeof(int) * mb->vtop);
+	allocator_state ta_state = ma_open(ta);
+	alias = (int *) ma_zalloc(ta, sizeof(int) * mb->vtop);
+	cand = (int *) ma_zalloc(ta, sizeof(int) * mb->vtop);
+	cst = (VarPtr *) ma_zalloc(ta, sizeof(VarPtr) * mb->vtop);
+	index = (int *) ma_zalloc(ta, sizeof(int) * mb->vtop);
 
 	if (alias == NULL || cst == NULL || index == NULL || cand == NULL) {
 		msg = createException(MAL, "optimizer.constants",
@@ -57,7 +57,7 @@ OPTconstantsImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 	}
 
 	(void) stk;
-	(void) cntxt;
+	(void) ctx;
 
 	for (i = 0; i < mb->stop; i++) {
 		q = getInstrPtr(mb, i);
@@ -91,8 +91,8 @@ OPTconstantsImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 					if (x->type == y->type && x->rowcnt == y->rowcnt
 						&& x->value.vtype == y->value.vtype
 						&& (x->value.vtype == TYPE_any
-						|| ATOMcmp(x->value.vtype, VALptr(&x->value),
-								   VALptr(&y->value)) == 0)) {
+						|| ATOMeq(x->value.vtype, VALptr(&x->value),
+								  VALptr(&y->value)))) {
 
 						/* reuse a constant */
 						alias[i] = index[k];
@@ -117,23 +117,16 @@ OPTconstantsImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 
 	/* Defense line against incorrect plans */
 	/* Plan remains unaffected */
-	// msg = chkTypes(cntxt->usermodule, mb, FALSE);
+	// msg = chkTypes(ctx->usermodule, mb, FALSE);
 	// if (!msg)
 	//      msg = chkFlow(mb);
 	// if(!msg)
 	//      msg = chkDeclarations(mb);
 	/* keep all actions taken as a post block comment */
   wrapup:
+	ma_close(&ta_state);
+  wrapup1:
 	/* keep actions taken as a fake argument */
 	(void) pushInt(mb, pci, actions);
-
-	if (cand)
-		GDKfree(cand);
-	if (alias)
-		GDKfree(alias);
-	if (cst)
-		GDKfree(cst);
-	if (index)
-		GDKfree(index);
 	return msg;
 }

@@ -3,11 +3,9 @@
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024, 2025 MonetDB Foundation;
- * Copyright August 2008 - 2023 MonetDB B.V.;
- * Copyright 1997 - July 2008 CWI.
+ * For copyright information, see the file debian/copyright.
  */
 
 #ifndef _MAPI_H_INCLUDED
@@ -69,11 +67,15 @@ extern "C" {
 #define mapi_export extern
 #endif
 
-#ifndef __GNUC__
-/* This feature is available in gcc versions 2.5 and later.  */
-# ifndef __attribute__
-#  define __attribute__(Spec)	/* empty */
-# endif
+/* Does your compiler support `__attribute__' extension? */
+#if !defined(__has_attribute)
+#ifndef __attribute__
+#define __attribute__(...)
+#endif
+#else
+#if !__has_attribute(__nonnull__)
+#define __nonnull__(...)
+#endif
 #endif
 
 /* connection-oriented functions */

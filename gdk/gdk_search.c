@@ -3,11 +3,9 @@
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024, 2025 MonetDB Foundation;
- * Copyright August 2008 - 2023 MonetDB B.V.;
- * Copyright 1997 - July 2008 CWI.
+ * For copyright information, see the file debian/copyright.
  */
 
 /*
@@ -53,8 +51,10 @@
 #include "gdk.h"
 #include "gdk_private.h"
 
-#define VALUE(x)	(vars ?					\
-			 vars + VarHeapVal(vals, (x), width) :	\
+#define VALUE(x)	(vars ?						\
+			 (off = VarHeapVal(vals, (x), width)) == 0 ?	\
+			 nil :						\
+			 vars + off :					\
 			 (const char *) vals + ((x) * width))
 
 #define bte_LT(a, b)	((a) < (b))
@@ -88,16 +88,16 @@
 #define flt_LE(a, b)	(is_flt_nil(a) || (!is_flt_nil(b) && (a) <= (b)))
 #define flt_GT(a, b)	(!is_flt_nil(a) && (is_flt_nil(b) || (a) > (b)))
 #define flt_GE(a, b)	(is_flt_nil(b) || (!is_flt_nil(a) && (a) >= (b)))
-#define flt_EQ(a, b)	(is_flt_nil(a) ? is_flt_nil(b) : !is_flt_nil(b) && (a) == (b))
+#define flt_EQ(a, b)	is_flt_eq(a, b)
 #define dbl_LT(a, b)	(!is_dbl_nil(b) && (is_dbl_nil(a) || (a) < (b)))
 #define dbl_LE(a, b)	(is_dbl_nil(a) || (!is_dbl_nil(b) && (a) <= (b)))
 #define dbl_GT(a, b)	(!is_dbl_nil(a) && (is_dbl_nil(b) || (a) > (b)))
 #define dbl_GE(a, b)	(is_dbl_nil(b) || (!is_dbl_nil(a) && (a) >= (b)))
-#define dbl_EQ(a, b)	(is_dbl_nil(a) ? is_dbl_nil(b) : !is_dbl_nil(b) && (a) == (b))
+#define dbl_EQ(a, b)	is_dbl_eq(a, b)
 
 #define BINSEARCHFUNC(TYPE)						\
 BUN									\
-binsearch_##TYPE(const oid *restrict indir, oid offset,			\
+binsearch_##TYPE(const oid *restrict indir,				\
 		 const TYPE *restrict vals, BUN lo, BUN hi, TYPE v,	\
 		 int ordering, int last)				\
 {									\
@@ -110,10 +110,10 @@ binsearch_##TYPE(const oid *restrict indir, oid offset,			\
 	if (ordering > 0) {						\
 		if (indir) {						\
 			if (last > 0) {					\
-				x = vals[indir[lo] - offset];		\
+				x = vals[indir[lo]];			\
 				if (TYPE##_GT(x, v))			\
 					return lo;			\
-				x = vals[indir[hi] - offset];		\
+				x = vals[indir[hi]];			\
 				if (TYPE##_LE(x, v))			\
 					return hi + 1;			\
 									\
@@ -121,17 +121,17 @@ binsearch_##TYPE(const oid *restrict indir, oid offset,			\
 				/* value@lo <= v < value@hi */		\
 				while (hi - lo > 1) {			\
 					mid = (hi + lo) / 2;		\
-					x = vals[indir[mid] - offset];	\
+					x = vals[indir[mid]];		\
 					if (TYPE##_GT(x, v))		\
 						hi = mid;		\
 					else				\
 						lo = mid;		\
 				}					\
 			} else {					\
-				x = vals[indir[lo] - offset];		\
+				x = vals[indir[lo]];			\
 				if (TYPE##_GE(x, v))			\
 					return last == 0 || TYPE##_EQ(x, v) ? lo : BUN_NONE; \
-				x = vals[indir[hi] - offset];		\
+				x = vals[indir[hi]];			\
 				if (TYPE##_LT(x, v))			\
 					return last == 0 ? hi + 1 : BUN_NONE; \
 									\
@@ -139,7 +139,7 @@ binsearch_##TYPE(const oid *restrict indir, oid offset,			\
 				/* value@lo < v <= value@hi */		\
 				while (hi - lo > 1) {			\
 					mid = (hi + lo) / 2;		\
-					x = vals[indir[mid] - offset];	\
+					x = vals[indir[mid]];		\
 					if (TYPE##_GE(x, v))		\
 						hi = mid;		\
 					else				\
@@ -188,10 +188,10 @@ binsearch_##TYPE(const oid *restrict indir, oid offset,			\
 	} else {							\
 		if (indir) {						\
 			if (last > 0) {					\
-				x = vals[indir[lo] - offset];		\
+				x = vals[indir[lo]];			\
 				if (TYPE##_LT(x, v))			\
 					return lo;			\
-				x = vals[indir[hi] - offset];		\
+				x = vals[indir[hi]];			\
 				if (TYPE##_GE(x, v))			\
 					return hi + 1;			\
 									\
@@ -199,17 +199,17 @@ binsearch_##TYPE(const oid *restrict indir, oid offset,			\
 				/* value@lo >= v > value@hi */		\
 				while (hi - lo > 1) {			\
 					mid = (hi + lo) / 2;		\
-					x = vals[indir[mid] - offset];	\
+					x = vals[indir[mid]];		\
 					if (TYPE##_LT(x, v))		\
 						hi = mid;		\
 					else				\
 						lo = mid;		\
 				}					\
 			} else {					\
-				x = vals[indir[lo] - offset];		\
+				x = vals[indir[lo]];			\
 				if (TYPE##_LE(x, v))			\
 					return last == 0 || TYPE##_EQ(x, v) ? lo : BUN_NONE; \
-				x = vals[indir[hi] - offset];		\
+				x = vals[indir[hi]];			\
 				if (TYPE##_GT(x, v))			\
 					return last == 0 ? hi + 1 : BUN_NONE; \
 									\
@@ -217,7 +217,7 @@ binsearch_##TYPE(const oid *restrict indir, oid offset,			\
 				/* value@lo > v >= value@hi */		\
 				while (hi - lo > 1) {			\
 					mid = (hi + lo) / 2;		\
-					x = vals[indir[mid] - offset];	\
+					x = vals[indir[mid]];		\
 					if (TYPE##_LE(x, v))		\
 						hi = mid;		\
 					else				\
@@ -264,7 +264,7 @@ binsearch_##TYPE(const oid *restrict indir, oid offset,			\
 			}						\
 		}							\
 	}								\
-	return last >= 0 || (x = (indir ? vals[indir[hi] - offset] : vals[hi]), TYPE##_EQ(x, v)) ? hi : BUN_NONE; \
+	return last >= 0 || (x = (indir ? vals[indir[hi]] : vals[hi]), TYPE##_EQ(x, v)) ? hi : BUN_NONE; \
 }
 
 BINSEARCHFUNC(bte)
@@ -298,14 +298,13 @@ realign_tags(void)
  * all comparisons are reversed.
  */
 BUN
-binsearch(const oid *restrict indir, oid offset,
+binsearch(const oid *restrict indir,
 	  int type, const void *restrict vals, const char * restrict vars,
 	  int width, BUN lo, BUN hi, const void *restrict v,
 	  int ordering, int last)
 {
 	BUN mid;
 	int c;
-	int (*cmp)(const void *, const void *);
 
 	assert(ordering == 1 || ordering == -1);
 	assert(lo < hi);
@@ -315,48 +314,50 @@ binsearch(const oid *restrict indir, oid offset,
 	switch (ATOMbasetype(type)) {
 		/* TYPE_oid is covered by TYPE_int/TYPE_lng */
 	case TYPE_bte:
-		return binsearch_bte(indir, offset, (const bte *) vals,
+		return binsearch_bte(indir, (const bte *) vals,
 				     lo, hi, *(const bte *) v, ordering, last);
 	case TYPE_sht:
-		return binsearch_sht(indir, offset, (const sht *) vals,
+		return binsearch_sht(indir, (const sht *) vals,
 				     lo, hi, *(const sht *) v, ordering, last);
 	case TYPE_int:
-		return binsearch_int(indir, offset, (const int *) vals,
+		return binsearch_int(indir, (const int *) vals,
 				     lo, hi, *(const int *) v, ordering, last);
 	case TYPE_lng:
-		return binsearch_lng(indir, offset, (const lng *) vals,
+		return binsearch_lng(indir, (const lng *) vals,
 				     lo, hi, *(const lng *) v, ordering, last);
 #ifdef HAVE_HGE
 	case TYPE_hge:
-		return binsearch_hge(indir, offset, (const hge *) vals,
+		return binsearch_hge(indir, (const hge *) vals,
 				     lo, hi, *(const hge *) v, ordering, last);
 #endif
 	case TYPE_flt:
-		return binsearch_flt(indir, offset, (const flt *) vals,
+		return binsearch_flt(indir, (const flt *) vals,
 				     lo, hi, *(const flt *) v, ordering, last);
 	case TYPE_dbl:
-		return binsearch_dbl(indir, offset, (const dbl *) vals,
+		return binsearch_dbl(indir, (const dbl *) vals,
 				     lo, hi, *(const dbl *) v, ordering, last);
 	}
 
-	cmp = ATOMcompare(type);
+	int (*cmp)(const void *, const void *) = ATOMcompare(type);
+	var_t off;
+	const void *nil = ATOMnilptr(type);
 
 	if (last > 0) {
-		if ((c = ordering * cmp(VALUE(indir ? indir[lo] - offset : lo), v)) > 0)
+		if ((c = ordering * cmp(VALUE(indir ? indir[lo] : lo), v)) > 0)
 			return lo;
-		if ((c = ordering * cmp(VALUE(indir ? indir[hi] - offset : hi), v)) <= 0)
+		if ((c = ordering * cmp(VALUE(indir ? indir[hi] : hi), v)) <= 0)
 			return hi + 1;
 	} else if (last == 0) {
-		if ((c = ordering * cmp(VALUE(indir ? indir[lo] - offset : lo), v)) >= 0)
+		if ((c = ordering * cmp(VALUE(indir ? indir[lo] : lo), v)) >= 0)
 			return lo;
-		if ((c = ordering * cmp(VALUE(indir ? indir[hi] - offset : hi), v)) < 0)
+		if ((c = ordering * cmp(VALUE(indir ? indir[hi] : hi), v)) < 0)
 			return hi + 1;
 	} else {
-		if ((c = ordering * cmp(VALUE(indir ? indir[lo] - offset : lo), v)) > 0)
+		if ((c = ordering * cmp(VALUE(indir ? indir[lo] : lo), v)) > 0)
 			return BUN_NONE;
 		if (c == 0)
 			return lo;
-		if ((c = ordering * cmp(VALUE(indir ? indir[hi] - offset : hi), v)) < 0)
+		if ((c = ordering * cmp(VALUE(indir ? indir[hi] : hi), v)) < 0)
 			return BUN_NONE;
 		if (c == 0)
 			return hi;
@@ -376,13 +377,13 @@ binsearch(const oid *restrict indir, oid offset,
 	 * vars (in VALUE()) already, so we're beyond caring. */
 	while (hi - lo > 1) {
 		mid = (hi + lo) / 2;
-		if ((c = ordering * cmp(VALUE(indir ? indir[mid] - offset : mid), v)) > 0 ||
+		if ((c = ordering * cmp(VALUE(indir ? indir[mid] : mid), v)) > 0 ||
 		    (last <= 0 && c == 0))
 			hi = mid;
 		else
 			lo = mid;
 	}
-	return last >= 0 || cmp(VALUE(indir ? indir[hi] - offset : hi), v) == 0 ? hi : BUN_NONE;
+	return last >= 0 || cmp(VALUE(indir ? indir[hi] : hi), v) == 0 ? hi : BUN_NONE;
 }
 
 /* Return the BUN of any tail value in b that is equal to v; if no
@@ -412,7 +413,7 @@ SORTfnd(BAT *b, const void *v)
 		return BUN_NONE;
 	}
 	BATiter bi = bat_iterator(b);
-	BUN p =  binsearch(NULL, 0, bi.type, bi.base,
+	BUN p =  binsearch(NULL, bi.type, bi.base,
 			   bi.vh ? bi.vh->base : NULL, bi.width, 0,
 			   bi.count, v, bi.sorted ? 1 : -1, -1);
 	bat_iterator_end(&bi);
@@ -426,7 +427,7 @@ ORDERfnd(BAT *b, Heap *oidxh, const void *v)
 	if (BATcount(b) == 0)
 		return BUN_NONE;
 	BATiter bi = bat_iterator(b);
-	BUN p = binsearch((oid *) oidxh->base + ORDERIDXOFF, 0, bi.type,
+	BUN p = binsearch((oid *) oidxh->base + ORDERIDXOFF, bi.type,
 			  bi.base, bi.vh ? bi.vh->base : NULL,
 			  bi.width, 0, bi.count, v, 1, -1);
 	bat_iterator_end(&bi);
@@ -458,7 +459,7 @@ SORTfndfirst(BAT *b, const void *v)
 		return 0;
 	}
 	BATiter bi = bat_iterator(b);
-	BUN p = binsearch(NULL, 0, bi.type, bi.base,
+	BUN p = binsearch(NULL, bi.type, bi.base,
 			  bi.vh ? bi.vh->base : NULL, bi.width, 0,
 			  bi.count, v, bi.sorted ? 1 : -1, 0);
 	bat_iterator_end(&bi);
@@ -472,7 +473,7 @@ ORDERfndfirst(BAT *b, Heap *oidxh, const void *v)
 	if (BATcount(b) == 0)
 		return 0;
 	BATiter bi = bat_iterator(b);
-	BUN p = binsearch((oid *) oidxh->base + ORDERIDXOFF, 0, bi.type,
+	BUN p = binsearch((oid *) oidxh->base + ORDERIDXOFF, bi.type,
 			  bi.base, bi.vh ? bi.vh->base : NULL,
 			  bi.width, 0, bi.count, v, 1, 0);
 	bat_iterator_end(&bi);
@@ -505,7 +506,7 @@ SORTfndlast(BAT *b, const void *v)
 		return BATcount(b);
 	}
 	BATiter bi = bat_iterator(b);
-	BUN p = binsearch(NULL, 0, bi.type, bi.base,
+	BUN p = binsearch(NULL, bi.type, bi.base,
 			  bi.vh ? bi.vh->base : NULL, bi.width, 0,
 			  bi.count, v, bi.sorted ? 1 : -1, 1);
 	bat_iterator_end(&bi);
@@ -519,7 +520,7 @@ ORDERfndlast(BAT *b, Heap *oidxh, const void *v)
 	if (BATcount(b) == 0)
 		return 0;
 	BATiter bi = bat_iterator(b);
-	BUN p = binsearch((oid *) oidxh->base + ORDERIDXOFF, 0, bi.type,
+	BUN p = binsearch((oid *) oidxh->base + ORDERIDXOFF, bi.type,
 			  bi.base, bi.vh ? bi.vh->base : NULL,
 			  bi.width, 0, bi.count, v, 1, 1);
 	bat_iterator_end(&bi);

@@ -4,7 +4,7 @@ create table analytics (aa int, bb int)
 statement ok
 insert into analytics values (15, 3), (3, 1), (2, 1), (5, 3), (NULL, 2), (3, 2), (4, 1), (6, 3), (8, 2), (NULL, 4)
 
-query III rowsort
+query III nosort
 select cast(sum(1) over () as bigint), rank() over (), nth_value(1, 1) over ()
 ----
 1
@@ -14,12 +14,12 @@ select cast(sum(1) over () as bigint), rank() over (), nth_value(1, 1) over ()
 statement error
 select avg(sum(aa) over ()) from analytics
 
-query I rowsort
+query I nosort
 select cast(sum(1) * count(*) over () as bigint)
 ----
 1
 
-query I rowsort
+query I nosort
 select cast(sum(aa) * count(*) over () as bigint) from analytics
 ----
 46
@@ -38,76 +38,76 @@ select cast(aa * count(1) over () as bigint) from analytics
 NULL
 NULL
 
-query I rowsort
+query I nosort
 select cast(sum(aa) * count(1) over () as bigint) from analytics
 ----
 46
 
-query I rowsort
+query I nosort
 select cast(sum(aa) * count(1 + aa) / avg(1) over () as bigint) from analytics
 ----
 368
 
-query R rowsort
+query R nosort
 select avg(sum(aa)) over () from analytics
 ----
 46.000
 
-query R rowsort
-select sum(cast(aa as double)) over (rows unbounded preceding) from analytics
+query R nosort
+select sum(cast(aa as double)) over (order by aa nulls first rows unbounded preceding) from analytics order by 1 nulls first
 ----
-15.000
-18.000
-20.000
-25.000
-25.000
-28.000
-32.000
-38.000
-46.000
+NULL
+NULL
+2.000
+5.000
+8.000
+12.000
+17.000
+23.000
+31.000
 46.000
 
-query R rowsort
-select sum(cast(aa as double)) over (range unbounded preceding) from analytics
+query R nosort
+select sum(cast(aa as double)) over (order by aa nulls first range unbounded preceding) from analytics order by 1 nulls first
 ----
-46.000
-46.000
-46.000
-46.000
-46.000
-46.000
-46.000
-46.000
-46.000
+NULL
+NULL
+2.000
+8.000
+8.000
+12.000
+17.000
+23.000
+31.000
 46.000
 
-query R rowsort
+query R nosort
 select avg(avg(aa)) over (rows unbounded preceding) from analytics
 ----
 5.750
 
-query R rowsort
+query R nosort
 select avg(avg(aa)) over (range unbounded preceding) from analytics
 ----
 5.750
 
-query R rowsort
+query R nosort
 select avg(sum(aa)) over (rows unbounded preceding) from analytics
 ----
 46.000
 
-query R rowsort
+query R nosort
 select avg(sum(aa)) over (range unbounded preceding) from analytics
 ----
 46.000
 
-query RR rowsort
+query RR nosort
 select avg(sum(aa)) over (), avg(avg(aa)) over () from analytics
 ----
 46.000
 5.750
 
-query RIRR rowsort
+query RIRR nosort
 select avg(sum(aa)) over (),
        cast(sum(aa) * count(case when bb < 2 then bb - 1 else bb + 1 end) / avg(1) over (rows between current row and current row) as bigint),
        avg(sum(aa)) over (rows unbounded preceding),
@@ -118,7 +118,7 @@ select avg(sum(aa)) over (),
 46.000
 46.000
 
-query R rowsort
+query R nosort
 select avg(sum(aa)) over () from analytics group by aa
 ----
 6.571
@@ -131,7 +131,7 @@ select avg(sum(aa)) over () from analytics group by aa
 6.571
 
 query I nosort
-select cast(sum(aa) * count(aa) / avg(aa) over (order by aa desc rows between current row and unbounded following) as bigint) from analytics group by aa
+select cast(sum(aa) * count(aa) / avg(aa) over (order by aa desc nulls last rows between current row and unbounded following) as bigint) from analytics group by aa order by aa desc nulls last
 ----
 2
 2
@@ -143,35 +143,35 @@ select cast(sum(aa) * count(aa) / avg(aa) over (order by aa desc rows between cu
 NULL
 
 query RRIR nosort
-select avg(sum(aa)) over ( order by aa desc),
-       avg(sum(aa)) over (rows unbounded preceding),
-       cast(sum(aa) * count(aa) / avg(aa) over (rows between current row and unbounded following) as bigint),
-       avg(sum(aa)) over (range unbounded preceding) from analytics group by aa
+select avg(sum(aa)) over ( order by aa desc nulls last),
+       avg(sum(aa)) over (order by aa desc nulls last rows unbounded preceding),
+       cast(sum(aa) * count(aa) / avg(aa) over (order by aa desc nulls last rows between current row and unbounded following) as bigint),
+       avg(sum(aa)) over (order by aa desc nulls last range unbounded preceding) from analytics group by aa order by aa desc nulls last
 ----
 15.000
 15.000
 2
-6.571
+15.000
 11.500
 11.500
 2
-6.571
+11.500
 9.667
 9.667
 2
-6.571
+9.667
 8.500
 8.500
 1
-6.571
+8.500
 7.600
 7.600
 1
-6.571
+7.600
 7.333
 7.333
 5
-6.571
+7.333
 6.571
 6.571
 1
@@ -181,54 +181,56 @@ select avg(sum(aa)) over ( order by aa desc),
 NULL
 6.571
 
-query II rowsort
+query II nosort
 select cast(sum(aa) * count(aa) over () as bigint),
-       cast(sum(aa) over () as bigint) from analytics group by aa
+       cast(sum(aa) over () as bigint) from analytics group by aa order by aa desc nulls last
 ----
 105
 43
-14
+56
 43
-28
+42
 43
 35
 43
-42
+28
 43
 42
 43
-56
+14
 43
 NULL
 43
 
-query II rowsort
+query II nosort
 select cast(sum(sum(aa)) over () as bigint),
-       cast(sum(aa) * count(count(aa)) over () as bigint) from analytics group by aa
+       cast(sum(aa) * count(count(aa)) over () as bigint) from analytics group by aa order by aa desc nulls last
 ----
 46
 120
 46
-16
+64
 46
-32
+48
 46
 40
 46
-48
+32
 46
 48
 46
-64
+16
 46
 NULL
 
-query IR rowsort
+query IR nosort
 select count(aa) over (),
-       avg(aa) over () * count(aa) from analytics group by aa
+       avg(aa) over () * count(aa) from analytics group by aa order by aa nulls first
 ----
 7
 0.000
+7
+6.143
 7
 12.286
 7
@@ -241,84 +243,82 @@ select count(aa) over (),
 6.143
 7
 6.143
-7
-6.143
 
-query III rowsort
+query III nosort
 select cast(sum(aa) over () as bigint),
        cast(sum(aa) over () as bigint),
-       cast(sum(aa) * count(aa) over () as bigint) from analytics group by aa
+       cast(sum(aa) * count(aa) over () as bigint) from analytics group by aa order by aa desc nulls last
 ----
 43
 43
 105
 43
 43
-14
+56
 43
 43
-28
+42
 43
 43
 35
 43
 43
-42
+28
 43
 43
 42
 43
 43
-56
+14
 43
 43
 NULL
 
-query RRI rowsort
+query RRI nosort
 select 21 - avg(sum(aa)) over (),
        avg(45 * count(aa) + sum(aa)) over (),
-       cast(sum(aa) * count(aa) over () as bigint) from analytics group by aa
+       cast(sum(aa) * count(aa) over () as bigint) from analytics group by aa order by aa desc nulls last
 ----
 14.429
 58.000
 105
 14.429
 58.000
-14
+56
 14.429
 58.000
-28
+42
 14.429
 58.000
 35
 14.429
 58.000
-42
+28
 14.429
 58.000
 42
 14.429
 58.000
-56
+14
 14.429
 58.000
 NULL
 
-query R rowsort
-select avg(sum(aa)) over (partition by bb) from analytics group by bb
+query R sort
+select avg(sum(aa)) over (partition by bb) from analytics group by bb order by bb
 ----
+9.000
 11.000
 26.000
-9.000
 NULL
 
-query I rowsort
+query I nosort
 select cast(sum(aa) * 100 / sum(sum(aa)) over () as bigint) from analytics
 ----
 100
 
-query I rowsort
-select cast(sum(aa) * 100 / sum(sum(aa)) over (partition by bb) as bigint) from analytics group by bb
+query I nosort
+select cast(sum(aa) * 100 / sum(sum(aa)) over (partition by bb) as bigint) from analytics group by bb order by bb
 ----
 100
 100
@@ -337,7 +337,7 @@ select avg(sum(aa) over ()) over () from analytics
 statement error
 select avg(aa) over (partition by sum(aa) over ()) from analytics
 
-query I rowsort
+query I nosort
 select rank() over (partition by case when aa > 5 then aa else aa + 5 end) from analytics
 ----
 1
@@ -351,17 +351,17 @@ select rank() over (partition by case when aa > 5 then aa else aa + 5 end) from 
 1
 1
 
-query I rowsort
+query I nosort
 select rank() over (partition by sum(aa)) from analytics
 ----
 1
 
-query I rowsort
+query I nosort
 select rank() over (partition by 12*sum(aa)) from analytics
 ----
 1
 
-query I rowsort
+query I nosort
 select rank() over (partition by sum(aa)) from analytics group by aa
 ----
 1
@@ -373,7 +373,7 @@ select rank() over (partition by sum(aa)) from analytics group by aa
 1
 1
 
-query I rowsort
+query I nosort
 select rank() over (partition by sum(aa)) from analytics group by bb
 ----
 1
@@ -381,17 +381,17 @@ select rank() over (partition by sum(aa)) from analytics group by bb
 1
 1
 
-query I rowsort
+query I nosort
 select rank() over (partition by sum(aa)*sum(bb)) from analytics
 ----
 1
 
-query I rowsort
+query I nosort
 select rank() over (partition by sum(aa), sum(bb)) from analytics
 ----
 1
 
-query I rowsort
+query I nosort
 select rank() over (partition by sum(aa), sum(bb)) from analytics group by aa
 ----
 1
@@ -433,7 +433,7 @@ select dense_rank() over (partition by sum(aa) order by avg(bb)) from analytics
 ----
 1
 
-query RI rowsort
+query RI nosort
 select avg(sum(aa)) over (rows unbounded preceding),
        rank() over (partition by sum(aa)) from analytics
 ----

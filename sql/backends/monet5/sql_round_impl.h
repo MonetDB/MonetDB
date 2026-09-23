@@ -3,11 +3,9 @@
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024, 2025 MonetDB Foundation;
- * Copyright August 2008 - 2023 MonetDB B.V.;
- * Copyright 1997 - July 2008 CWI.
+ * For copyright information, see the file debian/copyright.
  */
 
 #define dec_round_body		FUN(TYPE, dec_round_body)
@@ -29,8 +27,9 @@
 #define batdec2second_interval	FUN(TYPE, batdec2second_interval)
 
 static inline TYPE
-dec_round_body(TYPE v, TYPE r)
+dec_round_body(Client ctx, TYPE v, TYPE r)
 {
+	(void) ctx;
 	TYPE add = r >> 1;
 
 	assert(!ISNIL(TYPE)(v));
@@ -42,8 +41,9 @@ dec_round_body(TYPE v, TYPE r)
 }
 
 str
-dec_round_wrap(TYPE *res, const TYPE *v, const TYPE *r)
+dec_round_wrap(Client ctx, TYPE *res, const TYPE *v, const TYPE *r)
 {
+	(void) ctx;
 	/* basic sanity checks */
 	assert(res && v && r);
 
@@ -52,7 +52,7 @@ dec_round_wrap(TYPE *res, const TYPE *v, const TYPE *r)
 	if (*r <= 0)
 		throw(MAL, "round", SQLSTATE(42000) "Argument 2 to round function must be positive");
 
-	*res = ISNIL(TYPE)(*v) ? NIL(TYPE) : dec_round_body(*v, *r);
+	*res = ISNIL(TYPE)(*v) ? NIL(TYPE) : dec_round_body(ctx, *v, *r);
 	return MAL_SUCCEED;
 }
 
@@ -110,7 +110,7 @@ bat_dec_round_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				dst[i] = NIL(TYPE);
 				nils = true;
 			} else {
-				dst[i] = dec_round_body(x, r);
+				dst[i] = dec_round_body(cntxt, x, r);
 			}
 		}
 	} else {
@@ -122,7 +122,7 @@ bat_dec_round_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				dst[i] = NIL(TYPE);
 				nils = true;
 			} else {
-				dst[i] = dec_round_body(x, r);
+				dst[i] = dec_round_body(cntxt, x, r);
 			}
 		}
 	}
@@ -187,7 +187,7 @@ bat_dec_round_wrap_cst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				dst[i] = NIL(TYPE);
 				nils = true;
 			} else {
-				dst[i] = dec_round_body(x, r);
+				dst[i] = dec_round_body(cntxt, x, r);
 			}
 		}
 	} else {
@@ -205,7 +205,7 @@ bat_dec_round_wrap_cst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				dst[i] = NIL(TYPE);
 				nils = true;
 			} else {
-				dst[i] = dec_round_body(x, r);
+				dst[i] = dec_round_body(cntxt, x, r);
 			}
 		}
 	}
@@ -281,7 +281,7 @@ bat_dec_round_wrap_nocst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 				dst[i] = NIL(TYPE);
 				nils = true;
 			} else {
-				dst[i] = dec_round_body(x, rr);
+				dst[i] = dec_round_body(cntxt, x, rr);
 			}
 		}
 	} else {
@@ -300,7 +300,7 @@ bat_dec_round_wrap_nocst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 				dst[i] = NIL(TYPE);
 				nils = true;
 			} else {
-				dst[i] = dec_round_body(x, rr);
+				dst[i] = dec_round_body(cntxt, x, rr);
 			}
 		}
 	}
@@ -350,8 +350,9 @@ round_body(TYPE v, int d, int s, int r)
 }
 
 str
-round_wrap(TYPE *res, const TYPE *v, const bte *r, const int *d, const int *s)
+round_wrap(Client ctx, TYPE *res, const TYPE *v, const bte *r, const int *d, const int *s)
 {
+	(void) ctx;
 	/* basic sanity checks */
 	assert(res && v && r && d && s);
 
@@ -595,8 +596,9 @@ bailout:
 }
 
 str
-nil_2dec(TYPE *res, const void *val, const int *d, const int *sc)
+nil_2dec(Client ctx, TYPE *res, const void *val, const int *d, const int *sc)
 {
+	(void) ctx;
 	(void) val;
 	(void) d;
 	(void) sc;
@@ -606,8 +608,9 @@ nil_2dec(TYPE *res, const void *val, const int *d, const int *sc)
 }
 
 static inline str
-str_2dec_body(TYPE *res, const char *val, const int d, const int sc)
+str_2dec_body(Client ctx, TYPE *res, const char *val, const int d, const int sc)
 {
+	(void) ctx;
 	const char *s = val;
 	int digits;
 	int scale;
@@ -662,41 +665,35 @@ str_2dec_body(TYPE *res, const char *val, const int d, const int sc)
 }
 
 str
-str_2dec(TYPE *res, const str *val, const int *d, const int *sc)
+str_2dec(Client ctx, TYPE *res, const str *val, const int *d, const int *sc)
 {
+	(void) ctx;
 	str v = *val;
 
 	if (strNil(v)) {
 		*res = NIL(TYPE);
 		return MAL_SUCCEED;
 	} else {
-		return str_2dec_body(res, v, *d, *sc);
+		return str_2dec_body(ctx, res, v, *d, *sc);
 	}
 }
 
 str
-batnil_2dec(bat *res, const bat *bid, const int *d, const int *sc)
+batnil_2dec(Client ctx, bat *res, const bat *bid, const int *d, const int *sc)
 {
+	(void) ctx;
 	BAT *b, *dst;
-	BUN p, q;
 
 	(void) d;
 	(void) sc;
 	if ((b = BATdescriptor(*bid)) == NULL) {
 		throw(SQL, "batcalc.nil_2dec_" STRING(TYPE), SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	}
-	dst = COLnew(b->hseqbase, TPE(TYPE), BATcount(b), TRANSIENT);
+	const TYPE r = NIL(TYPE);
+	dst = BATconstant(0, TPE(TYPE), &r, BATcount(b), TRANSIENT);
 	if (dst == NULL) {
 		BBPunfix(b->batCacheid);
 		throw(SQL, "sql.dec_" STRING(TYPE), SQLSTATE(HY013) MAL_MALLOC_FAIL);
-	}
-	const TYPE r = NIL(TYPE);
-	BATloop(b, p, q) {
-		if (BUNappend(dst, &r, false) != GDK_SUCCEED) {
-			BBPunfix(b->batCacheid);
-			BBPreclaim(dst);
-			throw(SQL, "sql.dec_" STRING(TYPE), SQLSTATE(HY013) MAL_MALLOC_FAIL);
-		}
 	}
 	*res = dst->batCacheid;
 	BBPkeepref(dst);
@@ -739,23 +736,23 @@ batstr_2dec(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (ci.tpe == cand_dense) {
 		for (BUN i = 0; i < ci.ncand; i++) {
 			oid p = (canditer_next_dense(&ci) - off);
-			const char *next = BUNtail(bi, p);
+			const char *next = BUNtail(&bi, p);
 
 			if (strNil(next)) {
 				ret[i] = NIL(TYPE);
 				nils = true;
-			} else if ((msg = str_2dec_body(&(ret[i]), next, d, sk)))
+			} else if ((msg = str_2dec_body(cntxt, &(ret[i]), next, d, sk)))
 				goto bailout1;
 		}
 	} else {
 		for (BUN i = 0; i < ci.ncand; i++) {
 			oid p = (canditer_next(&ci) - off);
-			const char *next = BUNtail(bi, p);
+			const char *next = BUNtail(&bi, p);
 
 			if (strNil(next)) {
 				ret[i] = NIL(TYPE);
 				nils = true;
-			} else if ((msg = str_2dec_body(&(ret[i]), next, d, sk)))
+			} else if ((msg = str_2dec_body(cntxt, &(ret[i]), next, d, sk)))
 				goto bailout1;
 		}
 	}
@@ -769,8 +766,9 @@ bailout:
 }
 
 str
-dec2second_interval(lng *res, const int *sc, const TYPE *dec, const int *ek, const int *sk)
+dec2second_interval(Client ctx, lng *res, const int *sc, const TYPE *dec, const int *ek, const int *sk)
 {
+	(void) ctx;
 	BIG value = *dec;
 	int scale = *sc;
 

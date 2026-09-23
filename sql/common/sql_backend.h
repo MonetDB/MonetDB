@@ -3,11 +3,9 @@
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024, 2025 MonetDB Foundation;
- * Copyright August 2008 - 2023 MonetDB B.V.;
- * Copyright 1997 - July 2008 CWI.
+ * For copyright information, see the file debian/copyright.
  */
 
 #ifndef _SQL_BACKEND_H_
@@ -24,7 +22,7 @@ typedef int  (*drop_user_fptr) (ptr mvc, char *user);
 typedef oid  (*find_user_fptr) (ptr mvc, char *user);
 typedef void (*create_privileges_fptr) (ptr mvc, sql_schema *s, const char *initpasswd);
 typedef int  (*schema_has_user_fptr) (ptr mvc, sql_schema *s);
-typedef int  (*alter_user_fptr) (ptr mvc, str user, str passwd, bool enc, sqlid schema_id, char *schema_path, str oldpasswd, sqlid role_id, lng max_memory, int max_workers);
+typedef int  (*alter_user_fptr) (ptr mvc, str user, str passwd, bool enc, sqlid schema_id, char *schema_path, str oldpasswd, sqlid role_id, lng max_memory, int max_workers, str optimizer);
 typedef int  (*rename_user_fptr) (ptr mvc, str olduser, str newuser);
 typedef void*  (*schema_user_dependencies) (ptr mvc, int schema_id);
 typedef void  (*create_function) (ptr mvc, str name, sql_rel *rel, sql_table *t);
@@ -48,6 +46,7 @@ typedef struct _backend_functions {
 	resolve_function fresolve_function;
 	has_module_function fhas_module_function;
 	create_sub_backend sub_backend;
+	void (*setIdle)(int, time_t);
 } backend_functions;
 
 extern void backend_freecode(const char *mod, int clientid, const char *name);
@@ -57,12 +56,13 @@ extern int  backend_drop_user(ptr mvc, char *user);
 extern oid  backend_find_user(ptr mp, char *user);
 extern void backend_create_privileges(ptr mvc, sql_schema *s, const char *initpasswd);
 extern int  backend_schema_has_user(ptr mvc, sql_schema *s);
-extern int	backend_alter_user(ptr mvc, str user, str passwd, bool enc, sqlid schema_id, char *schema_path, str oldpasswd, sqlid role_id, lng max_memory, int max_workers);
+extern int	backend_alter_user(ptr mvc, str user, str passwd, bool enc, sqlid schema_id, char *schema_path, str oldpasswd, sqlid role_id, lng max_memory, int max_workers, char *optimizer);
 extern int	backend_rename_user(ptr mvc, str olduser, str newuser);
 extern void*	backend_schema_user_dependencies(ptr trans, sqlid schema_id);
 extern int	backend_resolve_function(ptr trans, sql_func *f, const char *fimp, bool *side_effect);
 extern int	backend_has_module(ptr M, char *name);
 extern int  backend_find_role(ptr mp, char *role, sqlid *role_id);
+extern void backend_set_idle(int clientid, time_t t);
 
 extern backend_functions be_funcs;
 

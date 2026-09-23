@@ -3,11 +3,9 @@
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024, 2025 MonetDB Foundation;
- * Copyright August 2008 - 2023 MonetDB B.V.;
- * Copyright 1997 - July 2008 CWI.
+ * For copyright information, see the file debian/copyright.
  */
 
 #ifdef _MSC_VER
@@ -214,6 +212,9 @@ const struct {
 		.info = SQL_CONVERT_BIGINT,
 		.name = "SQL_CONVERT_BIGINT",
 		.type = INTEGER,
+#ifndef SQL_CVT_GUID
+#define SQL_CVT_GUID 0
+#endif
 		.i = SQL_CVT_BIGINT | SQL_CVT_BIT | SQL_CVT_CHAR | SQL_CVT_DECIMAL | SQL_CVT_DOUBLE | SQL_CVT_FLOAT | SQL_CVT_INTEGER | SQL_CVT_INTERVAL_YEAR_MONTH | SQL_CVT_INTERVAL_DAY_TIME | SQL_CVT_LONGVARCHAR | SQL_CVT_NUMERIC | SQL_CVT_REAL | SQL_CVT_SMALLINT | SQL_CVT_TINYINT | SQL_CVT_VARCHAR,
 	},
 	{
@@ -663,7 +664,7 @@ const struct {
 			"MATCHED,MAXVALUE,MEDIUMINT,MERGE,MINVALUE,"
 			"NAME,NATIVE,NEW,NOW,NULLS,"
 			"OBJECT,OFFSET,OLD,OPTIONS,ORDERED,OTHERS,OVER,"
-			"PARTITION,PASSWORD,PATH,PLAN,PRECEDING,PREP,QUARTER,"
+			"PARTITION,PASSWORD,PATH,PRECEDING,PREP,QUARTER,"
 			"RANGE,RECORDS,REFERENCING,RELEASE,REMOTE,RENAME,REPEATABLE,"
 			"REPLACE,REPLICA,RESTART,RETURN,RETURNS,ROLE,ROLLUP,ROW,"
 			"SAMPLE,SAVEPOINT,SEED,SEQUENCE,SERIAL,SERIALIZABLE,"

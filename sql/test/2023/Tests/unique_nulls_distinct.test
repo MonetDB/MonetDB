@@ -176,3 +176,4 @@ abc_c4_c2_nndunique
 
 statement ok
 DROP TABLE abc
+

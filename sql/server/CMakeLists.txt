@@ -3,11 +3,9 @@
 #
 # This Source Code Form is subject to the terms of the Mozilla Public
 # License, v. 2.0.  If a copy of the MPL was not distributed with this
-# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+# file, You can obtain one at https://mozilla.org/MPL/2.0/.
 #
-# Copyright 2024, 2025 MonetDB Foundation;
-# Copyright August 2008 - 2023 MonetDB B.V.;
-# Copyright 1997 - July 2008 CWI.
+# For copyright information, see the file debian/copyright.
 #]]
 
 BISON_TARGET(sqlparser
@@ -22,17 +20,13 @@ add_library(sqlserver STATIC)
 set(sqlserver_public_headers
   ${CMAKE_CURRENT_SOURCE_DIR}/sql_parser.h
   ${CMAKE_CURRENT_SOURCE_DIR}/rel_file_loader.h
+  ${CMAKE_CURRENT_SOURCE_DIR}/rel_proto_loader.h
   ${CMAKE_CURRENT_SOURCE_DIR}/sql_mvc.h)
 
 target_sources(sqlserver
   PRIVATE
-  sql_atom.c
-  sql_datetime.c
-  sql_decimal.c
   sql_semantic.c
   sql_qc.c
-  sql_symbol.c
-  sql_scan.c
   sql_partition.c
   sql_mvc.c
   sql_env.c
@@ -57,8 +51,6 @@ target_sources(sqlserver
   rel_optimize_others.c
   rel_optimize_proj.c
   rel_optimize_sel.c
-  rel_partition.c
-  rel_planner.c rel_planner.h
   rel_distribute.c
   rel_remote.c rel_remote.h
   rel_propagate.c rel_propagate.h
@@ -66,6 +58,7 @@ target_sources(sqlserver
   rel_xml.c
   rel_dump.c
   rel_file_loader.c
+  rel_proto_loader.c
   rel_dump.h rel_exp.h rel_rel.h
   rel_basetable.h
   rel_rewriter.h
@@ -73,7 +66,6 @@ target_sources(sqlserver
   rel_optimizer.h
   rel_statistics.h
   rel_optimizer_private.h
-  rel_partition.h
   rel_prop.h
   rel_schema.h
   rel_select.h
@@ -83,19 +75,15 @@ target_sources(sqlserver
   rel_updates.h
   rel_psm.h
   rel_xml.h
-  sql_atom.h
-  sql_datetime.h
-  sql_decimal.h
   sql_env.h
   sql_privileges.h
   sql_query.h
   sql_qc.h
-  sql_scan.h
   sql_semantic.h
-  sql_symbol.h
   sql_tokens.h
   sql_partition.h
   rel_file_loader.h
+  rel_proto_loader.h
   ${BISON_sqlparser_OUTPUT_HEADER}
   ${BISON_sqlparser_OUTPUT_SOURCE}
   PUBLIC
@@ -107,6 +95,8 @@ target_include_directories(sqlserver
   $<TARGET_PROPERTY:atoms,INTERFACE_INCLUDE_DIRECTORIES>
   $<TARGET_PROPERTY:mal,INTERFACE_INCLUDE_DIRECTORIES>
   $<TARGET_PROPERTY:malmodules,INTERFACE_INCLUDE_DIRECTORIES>
+  $<TARGET_PROPERTY:sqlcommon,INTERFACE_INCLUDE_DIRECTORIES>
+  $<TARGET_PROPERTY:sqlstorage,INTERFACE_INCLUDE_DIRECTORIES>
   PUBLIC
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
   $<INSTALL_INTERFACE:${INCLUDEDIR}/monetdb>)
@@ -115,9 +105,8 @@ target_link_libraries(sqlserver
   PRIVATE
   monetdb_config_header
   bat
-  sqlcommon
-  sqlinclude
-  sqlstorage)
+  sqlparserlib
+  sqlinclude)
 
 target_compile_definitions(sqlserver
   PRIVATE
@@ -127,7 +116,54 @@ if(NOT MONETDB_STATIC)
   set_target_properties(sqlserver
     PROPERTIES
     POSITION_INDEPENDENT_CODE ON
-  PUBLIC_HEADER "${sqlserver_public_headers}")
+    PUBLIC_HEADER "${sqlserver_public_headers}")
+endif()
+
+add_library(sqlparserlib STATIC)
+
+target_sources(sqlparserlib
+  PRIVATE
+  sql_atom.c
+  sql_atom.h
+  sql_datetime.c
+  sql_datetime.h
+  sql_decimal.c
+  sql_decimal.h
+  sql_scan.c
+  sql_scan.h
+  sql_symbol.c
+  sql_symbol.h
+  ${BISON_sqlparser_OUTPUT_HEADER}
+  ${BISON_sqlparser_OUTPUT_SOURCE}
+  ${sqlserver_public_headers})
+
+target_include_directories(sqlparserlib
+  PRIVATE
+  $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}>
+  $<TARGET_PROPERTY:atoms,INTERFACE_INCLUDE_DIRECTORIES>
+  $<TARGET_PROPERTY:mal,INTERFACE_INCLUDE_DIRECTORIES>
+  $<TARGET_PROPERTY:malmodules,INTERFACE_INCLUDE_DIRECTORIES>
+  $<TARGET_PROPERTY:sqlcommon,INTERFACE_INCLUDE_DIRECTORIES>
+  PUBLIC
+  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
+  $<INSTALL_INTERFACE:${INCLUDEDIR}/monetdb>)
+
+target_link_libraries(sqlparserlib
+  PRIVATE
+  monetdb_config_header
+  bat
+  sqlinclude
+  sqlstorage)
+
+target_compile_definitions(sqlparserlib
+  PRIVATE
+  LIBSQL)
+
+if(NOT MONETDB_STATIC)
+  set_target_properties(sqlparserlib
+    PROPERTIES
+    POSITION_INDEPENDENT_CODE ON
+    PUBLIC_HEADER "${sqlserver_public_headers}")
 endif()
 
 if(WITH_SQLPARSE)
@@ -135,27 +171,13 @@ add_executable(sqlparse)
 
 target_sources(sqlparse
   PRIVATE
-  sql_atom.h
-  sql_atom.c
-  sql_decimal.h
-  sql_decimal.c
-  sql_scan.h
-  sql_scan.c
-  sql_symbol.h
-  sql_symbol.c
-  sql_datetime.c
-  sql_datetime.h
-
-  sql_semantic.h
-  sql_mvc.h
-  rel_sequence.h
-  ${BISON_sqlparser_OUTPUT_HEADER}
-  ${BISON_sqlparser_OUTPUT_SOURCE}
   sqlparse.c)
 
 target_include_directories(sqlparse
   PRIVATE
+  $<$<PLATFORM_ID:Windows>:${HAVE_GETOPT_H}>
   $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}>
+  $<TARGET_PROPERTY:sqlcommon,INTERFACE_INCLUDE_DIRECTORIES>
   PUBLIC
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
   $<INSTALL_INTERFACE:${INCLUDEDIR}/monetdb>)
@@ -163,10 +185,11 @@ target_include_directories(sqlparse
 target_link_libraries(sqlparse
   PRIVATE
   monetdb_config_header
+  sqlparserlib
   stream
   bat
   sqlinclude
-  sqlcommon
+  mutils
   $<$<NOT:$<PLATFORM_ID:Windows>>:m>
   $<$<PLATFORM_ID:Windows>:${GETOPT_LIB}>
   $<$<BOOL:${MALLOC_FOUND}>:Malloc::Malloc>

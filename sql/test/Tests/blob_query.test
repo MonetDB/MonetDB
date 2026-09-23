@@ -42,45 +42,33 @@ ORDER BY id
 
 # First try the parts separately
 
-query TII nosort
+query TIT nosort
 SELECT 'nulls', COUNT(*), NULL FROM foo WHERE (b IS NULL) <> (id % 3 = 2)
 ----
-nulls
-0
-NULL
-
-query TII nosort
-SELECT 'lengths', COUNT(*), NULL FROM foo WHERE b IS NOT NULL AND id % 1000 <> length(b)
-----
-lengths
-0
-NULL
+nulls	0	NULL
 
 query TIT nosort
+SELECT 'lengths', COUNT(*), NULL FROM foo WHERE b IS NOT NULL AND id % 1000 <> length(b)
+----
+lengths	0	NULL
+
+query TTT nosort
 SELECT 'blob6', NULL, b FROM foo WHERE id = 6
 ----
-blob6
-NULL
-DBDBDBDBDBDB
+blob6	NULL	DBDBDBDBDBDB
 
 # This is the one that seems to crash
 
-query TIT nosort
+query TIT rowsort
 SELECT 'nulls', COUNT(*), NULL FROM foo WHERE (b IS NULL) <> (id % 3 = 2)
 UNION
 SELECT 'lengths', COUNT(*), NULL FROM foo WHERE b IS NOT NULL AND id % 1000 <> length(b)
 UNION
 SELECT 'blob6', NULL, b FROM foo WHERE id = 6
 ----
-nulls
-0
-NULL
-lengths
-0
-NULL
-blob6
-NULL
-DBDBDBDBDBDB
+blob6	NULL	DBDBDBDBDBDB
+lengths	0	NULL
+nulls	0	NULL
 
 statement ok
 ROLLBACK

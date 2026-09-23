@@ -3,11 +3,9 @@
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024, 2025 MonetDB Foundation;
- * Copyright August 2008 - 2023 MonetDB B.V.;
- * Copyright 1997 - July 2008 CWI.
+ * For copyright information, see the file debian/copyright.
  */
 
 #include "monetdb_config.h"
@@ -23,7 +21,7 @@ base_key( sql_base *b )
 }
 
 void
-trans_add(sql_trans *tr, sql_base *b, void *data, tc_cleanup_fptr cleanup, tc_commit_fptr commit, tc_log_fptr log)
+trans_add(sql_trans *tr, sql_base *b, void *data, tc_cleanup_fptr cleanup, tc_commit_fptr commit, tc_log_fptr log, bool locked)
 {
 	sql_change *change = MNEW(sql_change);
 
@@ -34,11 +32,13 @@ trans_add(sql_trans *tr, sql_base *b, void *data, tc_cleanup_fptr cleanup, tc_co
 		.commit = commit,
 		.log = log,
 	};
-	MT_lock_set(&tr->lock);
+	if (!locked)
+		MT_lock_set(&tr->lock);
 	tr->changes = list_add(tr->changes, change);
 	if (log)
 		tr->logchanges++;
-	MT_lock_unset(&tr->lock);
+	if (!locked)
+		MT_lock_unset(&tr->lock);
 }
 
 void
@@ -253,20 +253,19 @@ find_sql_table(sql_trans *tr, sql_schema *s, const char *tname)
 	}
 
 	if (t && isTempTable(t) && tr->tmp == s) {
-		sqlstore *store = tr->store;
 		assert(isGlobal(t));
 
 		sql_table* lt = (sql_table*) os_find_name(tr->localtmps, tr, tname);
 		if (lt)
 			return lt;
-		MT_lock_set(&store->table_locks[t->base.id&(NR_TABLE_LOCKS-1)]);
 
+		MT_lock_set(&tr->localtmplock);
 		lt = (sql_table*) os_find_name(tr->localtmps, tr, tname);
 		if (!lt)
 			t = globaltmp_instantiate(tr, t);
 		else
 			t = lt;
-		MT_lock_unset(&store->table_locks[t->base.id&(NR_TABLE_LOCKS-1)]);
+		MT_lock_unset(&tr->localtmplock);
 		return t;
 	}
 
@@ -277,25 +276,25 @@ sql_table *
 find_sql_table_id(sql_trans *tr, sql_schema *s, sqlid id)
 {
 	sql_table *t = (sql_table*)os_find_id(s->tables, tr, id);
+
 	if (!t && tr->tmp == s) {
 		t = (sql_table*) os_find_id(tr->localtmps, tr, id);
 		return t;
 	}
 
 	if (t && isTempTable(t) && tr->tmp == s) {
-		sqlstore *store = tr->store;
 		assert(isGlobal(t));
 
 		sql_table* lt = (sql_table*) os_find_id(tr->localtmps, tr, id);
 		if (lt)
 			return lt;
-		MT_lock_set(&store->table_locks[id&(NR_TABLE_LOCKS-1)]);
+		MT_lock_set(&tr->localtmplock);
 		lt = (sql_table*) os_find_id(tr->localtmps, tr, id);
 		if (!lt)
 			t = globaltmp_instantiate(tr, t);
 		else
 			t = lt;
-		MT_lock_unset(&store->table_locks[id&(NR_TABLE_LOCKS-1)]);
+		MT_lock_unset(&tr->localtmplock);
 		return t;
 	}
 	return t;
@@ -335,6 +334,18 @@ find_sql_schema_id(sql_trans *tr, sqlid id)
 	if (tr->tmp && tr->tmp->base.id == id)
 		return tr->tmp;
 	return (sql_schema*)os_find_id(tr->cat->schemas, tr, id);
+}
+
+sql_ustr *
+find_sql_ustr(sql_trans *tr, sql_schema *s, const char *uname)
+{
+	return (sql_ustr *) os_find_name(s->ustrs, tr, uname);
+}
+
+sql_ustr *
+find_sql_ustr_id(sql_trans *tr, sql_schema *s, sqlid id)
+{
+	return (sql_ustr *) os_find_id(s->ustrs, tr, id);
 }
 
 sql_type *
@@ -460,10 +471,10 @@ sql_range_part_validate_and_insert(void *v1, void *v2, void *type)
 	if (newp->with_nills && pt->with_nills) /* only one partition at most has null values */
 		return pt;
 
-	pt_down_all = !ATOMcmp(tpe, nil, pt->part.range.minvalue);
-	pt_upper_all = !ATOMcmp(tpe, nil, pt->part.range.maxvalue);
-	newp_down_all = !ATOMcmp(tpe, nil, newp->part.range.minvalue);
-	newp_upper_all = !ATOMcmp(tpe, nil, newp->part.range.maxvalue);
+	pt_down_all = ATOMeq(tpe, nil, pt->part.range.minvalue);
+	pt_upper_all = ATOMeq(tpe, nil, pt->part.range.maxvalue);
+	newp_down_all = ATOMeq(tpe, nil, newp->part.range.minvalue);
+	newp_upper_all = ATOMeq(tpe, nil, newp->part.range.maxvalue);
 
 	/* if one partition just holds NULL values, then there's no conflict */
 	if ((newp_down_all && newp_upper_all && newp->with_nills) || (pt_down_all && pt_upper_all && pt->with_nills))
@@ -472,8 +483,8 @@ sql_range_part_validate_and_insert(void *v1, void *v2, void *type)
 	if ((pt_down_all && pt_upper_all && !pt->with_nills) || (newp_down_all && newp_upper_all && !newp->with_nills))
 		return pt;
 
-	pt_min_max_same = !ATOMcmp(tpe, pt->part.range.maxvalue, pt->part.range.minvalue);
-	newp_min_max_same = !ATOMcmp(tpe, newp->part.range.maxvalue, newp->part.range.minvalue);
+	pt_min_max_same = ATOMeq(tpe, pt->part.range.maxvalue, pt->part.range.minvalue);
+	newp_min_max_same = ATOMeq(tpe, newp->part.range.maxvalue, newp->part.range.minvalue);
 
 	if (pt_down_all) { /* from range min value until a value */
 		res1 = ATOMcmp(tpe, pt->part.range.maxvalue, newp->part.range.minvalue);
@@ -601,15 +612,17 @@ is_column_unique(sql_column *c)
 ValPtr
 SA_VALcopy(allocator *sa, ValPtr d, const ValRecord *s)
 {
+	return VALcopy(sa, d, s);
+	/*
 	if (sa == NULL)
-		return VALcopy(d, s);
+		return VALcopy(NULL, d, s);
 	if (!ATOMextern(s->vtype)) {
 		*d = *s;
 	} else if (s->val.pval == 0) {
 		const void *p = ATOMnilptr(s->vtype);
 		d->vtype = s->vtype;
 		d->len = ATOMlen(d->vtype, p);
-		d->val.pval = sa_alloc(sa, d->len);
+		d->val.pval = ma_alloc(sa, d->len);
 		if (d->val.pval == NULL)
 			return NULL;
 		memcpy(d->val.pval, p, d->len);
@@ -617,7 +630,7 @@ SA_VALcopy(allocator *sa, ValPtr d, const ValRecord *s)
 		const char *p = s->val.sval;
 		d->vtype = TYPE_str;
 		d->len = strLen(p);
-		d->val.sval = sa_alloc(sa, d->len);
+		d->val.sval = ma_alloc(sa, d->len);
 		if (d->val.sval == NULL)
 			return NULL;
 		memcpy(d->val.sval, p, d->len);
@@ -625,12 +638,13 @@ SA_VALcopy(allocator *sa, ValPtr d, const ValRecord *s)
 		const void *p = s->val.pval;
 		d->vtype = s->vtype;
 		d->len = ATOMlen(d->vtype, p);
-		d->val.pval = sa_alloc(sa, d->len);
+		d->val.pval = ma_alloc(sa, d->len);
 		if (d->val.pval == NULL)
 			return NULL;
 		memcpy(d->val.pval, p, d->len);
 	}
 	return d;
+	*/
 }
 
 atom *

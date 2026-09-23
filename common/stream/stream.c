@@ -3,11 +3,9 @@
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024, 2025 MonetDB Foundation;
- * Copyright August 2008 - 2023 MonetDB B.V.;
- * Copyright 1997 - July 2008 CWI.
+ * For copyright information, see the file debian/copyright.
  */
 
 /* stream
@@ -57,6 +55,7 @@
 #include "monetdb_config.h"
 #include "stream.h"
 #include "stream_internal.h"
+#include "mstring.h"
 #include <stdio.h>
 
 
@@ -612,7 +611,7 @@ mnstr_isalive(const stream *s)
 }
 
 int
-mnstr_getoob(const stream *s)
+mnstr_getoob(stream *s)
 {
 	if (s->getoob)
 		return s->getoob(s);
@@ -620,7 +619,7 @@ mnstr_getoob(const stream *s)
 }
 
 int
-mnstr_putoob(const stream *s, char val)
+mnstr_putoob(stream *s, char val)
 {
 	if (s->putoob)
 		return s->putoob(s, val);
@@ -875,14 +874,14 @@ wrapper_isalive(const stream *s)
 
 
 static int
-wrapper_getoob(const stream *s)
+wrapper_getoob(stream *s)
 {
 	return s->inner->getoob(s->inner);
 }
 
 
 static int
-wrapper_putoob(const stream *s, char val)
+wrapper_putoob(stream *s, char val)
 {
 	return s->inner->putoob(s->inner, val);
 }

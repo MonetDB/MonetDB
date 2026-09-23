@@ -1,8 +1,12 @@
 statement ok
 set optimizer = 'sequential_pipe'
 
-query T python .explain.function_histogram
+statement ok
 explain select count(*) from v1
+
+skipif knownfail
+query T python .explain.function_histogram
+explain physical select count(*) from v1
 ----
 querylog.define
 1
@@ -13,8 +17,12 @@ sql.resultSet
 user.main
 1
 
-query T python .explain.function_histogram
+statement ok
 explain select id       from v1 order by id
+
+skipif knownfail
+query T python .explain.function_histogram
+explain physical select id       from v1 order by id
 ----
 algebra.projection
 1
@@ -22,8 +30,28 @@ algebra.sort
 1
 bat.pack
 5
+calc.not
+2
+language.pipelines
+2
+pipeline.counter
+1
+pipeline.counter_get
+1
+pipeline.done
+4
 querylog.define
 1
+sop.add
+2
+sop.fetch
+3
+sop.new
+1
+sort.merge
+1
+sort.mproject
+2
 sql.bind
 1
 sql.mvc
@@ -35,31 +63,59 @@ sql.tid
 user.main
 1
 
-query T python .explain.function_histogram
+statement ok
 explain select id , v1  from v1 order by id
+
+skipif knownfail
+query T python .explain.function_histogram
+explain physical select id , v1  from v1 order by id
 ----
 algebra.difference
 1
 algebra.join
 1
 algebra.project
-1
+2
 algebra.projection
-5
+8
 algebra.projectionpath
 1
 algebra.sort
 1
 bat.append
-4
+8
 bat.mirror
 1
 bat.new
-2
+4
 bat.pack
 5
+calc.not
+2
+language.pipelines
+2
+pipeline.counter
+1
+pipeline.counter_get
+1
+pipeline.done
+4
 querylog.define
 1
+slicer.no_slices
+1
+slicer.nth_slice
+4
+sop.add
+2
+sop.fetch
+3
+sop.new
+1
+sort.merge
+1
+sort.mproject
+3
 sql.bind
 2
 sql.bind_idxbat

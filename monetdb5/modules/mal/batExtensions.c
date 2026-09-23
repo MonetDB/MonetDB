@@ -3,11 +3,9 @@
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024, 2025 MonetDB Foundation;
- * Copyright August 2008 - 2023 MonetDB B.V.;
- * Copyright 1997 - July 2008 CWI.
+ * For copyright information, see the file debian/copyright.
  */
 
 /*
@@ -28,7 +26,6 @@
 #include "mal_client.h"
 #include "mal_interpreter.h"
 #include "bat5.h"
-#include "gdk_time.h"
 #include "mal_instruction.h"
 #include "mal_exception.h"
 
@@ -109,8 +106,15 @@ CMDBATsingle(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		BBPreclaim(b);
 		throw(MAL, "bat.single", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
-	*ret = b->batCacheid;
-	BBPkeepref(b);
+	/* BBPkeepref makes the BAT readonly, while in pipeline, we need to
+	 * keep the BAT writable for the next round, hence BBPretain to
+	 * increase the logical reference and BBPunfix to decrease the current
+	 * phsical reference.  Together they are similar to what BBPkeepref
+	 * does, but without making the BAT readonly.
+	 */
+	//BBPkeepref(*ret = b->batCacheid);
+	BBPretain(*ret = b->batCacheid);
+	BBPunfix(b->batCacheid);
 	return MAL_SUCCEED;
 }
 
@@ -261,8 +265,9 @@ CMDBATappend_bulk(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 
 static str
-CMDBATvacuum(bat *r, const bat *bid)
+CMDBATvacuum(Client ctx, bat *r, const bat *bid)
 {
+	(void) ctx;
 	BAT *b, *bn;
 
 	if ((b = BATdescriptor(*bid)) == NULL)
@@ -279,7 +284,7 @@ CMDBATvacuum(bat *r, const bat *bid)
 }
 
 #include "mel.h"
-mel_func batExtensions_init_funcs[] = {
+static mel_func batExtensions_init_funcs[] = {
  pattern("bat", "new", CMDBATnew, false, "", args(1,2, batargany("",1),argany("tt",1))),
  pattern("bat", "new", CMDBATnew, false, "", args(1,3, batargany("",1),argany("tt",1),arg("size",int))),
  pattern("bat", "new", CMDBATnew, false, "", args(1,4, batargany("",1),argany("tt",1),arg("size",lng),arg("persist",bit))),

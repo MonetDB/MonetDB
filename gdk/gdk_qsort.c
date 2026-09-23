@@ -3,11 +3,9 @@
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024, 2025 MonetDB Foundation;
- * Copyright August 2008 - 2023 MonetDB B.V.;
- * Copyright 1997 - July 2008 CWI.
+ * For copyright information, see the file debian/copyright.
  */
 
 #include "monetdb_config.h"
@@ -18,6 +16,7 @@ struct qsort_t {
 	unsigned int hs;
 	unsigned int ts;
 	int (*cmp)(const void *, const void *);
+	bool (*eq)(const void *, const void *);
 	const char *base;
 	const void *nil;
 };
@@ -38,7 +37,7 @@ struct qsort_t {
 #define fixgtf(i, j, TPE)	(!fixnil(j, TPE) && (fixnil(i, TPE) || ((TPE *) h)[i] > ((TPE *) h)[j]))
 #define fixgef(i, j, TPE)	(fixnil(i, TPE) || (!fixnil(j, TPE) && ((TPE *) h)[i] >= ((TPE *) h)[j]))
 
-#define fixeq(i, j, TPE)	(((TPE *) h)[i] == ((TPE *) h)[j])
+#define fixeq(i, j, TPE)	is_##TPE##_eq(((TPE *) h)[i], ((TPE *) h)[j])
 #define fixnil(i, TPE)		is_##TPE##_nil(((TPE *) h)[i])
 #define fixswap(i, j, TPE)						\
 	do {								\
@@ -117,7 +116,7 @@ struct qsort_t {
 #define fltlel_rev(i, j)	(fltnil(j) || (!fltnil(i) && fixgel(i, j, flt)))
 #define fltltf_rev(i, j)	fixgtf(i, j, flt)
 #define fltlef_rev(i, j)	fixgef(i, j, flt)
-#define flteq(i, j)		(fltnil(i) ? fltnil(j) : !fltnil(j) && fixeq(i, j, flt))
+#define flteq(i, j)		fixeq(i, j, flt)
 #define fltnil(i)		fixnil(i, flt)
 #define fltswap(i, j)		fixswap(i, j, flt)
 
@@ -129,7 +128,7 @@ struct qsort_t {
 #define dbllel_rev(i, j)	(dblnil(j) || (!dblnil(i) && fixgel(i, j, dbl)))
 #define dblltf_rev(i, j)	fixgtf(i, j, dbl)
 #define dbllef_rev(i, j)	fixgef(i, j, dbl)
-#define dbleq(i, j)		(dblnil(i) ? dblnil(j) : !dblnil(j) && fixeq(i, j, dbl))
+#define dbleq(i, j)		fixeq(i, j, dbl)
 #define dblnil(i)		fixnil(i, dbl)
 #define dblswap(i, j)		fixswap(i, j, dbl)
 
@@ -142,8 +141,8 @@ struct qsort_t {
 #define anylel_rev(i, j)	(anyCMP(i, j) >= 0)
 #define anyltf_rev(i, j)	(!anynil(j) && (anynil(i) || anyCMP(i, j) > 0))
 #define anylef_rev(i, j)	(anynil(i) || (!anynil(j) && anyCMP(i, j) >= 0))
-#define anyeq(i, j)		(anyCMP(i, j) == 0)
-#define anynil(i)		((*buf->cmp)(h + (i)*buf->hs, buf->nil) == 0)
+#define anyeq(i, j)		((*buf->eq)(h + (i)*buf->hs, h + (j)*buf->hs))
+#define anynil(i)		((*buf->eq)(h + (i)*buf->hs, buf->nil))
 #define anyswap(i, j)							\
 	do {								\
 		SWAP1((i) * buf->hs, (j) * buf->hs, h, buf->hs);	\
@@ -151,8 +150,8 @@ struct qsort_t {
 			SWAP1((i) * buf->ts, (j) * buf->ts, t, buf->ts); \
 	} while (0)
 
-#define varOFF(i)		(buf->base + VarHeapVal(h, i, buf->hs))
-#define varCMP(i, j)		(*buf->cmp)(varOFF(i), varOFF(j))
+#define varOFF(i,off)		((off = VarHeapVal(h, i, buf->hs)) == 0 ? buf->nil : buf->base + off)
+#define varCMP(i, j)		(*buf->cmp)(varOFF(i,off1), varOFF(j,off2))
 #define varltf(i, j)		(varCMP(i, j) < 0)
 #define varlef(i, j)		(varCMP(i, j) <= 0)
 #define varltl(i, j)		(!varnil(i) && (varnil(j) || varCMP(i, j) < 0))
@@ -161,8 +160,8 @@ struct qsort_t {
 #define varlel_rev(i, j)	(varCMP(i, j) >= 0)
 #define varltf_rev(i, j)	(!varnil(j) && (varnil(i) || varCMP(i, j) > 0))
 #define varlef_rev(i, j)	(varnil(i) || (!varnil(j) && varCMP(i, j) >= 0))
-#define vareq(i, j)		(varCMP(i, j) == 0)
-#define varnil(i)		((*buf->cmp)(varOFF(i), buf->nil) == 0)
+#define vareq(i, j)		((*buf->eq)(varOFF(i,off1), varOFF(j,off2)))
+#define varnil(i)		((*buf->eq)(varOFF(i,off1), buf->nil))
 #define varswap(i, j)		anyswap(i, j)
 
 #define LE(i, j, TPE, SUFF)	CONCAT3(TPE, le, SUFF)(i, j)
@@ -330,6 +329,7 @@ struct qsort_t {
 #undef TPE
 
 #define TPE var
+#define INITIALIZER var_t off1, off2
 #define SUFF f
 #include "gdk_qsort_impl.h"
 #undef SUFF
@@ -343,6 +343,7 @@ struct qsort_t {
 #include "gdk_qsort_impl.h"
 #undef SUFF
 #undef TPE
+#undef INITIALIZER
 
 /* Sort the array `h' of `n' elements with size `hs' each and type
  * `ts' in ascending or descending (if `reverse' is true) order.  If
@@ -372,6 +373,7 @@ GDKqsort(void *restrict h, void *restrict t, const void *restrict base,
 	buf.hs = (unsigned int) hs;
 	buf.ts = (unsigned int) ts;
 	buf.cmp = ATOMcompare(tpe);
+	buf.eq = ATOMequal(tpe);
 	buf.base = base;
 	buf.nil = ATOMnilptr(tpe);
 	assert(ATOMvarsized(tpe) ? base != NULL : base == NULL);

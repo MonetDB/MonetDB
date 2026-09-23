@@ -3,11 +3,9 @@
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024, 2025 MonetDB Foundation;
- * Copyright August 2008 - 2023 MonetDB B.V.;
- * Copyright 1997 - July 2008 CWI.
+ * For copyright information, see the file debian/copyright.
  */
 
 #include "monetdb_config.h"
@@ -20,16 +18,12 @@
  * from the debugger.
  */
 static str
-RQcall2str(MalBlkPtr mb, InstrPtr p)
+RQcall2str(str msg, MalBlkPtr mb, InstrPtr p)
 {
 	int k;
 	size_t len = 1;
-	str msg;
 	str s, cv = NULL;
 
-	msg = (str) GDKmalloc(BUFSIZ);
-	if (msg == NULL)
-		return NULL;
 	msg[0] = '#';
 	msg[1] = 0;
 	if (p->barrier)
@@ -46,24 +40,25 @@ RQcall2str(MalBlkPtr mb, InstrPtr p)
 	}
 	if (p->retc > 1)
 		strcat(msg, ")");
-	sprintf(msg + len, ":= %s.%s(", getModuleId(p), getFunctionId(p));
+	snprintf(msg + len, BUFSIZ - len, ":= %s.%s(", getModuleId(p), getFunctionId(p));
 	s = strchr(msg, '(');
 	if (s) {
 		s++;
 		*s = 0;
 		len = strlen(msg);
+		allocator *ta = MT_thread_getallocator();
 		for (k = p->retc; k < p->argc; k++) {
 			VarPtr v = getVar(mb, getArg(p, k));
 			if (isVarConstant(mb, getArg(p, k))) {
 				if (v->type == TYPE_void) {
-					sprintf(msg + len, "nil");
+					snprintf(msg + len, BUFSIZ - len, "nil");
 				} else {
-					if ((cv = VALformat(&v->value)) == NULL) {
-						GDKfree(msg);
+					allocator_state ta_state = ma_open(ta);
+					if ((cv = VALformat(ta, &v->value)) == NULL) {
 						return NULL;
 					}
-					sprintf(msg + len, "%s:%s", cv, ATOMname(v->type));
-					GDKfree(cv);
+					snprintf(msg + len, BUFSIZ - len, "%s:%s", cv, ATOMname(v->type));
+					ma_close(&ta_state);
 				}
 
 			} else
@@ -137,9 +132,9 @@ RQcall2str(MalBlkPtr mb, InstrPtr p)
 	do {																\
 		for (j = p->retc; j < p->argc; j++) {							\
 			if (location[getArg(p, j)] == 0 && !isVarConstant(mb, getArg(p, j))) { \
-				q = newInstruction(0, mapiRef, putRef);					\
+				q = newInstruction(mb, mapiRef, putRef);					\
 				if (q == NULL) {										\
-					freeInstruction(r);									\
+					freeInstruction(mb, r);									\
 					msg = createException(MAL, "optimizer.remote", SQLSTATE(HY013) MAL_MALLOC_FAIL); \
 					break;												\
 				}														\
@@ -154,11 +149,10 @@ RQcall2str(MalBlkPtr mb, InstrPtr p)
 
 #define remoteAction()							\
 	do {										\
-		s = RQcall2str(mb, p);					\
+		s = RQcall2str(buf, mb, p);				\
 		r = pushStr(mb, r, s + 1);				\
-		GDKfree(s);								\
 		pushInstruction(mb, r);					\
-		freeInstruction(p);						\
+		freeInstruction(mb, p);					\
 		actions++;								\
 	} while (0)
 
@@ -168,7 +162,7 @@ typedef struct {
 } DBalias;
 
 str
-OPTremoteQueriesImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
+OPTremoteQueriesImplementation(Client ctx, MalBlkPtr mb, MalStkPtr stk,
 							   InstrPtr pci)
 {
 	InstrPtr p, q, r, *old;
@@ -176,7 +170,7 @@ OPTremoteQueriesImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 	int remoteSite;
 	bool collectFirst;
 	int *location;
-	DBalias dbalias[128];
+	DBalias *dbalias;
 	int dbtop;
 	char buf[BUFSIZ], *s, *db, name[IDLENGTH];
 	ValRecord cst;
@@ -186,23 +180,21 @@ OPTremoteQueriesImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 	cst.val.ival = 0;
 	cst.len = 0;
 
-	(void) cntxt;
 	(void) stk;
 
 	limit = mb->stop;
 	slimit = mb->ssize;
 	old = mb->stmt;
+	allocator *ta = MT_thread_getallocator();
 
-	location = (int *) GDKzalloc(mb->vsize * sizeof(int));
-	if (location == NULL)
-		throw(MAL, "optimizer.remote", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-	memset(dbalias, 0, sizeof(dbalias));
-	dbtop = 0;
-
-	if (newMalBlkStmt(mb, mb->ssize) < 0) {
-		GDKfree(location);
+	allocator_state ta_state = ma_open(ta);
+	location = (int *) ma_zalloc(ta, mb->vsize * sizeof(int));
+	dbalias = (DBalias *) ma_zalloc(ta, 128 * sizeof(DBalias));
+	if (location == NULL || dbalias == NULL || newMalBlkStmt(mb, mb->ssize) < 0) {
+		ma_close(&ta_state);
 		throw(MAL, "optimizer.remote", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
+	dbtop = 0;
 
 	for (i = 0; i < limit; i++) {
 		p = old[i];
@@ -247,11 +239,10 @@ OPTremoteQueriesImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 				getArg(p, 1) = getArg(p, 2);
 
 				prepareRemote(TYPE_void);
-				s = RQcall2str(mb, p);
+				s = RQcall2str(buf, mb, p);
 				r = pushStr(mb, r, s + 1);
-				GDKfree(s);
 				pushInstruction(mb, r);
-				freeInstruction(p);
+				freeInstruction(mb, p);
 				actions++;
 			}
 		} else if ((getModuleId(p) == sqlRef && getFunctionId(p) == bindRef)) {
@@ -272,7 +263,7 @@ OPTremoteQueriesImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 				}
 			} else
 				pushInstruction(mb, p);
-		} else if (getModuleId(p) == sqlRef && getFunctionId(p) == binddbatRef) {
+		} else if (getModuleId(p) == sqlRef && getFunctionId(p) == bind_dbatRef) {
 
 			if (p->argc == 5 && getArgType(mb, p, 3) == TYPE_str) {
 				lookupServer(3);
@@ -361,7 +352,7 @@ OPTremoteQueriesImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 						&& !isVarConstant(mb, getArg(p, j))) {
 						q = newInstruction(0, mapiRef, putRef);
 						if (q == NULL) {
-							freeInstruction(r);
+							freeInstruction(mb, r);
 							msg = createException(MAL, "optimizer.remote",
 												  SQLSTATE(HY013)
 												  MAL_MALLOC_FAIL);
@@ -373,28 +364,26 @@ OPTremoteQueriesImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 						q = pushArgument(mb, q, getArg(p, j));
 						pushInstruction(mb, q);
 					}
-				s = RQcall2str(mb, p);
+				s = RQcall2str(buf, mb, p);
 				pushInstruction(mb, r);
 				(void) pushStr(mb, r, s + 1);
-				GDKfree(s);
 				for (j = 0; j < p->retc; j++)
 					location[getArg(p, j)] = remoteSite;
-				freeInstruction(p);
+				freeInstruction(mb, p);
 				actions++;
 			} else
 				pushInstruction(mb, p);
 		}
 	}
   bailout:
+	ma_close(&ta_state);
 	for (; i < slimit; i++)
 		if (old[i])
 			pushInstruction(mb, old[i]);
-	GDKfree(old);
-	GDKfree(location);
 
 	/* Defense line against incorrect plans */
 	if (msg == MAL_SUCCEED && actions) {
-		msg = chkTypes(cntxt->usermodule, mb, FALSE);
+		msg = chkTypes(ctx->usermodule, mb, FALSE);
 		if (!msg)
 			msg = chkFlow(mb);
 		if (!msg)

@@ -101151,6 +101151,19 @@ COPY 100001 RECORDS INTO "testschema"."bigstring" FROM stdin USING DELIMITERS E'
 "a3062016757282831719336781180126660209592607"	"b3062016757282831719336781180126660209592607"	"c3062016757282831719336781180126660209592607"
 
 statement ok
+CREATE DISTINCT STRING COLUMN testschema.unique_strings
+
+statement ok
+CREATE TABLE testschema.mediumstring_unique (
+	string1 VARCHAR(20) USING testschema.unique_strings,
+	string2 CHAR(20) USING testschema.unique_strings,
+	string3 CHARACTER LARGE OBJECT USING testschema.unique_strings
+)
+
+statement ok
+INSERT INTO testschema.mediumstring_unique SELECT * FROM testschema.mediumstring
+
+statement ok
 CREATE TABLE "testschema"."test" (
 	"id" INTEGER,
 	"i"  SMALLINT      DEFAULT next value for "testschema"."test_seq"
@@ -101310,6 +101323,19 @@ create table testschema.nulls_not_distinct (
 
 statement ok
 insert into testschema.nulls_not_distinct values (1, 1, 1, 1)
+
+statement ok
+create table testschema.double_check (
+	c1 int NOT NULL CHECK (c1 >= 1),
+	c2 int,
+	CONSTRAINT c2gtc1 CHECK (c2 IS NULL OR c2 > c1)
+)
+
+statement ok
+create unlogged table testschema.unlogged_table (
+	id int,
+	nm varchar(99)
+)
 
 statement ok
 CREATE TABLE "testschema"."selfref" (
@@ -101529,63 +101555,6 @@ CREATE REMOTE TABLE testschema.remotetable (i INTEGER) ON 'mapi:monetdb://remote
 
 statement ok
 CREATE TABLE """" ("""" int)
-
-statement ok
-CREATE FUNCTION pyapi01(i integer) returns table (i integer, d double)
-language P
-{
-        x = range(1, i + 1)
-        y = [42.0] * i
-        return([x,y])
-}
-
-statement ok
-CREATE FUNCTION pyapi02(i integer,j integer,z integer) returns integer
-language Python3
-{
-    x = i * sum(j) * z
-    return x
-}
-
-statement ok
-CREATE FUNCTION rapi01(i integer) returns table (i integer, d double)
-language R {
-        return(data.frame(i=seq(1,i),d=42.0));
-}
-
-statement ok
-CREATE FUNCTION rapi02(i integer,j integer,z integer) returns integer
-language R {
-        return(i*sum(j)*z);
-}
-
-statement ok
-CREATE FUNCTION capi00(inp INTEGER) RETURNS INTEGER LANGUAGE C {
-    size_t i;
-    result->initialize(result, inp.count);
-    for(i = 0; i < inp.count; i++) {
-        result->data[i] = inp.data[i] * 2;
-    }
-}
-
-statement ok
-CREATE AGGREGATE aggrmedian(val integer) RETURNS integer LANGUAGE P {
-        if 'aggr_group' in locals():
-                unique = numpy.unique(aggr_group)
-                x = numpy.zeros(shape=(unique.size))
-                for i in range(0,unique.size):
-                        x[i] = numpy.median(val[numpy.where(aggr_group==unique[i])])
-                return(x)
-        else:
-                return(numpy.median(val))
-}
-
-statement ok
-CREATE FUNCTION pyapi10_mult(i integer,j integer) returns integer
-language PYTHON_MAP
-{
-    return(i*j)
-}
 
 statement ok
 COMMIT

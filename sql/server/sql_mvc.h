@@ -3,11 +3,9 @@
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024, 2025 MonetDB Foundation;
- * Copyright August 2008 - 2023 MonetDB B.V.;
- * Copyright 1997 - July 2008 CWI.
+ * For copyright information, see the file debian/copyright.
  */
 
 /* multi version catalog */
@@ -55,21 +53,38 @@
 /* allowed to reduce (in the where and having parts we can reduce) */
 
 /* different query execution modes (emode) */
-#define m_normal 	0
+#define m_normal     0
 #define m_deallocate 1
-#define m_prepare 	2
-#define m_plan 		3
+#define m_prepare    2
+#define m_explain    3
 
 /* special modes for function/procedure and view instantiation and
    dependency generation */
-#define m_instantiate 	5
-#define m_deps 		6
+#define m_instantiate 5
+#define m_deps        6
 
 /* different query execution modifiers (emod) */
-#define mod_none 	0
-#define mod_trace 	1
-#define mod_explain 	2
-#define mod_exec 	4
+#define mod_none         0
+#define mod_explain_phys 1
+#define mod_exec         2
+
+#define S_NONE             0
+#define S_LOGICAL_UNNEST   1
+#define S_LOGICAL_REWRITE  2
+#define S_LOGICAL_PHYSICAL 3
+#define S_PHYSICAL         4
+
+#define T_NONE   0
+#define T_BEFORE 1
+#define T_AFTER  2
+
+#define BEFORE_LOGICAL_UNNEST(m)  (m->step == S_LOGICAL_UNNEST  && m->temporal == T_BEFORE)
+#define AFTER_LOGICAL_UNNEST(m)   (m->step == S_LOGICAL_UNNEST  && m->temporal == T_AFTER)
+#define BEFORE_LOGICAL_REWRITE(m) (m->step == S_LOGICAL_REWRITE && m->temporal == T_BEFORE)
+#define AFTER_LOGICAL_REWRITE(m)  (m->step == S_LOGICAL_REWRITE && m->temporal == T_AFTER)
+#define AFTER_LOGICAL_PHYSICAL(m) (m->step == S_LOGICAL_PHYSICAL && m->temporal == T_AFTER)
+#define BEFORE_PHYSICAL(m)        (m->step == S_PHYSICAL        && m->temporal == T_BEFORE)
+#define AFTER_PHYSICAL(m)         (m->step == S_PHYSICAL        && m->temporal == T_AFTER)
 
 typedef struct sql_groupby_expression {
 	symbol *sdef;
@@ -111,6 +126,7 @@ typedef struct sql_frame {
 /* a single SQL optimizer run */
 typedef struct {
 	const char *name; /* the optimizer name itself */
+	int index;        /* optimizer index */
 	int nchanges;     /* how many changes it did */
 	lng time;         /* how long it did take (all runs) */
 } sql_optimizer_run;
@@ -118,13 +134,14 @@ typedef struct {
 typedef struct mvc {
 	char errstr[ERRSIZE];
 
-	allocator *sa, *ta, *pa;
+	allocator *sa, *pa;
 
 	struct scanner scanner;
 
 	list *params;
 	sqlid objid;                /* when replacing an existing view, it can't be seen */
 	sql_func *forward;	        /* forward definitions for recursive functions */
+	bool globals;				/* only globals */
 	list *global_vars;          /* SQL declared variables on the global scope */
 	sql_frame **frames;	        /* stack of frames with variables */
 	int topframes;
@@ -144,12 +161,19 @@ typedef struct mvc {
 	sqlid role_id;
 	int timezone;		        /* milliseconds west of UTC */
 	unsigned int div_min_scale; /* minimum scale for division op*/
-	int reply_size;		        /* reply size */
+	int reply_size;             /* reply size */
 	int debug;
 	int sql_optimizer;          /* SQL optimizer mask */
 	sql_optimizer_run *runs;    /* Information about SQL optimizer runs */
-	char emode;		            /* execution mode */
-	char emod;		            /* execution modifier */
+	char emode;                 /* execution mode */
+	char emod;                  /* execution modifier */
+	unsigned temporal;          /* temporal modifier for explain */
+	unsigned step;              /* step modifier for explain */
+	int rewriter_stop_idx;      /* index of pre_sql_optimizers/post_sql_optimizers */
+	int rewriter_stop_cycle;    /* rel_optimizer_one stop cycle */
+	bool show_details;          /* show details in explain */
+	bool show_all_details;      /* show details in explain (during testing) */
+	bool trace;                 /* trace query execution */
 	sql_session *session;
 	sql_store store;
 
@@ -194,7 +218,7 @@ sql_export str mvc_rollback(mvc *c, int chain, const char *name, bool disabling_
 extern str mvc_release(mvc *c, const char *name);
 
 extern sql_type *mvc_bind_type(mvc *sql, const char *name);
-extern sql_type *schema_bind_type(mvc *sql, sql_schema * s, const char *name);
+sql_export sql_type *schema_bind_type(mvc *sql, sql_schema * s, const char *name);
 
 sql_export sql_schema *mvc_bind_schema(mvc *c, const char *sname);
 sql_export sql_table *mvc_bind_table(mvc *c, sql_schema *s, const char *tname);
@@ -229,8 +253,11 @@ extern int mvc_default(mvc *c, sql_column *col, char *val);
 extern int mvc_check(mvc *m, sql_column *col, char *check);
 extern int mvc_drop_default(mvc *c, sql_column *col);
 extern int mvc_storage(mvc *c, sql_column *col, char *storage);
+extern int mvc_ustr(mvc *m, sql_schema *s, sql_column *col, dlist *l);
+extern int mvc_subtype(mvc *m, sql_column *col, sql_subtype *t);
 extern int mvc_access(mvc *m, sql_table *t, sht access);
-extern int mvc_is_sorted(mvc *c, sql_column *col);
+extern int mvc_is_sorted_col(mvc *c, sql_column *col);
+extern int mvc_is_sorted_idx(mvc *c, sql_idx *idx);
 extern int mvc_is_unique(mvc *m, sql_column *col);
 extern int mvc_is_duplicate_eliminated(mvc *c, sql_column *col);
 extern int mvc_col_stats(mvc *m, sql_column *col, bool *nonil, bool *unique, double *unique_est, ValPtr min, ValPtr max);
@@ -252,8 +279,8 @@ extern int mvc_create_trigger(sql_trigger **tri, mvc *m, sql_table *t, const cha
 extern int mvc_drop_trigger(mvc *m, sql_schema *s, sql_trigger * tri);
 
 /*dependency control*/
-extern int mvc_create_dependency(mvc *m, sql_base *b, sqlid depend_id, sql_dependency depend_type);
-extern int mvc_create_dependencies(mvc *m, list *blist, sqlid depend_id, sql_dependency dep_type);
+extern int mvc_create_dependency(mvc *m, sql_base *b, sqlid depend_id, sql_dependency depend_type, temp_t temp);
+extern int mvc_create_dependencies(mvc *m, list *blist, sqlid depend_id, sql_dependency dep_type, temp_t temp);
 extern int mvc_check_dependency(mvc *m, sqlid id, sql_dependency type, list *ignore_ids);
 
 /* variable management */
@@ -295,9 +322,9 @@ extern sql_rel *frame_find_rel_view(mvc *sql, const char *name);
 extern int stack_has_frame(mvc *sql, const char *name);
 extern int stack_nr_of_declared_tables(mvc *sql);
 
-extern atom *sqlvar_set(sql_var *var, ValRecord *v);
+extern atom *sqlvar_set(allocator *sa, sql_var *var, ValRecord *v);
 extern str sqlvar_get_string(sql_var *var);
-extern str sqlvar_set_string(sql_var *var, const char *v);
+extern str sqlvar_set_string(allocator *sa, sql_var *var, const char *v);
 #ifdef HAVE_HGE
 extern hge val_get_number(const ValRecord *val);
 extern void sqlvar_set_number(sql_var *var, hge v);

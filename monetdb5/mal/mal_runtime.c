@@ -3,11 +3,9 @@
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024, 2025 MonetDB Foundation;
- * Copyright August 2008 - 2023 MonetDB B.V.;
- * Copyright 1997 - July 2008 CWI.
+ * For copyright information, see the file debian/copyright.
  */
 
 /* Author(s) M.L. Kersten
@@ -137,8 +135,7 @@ isaSQLquery(MalBlkPtr mb)
 	if (mb) {
 		for (int i = 1; i < mb->stop; i++) {
 			InstrPtr p = getInstrPtr(mb, i);
-			if (getModuleId(p) && idcmp(getModuleId(p), "querylog") == 0
-				&& idcmp(getFunctionId(p), "define") == 0)
+			if (getModuleId(p) == querylogRef && getFunctionId(p) == defineRef)
 				return getVarConstant(mb, getArg(p, 1)).val.sval;
 		}
 	}
@@ -267,9 +264,6 @@ runtimeProfileInit(Client cntxt, MalBlkPtr mb, MalStkPtr stk)
 		}
 	}
 	MT_lock_unset(&mal_delayLock);
-	MT_lock_set(&mal_contextLock);
-	cntxt->idle = 0;
-	MT_lock_unset(&mal_contextLock);
 }
 
 /*
@@ -306,9 +300,6 @@ runtimeProfileFinish(Client cntxt, MalBlkPtr mb, MalStkPtr stk)
 							QRYqueue[i].finished, QRYqueue[i].query);
 			// assume that the user is now idle
 			MT_lock_unset(&mal_delayLock);
-			MT_lock_set(&mal_contextLock);
-			cntxt->idle = time(0);
-			MT_lock_unset(&mal_contextLock);
 			found = true;
 			break;
 		}
@@ -364,6 +355,18 @@ runtimeProfileBegin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 
 	assert(pci);
 	/* always collect the MAL instruction execution time */
+	TRC_DEBUG_IF(MAL_INSTRUCTION) {
+		switch (pci->token) {
+			case PATcall:
+			case CMDcall:
+			case FCNcall:
+				TRC_DEBUG_ENDIF(MAL_INSTRUCTION, "calling %s.%s",
+								pci->modname ? pci->modname : "???",
+								pci->fcnname ? pci->fcnname : "???");
+		default:
+			break;
+		}
+	}
 	prof->ticks = GDKusec();
 }
 
@@ -374,73 +377,34 @@ runtimeProfileExit(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 {
 	lng ticks = GDKusec();
 
-	if (profilerStatus > 0)
-		profilerEvent(&(struct MalEvent) { cntxt, mb, stk, pci, ticks,
-					  ticks - prof->ticks },
-					  NULL);
-	if (cntxt->sqlprofiler)
-		sqlProfilerEvent(cntxt, mb, stk, pci, ticks, ticks - prof->ticks);
-	if (profilerStatus < 0) {
-		/* delay profiling until you encounter start of MAL function */
-		if (getInstrPtr(mb, 0) == pci)
-			profilerStatus = 1;
-	}
-}
-
-/*
- * For performance evaluation it is handy to estimate the
- * amount of bytes produced by an instruction.
- * The actual amount is harder to guess, because an instruction
- * may trigger a side effect, such as creating a hash-index.
- * Side effects are ignored.
- */
-
-lng
-getBatSpace(BAT *b)
-{
-	lng space = 0;
-	if (b == NULL)
-		return 0;
-	space += BATcount(b) << b->tshift;
-	if (space) {
-		MT_lock_set(&b->theaplock);
-		if (b->tvheap)
-			space += heapinfo(b->tvheap, b->batCacheid);
-		MT_lock_unset(&b->theaplock);
-		MT_rwlock_rdlock(&b->thashlock);
-		space += hashinfo(b->thash, b->batCacheid);
-		MT_rwlock_rdunlock(&b->thashlock);
-	}
-	return space;
-}
-
-lng
-getVolume(MalStkPtr stk, InstrPtr pci, int rd)
-{
-	int i, limit;
-	lng vol = 0;
-	BAT *b;
-
-	if (stk == NULL)
-		return 0;
-	limit = rd ? pci->argc : pci->retc;
-	i = rd ? pci->retc : 0;
-
-	for (; i < limit; i++) {
-		if (stk->stk[getArg(pci, i)].bat) {
-			oid cnt = 0;
-
-			b = BBPquickdesc(stk->stk[getArg(pci, i)].val.bval);
-			if (b == NULL)
-				continue;
-			cnt = BATcount(b);
-			/* Usually reading views cost as much as full bats.
-			   But when we output a slice that is not the case. */
-			if (rd)
-				vol += (!isVIEW(b) && !VIEWtparent(b)) ? tailsize(b, cnt) : 0;
-			else if (!isVIEW(b))
-				vol += tailsize(b, cnt);
+	pci->ticks += ticks - prof->ticks;
+	TRC_DEBUG_IF(MAL_INSTRUCTION) {
+		TRC_DEBUG_ENDIF(MAL_INSTRUCTION, "%s ("LLFMT" usec)",
+						instruction2str(mb, stk, pci, LIST_MAL_ALL | LIST_MAL_ALGO),
+						ticks - prof->ticks);
+	} else {
+		TRC_INFO_IF(MAL_INSTRUCTION) {
+			switch (pci->token) {
+			case ASSIGNsymbol:
+				TRC_INFO_ENDIF(MAL_INSTRUCTION, "%sassignment ("LLFMT" usec)",
+							   pci->retc > 1 ? "multi-" : "",
+							   ticks - prof->ticks);
+				break;
+			case PATcall:
+			case CMDcall:
+			case FCNcall:
+				TRC_INFO_ENDIF(MAL_INSTRUCTION, "call %s.%s ("LLFMT" usec)",
+							   pci->modname ? pci->modname : "???",
+							   pci->fcnname ? pci->fcnname : "???",
+							   ticks - prof->ticks);
+				break;
+			case REMsymbol:
+			case ENDsymbol:
+			default:
+				break;
+			}
 		}
 	}
-	return vol;
+	if (cntxt->sqlprofiler)
+		sqlProfilerEvent(cntxt, mb, stk, pci, ticks, ticks - prof->ticks);
 }

@@ -3,11 +3,9 @@
 #
 # This Source Code Form is subject to the terms of the Mozilla Public
 # License, v. 2.0.  If a copy of the MPL was not distributed with this
-# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+# file, You can obtain one at https://mozilla.org/MPL/2.0/.
 #
-# Copyright 2024, 2025 MonetDB Foundation;
-# Copyright August 2008 - 2023 MonetDB B.V.;
-# Copyright 1997 - July 2008 CWI.
+# For copyright information, see the file debian/copyright.
 #]]
 
 if(${HAVE_READLINE})
@@ -51,10 +49,8 @@ target_link_libraries(mclient
   PRIVATE
   monetdb_config_header
   mcutil
-  mprompt
   moptions
   mutils
-  mutf8
   mapi
   stream
   $<$<BOOL:${READLINE_FOUND}>:Readline::Readline>
@@ -81,7 +77,6 @@ target_link_libraries(msqldump
   mutils
   mapi
   stream
-  mprompt
   $<$<PLATFORM_ID:Windows>:${GETOPT_LIB}>)
 
 set_target_properties(mclient msqldump

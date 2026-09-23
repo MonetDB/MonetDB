@@ -3,11 +3,9 @@
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024, 2025 MonetDB Foundation;
- * Copyright August 2008 - 2023 MonetDB B.V.;
- * Copyright 1997 - July 2008 CWI.
+ * For copyright information, see the file debian/copyright.
  */
 
 #ifndef _SQL_ATOM_H_
@@ -40,6 +38,7 @@ extern unsigned int atom_num_digits(atom *a);
 
 /* cast atom a to type tp (success returns not NULL, fail returns NULL) */
 extern atom *atom_cast(allocator *sa, atom *a, sql_subtype *tp);
+extern atom *atom_cast_inplace(allocator *sa, atom *a, sql_subtype *tp);
 
 extern char *atom2string(allocator *sa, atom *a);
 extern char *atom2sql(allocator *sa, atom *a, int timezone);
@@ -65,6 +64,7 @@ extern atom *atom_inc(allocator *sa, atom *a);
 extern int atom_is_true(atom *a);
 extern int atom_is_false(atom *a);
 extern int atom_is_zero(atom *a);
+extern int atom_is_one(atom *a);
 
 extern unsigned int atom_digits(atom *a);
 
@@ -78,5 +78,6 @@ extern const lng scales[MAX_SCALE];
 
 extern atom *atom_zero_value(allocator *sa, sql_subtype *tpe);
 extern atom *atom_max_value(allocator *sa, sql_subtype *tpe);
+extern void free_atom(allocator *sa, atom *a);
 
 #endif /* _SQL_ATOM_H_ */

@@ -3,11 +3,9 @@
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024, 2025 MonetDB Foundation;
- * Copyright August 2008 - 2023 MonetDB B.V.;
- * Copyright 1997 - July 2008 CWI.
+ * For copyright information, see the file debian/copyright.
  */
 
 #include "monetdb_config.h"
@@ -15,7 +13,8 @@
 #include "gdk_private.h"
 #include "gdk_calc_private.h"
 
-#define VALUE(x)	(vars ? vars + VarHeapVal(vals, (x), width) : vals + (x) * width)
+#define VALUE(x)	(vars ? (off = VarHeapVal(vals, (x), width)) == 0 ? nil : vars + off : vals + (x) * width)
+
 /* BATunique returns a bat that indicates the unique tail values of
  * the input bat.  This is essentially the same output as the
  * "extents" output of BATgroup.  The difference is that BATunique
@@ -33,12 +32,13 @@ BATunique(BAT *b, BAT *s)
 	const void *v;
 	const char *vals;
 	const char *vars;
+	var_t off;
+	const void *nil = ATOMnilptr(b->ttype);
 	int width;
-	oid i, o, hseq;
+	oid o, hseq;
 	const char *nme;
-	Hash *hs = NULL;
 	BUN hb;
-	int (*cmp)(const void *, const void *);
+	bool (*eq)(const void *, const void *);
 	struct canditer ci;
 	const char *algomsg = "";
 	lng t0 = 0;
@@ -104,19 +104,18 @@ BATunique(BAT *b, BAT *s)
 	else
 		vars = NULL;
 	width = bi.width;
-	cmp = ATOMcompare(bi.type);
+	eq = ATOMequal(bi.type);
 	hseq = b->hseqbase;
 
 	if (ATOMbasetype(bi.type) == TYPE_bte ||
-	    (bi.width == 1 &&
-	     ATOMstorage(bi.type) == TYPE_str &&
-	     GDK_ELIMDOUBLES(bi.vh))) {
+	    (bi.width == 1 && bi.vkey)) {
 		uint8_t val;
 
-		algomsg = "unique: byte-sized atoms";
+		algomsg = "byte-sized atoms";
+		MT_thread_setalgorithm(algomsg, __func__);
 		uint32_t seen[256 >> 5];
 		memset(seen, 0, sizeof(seen));
-		TIMEOUT_LOOP_IDX(i, ci.ncand, qry_ctx) {
+		TIMEOUT_LOOP(ci.ncand, qry_ctx) {
 			o = canditer_next(&ci);
 			val = ((const uint8_t *) vals)[o - hseq];
 			uint32_t m = UINT32_C(1) << (val & 0x1F);
@@ -134,15 +133,14 @@ BATunique(BAT *b, BAT *s)
 		TIMEOUT_CHECK(qry_ctx,
 			      GOTO_LABEL_TIMEOUT_HANDLER(bunins_failed, qry_ctx));
 	} else if (ATOMbasetype(bi.type) == TYPE_sht ||
-		   (bi.width == 2 &&
-		    ATOMstorage(bi.type) == TYPE_str &&
-		    GDK_ELIMDOUBLES(bi.vh))) {
+		   (bi.width == 2 && bi.vkey)) {
 		uint16_t val;
 
-		algomsg = "unique: short-sized atoms";
+		algomsg = "short-sized atoms";
+		MT_thread_setalgorithm(algomsg, __func__);
 		uint32_t seen[65536 >> 5];
 		memset(seen, 0, sizeof(seen));
-		TIMEOUT_LOOP_IDX(i, ci.ncand, qry_ctx) {
+		TIMEOUT_LOOP(ci.ncand, qry_ctx) {
 			o = canditer_next(&ci);
 			val = ((const uint16_t *) vals)[o - hseq];
 			uint32_t m = UINT32_C(1) << (val & 0x1F);
@@ -161,11 +159,12 @@ BATunique(BAT *b, BAT *s)
 			      GOTO_LABEL_TIMEOUT_HANDLER(bunins_failed, qry_ctx));
 	} else if (bi.sorted || bi.revsorted) {
 		const void *prev = NULL;
-		algomsg = "unique: sorted";
-		TIMEOUT_LOOP_IDX(i, ci.ncand, qry_ctx) {
+		algomsg = "sorted";
+		MT_thread_setalgorithm(algomsg, __func__);
+		TIMEOUT_LOOP(ci.ncand, qry_ctx) {
 			o = canditer_next(&ci);
 			v = VALUE(o - hseq);
-			if (prev == NULL || (*cmp)(v, prev) != 0) {
+			if (prev == NULL || !(*eq)(v, prev)) {
 				if (bunfastappOID(bn, o) != GDK_SUCCEED)
 					goto bunins_failed;
 			}
@@ -180,24 +179,46 @@ BATunique(BAT *b, BAT *s)
 		    BAThash(b) == GDK_SUCCEED)) {
 		/* we already have a hash table on b, or b is
 		 * persistent and we could create a hash table */
-		algomsg = "unique: existing hash";
+		algomsg = "existing hash";
+		MT_thread_setalgorithm(algomsg, __func__);
 		MT_rwlock_rdlock(&b->thashlock);
-		hs = b->thash;
+		Hash *hs = b->thash;
 		if (hs == NULL) {
 			MT_rwlock_rdunlock(&b->thashlock);
 			goto lost_hash;
 		}
-		TIMEOUT_LOOP_IDX(i, ci.ncand, qry_ctx) {
+		if (bi.vkey) {
+			/* we don't need to look at the actual string
+			 * values */
+			assert(bi.vh);
+			/* only width 4 and 8 since 1 and 2 are handled
+			 * above */
+			if (bi.width == 4)
+				eq = ATOMequal(TYPE_int);
+			else
+				eq = ATOMequal(TYPE_lng);
+			HEAPdecref(bi.vh, false);
+			bi.vh = NULL; /* force BUNtail to use BUNtloc */
+			vars = NULL;  /* same for VALUE macro */
+		}
+		TIMEOUT_LOOP(ci.ncand, qry_ctx) {
 			BUN p;
 
 			o = canditer_next(&ci);
 			p = o - hseq;
 			v = VALUE(p);
+			/* follow the collision list starting at the
+			 * current BUN; all BUNs thus encountered are
+			 * earlier in the BAT; if we encounter an
+			 * eligible one with the same value, we
+			 * therefore have seen it before and we're done;
+			 * if we don't encounter such a value, this one
+			 * is new and is recorded as such */
 			for (hb = HASHgetlink(hs, p);
 			     hb != BUN_NONE;
 			     hb = HASHgetlink(hs, hb)) {
 				assert(hb < p);
-				if (cmp(v, BUNtail(bi, hb)) == 0 &&
+				if (eq(v, BUNtail(&bi, hb)) &&
 				    canditer_contains(&ci, hb + hseq)) {
 					/* we've seen this value
 					 * before */
@@ -207,7 +228,6 @@ BATunique(BAT *b, BAT *s)
 			if (hb == BUN_NONE) {
 				if (bunfastappOID(bn, o) != GDK_SUCCEED) {
 					MT_rwlock_rdunlock(&b->thashlock);
-					hs = NULL;
 					goto bunins_failed;
 				}
 			}
@@ -222,59 +242,85 @@ BATunique(BAT *b, BAT *s)
 
 	  lost_hash:
 		GDKclrerr();	/* not interested in BAThash errors */
-		algomsg = "unique: new partial hash";
+		algomsg = "new partial hash";
+		MT_thread_setalgorithm(algomsg, __func__);
 		nme = BBP_physical(b->batCacheid);
+		if (bi.vkey) {
+			/* we don't need to look at the actual string
+			 * values */
+			assert(bi.vh);
+			/* only width 4 and 8 since 1 and 2 are handled
+			 * above */
+			if (bi.width == 4) {
+				eq = ATOMequal(TYPE_int);
+				bi.type = TYPE_int;
+			} else {
+				eq = ATOMequal(TYPE_lng);
+				bi.type = TYPE_lng;
+			}
+			HEAPdecref(bi.vh, false);
+			bi.vh = NULL; /* force BUNtail to use BUNtloc */
+			vars = NULL;  /* same for VALUE macro */
+		}
 		if (ATOMbasetype(bi.type) == TYPE_bte) {
 			mask = (BUN) 1 << 8;
-			cmp = NULL; /* no compare needed, "hash" is perfect */
+			eq = NULL; /* no compare needed, "hash" is perfect */
 		} else if (ATOMbasetype(bi.type) == TYPE_sht) {
 			mask = (BUN) 1 << 16;
-			cmp = NULL; /* no compare needed, "hash" is perfect */
+			eq = NULL; /* no compare needed, "hash" is perfect */
 		} else {
 			mask = HASHmask(ci.ncand);
 			if (mask < ((BUN) 1 << 16))
 				mask = (BUN) 1 << 16;
 		}
-		if ((hs = GDKzalloc(sizeof(Hash))) == NULL) {
+		Hash hsh = {
+			.heaplink.parentid = b->batCacheid,
+			.heaplink.farmid = BBPselectfarm(TRANSIENT, bi.type, hashheap),
+			.heapbckt.parentid = b->batCacheid,
+			.heapbckt.farmid = BBPselectfarm(TRANSIENT, bi.type, hashheap),
+		};
+
+		if (hsh.heaplink.farmid < 0 ||
+		    hsh.heapbckt.farmid < 0 ||
+		    snprintf(hsh.heaplink.filename, sizeof(hsh.heaplink.filename), "%s.thshunil%x", nme, (unsigned) MT_getpid()) >= (int) sizeof(hsh.heaplink.filename) ||
+		    snprintf(hsh.heapbckt.filename, sizeof(hsh.heapbckt.filename), "%s.thshunib%x", nme, (unsigned) MT_getpid()) >= (int) sizeof(hsh.heapbckt.filename) ||
+		    HASHnew(&hsh, bi.type, BATcount(b), mask, BUN_NONE, false) != GDK_SUCCEED) {
 			GDKerror("cannot allocate hash table\n");
+			HEAPfree(&hsh.heaplink, true);
+			HEAPfree(&hsh.heapbckt, true);
 			goto bunins_failed;
 		}
-		hs->heapbckt.parentid = b->batCacheid;
-		hs->heaplink.parentid = b->batCacheid;
-		if ((hs->heaplink.farmid = BBPselectfarm(TRANSIENT, bi.type, hashheap)) < 0 ||
-		    (hs->heapbckt.farmid = BBPselectfarm(TRANSIENT, bi.type, hashheap)) < 0 ||
-		    snprintf(hs->heaplink.filename, sizeof(hs->heaplink.filename), "%s.thshunil%x", nme, (unsigned) MT_getpid()) >= (int) sizeof(hs->heaplink.filename) ||
-		    snprintf(hs->heapbckt.filename, sizeof(hs->heapbckt.filename), "%s.thshunib%x", nme, (unsigned) MT_getpid()) >= (int) sizeof(hs->heapbckt.filename) ||
-		    HASHnew(hs, bi.type, BATcount(b), mask, BUN_NONE, false) != GDK_SUCCEED) {
-			GDKfree(hs);
-			hs = NULL;
-			GDKerror("cannot allocate hash table\n");
-			goto bunins_failed;
-		}
-		TIMEOUT_LOOP_IDX(i, ci.ncand, qry_ctx) {
+		TIMEOUT_LOOP(ci.ncand, qry_ctx) {
 			o = canditer_next(&ci);
 			v = VALUE(o - hseq);
-			prb = HASHprobe(hs, v);
-			for (hb = HASHget(hs, prb);
+			prb = HASHprobe(&hsh, v);
+			BUN hb1 = HASHget(&hsh, prb);
+			for (hb = hb1;
 			     hb != BUN_NONE;
-			     hb = HASHgetlink(hs, hb)) {
-				if (cmp == NULL || cmp(v, BUNtail(bi, hb)) == 0)
+			     hb = HASHgetlink(&hsh, hb)) {
+				if (eq == NULL || eq(v, BUNtail(&bi, hb)))
 					break;
 			}
 			if (hb == BUN_NONE) {
 				p = o - hseq;
-				if (bunfastappOID(bn, o) != GDK_SUCCEED)
+				if (bunfastappOID(bn, o) != GDK_SUCCEED) {
+					HEAPfree(&hsh.heaplink, true);
+					HEAPfree(&hsh.heapbckt, true);
 					goto bunins_failed;
+				}
 				/* enter into hash table */
-				HASHputlink(hs, p, HASHget(hs, prb));
-				HASHput(hs, prb, p);
+				HASHputlink(&hsh, p, hb1);
+				HASHput(&hsh, prb, p);
+#ifndef NDEBUG
+				hsh.nheads += hb1 == BUN_NONE;
+				hsh.nunique++;
+#endif
 			}
 		}
+		HEAPfree(&hsh.heaplink, true);
+		HEAPfree(&hsh.heapbckt, true);
 		TIMEOUT_CHECK(qry_ctx,
 			      GOTO_LABEL_TIMEOUT_HANDLER(bunins_failed, qry_ctx));
-		HEAPfree(&hs->heaplink, true);
-		HEAPfree(&hs->heapbckt, true);
-		GDKfree(hs);
 	}
 	if (BATcount(bn) == bi.count) {
 		/* it turns out all values are distinct */
@@ -299,7 +345,6 @@ BATunique(BAT *b, BAT *s)
 	bn->tnil = false;
 	bn->tnonil = true;
 	bn = virtualize(bn);
-	MT_thread_setalgorithm(algomsg);
 	TRC_DEBUG(ALGO, "b=" ALGOBATFMT
 		  ",s=" ALGOOPTBATFMT " -> " ALGOOPTBATFMT
 		  " (%s -- " LLFMT "usec)\n",
@@ -309,11 +354,6 @@ BATunique(BAT *b, BAT *s)
 
   bunins_failed:
 	bat_iterator_end(&bi);
-	if (hs != NULL) {
-		HEAPfree(&hs->heaplink, true);
-		HEAPfree(&hs->heapbckt, true);
-		GDKfree(hs);
-	}
 	BBPreclaim(bn);
 	return NULL;
 }

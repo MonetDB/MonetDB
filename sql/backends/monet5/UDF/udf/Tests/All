@@ -1,2 +1,5 @@
 udf-reverse
 udf-fuse
+string-length.Bug-3999
+sqlancer
+alastair_udf_mergetable_bug

@@ -3,11 +3,9 @@
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024, 2025 MonetDB Foundation;
- * Copyright August 2008 - 2023 MonetDB B.V.;
- * Copyright 1997 - July 2008 CWI.
+ * For copyright information, see the file debian/copyright.
  */
 
 #ifndef _MAL_INSTR_H
@@ -142,16 +140,16 @@ mal_export char *getVarNameIntoBuffer(MalBlkPtr mb, int idx, char *buf)
 #define getArgGDKType(M,P,I) getVarGDKType((M),(P)->argv[I])
 #define getGDKType(T)		((T) <= TYPE_str ? (T) : ((T) == TYPE_any ? TYPE_void : findGDKtype(T)))
 
-mal_export void addMalException(MalBlkPtr mb, str msg);
+mal_export void addMalException(MalBlkPtr mb, const char *msg);
 mal_export void mal_instruction_reset(void);
 mal_export InstrPtr newInstruction(MalBlkPtr mb, const char *modnme,
 								   const char *fcnnme);
 mal_export InstrPtr newInstructionArgs(MalBlkPtr mb, const char *modnme,
 									   const char *fcnnme, int args);
-mal_export InstrPtr copyInstruction(const InstrRecord *p);
-mal_export InstrPtr copyInstructionArgs(const InstrRecord *p, int args);
+mal_export InstrPtr copyInstruction(MalBlkPtr mb, const InstrRecord *p);
+mal_export InstrPtr copyInstructionArgs(MalBlkPtr mb, const InstrRecord *p, int args);
 mal_export void clrInstruction(InstrPtr p);
-mal_export void freeInstruction(InstrPtr p);
+mal_export void freeInstruction(MalBlkPtr mb, InstrPtr p);
 mal_export void clrFunction(InstrPtr p);
 mal_export Symbol newSymbol(const char *nme, int kind);
 mal_export void freeSymbol(Symbol s);
@@ -159,7 +157,7 @@ mal_export void freeSymbolList(Symbol s);
 mal_export void printSignature(stream *fd, Symbol s, int flg);
 
 mal_export MalBlkPtr newMalBlk(int elements);
-mal_export void resetMalBlk(MalBlkPtr mb);
+mal_export str resetMalBlk(MalBlkPtr *mb);
 mal_export void resetMalTypes(MalBlkPtr mb, int stop);
 mal_export int newMalBlkStmt(MalBlkPtr mb, int elements);
 mal_export int resizeMalBlk(MalBlkPtr mb, int elements);
@@ -168,8 +166,6 @@ mal_export MalBlkPtr copyMalBlk(MalBlkPtr mb);
 mal_export void trimMalVariables(MalBlkPtr mb, MalStkPtr stk);
 mal_export void trimMalVariables_(MalBlkPtr mb, MalStkPtr glb);
 mal_export void moveInstruction(MalBlkPtr mb, int pc, int target);
-mal_export void removeInstruction(MalBlkPtr mb, InstrPtr p);
-mal_export void removeInstructionBlock(MalBlkPtr mb, int pc, int cnt);
 mal_export str operatorName(int i);
 
 mal_export int findVariable(MalBlkPtr mb, const char *name);
@@ -186,7 +182,7 @@ mal_export void clearVariable(MalBlkPtr mb, int varid);
 mal_export int cpyConstant(MalBlkPtr mb, VarPtr vr);
 mal_export int defConstant(MalBlkPtr mb, int type, ValPtr cst);
 mal_export int fndConstant(MalBlkPtr mb, const ValRecord *cst, int depth);
-mal_export str convertConstant(malType type, ValPtr vr);
+mal_export str convertConstant(allocator *ma, malType type, ValPtr vr);
 
 mal_export void pushInstruction(MalBlkPtr mb, InstrPtr p);
 mal_export InstrPtr pushArgument(MalBlkPtr mb, InstrPtr p, int varid);

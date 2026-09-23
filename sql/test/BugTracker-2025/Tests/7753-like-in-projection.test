@@ -1,0 +1,6 @@
+query II
+select 'Salvador' like '%alva%', 1
+----
+1
+1
+

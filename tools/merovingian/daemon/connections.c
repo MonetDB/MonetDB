@@ -3,11 +3,9 @@
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024, 2025 MonetDB Foundation;
- * Copyright August 2008 - 2023 MonetDB B.V.;
- * Copyright 1997 - July 2008 CWI.
+ * For copyright information, see the file debian/copyright.
  */
 
 #include "monetdb_config.h"
@@ -41,7 +39,7 @@ openConnectionIP(int *socks, bool udp, const char *bindaddr, unsigned short port
 	const char *msghost = bindaddr ? bindaddr : "any"; /* for messages */
 	int ipv6_vs6only = -1;
 
-	struct addrinfo hints = (struct addrinfo) {
+	struct addrinfo hints = {
 		.ai_family = AF_INET6,
 		.ai_socktype = udp ? SOCK_DGRAM : SOCK_STREAM,
 		.ai_flags = AI_PASSIVE | AI_NUMERICSERV,
@@ -56,7 +54,7 @@ openConnectionIP(int *socks, bool udp, const char *bindaddr, unsigned short port
 		hints.ai_flags |= AI_NUMERICHOST;
 		ipv6_vs6only = 0;
 		bindaddr = "::1";
-		strcpy_len(host, "localhost", sizeof(host));
+		strtcpy(host, "localhost", sizeof(host));
 	} else if (strcmp(bindaddr, "all") == 0) {
 		hints.ai_family = AF_INET6;
 		ipv6_vs6only = 0;
@@ -73,11 +71,11 @@ openConnectionIP(int *socks, bool udp, const char *bindaddr, unsigned short port
 		hints.ai_family = AF_INET6;
 		hints.ai_flags |= AI_NUMERICHOST;
 		ipv6_vs6only = 1;
-		strcpy_len(host, "localhost", sizeof(host));
+		strtcpy(host, "localhost", sizeof(host));
 	} else if (strcmp(bindaddr, "127.0.0.1") == 0) {
 		hints.ai_family = AF_INET;
 		hints.ai_flags |= AI_NUMERICHOST;
-		strcpy_len(host, "localhost", sizeof(host));
+		strtcpy(host, "localhost", sizeof(host));
 	} else {
 		hints.ai_family = AF_INET6;
 		ipv6_vs6only = 0;
@@ -210,7 +208,7 @@ openConnectionUNIX(int *ret, const char *path, int mode, FILE *log)
 	server = (struct sockaddr_un) {
 		.sun_family = AF_UNIX,
 	};
-	strcpy_len(server.sun_path, path, sizeof(server.sun_path));
+	strtcpy(server.sun_path, path, sizeof(server.sun_path));
 
 	/* have to use umask to restrict permissions to avoid a race
 	 * condition */

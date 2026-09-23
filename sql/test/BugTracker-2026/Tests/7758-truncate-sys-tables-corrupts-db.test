@@ -1,0 +1,95 @@
+-- populate the tmp schema system tables first by creating a temp table with constraints
+statement ok
+CREATE TEMP TABLE tt7758(id serial, nm VARCHAR(99) NOT NULL UNIQUE CHECK (LENGTH(nm) >= 1))
+
+-- Step 1: Truncate tmp.triggers
+query I nosort
+SELECT (COUNT(*) > 0) AS has_rows FROM tmp.triggers
+----
+0
+
+statement error TRUNCATE system tables is not allowed
+TRUNCATE TABLE tmp.triggers
+
+-- Step 2: Truncate tmp.objects
+query I nosort
+SELECT (COUNT(*) > 0) AS has_rows FROM tmp.objects
+----
+1
+
+statement error TRUNCATE system tables is not allowed
+TRUNCATE TABLE tmp.objects
+
+query I nosort
+SELECT (COUNT(*) > 0) AS has_rows FROM tmp.objects
+----
+1
+
+-- Step 3: Truncate tmp.keys
+query I nosort
+SELECT (COUNT(*) > 0) AS has_rows FROM tmp.keys
+----
+1
+
+statement error TRUNCATE system tables is not allowed
+TRUNCATE TABLE tmp.keys
+
+query I nosort
+SELECT (COUNT(*) > 0) AS has_rows FROM tmp.keys
+----
+1
+
+-- Step 4: Truncate tmp.idxs
+query I nosort
+SELECT (COUNT(*) > 0) AS has_rows FROM tmp.idxs
+----
+1
+
+statement error TRUNCATE system tables is not allowed
+TRUNCATE TABLE tmp.idxs
+
+query I nosort
+SELECT (COUNT(*) > 0) AS has_rows FROM tmp.idxs
+----
+1
+
+-- Step 5: This is where the crash occurs
+query I nosort
+SELECT (COUNT(*) > 0) AS has_rows FROM tmp._tables
+----
+1
+
+statement error TRUNCATE system tables is not allowed
+TRUNCATE TABLE tmp._tables
+
+query I nosort
+SELECT (COUNT(*) > 0) AS has_rows FROM tmp._tables
+----
+1
+
+query I nosort
+SELECT (COUNT(*) > 0) AS has_rows FROM tmp._columns
+----
+1
+
+statement error TRUNCATE system tables is not allowed
+TRUNCATE TABLE tmp._columns
+
+query I nosort
+SELECT (COUNT(*) > 0) AS has_rows FROM tmp._columns
+----
+1
+
+statement ok
+DROP TABLE tmp.tt7758
+
+query I nosort
+SELECT (COUNT(*) > 0) AS has_rows FROM tmp._tables
+----
+0
+
+query I nosort
+SELECT (COUNT(*) > 0) AS has_rows FROM tmp._columns
+----
+0
+

@@ -3,11 +3,9 @@
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024, 2025 MonetDB Foundation;
- * Copyright August 2008 - 2023 MonetDB B.V.;
- * Copyright 1997 - July 2008 CWI.
+ * For copyright information, see the file debian/copyright.
  */
 
 /* author M.Kersten
@@ -46,7 +44,7 @@
 	} while (0)
 
 str
-OPTemptybindImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
+OPTemptybindImplementation(Client ctx, MalBlkPtr mb, MalStkPtr stk,
 						   InstrPtr pci)
 {
 	int i, j, actions = 0, extras = 0;
@@ -56,9 +54,10 @@ OPTemptybindImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 	str sch, tbl;
 	int etop = 0, esize = 256;
 	str msg = MAL_SUCCEED;
+	allocator *ta = MT_thread_getallocator();
 
 	(void) stk;
-	(void) cntxt;
+	(void) ctx;
 
 	// use an instruction reference table to keep
 
@@ -75,20 +74,25 @@ OPTemptybindImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 	}
 	// track of where 'emptybind' results are produced
 	// reserve space for maximal number of emptybat variables created
-	empty = (int *) GDKzalloc((mb->vsize + extras) * sizeof(int));
-	if (empty == NULL)
+	// empty = (int *) GDKzalloc((mb->vsize + extras) * sizeof(int));
+	allocator_state ta_state = ma_open(ta);
+	empty = (int *) ma_zalloc(ta, (mb->vsize + extras) * sizeof(int));
+	if (empty == NULL) {
+		ma_close(&ta_state);
 		throw(MAL, "optimizer.emptybind", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+	}
 
-	updated = (InstrPtr *) GDKzalloc(esize * sizeof(InstrPtr));
+	// updated = (InstrPtr *) GDKzalloc(esize * sizeof(InstrPtr));
+	size_t updated_size = esize * sizeof(InstrPtr);
+	updated = (InstrPtr *) ma_zalloc(ta, updated_size);
 	if (updated == 0) {
-		GDKfree(empty);
+		ma_close(&ta_state);
 		throw(MAL, "optimizer.emptybind", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 
 	old = mb->stmt;
 	if (newMalBlkStmt(mb, mb->ssize) < 0) {
-		GDKfree(empty);
-		GDKfree(updated);
+		ma_close(&ta_state);
 		throw(MAL, "optimizer.emptybind", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 
@@ -113,14 +117,23 @@ OPTemptybindImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 			empty[getArg(p, 0)] = i;
 			continue;
 		}
+
+		if (p && p->inout >= 0) {
+			for (int i = p->inout; i < p->retc; i++)
+				empty[getArg(p, i)] = 0;
+			continue;
+		}
+
 		// any of these instructions leave a non-empty BAT behind
 		if (getModuleId(p) == sqlRef && isUpdateInstruction(p)) {
 			if (etop == esize) {
 				InstrPtr *tmp = updated;
-				updated = GDKrealloc(updated,
-									 (esize += 256) * sizeof(InstrPtr));
+				size_t osz = esize;
+				esize += 256;
+				updated = MA_RENEW_ARRAY(ta, InstrPtr, updated,
+									 esize, osz);
 				if (updated == NULL) {
-					GDKfree(tmp);
+					updated = tmp;
 					msg = createException(MAL, "optimizer.emptybind",
 										  SQLSTATE(HY013) MAL_MALLOC_FAIL);
 					goto wrapup;
@@ -148,13 +161,8 @@ OPTemptybindImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 				if (q && getModuleId(q) == sqlRef && isUpdateInstruction(q)) {
 					int c = getFunctionId(q) == claimRef;	/* claim has 2 results */
 					int cl = getFunctionId(q) == clear_tableRef;	/* clear table has no mvc dependency */
-					if (strcmp(getVarConstant(mb, getArg(q,
-														 2 - cl + c)).val.sval,
-							   sch) == 0
-						&& strcmp(getVarConstant(mb,
-												 getArg(q,
-														3 - cl + c)).val.sval,
-								  tbl) == 0) {
+					if (strcmp(getVarConstant(mb, getArg(q, 2 - cl + c)).val.sval, sch) == 0
+						&& strcmp(getVarConstant(mb, getArg(q, 3 - cl + c)).val.sval, tbl) == 0) {
 						empty[getArg(p, 0)] = 0;
 						if (p->retc == 2) {
 							empty[getArg(p, 1)] = 0;
@@ -163,8 +171,7 @@ OPTemptybindImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 					}
 				}
 				if (q && getModuleId(q) == sqlcatalogRef) {
-					if (strcmp(getVarConstant(mb, getArg(q, 2)).val.sval, sch)
-						== 0) {
+					if (strcmp(getVarConstant(mb, getArg(q, 2)).val.sval, sch) == 0) {
 						empty[getArg(p, 0)] = 0;
 						if (p->retc == 2) {
 							empty[getArg(p, 1)] = 0;
@@ -177,7 +184,7 @@ OPTemptybindImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 		}
 
 		if (getFunctionId(p) == emptybindidxRef) {
-			setFunctionId(p, bindidxRef);
+			setFunctionId(p, bind_idxbatRef);
 			p->typeresolved = false;
 			empty[getArg(p, 0)] = i;
 			if (p->retc == 2) {
@@ -191,10 +198,8 @@ OPTemptybindImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 				if (q && getModuleId(q) == sqlRef
 					&& (getFunctionId(q) == appendRef
 						|| getFunctionId(q) == updateRef)) {
-					if (strcmp(getVarConstant(mb, getArg(q, 2)).val.sval, sch)
-						== 0
-						&& strcmp(getVarConstant(mb, getArg(q, 3)).val.sval,
-								  tbl) == 0) {
+					if (strcmp(getVarConstant(mb, getArg(q, 2)).val.sval, sch) == 0
+						&& strcmp(getVarConstant(mb, getArg(q, 3)).val.sval, tbl) == 0) {
 						empty[getArg(p, 0)] = 0;
 						if (p->retc == 2) {
 							empty[getArg(p, 1)] = 0;
@@ -237,7 +242,7 @@ OPTemptybindImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 			continue;
 		}
 		if (getModuleId(p) == algebraRef && getFunctionId(p) == projectionRef) {
-			if (empty[getArg(p, 1)] || empty[getArg(p, 2)]) {
+			if (empty[getArg(p, 1)] /*|| empty[getArg(p, 2)]*/) {
 				actions++;
 				emptyresultorleft(0, 2);
 			}
@@ -283,6 +288,8 @@ OPTemptybindImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 			}
 		}
 		if (getModuleId(p) == batRef && isUpdateInstruction(p)) {
+			if (p->argc >= 4)
+				empty[getArg(p, 1)] = 0;
 			if (empty[getArg(p, 1)] && empty[getArg(p, 2)]) {
 				emptyresult(0);
 			} else if (empty[getArg(p, 2)]) {
@@ -297,12 +304,10 @@ OPTemptybindImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 	for (; i < slimit; i++)
 		if (old[i])
 			pushInstruction(mb, old[i]);
-	GDKfree(old);
-	GDKfree(empty);
-	GDKfree(updated);
+	ma_close(&ta_state);
 	/* Defense line against incorrect plans */
 	if (msg == MAL_SUCCEED)
-		msg = chkTypes(cntxt->usermodule, mb, FALSE);
+		msg = chkTypes(ctx->usermodule, mb, FALSE);
 	if (msg == MAL_SUCCEED)
 		msg = chkFlow(mb);
 	if (msg == MAL_SUCCEED)

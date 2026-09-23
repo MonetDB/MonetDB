@@ -1,0 +1,17 @@
+statement ok
+create table test(value int, name string)
+
+statement ok
+insert into test (select i, cast(i as string) from generate_series(0, 100000) i(i))
+
+# optimize the base table away !
+skipif knownfail
+query T python .plan.filter
+explain show details select * from test where 1 = 0
+----
+project (
+| select (
+| |  [ int(31) NULL as "test"."value" ]
+| ) [ boolean(1) "false" ]
+) [ int(31) NULL as "test"."value", varchar NULL as "test"."name" ]
+

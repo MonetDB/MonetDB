@@ -3,11 +3,9 @@
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024, 2025 MonetDB Foundation;
- * Copyright August 2008 - 2023 MonetDB B.V.;
- * Copyright 1997 - July 2008 CWI.
+ * For copyright information, see the file debian/copyright.
  */
 
 #include "monetdb_config.h"
@@ -217,6 +215,7 @@ forkMserver(const char *database, sabdb** stats, bool force)
 	char pipeline[512];
 	char memmaxsize[64];
 	char vmmaxsize[64];
+	char idletout[64];
 	char *dbextra = NULL;
 	char *dbtrace = NULL;
 	char *mserver5_extra = NULL;
@@ -321,11 +320,19 @@ forkMserver(const char *database, sabdb** stats, bool force)
 		pthread_mutex_unlock(&dp->fork_lock);
 		return(NO_ERR);
 	case SABdbCrashed:
+		if (!force && dp->crashcount > 4) {
+			state = (*stats)->state;
+			msab_freeStatus(stats);
+			freeConfFile(ckv);
+			free(ckv);
+			pthread_mutex_unlock(&dp->fork_lock);
+			return newErr("too many startup failures for database %s: fix database and try `monetdb start %s'", database, database);
+		}
 		t = localtime(&info.lastcrash);
 		strftime(tstr, sizeof(tstr), "%Y-%m-%d %H:%M:%S", t);
-		secondsToString(upmin, info.minuptime, 1);
-		secondsToString(upavg, info.avguptime, 1);
-		secondsToString(upmax, info.maxuptime, 1);
+		secondsToString(upmin, sizeof(upmin), info.minuptime, 1);
+		secondsToString(upavg, sizeof(upavg), info.avguptime, 1);
+		secondsToString(upmax, sizeof(upmax), info.maxuptime, 1);
 		Mlevelfprintf(ERROR, stdout, "%s '%s' has crashed after start on %s, "
 				 "attempting restart, "
 				 "up min/avg/max: %s/%s/%s, "
@@ -336,9 +343,9 @@ forkMserver(const char *database, sabdb** stats, bool force)
 				 info.startcntr, info.stopcntr, info.crashcntr);
 		break;
 	case SABdbInactive:
-		secondsToString(upmin, info.minuptime, 1);
-		secondsToString(upavg, info.avguptime, 1);
-		secondsToString(upmax, info.maxuptime, 1);
+		secondsToString(upmin, sizeof(upmin), info.minuptime, 1);
+		secondsToString(upavg, sizeof(upavg), info.avguptime, 1);
+		secondsToString(upmax, sizeof(upmax), info.maxuptime, 1);
 		Mlevelfprintf(INFORMATION, stdout, "starting %s '%s', "
 				 "up min/avg/max: %s/%s/%s, "
 				 "crash average: %d.00 %.2f %.2f (%d-%d=%d)\n",
@@ -507,6 +514,8 @@ forkMserver(const char *database, sabdb** stats, bool force)
 			 "--set=merovingian_uri=mapi:monetdb://%s:%u/%s",
 			 _mero_hostname, mport, database);
 	argv[c++] = _mero_mserver;
+	if (getuid() == 0)
+		argv[c++] = "--accept-the-risks-running-as-root";
 	argv[c++] = dbpath;
 	argv[c++] = muri;
 	if (dbextra != NULL) {
@@ -597,21 +606,6 @@ forkMserver(const char *database, sabdb** stats, bool force)
 		argv[c++] = vmmaxsize;
 	}
 
-	kv = findConfKey(ckv, "embedr");
-	if (kv->val != NULL && strcmp(kv->val, "no") != 0) {
-		argv[c++] = "--set=embedded_r=true";
-	}
-
-	kv = findConfKey(ckv, "embedpy3");
-	if (kv->val != NULL && strcmp(kv->val, "no") != 0) {
-		argv[c++] = "--set=embedded_py=3";
-	}
-
-	kv = findConfKey(ckv, "embedc");
-	if (kv->val != NULL && strcmp(kv->val, "no") != 0) {
-		argv[c++] = "--set=embedded_c=true";
-	}
-
 	kv = findConfKey(ckv, "readonly");
 	if (kv->val != NULL && strcmp(kv->val, "no") != 0)
 		argv[c++] = "--readonly";
@@ -619,6 +613,14 @@ forkMserver(const char *database, sabdb** stats, bool force)
 	kv = findConfKey(ckv, "raw_strings");
 	if (kv->val != NULL && strcmp(kv->val, "no") != 0) {
 		argv[c++] = "--set=raw_strings=true";
+	}
+
+	kv = findConfKey(ckv, "idletimeout");
+	if (kv->val == NULL)
+		kv = findConfKey(_mero_db_props, "idletimeout");
+	if (kv->val != NULL) {
+		snprintf(idletout, sizeof(tabthreads), "--set=idle_timeout=%s", kv->val);
+		argv[c++] = idletout;
 	}
 
 	/* get the rest (non-default) mserver props set in the conf file */
@@ -800,6 +802,10 @@ forkMserver(const char *database, sabdb** stats, bool force)
 		if (dp->pid == -1) {
 			state = (*stats)->state;
 
+			/* do this while we still have the lock */
+			if (!force)
+				dp->crashcount++;
+
 			pthread_mutex_unlock(&_mero_topdp_lock);
 			pthread_mutex_unlock(&dp->fork_lock);
 
@@ -841,6 +847,8 @@ forkMserver(const char *database, sabdb** stats, bool force)
 				return(newErr("unknown state: %d", (int)state));
 			}
 		}
+
+		dp->crashcount = 0;
 
 		pthread_mutex_unlock(&_mero_topdp_lock);
 		pthread_mutex_unlock(&dp->fork_lock);

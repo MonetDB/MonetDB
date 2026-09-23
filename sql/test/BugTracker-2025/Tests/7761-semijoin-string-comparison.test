@@ -1,0 +1,9 @@
+statement ok
+CREATE TABLE t0(c0 INTEGER, c1 INTEGER)
+
+statement ok rowcount 1
+INSERT INTO t0 (c0, c1) VALUES (-9, -1)
+
+query II
+SELECT * FROM t0 WHERE EXISTS (SELECT 1 FROM (SELECT CAST(t0.c1 AS VARCHAR) AS col0 FROM t0) AS subQuery WHERE ((t0.c0)>(subQuery.col0)))
+----

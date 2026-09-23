@@ -25,7 +25,7 @@ INSERT INTO products VALUES (1, 1, 1, 'apples', 1.5), (2, 1, 2, 'melons', 4.0), 
 statement ok
 INSERT INTO sales VALUES (1, date '2020-03-01', 10), (2, date '2020-03-01', 3), (4, date '2020-03-01', 4), (1, date '2020-03-02', 6), (4, date '2020-03-02', 5), (5, date '2020-03-02', 2), (1, date '2020-03-03', 7), (3, date '2020-03-03', 4), (2, date '2020-03-03', 3), (5, date '2020-03-03', 1), (6, date '2020-03-03', 1)
 
-query TTR nosort
+query TTD nosort
 SELECT COALESCE(products."description", 'all_products') AS "description",
        COALESCE(sale_day, 'all_days') AS sale_day,
        CAST(totals.total AS DECIMAL (12,4))
@@ -40,60 +40,60 @@ ORDER BY sale_day NULLS LAST, productid NULLS LAST
 ----
 apples
 2020-03-01
-15.000
+15.0000
 melons
 2020-03-01
-12.000
+12.0000
 water
 2020-03-01
-4.000
+4.0000
 apples
 2020-03-02
-9.000
+9.0000
 water
 2020-03-02
-5.000
+5.0000
 wine
 2020-03-02
-10.000
+10.0000
 apples
 2020-03-03
-10.500
+10.5000
 melons
 2020-03-03
-12.000
+12.0000
 peanuts
 2020-03-03
-8.000
+8.0000
 wine
 2020-03-03
-5.000
+5.0000
 walnuts
 2020-03-03
-1.500
+1.5000
 apples
 all_days
-34.500
+34.5000
 melons
 all_days
-24.000
+24.0000
 peanuts
 all_days
-8.000
+8.0000
 water
 all_days
-9.000
+9.0000
 wine
 all_days
-15.000
+15.0000
 walnuts
 all_days
-1.500
+1.5000
 all_products
 all_days
-92.000
+92.0000
 
-query TTR rowsort
+query TTD rowsort
 SELECT COALESCE(sections."description", 'all_sections') AS section,
        COALESCE(categories."description", 'all_categories') AS category,
        CAST(totals.total AS DECIMAL (12,4))
@@ -108,25 +108,25 @@ LEFT JOIN sections ON totals.sectionid = sections.id
 ----
 all_sections
 all_categories
-92.000
+92.0000
 all_sections
 drinks
-24.000
+24.0000
 all_sections
 dry food
-9.500
+9.5000
 all_sections
 fresh food
-58.500
+58.5000
 back
 all_categories
-16.500
+16.5000
 front
 all_categories
-43.500
+43.5000
 side
 all_categories
-32.000
+32.0000
 
 statement ok
 CREATE VIEW sales_totals AS
@@ -137,18 +137,18 @@ CREATE VIEW sales_totals AS
     LEFT JOIN sales ON sales.productid = products.id
     GROUP BY GROUPING SETS ((categoryid), (sectionid), ())
 
-query TR rowsort
+query TD rowsort
 SELECT "description", CAST(total AS DECIMAL (12,4))
 FROM sales_totals
 LEFT JOIN categories ON sales_totals.categoryid = categories.id
 WHERE category_aggregates = 0
 ----
 drinks
-24.000
+24.0000
 dry food
-9.500
+9.5000
 fresh food
-58.500
+58.5000
 
 statement error
 SELECT * FROM categories GROUP BY ()

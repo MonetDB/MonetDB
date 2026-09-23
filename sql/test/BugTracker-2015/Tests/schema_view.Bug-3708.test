@@ -52,7 +52,7 @@ statement ok
 create view s4 as select * from s3
 
 query T nosort
-PLAN select * from s1.s4
+EXPLAIN SHOW DETAILS select * from s1.s4
 ----
 project (
 | table("s1"."s3") [ "s3"."x" NOT NULL UNIQUE ]
@@ -62,7 +62,7 @@ statement ok
 set schema s2
 
 query T nosort
-PLAN select * from s1.s4
+EXPLAIN SHOW DETAILS select * from s1.s4
 ----
 project (
 | table("s1"."s3") [ "s3"."x" NOT NULL UNIQUE ]

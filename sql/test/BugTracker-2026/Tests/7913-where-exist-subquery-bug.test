@@ -1,0 +1,118 @@
+-- MonetDB 11.55.3
+-- Reproduces: non-resultset behavior inside EXISTS + UNION ALL causes wrong DELETE outcome
+
+statement ok
+CREATE TABLE a(id INT, v DATE)
+
+statement ok
+INSERT INTO a VALUES (1, DATE '2020-01-01'), (2, DATE '2020-01-02')
+
+query IT rowsort
+SELECT * FROM a
+WHERE EXISTS(
+  (
+    SELECT y.k3
+    FROM (
+      (SELECT a.v AS k, a.v AS k2, a.v AS k3
+       FROM a
+       GROUP BY a.v
+       HAVING 1 = 1)
+      EXCEPT
+      (SELECT CAST(NULL AS DATE) AS k, CAST(NULL AS DATE) AS k2, CAST(NULL AS DATE) AS k3
+       WHERE 1 = 0)
+    ) AS y
+  )
+  UNION ALL
+  (SELECT DATE '2022-01-01')
+)
+----
+1
+2020-01-01
+2
+2020-01-02
+
+-- ORIGINAL
+-- This should delete all rows because UNION ALL has a guaranteed row (SELECT DATE '2022-01-01')
+statement ok rowcount 2
+DELETE FROM a
+WHERE EXISTS(
+  (
+    SELECT y.k3
+    FROM (
+      (SELECT a.v AS k, a.v AS k2, a.v AS k3
+       FROM a
+       GROUP BY a.v
+       HAVING 1 = 1)
+      EXCEPT
+      (SELECT CAST(NULL AS DATE) AS k, CAST(NULL AS DATE) AS k2, CAST(NULL AS DATE) AS k3
+       WHERE 1 = 0)
+    ) AS y
+  )
+  UNION ALL
+  (SELECT DATE '2022-01-01')
+)
+
+-- Actual on 11.55.3: rows remain (no delete)
+query IT rowsort
+SELECT * FROM a ORDER BY id
+----
+
+statement ok
+TRUNCATE TABLE a
+
+statement ok
+INSERT INTO a VALUES (1, DATE '2020-01-01'), (2, DATE '2020-01-02')
+
+-- MUTATED (under-approx left branch: HAVING ... AND 1=0)
+query IT rowsort
+SELECT * FROM a
+WHERE EXISTS(
+  (
+    SELECT y.k3
+    FROM (
+      (SELECT a.v AS k, a.v AS k2, a.v AS k3
+       FROM a
+       GROUP BY a.v
+       HAVING 1 = 1 AND 1 = 0)
+      EXCEPT
+      (SELECT CAST(NULL AS DATE) AS k, CAST(NULL AS DATE) AS k2, CAST(NULL AS DATE) AS k3
+       WHERE 1 = 0)
+    ) AS y
+  )
+  UNION ALL
+  (SELECT DATE '2022-01-01')
+)
+----
+1
+2020-01-01
+2
+2020-01-02
+
+-- MUTATED (under-approx left branch: HAVING ... AND 1=0)
+statement ok rowcount 2
+DELETE FROM a
+WHERE EXISTS(
+  (
+    SELECT y.k3
+    FROM (
+      (SELECT a.v AS k, a.v AS k2, a.v AS k3
+       FROM a
+       GROUP BY a.v
+       HAVING 1 = 1 AND 1 = 0)
+      EXCEPT
+      (SELECT CAST(NULL AS DATE) AS k, CAST(NULL AS DATE) AS k2, CAST(NULL AS DATE) AS k3
+       WHERE 1 = 0)
+    ) AS y
+  )
+  UNION ALL
+  (SELECT DATE '2022-01-01')
+)
+
+-- Actual on 11.55.3: empty table (all rows deleted)
+query IT rowsort
+SELECT * FROM a ORDER BY id
+----
+
+statement ok
+DROP TABLE a
+

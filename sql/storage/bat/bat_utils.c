@@ -3,11 +3,9 @@
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024, 2025 MonetDB Foundation;
- * Copyright August 2008 - 2023 MonetDB B.V.;
- * Copyright 1997 - July 2008 CWI.
+ * For copyright information, see the file debian/copyright.
  */
 
 #include "monetdb_config.h"
@@ -31,8 +29,10 @@ BAT *
 bat_new(int tt, BUN size, role_t role)
 {
 	BAT *bn = COLnew(0, tt, size, role);
-	if (bn)
+	if (bn) {
 		BBP_pid(bn->batCacheid) = 0;
+		BATsettrivprop(bn);
+	}
 	return bn;
 }
 

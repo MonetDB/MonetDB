@@ -3,11 +3,9 @@
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024, 2025 MonetDB Foundation;
- * Copyright August 2008 - 2023 MonetDB B.V.;
- * Copyright 1997 - July 2008 CWI.
+ * For copyright information, see the file debian/copyright.
  */
 
 /*
@@ -95,7 +93,6 @@ malEmbeddedBoot(int workerlimit, int memorylimit, int querytimeout,
 		throw(MAL, "malEmbeddedBoot", "Failed to initialize clients structure");
 	// monet_memory = MT_npages() * MT_pagesize();
 	initNamespace();
-	initHeartbeat();
 	// initResource();
 	qc_old = MT_thread_get_qry_ctx();
 	c = MCinitClient((oid) 0, 0, 0);
@@ -104,8 +101,14 @@ malEmbeddedBoot(int workerlimit, int memorylimit, int querytimeout,
 	c->workerlimit = workerlimit;
 	c->memorylimit = memorylimit;
 	c->querytimeout = querytimeout * 1000000;	// from sec to usec
-	c->qryctx.endtime = c->qryctx.starttime && c->querytimeout ? c->qryctx.starttime + c->querytimeout : 0;
-	c->sessiontimeout = sessiontimeout * 1000000;
+	if (c->qryctx.starttime && c->querytimeout)
+		c->qryctx.endtime = c->qryctx.starttime + c->querytimeout;
+	if (sessiontimeout > 0) {
+		c->logical_sessiontimeout = sessiontimeout;
+		c->sessiontimeout = GDKusec() + sessiontimeout * LL_CONSTANT(1000000);
+		if (c->qryctx.endtime == 0 || c->sessiontimeout < c->qryctx.endtime)
+			c->qryctx.endtime = c->sessiontimeout;
+	}
 	c->curmodule = c->usermodule = userModule();
 	if (c->usermodule == NULL) {
 		MCcloseClient(c);
@@ -122,7 +125,7 @@ malEmbeddedBoot(int workerlimit, int memorylimit, int querytimeout,
 		MT_thread_set_qry_ctx(qc_old);
 		return msg;
 	}
-	char *modules[6] = { "embedded", "sql", "generator", "udf", "csv" };
+	static const char *modules[8] = { "embedded", "sql", "generator", "udf", "csv", "parquet", "monetdb_loader" };
 	if ((msg = malIncludeModules(c, modules, 0, !with_mapi_server, NULL)) != MAL_SUCCEED) {
 		MCcloseClient(c);
 		MT_thread_set_qry_ctx(qc_old);
@@ -165,8 +168,6 @@ malEmbeddedReset(void)			//remove extra modules and set to non-initialized again
 
 	GDKprepareExit();
 	MCstopClients(0);
-	setHeartbeat(-1);
-	stopProfiler(0);
 	AUTHreset();
 	if (!GDKinmemory(0) && !GDKembedded()) {
 		str err = 0;
@@ -181,6 +182,7 @@ malEmbeddedReset(void)			//remove extra modules and set to non-initialized again
 		}
 	}
 	mal_dataflow_reset();
+	mal_pipelines_reset();
 	mal_client_reset();
 	mal_linker_reset();
 	mal_resource_reset();
@@ -189,7 +191,6 @@ malEmbeddedReset(void)			//remove extra modules and set to non-initialized again
 	mal_atom_reset();
 
 	memset((char *) monet_cwd, 0, sizeof(monet_cwd));
-	memset((char *) monet_characteristics, 0, sizeof(monet_characteristics));
 	mal_namespace_reset();
 	GDKreset(0);				// terminate all other threads
 	embeddedinitialized = false;

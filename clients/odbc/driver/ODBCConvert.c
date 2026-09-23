@@ -3,11 +3,9 @@
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024, 2025 MonetDB Foundation;
- * Copyright August 2008 - 2023 MonetDB B.V.;
- * Copyright 1997 - July 2008 CWI.
+ * For copyright information, see the file debian/copyright.
  */
 
 #include "ODBCGlobal.h"
@@ -20,7 +18,7 @@
 #include <float.h>		/* for FLT_MAX */
 
 #ifdef HAVE_HGE
-#define MAXBIGNUM10	(((uhge) UINT64_C(0x1999999999999999) << 64) | ((uhge) UINT64_C(0x9999999999999999)))
+#define MAXBIGNUM10	(((uint128_t) UINT64_C(0x1999999999999999) << 64) | ((uint128_t) UINT64_C(0x9999999999999999)))
 #define MAXBIGNUMLAST	'5'
 #else
 #define MAXBIGNUM10	(UINT64_MAX / 10)
@@ -37,21 +35,11 @@ typedef struct {
 				 * i.e. multiply with power of 10) */
 	uint8_t sign;		/* 1 pos, 0 neg */
 #ifdef HAVE_HGE
-	uhge val;		/* the value (128 bits) */
+	uint128_t val;		/* the value (128 bits) */
 #else
 	uint64_t val;		/* the value (64 bits) */
 #endif
 } bignum_t;
-
-typedef union {
-	SQLGUID g;
-	struct {
-		uint32_t d1;
-		uint16_t d2, d3;
-		uint8_t d4[8];
-	} d;
-	uint8_t u[16];
-} uuid_t;
 
 /* Parse a number and store in a bignum_t.
  * 1 is returned if all is well;
@@ -59,7 +47,7 @@ typedef union {
  * 0 is returned if the string is not a number, or if scale doesn't fit.
  */
 static int
-parseint(const char *data, bignum_t *nval)
+parsebignum(const char *data, bignum_t *nval)
 {
 	int fraction = 0;	/* inside the fractional part */
 	int scale = 0;
@@ -67,7 +55,7 @@ parseint(const char *data, bignum_t *nval)
 
 	nval->val = 0;
 	nval->precision = 0;
-	scale = 0;
+
 	while (space(*data))
 		data++;
 	if (*data == '-') {
@@ -1029,23 +1017,39 @@ ODBCFetch(ODBCStmt *stmt,
 	if (type == SQL_C_DEFAULT)
 		type = ODBCDefaultType(irdrec);
 
-	if (precision == UNAFFECTED ||
-	    scale == UNAFFECTED ||
-	    datetime_interval_precision == UNAFFECTED) {
+	if (precision == UNAFFECTED) {
+		precision = (ardrec) ? ardrec->sql_desc_precision : (type == SQL_C_NUMERIC) ? 10 : 6;
+	}
+	if (scale == UNAFFECTED) {
+		scale = (ardrec) ? ardrec->sql_desc_scale : 0;
+	}
+	if (datetime_interval_precision == UNAFFECTED) {
 		if (ardrec) {
-			if (precision == UNAFFECTED)
-				precision = ardrec->sql_desc_precision;
-			if (scale == UNAFFECTED)
-				scale = ardrec->sql_desc_scale;
-			if (datetime_interval_precision == UNAFFECTED)
-				datetime_interval_precision = ardrec->sql_desc_datetime_interval_precision;
+			datetime_interval_precision = ardrec->sql_desc_datetime_interval_precision;
 		} else {
-			if (precision == UNAFFECTED)
-				precision = type == SQL_C_NUMERIC ? 10 : 6;
-			if (scale == UNAFFECTED)
-				scale = 0;
-			if (datetime_interval_precision == UNAFFECTED)
+			switch (type) {
+			case SQL_C_INTERVAL_YEAR:
+				datetime_interval_precision = 4;
+				break;
+			case SQL_C_INTERVAL_YEAR_TO_MONTH:
+			case SQL_C_INTERVAL_MONTH:
+				datetime_interval_precision = 6;
+				break;
+			case SQL_C_INTERVAL_DAY:
+			case SQL_C_INTERVAL_DAY_TO_HOUR:
+			case SQL_C_INTERVAL_DAY_TO_MINUTE:
+			case SQL_C_INTERVAL_DAY_TO_SECOND:
+			case SQL_C_INTERVAL_HOUR:
+			case SQL_C_INTERVAL_HOUR_TO_MINUTE:
+			case SQL_C_INTERVAL_HOUR_TO_SECOND:
+			case SQL_C_INTERVAL_MINUTE:
+			case SQL_C_INTERVAL_MINUTE_TO_SECOND:
+			case SQL_C_INTERVAL_SECOND:
+				datetime_interval_precision = 9;
+				break;
+			default:
 				datetime_interval_precision = 2;
+			}
 		}
 	}
 	i = datetime_interval_precision;
@@ -1097,7 +1101,7 @@ ODBCFetch(ODBCStmt *stmt,
 	case SQL_INTERVAL_MINUTE:
 	case SQL_INTERVAL_MINUTE_TO_SECOND:
 	case SQL_INTERVAL_SECOND:
-		switch (parseint(data, &nval)) {
+		switch (parsebignum(data, &nval)) {
 		case 0:
 			/* shouldn't happen: getting here means SQL
 			 * server told us a value was of a certain
@@ -1302,6 +1306,8 @@ ODBCFetch(ODBCStmt *stmt,
 		case SQL_INTEGER:
 		case SQL_BIGINT:
 		case SQL_HUGEINT:
+		case SQL_DECIMAL:
+		case SQL_NUMERIC:
 			sz = snprintf((char *) ptr, buflen, "%s", data);
 			if (sz < 0 || sz >= buflen) {
 				/* Numeric value out of range */
@@ -1314,8 +1320,6 @@ ODBCFetch(ODBCStmt *stmt,
 			if (lenp)
 				*lenp = sz;
 			break;
-		case SQL_DECIMAL:
-		case SQL_NUMERIC:
 		case SQL_BIT: {
 			uint64_t f;
 			int n;
@@ -1325,7 +1329,7 @@ ODBCFetch(ODBCStmt *stmt,
 			for (n = 0, f = 1; n < nval.scale; n++)
 				f *= 10;
 #ifdef HAVE_HGE
-			uhge v = nval.val / f;
+			uint128_t v = nval.val / f;
 			if (v > UINT64_MAX) {
 				/* Numeric value out of range */
 				addStmtError(stmt, "22003", NULL, 0);
@@ -2092,7 +2096,7 @@ ODBCFetch(ODBCStmt *stmt,
 		case SQL_FLOAT:
 		case SQL_REAL:
 			/* reparse double and float, parse char */
-			if (!parseint(data, &nval)) {
+			if (!parsebignum(data, &nval)) {
 				/* Invalid character value for cast
 				 * specification */
 				addStmtError(stmt, "22018", NULL, 0);
@@ -2141,6 +2145,105 @@ ODBCFetch(ODBCStmt *stmt,
 			case SQL_C_SBIGINT:
 				WriteData(ptr, nval.sign ? (SQLBIGINT) nval.val : -(SQLBIGINT) nval.val, SQLBIGINT);
 				break;
+			}
+			break;
+		}
+		case SQL_INTERVAL_YEAR:
+		case SQL_INTERVAL_YEAR_TO_MONTH:
+		case SQL_INTERVAL_MONTH:
+		case SQL_INTERVAL_DAY:
+		case SQL_INTERVAL_DAY_TO_HOUR:
+		case SQL_INTERVAL_DAY_TO_MINUTE:
+		case SQL_INTERVAL_DAY_TO_SECOND:
+		case SQL_INTERVAL_HOUR:
+		case SQL_INTERVAL_HOUR_TO_MINUTE:
+		case SQL_INTERVAL_HOUR_TO_SECOND:
+		case SQL_INTERVAL_MINUTE:
+		case SQL_INTERVAL_MINUTE_TO_SECOND:
+		case SQL_INTERVAL_SECOND: {
+			SQLBIGINT val;
+			/* only single field intervals can be converted */
+			switch (mapi_get_digits(stmt->hdl, col - 1)) {
+			case 1:	/* interval year */
+				val = ival.intval.year_month.year;
+				break;
+			case 3:	/* interval month */
+				val = ival.intval.year_month.year * 12
+					+ ival.intval.year_month.month;
+				break;
+			case 4:	/* interval day */
+				val = ival.intval.day_second.day;
+				break;
+			case 8:	/* interval hour */
+				val = ival.intval.day_second.day * 24
+					+ ival.intval.day_second.hour;
+				break;
+			case 11: /* interval minute */
+				val = ival.intval.day_second.day * 24 * 60
+					+ ival.intval.day_second.hour * 60
+					+ ival.intval.day_second.minute;
+				break;
+			case 13: /* interval second */
+				val = ival.intval.day_second.day * 24 * 60 * 60
+					+ ival.intval.day_second.hour * 60 * 60
+					+ ival.intval.day_second.minute * 60
+					+ ival.intval.day_second.second;
+				if (ival.intval.day_second.fraction) {
+					/* Fractional truncation */
+					addStmtError(stmt, "01S07", NULL, 0);
+				}
+				break;
+			default:
+				/* Interval field overflow */
+				addStmtError(stmt, "22015", NULL, 0);
+				return SQL_ERROR;
+			}
+			if (ival.interval_sign)
+				val = -val;
+			switch (type) {
+			case SQL_C_STINYINT:
+				if (val < -128 || val > 127)
+					goto overflow;
+				WriteData(ptr, (signed char) val, signed char);
+				break;
+			case SQL_C_TINYINT:
+				if (val < 0 || val > 255)
+					goto overflow;
+				WriteData(ptr, (unsigned char) val, unsigned char);
+				break;
+			case SQL_C_SSHORT:
+				if (val < -32768 || val > 32767)
+					goto overflow;
+				WriteData(ptr, (short) val, short);
+				break;
+			case SQL_C_SHORT:
+				if (val < 0 || val > 65535)
+					goto overflow;
+				WriteData(ptr, (unsigned short) val, unsigned short);
+				break;
+			case SQL_C_SLONG:
+				if (val < (SQLBIGINT) INT64_C(-2147483648) ||
+				    val > (SQLBIGINT) INT64_C(2147483647))
+					goto overflow;
+				WriteData(ptr, (int) val, int);
+				break;
+			case SQL_C_LONG:
+				if (val < 0 ||
+				    val > (SQLBIGINT) INT64_C(4294967295))
+					goto overflow;
+				WriteData(ptr, (unsigned int) val, unsigned int);
+				break;
+			case SQL_C_SBIGINT:
+				WriteData(ptr, (SQLBIGINT) val, SQLBIGINT);
+				break;
+			default:
+				/* Restricted data type attribute violation */
+				addStmtError(stmt, "07006", NULL, 0);
+				return SQL_ERROR;
+			overflow:
+				/* Numeric value out of range */
+				addStmtError(stmt, "22003", NULL, 0);
+				return SQL_ERROR;
 			}
 			break;
 		}
@@ -2196,7 +2299,7 @@ ODBCFetch(ODBCStmt *stmt,
 		case SQL_FLOAT:
 		case SQL_REAL:
 			/* reparse double and float, parse char */
-			if (!parseint(data, &nval)) {
+			if (!parsebignum(data, &nval)) {
 				/* Invalid character value for cast
 				 * specification */
 				addStmtError(stmt, "22018", NULL, 0);
@@ -2265,7 +2368,7 @@ ODBCFetch(ODBCStmt *stmt,
 		case SQL_FLOAT:
 		case SQL_REAL:
 			/* reparse double and float, parse char */
-			if (!(i = parseint(data, &nval))) {
+			if (!(i = parsebignum(data, &nval))) {
 				/* Invalid character value for cast
 				 * specification */
 				addStmtError(stmt, "22018", NULL, 0);
@@ -2815,25 +2918,16 @@ ODBCFetch(ODBCStmt *stmt,
 #ifdef ODBCDEBUG
 		ODBCLOG("Writing 16 bytes to %p\n", ptr);
 #endif
-		uuid_t u;
-		if (sscanf(data, "%2"SCNx8"%2"SCNx8"%2"SCNx8"%2"SCNx8
-			   "-%2"SCNx8"%2"SCNx8
-			   "-%2"SCNx8"%2"SCNx8
-			   "-%2"SCNx8"%2"SCNx8
-			   "-%2"SCNx8"%2"SCNx8"%2"SCNx8"%2"
-			   SCNx8"%2"SCNx8"%2"SCNx8,
-			   &u.u[3], &u.u[2], &u.u[1], &u.u[0],
-			   &u.u[5], &u.u[4],
-			   &u.u[7], &u.u[6],
-			   &u.u[8], &u.u[9],
-			   &u.u[10], &u.u[11], &u.u[12],
-			   &u.u[13], &u.u[14], &u.u[15]) != 16) {
-			/* Restricted data type attribute
-			 * violation */
-			addStmtError(stmt, "07006", NULL, 0);
-			return SQL_ERROR;
-		}
-		WriteData(ptr, u.g, SQLGUID);
+		SQLGUID su;
+		unsigned int sudata1; /* DWORD su.Data1 either long or int */
+		sscanf(data,
+		       "%8x-%4hx-%4hx-%2hhx%2hhx"
+		       "-%2hhx%2hhx%2hhx%2hhx%2hhx%2hhx",
+		       &sudata1, &su.Data2, &su.Data3,
+		       &su.Data4[0], &su.Data4[1],
+		       &su.Data4[2], &su.Data4[3], &su.Data4[4], &su.Data4[5], &su.Data4[6], &su.Data4[7]);
+		su.Data1 = sudata1;
+		WriteData(ptr, su, SQLGUID);
 		if (lenp)
 			*lenp = sizeof(SQLGUID);
 		break;
@@ -2905,7 +2999,7 @@ ODBCStore(ODBCStmt *stmt,
 	TIMESTAMP_STRUCT tsval;
 	int ivalprec = 0;	/* interval second precision */
 	SQL_INTERVAL_STRUCT ival;
-	uuid_t u;
+	SQLGUID u;
 	char *buf = *bufp;
 	size_t bufpos = *bufposp;
 	size_t buflen = *buflenp;
@@ -3364,20 +3458,15 @@ ODBCStore(ODBCStmt *stmt,
 			}
 			break;
 		case SQL_C_GUID:
-			u.g = *(SQLGUID *)ptr;
+			u = *(SQLGUID *)ptr;
 			snprintf(data, sizeof(data),
-				 "%02"PRIx8"%02"PRIx8"%02"PRIx8"%02"PRIx8
-				 "-%02"PRIx8"%02"PRIx8
-				 "-%02"PRIx8"%02"PRIx8
-				 "-%02"PRIx8"%02"PRIx8
-				 "-%02"PRIx8"%02"PRIx8"%02"PRIx8
-				 "%02"PRIx8"%02"PRIx8"%02"PRIx8,
-				 u.u[3], u.u[2], u.u[1], u.u[0],
-				 u.u[5], u.u[4],
-				 u.u[7], u.u[6],
-				 u.u[8], u.u[9],
-				 u.u[10], u.u[11], u.u[12],
-				 u.u[13], u.u[14], u.u[15]);
+				 "%08x-%04x-%04x-%02x%02x"
+				 "-%02x%02x%02x%02x%02x%02x",
+				 (unsigned int) u.Data1, u.Data2, u.Data3,
+				 u.Data4[0], u.Data4[1],
+				 u.Data4[2], u.Data4[3],
+				 u.Data4[4], u.Data4[5],
+				 u.Data4[6], u.Data4[7]);
 			break;
 		}
 		assign(buf, bufpos, buflen, '\'', stmt);
@@ -3688,7 +3777,7 @@ ODBCStore(ODBCStmt *stmt,
 		case SQL_C_BINARY:
 			/* parse character data, reparse floating
 			 * point number */
-			if (!parseint(sval, &nval)) {
+			if (!parsebignum(sval, &nval)) {
 				/* Invalid character value for cast
 				 * specification */
 				addStmtError(stmt, "22018", NULL, 0);
@@ -3907,36 +3996,26 @@ ODBCStore(ODBCStmt *stmt,
 				addStmtError(stmt, "22018", NULL, 0);
 				goto failure;
 			}
-			for (i = 0; i < 36; i++) {
-				if (strchr("0123456789abcdefABCDEF-",
-					   sval[i]) == NULL) {
-					/* not sure this is the
-					 * correct error */
-					/* Invalid character value for
-					 * cast specification */
-					addStmtError(stmt, "22018", NULL, 0);
-					goto failure;
-				}
+			if (sval[strspn(sval, "0123456789abcdefABCDEF-")] != 0) {
+				/* not sure this is the correct error */
+				/* Invalid character value for cast
+				 * specification */
+				addStmtError(stmt, "22018", NULL, 0);
+				goto failure;
 			}
 			snprintf(data, sizeof(data), "%.36s", sval);
 			break;
 		case SQL_C_GUID:
-			u.g = *(SQLGUID *)ptr;
+			u = *(SQLGUID *)ptr;
 			snprintf(data, sizeof(data),
 				 "UUID '"
-				 "%02"PRIx8"%02"PRIx8"%02"PRIx8"%02"PRIx8
-				 "-%02"PRIx8"%02"PRIx8
-				 "-%02"PRIx8"%02"PRIx8
-				 "-%02"PRIx8"%02"PRIx8
-				 "-%02"PRIx8"%02"PRIx8"%02"PRIx8
-				 "%02"PRIx8"%02"PRIx8"%02"PRIx8
-				 "'",
-				 u.u[3], u.u[2], u.u[1], u.u[0],
-				 u.u[5], u.u[4],
-				 u.u[7], u.u[6],
-				 u.u[8], u.u[9],
-				 u.u[10], u.u[11], u.u[12],
-				 u.u[13], u.u[14], u.u[15]);
+				 "%08x-%04x-%04x-%02x%02x"
+				 "-%02x%02x%02x%02x%02x%02x'",
+				 (unsigned int) u.Data1, u.Data2, u.Data3,
+				 u.Data4[0], u.Data4[1],
+				 u.Data4[2], u.Data4[3],
+				 u.Data4[4], u.Data4[5],
+				 u.Data4[6], u.Data4[7]);
 			break;
 		default:
 			/* Restricted data type attribute violation */

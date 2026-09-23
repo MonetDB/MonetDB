@@ -4,11 +4,9 @@
 #
 # This Source Code Form is subject to the terms of the Mozilla Public
 # License, v. 2.0.  If a copy of the MPL was not distributed with this
-# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+# file, You can obtain one at https://mozilla.org/MPL/2.0/.
 #
-# Copyright 2024, 2025 MonetDB Foundation;
-# Copyright August 2008 - 2023 MonetDB B.V.;
-# Copyright 1997 - July 2008 CWI.
+# For copyright information, see the file debian/copyright.
 
 import os, sys, argparse, stat
 
@@ -17,11 +15,9 @@ license = [
     '',
     'This Source Code Form is subject to the terms of the Mozilla Public',
     'License, v. 2.0.  If a copy of the MPL was not distributed with this',
-    'file, You can obtain one at http://mozilla.org/MPL/2.0/.',
+    'file, You can obtain one at https://mozilla.org/MPL/2.0/.',
     '',
-    'Copyright 2024, 2025 MonetDB Foundation;',
-    'Copyright August 2008 - 2023 MonetDB B.V.;',
-    'Copyright 1997 - July 2008 CWI.',
+    'For copyright information, see the file debian/copyright.',
     ]
 
 def main():
@@ -119,8 +115,6 @@ suffixrules = {
     'CMakeLists.txt': ('#[[', '#]]', '# ', '', True),
     'Makefile': ('', '', '# ', '', True),
     '.merovingian_properties': ('', '', '# ', '', True),
-    'copyright': ('', '', '', '', True),
-    'license.txt': ('', '', '', '', True),
     }
 
 def getcomments(file, pre=None, post=None, start=None, end=None, nl=True):
@@ -207,20 +201,6 @@ def addlicense(file, pre=None, post=None, start=None, end=None, verbose=False):
         addblank = False
         if line.startswith('#!'):
             # if file starts with #! command interpreter, keep the line there
-            g.write(line)
-            # add a blank line
-            addblank = True
-            line = f.readline()
-        if '-*-' in line:
-            # if file starts with an Emacs mode specification, keep
-            # the line there
-            g.write(line)
-            # add a blank line
-            addblank = True
-            line = f.readline()
-        if 'vim:' in line:
-            # if file starts with a vim mode specification, keep
-            # the line there
             g.write(line)
             # add a blank line
             addblank = True
@@ -330,16 +310,6 @@ def dellicense(file, pre=None, post=None, start=None, end=None, verbose=False):
         f = open(file)
         line = f.readline()
         if line.startswith('#!'):
-            g.write(line)
-            line = f.readline()
-            if line and line == '\n':
-                line = f.readline()
-        if '-*-' in line:
-            g.write(line)
-            line = f.readline()
-            if line and line == '\n':
-                line = f.readline()
-        if 'vim:' in line:
             g.write(line)
             line = f.readline()
             if line and line == '\n':
@@ -459,14 +429,6 @@ def listfile(file, pre=None, post=None, start=None, end=None, verbose=False):
         f = open(file)
         line = f.readline()
         if line.startswith('#!'):
-            line = f.readline()
-            if line and line == '\n':
-                line = f.readline()
-        if '-*-' in line:
-            line = f.readline()
-            if line and line == '\n':
-                line = f.readline()
-        if 'vim:' in line:
             line = f.readline()
             if line and line == '\n':
                 line = f.readline()

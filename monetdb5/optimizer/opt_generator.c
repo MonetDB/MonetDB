@@ -3,11 +3,9 @@
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024, 2025 MonetDB Foundation;
- * Copyright August 2008 - 2023 MonetDB B.V.;
- * Copyright 1997 - July 2008 CWI.
+ * For copyright information, see the file debian/copyright.
  */
 
 #include "monetdb_config.h"
@@ -22,13 +20,13 @@
 #define errorCheck(P,IDX,MOD,I)										\
 	do {															\
 		setModuleId(P, generatorRef);								\
-		typeChecker(cntxt->usermodule, mb, P, IDX, TRUE);			\
+		typeChecker(ctx->usermodule, mb, P, IDX, TRUE);			\
 		if (!P->typeresolved) {										\
 			setModuleId(P, MOD);									\
-			typeChecker(cntxt->usermodule, mb, P, IDX, TRUE);		\
+			typeChecker(ctx->usermodule, mb, P, IDX, TRUE);		\
 			setModuleId(series[I], generatorRef);					\
 			setFunctionId(series[I], seriesRef);					\
-			typeChecker(cntxt->usermodule, mb, series[I], I, TRUE);	\
+			typeChecker(ctx->usermodule, mb, series[I], I, TRUE);	\
 		}															\
 		pushInstruction(mb,P);										\
 	} while (0)
@@ -37,47 +35,47 @@
 	do {																\
 		k = getArg(p, 1);												\
 		p->argc = p->retc;												\
-		q = newInstruction(0, calcRef, TPE##Ref);						\
+		q = newInstruction(mb, calcRef, TPE##Ref);						\
 		if (q == NULL) {												\
 			msg = createException(MAL, "optimizer.generator", SQLSTATE(HY013) MAL_MALLOC_FAIL); \
 			goto bailout;												\
 		}																\
 		if (setDestVar(q, newTmpVariable(mb, TYPE_##TPE)) < 0) {		\
-			freeInstruction(q);											\
+			freeInstruction(mb, q);										\
 			msg = createException(MAL, "optimizer.generator", SQLSTATE(HY013) MAL_MALLOC_FAIL); \
 			goto bailout;												\
 		}																\
 		q = pushArgument(mb, q, getArg(series[k], 1));					\
-		typeChecker(cntxt->usermodule, mb, q, 0, TRUE);					\
+		typeChecker(ctx->usermodule, mb, q, 0, TRUE);					\
 		p = pushArgument(mb, p, getArg(q, 0));							\
 		pushInstruction(mb, q);											\
-		q = newInstruction(0, calcRef, TPE##Ref);						\
+		q = newInstruction(mb, calcRef, TPE##Ref);						\
 		if (q == NULL) {												\
 			msg = createException(MAL, "optimizer.generator", SQLSTATE(HY013) MAL_MALLOC_FAIL); \
 			goto bailout;												\
 		}																\
 		if (setDestVar(q, newTmpVariable(mb, TYPE_##TPE)) < 0) {		\
-			freeInstruction(q);											\
+			freeInstruction(mb, q);											\
 			msg = createException(MAL, "optimizer.generator", SQLSTATE(HY013) MAL_MALLOC_FAIL); \
 			goto bailout;												\
 		}																\
 		q = pushArgument(mb, q, getArg(series[k], 2));					\
 		pushInstruction(mb, q);											\
-		typeChecker(cntxt->usermodule,  mb,  q,  0, TRUE);				\
+		typeChecker(ctx->usermodule,  mb,  q,  0, TRUE);				\
 		p = pushArgument(mb, p, getArg(q, 0));							\
 		if( p->argc == 4){												\
-			q = newInstruction(0, calcRef, TPE##Ref);					\
+			q = newInstruction(mb, calcRef, TPE##Ref);					\
 			if (q == NULL) {											\
 				msg = createException(MAL, "optimizer.generator", SQLSTATE(HY013) MAL_MALLOC_FAIL); \
 				goto bailout;											\
 			}															\
 			if (setDestVar(q, newTmpVariable(mb, TYPE_##TPE)) < 0) {	\
-				freeInstruction(q);										\
+				freeInstruction(mb, q);										\
 				msg = createException(MAL, "optimizer.generator", SQLSTATE(HY013) MAL_MALLOC_FAIL); \
 				goto bailout;											\
 			}															\
 			q = pushArgument(mb, q, getArg(series[k], 3));				\
-			typeChecker(cntxt->usermodule, mb, q, 0, TRUE);				\
+			typeChecker(ctx->usermodule, mb, q, 0, TRUE);				\
 			p = pushArgument(mb, p, getArg(q, 0));						\
 			pushInstruction(mb, q);										\
 		}																\
@@ -89,7 +87,7 @@
 	} while (0)
 
 str
-OPTgeneratorImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
+OPTgeneratorImplementation(Client ctx, MalBlkPtr mb, MalStkPtr stk,
 						   InstrPtr pci)
 {
 	InstrPtr p, q, *old, *series;
@@ -103,6 +101,7 @@ OPTgeneratorImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 	//const char *dblRef = getName("dbl");
 	str msg = MAL_SUCCEED;
 	int needed = 0;
+	allocator *ta = MT_thread_getallocator();
 
 	(void) stk;
 
@@ -124,12 +123,10 @@ OPTgeneratorImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 	if (!needed)
 		goto wrapup;
 
-	series = (InstrPtr *) GDKzalloc(sizeof(InstrPtr) * mb->vtop);
-	if (series == NULL)
-		throw(MAL, "optimizer.generator", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-
-	if (newMalBlkStmt(mb, mb->ssize) < 0) {
-		GDKfree(series);
+	allocator_state ta_state = ma_open(ta);
+	series = (InstrPtr *) ma_zalloc(ta, sizeof(InstrPtr) * mb->vtop);
+	if (series == NULL || newMalBlkStmt(mb, mb->ssize) < 0) {
+		ma_close(&ta_state);
 		throw(MAL, "optimizer.generator", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 
@@ -142,7 +139,7 @@ OPTgeneratorImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 			series[getArg(p, 0)] = p;
 			setModuleId(p, generatorRef);
 			setFunctionId(p, parametersRef);
-			typeChecker(cntxt->usermodule, mb, p, i, TRUE);
+			typeChecker(ctx->usermodule, mb, p, i, TRUE);
 			pushInstruction(mb, p);
 			old[i] = NULL;
 		} else if (getModuleId(p) == algebraRef && getFunctionId(p) == rangejoinRef
@@ -189,18 +186,18 @@ OPTgeneratorImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 			old[i] = NULL;
 		} else {
 			// check for use without conversion
-			for (k = p->retc; k < p->argc; k++) {
+			for (k = p->inout >= 0 ? p->inout : p->retc; k < p->argc; k++) {
 				if (series[getArg(p, k)]) {
 					const char *m = getModuleId(p);
 					setModuleId(p, generatorRef);
-					typeChecker(cntxt->usermodule, mb, p, i, TRUE);
+					typeChecker(ctx->usermodule, mb, p, i, TRUE);
 					if (!p->typeresolved) {
 						setModuleId(p, m);
-						typeChecker(cntxt->usermodule, mb, p, i, TRUE);
+						typeChecker(ctx->usermodule, mb, p, i, TRUE);
 						InstrPtr r = series[getArg(p, k)];
 						setModuleId(r, generatorRef);
 						setFunctionId(r, seriesRef);
-						typeChecker(cntxt->usermodule, mb, r, getPC(mb, r),
+						typeChecker(ctx->usermodule, mb, r, getPC(mb, r),
 									TRUE);
 					}
 				}
@@ -216,12 +213,11 @@ OPTgeneratorImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 		if (old[i])
 			pushInstruction(mb, old[i]);
 	}
-	GDKfree(old);
-	GDKfree(series);
+	ma_close(&ta_state);
 
 	/* Defense line against incorrect plans */
 	/* all new/modified statements are already checked */
-	// msg = chkTypes(cntxt->usermodule, mb, FALSE);
+	// msg = chkTypes(ctx->usermodule, mb, FALSE);
 	// if (!msg)
 	//      msg = chkFlow(mb);
 	// if (!msg)

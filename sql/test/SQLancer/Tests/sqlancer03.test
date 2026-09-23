@@ -56,7 +56,7 @@ SELECT sql_min(sql_max(NULL, ''), '')
 ----
 NULL
 
-query IR rowsort
+query ID rowsort
 SELECT ALL length(upper(MIN(ALL CAST(((trim(CAST('' AS STRING(659)), CAST('o3%+i]抔DCöf▟nßOpNbybಜ7' AS STRING)))||(sql_min(sql_max(NULL, ''), splitpart('x', ',7+.', t0.c1)))) AS STRING(151))))), 0.4179268710155164
 FROM v0 LEFT OUTER JOIN t0 ON NOT (t0.c0) WHERE t0.c0 GROUP BY CAST(t0.c1 AS STRING(601)), t0.c1
 ----
@@ -337,7 +337,7 @@ COPY 1 RECORDS INTO "sys"."t0" FROM stdin USING DELIMITERS E'\t',E'\n','"'
 <COPY_INTO_DATA>
 -1933820187.000	NULL	"-1554387152"
 
-query R rowsort
+query D rowsort
 select t0.c0 from t0 where not (true) union all select all t0.c0 from t0 where not (not (true)) union all select t0.c0 from t0 where (not (true)) is null
 ----
 -1933820187.000
@@ -566,12 +566,12 @@ query I rowsort
 SELECT 1 FROM t0 CROSS JOIN t1 WHERE (t1.c1 AND (t0.c0 > t0.c0)) IS NULL
 ----
 
-query R rowsort
+query D rowsort
 SELECT cast(SUM(agg0) as decimal(10,2)) FROM (SELECT ALL SUM(ALL 0.97) as agg0 FROM t0 CROSS JOIN t1 WHERE ((((t1.c1)AND(t1.c1)))AND(((t0.c0)>(t0.c0))))
 UNION ALL SELECT SUM(ALL 0.97) as agg0 FROM t0 CROSS JOIN t1 WHERE NOT (((((t1.c1)AND(t1.c1)))AND(((t0.c0)>(t0.c0)))))
 UNION ALL SELECT SUM(ALL 0.97) as agg0 FROM t0 CROSS JOIN t1 WHERE (((((t1.c1)AND(t1.c1)))AND(((t0.c0)>(t0.c0))))) IS NULL) as asdf
 ----
-9.700
+9.70
 
 statement ok
 ROLLBACK
@@ -1025,7 +1025,7 @@ SELECT v2.c0 FROM v2 WHERE v2.c1 = '1' AND v2.c3 BETWEEN v2.c3 AND v2.c3
 statement ok
 create view v0(c0, c1, c2, c3) as (select distinct 0.1, ((lower((((('&')||(2)))||(0.1))))||((('-1')||(abs(cast('1' as int)))))), 0.1, cot(((((- (((2)&(3))))+(abs(4))))*(- (cast(cast(5 as string) as int))))) from t0)
 
-query R rowsort
+query D rowsort
 SELECT v0.c0 FROM v0 WHERE NOT (NOT (((((((((NOT (((v0.c1)LIKE(v0.c1))))AND(((v0.c2)>=(v0.c0)))))AND(((v0.c3) BETWEEN SYMMETRIC (v0.c3) AND (v0.c3)) = TRUE)))AND
 ((((v0.c1)||(((v0.c0)<(v0.c0))))) BETWEEN SYMMETRIC (v0.c1) AND (v0.c1))))AND((0.2) BETWEEN SYMMETRIC (v0.c0) AND (v0.c0)))))
 ----
@@ -1050,12 +1050,12 @@ SELECT COUNT(t0.c0 = t0.c0 OR 1 BETWEEN ASYMMETRIC 1 AND 1) FROM t0
 ----
 4
 
-query RIR rowsort
+query DID rowsort
 SELECT 0.9, COUNT(ALL (((((((CAST(TRUE AS INT))-(t0.c0)))=(t0.c0))) = TRUE)OR((CAST(char_length('H') AS INT)) BETWEEN ASYMMETRIC (CAST(-1.3 AS INT)) AND (+ (length('0')))))), 0.3 FROM t0
 ----
-0.900
+0.9
 4
-0.300
+0.3
 
 statement ok
 ROLLBACK

@@ -3,11 +3,9 @@
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024, 2025 MonetDB Foundation;
- * Copyright August 2008 - 2023 MonetDB B.V.;
- * Copyright 1997 - July 2008 CWI.
+ * For copyright information, see the file debian/copyright.
  */
 
 #ifndef MAL_TYPE_H
@@ -60,10 +58,9 @@
 
 #define REMsymbol     99		/* commentary to be retained */
 
-mal_export str getTypeName(malType tpe);
-mal_export str getTypeIdentifier(malType tpe);
+mal_export str getTypeName(allocator *ma, malType tpe);
+mal_export str getTypeIdentifier(allocator *ma, malType tpe);
 mal_export int getAtomIndex(const char *nme, size_t len, int deftpe);
-#define idcmp(n, m)	strcmp(n, m)
 mal_export int isIdentifier(str s);
 mal_export int findGDKtype(int type);	/* used in src/mal/mal_interpreter.c */
 

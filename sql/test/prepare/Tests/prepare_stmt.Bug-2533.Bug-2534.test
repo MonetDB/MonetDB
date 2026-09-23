@@ -1,0 +1,20 @@
+query TIITTT nosort
+prepare select count(*) from _tables having count(*) = ?
+----
+bigint
+63
+0
+(empty)
+%1
+%1
+bigint
+63
+0
+NULL
+NULL
+NULL
+
+query I rowsort
+exec <LAST_PREPARE_ID>(1)
+----
+

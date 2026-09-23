@@ -1,0 +1,141 @@
+statement ok
+CREATE SCHEMA test7893
+
+statement ok
+SET SCHEMA test7893
+
+statement ok
+CREATE TABLE posts (
+    id          INT,
+    user_id     INT,
+    title       VARCHAR(255),
+    content     VARCHAR(1000),
+    views       INT,
+    likes       INT,
+    created_at  TIMESTAMP,
+    rating      DOUBLE
+)
+
+statement ok
+CREATE TABLE comments (
+    id          INT,
+    post_id     INT,
+    user_id     INT,
+    content     VARCHAR(1000),
+    is_spam     INT,
+    created_at  TIMESTAMP
+)
+
+statement ok
+INSERT INTO posts VALUES
+(1, 1, 'Hello World', 'First post', 100, 10, '2022-01-10 10:00:00', 4.5),
+(2, 1, 'Another Post', NULL,        150, 20, '2022-01-11 11:00:00', 3.0),
+(3, 2, 'Bob Post',     'Content',   NULL,  5, '2022-01-12 12:00:00', NULL),
+(4, 3, NULL,           'Empty',     50,   2, '2022-01-13 13:00:00', 5.0),
+(5, 4, 'Last Post',    'Last',      300,  30,'2022-01-14 14:00:00', 4.9)
+
+statement ok
+INSERT INTO comments VALUES
+(1, 1, 2, 'Nice post', 0, '2022-01-20 10:00:00'),
+(2, 1, 3, 'Spam here', 1,  '2022-01-21 11:00:00'),
+(3, 2, 1, 'Thanks',    0, '2022-01-22 12:00:00'),
+(4, 4, 5, NULL,        0, '2022-01-23 13:00:00')
+
+query I nosort
+SELECT COUNT(*)
+  FROM (
+    SELECT ref_1.views AS c0
+    FROM comments AS ref_0
+    RIGHT JOIN posts AS ref_1
+      ON (ref_1.likes IS NOT NULL)
+    WHERE (EXISTS (SELECT 1 FROM posts AS ref_2
+                   WHERE (SELECT AVG(id) FROM posts) < 19.71)
+           OR TRUE OR (ref_0.id < ref_0.id))
+  ) AS subq_0,
+  LATERAL (
+    SELECT ref_3.user_id AS c0, subq_0.c0 AS c1
+    FROM comments AS ref_3
+    WHERE subq_0.c0 != (SELECT MAX(id) FROM posts)
+  ) AS subq_1
+----
+64
+
+query I nosort
+SELECT (
+  SELECT COUNT(*)
+  FROM (
+    SELECT ref_1.views AS c0
+    FROM comments AS ref_0
+    RIGHT JOIN posts AS ref_1
+      ON (ref_1.likes IS NOT NULL)
+    WHERE (EXISTS (SELECT 1 FROM posts AS ref_2
+                   WHERE (SELECT AVG(id) FROM posts) < 19.71)
+           OR TRUE OR (ref_0.id < ref_0.id))
+  ) AS subq_0,
+  LATERAL (
+    SELECT ref_3.user_id AS c0, subq_0.c0 AS c1
+    FROM comments AS ref_3
+    WHERE subq_0.c0 != (SELECT MAX(id) FROM posts)
+  ) AS subq_1
+  WHERE (false AND CASE WHEN (subq_0.c0 != subq_1.c0) OR (72.88 < 97.58)
+                        THEN true
+                        ELSE startswith(ltrim(lpad('b', subq_1.c0)),'atk87g')
+                   END)
+) + (
+  SELECT COUNT(*)
+  FROM (
+    SELECT ref_1.views AS c0
+    FROM comments AS ref_0
+    RIGHT JOIN posts AS ref_1
+      ON (ref_1.likes IS NOT NULL)
+    WHERE (EXISTS (SELECT 1 FROM posts AS ref_2
+                   WHERE (SELECT AVG(id) FROM posts) < 19.71)
+           OR TRUE OR (ref_0.id < ref_0.id))
+  ) AS subq_0,
+  LATERAL (
+    SELECT ref_3.user_id AS c0, subq_0.c0 AS c1
+    FROM comments AS ref_3
+    WHERE subq_0.c0 != (SELECT MAX(id) FROM posts)
+  ) AS subq_1
+  WHERE NOT (
+    false AND CASE WHEN (subq_0.c0 != subq_1.c0) OR (72.88 < 97.58)
+                  THEN true
+                  ELSE startswith(ltrim(lpad('b', subq_1.c0)),'atk87g')
+             END
+  )
+) + (
+  SELECT COUNT(*)
+  FROM (
+    SELECT ref_1.views AS c0
+    FROM comments AS ref_0
+    RIGHT JOIN posts AS ref_1
+      ON (ref_1.likes IS NOT NULL)
+    WHERE (EXISTS (SELECT 1 FROM posts AS ref_2
+                   WHERE (SELECT AVG(id) FROM posts) < 19.71)
+           OR TRUE OR (ref_0.id < ref_0.id))
+  ) AS subq_0,
+  LATERAL (
+    SELECT ref_3.user_id AS c0, subq_0.c0 AS c1
+    FROM comments AS ref_3
+    WHERE subq_0.c0 != (SELECT MAX(id) FROM posts)
+  ) AS subq_1
+  WHERE (false AND CASE WHEN (subq_0.c0 != subq_1.c0) OR (72.88 < 97.58)
+                        THEN true
+                        ELSE startswith(ltrim(lpad('b', subq_1.c0)),'atk87g')
+                   END IS NULL)
+)
+----
+64
+
+statement ok
+DROP TABLE comments
+
+statement ok
+DROP TABLE posts
+
+statement ok
+SET SCHEMA sys
+
+statement ok
+DROP SCHEMA test7893
+

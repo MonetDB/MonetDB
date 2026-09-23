@@ -3,11 +3,9 @@
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024, 2025 MonetDB Foundation;
- * Copyright August 2008 - 2023 MonetDB B.V.;
- * Copyright 1997 - July 2008 CWI.
+ * For copyright information, see the file debian/copyright.
  */
 
 /*
@@ -48,12 +46,14 @@ isExceptionVariable(const char *nme)
 	return false;
 }
 
-static char *M5OutOfMemory = MAL_MALLOC_FAIL;
+static char M5OutOfMemory[] = MAL_MALLOC_FAIL;
 
 char *
 dupError(const char *err)
 {
-	char *msg = GDKstrdup(err);
+	QryCtx *qc = MT_thread_get_qry_ctx();
+	allocator *ma = qc->errorallocator;
+	char *msg = ma_strdup(ma, err);
 
 	return msg ? msg : M5OutOfMemory;
 }
@@ -61,14 +61,15 @@ dupError(const char *err)
 char *
 concatErrors(char *err1, const char *err2)
 {
+	QryCtx *qc = MT_thread_get_qry_ctx();
+	allocator *ma = qc->errorallocator;
 	size_t len = strlen(err1);
 	bool addnl = err1[len - 1] != '\n';
 	len += strlen(err2) + 1 + addnl;
-	char *new = GDKmalloc(len);
+	char *new = ma_alloc(ma, len);
 	if (new == NULL)
 		return err1;
-	strconcat_len(new, len, err1, addnl ? "\n" : "", err2, NULL);
-	freeException(err1);
+	strtconcat(new, len, err1, addnl ? "\n" : "", err2, NULL);
 	return new;
 }
 
@@ -80,12 +81,14 @@ concatErrors(char *err1, const char *err2)
 __attribute__((__format__(__printf__, 3, 0), __returns_nonnull__))
 static str
 createExceptionInternal(enum malexception type, const char *fcn,
-						const char *format, va_list ap)
+						_In_z_ _Printf_format_string_ const char *format, va_list ap)
 {
 	size_t msglen;
 	int len;
 	char *msg;
 	va_list ap2;
+	QryCtx *qc = MT_thread_get_qry_ctx();
+	allocator *ma = qc->errorallocator;
 
 	va_copy(ap2, ap);			/* we need to use it twice */
 	msglen = strlen(exceptionNames[type]) + strlen(fcn) + 2;
@@ -94,14 +97,12 @@ createExceptionInternal(enum malexception type, const char *fcn,
 		TRC_CRITICAL(MAL_SERVER, "called with bad arguments");
 		len = 0;
 	}
-	msg = GDKmalloc(msglen + len + 2);
+	msg = ma_alloc(ma, msglen + len + 2);
 	if (msg != NULL) {
 		/* the calls below succeed: the arguments have already been checked */
-		(void) strconcat_len(msg, msglen + 1,
-							 exceptionNames[type], ":", fcn, ":", NULL);
+		strtconcat(msg, msglen + 1, exceptionNames[type], ":", fcn, ":", NULL);
 		if (len > 0)
 			(void) vsnprintf(msg + msglen, len + 1, format, ap2);
-		va_end(ap2);
 		char *q = msg + strlen(msg);
 		if (q[-1] != '\n') {
 			/* make sure message ends with newline, we already have the space */
@@ -134,10 +135,11 @@ createException(enum malexception type, const char *fcn, const char *format,
 {
 	va_list ap;
 	str ret = NULL, localGDKerrbuf = GDKerrbuf;
+	const char *p;
 
 	if (localGDKerrbuf &&
-		(ret = strstr(format, MAL_MALLOC_FAIL)) != NULL &&
-		ret[strlen(MAL_MALLOC_FAIL)] != ':' &&
+		(p = strstr(format, MAL_MALLOC_FAIL)) != NULL &&
+		p[strlen(MAL_MALLOC_FAIL)] != ':' &&
 		(strncmp(localGDKerrbuf, "GDKmalloc", 9) == 0 ||
 		 strncmp(localGDKerrbuf, "GDKrealloc", 10) == 0 ||
 		 strncmp(localGDKerrbuf, "GDKzalloc", 9) == 0 ||
@@ -181,13 +183,6 @@ createException(enum malexception type, const char *fcn, const char *format,
 	return ret;
 }
 
-void
-freeException(str msg)
-{
-	if (msg != MAL_SUCCEED && msg != M5OutOfMemory)
-		GDKfree(msg);
-}
-
 /**
  * Internal helper function for createMalException and
  * showScriptException such that they share the same code, because reuse
@@ -196,12 +191,14 @@ freeException(str msg)
 __attribute__((__format__(__printf__, 5, 0), __returns_nonnull__))
 static str
 createMalExceptionInternal(MalBlkPtr mb, int pc, enum malexception type,
-						   char *prev, const char *format, va_list ap)
+						   const char *prev, _In_z_ _Printf_format_string_ const char *format, va_list ap)
 {
 	bool addnl = false;
-	const char *s = mb && getInstrPtr(mb, 0) ? getModName(mb) : "unknown";
-	const char *fcn = mb && getInstrPtr(mb, 0) ? getFcnName(mb) : "unknown";
+	const char *s = getInstrPtr(mb, 0) ? getModName(mb) : "unknown";
+	const char *fcn = getInstrPtr(mb, 0) ? getFcnName(mb) : "unknown";
 	size_t msglen;
+	QryCtx *qc = MT_thread_get_qry_ctx();
+	allocator *ma = qc->errorallocator;
 
 	if (prev) {
 		msglen = strlen(prev);
@@ -222,7 +219,7 @@ createMalExceptionInternal(MalBlkPtr mb, int pc, enum malexception type,
 	int len = vsnprintf(NULL, 0, format, ap);
 	if (len < 0)
 		len = 0;
-	char *msg = GDKmalloc(msglen + len + 1);
+	char *msg = ma_alloc(ma, msglen + len + 1);
 	if (msg != NULL) {
 		/* the calls below succeed: the arguments have already been checked */
 		if (prev) {
@@ -230,8 +227,7 @@ createMalExceptionInternal(MalBlkPtr mb, int pc, enum malexception type,
 							prev, addnl ? "\n" : "",
 							exceptionNames[type], s, fcn, pc);
 		} else if (type == SYNTAX) {
-			(void) strconcat_len(msg, msglen + 1,
-								 exceptionNames[type], ":", NULL);
+			(void) strtconcat(msg, msglen + 1, exceptionNames[type], ":", NULL);
 		} else {
 			(void) snprintf(msg, msglen + 1, "%s:%s.%s[%d]:",
 							exceptionNames[type], s, fcn, pc);
@@ -242,7 +238,6 @@ createMalExceptionInternal(MalBlkPtr mb, int pc, enum malexception type,
 		msg = M5OutOfMemory;
 	}
 	va_end(ap2);
-	freeException(prev);
 	return msg;
 }
 
@@ -301,13 +296,11 @@ getExceptionType(const char *exception)
 /**
  * Returns the location the exception was raised, if known.  It
  * depends on how the exception was created, what the location looks
- * like.  The returned string is mallocced with GDKmalloc, and hence
- * needs to be GDKfreed.
+ * like.  The returned string is allocated using the passed allocator.
  */
 str
-getExceptionPlace(const char *exception)
+getExceptionPlace(allocator *ma, const char *exception)
 {
-	str ret;
 	const char *s, *t;
 	enum malexception i;
 	size_t l;
@@ -318,15 +311,12 @@ getExceptionPlace(const char *exception)
 			exception[l] == ':') {
 			s = exception + l + 1;
 			if ((t = strchr(s, ':')) != NULL) {
-				if ((ret = GDKmalloc(t - s + 1)) == NULL)
-					return NULL;
-				strcpy_len(ret, s, t - s + 1);
-				return ret;
+				return ma_strndup(ma, s, t - s);
 			}
 			break;
 		}
 	}
-	return GDKstrdup("(unknown)");
+	return "(unknown)";
 }
 
 /**

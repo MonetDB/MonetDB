@@ -3,15 +3,14 @@
 #
 # This Source Code Form is subject to the terms of the Mozilla Public
 # License, v. 2.0.  If a copy of the MPL was not distributed with this
-# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+# file, You can obtain one at https://mozilla.org/MPL/2.0/.
 #
-# Copyright 2024, 2025 MonetDB Foundation;
-# Copyright August 2008 - 2023 MonetDB B.V.;
-# Copyright 1997 - July 2008 CWI.
+# For copyright information, see the file debian/copyright.
 #]]
 
 set(mal_public_headers
   ${CMAKE_CURRENT_SOURCE_DIR}/mal.h
+  ${CMAKE_CURRENT_SOURCE_DIR}/mal_arguments.h
   ${CMAKE_CURRENT_SOURCE_DIR}/mal_authorize.h
   ${CMAKE_CURRENT_SOURCE_DIR}/mal_client.h
   ${CMAKE_CURRENT_SOURCE_DIR}/mal_errors.h
@@ -47,6 +46,7 @@ target_sources(mal
   mal_resource.c mal_resource.h
   mal_interpreter.c mal_interpreter.h
   mal_dataflow.c mal_dataflow.h
+  mal_pipelines.c
   mal_linker.c  mal_linker.h
   mal_listing.c mal_listing.h
   mal_module.c
@@ -79,11 +79,12 @@ target_compile_definitions(mal
 target_link_libraries(mal
   PRIVATE
   monetdb_config_header
-  mcrypt
-  msabaoth
+  mutils
   stream
   mapi
-  bat)
+  bat
+  ${XXHASH_LDFLAGS}
+  $<$<BOOL:${MALLOC_FOUND}>:Malloc::Malloc>)
 
 set_target_properties(mal
   PROPERTIES

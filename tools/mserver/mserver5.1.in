@@ -2,16 +2,14 @@
 .\"
 .\" This Source Code Form is subject to the terms of the Mozilla Public
 .\" License, v. 2.0.  If a copy of the MPL was not distributed with this
-.\" file, You can obtain one at http://mozilla.org/MPL/2.0/.
+.\" file, You can obtain one at https://mozilla.org/MPL/2.0/.
 .\"
-.\" Copyright 2024, 2025 MonetDB Foundation;
-.\" Copyright August 2008 - 2023 MonetDB B.V.;
-.\" Copyright 1997 - July 2008 CWI.
+.\" For copyright information, see the file debian/copyright.
 .\"
 .\" Process this file with
 .\" groff -man -Tascii foo.1
 .\"
-.TH MSERVER5 1 2024-08-19 MonetDB "MonetDB Applications"
+.TH MSERVER5 1 2025-12-09 MonetDB "MonetDB Applications"
 .SH NAME
 mserver5 \- the MonetDB server version 5
 .SH SYNOPSIS
@@ -95,10 +93,18 @@ file
 inside the directory specified with the
 .B \-\-dbpath
 option.
+If
+.I path
+is equal to
+.BR stdout ,
+the trace will be written to the standard output which is normally
+captured by
+.IR monetdbd (1)
+and written to its log file.
 .TP
 \fB\-\-config=\fP\fIfile\fP
 Config file to read options from.
-This file can contain all options as can be set with the
+This file can contain all options that can be set with the
 .B \-\-set
 flag.
 See
@@ -120,6 +126,10 @@ sections.
 Load extra module in the form of a dynamic link library (.dll or .so
 file) which should be located in the lib/monetdb5 directory.
 This option can be repeated for different modules.
+Also see the
+.B loadmodules
+entry in
+.IR monetdb (1).
 .TP
 .B \-\-without\-geom
 Start the server without 
@@ -147,6 +157,32 @@ in-memory.
 data will be written to disk.
 The name of the database that a client can connect to is
 .BR in\-memory .
+.TP
+.B \-\-read\-password\-initialize\-and\-exit
+Read an unencrypted password from standard input and use it to set the
+password for the
+.B monetdb
+administrator user, initialize the database, and exit.
+If the database was already initialized, the administrator password is
+not changed.
+This option is used by
+.IR monetdbd (1)
+when creating a new database with an administrator password and should
+not be used otherwise.
+.TP
+.B \-\-process\-wal\-and\-exit
+Stop the server immediately after processing the write-ahead log.
+.TP
+.B \-\-clean\-BBP
+Clean up junk BATs from the BBP (i.e. the database).  These are BATs
+that were accidentally left around by older versions of the software
+(the current version is not known to do this) and so this option should
+not normally be used.
+.TP
+\fB\-\-logging\fP \fIcomponent\fP\fB=\fP\fIlevel\fP
+Set the specified logging component to the specified level as if the SQL
+query \fBcall logging.setcomplevel(\fP\fIcomponent\fP\fB,\fP\fIlevel\fP\fB)\fP
+had been executed, except this is done before SQL is initialized.
 .TP
 \fB\-\-debug\fP[\fB=\fP\fIvalue\fP]
 .PD 0
@@ -180,6 +216,9 @@ The value is an integer, which can be (a bit-wise OR of):
 .B 128
 (PARMASK) Thread management
 .TP
+.B 256
+(TESTINGMASK) Used for testing
+.TP
 .B 512
 (TMMASK) Transaction management
 .TP
@@ -187,13 +226,19 @@ The value is an integer, which can be (a bit-wise OR of):
 (TEMMASK) Locks and Triggers
 .TP
 .B 4096
-(PERFMASK) BBP Performance (?)
+(PERFMASK) BBP Performance
 .TP
 .B 8192
 (DELTAMASK) Delta debugging (?)
 .TP
 .B 16384
 (LOADMASK) Module loading
+.TP
+.B 32768
+(PUSHCANDMASK)
+.TP
+.B 65536
+(TAILCHKMASK) Check sizes of .tail files during low-level commit
 .TP
 .B 1048576
 (ACCELMASK) Accelerator debugging
@@ -219,10 +264,6 @@ measurements
 .B 67108864
 (ALLOCMASK) exhaustive GDK malloc & free tracing
 for debugging (GDK developers, only)
-.TP
-.B 134217728
-(OPTMASK) trace the actions, decisions and
-effects of MAL optimizers
 .TP
 .B 268435456
 (HEAPMASK) trace/debug HEAPextend;
@@ -271,21 +312,6 @@ Equivalent to \fB\-\-debug=\fP\fI(THRDMASK | PARMASK)\fP.
 .TP
 .B \-\-transactions
 Equivalent to \fB\-\-debug=\fP\fI(TMMASK | DELTAMASK | TEMMASK)\fP.
-.TP
-.B \-\-read\-password\-initialize\-and\-exit
-Read an unencrypted password from standard input and use it to set the
-password for the
-.B monetdb
-administrator user, initialize the database, and exit.
-If the database was already initialized, the administrator password is
-not changed.
-This option is used by
-.IR monetdbd (1)
-when creating a new database with an administrator password and should
-not be used otherwise.
-.TP
-.B \-\-process\-wal\-and\-exit
-Stop the server immediately after processing the write-ahead log.
 .SH MSERVER5 PARAMETERS
 .I Mserver5
 instructs the GDK kernel through the MAL (MonetDB Assembler Language)
@@ -441,59 +467,31 @@ The following are possible pipes to use:
 .TP
 .B minimal_pipe
 The minimal pipeline necessary by the server to operate correctly.
-.\" this documentation must be kept in sync with the respective code in monetdb5/optimizer/opt_pipes.c
-minimal_pipe=inline,remap,emptybind,deadcode,for,dict,multiplex,generator,profiler,garbageCollector
 .TP
 .B default_pipe
 The default pipeline contains the mitosis-mergetable-reorder
 optimizers, aimed at large tables and improved access locality.
-.\" this documentation must be kept in sync with the respective code in monetdb5/optimizer/opt_pipes.c
-default_pipe=inline,remap,costModel,coercions,aliases,evaluate,emptybind,deadcode,pushselect,aliases,for,dict,mitosis,mergetable,aliases,constants,commonTerms,projectionpath,deadcode,matpack,reorder,dataflow,querylog,multiplex,generator,candidates,deadcode,postfix,profiler,garbageCollector
 .TP
 .B no_mitosis_pipe
 The no_mitosis pipeline is identical to the default pipeline, except
-that optimizer mitosis is omitted.
+that optimizer mitosis and dependent optimizers are omitted.
 It is used mainly to make some tests work deterministically, and to
 check/debug whether ``unexpected'' problems are related to mitosis
 (and/or mergetable).
-.\" this documentation must be kept in sync with the respective code in monetdb5/optimizer/opt_pipes.c
-no_mitosis_pipe=inline,remap,costModel,coercions,aliases,evaluate,emptybind,deadcode,pushselect,aliases,mergetable,aliases,constants,commonTerms,projectionpath,deadcode,matpack,reorder,dataflow,querylog,multiplex,generator,candidates,deadcode,postfix,profiler,garbageCollector
 .TP
 .B sequential_pipe
 The sequential pipeline is identical to the default pipeline, except
-that optimizers mitosis & dataflow are omitted.
-It is use mainly to make some tests work deterministically, i.e.,
-avoid ambiguous output, by avoiding parallelism.
-.\" this documentation must be kept in sync with the respective code in monetdb5/optimizer/opt_pipes.c
-sequential_pipe=inline,remap,costModel,coercions,aliases,evaluate,emptybind,deadcode,pushselect,aliases,for,dict,mergetable,aliases,constants,commonTerms,projectionpath,deadcode,matpack,reorder,querylog,multiplex,generator,candidates,deadcode,postfix,profiler,garbageCollector
+that optimizers mitosis, dataflow and dependent optimizers are omitted.
+It is use mainly to make some tests work deterministically, i.e., avoid
+ambiguous output, by avoiding parallelism.
 .RE
 .TP
-.B embedded_py
-Enable embedded Python.  This means Python code can be called from
-SQL.
-The value is
-.B true
-or
-.B 3
-for embedded Python 3.  Note that by enabling embedded Python, users
-of the server are allowed to execute arbitrary Python code, and are
-therefore able to read and modify all data that the server process has
-access to.
-.TP
-.B embedded_r=true
-Enable embedded R.  This means R code can be called from SQL.  Note
-that by enabling embedded R, users of the server are allowed to
-execute arbitrary R code, and are therefore able to read and modify
-all data that the server process has access to.
-.TP
-.B embedded_c=true
-Enable embedded C.  This means C code can be called from SQL.  The C
-code will first be compiled and then executed.  This means a C
-compiler must be available.  Note also that by enabling embedded C,
-users of the server are allowed to execute arbitrary C code, and are
-therefore able to read and modify all data that the server process has
-access to.  In addition, if the C code causes a crash, all bets are
-off.
+\fBidle_timeout=\fP\fIseconds\fP
+Set the idle timeout.
+If there is an active transaction, and the client has not provided any
+input to the server for the specified amount of time, the server will
+close the connection and abort (rollback) the transaction.
+The default is \fB0\fP which means no timeout.
 .TP
 .B raw_strings=true
 The boolean option raw_strings controls how the sql scanner interprets string

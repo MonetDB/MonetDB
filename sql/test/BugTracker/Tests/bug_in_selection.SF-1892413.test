@@ -17,8 +17,15 @@ select * from test_subquery
 19260102
 19260104
 
-statement error
+query II rowsort
 SELECT date, (SELECT date from test_subquery where date > t1892413a.date limit 1) as dtNext from test_subquery t1892413a
+----
+19251231
+19260102
+19260102
+19260104
+19260104
+NULL
 
 statement error
 SELECT date, (SELECT date from test_subquery where date > t1892413a.date) as dtNext from test_subquery t1892413a

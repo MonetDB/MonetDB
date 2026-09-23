@@ -3,11 +3,9 @@
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024, 2025 MonetDB Foundation;
- * Copyright August 2008 - 2023 MonetDB B.V.;
- * Copyright 1997 - July 2008 CWI.
+ * For copyright information, see the file debian/copyright.
  */
 
 /*
@@ -173,7 +171,7 @@ findFunctionType(Module scope, MalBlkPtr mb, InstrPtr p, int idx, int silent)
 			returns[i] = 0;
 		returntype = returns;
 	} else {
-		returntype = (int *) GDKzalloc(p->retc * sizeof(int));
+		returntype = (int *) ma_zalloc(mb->ma, p->retc * sizeof(int));
 		if (returntype == 0)
 			return -1;
 	}
@@ -530,8 +528,6 @@ findFunctionType(Module scope, MalBlkPtr mb, InstrPtr p, int idx, int silent)
 			p->blk = s->def;
 		}
 
-		if (returntype != returns)
-			GDKfree(returntype);
 		return s1;
 	}							/* while */
 	/*
@@ -540,8 +536,6 @@ findFunctionType(Module scope, MalBlkPtr mb, InstrPtr p, int idx, int silent)
 	 * arguments, but that clashes with one of the target variables.
 	 */
   wrapup:
-	if (returntype != returns)
-		GDKfree(returntype);
 	return -3;
 }
 
@@ -557,12 +551,10 @@ typeMismatch(MalBlkPtr mb, InstrPtr p, int idx, int lhs, int rhs, int silent)
 	str n2;
 
 	if (!silent) {
-		n1 = getTypeName(lhs);
-		n2 = getTypeName(rhs);
+		n1 = getTypeName(mb->ma, lhs);
+		n2 = getTypeName(mb->ma, rhs);
 		mb->errors = createMalException(mb, idx, TYPE, "type mismatch %s := %s", n1,
 										n2);
-		GDKfree(n1);
-		GDKfree(n2);
 	}
 	p->typeresolved = false;
 }
@@ -632,40 +624,17 @@ typeChecker(Module scope, MalBlkPtr mb, InstrPtr p, int idx, int silent)
 		 */
 		if (!isaSignature(p) && !getInstrPtr(mb, 0)->polymorphic) {
 			if (!silent) {
-				char *errsig = NULL;
-				if (!malLibraryEnabled(p->modname)) {
-					mb->errors = createMalException(mb, idx, TYPE,
-													"'%s%s%s' library error in: %s",
-													(getModuleId(p) ?
-													 getModuleId(p) : ""),
-													(getModuleId(p) ? "." : ""),
-													getFunctionId(p),
-													malLibraryHowToEnable(p->
-																		  modname));
-				} else {
-					bool free_errsig = false, special_undefined = false;
-					errsig = malLibraryHowToEnable(p->modname);
-					if (!strcmp(errsig, "")) {
-						errsig = instruction2str(mb, 0, p,
-												 (LIST_MAL_NAME | LIST_MAL_TYPE
-												  | LIST_MAL_VALUE));
-						free_errsig = true;
-					} else {
-						special_undefined = true;
-					}
-					mb->errors = createMalException(mb, idx, TYPE,
-													"'%s%s%s' undefined%s: %s",
-													(getModuleId(p) ?
-													 getModuleId(p) : ""),
-													(getModuleId(p) ? "." : ""),
-													getFunctionId(p),
-													special_undefined ? "" :
-													" in",
-													errsig ? errsig :
-													"failed instruction2str()");
-					if (free_errsig)
-						GDKfree(errsig);
-				}
+				char *errsig = instruction2str(mb, 0, p,
+											   (LIST_MAL_NAME | LIST_MAL_TYPE
+												| LIST_MAL_VALUE));
+				mb->errors = createMalException(mb, idx, TYPE,
+												"'%s%s%s' undefined in: %s",
+												(getModuleId(p) ?
+												 getModuleId(p) : ""),
+												(getModuleId(p) ? "." : ""),
+												getFunctionId(p),
+												errsig ? errsig :
+												"failed instruction2str()");
 			}
 			p->typeresolved = false;
 		} else

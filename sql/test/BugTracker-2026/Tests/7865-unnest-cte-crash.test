@@ -1,0 +1,17 @@
+query I
+SELECT 1
+FROM (SELECT 1) as x(x)
+WHERE x IN
+(
+    WITH RECURSIVE t(row_number) AS
+    (
+        SELECT 1
+        EXCEPT
+        SELECT 2
+        UNION
+        SELECT 1 AS x WHERE EXISTS (SELECT * FROM t WHERE x = x)
+    )
+    SELECT x FROM t
+)
+----
+1

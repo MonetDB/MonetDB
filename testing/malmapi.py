@@ -2,11 +2,9 @@
 #
 # This Source Code Form is subject to the terms of the Mozilla Public
 # License, v. 2.0.  If a copy of the MPL was not distributed with this
-# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+# file, You can obtain one at https://mozilla.org/MPL/2.0/.
 #
-# Copyright 2024, 2025 MonetDB Foundation;
-# Copyright August 2008 - 2023 MonetDB B.V.;
-# Copyright 1997 - July 2008 CWI.
+# For copyright information, see the file debian/copyright.
 
 """
 This is the python implementation of the mapi protocol.
@@ -104,13 +102,21 @@ class Connection(object):
         unix_socket is used if hostname is not defined.
         """
 
+        if database.startswith('monetdb://') and 'sock=' in database:
+            unix_socket = database[database.index('sock=')+5:]
+            hostname = database = None
+        elif database.startswith('mapi:monetdb:///'):
+            unix_socket = database[15:]
+            hostname = database = None
         if hostname and hostname.startswith('/') and not unix_socket:
-            unix_socket = '%s/.s.monetdb.%d' % (hostname, port)
+            unix_socket = f'{hostname}/.s.monetdb.{port}'
             hostname = None
-        if not unix_socket and os.path.exists("/tmp/.s.monetdb.%i" % port):
-            unix_socket = "/tmp/.s.monetdb.%i" % port
+        if not unix_socket and os.path.exists(f'/tmp/.s.monetdb.{port}'):
+            unix_socket = f'/tmp/.s.monetdb.{port}'
         elif not unix_socket and not hostname:
             hostname = 'localhost'
+        elif unix_socket:
+            hostname = None
 
         # None and zero are allowed values
         if connect_timeout != -1:
@@ -163,6 +169,10 @@ class Connection(object):
 
         self.socket.settimeout(socket.getdefaulttimeout())
         self.state = STATE_READY
+
+    def settimeout(self, timeout):
+        """ set the amount of time before a connection times out """
+        self.socket.settimeout(timeout)
 
     def _login(self, iteration=0):
         """ Reads challenge from line, generate response and check if

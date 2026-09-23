@@ -3,11 +3,9 @@
 #
 # This Source Code Form is subject to the terms of the Mozilla Public
 # License, v. 2.0.  If a copy of the MPL was not distributed with this
-# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+# file, You can obtain one at https://mozilla.org/MPL/2.0/.
 #
-# Copyright 2024, 2025 MonetDB Foundation;
-# Copyright August 2008 - 2023 MonetDB B.V.;
-# Copyright 1997 - July 2008 CWI.
+# For copyright information, see the file debian/copyright.
 #]]
 
 # For now these tests only work on special docker containers.
@@ -30,12 +28,10 @@ include(${CMAKE_CURRENT_SOURCE_DIR}/detect-lz4.cmake)
 include(${CMAKE_CURRENT_SOURCE_DIR}/detect-proj.cmake)
 include(${CMAKE_CURRENT_SOURCE_DIR}/detect-netcdf.cmake)
 include(${CMAKE_CURRENT_SOURCE_DIR}/detect-readline.cmake)
-include(${CMAKE_CURRENT_SOURCE_DIR}/detect-libr.cmake)
 include(${CMAKE_CURRENT_SOURCE_DIR}/detect-fits.cmake)
 include(${CMAKE_CURRENT_SOURCE_DIR}/detect-valgrind.cmake)
 include(${CMAKE_CURRENT_SOURCE_DIR}/detect-geos.cmake)
 include(${CMAKE_CURRENT_SOURCE_DIR}/detect-gdal.cmake)
-include(${CMAKE_CURRENT_SOURCE_DIR}/detect-libpy3.cmake)
 include(${CMAKE_CURRENT_SOURCE_DIR}/detect-unixgetaddrinfo.cmake)
 include(${CMAKE_CURRENT_SOURCE_DIR}/detect-wingetaddrinfo.cmake)
 include(${CMAKE_CURRENT_SOURCE_DIR}/detect-getaddrinfo.cmake)
@@ -44,7 +40,6 @@ include(${CMAKE_CURRENT_SOURCE_DIR}/detect-pthreadkill.cmake)
 include(${CMAKE_CURRENT_SOURCE_DIR}/detect-pthreadsig.cmake)
 
 include(${CMAKE_CURRENT_SOURCE_DIR}/set-dir-vars.cmake)
-include(${CMAKE_CURRENT_SOURCE_DIR}/set-cmake-vars.cmake)
 
 assert_legacy_variable_exists(
   legacy_variablename HAVE_FITS

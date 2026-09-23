@@ -3,11 +3,9 @@
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024, 2025 MonetDB Foundation;
- * Copyright August 2008 - 2023 MonetDB B.V.;
- * Copyright 1997 - July 2008 CWI.
+ * For copyright information, see the file debian/copyright.
  */
 
 #ifndef BATSTORAGE_H
@@ -22,7 +20,7 @@ typedef struct column_storage {
 	int ebid;		/* extra bid, TODO change ebid into extra column_storage! */
 	int uibid;		/* bat with positions of updates */
 	int uvbid;		/* bat with values of updates */
-	storage_type st; /* ST_DEFAULT, ST_DICT, ST_FOR */
+	storage_type st; /* ST_DEFAULT, ST_DICT, ST_FOR, ST_USTR */
 	bool cleared;
 	bool merged;	/* only merge changes once */
 	size_t ucnt;	/* number of updates */
@@ -38,10 +36,12 @@ typedef struct sql_delta {
 typedef struct segment {
 	BUN start;
 	BUN end;
+	bool changed;	/* changed in this transaction */
 	bool deleted;	/* we need to keep a dense segment set, 0 - end of last segment,
 					   some segments maybe deleted */
 	ulng ts;		/* timestamp on this segment, ie tid of some active transaction or commit time of append/delete or
 					   rollback time, ie ready for reuse */
+	ulng cnr;
 	ulng oldts;		/* keep previous ts, for rollbacks */
 	ATOMIC_PTR_TYPE next;	/* usually one should be enough */
 	struct segment *prev;	/* used in destruction list */
@@ -51,6 +51,7 @@ typedef struct segment {
 typedef struct segments {
 	sql_ref r;
 	ulng nr_reused;
+	ATOMIC_TYPE deleted;
 	struct segment *h;
 	struct segment *t;
 } segments;

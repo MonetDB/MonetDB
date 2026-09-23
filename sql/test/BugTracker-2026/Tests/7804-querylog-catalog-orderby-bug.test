@@ -1,0 +1,42 @@
+statement ok
+call sys.querylog_enable()
+
+statement ok
+call sys.querylog_enable(1000)
+
+statement ok
+call sys.querylog_enable()
+
+# next query (without keyword: desc) works ok
+query TT
+select "owner", "pipe" from sys.querylog_catalog order by id
+----
+monetdb
+default_pipe
+monetdb
+default_pipe
+monetdb
+default_pipe
+
+# next query (with added: desc) crashes mserver5
+# gdk/gdk_bat.c:2703: BATassertProps: Assertion `b->tsorted' failed.
+query TT
+select "owner", "pipe" from sys.querylog_catalog order by id desc
+----
+monetdb
+default_pipe
+monetdb
+default_pipe
+monetdb
+default_pipe
+monetdb
+default_pipe
+
+
+# disable and cleanup
+statement ok
+call sys.querylog_disable()
+
+statement ok
+call sys.querylog_empty()
+

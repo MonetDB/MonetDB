@@ -3,11 +3,9 @@
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024, 2025 MonetDB Foundation;
- * Copyright August 2008 - 2023 MonetDB B.V.;
- * Copyright 1997 - July 2008 CWI.
+ * For copyright information, see the file debian/copyright.
  */
 
 #include "monetdb_config.h"
@@ -16,9 +14,10 @@
 #include "group.h"
 
 str
-GRPsubgroup5(bat *ngid, bat *next, bat *nhis, const bat *bid, const bat *sid,
+GRPsubgroup5(Client ctx, bat *ngid, bat *next, bat *nhis, const bat *bid, const bat *sid,
 			 const bat *gid, const bat *eid, const bat *hid)
 {
+	(void) ctx;
 	BAT *b, *s, *g, *e, *h, *gn, *en, *hn;
 	gdk_return r;
 
@@ -64,116 +63,116 @@ GRPsubgroup5(bat *ngid, bat *next, bat *nhis, const bat *bid, const bat *sid,
 }
 
 static str
-GRPsubgroup9(bat *ngid, bat *next, const bat *bid, const bat *sid,
+GRPsubgroup9(Client ctx, bat *ngid, bat *next, const bat *bid, const bat *sid,
 			 const bat *gid, const bat *eid, const bat *hid)
 {
-	return GRPsubgroup5(ngid, next, NULL, bid, sid, gid, eid, hid);
+	return GRPsubgroup5(ctx, ngid, next, NULL, bid, sid, gid, eid, hid);
 }
 
 static str
-GRPsubgroup8(bat *ngid, bat *next, const bat *bid, const bat *gid,
+GRPsubgroup8(Client ctx, bat *ngid, bat *next, const bat *bid, const bat *gid,
 			 const bat *eid, const bat *hid)
 {
-	return GRPsubgroup5(ngid, next, NULL, bid, NULL, gid, eid, hid);
+	return GRPsubgroup5(ctx, ngid, next, NULL, bid, NULL, gid, eid, hid);
 }
 
 static str
-GRPsubgroup7(bat *ngid, bat *next, const bat *bid, const bat *sid,
+GRPsubgroup7(Client ctx, bat *ngid, bat *next, const bat *bid, const bat *sid,
 			 const bat *gid)
 {
-	return GRPsubgroup5(ngid, next, NULL, bid, sid, gid, NULL, NULL);
+	return GRPsubgroup5(ctx, ngid, next, NULL, bid, sid, gid, NULL, NULL);
 }
 
 static str
-GRPsubgroup6(bat *ngid, bat *next, const bat *bid, const bat *gid)
+GRPsubgroup6(Client ctx, bat *ngid, bat *next, const bat *bid, const bat *gid)
 {
-	return GRPsubgroup5(ngid, next, NULL, bid, NULL, gid, NULL, NULL);
+	return GRPsubgroup5(ctx, ngid, next, NULL, bid, NULL, gid, NULL, NULL);
 }
 
 static str
-GRPsubgroup4(bat *ngid, bat *next, bat *nhis, const bat *bid, const bat *gid,
+GRPsubgroup4(Client ctx, bat *ngid, bat *next, bat *nhis, const bat *bid, const bat *gid,
 			 const bat *eid, const bat *hid)
 {
-	return GRPsubgroup5(ngid, next, nhis, bid, NULL, gid, eid, hid);
+	return GRPsubgroup5(ctx, ngid, next, nhis, bid, NULL, gid, eid, hid);
 }
 
 static str
-GRPsubgroup3(bat *ngid, bat *next, bat *nhis, const bat *bid, const bat *sid,
+GRPsubgroup3(Client ctx, bat *ngid, bat *next, bat *nhis, const bat *bid, const bat *sid,
 			 const bat *gid)
 {
-	return GRPsubgroup5(ngid, next, nhis, bid, sid, gid, NULL, NULL);
+	return GRPsubgroup5(ctx, ngid, next, nhis, bid, sid, gid, NULL, NULL);
 }
 
 str
-GRPsubgroup2(bat *ngid, bat *next, bat *nhis, const bat *bid, const bat *gid)
+GRPsubgroup2(Client ctx, bat *ngid, bat *next, bat *nhis, const bat *bid, const bat *gid)
 {
-	return GRPsubgroup5(ngid, next, nhis, bid, NULL, gid, NULL, NULL);
+	return GRPsubgroup5(ctx, ngid, next, nhis, bid, NULL, gid, NULL, NULL);
 }
 
 static str
-GRPgroup4(bat *ngid, bat *next, const bat *bid, const bat *sid)
+GRPgroup4(Client ctx, bat *ngid, bat *next, const bat *bid, const bat *sid)
 {
-	return GRPsubgroup5(ngid, next, NULL, bid, sid, NULL, NULL, NULL);
+	return GRPsubgroup5(ctx, ngid, next, NULL, bid, sid, NULL, NULL, NULL);
 }
 
 str
-GRPgroup3(bat *ngid, bat *next, const bat *bid)
+GRPgroup3(Client ctx, bat *ngid, bat *next, const bat *bid)
 {
-	return GRPsubgroup5(ngid, next, NULL, bid, NULL, NULL, NULL, NULL);
+	return GRPsubgroup5(ctx, ngid, next, NULL, bid, NULL, NULL, NULL, NULL);
 }
 
 static str
-GRPgroup2(bat *ngid, bat *next, bat *nhis, const bat *bid, const bat *sid)
+GRPgroup2(Client ctx, bat *ngid, bat *next, bat *nhis, const bat *bid, const bat *sid)
 {
-	return GRPsubgroup5(ngid, next, nhis, bid, sid, NULL, NULL, NULL);
+	return GRPsubgroup5(ctx, ngid, next, nhis, bid, sid, NULL, NULL, NULL);
 }
 
 str
-GRPgroup1(bat *ngid, bat *next, bat *nhis, const bat *bid)
+GRPgroup1(Client ctx, bat *ngid, bat *next, bat *nhis, const bat *bid)
 {
-	return GRPsubgroup5(ngid, next, nhis, bid, NULL, NULL, NULL, NULL);
+	return GRPsubgroup5(ctx, ngid, next, nhis, bid, NULL, NULL, NULL, NULL);
 }
 
 static str
-GRPgroup11(bat *ngid, const bat *bid)
+GRPgroup11(Client ctx, bat *ngid, const bat *bid)
 {
-	return GRPsubgroup5(ngid, NULL, NULL, bid, NULL, NULL, NULL, NULL);
+	return GRPsubgroup5(ctx, ngid, NULL, NULL, bid, NULL, NULL, NULL, NULL);
 }
 
 static str
-GRPgroup21(bat *ngid, const bat *bid, const bat *sid)
+GRPgroup21(Client ctx, bat *ngid, const bat *bid, const bat *sid)
 {
-	return GRPsubgroup5(ngid, NULL, NULL, bid, sid, NULL, NULL, NULL);
+	return GRPsubgroup5(ctx, ngid, NULL, NULL, bid, sid, NULL, NULL, NULL);
 }
 
 static str
-GRPsubgroup51(bat *ngid, const bat *bid, const bat *sid, const bat *gid,
+GRPsubgroup51(Client ctx, bat *ngid, const bat *bid, const bat *sid, const bat *gid,
 			  const bat *eid, const bat *hid)
 {
-	return GRPsubgroup5(ngid, NULL, NULL, bid, sid, gid, eid, hid);
+	return GRPsubgroup5(ctx, ngid, NULL, NULL, bid, sid, gid, eid, hid);
 }
 
 static str
-GRPsubgroup41(bat *ngid, const bat *bid, const bat *gid, const bat *eid,
+GRPsubgroup41(Client ctx, bat *ngid, const bat *bid, const bat *gid, const bat *eid,
 			  const bat *hid)
 {
-	return GRPsubgroup5(ngid, NULL, NULL, bid, NULL, gid, eid, hid);
+	return GRPsubgroup5(ctx, ngid, NULL, NULL, bid, NULL, gid, eid, hid);
 }
 
 static str
-GRPsubgroup31(bat *ngid, const bat *bid, const bat *sid, const bat *gid)
+GRPsubgroup31(Client ctx, bat *ngid, const bat *bid, const bat *sid, const bat *gid)
 {
-	return GRPsubgroup5(ngid, NULL, NULL, bid, sid, gid, NULL, NULL);
+	return GRPsubgroup5(ctx, ngid, NULL, NULL, bid, sid, gid, NULL, NULL);
 }
 
 static str
-GRPsubgroup21(bat *ngid, const bat *bid, const bat *gid)
+GRPsubgroup21(Client ctx, bat *ngid, const bat *bid, const bat *gid)
 {
-	return GRPsubgroup5(ngid, NULL, NULL, bid, NULL, gid, NULL, NULL);
+	return GRPsubgroup5(ctx, ngid, NULL, NULL, bid, NULL, gid, NULL, NULL);
 }
 
 #include "mel.h"
-mel_func group_init_funcs[] = {
+static mel_func group_init_funcs[] = {
  command("group", "group", GRPgroup1, false, "", args(3,4, batarg("groups",oid),batarg("extents",oid),batarg("histo",lng),batargany("b",1))),
  command("group", "group", GRPgroup2, false, "", args(3,5, batarg("groups",oid),batarg("extents",oid),batarg("histo",lng),batargany("b",1),batarg("s",oid))),
  command("group", "group", GRPgroup3, false, "", args(2,3, batarg("groups",oid),batarg("extents",oid),batargany("b",1))),

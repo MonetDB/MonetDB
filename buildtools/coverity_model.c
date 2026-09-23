@@ -3,11 +3,9 @@
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024, 2025 MonetDB Foundation;
- * Copyright August 2008 - 2023 MonetDB B.V.;
- * Copyright 1997 - July 2008 CWI.
+ * For copyright information, see the file debian/copyright.
  */
 
 /*
@@ -17,9 +15,7 @@
  * during any analysis they do on our code.
  *
  * We model our use of the various allocation functions.
- * Things we want to do is model that GDKmalloc and friends are paired
- * with GDKfree, and that exceptions created by createException and
- * createMalException should be freed with freeException.
+ * For now, we model that GDKmalloc and friends are paired with GDKfree.
  *
  * author: Sjoerd Mullender
  */
@@ -143,71 +139,5 @@ GDKmremap(const char *path, int mode, void *old_address, size_t old_size, size_t
 	if (p) {
 		(void) GDKmunmap(old_address, mode, old_size);
 	}
-	return p;
-}
-
-typedef struct {} *MalBlkPtr;
-enum malexception {
-	MAL,
-	ILLARG /*,
-	OUTOFBNDS,
-	IO,
-	INVCRED,
-	OPTIMIZER,
-	STKOF,
-	SYNTAX,
-	TYPE,
-	LOADER,
-	PARSE,
-	ARITH,
-	PERMD,
-	SQL */
-};
-
-char *
-createException(enum malexception type, const char *fcn, const char *format, ...)
-{
-	char *p;
-	__coverity_format_string_sink__(format);
-	p = __coverity_alloc_nosize__();
-	__coverity_mark_as_afm_allocated__(p, "freeException");
-	return p;
-}
-
-char *
-createMalException(MalBlkPtr mb, int pc, enum malexception type, const char *format, ...)
-{
-	char *p;
-	__coverity_format_string_sink__(format);
-	p = __coverity_alloc_nosize__();
-	__coverity_mark_as_afm_allocated__(p, "freeException");
-	return p;
-}
-
-char *
-dupError(const char *err)
-{
-	char *p;
-	p = __coverity_alloc_nosize__();
-	__coverity_mark_as_afm_allocated__(p, "freeException");
-	return p;
-}
-
-void
-freeException(char *p)
-{
-	if (p) {
-		__coverity_free__(p);
-		__coverity_mark_as_afm_freed__(p, "freeException");
-	}
-}
-
-char *
-concatErrors(char *err1, const char *err2)
-{
-	char *p;
-	freeException(err1);
-	p = __coverity_alloc_nosize__();
-	__coverity_mark_as_afm_allocated__(p, "freeException");
 	return p;
 }

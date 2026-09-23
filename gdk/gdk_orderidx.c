@@ -3,11 +3,9 @@
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024, 2025 MonetDB Foundation;
- * Copyright August 2008 - 2023 MonetDB B.V.;
- * Copyright 1997 - July 2008 CWI.
+ * For copyright information, see the file debian/copyright.
  */
 
 #include "monetdb_config.h"
@@ -43,8 +41,8 @@ BATidxsync(void *arg)
 							fsync(fd);
 #endif
 						}
-						hp->dirty = false;
 					} else {
+						hp->dirty = true;
 						perror("write hash");
 					}
 					close(fd);
@@ -53,9 +51,10 @@ BATidxsync(void *arg)
 				((oid *) hp->base)[0] |= (oid) 1 << 24;
 				if (!(ATOMIC_GET(&GDKdebug) & NOSYNCMASK) &&
 				    MT_msync(hp->base, SIZEOF_OID) < 0) {
+					hp->dirty = true;
+					failed = " sync failed";
 					((oid *) hp->base)[0] &= ~((oid) 1 << 24);
 				} else {
-					hp->dirty = false;
 					failed = ""; /* not failed */
 				}
 			}
@@ -88,9 +87,9 @@ BATcheckorderidx(BAT *b)
 		b->torderidx = NULL;
 		if ((hp = GDKzalloc(sizeof(*hp))) != NULL &&
 		    (hp->farmid = BBPselectfarm(b->batRole, b->ttype, orderidxheap)) >= 0) {
-			strconcat_len(hp->filename,
-				      sizeof(hp->filename),
-				      nme, ".torderidx", NULL);
+			strtconcat(hp->filename,
+				   sizeof(hp->filename),
+				   nme, ".torderidx", NULL);
 			hp->storage = hp->newstorage = STORE_INVALID;
 
 			/* check whether a persisted orderidx can be found */
@@ -145,8 +144,8 @@ createOIDXheap(BAT *b, bool stable)
 		.dirty = true,
 		.refs = ATOMIC_VAR_INIT(1),
 	};
-	strconcat_len(m->filename, sizeof(m->filename),
-		      BBP_physical(b->batCacheid), ".torderidx", NULL);
+	strtconcat(m->filename, sizeof(m->filename),
+		   BBP_physical(b->batCacheid), ".torderidx", NULL);
 	if (m->farmid < 0 ||
 	    HEAPalloc(m, BATcount(b) + ORDERIDXOFF, SIZEOF_OID) != GDK_SUCCEED) {
 		GDKfree(m);
@@ -191,7 +190,7 @@ BATorderidx(BAT *b, bool stable)
 		return GDK_SUCCEED;
 	if (!BATtdense(b)) {
 		BAT *on;
-		MT_thread_setalgorithm("create order index");
+		MT_thread_setalgorithm("create order index", __func__);
 		TRC_DEBUG(ACCELERATOR, "BATorderidx(" ALGOBATFMT ",%d) create index\n", ALGOBATPAR(b), stable);
 		if (BATsort(NULL, &on, NULL, b, NULL, NULL, false, false, stable) != GDK_SUCCEED)
 			return GDK_FAIL;
@@ -295,7 +294,10 @@ BATorderidx(BAT *b, bool stable)
 	do {								\
 		TYPE *minhp, t;						\
 		TYPE *v = (TYPE *) bi.base;				\
-		if ((minhp = GDKmalloc(sizeof(TYPE)*n_ar)) == NULL) {	\
+		allocator *ta = MT_thread_getallocator();		\
+		allocator_state ta_state = ma_open(ta);			\
+		if ((minhp = ma_alloc(ta, sizeof(TYPE)*n_ar)) == NULL) { \
+			ma_close(&ta_state);				\
 			goto bailout;					\
 		}							\
 		/* init min heap */					\
@@ -333,7 +335,7 @@ BATorderidx(BAT *b, bool stable)
 		while (p[0] < q[0]) {					\
 			*mv++ = *(p[0])++;				\
 		}							\
-		GDKfree(minhp);						\
+		ma_close(&ta_state);					\
 	} while (0)
 
 gdk_return
@@ -380,8 +382,7 @@ GDKmergeidx(BAT *b, BAT**a, int n_ar)
 		.dirty = true,
 		.refs = ATOMIC_VAR_INIT(1),
 	};
-	strconcat_len(m->filename, sizeof(m->filename),
-		      nme, ".torderidx", NULL);
+	strtconcat(m->filename, sizeof(m->filename), nme, ".torderidx", NULL);
 	if (m->farmid < 0 ||
 	    HEAPalloc(m, BATcount(b) + ORDERIDXOFF, SIZEOF_OID) != GDK_SUCCEED) {
 		GDKfree(m);
@@ -449,13 +450,14 @@ GDKmergeidx(BAT *b, BAT**a, int n_ar)
 	} else {
 		/* use min-heap */
 		oid **p, **q, *t_oid;
+		allocator *ta = MT_thread_getallocator();
+		allocator_state ta_state = ma_open(ta);
 
-		p = GDKmalloc(n_ar*sizeof(oid *));
-		q = GDKmalloc(n_ar*sizeof(oid *));
+		p = ma_alloc(ta, n_ar*sizeof(oid *));
+		q = ma_alloc(ta, n_ar*sizeof(oid *));
 		if (p == NULL || q == NULL) {
 		  bailout:
-			GDKfree(p);
-			GDKfree(q);
+			ma_close(&ta_state);
 			HEAPfree(m, true);
 			GDKfree(m);
 			MT_lock_unset(&b->batIdxLock);
@@ -488,8 +490,7 @@ GDKmergeidx(BAT *b, BAT**a, int n_ar)
 			assert(0);
 			goto bailout;
 		}
-		GDKfree(p);
-		GDKfree(q);
+		ma_close(&ta_state);
 	}
 
 	b->torderidx = m;
@@ -533,7 +534,7 @@ OIDXfree(BAT *b)
 void
 OIDXdestroy(BAT *b)
 {
-	if (b) {
+	if (b && b->torderidx) {
 		Heap *hp;
 
 		MT_lock_set(&b->batIdxLock);

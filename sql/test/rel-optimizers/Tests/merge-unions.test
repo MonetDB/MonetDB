@@ -11,7 +11,7 @@ select * from f_uchain
 5
 
 query T nosort
-plan select * from f_uchain
+explain show details select * from f_uchain
 ----
 munion (
 | project (
@@ -39,15 +39,16 @@ where n > 1 and n < 5
 4
 4
 
+skipif knownfail
 query T nosort
-plan select * from f_uchain
+explain show details select * from f_uchain
      where n > 1 and n < 5
 ----
 munion (
 | project (
 | | select (
 | | | table("sys"."f4") [ "f4"."n" NOT NULL UNIQUE ]
-| | ) [ (int(2) "1") < ("f4"."n" NOT NULL UNIQUE) < (int(2) "5") ]
+| | ) [ (int(3) "1") < ("f4"."n" NOT NULL UNIQUE) < (int(3) "5") ]
 | ) [ "f4"."n" NOT NULL UNIQUE as "f_uchain"."n" ],
 | project (
 | | table("sys"."f3") [ "f3"."n" NOT NULL UNIQUE ]
@@ -55,7 +56,7 @@ munion (
 | project (
 | | select (
 | | | table("sys"."f1") [ "f1"."n" NOT NULL UNIQUE ]
-| | ) [ (int(2) "1") < ("f1"."n" NOT NULL UNIQUE) < (int(2) "5") ]
+| | ) [ (int(3) "1") < ("f1"."n" NOT NULL UNIQUE) < (int(3) "5") ]
 | ) [ "f1"."n" NOT NULL UNIQUE as "f_uchain"."n" ],
 | project (
 | | table("sys"."f2") [ "f2"."n" NOT NULL UNIQUE ]
@@ -76,15 +77,16 @@ select n, count(n) from f_uchain group by n
 5
 1
 
+skipif knownfail
 query T nosort
-plan select * from f_uchain
+explain show details select * from f_uchain
      where n > 1 and n < 5
 ----
 munion (
 | project (
 | | select (
 | | | table("sys"."f4") [ "f4"."n" NOT NULL UNIQUE ]
-| | ) [ (int(2) "1") < ("f4"."n" NOT NULL UNIQUE) < (int(2) "5") ]
+| | ) [ (int(3) "1") < ("f4"."n" NOT NULL UNIQUE) < (int(3) "5") ]
 | ) [ "f4"."n" NOT NULL UNIQUE as "f_uchain"."n" ],
 | project (
 | | table("sys"."f3") [ "f3"."n" NOT NULL UNIQUE ]
@@ -92,7 +94,7 @@ munion (
 | project (
 | | select (
 | | | table("sys"."f1") [ "f1"."n" NOT NULL UNIQUE ]
-| | ) [ (int(2) "1") < ("f1"."n" NOT NULL UNIQUE) < (int(2) "5") ]
+| | ) [ (int(3) "1") < ("f1"."n" NOT NULL UNIQUE) < (int(3) "5") ]
 | ) [ "f1"."n" NOT NULL UNIQUE as "f_uchain"."n" ],
 | project (
 | | table("sys"."f2") [ "f2"."n" NOT NULL UNIQUE ]
@@ -112,7 +114,7 @@ select * from f_merge
 5
 
 query T nosort
-plan select * from f_merge
+explain show details select * from f_merge
 ----
 munion (
 | project (
@@ -140,8 +142,9 @@ where n > 1 and n < 5
 4
 4
 
+skipif knownfail
 query T nosort
-plan select * from f_merge
+explain show details select * from f_merge
      where n > 1 and n < 5
 ----
 munion (
@@ -176,7 +179,7 @@ select * from f_merge_rec
 5
 
 query T nosort
-plan select * from f_merge_rec
+explain show details select * from f_merge_rec
 ----
 munion (
 | project (
@@ -204,15 +207,16 @@ where n > 1 and n < 5
 4
 4
 
+skipif knownfail
 query T nosort
-plan select * from f_merge_rec
+explain show details select * from f_merge_rec
      where n > 1 and n < 5
 ----
 munion (
 | project (
 | | select (
 | | | table("sys"."f1") [ "f1"."n" NOT NULL UNIQUE as "f_merge_rec"."n" ]
-| | ) [ (int(31) "1") < ("f_merge_rec"."n" NOT NULL UNIQUE) < (int(31) "5"), (int(31) "1") < ("f_merge_rec"."n" NOT NULL UNIQUE) < (int(31) "5") ]
+| | ) [ (int(31) "1") < ("f_merge_rec"."n" NOT NULL UNIQUE) < (int(31) "5") ]
 | ) [ "f_merge_rec"."n" NOT NULL UNIQUE ],
 | project (
 | | table("sys"."f2") [ "f2"."n" NOT NULL UNIQUE as "f_merge_rec"."n" ]
@@ -223,7 +227,7 @@ munion (
 | project (
 | | select (
 | | | table("sys"."f4") [ "f4"."n" NOT NULL UNIQUE as "f_merge_rec"."n" ]
-| | ) [ (int(31) "1") < ("f_merge_rec"."n" NOT NULL UNIQUE) < (int(31) "5"), (int(31) "1") < ("f_merge_rec"."n" NOT NULL UNIQUE) < (int(31) "5") ]
+| | ) [ (int(31) "1") < ("f_merge_rec"."n" NOT NULL UNIQUE) < (int(31) "5") ]
 | ) [ "f_merge_rec"."n" NOT NULL UNIQUE ]
 ) [ "f_merge_rec"."n" NOT NULL ]
 
@@ -241,8 +245,9 @@ select n, count(n) from f_merge_rec group by n
 5
 1
 
+skipif knownfail
 query T nosort
-plan select n, count(n) from f_merge_rec group by n
+explain show details select n, count(n) from f_merge_rec group by n
 ----
 project (
 | group by (

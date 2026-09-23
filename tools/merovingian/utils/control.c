@@ -3,11 +3,9 @@
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024, 2025 MonetDB Foundation;
- * Copyright August 2008 - 2023 MonetDB B.V.;
- * Copyright 1997 - July 2008 CWI.
+ * For copyright information, see the file debian/copyright.
  */
 
 #include "monetdb_config.h"
@@ -66,7 +64,7 @@ control_setup(
 		server = (struct sockaddr_un) {
 			.sun_family = AF_UNIX,
 		};
-		strcpy_len(server.sun_path, host, sizeof(server.sun_path));
+		strtcpy(server.sun_path, host, sizeof(server.sun_path));
 		if (connect(control->sock, (struct sockaddr *) &server, sizeof(struct sockaddr_un)) == -1) {
 			switch (errno) {
 			case ENOENT:
@@ -198,7 +196,7 @@ control_setup(
 				char *algos = NULL;
 				char *shash = NULL;
 				char *phash = NULL;
-				char *algsv[] = {
+				static const char *algsv[] = {
 					"RIPEMD160",
 					"SHA512",
 					"SHA384",
@@ -302,7 +300,7 @@ control_setup(
 
 				/* now hash the password hash with the provided
 				 * challenge */
-				char **algs = algsv;
+				const char **algs = algsv;
 				for (; *algs != NULL; algs++) {
 					/* TODO: make this actually obey the separation by
 					 * commas, and only allow full matches */

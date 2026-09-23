@@ -1,16 +1,8 @@
 statement ok
 set optimizer = 'sequential_pipe'
 
-statement ok
-create procedure profiler.starttrace() external name profiler."starttrace"
-
-statement ok
-create procedure profiler.stoptrace() external name profiler.stoptrace
-
-statement ok
-call profiler."starttrace"()
-
 query TI rowsort
+trace
 select replace(a1,a2,a3), id
 from (
   select name as a1, 'a' as a2, 'A' as a3, id as id
@@ -22,9 +14,6 @@ from (
 2
 2
 
-statement ok
-call profiler.stoptrace()
-
 query I rowsort
 select count(*) from sys.tracelog() where stmt like '% batstr.replace%'
 ----
@@ -35,10 +24,8 @@ select count(*) from sys.tracelog() where stmt like '% str.replace%'
 ----
 0
 
-statement ok
-call profiler."starttrace"()
-
 query TI rowsort
+trace
 select replace(a1,a2,a3), id
 from (
   select name as a1, 'a' as a2, 'A' as a3, id + 1 as id
@@ -50,9 +37,6 @@ from (
 2
 3
 
-statement ok
-call profiler.stoptrace()
-
 query I rowsort
 select count(*) from sys.tracelog() where stmt like '% batstr.replace%'
 ----
@@ -63,10 +47,8 @@ select count(*) from sys.tracelog() where stmt like '% str.replace%'
 ----
 0
 
-statement ok
-call profiler."starttrace"()
-
 query TI rowsort
+trace
 select replace(a1,a2,a3), id
 from (
   select name as a1, 'a' as a2, 'A' as a3, abs(id) as id
@@ -78,9 +60,6 @@ from (
 2
 2
 
-statement ok
-call profiler.stoptrace()
-
 query I rowsort
 select count(*) from sys.tracelog() where stmt like '% batstr.replace%'
 ----
@@ -90,12 +69,6 @@ query I rowsort
 select count(*) from sys.tracelog() where stmt like '% str.replace%'
 ----
 0
-
-statement ok
-drop procedure profiler.starttrace()
-
-statement ok
-drop procedure profiler.stoptrace()
 
 statement ok
 set optimizer = 'default_pipe'

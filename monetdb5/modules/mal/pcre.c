@@ -3,11 +3,9 @@
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024, 2025 MonetDB Foundation;
- * Copyright August 2008 - 2023 MonetDB B.V.;
- * Copyright 1997 - July 2008 CWI.
+ * For copyright information, see the file debian/copyright.
  */
 
 /*
@@ -15,12 +13,7 @@
  * PCRE library interface
  * The  PCRE library is a set of functions that implement regular
  * expression pattern matching using the same syntax  and  semantics  as  Perl,
- * with  just  a  few  differences.  The  current  implementation of PCRE
- * (release 4.x) corresponds approximately with Perl 5.8, including  support
- * for  UTF-8  encoded  strings.   However,  this support has to be
- * explicitly enabled; it is not the default.
- *
- * ftp://ftp.csx.cam.ac.uk/pub/software/programming/pcre
+ * with  just  a  few  differences.
  */
 #include "monetdb_config.h"
 #include <string.h>
@@ -31,22 +24,17 @@
 #include "mal_exception.h"
 
 #include <wchar.h>
-#include <wctype.h>
 
 #ifdef HAVE_LIBPCRE
-#include <pcre.h>
-#ifndef PCRE_STUDY_JIT_COMPILE
-/* old library version on e.g. EPEL 6 */
-#define pcre_free_study(x)		pcre_free(x)
-#define PCRE_STUDY_JIT_COMPILE	0
-#endif
+#define PCRE2_CODE_UNIT_WIDTH 8
+#include <pcre2.h>
 #define JIT_COMPILE_MIN	1024	/* when to try JIT compilation of patterns */
 
 #else
 
 #include <regex.h>
 
-typedef regex_t pcre;
+typedef regex_t pcre2_code;
 #endif
 
 /* current implementation assumes simple %keyword% [keyw%]* */
@@ -212,20 +200,6 @@ mnre_match(const char *restrict s, const struct RE *restrict pattern)
 	return true;
 }
 
-static void
-mnre_destroy(struct RE *p)
-{
-	if (p) {
-		GDKfree(p->k);
-		do {
-			struct RE *n = p->n;
-
-			GDKfree(p);
-			p = n;
-		} while (p);
-	}
-}
-
 /* Create a linked list of RE structures.  Depending on the
  * caseignore and the ascii_pattern flags, the w
  * (if caseignore == true && ascii_pattern == false) or the k
@@ -235,9 +209,9 @@ mnre_destroy(struct RE *p)
  * the first.
  */
 static struct RE *
-mnre_create(const char *pat, bool caseignore, uint32_t esc)
+mnre_create(allocator *ma, const char *pat, bool caseignore, uint32_t esc)
 {
-	struct RE *r = GDKmalloc(sizeof(struct RE)), *n = r;
+	struct RE *r = ma_alloc(ma, sizeof(struct RE)), *n = r;
 	bool escaped = false;
 	char *p, *q;
 
@@ -259,8 +233,7 @@ mnre_create(const char *pat, bool caseignore, uint32_t esc)
 			break;
 		}
 	}
-	if ((p = GDKstrdup(pat)) == NULL) {
-		GDKfree(r);
+	if ((p = ma_strdup(ma, pat)) == NULL) {
 		return NULL;
 	}
 
@@ -288,7 +261,7 @@ mnre_create(const char *pat, bool caseignore, uint32_t esc)
 				p++;
 			}
 			if (*p || skip != 0) {
-				n = n->n = GDKmalloc(sizeof(struct RE));
+				n = n->n = ma_alloc(ma, sizeof(struct RE));
 				if (n == NULL)
 					goto bailout;
 				*n = (struct RE) {
@@ -312,29 +285,8 @@ mnre_create(const char *pat, bool caseignore, uint32_t esc)
 	*q = 0;
 	return r;
   bailout:
-	mnre_destroy(r);
 	return NULL;
 }
-
-#ifdef HAVE_LIBPCRE
-static str
-pcre_compile_wrap(pcre **res, const char *pattern, bit insensitive)
-{
-	pcre *r;
-	const char *err_p = NULL;
-	int errpos = 0;
-	int options = PCRE_UTF8 | PCRE_NO_UTF8_CHECK | PCRE_MULTILINE;
-	if (insensitive)
-		options |= PCRE_CASELESS;
-
-	if ((r = pcre_compile(pattern, options, &err_p, &errpos, NULL)) == NULL) {
-		throw(MAL, "pcre.compile", OPERATION_FAILED
-			  " with\n'%s'\nat %d in\n'%s'.\n", err_p, errpos, pattern);
-	}
-	*res = r;
-	return MAL_SUCCEED;
-}
-#endif
 
 /* maximum number of back references and quoted \ or $ in replacement string */
 #define MAX_NR_REFS		20
@@ -346,199 +298,64 @@ struct backref {
 };
 
 #ifdef HAVE_LIBPCRE
-/* fill in parameter backrefs (length maxrefs) with information about
- * back references in the replacement string; a back reference is a
- * dollar or backslash followed by a number */
-static int
-parse_replacement(const char *replacement, int len_replacement,
-				  struct backref *backrefs, int maxrefs)
+static PCRE2_UCHAR *
+single_replace(allocator *ma, pcre2_code *pcre_code, pcre2_match_data *match_data,
+			   PCRE2_SPTR origin_str, PCRE2_SIZE len_origin_str,
+			   uint32_t exec_options,
+			   PCRE2_SPTR replacement, PCRE2_SIZE len_replacement,
+			   PCRE2_UCHAR *result, PCRE2_SIZE *max_result, PCRE2_UCHAR *errbuf, size_t errlen)
 {
-	int nbackrefs = 0;
-
-	for (int i = 0; i < len_replacement && nbackrefs < maxrefs; i++) {
-		if (replacement[i] == '$' || replacement[i] == '\\') {
-			char *endptr;
-			backrefs[nbackrefs].idx = strtol(replacement + i + 1, &endptr, 10);
-			if (endptr > replacement + i + 1) {
-				int k = (int) (endptr - (replacement + i + 1));
-				backrefs[nbackrefs].start = i;
-				backrefs[nbackrefs].end = i + k + 1;
-				nbackrefs++;
-			} else if (replacement[i] == replacement[i + 1]) {
-				/* doubled $ or \, we must copy just one to the output */
-				backrefs[nbackrefs].idx = INT_MAX;	/* impossible value > 0 */
-				backrefs[nbackrefs].start = i;
-				backrefs[nbackrefs].end = i + 1;
-				i++;			/* don't look at second $ or \ again */
-				nbackrefs++;
-			}
-			/* else: $ or \ followed by something we don't recognize,
-			 * so just leave it */
-		}
+	int j = pcre2_substitute(pcre_code, origin_str, len_origin_str, 0, exec_options | PCRE2_SUBSTITUTE_OVERFLOW_LENGTH, match_data, NULL, replacement, len_replacement, result, max_result);
+	if (j == PCRE2_ERROR_NOMEMORY) {
+		result = ma_alloc(ma, *max_result);
+		if (result == NULL)
+			return NULL;
+		/* try again with bigger result buffer */
+		j = pcre2_substitute(pcre_code, origin_str, len_origin_str, 0, exec_options, match_data, NULL, replacement, len_replacement, result, max_result);
 	}
-	return nbackrefs;
-}
-
-static char *
-single_replace(pcre *pcre_code, pcre_extra *extra,
-			   const char *origin_str, int len_origin_str,
-			   int exec_options, int *ovector, int ovecsize,
-			   const char *replacement, int len_replacement,
-			   struct backref *backrefs, int nbackrefs,
-			   bool global, char *result, int *max_result)
-{
-	int offset = 0;
-	int len_result = 0;
-	int addlen;
-	int empty_match_correction = 0;
-	char *tmp;
-
-	do {
-		int j = pcre_exec(pcre_code, extra, origin_str, len_origin_str, offset,
-						  exec_options, ovector, ovecsize);
-		if (j <= 0)
-			break;
-
-		empty_match_correction = ovector[0] == ovector[1] ? 1 : 0;
-
-		// calculate the length of the string that will be appended to result
-		addlen = ovector[0] - offset
-				+ (nbackrefs == 0 ? len_replacement : 0) + empty_match_correction;
-		if (len_result + addlen >= *max_result) {
-			tmp = GDKrealloc(result, len_result + addlen + 1);
-			if (tmp == NULL) {
-				GDKfree(result);
-				return NULL;
-			}
-			result = tmp;
-			*max_result = len_result + addlen + 1;
-		}
-		// append to the result the parts of the original string that are left unchanged
-		if (ovector[0] > offset) {
-			strncpy(result + len_result, origin_str + offset,
-					ovector[0] - offset);
-			len_result += ovector[0] - offset;
-		}
-		// append to the result the replacement of the matched string
-		if (nbackrefs == 0) {
-			strncpy(result + len_result, replacement, len_replacement);
-			len_result += len_replacement;
-		} else {
-			int prevend = 0;
-			for (int i = 0; i < nbackrefs; i++) {
-				int off, len;
-				if (backrefs[i].idx >= ovecsize / 3) {
-					/* out of bounds, replace with empty string */
-					off = 0;
-					len = 0;
-				} else {
-					off = ovector[backrefs[i].idx * 2];
-					len = ovector[backrefs[i].idx * 2 + 1] - off;
-				}
-				addlen = backrefs[i].start - prevend + len;
-				if (len_result + addlen >= *max_result) {
-					tmp = GDKrealloc(result, len_result + addlen + 1);
-					if (tmp == NULL) {
-						GDKfree(result);
-						return NULL;
-					}
-					result = tmp;
-					*max_result = len_result + addlen + 1;
-				}
-				if (backrefs[i].start > prevend) {
-					strncpy(result + len_result, replacement + prevend,
-							backrefs[i].start - prevend);
-					len_result += backrefs[i].start - prevend;
-				}
-				if (len > 0) {
-					strncpy(result + len_result, origin_str + off, len);
-					len_result += len;
-				}
-				prevend = backrefs[i].end;
-			}
-			/* copy rest of replacement string (after last backref) */
-			addlen = len_replacement - prevend;
-			if (addlen > 0) {
-				if (len_result + addlen >= *max_result) {
-					tmp = GDKrealloc(result, len_result + addlen + 1);
-					if (tmp == NULL) {
-						GDKfree(result);
-						return NULL;
-					}
-					result = tmp;
-					*max_result = len_result + addlen + 1;
-				}
-				strncpy(result + len_result, replacement + prevend, addlen);
-				len_result += addlen;
-			}
-		}
-		// In case of an empty match just advance the offset by 1
-		offset = ovector[1] + empty_match_correction;
-		// and copy the character that we just advanced over
-		if (empty_match_correction) {
-			strncpy(result + len_result, origin_str + ovector[1], 1);
-			++len_result;
-		}
-		// before we loop around check with the offset - 1 if we had an empty match
-		// since we manually advanced the offset by one. otherwise we gonna skip a
-		// replacement at the end of the string
-	} while ((offset - empty_match_correction) < len_origin_str && global);
-
-	if (offset < len_origin_str) {
-		addlen = len_origin_str - offset;
-		if (len_result + addlen >= *max_result) {
-			tmp = GDKrealloc(result, len_result + addlen + 1);
-			if (tmp == NULL) {
-				GDKfree(result);
-				return NULL;
-			}
-			result = tmp;
-			*max_result = len_result + addlen + 1;
-		}
-		strncpy(result + len_result, origin_str + offset, addlen);
-		len_result += addlen;
+	if (j < 0) {
+		(void)pcre2_get_error_message(j, errbuf, errlen);
+		return NULL;
 	}
-	/* null terminate string */
-	result[len_result] = '\0';
 	return result;
 }
 #endif
 
 static str
-pcre_replace(str *res, const char *origin_str, const char *pattern,
+pcre_replace(allocator *ma, str *res, const char *origin_str, const char *pattern,
 			 const char *replacement, const char *flags, bool global)
 {
+	(void) ma;
 #ifdef HAVE_LIBPCRE
-	const char *err_p = NULL;
-	pcre *pcre_code = NULL;
-	pcre_extra *extra;
-	char *tmpres;
-	int max_result;
-	int i, errpos = 0;
-	int compile_options = PCRE_UTF8 | PCRE_NO_UTF8_CHECK;
-	int exec_options = PCRE_NOTEMPTY | PCRE_NO_UTF8_CHECK;
-	int *ovector, ovecsize;
-	int len_origin_str = (int) strlen(origin_str);
-	int len_replacement = (int) strlen(replacement);
-	struct backref backrefs[MAX_NR_REFS];
-	int nbackrefs = 0;
+	int err = 0;
+	pcre2_code *pcre_code = NULL;
+	pcre2_match_data *match_data;
+	PCRE2_UCHAR *tmpres;
+	PCRE2_SIZE max_result;
+	PCRE2_SIZE errpos = 0;
+	uint32_t compile_options = PCRE2_UTF | PCRE2_NO_UTF_CHECK;
+	uint32_t exec_options = PCRE2_NOTEMPTY | PCRE2_NO_UTF_CHECK;
+	PCRE2_SIZE len_origin_str = (PCRE2_SIZE) strlen(origin_str);
+	PCRE2_SIZE len_replacement = (PCRE2_SIZE) strlen(replacement);
+	PCRE2_UCHAR errbuf[256];
 
+	errbuf[0] = 0;
 	while (*flags) {
 		switch (*flags) {
 		case 'e':
-			exec_options &= ~PCRE_NOTEMPTY;
+			exec_options &= ~PCRE2_NOTEMPTY;
 			break;
 		case 'i':
-			compile_options |= PCRE_CASELESS;
+			compile_options |= PCRE2_CASELESS;
 			break;
 		case 'm':
-			compile_options |= PCRE_MULTILINE;
+			compile_options |= PCRE2_MULTILINE;
 			break;
 		case 's':
-			compile_options |= PCRE_DOTALL;
+			compile_options |= PCRE2_DOTALL;
 			break;
 		case 'x':
-			compile_options |= PCRE_EXTENDED;
+			compile_options |= PCRE2_EXTENDED;
 			break;
 		default:
 			throw(MAL, global ? "pcre.replace" : "pcre.replace_first",
@@ -548,60 +365,50 @@ pcre_replace(str *res, const char *origin_str, const char *pattern,
 		flags++;
 	}
 
-	if ((pcre_code = pcre_compile(pattern, compile_options, &err_p, &errpos, NULL)) == NULL) {
+	if (global)
+		exec_options |= PCRE2_SUBSTITUTE_GLOBAL;
+	pcre_code = pcre2_compile((PCRE2_SPTR) pattern, PCRE2_ZERO_TERMINATED,
+							  compile_options, &err, &errpos, NULL);
+	if (pcre_code == NULL) {
+		pcre2_get_error_message(err, errbuf, sizeof(errbuf));
 		throw(MAL, global ? "pcre.replace" : "pcre.replace_first",
 			  OPERATION_FAILED
 			  ": pcre compile of pattern (%s) failed at %d with\n'%s'.\n",
-			  pattern, errpos, err_p);
+			  pattern, (int) errpos, (char *) errbuf);
 	}
-
-	/* Since the compiled pattern is going to be used several times, it is
-	 * worth spending more time analyzing it in order to speed up the time
-	 * taken for matching.
-	 */
-	extra = pcre_study(pcre_code, 0, &err_p);
-	if (err_p != NULL) {
-		pcre_free(pcre_code);
-		throw(MAL, global ? "pcre.replace" : "pcre.replace_first",
-			  OPERATION_FAILED
-			  ": pcre study of pattern (%s) failed with '%s'.\n", pattern,
-			  err_p);
+	match_data = pcre2_match_data_create_from_pattern(pcre_code, NULL);
+	if (match_data == NULL) {
+		pcre2_code_free(pcre_code);
+		throw(MAL, "regexp.rematch", MAL_MALLOC_FAIL);
 	}
-	pcre_fullinfo(pcre_code, extra, PCRE_INFO_CAPTURECOUNT, &i);
-	ovecsize = (i + 1) * 3;
-	if ((ovector = (int *) GDKmalloc(sizeof(int) * ovecsize)) == NULL) {
-		pcre_free_study(extra);
-		pcre_free(pcre_code);
-		throw(MAL, global ? "pcre.replace" : "pcre.replace_first",
-			  SQLSTATE(HY013) MAL_MALLOC_FAIL);
-	}
-
-	/* identify back references in the replacement string */
-	nbackrefs = parse_replacement(replacement, len_replacement,
-								  backrefs, MAX_NR_REFS);
 
 	max_result = len_origin_str + 1;
-	tmpres = GDKmalloc(max_result);
+	tmpres = ma_alloc(ma, max_result);
 	if (tmpres == NULL) {
-		GDKfree(ovector);
-		pcre_free_study(extra);
-		pcre_free(pcre_code);
+		pcre2_match_data_free(match_data);
+		pcre2_code_free(pcre_code);
 		throw(MAL, global ? "pcre.replace" : "pcre.replace_first",
 			  SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 
-	tmpres = single_replace(pcre_code, extra, origin_str, len_origin_str,
-							exec_options, ovector, ovecsize, replacement,
-							len_replacement, backrefs, nbackrefs, global,
-							tmpres, &max_result);
-	GDKfree(ovector);
-	pcre_free_study(extra);
-	pcre_free(pcre_code);
-	if (tmpres == NULL)
-		throw(MAL, global ? "pcre.replace" : "pcre.replace_first",
-			  SQLSTATE(HY013) MAL_MALLOC_FAIL);
-
-	*res = tmpres;
+	tmpres = single_replace(ma, pcre_code, match_data, (PCRE2_SPTR) origin_str,
+							len_origin_str, exec_options,
+							(PCRE2_SPTR) replacement, len_replacement,
+							tmpres, &max_result, errbuf, sizeof(errbuf));
+	pcre2_match_data_free(match_data);
+	pcre2_code_free(pcre_code);
+	if (tmpres == NULL) {
+		if (errbuf[0]) {
+			throw(MAL, global ? "pcre.replace" : "pcre.replace_first",
+				OPERATION_FAILED
+				": pcre replace of pattern (%s) failed with '%s'.",
+				pattern, (char *) errbuf);
+		} else {
+			throw(MAL, global ? "pcre.replace" : "pcre.replace_first",
+				SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		}
+	}
+	*res = (char *) tmpres;
 	return MAL_SUCCEED;
 #else
 	(void) res;
@@ -620,119 +427,125 @@ pcre_replace_bat(BAT **res, BAT *origin_strs, const char *pattern,
 				 const char *replacement, const char *flags, bool global)
 {
 #ifdef HAVE_LIBPCRE
-	const char *err_p = NULL;
-	char *tmpres;
-	int i, errpos = 0;
-	int compile_options = PCRE_UTF8 | PCRE_NO_UTF8_CHECK;
-	int exec_options = PCRE_NOTEMPTY | PCRE_NO_UTF8_CHECK;
-	pcre *pcre_code = NULL;
-	pcre_extra *extra;
+	int err = 0;
+	PCRE2_UCHAR *tmpres;
+	PCRE2_SIZE errpos = 0;
+	uint32_t compile_options = PCRE2_UTF | PCRE2_NO_UTF_CHECK;
+	uint32_t exec_options = PCRE2_NOTEMPTY | PCRE2_NO_UTF_CHECK;
+	pcre2_code *pcre_code = NULL;
+	pcre2_match_data *match_data;
 	BAT *tmpbat;
 	BUN p, q;
-	int *ovector, ovecsize;
-	int len_replacement = (int) strlen(replacement);
-	struct backref backrefs[MAX_NR_REFS];
-	int nbackrefs = 0;
-	const char *origin_str;
-	int max_dest_size = 0;
+	PCRE2_SIZE len_replacement = (PCRE2_SIZE) strlen(replacement);
+	PCRE2_SPTR origin_str;
+	PCRE2_SIZE max_dest_size = 0, init_size = 0;
+	allocator *ta = MT_thread_getallocator();
+	allocator_state ta_state = ma_open(ta);
+	PCRE2_UCHAR errbuf[256];
 
+	errbuf[0] = 0;
 	while (*flags) {
 		switch (*flags) {
 		case 'e':
-			exec_options &= ~PCRE_NOTEMPTY;
+			exec_options &= ~PCRE2_NOTEMPTY;
 			break;
 		case 'i':
-			compile_options |= PCRE_CASELESS;
+			compile_options |= PCRE2_CASELESS;
 			break;
 		case 'm':
-			compile_options |= PCRE_MULTILINE;
+			compile_options |= PCRE2_MULTILINE;
 			break;
 		case 's':
-			compile_options |= PCRE_DOTALL;
+			compile_options |= PCRE2_DOTALL;
 			break;
 		case 'x':
-			compile_options |= PCRE_EXTENDED;
+			compile_options |= PCRE2_EXTENDED;
 			break;
 		default:
+			ma_close(&ta_state);
 			throw(MAL, global ? "batpcre.replace" : "batpcre.replace_first",
 				  ILLEGAL_ARGUMENT ": unsupported flag character '%c'\n",
 				  *flags);
 		}
 		flags++;
 	}
+	if (global)
+		exec_options |= PCRE2_SUBSTITUTE_GLOBAL;
 
-	if ((pcre_code = pcre_compile(pattern, compile_options, &err_p, &errpos, NULL)) == NULL) {
-		throw(MAL, global ? "batpcre.replace" : "batpcre.replace_first",
+	pcre_code = pcre2_compile((PCRE2_SPTR) pattern, PCRE2_ZERO_TERMINATED,
+							  compile_options, &err, &errpos, NULL);
+	if (pcre_code == NULL) {
+		pcre2_get_error_message(err, errbuf, sizeof(errbuf));
+		ma_close(&ta_state);
+		throw(MAL, global ? "pcre.replace" : "pcre.replace_first",
 			  OPERATION_FAILED
 			  ": pcre compile of pattern (%s) failed at %d with\n'%s'.\n",
-			  pattern, errpos, err_p);
+			  pattern, (int) errpos, (char *) errbuf);
 	}
-
-	/* Since the compiled pattern is going to be used several times,
-	 * it is worth spending more time analyzing it in order to speed
-	 * up the time taken for matching.
-	 */
-	extra = pcre_study(pcre_code,
-					   BATcount(origin_strs) >
-					   JIT_COMPILE_MIN ? PCRE_STUDY_JIT_COMPILE : 0, &err_p);
-	if (err_p != NULL) {
-		pcre_free(pcre_code);
-		throw(MAL, global ? "batpcre.replace" : "batpcre.replace_first",
-			  OPERATION_FAILED);
+	match_data = pcre2_match_data_create_from_pattern(pcre_code, NULL);
+	if (match_data == NULL) {
+		pcre2_code_free(pcre_code);
+		ma_close(&ta_state);
+		throw(MAL, "regexp.rematch", MAL_MALLOC_FAIL);
 	}
-	pcre_fullinfo(pcre_code, extra, PCRE_INFO_CAPTURECOUNT, &i);
-	ovecsize = (i + 1) * 3;
-	if ((ovector = (int *) GDKzalloc(sizeof(int) * ovecsize)) == NULL) {
-		pcre_free_study(extra);
-		pcre_free(pcre_code);
-		throw(MAL, global ? "batpcre.replace" : "batpcre.replace_first",
-			  SQLSTATE(HY013) MAL_MALLOC_FAIL);
-	}
-
-	/* identify back references in the replacement string */
-	nbackrefs = parse_replacement(replacement, len_replacement,
-								  backrefs, MAX_NR_REFS);
 
 	tmpbat = COLnew(origin_strs->hseqbase, TYPE_str, BATcount(origin_strs),
 					TRANSIENT);
 
 	/* the buffer for all destination strings is allocated only once,
 	 * and extended when needed */
-	max_dest_size = len_replacement + 1;
-	tmpres = GDKmalloc(max_dest_size);
+	init_size = max_dest_size = 64*1024;
+	tmpres = ma_alloc(ta, max_dest_size);
 	if (tmpbat == NULL || tmpres == NULL) {
-		pcre_free_study(extra);
-		pcre_free(pcre_code);
-		GDKfree(ovector);
+		pcre2_match_data_free(match_data);
+		pcre2_code_free(pcre_code);
 		BBPreclaim(tmpbat);
-		GDKfree(tmpres);
+		ma_close(&ta_state);
 		throw(MAL, global ? "batpcre.replace" : "batpcre.replace_first",
 			  SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 	BATiter origin_strsi = bat_iterator(origin_strs);
-	BATloop(origin_strs, p, q) {
-		origin_str = BUNtvar(origin_strsi, p);
-		tmpres = single_replace(pcre_code, extra, origin_str,
-								(int) strlen(origin_str), exec_options,
-								ovector, ovecsize, replacement,
-								len_replacement, backrefs, nbackrefs, global,
-								tmpres, &max_dest_size);
-		if (tmpres == NULL || BUNappend(tmpbat, tmpres, false) != GDK_SUCCEED) {
-			bat_iterator_end(&origin_strsi);
-			pcre_free_study(extra);
-			pcre_free(pcre_code);
-			GDKfree(ovector);
-			GDKfree(tmpres);
-			BBPreclaim(tmpbat);
-			throw(MAL, global ? "batpcre.replace" : "batpcre.replace_first",
-				  SQLSTATE(HY013) MAL_MALLOC_FAIL);
+	BATloop(&origin_strsi, p, q) {
+		origin_str = BUNtvar(&origin_strsi, p);
+		if (strNil((const char *) origin_str)) {
+			strtcpy((char *) tmpres, str_nil, max_dest_size);
+			tmpbat->tnonil = false;
+			tmpbat->tnil = true;
+		} else {
+			tmpres = single_replace(ta, pcre_code, match_data, origin_str,
+									(PCRE2_SIZE) strlen((char *) origin_str), exec_options,
+									(PCRE2_SPTR) replacement, len_replacement,
+									tmpres, &max_dest_size, errbuf, sizeof(errbuf));
 		}
+		if (tmpres == NULL || tfastins_nocheckVAR(tmpbat, p, tmpres) != GDK_SUCCEED) {
+			bat_iterator_end(&origin_strsi);
+			pcre2_match_data_free(match_data);
+			pcre2_code_free(pcre_code);
+			BBPreclaim(tmpbat);
+			ma_close(&ta_state);
+			if (errbuf[0]) {
+				throw(MAL, global ? "batpcre.replace" : "batpcre.replace_first",
+					OPERATION_FAILED
+					": pcre replace of pattern (%s) failed with '%s'.",
+					pattern, (char *) errbuf);
+			} else {
+				throw(MAL, global ? "batpcre.replace" : "batpcre.replace_first",
+					SQLSTATE(HY013) MAL_MALLOC_FAIL);
+			}
+		}
+		if (max_dest_size <= init_size)
+			max_dest_size = init_size;
+		else /* buffer is enlarged */
+			init_size = max_dest_size;
 	}
+	tmpbat->tsorted = tmpbat->trevsorted = false;
+	tmpbat->tkey = false;
+	tmpbat->tascii = false;
+	BATsetcount(tmpbat, BATcount(origin_strs));
 	bat_iterator_end(&origin_strsi);
-	pcre_free_study(extra);
-	pcre_free(pcre_code);
-	GDKfree(ovector);
-	GDKfree(tmpres);
+	pcre2_match_data_free(match_data);
+	pcre2_code_free(pcre_code);
+	ma_close(&ta_state);
 	*res = tmpbat;
 	return MAL_SUCCEED;
 #else
@@ -753,10 +566,11 @@ pcre_match_with_flags(bit *ret, const char *val, const char *pat,
 {
 	int pos;
 #ifdef HAVE_LIBPCRE
-	const char *err_p = NULL;
-	int errpos = 0;
-	int options = PCRE_UTF8 | PCRE_NO_UTF8_CHECK | PCRE_DOTALL;
-	pcre *re;
+	int err = 0;
+	PCRE2_SIZE errpos = 0;
+	uint32_t options = PCRE2_UTF | PCRE2_NO_UTF_CHECK | PCRE2_DOTALL;
+	pcre2_code *re;
+	pcre2_match_data *match_data;
 #else
 	int options = REG_NOSUB | REG_EXTENDED;
 	regex_t re;
@@ -766,32 +580,30 @@ pcre_match_with_flags(bit *ret, const char *val, const char *pat,
 
 	while (*flags) {
 		switch (*flags) {
-		case 'i':
 #ifdef HAVE_LIBPCRE
-			options |= PCRE_CASELESS;
-#else
-			options |= REG_ICASE;
-#endif
+		case 'i':
+			options |= PCRE2_CASELESS;
 			break;
 		case 'm':
-#ifdef HAVE_LIBPCRE
-			options |= PCRE_MULTILINE;
-#else
-			options |= REG_NEWLINE;
-#endif
+			options |= PCRE2_MULTILINE;
 			break;
-#ifdef HAVE_LIBPCRE
 		case 's':
-			options |= PCRE_DOTALL;
+			options |= PCRE2_DOTALL;
 			break;
-#endif
 		case 'x':
-#ifdef HAVE_LIBPCRE
-			options |= PCRE_EXTENDED;
-#else
-			options |= REG_EXTENDED;
-#endif
+			options |= PCRE2_EXTENDED;
 			break;
+#else
+		case 'i':
+			options |= REG_ICASE;
+			break;
+		case 'm':
+			options |= REG_NEWLINE;
+			break;
+		case 'x':
+			options |= REG_EXTENDED;
+			break;
+#endif
 		default:
 			throw(MAL, "pcre.match", ILLEGAL_ARGUMENT
 				  ": unsupported flag character '%c'\n", *flags);
@@ -804,25 +616,29 @@ pcre_match_with_flags(bit *ret, const char *val, const char *pat,
 	}
 
 #ifdef HAVE_LIBPCRE
-	if ((re = pcre_compile(pat, options, &err_p, &errpos, NULL)) == NULL)
-#else
-	if ((errcode = regcomp(&re, pat, options)) != 0)
-#endif
-	{
-		throw(MAL, "pcre.match", OPERATION_FAILED
-			  ": compilation of regular expression (%s) failed "
-#ifdef HAVE_LIBPCRE
-			  "at %d with '%s'", pat, errpos, err_p
-#else
-			  , pat
-#endif
-				);
+	re = pcre2_compile((PCRE2_SPTR) pat, PCRE2_ZERO_TERMINATED, options,
+					   &err, &errpos, NULL);
+	if (re == NULL) {
+		PCRE2_UCHAR buffer[256];
+		pcre2_get_error_message(err, buffer, sizeof(buffer));
+		throw(MAL, "pcre.match",
+		      "compilation of regular expression (%s) failed at %d with %s",
+		      pat, (int) errpos, (char *) buffer);
 	}
-#ifdef HAVE_LIBPCRE
-	pos = pcre_exec(re, NULL, val, (int) strlen(val), 0, PCRE_NO_UTF8_CHECK,
-					NULL, 0);
-	pcre_free(re);
+	match_data = pcre2_match_data_create_from_pattern(re, NULL);
+	if (match_data == NULL) {
+		pcre2_code_free(re);
+		throw(MAL, "pcre.match", MAL_MALLOC_FAIL);
+	}
+	pos = pcre2_match(re, (PCRE2_SPTR) val, PCRE2_ZERO_TERMINATED, 0, PCRE2_NO_UTF_CHECK,
+					  match_data, NULL);
+	pcre2_match_data_free(match_data);
+	pcre2_code_free(re);
 #else
+	if ((errcode = regcomp(&re, pat, options)) != 0) {
+		throw(MAL, "pcre.match", OPERATION_FAILED
+			  ": compilation of regular expression (%s) failed ", pat);
+	}
 	retval = regexec(&re, val, (size_t) 0, NULL, 0);
 	pos = retval == REG_NOMATCH ? -1 : (retval == REG_ENOSYS ? -2 : 0);
 	regfree(&re);
@@ -848,7 +664,7 @@ static const char pcre_specials[] = "$()*+.?[\\^{|";
 
 /* change SQL LIKE pattern into PCRE pattern */
 static str
-sql2pcre(str *r, const char *pat, const char *esc_str)
+sql2pcre(allocator *ma, str *r, const char *pat, const char *esc_str)
 {
 	int escaped = 0;
 	int hasWildcard = 0;
@@ -865,7 +681,7 @@ sql2pcre(str *r, const char *pat, const char *esc_str)
 		throw(MAL, "pcre.sql2pcre",
 			  SQLSTATE(22019) ILLEGAL_ARGUMENT
 			  ": (I)LIKE pattern must not be NULL");
-	ppat = GDKmalloc(strlen(pat) * 3 +
+	ppat = ma_alloc(ma ,strlen(pat) * 3 +
 					 3 /* 3 = "^'the translated regexp'$0" */ );
 	if (ppat == NULL)
 		throw(MAL, "pcre.sql2pcre", SQLSTATE(HY013) MAL_MALLOC_FAIL);
@@ -923,15 +739,12 @@ sql2pcre(str *r, const char *pat, const char *esc_str)
 	}
 	/* no wildcard or escape character at end of string */
 	if (!hasWildcard || escaped) {
-		GDKfree(*r);
 		*r = NULL;
 		if (escaped)
 			throw(MAL, "pcre.sql2pcre",
 				  SQLSTATE(22019) ILLEGAL_ARGUMENT
 				  ": (I)LIKE pattern must not end with escape character");
-		*r = GDKstrdup(str_nil);
-		if (*r == NULL)
-			throw(MAL, "pcre.sql2pcre", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		*r = (char *) str_nil;
 	} else {
 		*ppat++ = '$';
 		*ppat = 0;
@@ -942,10 +755,10 @@ sql2pcre(str *r, const char *pat, const char *esc_str)
 #ifdef HAVE_LIBPCRE
 /* change SQL PATINDEX pattern into PCRE pattern */
 static str
-pat2pcre(str *r, const char *pat)
+pat2pcre(allocator *ma, str *r, const char *pat)
 {
 	size_t len = strlen(pat);
-	char *ppat = GDKmalloc(len * 2 + 3 /* 3 = "^'the translated regexp'$0" */ );
+	char *ppat = ma_alloc(ma, len * 2 + 3 /* 3 = "^'the translated regexp'$0" */ );
 	int start = 0;
 
 	if (ppat == NULL)
@@ -979,25 +792,28 @@ pat2pcre(str *r, const char *pat)
  */
 
 static str
-PCREreplace_wrap(str *res, const char *const *or, const char *const *pat,
+PCREreplace_wrap(Client ctx, str *res, const char *const *or, const char *const *pat,
 				 const char *const *repl, const char *const *flags)
 {
-	return pcre_replace(res, *or, *pat, *repl, *flags, true);
+	allocator *ma = ctx->curprg->def->ma;
+	return pcre_replace(ma, res, *or, *pat, *repl, *flags, true);
 }
 
 static str
-PCREreplacefirst_wrap(str *res, const char *const *or, const char *const *pat,
+PCREreplacefirst_wrap(Client ctx, str *res, const char *const *or, const char *const *pat,
 					  const char *const *repl, const char *const *flags)
 {
-	return pcre_replace(res, *or, *pat, *repl, *flags, false);
+	allocator *ma = ctx->curprg->def->ma;
+	return pcre_replace(ma, res, *or, *pat, *repl, *flags, false);
 }
 
 static str
-PCREreplace_bat_wrap(bat *res, const bat *bid, const char *const *pat,
+PCREreplace_bat_wrap(Client ctx, bat *res, const bat *bid, const char *const *pat,
 					 const char *const *repl, const char *const *flags)
 {
 	BAT *b, *bn = NULL;
 	str msg;
+	(void) ctx;
 	if ((b = BATdescriptor(*bid)) == NULL)
 		throw(MAL, "batpcre.replace", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 
@@ -1011,11 +827,12 @@ PCREreplace_bat_wrap(bat *res, const bat *bid, const char *const *pat,
 }
 
 static str
-PCREreplacefirst_bat_wrap(bat *res, const bat *bid, const char *const *pat,
+PCREreplacefirst_bat_wrap(Client ctx, bat *res, const bat *bid, const char *const *pat,
 						  const char *const *repl, const char *const *flags)
 {
 	BAT *b, *bn = NULL;
 	str msg;
+	(void) ctx;
 	if ((b = BATdescriptor(*bid)) == NULL)
 		throw(MAL, "batpcre.replace_first", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 
@@ -1029,58 +846,70 @@ PCREreplacefirst_bat_wrap(bat *res, const bat *bid, const char *const *pat,
 }
 
 static str
-PCREmatch(bit *ret, const char *const *val, const char *const *pat)
+PCREmatch(Client ctx, bit *ret, const char *const *val, const char *const *pat)
 {
+	(void) ctx;
 	return pcre_match_with_flags(ret, *val, *pat, "");
 }
 
 static str
-PCREimatch(bit *ret, const char *const *val, const char *const *pat)
+PCREimatch(Client ctx, bit *ret, const char *const *val, const char *const *pat)
 {
+	(void) ctx;
 	return pcre_match_with_flags(ret, *val, *pat, "i");
 }
 
 static str
-PCREindex(int *res, const pcre *pattern, const char *const *s)
+PCREpatindex(Client ctx, int *ret, const char *const *pat, const char *const *val)
 {
+	(void) ctx;
 #ifdef HAVE_LIBPCRE
-	int v[3];
-
-	v[0] = v[1] = *res = 0;
-	if (pcre_exec(pattern, NULL, *s, (int) strlen(*s), 0,
-				  PCRE_NO_UTF8_CHECK, v, 3) >= 0) {
-		*res = v[1];
-	}
-	return MAL_SUCCEED;
-#else
-	(void) res;
-	(void) pattern;
-	(void) s;
-	throw(MAL, "pcre.index", "Database was compiled without PCRE support.");
-#endif
-}
-
-static str
-PCREpatindex(int *ret, const char *const *pat, const char *const *val)
-{
-#ifdef HAVE_LIBPCRE
-	pcre *re = NULL;
+	pcre2_code *re;
+	pcre2_match_data *match_data;
 	char *ppat = NULL, *msg;
+	int errcode;
+	PCRE2_SIZE errpos;
+	int pos;
 
 	if (strNil(*pat) || strNil(*val)) {
 		*ret = int_nil;
 		return MAL_SUCCEED;
 	}
 
-	if ((msg = pat2pcre(&ppat, *pat)) != MAL_SUCCEED)
-		return msg;
-	if ((msg = pcre_compile_wrap(&re, ppat, FALSE)) != MAL_SUCCEED) {
-		GDKfree(ppat);
+	allocator *ta = MT_thread_getallocator();
+	allocator_state ta_state = ma_open(ta);
+
+	if ((msg = pat2pcre(ta, &ppat, *pat)) != MAL_SUCCEED) {
+		ma_close(&ta_state);
 		return msg;
 	}
-	GDKfree(ppat);
-	msg = PCREindex(ret, re, val);
-	pcre_free(re);
+	re = pcre2_compile((PCRE2_SPTR) ppat, PCRE2_ZERO_TERMINATED, PCRE2_UTF | PCRE2_NO_UTF_CHECK | PCRE2_MULTILINE, &errcode, &errpos, NULL);
+	if (re == NULL) {
+		PCRE2_UCHAR errbuf[256];
+		pcre2_get_error_message(errcode, errbuf, sizeof(errbuf));
+		msg = createException(MAL, "pcre.patindex",
+							  "compilation of regular expression (%s) failed at %d with %s",
+							  ppat, (int) errpos, (char *) errbuf);
+		ma_close(&ta_state);
+		return msg;
+	}
+	ma_close(&ta_state);
+	match_data = pcre2_match_data_create_from_pattern(re, NULL);
+	if (match_data == NULL) {
+		pcre2_code_free(re);
+		throw(MAL, "pcre.patindex", MAL_MALLOC_FAIL);
+	}
+	pos = pcre2_match(re, (PCRE2_SPTR) *val, PCRE2_ZERO_TERMINATED, 0,
+					  PCRE2_NO_UTF_CHECK, match_data, NULL);
+	if (pos >= 0) {
+		/* there was a match, get index of end of match */
+		*ret = (int) pcre2_get_ovector_pointer(match_data)[1];
+	} else {
+		/* no match or error */
+		*ret = 0;
+	}
+	pcre2_match_data_free(match_data);
+	pcre2_code_free(re);
 	return msg;
 #else
 	(void) ret;
@@ -1091,20 +920,20 @@ PCREpatindex(int *ret, const char *const *pat, const char *const *val)
 }
 
 static str
-PCREquote(str *ret, const char *const *val)
+PCREquote(Client ctx, str *ret, const char *const *val)
 {
+	(void) ctx;
 	char *p;
 	const char *s = *val;
+	allocator *ma = ctx->curprg->def->ma;
 
-	*ret = p = GDKmalloc(strlen(s) * 2 + 1);	/* certainly long enough */
+	*ret = p = ma_alloc(ma, strlen(s) * 2 + 1);	/* certainly long enough */
 	if (p == NULL)
 		throw(MAL, "pcre.quote", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	/* quote all non-alphanumeric ASCII characters (i.e. leave
 	   non-ASCII and alphanumeric alone) */
 	while (*s) {
-		if (!((*s & 0x80) != 0 ||
-			  ('a' <= *s && *s <= 'z') ||
-			  ('A' <= *s && *s <= 'Z') || isdigit((unsigned char) *s)))
+		if ((*s & 0x80) == 0 && isalnum((unsigned char) *s))
 			*p++ = '\\';
 		*p++ = *s++;
 	}
@@ -1113,9 +942,11 @@ PCREquote(str *ret, const char *const *val)
 }
 
 static str
-PCREsql2pcre(str *ret, const char *const *pat, const char *const *esc)
+PCREsql2pcre(Client ctx, str *ret, const char *const *pat, const char *const *esc)
 {
-	return sql2pcre(ret, *pat, *esc);
+	(void) ctx;
+	allocator *ma = ctx->curprg->def->ma;
+	return sql2pcre(ma, ret, *pat, *esc);
 }
 
 static inline str
@@ -1157,10 +988,11 @@ PCRElike_imp(bit *ret, const char *const *s, const char *const *pat,
 								*pat, *esc)) != MAL_SUCCEED)
 		return res;
 
-	MT_thread_setalgorithm(empty ? "pcrelike: trivially empty" : use_strcmp ?
-						   "pcrelike: pattern matching using strcmp" : use_re ?
-						   "pcrelike: pattern matching using RE" :
-						   "pcrelike: pattern matching using pcre");
+	MT_thread_setalgorithm(empty ? "trivially empty" : use_strcmp ?
+						   "pattern matching using strcmp" : use_re ?
+						   "pattern matching using RE" :
+						   "pattern matching using pcre",
+						   __func__);
 
 	if (strNil(*s) || empty) {
 		*ret = bit_nil;
@@ -1169,44 +1001,47 @@ PCRElike_imp(bit *ret, const char *const *s, const char *const *pat,
 			*ret = *isens ? GDKstrcasecmp(*s, *pat) == 0
 				: strcmp(*s, *pat) == 0;
 		} else {
-			if (!(re = mnre_create(*pat, *isens, (unsigned char) **esc)))
+			allocator *ta = MT_thread_getallocator();
+			allocator_state ta_state = ma_open(ta);
+			if (!(re = mnre_create(ta, *pat, *isens, (unsigned char) **esc)))
 				res = createException(MAL, "pcre.like4",
 									  SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			else
 				*ret = mnre_match(*s, re);
+			ma_close(&ta_state);
 		}
 	}
 
-	if (re)
-		mnre_destroy(re);
 	return res;
 }
 
 static str
-PCRElike(bit *ret, const char *const *s, const char *const *pat,
+PCRElike(Client ctx, bit *ret, const char *const *s, const char *const *pat,
 		 const char *const *esc, const bit *isens)
 {
+	(void) ctx;
 	return PCRElike_imp(ret, s, pat, esc, isens);
 }
 
 static str
-PCREnotlike(bit *ret, const char *const *s, const char *const *pat,
+PCREnotlike(Client ctx, bit *ret, const char *const *s, const char *const *pat,
 			const char *const *esc, const bit *isens)
 {
+	(void) ctx;
 	str tmp;
 	bit r;
 
-	rethrow("str.not_like", tmp, PCRElike(&r, s, pat, esc, isens));
+	rethrow("str.not_like", tmp, PCRElike(ctx, &r, s, pat, esc, isens));
 	*ret = r == bit_nil ? bit_nil : !r;
 	return MAL_SUCCEED;
 }
 
 static inline str
-mnre_like_build(struct RE **re, const char *pat, bool caseignore,
+mnre_like_build(allocator *ma, struct RE **re, const char *pat, bool caseignore,
 			  bool use_strcmp, uint32_t esc)
 {
 	if (!use_strcmp) {
-		if (!(*re = mnre_create(pat, caseignore, esc)))
+		if (!(*re = mnre_create(ma, pat, caseignore, esc)))
 			return createException(MAL, "pcre.re_like_build",
 								   SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
@@ -1240,14 +1075,14 @@ mnre_like_proj_apply(const char *s, const struct RE *restrict re,
 	}
 }
 
-static inline void
-mnre_like_clean(struct RE **re)
-{
-	if (*re) {
-		mnre_destroy(*re);
-		*re = NULL;
-	}
-}
+//static inline void
+//mnre_like_clean(struct RE **re)
+//{
+//	if (*re) {
+//		mnre_destroy(*re);
+//		*re = NULL;
+//	}
+//}
 
 static str
 BATPCRElike_imp(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
@@ -1268,7 +1103,7 @@ BATPCRElike_imp(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 	BUN q = 0;
 	bit *restrict ret = NULL;
 	struct RE *mnre_simple = NULL;
-	BATiter bi = (BATiter) { 0 }, pi;
+	BATiter bi = { 0 }, pi;
 
 	(void) cntxt;
 	if (input_is_a_bat) {
@@ -1306,8 +1141,8 @@ BATPCRElike_imp(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 			input = *getArgReference_str(stk, pci, 1);
 
 		for (BUN p = 0; p < q; p++) {
-			const char *next_input = b ? BUNtvar(bi, p) : input,
-				*np = BUNtvar(pi, p);
+			const char *next_input = b ? BUNtvar(&bi, p) : input,
+				*np = BUNtvar(&pi, p);
 
 			if ((msg = choose_like_path(&use_re, &use_strcmp, &empty,
 										np, *esc)) != MAL_SUCCEED) {
@@ -1320,17 +1155,20 @@ BATPCRElike_imp(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 			if (empty) {
 				ret[p] = bit_nil;
 			} else {
-				if ((msg = mnre_like_build(&mnre_simple, np, isensitive,
+				allocator *ta = MT_thread_getallocator();
+				allocator_state ta_state = ma_open(ta);
+				if ((msg = mnre_like_build(ta, &mnre_simple, np, isensitive,
 										 use_strcmp,
 										 (unsigned char) **esc)) != MAL_SUCCEED) {
 					bat_iterator_end(&pi);
 					if (b)
 						bat_iterator_end(&bi);
+					ma_close(&ta_state);
 					goto bailout;
 				}
 				ret[p] = mnre_like_proj_apply(next_input, mnre_simple, np,
 											isensitive, anti, use_strcmp);
-				mnre_like_clean(&mnre_simple);
+				ma_close(&ta_state);
 			}
 			has_nil |= is_bit_nil(ret[p]);
 		}
@@ -1344,33 +1182,37 @@ BATPCRElike_imp(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 			goto bailout;
 
 		bi = bat_iterator(b);
-		MT_thread_setalgorithm(empty ? "pcrelike: trivially empty" : use_strcmp
-							   ? "pcrelike: pattern matching using strcmp" :
-							   use_re ? "pcrelike: pattern matching using RE" :
-							   "pcrelike: pattern matching using pcre");
+		MT_thread_setalgorithm(empty ? "trivially empty" : use_strcmp
+							   ? "pattern matching using strcmp" :
+							   use_re ? "pattern matching using RE" :
+							   "pattern matching using pcre",
+							   __func__);
 
 		if (empty) {
 			for (BUN p = 0; p < q; p++)
 				ret[p] = bit_nil;
 			has_nil = true;
 		} else {
-			if ((msg = mnre_like_build(&mnre_simple, pat, isensitive, use_strcmp,
+			allocator *ta = MT_thread_getallocator();
+			allocator_state ta_state = ma_open(ta);
+			if ((msg = mnre_like_build(ta, &mnre_simple, pat, isensitive, use_strcmp,
 									 (unsigned char) **esc)) != MAL_SUCCEED) {
 				bat_iterator_end(&bi);
+				ma_close(&ta_state);
 				goto bailout;
 			}
 			for (BUN p = 0; p < q; p++) {
-				const char *s = BUNtvar(bi, p);
+				const char *s = BUNtvar(&bi, p);
 				ret[p] = mnre_like_proj_apply(s, mnre_simple, pat, isensitive,
 											anti, use_strcmp);
 				has_nil |= is_bit_nil(ret[p]);
 			}
+			ma_close(&ta_state);
 		}
 		bat_iterator_end(&bi);
 	}
 
   bailout:
-	mnre_like_clean(&mnre_simple);
 	if (bn && !msg) {
 		BATsetcount(bn, q);
 		bn->tnil = has_nil;
@@ -1418,7 +1260,7 @@ BATPCREnotlike(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			for (; p < q; p++) {										\
 				GDK_CHECK_TIMEOUT(qry_ctx, counter,						\
 								  GOTO_LABEL_TIMEOUT_HANDLER(bailout, qry_ctx)); \
-				const char *restrict v = BUNtvar(bi, p - off);			\
+				const char *restrict v = BUNtvar(&bi, p - off);			\
 				if ((TEST) || ((KEEP_NULLS) && strNil(v)))				\
 					vals[cnt++] = p;									\
 			}															\
@@ -1427,7 +1269,7 @@ BATPCREnotlike(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				GDK_CHECK_TIMEOUT(qry_ctx, counter,						\
 								  GOTO_LABEL_TIMEOUT_HANDLER(bailout, qry_ctx)); \
 				oid o = canditer_next(ci);								\
-				const char *restrict v = BUNtvar(bi, o - off);			\
+				const char *restrict v = BUNtvar(&bi, o - off);			\
 				if ((TEST) || ((KEEP_NULLS) && strNil(v)))				\
 					vals[cnt++] = o;									\
 			}															\
@@ -1444,11 +1286,13 @@ mnre_likeselect(BAT *bn, BAT *b, BAT *s, struct canditer *ci, BUN p, BUN q,
 	oid off = b->hseqbase, *restrict vals = Tloc(bn, 0);
 	struct RE *re = NULL;
 	str msg = MAL_SUCCEED;
+	allocator *ta = MT_thread_getallocator();
+	allocator_state ta_state = ma_open(ta);
 
 	size_t counter = 0;
 	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
 
-	if ((msg = mnre_like_build(&re, pat, caseignore, use_strcmp,
+	if ((msg = mnre_like_build(ta, &re, pat, caseignore, use_strcmp,
 							 esc)) != MAL_SUCCEED)
 		goto bailout;
 
@@ -1487,15 +1331,16 @@ mnre_likeselect(BAT *bn, BAT *b, BAT *s, struct canditer *ci, BUN p, BUN q,
 
   bailout:
 	bat_iterator_end(&bi);
-	mnre_like_clean(&re);
+	ma_close(&ta_state);
 	*rcnt = cnt;
 	return msg;
 }
 
 static str
-PCRElikeselect(bat *ret, const bat *bid, const bat *sid, const char *const *pat,
+PCRElikeselect(Client ctx, bat *ret, const bat *bid, const bat *sid, const char *const *pat,
 			   const char *const *esc, const bit *caseignore, const bit *anti)
 {
+	(void) ctx;
 	BAT *b, *s = NULL, *bn = NULL, *old_s = NULL;
 	str msg = MAL_SUCCEED;
 	bool use_re = false,
@@ -1556,21 +1401,21 @@ PCRElikeselect(bat *ret, const bat *bid, const bat *sid, const char *const *pat,
 
 	MT_thread_setalgorithm(use_strcmp
 						   ? (with_strimps ?
-							  "pcrelike: pattern matching using strcmp with strimps"
+							  "pattern matching using strcmp with strimps"
 							  : (with_strimps_anti ?
-								 "pcrelike: pattern matching using strcmp with strimps anti"
-								 : "pcrelike: pattern matching using strcmp")) :
+								 "pattern matching using strcmp with strimps anti"
+								 : "pattern matching using strcmp")) :
 						   use_re ? (with_strimps ?
-									 "pcrelike: pattern matching using RE with strimps"
+									 "pattern matching using RE with strimps"
 									 : (with_strimps_anti ?
-										"pcrelike: patterm matching using RE with strimps anti"
-										:
-										"pcrelike: pattern matching using RE"))
+										"patterm matching using RE with strimps anti"
+										: "pattern matching using RE"))
 						   : (with_strimps ?
-							  "pcrelike: pattern matching using pcre with strimps"
+							  "pattern matching using pcre with strimps"
 							  : (with_strimps_anti ?
-								 "pcrelike: pattermatching using pcre with strimps anti"
-								 : "pcrelike: pattern matching using pcre")));
+								 "pattermatching using pcre with strimps anti"
+								 : "pattern matching using pcre")),
+						   __func__);
 
 	canditer_init(&ci, b, s);
 	if (!(bn = COLnew(0, TYPE_oid, ci.ncand, TRANSIENT))) {
@@ -1644,7 +1489,7 @@ PCRElikeselect(bat *ret, const bat *bid, const bat *sid, const char *const *pat,
 }
 
 #define APPEND(b, o)	(((oid *) b->theap->base)[b->batCount++] = (o))
-#define VALUE(s, x)		(s##vars + VarHeapVal(s##vals, (x), s##i.width))
+#define VALUE(s, x)		((off = VarHeapVal(s##vals, (x), s##i.width)) == 0 ? str_nil : s##vars + off)
 
 /* nested loop implementation for PCRE join */
 #define pcre_join_loop(STRCMP, MNRE_MATCH)								\
@@ -1657,10 +1502,10 @@ PCRElikeselect(bat *ret, const bat *bid, const bat *sid, const char *const *pat,
 			if ((msg = choose_like_path(&use_re, &use_strcmp, &empty, vr, esc))) \
 				goto bailout;											\
 			if (!empty) {												\
-				if ((msg = mnre_like_build(&re, vr, false, use_strcmp, (unsigned char) *esc)) != MAL_SUCCEED) \
+				if ((msg = mnre_like_build(ta, &re, vr, false, use_strcmp, (unsigned char) *esc)) != MAL_SUCCEED) \
 					goto bailout;										\
 				canditer_reset(&lci);									\
-				TIMEOUT_LOOP_IDX_DECL(lidx, lci.ncand, qry_ctx) {		\
+				TIMEOUT_LOOP(lci.ncand, qry_ctx) {		\
 					lo = canditer_next(&lci);							\
 					vl = VALUE(l, lo - lbase);							\
 					if (strNil(vl)) {									\
@@ -1708,7 +1553,7 @@ PCRElikeselect(bat *ret, const bat *bid, const bat *sid, const char *const *pat,
 					lastl = lo;											\
 					nl++;												\
 				}														\
-				mnre_like_clean(&re);										\
+				/*mnre_like_clean(&re);*/										\
 				TIMEOUT_CHECK(qry_ctx,									\
 							  GOTO_LABEL_TIMEOUT_HANDLER(bailout, qry_ctx)); \
 			}															\
@@ -1734,6 +1579,7 @@ pcrejoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr, const char *esc,
 {
 	struct canditer lci, rci;
 	const char *lvals, *rvals, *lvars, *rvars, *vl, *vr;
+	var_t off;
 	int rskipped = 0;			/* whether we skipped values in r */
 	oid lbase, rbase, lo, ro, lastl = 0;	/* last value inserted into r1 */
 	BUN nl, newcap;
@@ -1790,11 +1636,15 @@ pcrejoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr, const char *esc,
 		r2->tnonil = true;
 	}
 
+	allocator *ta = MT_thread_getallocator();
+	allocator_state ta_state = ma_open(ta);
+
 	if (anti) {
 		pcre_join_loop(strcmp(vl, vr) == 0, mnre_match(vl, re));
 	} else {
 		pcre_join_loop(strcmp(vl, vr) != 0, !mnre_match(vl, re));
 	}
+	ma_close(&ta_state);
 	bat_iterator_end(&li);
 	bat_iterator_end(&ri);
 	if (ol) {
@@ -1870,7 +1720,6 @@ pcrejoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr, const char *esc,
   bailout:
 	bat_iterator_end(&li);
 	bat_iterator_end(&ri);
-	mnre_like_clean(&re);
 	assert(msg != MAL_SUCCEED);
 	return msg;
 }
@@ -1934,10 +1783,10 @@ PCREjoin(bat *r1, bat *r2, bat lid, bat rid, bat slid, bat srid, bat elid,
 		goto fail;
 	}
 	bi = bat_iterator(caseignore);
-	ci = *(bit *) BUNtloc(bi, 0);
+	ci = *(bit *) BUNtloc(&bi, 0);
 	bat_iterator_end(&bi);
 	bi = bat_iterator(escape);
-	esc = BUNtvar(bi, 0);
+	esc = BUNtvar(&bi, 0);
 	msg = pcrejoin(result1, result2, left, right, candleft, candright, esc, ci,
 				   anti);
 	bat_iterator_end(&bi);
@@ -1972,10 +1821,11 @@ PCREjoin(bat *r1, bat *r2, bat lid, bat rid, bat slid, bat srid, bat elid,
 }
 
 static str
-LIKEjoin(bat *r1, bat *r2, const bat *lid, const bat *rid, const bat *elid,
+LIKEjoin(Client ctx, bat *r1, bat *r2, const bat *lid, const bat *rid, const bat *elid,
 		 const bat *cid, const bat *slid, const bat *srid,
 		 const bit *nil_matches, const lng *estimate, const bit *anti)
 {
+	(void) ctx;
 	(void) nil_matches;
 	(void) estimate;
 	return PCREjoin(r1, r2, *lid, *rid, slid ? *slid : 0, srid ? *srid : 0,
@@ -1983,10 +1833,11 @@ LIKEjoin(bat *r1, bat *r2, const bat *lid, const bat *rid, const bat *elid,
 }
 
 static str
-LIKEjoin1(bat *r1, const bat *lid, const bat *rid, const bat *elid,
+LIKEjoin1(Client ctx, bat *r1, const bat *lid, const bat *rid, const bat *elid,
 		  const bat *cid, const bat *slid, const bat *srid,
 		  const bit *nil_matches, const lng *estimate, const bit *anti)
 {
+	(void) ctx;
 	(void) nil_matches;
 	(void) estimate;
 	return PCREjoin(r1, NULL, *lid, *rid, slid ? *slid : 0, srid ? *srid : 0,
@@ -1994,16 +1845,12 @@ LIKEjoin1(bat *r1, const bat *lid, const bat *rid, const bat *elid,
 }
 
 #include "mel.h"
-mel_atom pcre_init_atoms[] = {
- { .name="pcre", },  { .cmp=NULL }
-};
-mel_func pcre_init_funcs[] = {
- command("pcre", "index", PCREindex, false, "match a pattern, return matched position (or 0 when not found)", args(1,3, arg("",int),arg("pat",pcre),arg("s",str))),
+static mel_func pcre_init_funcs[] = {
  command("pcre", "match", PCREmatch, false, "Perl Compatible Regular Expression pattern matching against a string", args(1,3, arg("",bit),arg("s",str),arg("pat",str))),
  command("pcre", "imatch", PCREimatch, false, "Caseless Perl Compatible Regular Expression pattern matching against a string", args(1,3, arg("",bit),arg("s",str),arg("pat",str))),
  command("pcre", "patindex", PCREpatindex, false, "Location of the first POSIX pattern matching against a string", args(1,3, arg("",int),arg("pat",str),arg("s",str))),
- command("pcre", "replace", PCREreplace_wrap, false, "Replace _all_ matches of \"pattern\" in \"origin_str\" with \"replacement\".\nParameter \"flags\" accept these flags: 'i', 'm', 's', and 'x'.\n'e': if present, an empty string is considered to be a valid match\n'i': if present, the match operates in case-insensitive mode.\nOtherwise, in case-sensitive mode.\n'm': if present, the match operates in multi-line mode.\n's': if present, the match operates in \"dot-all\"\nThe specifications of the flags can be found in \"man pcreapi\"\nThe flag letters may be repeated.\nNo other letters than 'e', 'i', 'm', 's' and 'x' are allowed in \"flags\".\nReturns the replaced string, or if no matches found, the original string.", args(1,5, arg("",str),arg("origin",str),arg("pat",str),arg("repl",str),arg("flags",str))),
- command("pcre", "replace_first", PCREreplacefirst_wrap, false, "Replace _the first_ match of \"pattern\" in \"origin_str\" with \"replacement\".\nParameter \"flags\" accept these flags: 'i', 'm', 's', and 'x'.\n'e': if present, an empty string is considered to be a valid match\n'i': if present, the match operates in case-insensitive mode.\nOtherwise, in case-sensitive mode.\n'm': if present, the match operates in multi-line mode.\n's': if present, the match operates in \"dot-all\"\nThe specifications of the flags can be found in \"man pcreapi\"\nThe flag letters may be repeated.\nNo other letters than 'e', 'i', 'm', 's' and 'x' are allowed in \"flags\".\nReturns the replaced string, or if no matches found, the original string.", args(1,5, arg("",str),arg("origin",str),arg("pat",str),arg("repl",str),arg("flags",str))),
+ command("pcre", "replace", PCREreplace_wrap, false, "Replace _all_ matches of \"pattern\" in \"origin_str\" with \"replacement\". Parameter \"flags\" accept these flags: 'i', 'm', 's', and 'x'. 'e': if present, an empty string is considered to be a valid match 'i': if present, the match operates in case-insensitive mode. Otherwise, in case-sensitive mode. 'm': if present, the match operates in multi-line mode. 's': if present, the match operates in \"dot-all\" The specifications of the flags can be found in \"man pcreapi\" The flag letters may be repeated. No other letters than 'e', 'i', 'm', 's' and 'x' are allowed in \"flags\". Returns the replaced string, or if no matches found, the original string.", args(1,5, arg("",str),arg("origin",str),arg("pat",str),arg("repl",str),arg("flags",str))),
+ command("pcre", "replace_first", PCREreplacefirst_wrap, false, "Replace _the first_ match of \"pattern\" in \"origin_str\" with \"replacement\". Parameter \"flags\" accept these flags: 'i', 'm', 's', and 'x'. 'e': if present, an empty string is considered to be a valid match 'i': if present, the match operates in case-insensitive mode. Otherwise, in case-sensitive mode. 'm': if present, the match operates in multi-line mode. 's': if present, the match operates in \"dot-all\" The specifications of the flags can be found in \"man pcreapi\" The flag letters may be repeated. No other letters than 'e', 'i', 'm', 's' and 'x' are allowed in \"flags\". Returns the replaced string, or if no matches found, the original string.", args(1,5, arg("",str),arg("origin",str),arg("pat",str),arg("repl",str),arg("flags",str))),
  command("pcre", "pcre_quote", PCREquote, false, "Return a PCRE pattern string that matches the argument exactly.", args(1,2, arg("",str),arg("s",str))),
  command("pcre", "sql2pcre", PCREsql2pcre, false, "Convert a SQL like pattern with the given escape character into a PCRE pattern.", args(1,3, arg("",str),arg("pat",str),arg("esc",str))),
  command("str", "replace", PCREreplace_wrap, false, "", args(1,5, arg("",str),arg("origin",str),arg("pat",str),arg("repl",str),arg("flags",str))),
@@ -2017,8 +1864,8 @@ mel_func pcre_init_funcs[] = {
  pattern("batalgebra", "not_like", BATPCREnotlike, false, "", args(1,5, batarg("",bit),batarg("s",str),arg("pat",str),arg("esc",str),arg("caseignore",bit))),
  pattern("batalgebra", "not_like", BATPCREnotlike, false, "", args(1,5, batarg("",bit),arg("s",str),batarg("pat",str),arg("esc",str),arg("caseignore",bit))),
  pattern("batalgebra", "not_like", BATPCREnotlike, false, "", args(1,5, batarg("",bit),batarg("s",str),batarg("pat",str),arg("esc",str),arg("caseignore",bit))),
- command("algebra", "likeselect", PCRElikeselect, false, "Select all head values of the first input BAT for which the\ntail value is \"like\" the given (SQL-style) pattern and for\nwhich the head value occurs in the tail of the second input\nBAT.\nInput is a dense-headed BAT, output is a dense-headed BAT with in\nthe tail the head value of the input BAT for which the\nrelationship holds.  The output BAT is sorted on the tail value.", args(1,7, batarg("",oid),batarg("b",str),batarg("s",oid),arg("pat",str),arg("esc",str),arg("caseignore",bit),arg("anti",bit))),
- command("algebra", "likejoin", LIKEjoin, false, "Join the string bat L with the pattern bat R\nwith optional candidate lists SL and SR using pattern escape string ESC\nand doing a case sensitive match.\nThe result is two aligned bats with oids of matching rows.", args(2,11, batarg("",oid),batarg("",oid),batarg("l",str),batarg("r",str),batarg("esc",str),batarg("caseignore",bit),batarg("sl",oid),batarg("sr",oid),arg("nil_matches",bit),arg("estimate",lng),arg("anti",bit))),
+ command("algebra", "likeselect", PCRElikeselect, false, "Select all head values of the first input BAT for which the tail value is \"like\" the given (SQL-style) pattern and for which the head value occurs in the tail of the second input BAT. Input is a dense-headed BAT, output is a dense-headed BAT with in the tail the head value of the input BAT for which the relationship holds.  The output BAT is sorted on the tail value.", args(1,7, batarg("",oid),batarg("b",str),batarg("s",oid),arg("pat",str),arg("esc",str),arg("caseignore",bit),arg("anti",bit))),
+ command("algebra", "likejoin", LIKEjoin, false, "Join the string bat L with the pattern bat R with optional candidate lists SL and SR using pattern escape string ESC and doing a case sensitive match. The result is two aligned bats with oids of matching rows.", args(2,11, batarg("",oid),batarg("",oid),batarg("l",str),batarg("r",str),batarg("esc",str),batarg("caseignore",bit),batarg("sl",oid),batarg("sr",oid),arg("nil_matches",bit),arg("estimate",lng),arg("anti",bit))),
  command("algebra", "likejoin", LIKEjoin1, false, "The same as LIKEjoin_esc, but only produce one output", args(1,10,batarg("",oid),batarg("l",str),batarg("r",str),batarg("esc",str),batarg("caseignore",bit),batarg("sl",oid),batarg("sr",oid),arg("nil_matches",bit),arg("estimate",lng), arg("anti",bit))),
  { .imp=NULL }
 };
@@ -2028,4 +1875,4 @@ mel_func pcre_init_funcs[] = {
 #pragma section(".CRT$XCU",read)
 #endif
 LIB_STARTUP_FUNC(init_pcre_mal)
-{ mal_module("pcre", pcre_init_atoms, pcre_init_funcs); }
+{ mal_module("pcre", NULL, pcre_init_funcs); }

@@ -3,20 +3,14 @@
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024, 2025 MonetDB Foundation;
- * Copyright August 2008 - 2023 MonetDB B.V.;
- * Copyright 1997 - July 2008 CWI.
+ * For copyright information, see the file debian/copyright.
  */
 
 #include "monetdb_config.h"
-#ifndef HAVE_GETOPT_LONG
-#  include "monet_getopt.h"
-#else
-# ifdef HAVE_GETOPT_H
-#  include "getopt.h"
-# endif
+#ifdef HAVE_GETOPT_H
+#include "getopt.h"
 #endif
 #include "mapi.h"
 #include <unistd.h>
@@ -26,7 +20,6 @@
 
 #include "stream.h"
 #include "msqldump.h"
-#define LIBMUTILS 1
 #include "mprompt.h"
 #include "mutils.h"		/* mercurial_revision */
 #include "dotmonetdb.h"
@@ -64,7 +57,7 @@ int
 #ifdef _MSC_VER
 wmain(int argc, wchar_t **wargv)
 #else
-main(int argc, char **argv)
+	main(int argc, char **argv)
 #endif
 {
 	int port = 0;
@@ -86,7 +79,7 @@ main(int argc, char **argv)
 	bool quiet = false;
 	stream *out;
 	bool user_set_as_flag = false;
-	char *table = NULL;
+	const char *table = NULL;
 	static struct option long_options[] = {
 		{"host", 1, 0, 'h'},
 		{"port", 1, 0, 'p'},
@@ -113,7 +106,7 @@ main(int argc, char **argv)
 		exit(1);
 	}
 	for (int i = 0; i < argc; i++) {
-		if ((argv[i] = wchartoutf8(wargv[i])) == NULL) {
+		if ((argv[i] = utf16toutf8(wargv[i])) == NULL) {
 			fprintf(stderr, "cannot convert argument to UTF-8\n");
 			exit(1);
 		}
@@ -292,13 +285,13 @@ main(int argc, char **argv)
 	if (out == NULL) {
 		if (output)
 			fprintf(stderr, "cannot open file: %s: %s\n",
-					output, mnstr_peek_error(NULL));
+				output, mnstr_peek_error(NULL));
 		else if (outputdir)
 			fprintf(stderr, "cannot open file: %s%cdump.sql: %s\n",
-					outputdir, DIR_SEP, mnstr_peek_error(NULL));
+				outputdir, DIR_SEP, mnstr_peek_error(NULL));
 		else
 			fprintf(stderr, "failed to allocate stream: %s\n",
-					mnstr_peek_error(NULL));
+				mnstr_peek_error(NULL));
 		exit(2);
 	}
 	if (!quiet) {
@@ -312,7 +305,7 @@ main(int argc, char **argv)
 #ifdef HAVE_CTIME_R
 		ctime_r(&t, buf);
 #else
-		strcpy_len(buf, ctime(&t), sizeof(buf));
+		strtcpy(buf, ctime(&t), sizeof(buf));
 #endif
 #endif
 		if ((p = strrchr(buf, '\n')) != NULL)

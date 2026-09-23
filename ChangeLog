@@ -1,9 +1,66 @@
 # ChangeLog file for devel
 # This file is updated with Maddlog
 
-* Mon Sep 16 2024 Joeri van Ruth <joeri.van.ruth@monetdbsolutions.com>
-- Hot snapshot: allow member files larger than 64 GiB. By member files we mean
-  the files inside the resulting .tar file, not the tar file itself. Huge member
-  files are written using a GNU tar extension to the original tar format, which
-  doesn't support more than 8 GiB.
+* Thu Sep 17 2026 Sjoerd Mullender <sjoerd@acm.org>
+- It is now possible to use --set usr1_outputfile=... to specify a file
+  where the output for the SIGUSR1 signal is to be written.  The file
+  is opened (created if it doesn't exist, appended to if it does) every
+  time output is generated, making it easy to rotate the file.
+
+* Mon Aug  3 2026 Sjoerd Mullender <sjoerd@acm.org>
+- The hash function used for all internal hash tables has been changed
+  to xxhash which is therefore now a build requirement.
+
+* Mon Jun 22 2026 Sjoerd Mullender <sjoerd@acm.org>
+- Removed support for LOADER FUNCTION.  Since Python UDFs are not
+  supported anymore, the loader functions can also not be supported
+  anymore.  It is no longer possible to create LOADER functions, nor is
+  it possible to use them.  Upgrading to this version will succeed if
+  such functions exist.  Use this query to find all affected functions:
+  `SELECT s.name, f.name FROM sys.functions f JOIN sys.schemas s ON s.id
+  = f.schema_id WHERE f.type = 7;`.  These functions can then be dropped
+  manually using `DROP LOADER FUNCTION ...;`.
+
+* Fri Jun 19 2026 Sjoerd Mullender <sjoerd@acm.org>
+- Removed embedded Python support.  It is no longer possible to use
+  user-defined functions which are written in Python (i.e. using `CREATE
+  FUNCTION ... LANGUAGE PYTHON ...`).  Upgrading to this version will
+  succeed if such functions are defined, but the cannot be used anymore.
+  Use this query to find all affected functions: `SELECT s.name, f.name
+  FROM sys.functions f JOIN sys.schemas s ON s.id = f.schema_id WHERE
+  f.language IN (6, 10);`.  These functions can then be dropped manually.
+- Removed embedded R support.  It is no longer possible to use
+  user-defined functions which are written in R (i.e. using `CREATE
+  FUNCTION ... LANGUAGE R ...`).  Upgrading to this version will succeed
+  if such functions are defined, but they cannot be used anymore.
+  Use this query to find all affected functions: `SELECT s.name, f.name
+  FROM sys.functions f JOIN sys.schemas s ON s.id = f.schema_id WHERE
+  f.language = 3;`.  These functions can then be dropped manually.
+- Removed embedded C support.  It is no longer possible to use
+  user-defined functions which are written in C or C++ (i.e. using
+  `CREATE FUNCTION ... LANGUAGE C ...`).  Upgrading to this version will
+  succeed if such functions are defined, but they cannot be used
+  anymore.  Use this query to find all affected functions: `SELECT
+  s.name, f.name FROM sys.functions f JOIN sys.schemas s ON s.id =
+  f.schema_id WHERE f.language IN (4, 12);`.  These functions can then
+  be dropped manually.
+
+* Thu May  7 2026 Niels Nes <niels@cwi.nl>
+- disallow casting /coercing from decimal to integers when the functions
+  work on bits (like xor, and, or, <<, >> etc)
+
+* Thu May  7 2026 Sjoerd Mullender <sjoerd@acm.org>
+- The version number has changed from three levels where the first level
+  has always been 11 to two levels.  The 11. has been dropped.
+
+* Wed May  6 2026 Martin van Dinther <martin.van.dinther@monetdbsolutions.com>
+- Added capability to change the OPTIMIZER setting for a USER via:
+  ALTER USER user_id OPTIMIZER 'minimal_pipe';
+
+* Sat May  2 2026 Lucas Pereira <lucas.pereira@monetdbsolutions.com>
+- Set default to 'no' of monetdbd discovery property.
+
+* Thu Feb 19 2026 Sjoerd Mullender <sjoerd@acm.org>
+- Changed the BATloop macro so that it now has a BATiter pointer as
+  first argument.
 

@@ -1,5 +1,5 @@
-query R rowsort
+query D rowsort
 select round(750,1)
 ----
-750.000
+750
 

@@ -3,15 +3,12 @@
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024, 2025 MonetDB Foundation;
- * Copyright August 2008 - 2023 MonetDB B.V.;
- * Copyright 1997 - July 2008 CWI.
+ * For copyright information, see the file debian/copyright.
  */
 
 #include "monetdb_config.h"
-#include "rel_trans.h"
 #include "rel_rel.h"
 #include "rel_basetable.h"
 #include "rel_select.h"
@@ -22,14 +19,9 @@
 #include "rel_psm.h"
 #include "rel_dump.h"
 #include "rel_propagate.h"
-#include "rel_unnest.h"
 #include "sql_parser.h"
 #include "sql_privileges.h"
-#include "sql_partition.h"
 #include "sql_storage.h"
-
-#include "mal_authorize.h"
-#include "mal_exception.h"
 
 sql_rel *
 rel_table(mvc *sql, int cat_type, const char *sname, sql_table *t, int nr)
@@ -40,8 +32,8 @@ rel_table(mvc *sql, int cat_type, const char *sname, sql_table *t, int nr)
 		return NULL;
 
 	append(exps, exp_atom_int(sql->sa, nr));
-	append(exps, exp_atom_str(sql->sa, sname, sql_bind_localtype("str") ));
-	append(exps, exp_atom_str(sql->sa, t->base.name, sql_bind_localtype("str") ));
+	append(exps, exp_atom_str(sql->sa, sname, sql_fetch_localtype(TYPE_str) ));
+	append(exps, exp_atom_str(sql->sa, t->base.name, sql_fetch_localtype(TYPE_str) ));
 	append(exps, exp_atom_ptr(sql->sa, t));
 	rel->l = rel_basetable(sql, t, t->base.name);
 	rel->r = NULL;
@@ -62,11 +54,11 @@ rel_create_remote(mvc *sql, int cat_type, const char *sname, sql_table *t, int p
 		return NULL;
 
 	append(exps, exp_atom_int(sql->sa, pw_encrypted));
-	append(exps, exp_atom_str(sql->sa, sname, sql_bind_localtype("str") ));
-	append(exps, exp_atom_str(sql->sa, t->base.name, sql_bind_localtype("str") ));
+	append(exps, exp_atom_str(sql->sa, sname, sql_fetch_localtype(TYPE_str) ));
+	append(exps, exp_atom_str(sql->sa, t->base.name, sql_fetch_localtype(TYPE_str) ));
 	append(exps, exp_atom_ptr(sql->sa, t));
-	append(exps, exp_atom_str(sql->sa, username, sql_bind_localtype("str") ));
-	append(exps, exp_atom_str(sql->sa, passwd, sql_bind_localtype("str") ));
+	append(exps, exp_atom_str(sql->sa, username, sql_fetch_localtype(TYPE_str) ));
+	append(exps, exp_atom_str(sql->sa, passwd, sql_fetch_localtype(TYPE_str) ));
 	rel->l = rel_basetable(sql, t, t->base.name);
 	rel->r = NULL;
 	rel->op = op_ddl;
@@ -277,7 +269,7 @@ mvc_create_remote_as_subquery(mvc *sql, sql_rel *sq, sql_schema *s, const char *
 }
 
 static char *
-table_constraint_name(mvc *sql, symbol *s, sql_schema *ss, sql_table *t)
+table_constraint_name(allocator *ta, mvc *sql, symbol *s, sql_schema *ss, sql_table *t)
 {
 	/* create a descriptive name like table_col1_col2_pkey */
 	char *suffix;		/* stores the type of this constraint */
@@ -312,7 +304,7 @@ table_constraint_name(mvc *sql, symbol *s, sql_schema *ss, sql_table *t)
 				nme2 = name2;
 				found = ol_find_name(t->keys, nme2) || mvc_bind_key(sql, ss, nme2);
 			} while (found);
-			buf = SA_NEW_ARRAY(sql->ta, char, buflen);
+			buf = SA_NEW_ARRAY(ta, char, buflen);
 			strcpy(buf, nme2);
 			return buf;
 		default:
@@ -326,7 +318,7 @@ table_constraint_name(mvc *sql, symbol *s, sql_schema *ss, sql_table *t)
 	slen = strlen(suffix);
 	while (len + slen >= buflen)
 		buflen += BUFSIZ;
-	buf = SA_NEW_ARRAY(sql->ta, char, buflen);
+	buf = SA_NEW_ARRAY(ta, char, buflen);
 	strcpy(buf, t->base.name);
 
 	/* add column name(s) */
@@ -334,7 +326,7 @@ table_constraint_name(mvc *sql, symbol *s, sql_schema *ss, sql_table *t)
 		slen = strlen(nms->data.sval);
 		while (len + slen + 1 >= buflen) {
 			size_t nbuflen = buflen + BUFSIZ;
-			char *nbuf = SA_RENEW_ARRAY(sql->ta, char, buf, nbuflen, buflen);
+			char *nbuf = SA_RENEW_ARRAY(ta, char, buf, nbuflen, buflen);
 			buf = nbuf;
 			buflen = nbuflen;
 		}
@@ -346,7 +338,7 @@ table_constraint_name(mvc *sql, symbol *s, sql_schema *ss, sql_table *t)
 	slen = strlen(suffix);
 	while (len + 1 + slen >= buflen) {
 		size_t nbuflen = buflen + BUFSIZ;
-		char *nbuf = SA_RENEW_ARRAY(sql->ta, char, buf, nbuflen, buflen);
+		char *nbuf = SA_RENEW_ARRAY(ta, char, buf, nbuflen, buflen);
 		buf = nbuf;
 		buflen = nbuflen;
 	}
@@ -355,7 +347,7 @@ table_constraint_name(mvc *sql, symbol *s, sql_schema *ss, sql_table *t)
 }
 
 static char *
-column_constraint_name(mvc *sql, symbol *s, sql_column *sc, sql_table *t)
+column_constraint_name(allocator *ta, symbol *s, sql_column *sc, sql_table *t)
 {
 	/* create a descriptive name like table_col_pkey */
 	char *suffix /* stores the type of this constraint */, *buf;
@@ -382,13 +374,15 @@ column_constraint_name(mvc *sql, symbol *s, sql_column *sc, sql_table *t)
 	}
 
 	buflen = strlen(t->base.name) + strlen(sc->base.name) + strlen(suffix) + 3;
-	buf = SA_NEW_ARRAY(sql->ta, char, buflen);
+	buf = SA_NEW_ARRAY(ta, char, buflen);
 	snprintf(buf, buflen, "%s_%s_%s", t->base.name, sc->base.name, suffix);
 	return buf;
 }
 
 #define COL_NULL	0
 #define COL_DEFAULT 1
+#define COL_STORAGE 2
+#define COL_USTR	4
 
 static bool
 foreign_key_check_types(sql_subtype *lt, sql_subtype *rt)
@@ -401,14 +395,14 @@ foreign_key_check_types(sql_subtype *lt, sql_subtype *rt)
 static key_type
 token2key_type(int token)
 {
-		switch (token) {
+	switch (token) {
 		case SQL_UNIQUE:					return ukey;
 		case SQL_UNIQUE_NULLS_NOT_DISTINCT:	return unndkey;
 		case SQL_PRIMARY_KEY:				return pkey;
 		case SQL_CHECK:						return ckey;
-		}
-		assert(0);
-		return -1;
+	}
+	assert(0);
+	return -1;
 }
 
 static sql_rel*
@@ -417,11 +411,14 @@ create_check_plan(sql_query *query, symbol *s, sql_table *t)
 	mvc *sql = query->sql;
 	exp_kind ek = {type_value, card_value, FALSE};
 	sql_rel *rel = rel_basetable(sql, t, t->base.name);
-	sql_exp *e = rel_logical_value_exp(query, &rel, s->data.lval->h->data.sym, sql_sel | sql_no_subquery, ek);
+	if (!stack_push_frame(sql, NULL))
+		return sql_error(sql, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
+	sql_exp *e = rel_logical_value_exp(query, &rel, s->data.lval->h->data.sym, sql_sel | sql_no_subquery | sql_check, ek);
+	stack_pop_frame(sql);
 
 	if (!e || !rel || !is_basetable(rel->op))
 		return NULL;
-	e->comment = sa_strdup(sql->sa, s->data.lval->h->next->data.sval);
+	e->comment = ma_strdup(sql->sa, s->data.lval->h->next->data.sval);
 	rel->exps = rel_base_projection(sql, rel, 0);
 	list *pexps = sa_list(sql->sa);
 	pexps = append(pexps, e);
@@ -612,9 +609,12 @@ column_constraint_type(sql_query *query, const char *name, symbol *s, sql_schema
 		}
 		kc = rk->columns->h->data;
 		if (!foreign_key_check_types(&cs->type, &kc->c->type)) {
-			str tp1 = sql_subtype_string(sql->ta, &cs->type), tp2 = sql_subtype_string(sql->ta, &kc->c->type);
+			allocator *ta = MT_thread_getallocator();
+			allocator_state ta_state = ma_open(ta);
+			str tp1 = sql_subtype_string(ta, &cs->type), tp2 = sql_subtype_string(ta, &kc->c->type);
 			(void) sql_error(sql, 02, SQLSTATE(42000) "CONSTRAINT FOREIGN KEY: the type of the FOREIGN KEY column '%s' %s is not compatible with the referenced %s KEY column type %s",
 							 cs->base.name, tp1, rk->type == pkey ? "PRIMARY" : "UNIQUE", tp2);
+			ma_close(&ta_state);
 			return res;
 		}
 		switch (mvc_create_fkey(&fk, sql, t, name, fkey, rk, ref_actions & 255, (ref_actions>>8) & 255)) {
@@ -697,60 +697,44 @@ column_options(sql_query *query, dlist *opt_list, sql_schema *ss, sql_table *t, 
 			symbol *s = n->data.sym;
 
 			switch (s->token) {
-				case SQL_CONSTRAINT: {
-					dlist *l = s->data.lval;
-					char *opt_name = l->h->data.sval, *default_name = NULL;
-					symbol *sym = l->h->next->data.sym;
+			case SQL_CONSTRAINT: {
+				dlist *l = s->data.lval;
+				char *opt_name = l->h->data.sval, *default_name = NULL;
+				symbol *sym = l->h->next->data.sym;
+				allocator *ta = MT_thread_getallocator();
+				allocator_state ta_state = ma_open(ta);
 
-					if (!opt_name && !(default_name = column_constraint_name(sql, sym, cs, t)))
+				if (!opt_name && !(default_name = column_constraint_name(ta, sym, cs, t))) {
+					ma_close(&ta_state);
+					return SQL_ERR;
+				}
+
+				res = column_constraint_type(query, opt_name ? opt_name : default_name, sym, ss, t, cs, isDeclared, &used);
+				ma_close(&ta_state);
+				if (res<0)
+					res = SQL_ERR;
+			} 	break;
+			case SQL_DEFAULT: {
+				symbol *sym = s->data.sym;
+				char *err = NULL, *r;
+
+				if (used & (1 << COL_DEFAULT)) {
+					(void) sql_error(sql, 02, SQLSTATE(42000) "A default value for a column may be specified at most once");
+					return SQL_ERR;
+				}
+				used |= (1 << COL_DEFAULT);
+
+				if (sym->token == SQL_COLUMN || sym->token == SQL_IDENT || sym->token == SQL_NEXT) {
+					exp_kind ek = {type_value, card_value, FALSE};
+					sql_exp *e = rel_logical_value_exp(query, NULL, sym, sql_sel, ek);
+
+					if (!e)
 						return SQL_ERR;
+					if (e && is_atom(e->type)) {
+						atom *a = exp_value(sql, e);
 
-					res = column_constraint_type(query, opt_name ? opt_name : default_name, sym, ss, t, cs, isDeclared, &used);
-				} 	break;
-				case SQL_DEFAULT: {
-					symbol *sym = s->data.sym;
-					char *err = NULL, *r;
-
-					if ((used&(1<<COL_DEFAULT))) {
-						(void) sql_error(sql, 02, SQLSTATE(42000) "A default value for a column may be specified at most once");
-						return SQL_ERR;
-					}
-					used |= (1<<COL_DEFAULT);
-
-					if (sym->token == SQL_COLUMN || sym->token == SQL_IDENT || sym->token == SQL_NEXT) {
-						exp_kind ek = {type_value, card_value, FALSE};
-						sql_exp *e = rel_logical_value_exp(query, NULL, sym, sql_sel, ek);
-
-						if (!e)
-							return SQL_ERR;
-						if (e && is_atom(e->type)) {
-							atom *a = exp_value(sql, e);
-
-							if (a && atom_null(a)) {
-								switch (mvc_default(sql, cs, NULL)) {
-									case -1:
-										(void) sql_error(sql, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
-										return SQL_ERR;
-									case -2:
-									case -3:
-										(void) sql_error(sql, 02, SQLSTATE(42000) "DEFAULT: transaction conflict detected while setting default value");
-										return SQL_ERR;
-									default:
-										break;
-								}
-								break;
-							}
-						}
-						/* reset error */
-						sql->session->status = 0;
-						sql->errstr[0] = '\0';
-					}
-					r = symbol2string(sql, s->data.sym, 0, &err);
-					if (!r) {
-						(void) sql_error(sql, 02, SQLSTATE(42000) "Incorrect default value '%s'", err?err:"");
-						return SQL_ERR;
-					} else {
-						switch (mvc_default(sql, cs, r)) {
+						if (a && atom_null(a)) {
+							switch (mvc_default(sql, cs, NULL)) {
 							case -1:
 								(void) sql_error(sql, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 								return SQL_ERR;
@@ -760,35 +744,100 @@ column_options(sql_query *query, dlist *opt_list, sql_schema *ss, sql_table *t, 
 								return SQL_ERR;
 							default:
 								break;
+							}
+							break;
 						}
 					}
-				} 	break;
-				case SQL_NOT_NULL:
-				case SQL_NULL: {
-					int null = (s->token != SQL_NOT_NULL);
-
-					if ((used&(1<<COL_NULL))) {
-						(void) sql_error(sql, 02, SQLSTATE(42000) "NULL constraint for a column may be specified at most once");
-						return SQL_ERR;
-					}
-					used |= (1<<COL_NULL);
-
-					switch (mvc_null(sql, cs, null)) {
-						case -1:
-							(void) sql_error(sql, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
-							return SQL_ERR;
-						case -2:
-						case -3:
-							(void) sql_error(sql, 02, SQLSTATE(42000) "NULL CONSTRAINT: transaction conflict detected");
-							return SQL_ERR;
-						default:
-							break;
-					}
-				} 	break;
-				default: {
-					(void) sql_error(sql, 02, SQLSTATE(M0M03) "Unknown column option (%p)->token = %s", s, token2string(s->token));
+					/* reset error */
+					sql->session->status = 0;
+					sql->errstr[0] = '\0';
+				}
+				r = symbol2string(sql, s->data.sym, 0, &err);
+				if (!r) {
+					(void) sql_error(sql, 02, SQLSTATE(42000) "Incorrect default value '%s'", err?err:"");
 					return SQL_ERR;
 				}
+				switch (mvc_default(sql, cs, r)) {
+				case -1:
+					(void) sql_error(sql, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
+					return SQL_ERR;
+				case -2:
+				case -3:
+					(void) sql_error(sql, 02, SQLSTATE(42000) "DEFAULT: transaction conflict detected while setting default value");
+					return SQL_ERR;
+				default:
+					break;
+				}
+				break;
+			}
+			case SQL_NOT_NULL:
+			case SQL_NULL:
+				if (used & (1 << COL_NULL)) {
+					(void) sql_error(sql, 02, SQLSTATE(42000) "NULL constraint for a column may be specified at most once");
+					return SQL_ERR;
+				}
+				used |= (1 << COL_NULL);
+
+				switch (mvc_null(sql, cs, (s->token != SQL_NOT_NULL))) {
+				case -1:
+					(void) sql_error(sql, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
+					return SQL_ERR;
+				case -2:
+				case -3:
+					(void) sql_error(sql, 02, SQLSTATE(42000) "NULL CONSTRAINT: transaction conflict detected");
+					return SQL_ERR;
+				default:
+					break;
+				}
+				break;
+			case SQL_STORAGE:
+				if (used & (1 << COL_STORAGE)) {
+					(void) sql_error(sql, 02, SQLSTATE(42000) "STORAGE option for a column may be specified at most once");
+					return SQL_ERR;
+				}
+				used |= (1 << COL_STORAGE);
+				switch (mvc_storage(sql, cs, s->data.sval)) {
+				case -1:
+					(void) sql_error(sql, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
+					return SQL_ERR;
+				case -2:
+				case -3:
+					(void) sql_error(sql, 02, SQLSTATE(42000) "STORAGE option: transaction conflict detected");
+					return SQL_ERR;
+				default:
+					break;
+				}
+				break;
+			case SQL_USTR:
+				if (used & (1 << COL_USTR)) {
+					(void) sql_error(sql, 02, SQLSTATE(42000) "DISTINCT STRING COLUMN option for a column may be specified at most once");
+					return SQL_ERR;
+				}
+				used |= (1 << COL_USTR);
+				switch (mvc_ustr(sql, ss, cs, s->data.lval)) {
+				case -1:
+					(void) sql_error(sql, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
+					return SQL_ERR;
+				case -2:
+				case -3:
+					(void) sql_error(sql, 02, SQLSTATE(42000) "DISTINCT STRING COLUMN option: transaction conflict detected");
+					return SQL_ERR;
+				case -4:
+					(void) sql_error(sql, 02, SQLSTATE(42000) "DISTINCT STRING COLUMN option: no such schema '%s'", qname_schema(s->data.lval));
+					return SQL_ERR;
+				case -5:
+					(void) sql_error(sql, 02, SQLSTATE(42000) "DISTINCT STRING COLUMN option: column is not a (var)char column");
+					return SQL_ERR;
+				case -6:
+					(void) sql_error(sql, 02, SQLSTATE(42000) "DISTINCT STRING COLUMN option: no such distinct string column '%s.%s'", qname_schema(s->data.lval) ? qname_schema(s->data.lval) : ss->base.name, qname_schema_object(s->data.lval));
+					return SQL_ERR;
+				default:
+					break;
+				}
+				break;
+			default:
+				(void) sql_error(sql, 02, SQLSTATE(M0M03) "Unknown column option (%p)->token = %s", s, token2string(s->token));
+				return SQL_ERR;
 			}
 		}
 	}
@@ -894,9 +943,12 @@ table_foreign_key(mvc *sql, const char *name, symbol *s, sql_schema *ss, sql_tab
 				return SQL_ERR;
 			}
 			if (!foreign_key_check_types(&cs->type, &kc->c->type)) {
-				str tp1 = sql_subtype_string(sql->ta, &cs->type), tp2 = sql_subtype_string(sql->ta, &kc->c->type);
+				allocator *ta = MT_thread_getallocator();
+				allocator_state ta_state = ma_open(ta);
+				str tp1 = sql_subtype_string(ta, &cs->type), tp2 = sql_subtype_string(ta, &kc->c->type);
 				(void) sql_error(sql, 02, SQLSTATE(42000) "CONSTRAINT FOREIGN KEY: the type of the FOREIGN KEY column '%s' %s is not compatible with the referenced %s KEY column type %s",
 								 cs->base.name, tp1, rk->type == pkey ? "PRIMARY" : "UNIQUE", tp2);
+				ma_close(&ta_state);
 				return SQL_ERR;
 			}
 			switch (mvc_create_fkc(sql, fk, cs)) {
@@ -1063,13 +1115,17 @@ table_constraint(sql_query *query, symbol *s, sql_schema *ss, sql_table *t)
 		dlist *l = s->data.lval;
 		char *opt_name = l->h->data.sval;
 		symbol *sym = l->h->next->data.sym;
+		allocator *ta = MT_thread_getallocator();
+		allocator_state ta_state = ma_open(ta);
 
-		if (!opt_name)
-			opt_name = table_constraint_name(sql, sym, ss, t);
-		else if (s->token)
 		if (opt_name == NULL)
+			opt_name = table_constraint_name(ta, sql, sym, ss, t);
+		if (opt_name == NULL) {
+			ma_close(&ta_state);
 			return SQL_ERR;
+		}
 		res = table_constraint_type(query, opt_name, sym, ss, t);
+		ma_close(&ta_state);
 	}
 
 	if (res != SQL_OK) {
@@ -1092,8 +1148,8 @@ create_column(sql_query *query, symbol *s, sql_schema *ss, sql_table *t, int alt
 	(void) ss;
 	if (alter && !(isTable(t) || ((isMergeTable(t) || isReplicaTable(t)) && list_length(t->members)==0))) {
 		(void) sql_error(sql, 02, SQLSTATE(42000) "ALTER TABLE: cannot add column to %s '%s'%s",
-				  TABLE_TYPE_DESCRIPTION(t->type, t->properties),
-				  t->base.name, ((isMergeTable(t) || isReplicaTable(t)) && list_length(t->members)) ? " while it has partitions" : "");
+				TABLE_TYPE_DESCRIPTION(t->type, t->properties),
+				t->base.name, ((isMergeTable(t) || isReplicaTable(t)) && list_length(t->members)) ? " while it has partitions" : "");
 		return SQL_ERR;
 	}
 	if (l->h->next->next)
@@ -1143,8 +1199,9 @@ table_element(sql_query *query, symbol *s, sql_schema *ss, sql_table *t, int alt
 		((isMergeTable(t) || isReplicaTable(t)) && (s->token != SQL_TABLE && s->token != SQL_DROP_TABLE && list_length(t->members))) ||
 		(isTable(t) && (s->token == SQL_TABLE || s->token == SQL_DROP_TABLE)) ||
 		(partition_find_part(sql->session->tr, t, NULL) &&
-			 (s->token == SQL_DROP_COLUMN || s->token == SQL_COLUMN || s->token == SQL_CONSTRAINT ||
-			  s->token == SQL_DEFAULT || s->token == SQL_DROP_DEFAULT || s->token == SQL_NOT_NULL || s->token == SQL_NULL || s->token == SQL_DROP_CONSTRAINT)))){
+			(s->token == SQL_DROP_COLUMN || s->token == SQL_COLUMN || s->token == SQL_CONSTRAINT ||
+			 s->token == SQL_DEFAULT || s->token == SQL_DROP_DEFAULT || s->token == SQL_NOT_NULL ||
+			 s->token == SQL_NULL || s->token == SQL_DROP_CONSTRAINT)))) {
 		const char *msg = "";
 
 		switch (s->token) {
@@ -1177,6 +1234,9 @@ table_element(sql_query *query, symbol *s, sql_schema *ss, sql_table *t, int alt
 			break;
 		case SQL_DROP_CONSTRAINT:
 			msg = "drop constraint from";
+			break;
+		case SQL_TYPE:
+			msg = "alter column type";
 			break;
 		default:
 			sql_error(sql, 02, SQLSTATE(M0M03) "%s: Unknown table element (%p)->token = %s\n", action, s, token2string(s->token));
@@ -1358,16 +1418,26 @@ table_element(sql_query *query, symbol *s, sql_schema *ss, sql_table *t, int alt
 			}
 			assert(oc->type.type->eclass != EC_ANY);
 			switch (mvc_create_column(&nc, sql, t, oc->base.name, &oc->type)) {
-				case -1:
-					sql_error(sql, 01, SQLSTATE(HY013) MAL_MALLOC_FAIL);
-					return SQL_ERR;
-				case -2:
-				case -3:
-					sql_error(sql, 01, SQLSTATE(42000) "%s: transaction conflict detected", action);
-					return SQL_ERR;
-				default:
-					break;
+			case -1:
+				sql_error(sql, 01, SQLSTATE(HY013) MAL_MALLOC_FAIL);
+				return SQL_ERR;
+			case -2:
+			case -3:
+				sql_error(sql, 01, SQLSTATE(42000) "%s: transaction conflict detected", action);
+				return SQL_ERR;
+			default:
+				sql_error(sql, 01, SQLSTATE(42000) "%s: unknown error", action);
+				return SQL_ERR;
+			case 0:
+				break;
 			}
+			assert(nc != NULL);
+			if (oc->null != nc->null)
+				mvc_null(sql, nc, oc->null);
+			if (oc->storage_type &&
+				(nc->storage_type == NULL ||
+				 strcmp(oc->storage_type, nc->storage_type) != 0))
+				mvc_storage(sql, nc, oc->storage_type);
 		}
 	} 	break;
 	case SQL_DROP_COLUMN:
@@ -1398,7 +1468,7 @@ table_element(sql_query *query, symbol *s, sql_schema *ss, sql_table *t, int alt
 			sql_error(sql, 02, SQLSTATE(2BM37) "%s: cannot drop column '%s': there are database objects which depend on it\n", action, cname);
 			return SQL_ERR;
 		}
-		if (!drop_action  && t->keys) {
+		if (!drop_action && t->keys) {
 			node *n, *m;
 
 			for (n = ol_first_node(t->keys); n; n = n->next) {
@@ -1440,6 +1510,39 @@ table_element(sql_query *query, symbol *s, sql_schema *ss, sql_table *t, int alt
 	case SQL_DROP_CONSTRAINT:
 		res = SQL_OK;
 		break;
+	case SQL_TYPE:
+	{
+		dlist *l = s->data.lval;
+		char *cname = l->h->data.sval;
+		sql_subtype *tv = &l->h->next->data.typeval;
+		sql_column *col = mvc_bind_column(sql, t, cname);
+
+		assert(l->h->next->type == type_type);
+		(void)tv;
+		if (col == NULL) {
+			sql_error(sql, ERR_NOTFOUND, SQLSTATE(42S22) "ALTER TYPE: no such column '%s'\n", cname);
+			return SQL_ERR;
+		}
+		if (t->system) {
+			sql_error(sql, 02, SQLSTATE(42000) "ALTER TYPE: cannot alter type of column '%s': table is a system table\n", cname);
+			return SQL_ERR;
+		}
+		if (mvc_check_dependency(sql, col->base.id, COLUMN_DEPENDENCY, NULL)) {
+			sql_error(sql, 02, SQLSTATE(2BM37) "ALTER TYPE: cannot alter type of column '%s': there are database objects which depend on it\n", cname);
+			return SQL_ERR;
+		}
+		switch (mvc_subtype(sql, col, tv)) {
+			case -1:
+				(void) sql_error(sql, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
+				return SQL_ERR;
+			case -2:
+			case -3:
+				(void) sql_error(sql, 02, SQLSTATE(42000) "NULL CONSTRAINT: transaction conflict detected");
+				return SQL_ERR;
+			default:
+				break;
+		}
+	} break;
 	default:
 		res = SQL_ERR;
 	}
@@ -1477,8 +1580,11 @@ create_partition_definition(mvc *sql, sql_table *t, symbol *partition_def)
 			sql_ec = t->part.pcol->type.type->eclass;
 			if (!(sql_ec == EC_BIT || EC_VARCHAR(sql_ec) || EC_TEMP(sql_ec) || sql_ec == EC_POS || sql_ec == EC_NUM ||
 				 EC_INTERVAL(sql_ec)|| sql_ec == EC_DEC || sql_ec == EC_BLOB)) {
-				err = sql_subtype_string(sql->ta, &(t->part.pcol->type));
+				allocator *ta = MT_thread_getallocator();
+				allocator_state ta_state = ma_open(ta);
+				err = sql_subtype_string(ta, &(t->part.pcol->type));
 				sql_error(sql, 02, SQLSTATE(42000) "CREATE MERGE TABLE: column type %s not yet supported for the partition column", err);
+				ma_close(&ta_state);
 				return SQL_ERR;
 			}
 		} else if (isPartitionedByExpressionTable(t)) {
@@ -1489,7 +1595,7 @@ create_partition_definition(mvc *sql, sql_table *t, symbol *partition_def)
 			}
 			t->part.pexp = SA_ZNEW(sql->sa, sql_expression);
 			t->part.pexp->exp = query;
-			t->part.pexp->type = *sql_bind_localtype("void");
+			t->part.pexp->type = *sql_fetch_localtype(TYPE_void);
 		}
 	}
 	return SQL_OK;
@@ -1543,7 +1649,7 @@ rel_create_table(sql_query *query, int temp, const char *sname, const char *name
 		int res = LOG_OK;
 
 		if (tt == tt_remote) {
-			if (!mapiuri_valid(loc))
+			if (!mapiuri_valid(loc, sql->sa))
 				return sql_error(sql, 02, SQLSTATE(42000) "%s TABLE: incorrect uri '%s' for remote table '%s'", action, loc, name);
 			res = mvc_create_remote(&t, sql, s, name, SQL_DECLARED_TABLE, loc);
 		} else {
@@ -1599,15 +1705,15 @@ rel_create_table(sql_query *query, int temp, const char *sname, const char *name
 
 		/* create table */
 		if (tt == tt_remote) {
-			if (!mapiuri_valid(loc))
+			if (!mapiuri_valid(loc, sql->sa))
 				return sql_error(sql, 02, SQLSTATE(42000) "%s TABLE: incorrect uri '%s' for remote table '%s'", action, loc, name);
 			if ((t = mvc_create_remote_as_subquery(sql, sq, s, name, column_spec, loc, (temp == SQL_DECLARED_TABLE)?"DECLARE TABLE":"CREATE TABLE")) == NULL) {
-				rel_destroy(sq);
+				rel_destroy(sql, sq);
 				return NULL;
 			}
 		} else {
 			if ((t = mvc_create_table_as_subquery(sql, sq, s, name, column_spec, temp, commit_action, (temp == SQL_DECLARED_TABLE)?"DECLARE TABLE":"CREATE TABLE")) == NULL) {
-				rel_destroy(sq);
+				rel_destroy(sql, sq);
 				return NULL;
 			}
 		}
@@ -1616,13 +1722,13 @@ rel_create_table(sql_query *query, int temp, const char *sname, const char *name
 		if (tt == tt_remote) {
 			res = rel_create_remote(sql, ddl_create_table, s->base.name, t, pw_encrypted, username, password);
 			/* we cannot insert in remote so just remove the subquery */
-			rel_destroy(sq);
+			rel_destroy(sql, sq);
 		} else {
 			res = rel_table(sql, ddl_create_table, s->base.name, t, (tt == tt_table)?temp:SQL_PERSIST);
 			if (with_data) {
 				res = rel_insert(query->sql, res, sq);
 			} else {
-				rel_destroy(sq);
+				rel_destroy(sql, sq);
 			}
 		}
 		return res;
@@ -1645,7 +1751,7 @@ rel_create_view(sql_query *query, int temp, dlist *qname, dlist *column_spec, sy
 	const char *base = replace ? "CREATE OR REPLACE VIEW" : "CREATE VIEW";
 	const char *action = (temp == SQL_DECLARED_TABLE)?"DECLARE":"CREATE";
 
-	(void) check;		/* Stefan: unused!? */
+	(void) check;
 
 	if (temp == SQL_GLOBAL_TEMP)
 		temp = SQL_PERSIST; /* just normal view */
@@ -1683,10 +1789,13 @@ rel_create_view(sql_query *query, int temp, dlist *qname, dlist *column_spec, sy
 				return sql_error(sql, 01, SQLSTATE(42000) "%s: %s not supported", base, sn->limit ? "LIMIT" : "SAMPLE");
 		}
 
+		bool globals = sql->globals;
+		sql->globals = (persistent && temp != SQL_LOCAL_TEMP);
 		pfoundid = sql->objid;
 		sql->objid = foundid; /* when recreating a view, the view itself can't be found */
 		sq = schema_selects(query, s, ast);
 		sql->objid = pfoundid;
+		sql->globals = globals;
 		if (!sq)
 			return NULL;
 		if (!is_project(sq->op)) /* make sure sq is a projection */
@@ -1701,25 +1810,30 @@ rel_create_view(sql_query *query, int temp, dlist *qname, dlist *column_spec, sy
 					;
 				if (n || m) {
 					sql_error(sql, 01, SQLSTATE(21S02) "WITH CLAUSE: number of columns does not match");
-					rel_destroy(sq);
+					rel_destroy(sql, sq);
 					return NULL;
 				}
 			}
 		}
 
 		if (create) {
-			q = query_cleaned(sql->ta, q);
+			allocator *ta = MT_thread_getallocator();
+			allocator_state ta_state = ma_open(ta);
+			q = query_cleaned(ta, q);
 			switch (mvc_create_view(&t, sql, s, name, SQL_DECLARED_TABLE, q, 0)) {
 				case -1:
+					ma_close(&ta_state);
 					return sql_error(sql, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 				case -2:
 				case -3:
+					ma_close(&ta_state);
 					return sql_error(sql, 02, SQLSTATE(42000) "%s: transaction conflict detected", base);
 				default:
 					break;
 			}
+			ma_close(&ta_state);
 			if (as_subquery(sql, t, tt_view, sq, column_spec, base) != 0) {
-				rel_destroy(sq);
+				rel_destroy(sql, sq);
 				return NULL;
 			}
 			return rel_create_view_ddl(sql, ddl_create_view, s->base.name, t, temp, replace);
@@ -1736,7 +1850,7 @@ rel_create_view(sql_query *query, int temp, dlist *qname, dlist *column_spec, sy
 }
 
 static sql_rel *
-rel_schema2(allocator *sa, int cat_type, char *sname, char *auth, int nr)
+rel_schema2(allocator *sa, int cat_type, const char *sname, const char *auth, int nr)
 {
 	sql_rel *rel = rel_create(sa);
 	list *exps = new_exp_list(sa);
@@ -1778,21 +1892,27 @@ rel_schema3(allocator *sa, int cat_type, char *sname, char *tname, char *name)
 }
 
 static sql_rel *
-rel_drop_type(mvc *sql, dlist *qname, int drop_action)
+rel_drop_type(mvc *sql, dlist *qname, int drop_action, int if_exists)
 {
 	char *name = qname_schema_object(qname);
 	char *sname = qname_schema(qname);
 	sql_type *t = NULL;
 
-	if (!(t = find_type_on_scope(sql, sname, name, "DROP TYPE")))
+	if (!(t = find_type_on_scope(sql, sname, name, "DROP TYPE"))) {
+		if (if_exists) {
+			sql->errstr[0] = '\0'; /* reset type not found error */
+			sql->session->status = 0;
+			return rel_psm_block(sql->sa, new_exp_list(sql->sa));
+		}
 		return NULL;
+	}
 	if (!mvc_schema_privs(sql, t->s))
 		return sql_error(sql, 02, SQLSTATE(42000) "DROP TYPE: access denied for %s to schema '%s'", get_string_global_var(sql, "current_user"), t->s->base.name);
 	return rel_schema2(sql->sa, ddl_drop_type, t->s->base.name, name, drop_action);
 }
 
 static sql_rel *
-rel_create_type(mvc *sql, dlist *qname, char *impl)
+rel_create_type(mvc *sql, dlist *qname, char *impl, int if_not_exists)
 {
 	char *name = qname_schema_object(qname);
 	char *sname = qname_schema(qname);
@@ -1800,8 +1920,11 @@ rel_create_type(mvc *sql, dlist *qname, char *impl)
 
 	if (sname && !(s = mvc_bind_schema(sql, sname)))
 		return sql_error(sql, ERR_NOTFOUND, SQLSTATE(3F000) "CREATE TYPE: no such schema '%s'", sname);
-	if (schema_bind_type(sql, s, name) != NULL)
+	if (schema_bind_type(sql, s, name) != NULL) {
+		if (if_not_exists == 1)
+			return rel_psm_block(sql->sa, new_exp_list(sql->sa));
 		return sql_error(sql, 02, SQLSTATE(42S01) "CREATE TYPE: name '%s' already in use", name);
+	}
 	if (!mvc_schema_privs(sql, s))
 		return sql_error(sql, 02, SQLSTATE(42000) "CREATE TYPE: access denied for %s to schema '%s'", get_string_global_var(sql, "current_user"), s->base.name);
 	return rel_schema3(sql->sa, ddl_create_type, s->base.name, name, impl);
@@ -1822,7 +1945,7 @@ schema_auth(dlist *name_auth)
 }
 
 static sql_rel *
-rel_drop(allocator *sa, int cat_type, char *sname, char *first_val, char *second_val, int nr, int exists_check)
+rel_drop(allocator *sa, ddl_statement cat_type, const char *sname, const char *first_val, const char *second_val, int nr, int exists_check)
 {
 	sql_rel *rel = rel_create(sa);
 	list *exps = new_exp_list(sa);
@@ -1867,7 +1990,7 @@ rel_create_schema_dll(allocator *sa, char *sname, char *auth, int nr)
 }
 
 static sql_rel *
-rel_create_schema(sql_query *query, dlist *auth_name, dlist *schema_elements, int if_not_exists)
+rel_create_schema(sql_query *query, dlist *auth_name, int if_not_exists)
 {
 	mvc *sql = query->sql;
 	char *name = dlist_get_schema_name(auth_name);
@@ -1886,28 +2009,7 @@ rel_create_schema(sql_query *query, dlist *auth_name, dlist *schema_elements, in
 			return sql_error(sql, 02, SQLSTATE(3F000) "CREATE SCHEMA: name '%s' already in use", name);
 		return rel_psm_block(sql->sa, new_exp_list(sql->sa));
 	} else {
-		sql_schema *os = cur_schema(sql);
-		dnode *n = schema_elements->h;
-		sql_schema *ss = SA_ZNEW(sql->sa, sql_schema);
-		sql_rel *ret = rel_create_schema_dll(sql->sa, name, auth, 0);
-
-		ss->base.name = name;
-		ss->auth_id = auth_id;
-		ss->owner = sql->user_id;
-
-		sql->session->schema = ss;
-		while (n) {
-			sql_rel *res = rel_semantic(query, n->data.sym);
-			if (!res) {
-				rel_destroy(ret);
-				sql->session->schema = os;
-				return NULL;
-			}
-			ret = rel_list(sql->sa, ret, res);
-			n = n->next;
-		}
-		sql->session->schema = os;
-		return ret;
+		return rel_create_schema_dll(sql->sa, name, auth, 0);
 	}
 }
 
@@ -1943,7 +2045,7 @@ sql_drop_view(sql_query *query, dlist *qname, int nr, int if_exists)
 
 	if (!(t = find_table_or_view_on_scope(sql, NULL, sname, tname, "DROP VIEW", true))) {
 		if (if_exists) {
-			sql->errstr[0] = '\0'; /* reset table not found error */
+			sql->errstr[0] = '\0'; /* reset view not found error */
 			sql->session->status = 0;
 			return rel_psm_block(sql->sa, new_exp_list(sql->sa));
 		}
@@ -1992,22 +2094,31 @@ sql_alter_table(sql_query *query, dlist *dl, dlist *qname, symbol *te, int if_ex
 
 		if (!(pt = find_table_or_view_on_scope(sql, t->s, nsname, ntname, "ALTER TABLE", false)))
 			return NULL;
+		const char *errt = TABLE_TYPE_DESCRIPTION(t->type, t->properties);
+		const char *errpt = TABLE_TYPE_DESCRIPTION(pt->type, pt->properties);
 		if (isView(pt))
-			return sql_error(sql, 02, SQLSTATE(42000) "ALTER TABLE: can't add/drop a view into a %s",
-							TABLE_TYPE_DESCRIPTION(t->type, t->properties));
+			return sql_error(sql, 02, SQLSTATE(42000) "ALTER TABLE: can't add/drop a view into a %s", errt);
 		if (isDeclaredTable(pt))
-			return sql_error(sql, 02, SQLSTATE(42000) "ALTER TABLE: can't add/drop a declared table into a %s",
-							TABLE_TYPE_DESCRIPTION(t->type, t->properties));
+			return sql_error(sql, 02, SQLSTATE(42000) "ALTER TABLE: can't add/drop a declared table into a %s", errt);
 		if (isTempSchema(pt->s))
-			return sql_error(sql, 02, SQLSTATE(42000) "ALTER TABLE: can't add/drop a temporary table into a %s",
-							TABLE_TYPE_DESCRIPTION(t->type, t->properties));
+			return sql_error(sql, 02, SQLSTATE(42000) "ALTER TABLE: can't add/drop a temporary table into a %s", errt);
 		if (isReplicaTable(t) && isMergeTable(pt))
-			return sql_error(sql, 02, SQLSTATE(42000) "ALTER TABLE: can't add/drop a %s table into a %s",
-							TABLE_TYPE_DESCRIPTION(pt->type, pt->properties), TABLE_TYPE_DESCRIPTION(t->type, t->properties));
+			return sql_error(sql, 02, SQLSTATE(42000) "ALTER TABLE: can't add/drop a %s table into a %s", errpt, errt);
 		nsname = pt->s->base.name;
 		if (strcmp(sname, nsname) != 0)
-			return sql_error(sql, 02, SQLSTATE(42000) "ALTER TABLE: all children tables of '%s.%s' must be part of schema '%s'",
-						sname, tname, sname);
+			return sql_error(sql, 02, SQLSTATE(42000) "ALTER TABLE: all children tables of '%s.%s' must be part of schema '%s'", sname, tname, sname);
+
+		if (ol_length(t->columns) != ol_length(pt->columns))
+			return sql_error(sql, 02, SQLSTATE(3F000) "ALTER %s: to be added table doesn't match %s definition", errt, errt);
+		for (node *n = ol_first_node(t->columns), *m = ol_first_node(pt->columns); n && m; n = n->next, m = m->next) {
+			sql_column *nc = n->data;
+			sql_column *mc = m->data;
+
+			if (subtype_cmp(&nc->type, &mc->type) != 0)
+			return sql_error(sql, 02, SQLSTATE(3F000) "ALTER %s: to be added table column type doesn't match %s definition", errt, errt);
+			if (nc->null != mc->null)
+				return sql_error(sql, 02, SQLSTATE(3F000) "ALTER %s: to be added table column NULL check doesn't match %s definition", errt, errt);
+		}
 
 		if (te->token == SQL_TABLE) {
 			symbol *extra = dl->h->next->next->next->data.sym;
@@ -2111,7 +2222,7 @@ sql_alter_table(sql_query *query, dlist *dl, dlist *qname, symbol *te, int if_ex
 	e = exp_ref(sql, e);
 
 	/*
-	e = exp_column(sql->sa, nt->base.name, TID, sql_bind_localtype("oid"), CARD_MULTI, 0, 1, 1);
+	e = exp_column(sql->sa, nt->base.name, TID, sql_fetch_localtype(TYPE_oid), CARD_MULTI, 0, 1, 1);
 	e->alias.label = rel_base_nid(bt, NULL);
 	*/
 	r = rel_project(sql->sa, res, append(new_exp_list(sql->sa),e));
@@ -2131,7 +2242,7 @@ sql_alter_table(sql_query *query, dlist *dl, dlist *qname, symbol *te, int if_ex
 			e = exp_atom(sql->sa, atom_general(sql->sa, &c->type, NULL, 0));
 		}
 		if (!e || (e = exp_check_type(sql, &c->type, r, e, type_equal)) == NULL) {
-			rel_destroy(r);
+			rel_destroy(sql, r);
 			return NULL;
 		}
 		list_append(cols, ne=exp_column(sql->sa, nt->base.name, c->base.name, &c->type, CARD_MULTI, 0, 0, 0));
@@ -2182,7 +2293,7 @@ rel_grant_or_revoke_roles(mvc *sql, dlist *roles, dlist *grantees, int grant, in
 			char *grantee = g->data.sval;
 
 			if ((res = rel_list(sql->sa, res, rel_role(sql->sa, grantee, role, grantor, grant, action))) == NULL) {
-				rel_destroy(res);
+				rel_destroy(sql, res);
 				return NULL;
 			}
 		}
@@ -2259,7 +2370,7 @@ rel_grant_or_revoke_global(mvc *sql, dlist *privs, dlist *grantees, int grant, i
 			int priv = opn->data.i_val;
 
 			if ((res = rel_list(sql->sa, res, rel_priv(sql->sa, sname, NULL, grantee, priv, NULL, grant, grantor, action))) == NULL) {
-				rel_destroy(res);
+				rel_destroy(sql, res);
 				return NULL;
 			}
 		}
@@ -2288,7 +2399,7 @@ rel_grant_or_revoke_table(mvc *sql, dlist *privs, dlist *qname, dlist *grantees,
 
 		if (!privs) {
 			if ((res = rel_list(sql->sa, res, rel_priv(sql->sa, t->s->base.name, tname, grantee, all, NULL, grant, grantor, action))) == NULL) {
-				rel_destroy(res);
+				rel_destroy(sql, res);
 				return NULL;
 			}
 			continue;
@@ -2322,12 +2433,12 @@ rel_grant_or_revoke_table(mvc *sql, dlist *privs, dlist *qname, dlist *grantees,
 				for (dnode *cn = op->data.lval->h; cn; cn = cn->next) {
 					char *cname = cn->data.sval;
 					if ((res = rel_list(sql->sa, res, rel_priv(sql->sa, t->s->base.name, tname, grantee, priv, cname, grant, grantor, action))) == NULL) {
-						rel_destroy(res);
+						rel_destroy(sql, res);
 						return NULL;
 					}
 				}
 			} else if ((res = rel_list(sql->sa, res, rel_priv(sql->sa, t->s->base.name, tname, grantee, priv, NULL, grant, grantor, action))) == NULL) {
-				rel_destroy(res);
+				rel_destroy(sql, res);
 				return NULL;
 			}
 		}
@@ -2355,7 +2466,7 @@ rel_grant_or_revoke_func(mvc *sql, dlist *privs, dlist *qname, dlist *typelist, 
 
 		if (!privs) {
 			if ((res = rel_list(sql->sa, res, rel_func_priv(sql->sa, func->s->base.name, func->base.id, grantee, PRIV_EXECUTE, grant, grantor, action))) == NULL) {
-				rel_destroy(res);
+				rel_destroy(sql, res);
 				return NULL;
 			}
 			continue;
@@ -2366,7 +2477,7 @@ rel_grant_or_revoke_func(mvc *sql, dlist *privs, dlist *qname, dlist *typelist, 
 			if (op->token != SQL_EXECUTE)
 				return sql_error(sql, 02, SQLSTATE(42000) "Can only %s 'EXECUTE' on function '%s'", err, fname);
 			if ((res = rel_list(sql->sa, res, rel_func_priv(sql->sa, func->s->base.name, func->base.id, grantee, PRIV_EXECUTE, grant, grantor, action))) == NULL) {
-				rel_destroy(res);
+				rel_destroy(sql, res);
 				return NULL;
 			}
 		}
@@ -2403,14 +2514,16 @@ rel_grant_or_revoke_privs(mvc *sql, dlist *privs, dlist *grantees, int grant, in
 
 /* iname, itype, sname.tname (col1 .. coln) */
 static sql_rel *
-rel_create_index(mvc *sql, char *iname, idx_type itype, dlist *qname, dlist *column_list)
+rel_create_index(mvc *sql, char *iname, idx_type itype, dlist *qname, dlist *column_list, int if_not_exists)
 {
 	sql_table *t = NULL, *nt;
 	sql_rel *r, *res;
 	sql_exp **updates, *e;
 	sql_idx *i;
 	dnode *n;
-	char *sname = qname_schema(qname), *tname = qname_schema_object(qname), *s = iname;
+	char *sname = qname_schema(qname);
+	char *tname = qname_schema_object(qname);
+	char *s = iname;
 
 	if (!(t = find_table_or_view_on_scope(sql, NULL, sname, tname, "CREATE INDEX", false)))
 		return NULL;
@@ -2424,8 +2537,11 @@ rel_create_index(mvc *sql, char *iname, idx_type itype, dlist *qname, dlist *col
 		s++;
 	if (!*s) /* if an index name just contains digit characters, it can be mistaken with a label */
 		return sql_error(sql, 02, SQLSTATE(42000) "CREATE INDEX: index name cannot contain just digit characters (0 through 9)");
-	if ((i = mvc_bind_idx(sql, t->s, iname)))
+	if ((i = mvc_bind_idx(sql, t->s, iname))) {
+		if (if_not_exists == 1)
+			return rel_psm_block(sql->sa, new_exp_list(sql->sa));
 		return sql_error(sql, 02, SQLSTATE(42S11) "CREATE INDEX: name '%s' already in use", iname);
+	}
 	if (ol_find_name(t->keys, iname) || mvc_bind_key(sql, t->s, iname))
 		return sql_error(sql, 02, SQLSTATE(42000) "CREATE INDEX: a key named '%s' already exists, and it would conflict with the index", iname);
 	if (!isTable(t))
@@ -2466,7 +2582,7 @@ rel_create_index(mvc *sql, char *iname, idx_type itype, dlist *qname, dlist *col
 	updates = SA_ZNEW_ARRAY(sql->sa, sql_exp*, ol_length(nt->columns));
 
 	res = rel_table(sql, ddl_alter_table, sname, nt, 0);
-	e = exp_column(sql->sa, nt->base.name, TID, sql_bind_localtype("oid"), CARD_MULTI, 0, 1, 1);
+	e = exp_column(sql->sa, nt->base.name, TID, sql_fetch_localtype(TYPE_oid), CARD_MULTI, 0, 1, 1);
 	sql_rel *bt = rel_ddl_basetable_get(res);
 	e->alias.label = rel_base_nid(bt, NULL);
 	e->nid = e->alias.label;
@@ -2504,7 +2620,7 @@ rel_create_user(allocator *sa, char *user, char *passwd, int enc, char *fullname
 }
 
 static sql_rel *
-rel_alter_user(allocator *sa, char *user, char *passwd, int enc, char *schema, char *schema_path, char *oldpasswd, char *role, lng max_memory, int max_workers)
+rel_alter_user(allocator *sa, char *user, char *passwd, int enc, char *schema, char *schema_path, char *oldpasswd, char *role, lng max_memory, int max_workers, char *optimizer)
 {
 	sql_rel *rel = rel_create(sa);
 	list *exps = new_exp_list(sa);
@@ -2520,6 +2636,7 @@ rel_alter_user(allocator *sa, char *user, char *passwd, int enc, char *schema, c
 	append(exps, exp_atom_clob(sa, role));
 	append(exps, exp_atom_lng(sa, max_memory));
 	append(exps, exp_atom_int(sa, max_workers));
+	append(exps, exp_atom_clob(sa, optimizer));
 
 	rel->l = NULL;
 	rel->r = NULL;
@@ -2573,7 +2690,11 @@ rel_find_designated_table(mvc *sql, symbol *sym, sql_schema **schema_out) {
 	}
 
 	sql_error(sql, ERR_NOTFOUND, SQLSTATE(42S02) "COMMENT ON: no such %s: %s%s%s'%s'",
-			  want_table ? "table" : "view", sname ? "'":"", sname ? sname : "", sname ? "'.":"", tname);
+			want_table ? "table" : "view",
+			sname ? "'" : "",
+			sname ? sname : "",
+			sname ? "'." : "",
+			tname);
 	return 0;
 }
 
@@ -2612,7 +2733,11 @@ rel_find_designated_column(mvc *sql, symbol *sym, sql_schema **schema_out) {
 	}
 	if (!(c = mvc_bind_column(sql, t, cname))) {
 		sql_error(sql, ERR_NOTFOUND, SQLSTATE(42S12) "COMMENT ON: no such column: %s%s%s'%s'.'%s'",
-				  sname ? "'":"", sname ? sname : "", sname ? "'.":"", tname, cname);
+				sname ? "'" : "",
+				sname ? sname : "",
+				sname ? "'.":"",
+				tname,
+				cname);
 		return 0;
 	}
 	*schema_out = t->s;
@@ -2791,28 +2916,23 @@ rel_rename_schema(mvc *sql, char *old_name, char *new_name, int if_exists)
 	if (!(s = mvc_bind_schema(sql, old_name))) {
 		if (if_exists)
 			return rel_psm_block(sql->sa, new_exp_list(sql->sa));
-		return sql_error(sql, ERR_NOTFOUND, SQLSTATE(3F000)
-						 "ALTER SCHEMA: no such schema '%s'", old_name);
+		return sql_error(sql, ERR_NOTFOUND, SQLSTATE(3F000) "ALTER SCHEMA: no such schema '%s'", old_name);
 	}
 
 	if (!mvc_schema_privs(sql, s))
-		return sql_error(sql, 02, SQLSTATE(3F000)
-						 "ALTER SCHEMA: access denied for %s to schema '%s'",
-						 get_string_global_var(sql, "current_user"), old_name);
+		return sql_error(sql, 02, SQLSTATE(3F000) "ALTER SCHEMA: access denied for %s to schema '%s'",
+					get_string_global_var(sql, "current_user"), old_name);
 
 	if (s->system)
-		return sql_error(sql, 02, SQLSTATE(3F000)
-						 "ALTER SCHEMA: cannot rename a system schema");
+		return sql_error(sql, 02, SQLSTATE(3F000) "ALTER SCHEMA: cannot rename a system schema");
 
 	if (strNil(new_name) || *new_name == '\0')
-		return sql_error(sql, 02, SQLSTATE(3F000)
-						 "ALTER SCHEMA: invalid new schema name");
+		return sql_error(sql, 02, SQLSTATE(3F000) "ALTER SCHEMA: invalid new schema name");
 
 	if (mvc_bind_schema(sql, new_name))
-		return sql_error(sql, 02, SQLSTATE(3F000)
-						 "ALTER SCHEMA: there is a schema named '%s' in the database", new_name);
+		return sql_error(sql, 02, SQLSTATE(3F000) "ALTER SCHEMA: there is a schema named '%s' in the database", new_name);
 
-	if (mvc_check_dependency(sql, s->base.id, SCHEMA_DEPENDENCY, NULL) != NO_DEPENDENCY) {
+	if (mvc_check_dependency(sql, s->base.id, SCHEMA_DEPENDENCY, NULL)) {
 		return sql_error(sql, 02,
 						 SQLSTATE(2BM37) "ALTER SCHEMA: unable to"
 						 " rename schema '%s', there are database objects"
@@ -2973,6 +3093,34 @@ rel_set_table_schema(sql_query *query, char *old_schema, char *tname, char *new_
 	return rel;
 }
 
+static sql_rel *
+rel_create_ustr(allocator *sa, const char *sname, const char *uname, int if_not_exists)
+{
+	return rel_schema2(sa, ddl_create_ustr, sname, uname, if_not_exists);
+}
+
+static sql_rel *
+rel_drop_ustr(allocator *sa, const char *sname, const char *uname, int if_exists, int drop_action)
+{
+	sql_rel *rel = rel_create(sa);
+	list *exps = new_exp_list(sa);
+	if (!rel || !exps)
+		return NULL;
+
+	append(exps, exp_atom_clob(sa, sname));
+	append(exps, exp_atom_clob(sa, uname));
+	append(exps, exp_atom_int(sa, drop_action));
+	append(exps, exp_atom_int(sa, if_exists));
+	rel->l = NULL;
+	rel->r = NULL;
+	rel->op = op_ddl;
+	rel->flag = ddl_drop_ustr;
+	rel->exps = exps;
+	rel->card = 0;
+	rel->nrcols = 0;
+	return rel;
+}
+
 sql_rel *
 rel_schemas(sql_query *query, symbol *s)
 {
@@ -2987,9 +3135,7 @@ rel_schemas(sql_query *query, symbol *s)
 	{
 		dlist *l = s->data.lval;
 
-		ret = rel_create_schema(query, l->h->data.lval,
-				l->h->next->next->next->data.lval,
-				l->h->next->next->next->next->data.i_val); /* if not exists */
+		ret = rel_create_schema(query, l->h->data.lval, l->h->next->next->next->data.i_val); /* if not exists */
 	} 	break;
 	case SQL_DROP_SCHEMA:
 	{
@@ -2998,11 +3144,11 @@ rel_schemas(sql_query *query, symbol *s)
 
 		assert(l->h->next->type == type_int);
 		ret = rel_drop(sql->sa, ddl_drop_schema,
-			   dlist_get_schema_name(auth_name),
-			   NULL,
-			   NULL,
-			   l->h->next->data.i_val, 	/* drop_action */
-			   l->h->next->next->data.i_val); /* if exists */
+				dlist_get_schema_name(auth_name),
+				NULL,
+				NULL,
+				l->h->next->data.i_val,	/* drop_action */
+				l->h->next->next->data.i_val); /* if exists */
 	} 	break;
 	case SQL_DECLARE_TABLE:
 		return sql_error(sql, 02, SQLSTATE(42000) "Tables cannot be declared on the global scope");
@@ -3025,12 +3171,12 @@ rel_schemas(sql_query *query, symbol *s)
 		assert(l->h->type == type_int);
 		assert(l->h->next->next->next->type == type_int);
 		ret = rel_create_table(query, temp, sname, name, true,
-				       l->h->next->next->data.sym,                   /* elements or subquery */
-				       l->h->next->next->next->data.i_val,           /* commit action */
-				       l->h->next->next->next->next->data.sval,      /* location */
-				       username, password, pw_encrypted,
-				       l->h->next->next->next->next->next->next->next->data.sym,
-				       l->h->next->next->next->next->next->next->data.i_val); /* if not exists */
+				l->h->next->next->data.sym,                   /* elements or subquery */
+				l->h->next->next->next->data.i_val,           /* commit action */
+				l->h->next->next->next->next->data.sval,      /* location */
+				username, password, pw_encrypted,
+				l->h->next->next->next->next->next->next->next->data.sym,
+				l->h->next->next->next->next->next->next->data.i_val); /* if not exists */
 	} 	break;
 	case SQL_CREATE_VIEW:
 	{
@@ -3040,12 +3186,12 @@ rel_schemas(sql_query *query, symbol *s)
 		assert(l->h->next->next->next->next->type == type_int);
 		assert(l->h->next->next->next->next->next->type == type_int);
 		ret = rel_create_view(query, l->h->data.i_val,
-							  l->h->next->data.lval,
-							  l->h->next->next->data.lval,
-							  l->h->next->next->next->data.sym,
-							  l->h->next->next->next->next->data.i_val,
-							  l->h->next->next->next->next->next->data.i_val,
-							  l->h->next->next->next->next->next->next->data.i_val); /* or replace */
+				l->h->next->data.lval,
+				l->h->next->next->data.lval,
+				l->h->next->next->next->data.sym,
+				l->h->next->next->next->next->data.i_val,
+				l->h->next->next->next->next->next->data.i_val,
+				l->h->next->next->next->next->next->next->data.i_val); /* or replace */
 	} 	break;
 	case SQL_DROP_TABLE:
 	{
@@ -3053,8 +3199,8 @@ rel_schemas(sql_query *query, symbol *s)
 
 		assert(l->h->next->type == type_int);
 		ret = sql_drop_table(query, l->h->data.lval,
-							 l->h->next->data.i_val,
-						 	 l->h->next->next->data.i_val); /* if exists */
+				l->h->next->data.i_val,
+				l->h->next->next->data.i_val); /* if exists */
 	} 	break;
 	case SQL_DROP_VIEW:
 	{
@@ -3062,17 +3208,17 @@ rel_schemas(sql_query *query, symbol *s)
 
 		assert(l->h->next->type == type_int);
 		ret = sql_drop_view(query, l->h->data.lval,
-							l->h->next->data.i_val,
-							l->h->next->next->data.i_val); /* if exists */
+				l->h->next->data.i_val,
+				l->h->next->next->data.i_val); /* if exists */
 	} 	break;
 	case SQL_ALTER_TABLE:
 	{
 		dlist *l = s->data.lval;
 
 		ret = sql_alter_table(query, l,
-			l->h->data.lval,      /* table name */
-			l->h->next->data.sym, /* table element */
-			l->h->next->next->data.i_val); /* if exists */
+				l->h->data.lval,      /* table name */
+				l->h->next->data.sym, /* table element */
+				l->h->next->next->data.i_val); /* if exists */
 	} 	break;
 	case SQL_GRANT_ROLES:
 	{
@@ -3081,10 +3227,10 @@ rel_schemas(sql_query *query, symbol *s)
 		assert(l->h->next->next->type == type_int);
 		assert(l->h->next->next->next->type == type_int);
 		ret = rel_grant_or_revoke_roles(sql, l->h->data.lval,	/* authids */
-				  l->h->next->data.lval,	/* grantees */
-				  l->h->next->next->data.i_val,	/* admin? */
-				  l->h->next->next->next->data.i_val == cur_user ? sql->user_id : sql->role_id, ddl_grant_roles);
-		/* grantor ? */
+				l->h->next->data.lval,	/* grantees */
+				l->h->next->next->data.i_val,	/* admin? */
+				l->h->next->next->next->data.i_val == cur_user ? sql->user_id : sql->role_id,
+				ddl_grant_roles);		/* grantor ? */
 	} 	break;
 	case SQL_REVOKE_ROLES:
 	{
@@ -3093,10 +3239,10 @@ rel_schemas(sql_query *query, symbol *s)
 		assert(l->h->next->next->type == type_int);
 		assert(l->h->next->next->next->type == type_int);
 		ret = rel_grant_or_revoke_roles(sql, l->h->data.lval,	/* authids */
-				  l->h->next->data.lval,	/* grantees */
-				  l->h->next->next->data.i_val,	/* admin? */
-				  l->h->next->next->next->data.i_val  == cur_user? sql->user_id : sql->role_id, ddl_revoke_roles);
-		/* grantor ? */
+				l->h->next->data.lval,	/* grantees */
+				l->h->next->next->data.i_val,	/* admin? */
+				l->h->next->next->next->data.i_val == cur_user ? sql->user_id : sql->role_id,
+				ddl_revoke_roles);		/* grantor ? */
 	} 	break;
 	case SQL_GRANT:
 	{
@@ -3105,10 +3251,10 @@ rel_schemas(sql_query *query, symbol *s)
 		assert(l->h->next->next->type == type_int);
 		assert(l->h->next->next->next->type == type_int);
 		ret = rel_grant_or_revoke_privs(sql, l->h->data.lval,	/* privileges */
-				  l->h->next->data.lval,	/* grantees */
-				  l->h->next->next->data.i_val,	/* grant ? */
-				  l->h->next->next->next->data.i_val  == cur_user? sql->user_id : sql->role_id, ddl_grant);
-		/* grantor ? */
+				l->h->next->data.lval,	/* grantees */
+				l->h->next->next->data.i_val,	/* grant ? */
+				l->h->next->next->next->data.i_val == cur_user ? sql->user_id : sql->role_id,
+				ddl_grant);			/* grantor ? */
 	} 	break;
 	case SQL_REVOKE:
 	{
@@ -3117,76 +3263,169 @@ rel_schemas(sql_query *query, symbol *s)
 		assert(l->h->next->next->type == type_int);
 		assert(l->h->next->next->next->type == type_int);
 		ret = rel_grant_or_revoke_privs(sql, l->h->data.lval,	/* privileges */
-				   l->h->next->data.lval,	/* grantees */
-				   l->h->next->next->data.i_val,	/* grant ? */
-				   l->h->next->next->next->data.i_val  == cur_user? sql->user_id : sql->role_id, ddl_revoke);
-		/* grantor ? */
+				l->h->next->data.lval,	/* grantees */
+				l->h->next->next->data.i_val,	/* grant ? */
+				l->h->next->next->next->data.i_val == cur_user ? sql->user_id : sql->role_id,
+				ddl_revoke);			/* grantor ? */
 	} 	break;
 	case SQL_CREATE_ROLE:
 	{
 		dlist *l = s->data.lval;
 		char *rname = l->h->data.sval;
+		int if_not_exists = l->h->next->next->data.i_val;
+
+		if (if_not_exists == 1 && rname != NULL) {
+			sqlid role_id = 0;
+			if (backend_find_role(sql, rname, &role_id) >= 0)
+				/* role already exists, but IF NOT EXISTS is specified, so we are done */
+				return rel_psm_block(sql->sa, new_exp_list(sql->sa));
+		}
 		ret = rel_schema2(sql->sa, ddl_create_role, rname, NULL,
-				 l->h->next->data.i_val  == cur_user? sql->user_id : sql->role_id);
+				 l->h->next->data.i_val == cur_user ? sql->user_id : sql->role_id);
 	} 	break;
 	case SQL_DROP_ROLE:
 	{
-		char *rname = s->data.sval;
+		dlist *l = s->data.lval;
+		char *rname = l->h->data.sval;
+		int if_exists = l->h->next->data.i_val;
+
+		if (if_exists == 1 && rname != NULL) {
+			sqlid role_id = 0;
+			if (backend_find_role(sql, rname, &role_id) < 0)
+				/* role does not exist, but IF EXISTS is specified, so we are done */
+				return rel_psm_block(sql->sa, new_exp_list(sql->sa));
+		}
 		ret = rel_schema2(sql->sa, ddl_drop_role, rname, NULL, 0);
 	} 	break;
 	case SQL_CREATE_INDEX: {
 		dlist *l = s->data.lval;
-
 		assert(l->h->next->type == type_int);
-		ret = rel_create_index(sql, l->h->data.sval, (idx_type) l->h->next->data.i_val, l->h->next->next->data.lval, l->h->next->next->next->data.lval);
+		ret = rel_create_index(sql, l->h->data.sval,
+				(idx_type) l->h->next->data.i_val,
+				l->h->next->next->data.lval,
+				l->h->next->next->next->data.lval,
+				l->h->next->next->next->next->data.i_val); /* if not exists */
 	} 	break;
 	case SQL_DROP_INDEX: {
 		dlist *l = s->data.lval;
-		char *sname = qname_schema(l);
-		char *iname = qname_schema_object(l);
+		dlist *qname = l->h->data.lval;
+		char *sname = qname_schema(qname);
+		char *iname = qname_schema_object(qname);
 		sql_idx *idx = NULL;
 
-		if (!(idx = find_idx_on_scope(sql, sname, iname, "DROP INDEX")))
+		if (!(idx = find_idx_on_scope(sql, sname, iname, "DROP INDEX"))) {
+			int if_exists = l->h->next->data.i_val;
+			if (if_exists) {
+				sql->errstr[0] = '\0'; /* reset index not found error */
+				sql->session->status = 0;
+				return rel_psm_block(sql->sa, new_exp_list(sql->sa));
+			}
 			return NULL;
+		}
 		ret = rel_schema2(sql->sa, ddl_drop_index, idx->t->s->base.name, iname, 0);
 	} 	break;
+	case SQL_CREATE_USTR: {
+		dlist *l = s->data.lval;
+		dlist *qname = l->h->data.lval;
+		char *sname = qname_schema(qname);
+		char *cname = qname_schema_object(qname);
+		int if_not_exists = l->h->next->data.i_val;
+		sql_schema *sch;
+		if (sname == NULL) {
+			sch = cur_schema(sql);
+			sname = sch->base.name;
+		} else {
+			sch = mvc_bind_schema(sql, sname);
+		}
+		if (!mvc_schema_privs(sql, sch)) {
+			return sql_error(sql, 02, SQLSTATE(42000) "CREATE DISTINCT STRING COLUMN: insufficient privileges for user '%s' in schema '%s'", get_string_global_var(sql, "current_user"), sname);
+		}
+		ret = rel_create_ustr(sql->sa, sname, cname, if_not_exists);
+		break;
+	}
+	case SQL_DROP_USTR: {
+		dlist *l = s->data.lval;
+		dlist *qname = l->h->data.lval;
+		char *sname = qname_schema(qname);
+		char *cname = qname_schema_object(qname);
+		sql_schema *sch;
+		if (sname == NULL) {
+			sch = cur_schema(sql);
+			sname = sch->base.name;
+		} else {
+			sch = mvc_bind_schema(sql, sname);
+		}
+		if (!mvc_schema_privs(sql, sch)) {
+			return sql_error(sql, 02, SQLSTATE(42000) "CREATE DISTINCT STRING COLUMN: insufficient privileges for user '%s' in schema '%s'", get_string_global_var(sql, "current_user"), sname);
+		}
+		ret = rel_drop_ustr(sql->sa, sname, cname, l->h->next->data.i_val, l->h->next->next->data.i_val);
+		break;
+	}
 	case SQL_CREATE_USER: {
 		dlist *l = s->data.lval;
+		char *username = l->h->data.sval;
 		dlist *schema_details = l->h->next->next->next->data.lval;
+		int if_not_exists = l->h->next->next->next->next->next->next->next->next->next->data.i_val;
 
-		ret = rel_create_user(sql->sa, l->h->data.sval,	/* user name */
-				  l->h->next->data.sval,	/* password */
-				  l->h->next->next->next->next->data.i_val == SQL_PW_ENCRYPTED, /* encrypted */
-				  l->h->next->next->data.sval,	/* fullname */
-				  schema_details->h->data.sval,	/* schema ident*/
-				  schema_details->h->next->data.sval,	/* schema path */
-				  l->h->next->next->next->next->next->data.l_val,	/* max memory */
-				  l->h->next->next->next->next->next->next->data.i_val, /* max workers */
-				  l->h->next->next->next->next->next->next->next->data.sval, /* optimizer */
-				  l->h->next->next->next->next->next->next->next->next->data.sval); /* default role */
+		if (if_not_exists == 1 && username != NULL) {
+			if (!is_oid_nil(backend_find_user(sql, username)))
+				/* user already exists, but IF NOT EXISTS is specified, so we are done */
+				return rel_psm_block(sql->sa, new_exp_list(sql->sa));
+		}
+		ret = rel_create_user(sql->sa, username,	/* user name */
+				l->h->next->data.sval,	/* password */
+				l->h->next->next->next->next->data.i_val == SQL_PW_ENCRYPTED, /* encrypted */
+				l->h->next->next->data.sval,	/* fullname */
+				schema_details->h->data.sval,	/* schema ident*/
+				schema_details->h->next->data.sval,	/* schema path */
+				l->h->next->next->next->next->next->data.l_val,	/* max memory */
+				l->h->next->next->next->next->next->next->data.i_val, /* max workers */
+				l->h->next->next->next->next->next->next->next->data.sval, /* optimizer */
+				l->h->next->next->next->next->next->next->next->next->data.sval); /* default role */
 	} 	break;
-	case SQL_DROP_USER:
-		ret = rel_schema2(sql->sa, ddl_drop_user, s->data.sval, NULL, 0);
-		break;
+	case SQL_DROP_USER: {
+		dlist *l = s->data.lval;
+		char *username = l->h->data.sval;
+		int if_exists = l->h->next->data.i_val;
+
+		if (if_exists == 1 && username != NULL && is_oid_nil(backend_find_user(sql, username))) {
+			/* user does not exist, but IF EXISTS is specified, so we are done */
+			return rel_psm_block(sql->sa, new_exp_list(sql->sa));
+		}
+		ret = rel_schema2(sql->sa, ddl_drop_user, username, NULL, 0);
+	}	break;
 	case SQL_ALTER_USER: {
 		dlist *l = s->data.lval;
+		char *username = l->h->data.sval;
 		dnode *a = l->h->next->data.lval->h;
+		int if_exists = l->h->next->next->next->next->next->next->data.i_val;
 
-		ret = rel_alter_user(sql->sa, l->h->data.sval,	/* user */
-			     a->data.sval,	/* passwd */
-			     a->next->next->next->data.i_val == SQL_PW_ENCRYPTED, /* encrypted */
-			     a->next->data.sval,	/* schema */
-				 a->next->next->data.sval, /* schema path */
-			     a->next->next->next->next->data.sval, /* old passwd */
-			     l->h->next->next->data.sval, /* default role */
-			     l->h->next->next->next->data.l_val, /* max_memory */
-			     l->h->next->next->next->next->data.i_val /* max_workers */
-		    );
+		if (if_exists == 1 && username != NULL && is_oid_nil(backend_find_user(sql, username))) {
+			/* user does not exist, but IF EXISTS is specified, so we are done */
+			return rel_psm_block(sql->sa, new_exp_list(sql->sa));
+		}
+		ret = rel_alter_user(sql->sa, username,	/* user */
+				a->data.sval,	/* passwd */
+				a->next->next->next->data.i_val == SQL_PW_ENCRYPTED, /* encrypted */
+				a->next->data.sval,	/* schema */
+				a->next->next->data.sval, /* schema path */
+				a->next->next->next->next->data.sval, /* old passwd */
+				l->h->next->next->data.sval, /* default role */
+				l->h->next->next->next->data.l_val, /* max_memory */
+				l->h->next->next->next->next->data.i_val, /* max_workers */
+				l->h->next->next->next->next->next->data.sval /* optimizer */
+			);
 	} 	break;
 	case SQL_RENAME_USER: {
 		dlist *l = s->data.lval;
+		char *username = l->h->data.sval;
+		int if_exists = l->h->next->next->data.i_val;
 
-		ret = rel_schema2(sql->sa, ddl_rename_user, l->h->data.sval, l->h->next->data.sval, 0);
+		if (if_exists == 1 && username != NULL && is_oid_nil(backend_find_user(sql, username))) {
+			/* user does not exist, but IF EXISTS is specified, so we are done */
+			return rel_psm_block(sql->sa, new_exp_list(sql->sa));
+		}
+		ret = rel_schema2(sql->sa, ddl_rename_user, username, l->h->next->data.sval, 0);
 	} 	break;
 	case SQL_RENAME_SCHEMA: {
 		dlist *l = s->data.lval;
@@ -3212,12 +3451,13 @@ rel_schemas(sql_query *query, symbol *s)
 	} 	break;
 	case SQL_CREATE_TYPE: {
 		dlist *l = s->data.lval;
-
-		ret = rel_create_type(sql, l->h->data.lval, l->h->next->data.sval);
+		ret = rel_create_type(sql, l->h->data.lval, l->h->next->data.sval,
+				l->h->next->next->data.i_val);	/* if not exists */
 	} 	break;
 	case SQL_DROP_TYPE: {
 		dlist *l = s->data.lval;
-		ret = rel_drop_type(sql, l->h->data.lval, l->h->next->data.i_val);
+		ret = rel_drop_type(sql, l->h->data.lval, l->h->next->data.i_val,
+				l->h->next->next->data.i_val);	/* if exists */
 	} 	break;
 	case SQL_COMMENT:
 	{

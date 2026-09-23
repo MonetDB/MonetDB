@@ -3,11 +3,9 @@
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024, 2025 MonetDB Foundation;
- * Copyright August 2008 - 2023 MonetDB B.V.;
- * Copyright 1997 - July 2008 CWI.
+ * For copyright information, see the file debian/copyright.
  */
 
 #ifndef SQL_TYPES_H
@@ -37,7 +35,8 @@ sql_export int sql_find_subtype(sql_subtype *res, const char *name, unsigned int
 extern sql_subtype *sql_find_numeric(sql_subtype *r, int localtype, unsigned int digits);
 
 sql_export sql_subtype *sql_bind_subtype(allocator *sa, const char *name, unsigned int digits, unsigned int scale);
-extern sql_subtype *sql_bind_localtype(const char *name);
+sql_export sql_subtype *sql_fetch_localtype(int localtype);
+extern sql_subtype *sql_fetch_battype(void);
 extern sql_subtype *sql_create_subtype(allocator *sa, sql_type *t, unsigned int s, unsigned int d);
 sql_export void sql_init_subtype(sql_subtype *res, sql_type *t, unsigned int digits, unsigned int scale);
 
@@ -54,7 +53,7 @@ extern sql_arg *sql_create_arg(allocator *sa, const char *name, sql_subtype *t, 
 extern int subfunc_cmp(sql_subfunc *f1, sql_subfunc *f2);
 extern sql_subfunc *sql_dup_subfunc(allocator *sa, sql_func *f, list *ops, sql_subtype *member);
 extern sql_subtype *supertype(sql_subtype *super, sql_subtype *r, sql_subtype *i);
-extern sql_subtype *cmp_supertype(sql_subtype *super, sql_subtype *r, sql_subtype *i);
+extern sql_subtype *cmp_supertype(sql_subtype *super, sql_subtype *r, sql_subtype *i, bool opt_string);
 
 extern char *sql_func_imp(sql_func *f);
 extern char *sql_func_mod(sql_func *f);

@@ -3,14 +3,13 @@
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024, 2025 MonetDB Foundation;
- * Copyright August 2008 - 2023 MonetDB B.V.;
- * Copyright 1997 - July 2008 CWI.
+ * For copyright information, see the file debian/copyright.
  */
 
 #include <iconv.h>
+#include "stream.h"
 
 struct ic_priv_t {
 	stream *s;
@@ -236,7 +235,7 @@ iconv_rstream(stream *restrict ss, const char *restrict charset, const char *res
 	if (priv->cd == (iconv_t) -1) {
 		free(priv);
 		fprintf(stderr, "Cannot initiate character set translation from %s\n",
-				charset);
+			charset);
 		return NULL;
 	}
 	stream *s = callback_stream(priv, ic_read, NULL, ic_close, ic_destroy, name);
@@ -267,7 +266,7 @@ iconv_wstream(stream *restrict ss, const char *restrict charset, const char *res
 	if (priv->cd == (iconv_t) -1) {
 		free(priv);
 		fprintf(stderr, "Cannot initiate character set translation from %s\n",
-				charset);
+			charset);
 		return NULL;
 	}
 	stream *s = callback_stream(priv, NULL, ic_write, ic_close, ic_destroy, name);

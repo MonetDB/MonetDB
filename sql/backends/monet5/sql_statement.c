@@ -3,17 +3,16 @@
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024, 2025 MonetDB Foundation;
- * Copyright August 2008 - 2023 MonetDB B.V.;
- * Copyright 1997 - July 2008 CWI.
+ * For copyright information, see the file debian/copyright.
  */
 
 #include "monetdb_config.h"
 #include "sql_mem.h"
 #include "sql_stack.h"
 #include "sql_statement.h"
+#include "sql_pp_statement.h"
 #include "sql_gencode.h"
 #include "rel_rel.h"
 #include "rel_exp.h"
@@ -21,6 +20,8 @@
 
 #include "mal_namespace.h"
 #include "mal_builder.h"
+
+static stmt * stmt_aggr_(backend *be, stmt *op1, stmt *grp, stmt *ext, sql_subfunc *op, int reduce, int no_nil, int nil_if_empty);
 
 /*
  * Some utility routines to generate code
@@ -86,7 +87,7 @@ dump_2(MalBlkPtr mb, const char *mod, const char *name, stmt *o1, stmt *o2)
 	return q;
 }
 
-static InstrPtr
+InstrPtr
 pushPtr(MalBlkPtr mb, InstrPtr q, ptr val)
 {
 	int _t;
@@ -124,7 +125,7 @@ stmt_key(stmt *s)
 stmt *
 stmt_atom_string(backend *be, const char *S)
 {
-	const char *s = sa_strdup(be->mvc->sa, S);
+	const char *s = ma_strdup(be->mvc->sa, S);
 	sql_subtype t;
 
 	if (s == NULL)
@@ -170,6 +171,15 @@ stmt_atom_lng_nil(backend *be)
 }
 
 stmt *
+stmt_atom_dbl(backend *be, dbl d)
+{
+	sql_subtype t;
+
+	sql_find_subtype(&t, "double", 53, 0);
+	return stmt_atom(be, atom_float(be->mvc->sa, &t, d));
+}
+
+stmt *
 stmt_bool(backend *be, int b)
 {
 	sql_subtype t;
@@ -185,7 +195,7 @@ stmt_bool(backend *be, int b)
 	}
 }
 
-static stmt *
+stmt *
 stmt_create(allocator *sa, st_type type)
 {
 	stmt *s = SA_NEW(sa, stmt);
@@ -206,7 +216,7 @@ stmt_group(backend *be, stmt *s, stmt *grp, stmt *ext, stmt *cnt, int done)
 
 	if (s == NULL || s->nr < 0)
 		goto bailout;
-	if (grp && (grp->nr < 0 || ext->nr < 0 || cnt->nr < 0))
+	if (grp && (grp->nr < 0 || ext->nr < 0 || (cnt && cnt->nr < 0)))
 		goto bailout;
 
 	q = newStmt(mb, groupRef, done ? grp ? subgroupdoneRef : groupdoneRef : grp ? subgroupRef : groupRef);
@@ -220,12 +230,12 @@ stmt_group(backend *be, stmt *s, stmt *grp, stmt *ext, stmt *cnt, int done)
 	if (grp)
 		q = pushArgument(mb, q, grp->nr);
 
-	bool enabled = be->mvc->sa->eb.enabled;
-	be->mvc->sa->eb.enabled = false;
+	bool enabled = ma_get_eb(be->mvc->sa)->enabled;
+	ma_get_eb(be->mvc->sa)->enabled = false;
 	stmt *ns = stmt_create(be->mvc->sa, st_group);
-	be->mvc->sa->eb.enabled = enabled;
+	ma_get_eb(be->mvc->sa)->enabled = enabled;
 	if (ns == NULL) {
-		freeInstruction(q);
+		freeInstruction(be->mb, q);
 		goto bailout;
 	}
 
@@ -244,8 +254,8 @@ stmt_group(backend *be, stmt *s, stmt *grp, stmt *ext, stmt *cnt, int done)
 	return ns;
 
   bailout:
-	if (be->mvc->sa->eb.enabled)
-		eb_error(&be->mvc->sa->eb, be->mvc->errstr[0] ? be->mvc->errstr : mb->errors ? mb->errors : *GDKerrbuf ? GDKerrbuf : "out of memory", 1000);
+	if (ma_get_eb(be->mvc->sa)->enabled)
+		eb_error(ma_get_eb(be->mvc->sa), be->mvc->errstr[0] ? be->mvc->errstr : mb->errors ? mb->errors : *GDKerrbuf ? GDKerrbuf : "out of memory", 1000);
 	return NULL;
 }
 
@@ -265,12 +275,12 @@ stmt_unique(backend *be, stmt *s)
 	q = pushArgument(mb, q, s->nr);
 	q = pushNilBat(mb, q); /* candidate list */
 
-	bool enabled = be->mvc->sa->eb.enabled;
-	be->mvc->sa->eb.enabled = false;
+	bool enabled = ma_get_eb(be->mvc->sa)->enabled;
+	ma_get_eb(be->mvc->sa)->enabled = false;
 	stmt *ns = stmt_create(be->mvc->sa, st_unique);
-	be->mvc->sa->eb.enabled = enabled;
+	ma_get_eb(be->mvc->sa)->enabled = enabled;
 	if (ns == NULL) {
-		freeInstruction(q);
+		freeInstruction(be->mb, q);
 		goto bailout;
 	}
 
@@ -283,8 +293,8 @@ stmt_unique(backend *be, stmt *s)
 	return ns;
 
   bailout:
-	if (be->mvc->sa->eb.enabled)
-		eb_error(&be->mvc->sa->eb, be->mvc->errstr[0] ? be->mvc->errstr : mb->errors ? mb->errors : *GDKerrbuf ? GDKerrbuf : "out of memory", 1000);
+	if (ma_get_eb(be->mvc->sa)->enabled)
+		eb_error(ma_get_eb(be->mvc->sa), be->mvc->errstr[0] ? be->mvc->errstr : mb->errors ? mb->errors : *GDKerrbuf ? GDKerrbuf : "out of memory", 1000);
 	return NULL;
 }
 
@@ -294,17 +304,24 @@ stmt_none(backend *be)
 	return stmt_create(be->mvc->sa, st_none);
 }
 
-static int
-create_bat(MalBlkPtr mb, int tt)
+stmt *
+stmt_bat_declare(backend *be, sql_subtype *tpe)
 {
-	InstrPtr q = newStmt(mb, batRef, newRef);
+	InstrPtr q = newAssignment(be->mb);
+	int tt = tpe->type->localtype;
 
 	if (q == NULL)
-		return -1;
-	setVarType(mb, getArg(q, 0), newBatType(tt));
-	q = pushType(mb, q, tt);
-	pushInstruction(mb, q);
-	return getDestVar(q);
+		return NULL;
+	setVarType(be->mb, getArg(q, 0), newBatType(tt));
+	q = pushNil(be->mb, q, newBatType(tt));
+	pushInstruction(be->mb, q);
+
+	stmt *s = stmt_create(be->mvc->sa, st_alias);
+	s->op4.typeval = *tpe;
+	s->q = q;
+	s->nr = q->argv[0];
+	s->nrcols = 2;
+	return s;
 }
 
 stmt *
@@ -315,8 +332,6 @@ stmt_bat_new(backend *be, sql_subtype *tpe, lng estimate)
 
 	if (q == NULL)
 		return NULL;
-	if (tt == TYPE_void)
-		tt = TYPE_bte;
 	setVarType(be->mb, getArg(q, 0), newBatType(tt));
 	q = pushType(be->mb, q, tt);
 	if (estimate > 0)
@@ -331,8 +346,38 @@ stmt_bat_new(backend *be, sql_subtype *tpe, lng estimate)
 	return s;
 }
 
+stmt *
+stmt_bat_new2(backend *be, sql_subtype *tpe, stmt *sz_base)
+{
+	assert(sz_base);
+	InstrPtr q = newStmt(be->mb, aggrRef, countRef);
+	if (q == NULL)
+		return NULL;
+	q = pushArgument(be->mb, q, sz_base->nr);
+	pushInstruction(be->mb, q);
+
+	InstrPtr qq = newStmt(be->mb, batRef, newRef);
+	if (qq == NULL)
+		return NULL;
+
+	int tt = tpe->type->localtype;
+	if (tt == TYPE_void)
+		tt = TYPE_bte;
+	setVarType(be->mb, getArg(qq, 0), newBatType(tt));
+	qq = pushType(be->mb, qq, tt);
+	qq = pushArgument(be->mb, qq, q->argv[0]);
+	pushInstruction(be->mb, qq);
+
+	stmt *s = stmt_create(be->mvc->sa, st_alias);
+	s->op4.typeval = *tpe;
+	s->q = qq;
+	s->nr = qq->argv[0];
+	s->nrcols = 2;
+	return s;
+}
+
 static int *
-dump_table(allocator *sa, MalBlkPtr mb, sql_table *t)
+dump_table(allocator *sa, backend *be, sql_table *t)
 {
 	int i = 0;
 	node *n;
@@ -342,13 +387,15 @@ dump_table(allocator *sa, MalBlkPtr mb, sql_table *t)
 		return NULL;
 
 	/* tid column */
-	if ((l[i++] = create_bat(mb, TYPE_oid)) < 0)
+	stmt *s = stmt_bat_new(be, sql_fetch_localtype(TYPE_oid), -1);
+	if (!s || (l[i++] = s->nr) < 0)
 		return NULL;
 
 	for (n = ol_first_node(t->columns); n; n = n->next) {
 		sql_column *c = n->data;
 
-		if ((l[i++] = create_bat(mb, c->type.type->localtype)) < 0)
+		s = stmt_bat_new(be, &c->type, -1);
+		if (!s || (l[i++] = s->nr) < 0)
 			return NULL;
 	}
 	return l;
@@ -405,12 +452,12 @@ stmt_var(backend *be, const char *sname, const char *varname, sql_subtype *t, in
 		q = pushNil(mb, q, tt);
 		q->retc++;
 	}
-	bool enabled = be->mvc->sa->eb.enabled;
-	be->mvc->sa->eb.enabled = false;
+	bool enabled = ma_get_eb(be->mvc->sa)->enabled;
+	ma_get_eb(be->mvc->sa)->enabled = false;
 	stmt *s = stmt_create(be->mvc->sa, st_var);
-	be->mvc->sa->eb.enabled = enabled;
+	ma_get_eb(be->mvc->sa)->enabled = enabled;
 	if (s == NULL) {
-		freeInstruction(q);
+		freeInstruction(be->mb, q);
 		goto bailout;
 	}
 
@@ -426,20 +473,19 @@ stmt_var(backend *be, const char *sname, const char *varname, sql_subtype *t, in
 	return s;
 
   bailout:
-	if (be->mvc->sa->eb.enabled)
-		eb_error(&be->mvc->sa->eb, be->mvc->errstr[0] ? be->mvc->errstr : mb->errors ? mb->errors : *GDKerrbuf ? GDKerrbuf : "out of memory", 1000);
+	if (ma_get_eb(be->mvc->sa)->enabled)
+		eb_error(ma_get_eb(be->mvc->sa), be->mvc->errstr[0] ? be->mvc->errstr : mb->errors ? mb->errors : *GDKerrbuf ? GDKerrbuf : "out of memory", 1000);
 	return NULL;
 }
 
 stmt *
 stmt_vars(backend *be, const char *varname, sql_table *t, int declare, int level)
 {
-	MalBlkPtr mb = be->mb;
 	int *l;
 
 	(void)varname;
 	/* declared table */
-	if ((l = dump_table(be->mvc->sa, mb, t)) != NULL) {
+	if ((l = dump_table(be->mvc->sa, be, t)) != NULL) {
 		stmt *s = stmt_create(be->mvc->sa, st_var);
 
 		if (s == NULL) {
@@ -456,8 +502,8 @@ stmt_vars(backend *be, const char *varname, sql_table *t, int declare, int level
 		s->nr = l[0];
 		return s;
 	}
-	if (be->mvc->sa->eb.enabled)
-		eb_error(&be->mvc->sa->eb, be->mvc->errstr[0] ? be->mvc->errstr : mb->errors ? mb->errors : *GDKerrbuf ? GDKerrbuf : "out of memory", 1000);
+	if (ma_get_eb(be->mvc->sa)->enabled)
+		eb_error(ma_get_eb(be->mvc->sa), be->mvc->errstr[0] ? be->mvc->errstr : be->mb->errors ? be->mb->errors : *GDKerrbuf ? GDKerrbuf : "out of memory", 1000);
 	return NULL;
 }
 
@@ -474,12 +520,12 @@ stmt_varnr(backend *be, int nr, sql_subtype *t)
 	(void) snprintf(buf, sizeof(buf), "A%d", nr);
 	q = pushArgumentId(mb, q, buf);
 
-	bool enabled = be->mvc->sa->eb.enabled;
-	be->mvc->sa->eb.enabled = false;
+	bool enabled = ma_get_eb(be->mvc->sa)->enabled;
+	ma_get_eb(be->mvc->sa)->enabled = false;
 	stmt *s = stmt_create(be->mvc->sa, st_var);
-	be->mvc->sa->eb.enabled = enabled;
+	ma_get_eb(be->mvc->sa)->enabled = enabled;
 	if (s == NULL) {
-		freeInstruction(q);
+		freeInstruction(be->mb, q);
 		goto bailout;
 	}
 
@@ -496,8 +542,8 @@ stmt_varnr(backend *be, int nr, sql_subtype *t)
 	return s;
 
   bailout:
-	if (be->mvc->sa->eb.enabled)
-		eb_error(&be->mvc->sa->eb, be->mvc->errstr[0] ? be->mvc->errstr : mb->errors ? mb->errors : *GDKerrbuf ? GDKerrbuf : "out of memory", 1000);
+	if (ma_get_eb(be->mvc->sa)->enabled)
+		eb_error(ma_get_eb(be->mvc->sa), be->mvc->errstr[0] ? be->mvc->errstr : mb->errors ? mb->errors : *GDKerrbuf ? GDKerrbuf : "out of memory", 1000);
 	return NULL;
 }
 
@@ -532,8 +578,8 @@ stmt_table(backend *be, stmt *cols, int temp)
 	return s;
 
   bailout:
-	if (be->mvc->sa->eb.enabled)
-		eb_error(&be->mvc->sa->eb, be->mvc->errstr[0] ? be->mvc->errstr : mb->errors ? mb->errors : *GDKerrbuf ? GDKerrbuf : "out of memory", 1000);
+	if (ma_get_eb(be->mvc->sa)->enabled)
+		eb_error(ma_get_eb(be->mvc->sa), be->mvc->errstr[0] ? be->mvc->errstr : mb->errors ? mb->errors : *GDKerrbuf ? GDKerrbuf : "out of memory", 1000);
 	return NULL;
 }
 
@@ -548,13 +594,13 @@ stmt_temp(backend *be, sql_subtype *t)
 		goto bailout;
 	setVarType(mb, getArg(q, 0), newBatType(tt));
 	q = pushType(mb, q, tt);
-	bool enabled = be->mvc->sa->eb.enabled;
-	be->mvc->sa->eb.enabled = false;
+	bool enabled = ma_get_eb(be->mvc->sa)->enabled;
+	ma_get_eb(be->mvc->sa)->enabled = false;
 	stmt *s = stmt_create(be->mvc->sa, st_temp);
-	be->mvc->sa->eb.enabled = enabled;
+	ma_get_eb(be->mvc->sa)->enabled = enabled;
 
 	if (s == NULL) {
-		freeInstruction(q);
+		freeInstruction(be->mb, q);
 		goto bailout;
 	}
 	s->op4.typeval = *t;
@@ -565,8 +611,8 @@ stmt_temp(backend *be, sql_subtype *t)
 	return s;
 
   bailout:
-	if (be->mvc->sa->eb.enabled)
-		eb_error(&be->mvc->sa->eb, be->mvc->errstr[0] ? be->mvc->errstr : mb->errors ? mb->errors : *GDKerrbuf ? GDKerrbuf : "out of memory", 1000);
+	if (ma_get_eb(be->mvc->sa)->enabled)
+		eb_error(ma_get_eb(be->mvc->sa), be->mvc->errstr[0] ? be->mvc->errstr : mb->errors ? mb->errors : *GDKerrbuf ? GDKerrbuf : "out of memory", 1000);
 	return NULL;
 }
 
@@ -585,7 +631,6 @@ stmt_blackbox_result(backend *be, InstrPtr q, int retnr, sql_subtype *t)
 	s->flag = retnr;
 	return s;
 }
-
 
 stmt *
 stmt_tid(backend *be, sql_table *t, int partition)
@@ -615,6 +660,9 @@ stmt_tid(backend *be, sql_table *t, int partition)
 	q = pushArgument(mb, q, be->mvc_var);
 	q = pushSchema(mb, q, t);
 	q = pushStr(mb, q, t->base.name);
+	if (partition && be->pp) {
+		q = pushArgument(mb, q, be->pp);
+	}
 	if (t && isTable(t) && partition) {
 		sql_trans *tr = be->mvc->session->tr;
 		sqlstore *store = tr->store;
@@ -622,12 +670,12 @@ stmt_tid(backend *be, sql_table *t, int partition)
 		setRowCnt(mb,getArg(q,0),rows);
 	}
 
-	bool enabled = be->mvc->sa->eb.enabled;
-	be->mvc->sa->eb.enabled = false;
+	bool enabled = ma_get_eb(be->mvc->sa)->enabled;
+	ma_get_eb(be->mvc->sa)->enabled = false;
 	stmt *s = stmt_create(be->mvc->sa, st_tid);
-	be->mvc->sa->eb.enabled = enabled;
+	ma_get_eb(be->mvc->sa)->enabled = enabled;
 	if (s == NULL) {
-		freeInstruction(q);
+		freeInstruction(be->mb, q);
 		goto bailout;
 	}
 
@@ -640,8 +688,8 @@ stmt_tid(backend *be, sql_table *t, int partition)
 	return s;
 
   bailout:
-	if (be->mvc->sa->eb.enabled)
-		eb_error(&be->mvc->sa->eb, be->mvc->errstr[0] ? be->mvc->errstr : mb->errors ? mb->errors : *GDKerrbuf ? GDKerrbuf : "out of memory", 1000);
+	if (ma_get_eb(be->mvc->sa)->enabled)
+		eb_error(ma_get_eb(be->mvc->sa), be->mvc->errstr[0] ? be->mvc->errstr : mb->errors ? mb->errors : *GDKerrbuf ? GDKerrbuf : "out of memory", 1000);
 	return NULL;
 }
 
@@ -697,7 +745,7 @@ stmt_bat(backend *be, sql_column *c, int access, int partition)
 		sqlstore *store = tr->store;
 		BAT *b = store->storage_api.bind_col(tr, c, QUICK);
 		if (!b) {
-			freeInstruction(q);
+			freeInstruction(be->mb, q);
 			goto bailout;
 		}
 		tt = b->ttype;
@@ -712,6 +760,9 @@ stmt_bat(backend *be, sql_column *c, int access, int partition)
 	q = pushArgument(mb, q, getStrConstant(mb,c->t->base.name));
 	q = pushArgument(mb, q, getStrConstant(mb,c->base.name));
 	q = pushArgument(mb, q, getIntConstant(mb,access));
+	if (partition && be->pp) {
+		q = pushArgument(mb, q, be->pp);
+	}
 
 	if (access == RD_UPD_ID) {
 		setVarType(mb, getArg(q, 1), newBatType(tt));
@@ -726,12 +777,12 @@ stmt_bat(backend *be, sql_column *c, int access, int partition)
 		}
 	}
 
-	bool enabled = be->mvc->sa->eb.enabled;
-	be->mvc->sa->eb.enabled = false;
+	bool enabled = ma_get_eb(be->mvc->sa)->enabled;
+	ma_get_eb(be->mvc->sa)->enabled = false;
 	stmt *s = stmt_create(be->mvc->sa, st_bat);
-	be->mvc->sa->eb.enabled = enabled;
+	ma_get_eb(be->mvc->sa)->enabled = enabled;
 	if (s == NULL) {
-		freeInstruction(q);
+		freeInstruction(be->mb, q);
 		goto bailout;
 	}
 
@@ -749,8 +800,8 @@ stmt_bat(backend *be, sql_column *c, int access, int partition)
 	return s;
 
   bailout:
-	if (be->mvc->sa->eb.enabled)
-		eb_error(&be->mvc->sa->eb, be->mvc->errstr[0] ? be->mvc->errstr : mb->errors ? mb->errors : *GDKerrbuf ? GDKerrbuf : "out of memory", 1000);
+	if (ma_get_eb(be->mvc->sa)->enabled)
+		eb_error(ma_get_eb(be->mvc->sa), be->mvc->errstr[0] ? be->mvc->errstr : mb->errors ? mb->errors : *GDKerrbuf ? GDKerrbuf : "out of memory", 1000);
 	return NULL;
 }
 
@@ -759,7 +810,7 @@ stmt_idxbat(backend *be, sql_idx *i, int access, int partition)
 {
 	int tt = hash_index(i->type)?TYPE_lng:TYPE_oid;
 	MalBlkPtr mb = be->mb;
-	InstrPtr q = newStmtArgs(mb, sqlRef, bindidxRef, 9);
+	InstrPtr q = newStmtArgs(mb, sqlRef, bind_idxbatRef, 9);
 
 	if (q == NULL)
 		goto bailout;
@@ -775,6 +826,9 @@ stmt_idxbat(backend *be, sql_idx *i, int access, int partition)
 	q = pushArgument(mb, q, getStrConstant(mb, i->t->base.name));
 	q = pushArgument(mb, q, getStrConstant(mb, i->base.name));
 	q = pushArgument(mb, q, getIntConstant(mb, access));
+	if (partition && be->pp) {
+		q = pushArgument(mb, q, be->pp);
+	}
 
 	if (access == RD_UPD_ID) {
 		setVarType(mb, getArg(q, 1), newBatType(tt));
@@ -789,12 +843,12 @@ stmt_idxbat(backend *be, sql_idx *i, int access, int partition)
 		}
 	}
 
-	bool enabled = be->mvc->sa->eb.enabled;
-	be->mvc->sa->eb.enabled = false;
+	bool enabled = ma_get_eb(be->mvc->sa)->enabled;
+	ma_get_eb(be->mvc->sa)->enabled = false;
 	stmt *s = stmt_create(be->mvc->sa, st_idxbat);
-	be->mvc->sa->eb.enabled = enabled;
+	ma_get_eb(be->mvc->sa)->enabled = enabled;
 	if (s == NULL) {
-		freeInstruction(q);
+		freeInstruction(be->mb, q);
 		goto bailout;
 	}
 
@@ -810,13 +864,13 @@ stmt_idxbat(backend *be, sql_idx *i, int access, int partition)
 	return s;
 
   bailout:
-	if (be->mvc->sa->eb.enabled)
-		eb_error(&be->mvc->sa->eb, be->mvc->errstr[0] ? be->mvc->errstr : mb->errors ? mb->errors : *GDKerrbuf ? GDKerrbuf : "out of memory", 1000);
+	if (ma_get_eb(be->mvc->sa)->enabled)
+		eb_error(ma_get_eb(be->mvc->sa), be->mvc->errstr[0] ? be->mvc->errstr : mb->errors ? mb->errors : *GDKerrbuf ? GDKerrbuf : "out of memory", 1000);
 	return NULL;
 }
 
 stmt *
-stmt_append_col(backend *be, sql_column *c, stmt *offset, stmt *b, int *mvc_var_update, int fake)
+stmt_append_col(backend *be, sql_column *c, stmt *offset, stmt *b, int *mvc_var_update, int fake, bool first)
 {
 	MalBlkPtr mb = be->mb;
 	InstrPtr q = NULL;
@@ -831,6 +885,7 @@ stmt_append_col(backend *be, sql_column *c, stmt *offset, stmt *b, int *mvc_var_
 			q = newStmt(mb, sqlRef, growRef);
 			if (q == NULL)
 				goto bailout;
+			q->argv[0] = l[0];
 			q = pushArgument(mb, q, l[0]);
 			q = pushArgument(mb, q, b->nr);
 			pushInstruction(mb, q);
@@ -838,10 +893,10 @@ stmt_append_col(backend *be, sql_column *c, stmt *offset, stmt *b, int *mvc_var_
 		q = newStmt(mb, batRef, appendRef);
 		if (q == NULL)
 			goto bailout;
+		getArg(q,0) = l[c->colnr+1];
 		q = pushArgument(mb, q, l[c->colnr+1]);
 		q = pushArgument(mb, q, b->nr);
 		q = pushBit(mb, q, TRUE);
-		getArg(q,0) = l[c->colnr+1];
 	} else if (!fake) {	/* fake append */
 		if (offset == NULL || offset->nr < 0)
 			goto bailout;
@@ -860,21 +915,23 @@ stmt_append_col(backend *be, sql_column *c, stmt *offset, stmt *b, int *mvc_var_
 		/* also the offsets */
 		assert(offset->q->retc == 2);
 		q = pushArgument(mb, q, getArg(offset->q, 1));
-		if (b->cand) /* nullmask */
-			q = pushArgument(mb, q, b->cand->nr);
 		q = pushArgument(mb, q, b->nr);
 		if (mvc_var_update != NULL)
 			*mvc_var_update = getDestVar(q);
+		if (be->pp && first && offset && offset->q && offset->q->argc == 8)
+			q = pushArgument(mb, q, getArg(offset->q, 7));
+		if (b->cand) /* nullmask */
+			q = pushArgument(mb, q, b->cand->nr);
 	} else {
 		return b;
 	}
-	bool enabled = be->mvc->sa->eb.enabled;
-	be->mvc->sa->eb.enabled = false;
+	bool enabled = ma_get_eb(be->mvc->sa)->enabled;
+	ma_get_eb(be->mvc->sa)->enabled = false;
 	stmt *s = stmt_create(be->mvc->sa, st_append_col);
-	be->mvc->sa->eb.enabled = enabled;
+	ma_get_eb(be->mvc->sa)->enabled = enabled;
 
 	if (s == NULL) {
-		freeInstruction(q);
+		freeInstruction(be->mb, q);
 		goto bailout;
 	}
 	s->op1 = b;
@@ -886,8 +943,8 @@ stmt_append_col(backend *be, sql_column *c, stmt *offset, stmt *b, int *mvc_var_
 	return s;
 
   bailout:
-	if (be->mvc->sa->eb.enabled)
-		eb_error(&be->mvc->sa->eb, be->mvc->errstr[0] ? be->mvc->errstr : mb->errors ? mb->errors : *GDKerrbuf ? GDKerrbuf : "out of memory", 1000);
+	if (ma_get_eb(be->mvc->sa)->enabled)
+		eb_error(ma_get_eb(be->mvc->sa), be->mvc->errstr[0] ? be->mvc->errstr : mb->errors ? mb->errors : *GDKerrbuf ? GDKerrbuf : "out of memory", 1000);
 	return NULL;
 }
 
@@ -907,7 +964,7 @@ stmt_append_idx(backend *be, sql_idx *i, stmt *offset, stmt *b)
 	getArg(q, 0) = be->mvc_var = newTmpVariable(mb, TYPE_int);
 	q = pushSchema(mb, q, i->t);
 	q = pushStr(mb, q, i->t->base.name);
-	q = pushStr(mb, q, sa_strconcat(be->mvc->sa, "%", i->base.name));
+	q = pushStr(mb, q, ma_strconcat(be->mvc->sa, "%", i->base.name));
 	q = pushArgument(mb, q, offset->nr);
 	/* also the offsets */
 	assert(offset->q->retc == 2);
@@ -915,12 +972,12 @@ stmt_append_idx(backend *be, sql_idx *i, stmt *offset, stmt *b)
 	q = pushArgument(mb, q, b->nr);
 	be->mvc_var = getDestVar(q);
 
-	bool enabled = be->mvc->sa->eb.enabled;
-	be->mvc->sa->eb.enabled = false;
+	bool enabled = ma_get_eb(be->mvc->sa)->enabled;
+	ma_get_eb(be->mvc->sa)->enabled = false;
 	stmt *s = stmt_create(be->mvc->sa, st_append_idx);
-	be->mvc->sa->eb.enabled = enabled;
+	ma_get_eb(be->mvc->sa)->enabled = enabled;
 	if (s == NULL) {
-		freeInstruction(q);
+		freeInstruction(be->mb, q);
 		goto bailout;
 	}
 
@@ -933,8 +990,8 @@ stmt_append_idx(backend *be, sql_idx *i, stmt *offset, stmt *b)
 	return s;
 
   bailout:
-	if (be->mvc->sa->eb.enabled)
-		eb_error(&be->mvc->sa->eb, be->mvc->errstr[0] ? be->mvc->errstr : mb->errors ? mb->errors : *GDKerrbuf ? GDKerrbuf : "out of memory", 1000);
+	if (ma_get_eb(be->mvc->sa)->enabled)
+		eb_error(ma_get_eb(be->mvc->sa), be->mvc->errstr[0] ? be->mvc->errstr : mb->errors ? mb->errors : *GDKerrbuf ? GDKerrbuf : "out of memory", 1000);
 	return NULL;
 }
 
@@ -953,6 +1010,7 @@ stmt_update_col(backend *be, sql_column *c, stmt *tids, stmt *upd)
 		q = newStmt(mb, batRef, replaceRef);
 		if (q == NULL)
 			goto bailout;
+		q->argv[0] = l[c->colnr+1];
 		q = pushArgument(mb, q, l[c->colnr+1]);
 		q = pushArgument(mb, q, tids->nr);
 		q = pushArgument(mb, q, upd->nr);
@@ -969,13 +1027,13 @@ stmt_update_col(backend *be, sql_column *c, stmt *tids, stmt *upd)
 		q = pushArgument(mb, q, upd->nr);
 		be->mvc_var = getDestVar(q);
 	}
-	bool enabled = be->mvc->sa->eb.enabled;
-	be->mvc->sa->eb.enabled = false;
+	bool enabled = ma_get_eb(be->mvc->sa)->enabled;
+	ma_get_eb(be->mvc->sa)->enabled = false;
 	stmt *s = stmt_create(be->mvc->sa, st_update_col);
-	be->mvc->sa->eb.enabled = enabled;
+	ma_get_eb(be->mvc->sa)->enabled = enabled;
 
 	if (s == NULL) {
-		freeInstruction(q);
+		freeInstruction(be->mb, q);
 		goto bailout;
 	}
 	s->op1 = tids;
@@ -987,8 +1045,8 @@ stmt_update_col(backend *be, sql_column *c, stmt *tids, stmt *upd)
 	return s;
 
   bailout:
-	if (be->mvc->sa->eb.enabled)
-		eb_error(&be->mvc->sa->eb, be->mvc->errstr[0] ? be->mvc->errstr : mb->errors ? mb->errors : *GDKerrbuf ? GDKerrbuf : "out of memory", 1000);
+	if (ma_get_eb(be->mvc->sa)->enabled)
+		eb_error(ma_get_eb(be->mvc->sa), be->mvc->errstr[0] ? be->mvc->errstr : mb->errors ? mb->errors : *GDKerrbuf ? GDKerrbuf : "out of memory", 1000);
 	return NULL;
 }
 
@@ -1009,16 +1067,16 @@ stmt_update_idx(backend *be, sql_idx *i, stmt *tids, stmt *upd)
 	getArg(q, 0) = be->mvc_var = newTmpVariable(mb, TYPE_int);
 	q = pushSchema(mb, q, i->t);
 	q = pushStr(mb, q, i->t->base.name);
-	q = pushStr(mb, q, sa_strconcat(be->mvc->sa, "%", i->base.name));
+	q = pushStr(mb, q, ma_strconcat(be->mvc->sa, "%", i->base.name));
 	q = pushArgument(mb, q, tids->nr);
 	q = pushArgument(mb, q, upd->nr);
 	be->mvc_var = getDestVar(q);
-	bool enabled = be->mvc->sa->eb.enabled;
-	be->mvc->sa->eb.enabled = false;
+	bool enabled = ma_get_eb(be->mvc->sa)->enabled;
+	ma_get_eb(be->mvc->sa)->enabled = false;
 	stmt *s = stmt_create(be->mvc->sa, st_update_idx);
-	be->mvc->sa->eb.enabled = enabled;
+	ma_get_eb(be->mvc->sa)->enabled = enabled;
 	if (s == NULL) {
-		freeInstruction(q);
+		freeInstruction(be->mb, q);
 		goto bailout;
 	}
 
@@ -1031,8 +1089,8 @@ stmt_update_idx(backend *be, sql_idx *i, stmt *tids, stmt *upd)
 	return s;
 
   bailout:
-	if (be->mvc->sa->eb.enabled)
-		eb_error(&be->mvc->sa->eb, be->mvc->errstr[0] ? be->mvc->errstr : mb->errors ? mb->errors : *GDKerrbuf ? GDKerrbuf : "out of memory", 1000);
+	if (ma_get_eb(be->mvc->sa)->enabled)
+		eb_error(ma_get_eb(be->mvc->sa), be->mvc->errstr[0] ? be->mvc->errstr : mb->errors ? mb->errors : *GDKerrbuf ? GDKerrbuf : "out of memory", 1000);
 	return NULL;
 }
 
@@ -1051,6 +1109,7 @@ stmt_delete(backend *be, sql_table *t, stmt *tids)
 		q = newStmt(mb, batRef, deleteRef);
 		if (q == NULL)
 			goto bailout;
+		q->argv[0] = l[0];
 		q = pushArgument(mb, q, l[0]);
 		q = pushArgument(mb, q, tids->nr);
 	} else {
@@ -1064,12 +1123,12 @@ stmt_delete(backend *be, sql_table *t, stmt *tids)
 		q = pushArgument(mb, q, tids->nr);
 		be->mvc_var = getDestVar(q);
 	}
-	bool enabled = be->mvc->sa->eb.enabled;
-	be->mvc->sa->eb.enabled = false;
+	bool enabled = ma_get_eb(be->mvc->sa)->enabled;
+	ma_get_eb(be->mvc->sa)->enabled = false;
 	stmt *s = stmt_create(be->mvc->sa, st_delete);
-	be->mvc->sa->eb.enabled = enabled;
+	ma_get_eb(be->mvc->sa)->enabled = enabled;
 	if (s == NULL) {
-		freeInstruction(q);
+		freeInstruction(be->mb, q);
 		goto bailout;
 	}
 
@@ -1081,8 +1140,8 @@ stmt_delete(backend *be, sql_table *t, stmt *tids)
 	return s;
 
   bailout:
-	if (be->mvc->sa->eb.enabled)
-		eb_error(&be->mvc->sa->eb, be->mvc->errstr[0] ? be->mvc->errstr : mb->errors ? mb->errors : *GDKerrbuf ? GDKerrbuf : "out of memory", 1000);
+	if (ma_get_eb(be->mvc->sa)->enabled)
+		eb_error(ma_get_eb(be->mvc->sa), be->mvc->errstr[0] ? be->mvc->errstr : mb->errors ? mb->errors : *GDKerrbuf ? GDKerrbuf : "out of memory", 1000);
 	return NULL;
 }
 
@@ -1111,13 +1170,14 @@ stmt_const(backend *be, stmt *s, stmt *val)
 		ns->aggr = s->aggr;
 		ns->q = q;
 		ns->nr = getDestVar(q);
-		ns->tname = val->tname;
-		ns->cname = val->cname;
+		ns->tname = val?val->tname:s->tname;
+		ns->cname = val?val->cname:s->cname;
+		ns->label = val?val->label:s->label;
 		return ns;
 	}
   bailout:
-	if (be->mvc->sa->eb.enabled)
-		eb_error(&be->mvc->sa->eb, be->mvc->errstr[0] ? be->mvc->errstr : mb->errors ? mb->errors : *GDKerrbuf ? GDKerrbuf : "out of memory", 1000);
+	if (ma_get_eb(be->mvc->sa)->enabled)
+		eb_error(ma_get_eb(be->mvc->sa), be->mvc->errstr[0] ? be->mvc->errstr : mb->errors ? mb->errors : *GDKerrbuf ? GDKerrbuf : "out of memory", 1000);
 	return NULL;
 }
 
@@ -1148,8 +1208,8 @@ stmt_gen_group(backend *be, stmt *gids, stmt *cnts)
 		return ns;
 	}
   bailout:
-	if (be->mvc->sa->eb.enabled)
-		eb_error(&be->mvc->sa->eb, be->mvc->errstr[0] ? be->mvc->errstr : mb->errors ? mb->errors : *GDKerrbuf ? GDKerrbuf : "out of memory", 1000);
+	if (ma_get_eb(be->mvc->sa)->enabled)
+		eb_error(ma_get_eb(be->mvc->sa), be->mvc->errstr[0] ? be->mvc->errstr : mb->errors ? mb->errors : *GDKerrbuf ? GDKerrbuf : "out of memory", 1000);
 	return NULL;
 }
 
@@ -1168,7 +1228,7 @@ stmt_mirror(backend *be, stmt *s)
 		if (ns == NULL) {
 			goto bailout;
 		}
-
+		ns->op4.typeval = *sql_fetch_localtype(TYPE_oid);
 		ns->op1 = s;
 		ns->nrcols = 2;
 		ns->key = s->key;
@@ -1178,8 +1238,8 @@ stmt_mirror(backend *be, stmt *s)
 		return ns;
 	}
   bailout:
-	if (be->mvc->sa->eb.enabled)
-		eb_error(&be->mvc->sa->eb, be->mvc->errstr[0] ? be->mvc->errstr : mb->errors ? mb->errors : *GDKerrbuf ? GDKerrbuf : "out of memory", 1000);
+	if (ma_get_eb(be->mvc->sa)->enabled)
+		eb_error(ma_get_eb(be->mvc->sa), be->mvc->errstr[0] ? be->mvc->errstr : mb->errors ? mb->errors : *GDKerrbuf ? GDKerrbuf : "out of memory", 1000);
 	return NULL;
 }
 
@@ -1219,9 +1279,9 @@ stmt_result(backend *be, stmt *s, int nr)
 	if (!nr && (s->type == st_order || s->type == st_reorder))
 		ns->op4.typeval = *tail_type(s->op1);
 	else if (nr && ((s->type == st_join && s->flag == MARKJOIN) || (s->type == st_uselect2 && s->flag == MARKJOIN)))
-		ns->op4.typeval = *sql_bind_localtype("bit");
+		ns->op4.typeval = *sql_fetch_localtype(TYPE_bit);
 	else
-		ns->op4.typeval = *sql_bind_localtype("oid");
+		ns->op4.typeval = *sql_fetch_localtype(TYPE_oid);
 	ns->flag = nr;
 	ns->nrcols = s->nrcols;
 	ns->key = s->key;
@@ -1229,6 +1289,35 @@ stmt_result(backend *be, stmt *s, int nr)
 	return ns;
 }
 
+stmt *
+stmt_identity(backend *be, stmt *s)
+{
+	MalBlkPtr mb = be->mb;
+
+	if (s == NULL)
+		goto bailout;
+
+	InstrPtr q = dump_1(mb, batcalcRef, identityRef, s);
+
+	if (q) {
+		stmt *ns = stmt_create(be->mvc->sa, st_mirror);
+		if (ns == NULL) {
+			goto bailout;
+		}
+
+		ns->op1 = s;
+		ns->nrcols = 2;
+		ns->key = s->key;
+		ns->aggr = s->aggr;
+		ns->q = q;
+		ns->nr = getDestVar(q);
+		return ns;
+	}
+  bailout:
+	if (ma_get_eb(be->mvc->sa)->enabled)
+		eb_error(ma_get_eb(be->mvc->sa), be->mvc->errstr[0] ? be->mvc->errstr : mb->errors ? mb->errors : *GDKerrbuf ? GDKerrbuf : "out of memory", 1000);
+	return NULL;
+}
 
 /* limit maybe atom nil */
 stmt *
@@ -1274,15 +1363,6 @@ stmt_limit(backend *be, stmt *col, stmt *piv, stmt *gid, stmt *offset, stmt *lim
 			q = pushBit(mb, q, nullslast);
 			return piv;
 		} else {
-			int topn = 0;
-
-			q = newStmt(mb, calcRef, plusRef);
-			if (q == NULL)
-				goto bailout;
-			q = pushArgument(mb, q, offset->nr);
-			q = pushArgument(mb, q, limit->nr);
-			topn = getDestVar(q);
-			pushInstruction(mb, q);
 
 			if (!gid || (piv && !piv->q)) { /* use algebra.firstn (possibly concurrently) */
 				int p = (piv) ? piv->nr : 0;
@@ -1300,7 +1380,9 @@ stmt_limit(backend *be, stmt *col, stmt *piv, stmt *gid, stmt *offset, stmt *lim
 					q = pushArgument(mb, q, g);
 				else
 					q = pushNilBat(mb, q);
-				q = pushArgument(mb, q, topn);
+				q = pushArgument(mb, q, limit->nr);
+				q = pushArgument(mb, q, offset->nr);
+				q = pushBit(mb, q, nr_obe > 1); /* reduce to offset and limit on last call */
 				q = pushBit(mb, q, dir);
 				q = pushBit(mb, q, nullslast);
 				q = pushBit(mb, q, distinct != 0);
@@ -1312,7 +1394,9 @@ stmt_limit(backend *be, stmt *col, stmt *piv, stmt *gid, stmt *offset, stmt *lim
 				q = newStmtArgs(mb, algebraRef, groupedfirstnRef, (nr_obe*3)+6);
 				if (q == NULL)
 					goto bailout;
-				q = pushArgument(mb, q, topn);
+				q = pushArgument(mb, q, limit->nr);
+				q = pushArgument(mb, q, offset->nr);
+				q = pushBit(mb, q, nr_obe > 1); /* reduce to offset and limit on last call */
 				q = pushNilBat(mb, q);	/* candidates */
 				if (g)					/* grouped case */
 					q = pushArgument(mb, q, g);
@@ -1329,33 +1413,20 @@ stmt_limit(backend *be, stmt *col, stmt *piv, stmt *gid, stmt *offset, stmt *lim
 			}
 		}
 	} else {
-		int len;
-
-		q = newStmt(mb, calcRef, plusRef);
-		if (q == NULL)
-			goto bailout;
-		q = pushArgument(mb, q, offset->nr);
-		q = pushArgument(mb, q, limit->nr);
-		len = getDestVar(q);
-		pushInstruction(mb, q);
-
-		/* since both arguments of algebra.subslice are
-		   inclusive correct the LIMIT value by
-		   subtracting 1 */
-		q = newStmt(mb, calcRef, minusRef);
-		if (q == NULL)
-			goto bailout;
-		q = pushArgument(mb, q, len);
-		q = pushInt(mb, q, 1);
-		len = getDestVar(q);
-		pushInstruction(mb, q);
-
-		q = newStmt(mb, algebraRef, subsliceRef);
+		q = newStmtArgs(mb, algebraRef, firstnRef, 9);
 		if (q == NULL)
 			goto bailout;
 		q = pushArgument(mb, q, c);
+		q = pushNilBat(mb, q);
+		q = pushNilBat(mb, q);
+		q = pushArgument(mb, q, limit->nr);
 		q = pushArgument(mb, q, offset->nr);
-		q = pushArgument(mb, q, len);
+		q = pushBit(mb, q, false); /* return skipped */
+		q = pushBit(mb, q, bit_nil); /* no direction */
+		q = pushBit(mb, q, bit_nil); /* nulls not handled specialy */
+		q = pushBit(mb, q, false); /* no info on distinct */
+
+		l = getArg(q, 0);
 		l = getDestVar(q);
 		pushInstruction(mb, q);
 	}
@@ -1386,8 +1457,8 @@ stmt_limit(backend *be, stmt *col, stmt *piv, stmt *gid, stmt *offset, stmt *lim
 	return ns;
 
   bailout:
-	if (be->mvc->sa->eb.enabled)
-		eb_error(&be->mvc->sa->eb, be->mvc->errstr[0] ? be->mvc->errstr : mb->errors ? mb->errors : *GDKerrbuf ? GDKerrbuf : "out of memory", 1000);
+	if (ma_get_eb(be->mvc->sa)->enabled)
+		eb_error(ma_get_eb(be->mvc->sa), be->mvc->errstr[0] ? be->mvc->errstr : mb->errors ? mb->errors : *GDKerrbuf ? GDKerrbuf : "out of memory", 1000);
 	return NULL;
 }
 
@@ -1412,12 +1483,12 @@ stmt_sample(backend *be, stmt *s, stmt *sample, stmt *seed)
 		q = pushArgument(mb, q, seed->nr);
 	}
 
-	bool enabled = be->mvc->sa->eb.enabled;
-	be->mvc->sa->eb.enabled = false;
+	bool enabled = ma_get_eb(be->mvc->sa)->enabled;
+	ma_get_eb(be->mvc->sa)->enabled = false;
 	stmt *ns = stmt_create(be->mvc->sa, st_sample);
-	be->mvc->sa->eb.enabled = enabled;
+	ma_get_eb(be->mvc->sa)->enabled = enabled;
 	if (ns == NULL) {
-		freeInstruction(q);
+		freeInstruction(be->mb, q);
 		goto bailout;
 	}
 
@@ -1438,8 +1509,8 @@ stmt_sample(backend *be, stmt *s, stmt *sample, stmt *seed)
 	return ns;
 
   bailout:
-	if (be->mvc->sa->eb.enabled)
-		eb_error(&be->mvc->sa->eb, be->mvc->errstr[0] ? be->mvc->errstr : mb->errors ? mb->errors : *GDKerrbuf ? GDKerrbuf : "out of memory", 1000);
+	if (ma_get_eb(be->mvc->sa)->enabled)
+		eb_error(ma_get_eb(be->mvc->sa), be->mvc->errstr[0] ? be->mvc->errstr : mb->errors ? mb->errors : *GDKerrbuf ? GDKerrbuf : "out of memory", 1000);
 	return NULL;
 }
 
@@ -1463,12 +1534,12 @@ stmt_order(backend *be, stmt *s, int direction, int nullslast)
 	q = pushBit(mb, q, nullslast);
 	q = pushBit(mb, q, FALSE);
 
-	bool enabled = be->mvc->sa->eb.enabled;
-	be->mvc->sa->eb.enabled = false;
+	bool enabled = ma_get_eb(be->mvc->sa)->enabled;
+	ma_get_eb(be->mvc->sa)->enabled = false;
 	stmt *ns = stmt_create(be->mvc->sa, st_order);
-	be->mvc->sa->eb.enabled = enabled;
+	ma_get_eb(be->mvc->sa)->enabled = enabled;
 	if (ns == NULL) {
-		freeInstruction(q);
+		freeInstruction(be->mb, q);
 		goto bailout;
 	}
 
@@ -1483,8 +1554,8 @@ stmt_order(backend *be, stmt *s, int direction, int nullslast)
 	return ns;
 
   bailout:
-	if (be->mvc->sa->eb.enabled)
-		eb_error(&be->mvc->sa->eb, be->mvc->errstr[0] ? be->mvc->errstr : mb->errors ? mb->errors : *GDKerrbuf ? GDKerrbuf : "out of memory", 1000);
+	if (ma_get_eb(be->mvc->sa)->enabled)
+		eb_error(ma_get_eb(be->mvc->sa), be->mvc->errstr[0] ? be->mvc->errstr : mb->errors ? mb->errors : *GDKerrbuf ? GDKerrbuf : "out of memory", 1000);
 	return NULL;
 }
 
@@ -1509,12 +1580,12 @@ stmt_reorder(backend *be, stmt *s, int direction, int nullslast, stmt *orderby_i
 	q = pushBit(mb, q, nullslast);
 	q = pushBit(mb, q, FALSE);
 
-	bool enabled = be->mvc->sa->eb.enabled;
-	be->mvc->sa->eb.enabled = false;
+	bool enabled = ma_get_eb(be->mvc->sa)->enabled;
+	ma_get_eb(be->mvc->sa)->enabled = false;
 	stmt *ns = stmt_create(be->mvc->sa, st_reorder);
-	be->mvc->sa->eb.enabled = enabled;
+	ma_get_eb(be->mvc->sa)->enabled = enabled;
 	if (ns == NULL) {
-		freeInstruction(q);
+		freeInstruction(be->mb, q);
 		goto bailout;
 	}
 
@@ -1531,8 +1602,8 @@ stmt_reorder(backend *be, stmt *s, int direction, int nullslast, stmt *orderby_i
 	return ns;
 
   bailout:
-	if (be->mvc->sa->eb.enabled)
-		eb_error(&be->mvc->sa->eb, be->mvc->errstr[0] ? be->mvc->errstr : mb->errors ? mb->errors : *GDKerrbuf ? GDKerrbuf : "out of memory", 1000);
+	if (ma_get_eb(be->mvc->sa)->enabled)
+		eb_error(ma_get_eb(be->mvc->sa), be->mvc->errstr[0] ? be->mvc->errstr : mb->errors ? mb->errors : *GDKerrbuf ? GDKerrbuf : "out of memory", 1000);
 	return NULL;
 }
 
@@ -1545,7 +1616,7 @@ stmt_mask(backend *be, bool val)
 	if (q) {
 		stmt *s = stmt_create(be->mvc->sa, st_atom);
 		if (s == NULL) {
-			freeInstruction(q);
+			freeInstruction(be->mb, q);
 			return NULL;
 		}
 
@@ -1557,9 +1628,51 @@ stmt_mask(backend *be, bool val)
 	return NULL;
 }
 
+static int
+constantAtom(MalBlkPtr mb, atom *a)
+{
+	int idx, tpe = atom_type(a)->type->localtype;
+	ValPtr vr = (ValPtr) &a->data;
+	ValRecord cst;
+
+	if (atom_null(a)) {
+		VALinit(mb->ma, &cst, tpe, ATOMnilptr(tpe));
+	} else {
+		cst.vtype = 0;
+		if (SA_VALcopy(mb->ma, &cst, vr) == NULL)
+			return -1;
+	}
+	idx = defConstant(mb, tpe, &cst);
+	return idx;
+}
+
+
+static stmt *
+stmt_atom_const(backend *be, atom *a)
+{
+	int k;
+	if ((k = constantAtom(be->mb, a)) == -1)
+		return NULL;
+	bool enabled = ma_get_eb(be->mvc->sa)->enabled;
+	ma_get_eb(be->mvc->sa)->enabled = false;
+	stmt *s = stmt_create(be->mvc->sa, st_atom);
+	ma_get_eb(be->mvc->sa)->enabled = enabled;
+	if (s == NULL)
+		return NULL;
+
+	s->op4.aval = a;
+	s->key = 1;		/* values are also unique */
+	s->q = NULL;
+	s->nr = k;
+	return s;
+}
+
 stmt *
 stmt_atom(backend *be, atom *a)
 {
+	if (!EC_TEMP_FRAC(atom_type(a)->type->eclass) && atom_type(a)->type->localtype <= TYPE_str)
+		return stmt_atom_const(be, a);
+
 	MalBlkPtr mb = be->mb;
 
 	if (a == NULL)
@@ -1577,8 +1690,8 @@ stmt_atom(backend *be, atom *a)
 		q = pushNil(mb, q, atom_type(a)->type->localtype);
 	} else {
 		int k;
-		if ((k = constantAtom(be, mb, a)) == -1) {
-			freeInstruction(q);
+		if ((k = constantAtom(mb, a)) == -1) {
+			freeInstruction(be->mb, q);
 			goto bailout;
 		}
 		q = pushArgument(mb, q, k);
@@ -1586,12 +1699,12 @@ stmt_atom(backend *be, atom *a)
 	/* digits of the result timestamp/daytime */
 	if (EC_TEMP_FRAC(atom_type(a)->type->eclass))
 		q = pushInt(mb, q, atom_type(a)->digits);
-	bool enabled = be->mvc->sa->eb.enabled;
-	be->mvc->sa->eb.enabled = false;
+	bool enabled = ma_get_eb(be->mvc->sa)->enabled;
+	ma_get_eb(be->mvc->sa)->enabled = false;
 	stmt *s = stmt_create(be->mvc->sa, st_atom);
-	be->mvc->sa->eb.enabled = enabled;
+	ma_get_eb(be->mvc->sa)->enabled = enabled;
 	if (s == NULL) {
-		freeInstruction(q);
+		freeInstruction(be->mb, q);
 		goto bailout;
 	}
 
@@ -1604,8 +1717,8 @@ stmt_atom(backend *be, atom *a)
 	return s;
 
   bailout:
-	if (be->mvc->sa->eb.enabled)
-		eb_error(&be->mvc->sa->eb, be->mvc->errstr[0] ? be->mvc->errstr : mb->errors ? mb->errors : *GDKerrbuf ? GDKerrbuf : "out of memory", 1000);
+	if (ma_get_eb(be->mvc->sa)->enabled)
+		eb_error(ma_get_eb(be->mvc->sa), be->mvc->errstr[0] ? be->mvc->errstr : mb->errors ? mb->errors : *GDKerrbuf ? GDKerrbuf : "out of memory", 1000);
 	return NULL;
 }
 
@@ -1667,7 +1780,11 @@ stmt_genselect(backend *be, stmt *lops, stmt *rops, sql_subfunc *f, stmt *sub, i
 	} else {
 		node *n;
 
-		op = sa_strconcat(be->mvc->sa, op, selectRef);
+		if (strncmp(op, "not_", 4) == 0) {
+			anti = !anti;
+			op += 4;
+		}
+		op = ma_strconcat(be->mvc->sa, op, selectRef);
 		q = newStmtArgs(mb, mod, convertMultiplexFcn(op), 9);
 		if (q == NULL)
 			goto bailout;
@@ -1675,10 +1792,6 @@ stmt_genselect(backend *be, stmt *lops, stmt *rops, sql_subfunc *f, stmt *sub, i
 		// allows getting argument names for example
 		if (LANG_EXT(f->func->lang))
 			q = pushPtr(mb, q, f->func); // nothing to see here, please move along
-		// f->query contains the R code to be run
-		if (f->func->lang == FUNC_LANG_R || f->func->lang >= FUNC_LANG_PY)
-			q = pushStr(mb, q, f->func->query);
-
 		for (n = lops->op4.lval->h; n; n = n->next) {
 			stmt *op = n->data;
 
@@ -1699,12 +1812,12 @@ stmt_genselect(backend *be, stmt *lops, stmt *rops, sql_subfunc *f, stmt *sub, i
 		q = pushBit(mb, q, anti);
 	}
 
-	bool enabled = be->mvc->sa->eb.enabled;
-	be->mvc->sa->eb.enabled = false;
+	bool enabled = ma_get_eb(be->mvc->sa)->enabled;
+	ma_get_eb(be->mvc->sa)->enabled = false;
 	stmt *s = stmt_create(be->mvc->sa, st_uselect);
-	be->mvc->sa->eb.enabled = enabled;
+	ma_get_eb(be->mvc->sa)->enabled = enabled;
 	if (s == NULL) {
-		freeInstruction(q);
+		freeInstruction(be->mb, q);
 		goto bailout;
 	}
 
@@ -1721,8 +1834,8 @@ stmt_genselect(backend *be, stmt *lops, stmt *rops, sql_subfunc *f, stmt *sub, i
 	return s;
 
   bailout:
-	if (be->mvc->sa->eb.enabled)
-		eb_error(&be->mvc->sa->eb, be->mvc->errstr[0] ? be->mvc->errstr : mb->errors ? mb->errors : *GDKerrbuf ? GDKerrbuf : "out of memory", 1000);
+	if (ma_get_eb(be->mvc->sa)->enabled)
+		eb_error(ma_get_eb(be->mvc->sa), be->mvc->errstr[0] ? be->mvc->errstr : mb->errors ? mb->errors : *GDKerrbuf ? GDKerrbuf : "out of memory", 1000);
 	return NULL;
 }
 
@@ -1867,18 +1980,18 @@ stmt_uselect(backend *be, stmt *op1, stmt *op2, comp_type cmptype, stmt *sub, in
 		default:
 			TRC_ERROR(SQL_EXECUTION, "Impossible select compare\n");
 			if (q)
-				freeInstruction(q);
+				freeInstruction(be->mb, q);
 			q = NULL;
 			goto bailout;
 		}
 	}
 
-	bool enabled = be->mvc->sa->eb.enabled;
-	be->mvc->sa->eb.enabled = false;
+	bool enabled = ma_get_eb(be->mvc->sa)->enabled;
+	ma_get_eb(be->mvc->sa)->enabled = false;
 	stmt *s = stmt_create(be->mvc->sa, st_uselect);
-	be->mvc->sa->eb.enabled = enabled;
+	ma_get_eb(be->mvc->sa)->enabled = enabled;
 	if (s == NULL) {
-		freeInstruction(q);
+		freeInstruction(be->mb, q);
 		goto bailout;
 	}
 
@@ -1897,9 +2010,33 @@ stmt_uselect(backend *be, stmt *op1, stmt *op2, comp_type cmptype, stmt *sub, in
 	return s;
 
   bailout:
-	if (be->mvc->sa->eb.enabled)
-		eb_error(&be->mvc->sa->eb, be->mvc->errstr[0] ? be->mvc->errstr : mb->errors ? mb->errors : *GDKerrbuf ? GDKerrbuf : "out of memory", 1000);
+	if (ma_get_eb(be->mvc->sa)->enabled)
+		eb_error(ma_get_eb(be->mvc->sa), be->mvc->errstr[0] ? be->mvc->errstr : mb->errors ? mb->errors : *GDKerrbuf ? GDKerrbuf : "out of memory", 1000);
 	return NULL;
+}
+
+stmt *
+stmt_thetaselect(backend *be, stmt *op1, stmt *op2, stmt *val, const char *cmp, sql_subtype *tpe)
+{
+	MalBlkPtr mb = be->mb;
+	InstrPtr q = newStmt(mb, algebraRef, thetaselectRef);
+	if (q == NULL) return NULL;
+
+	q = pushArgument(mb, q, op1->nr);
+	if (op2)
+		q = pushArgument(mb, q, op1->nr);
+	else
+		q = pushNilBat(mb, q);
+	q = pushArgument(mb, q, val->nr);
+	q = pushStr(mb, q, cmp);
+	pushInstruction(mb, q);
+
+	stmt *s = stmt_none(be);
+	s->op4.typeval = *tpe;
+	s->q = q;
+	s->nr = getArg(q, 0);
+	s->nrcols = 1;
+	return s;
 }
 
 /*
@@ -1944,8 +2081,6 @@ argumentZero(MalBlkPtr mb, int tpe)
 	cst.vtype = TYPE_int;
 	cst.val.ival = 0;
 	msg = convertConstant(tpe, &cst);
-	if( msg)
-		freeException(msg); // will not be called
 	return defConstant(mb, tpe, &cst);
 }
 */
@@ -2050,7 +2185,7 @@ select2_join2(backend *be, stmt *op1, stmt *op2, stmt *op3, int cmp, stmt **Sub,
 
 		int r1 = op2->nr;
 		int r2 = op3->nr;
-		int rs = 0;
+		/* int rs = 0; */
 		q = newStmtArgs(mb, algebraRef, cmd, 12);
 		if (q == NULL)
 			goto bailout;
@@ -2068,12 +2203,12 @@ select2_join2(backend *be, stmt *op1, stmt *op2, stmt *op3, int cmp, stmt **Sub,
 		}
 		if (sub) /* only for uselect2 */
 			q = pushArgument(mb, q, sub->nr);
-		if (rs) {
-			q = pushArgument(mb, q, rs);
-		} else {
-			q = pushArgument(mb, q, r1);
-			q = pushArgument(mb, q, r2);
-		}
+		/* if (rs) { */
+			/* q = pushArgument(mb, q, rs); */
+		/* } else { */
+		q = pushArgument(mb, q, r1);
+		q = pushArgument(mb, q, r2);
+		/* } */
 		if (type == st_join2) {
 			q = pushNilBat(mb, q);
 			q = pushNilBat(mb, q);
@@ -2123,13 +2258,41 @@ select2_join2(backend *be, stmt *op1, stmt *op2, stmt *op3, int cmp, stmt **Sub,
 	return q;
 
   bailout:
-	if (be->mvc->sa->eb.enabled)
-		eb_error(&be->mvc->sa->eb, be->mvc->errstr[0] ? be->mvc->errstr : mb->errors ? mb->errors : *GDKerrbuf ? GDKerrbuf : "out of memory", 1000);
+	if (ma_get_eb(be->mvc->sa)->enabled)
+		eb_error(ma_get_eb(be->mvc->sa), be->mvc->errstr[0] ? be->mvc->errstr : mb->errors ? mb->errors : *GDKerrbuf ? GDKerrbuf : "out of memory", 1000);
 	return NULL;
 }
 
 stmt *
-stmt_outerselect(backend *be, stmt *g, stmt *m, stmt *p, bool any)
+stmt_single(backend *be, stmt *c, stmt *i)
+{
+	MalBlkPtr mb = be->mb;
+	InstrPtr q;
+
+	q = newStmtArgs(mb, algebraRef, "single", 6);
+	q = pushArgument(mb, q, c->nr); /* cands ids */
+	q = pushArgument(mb, q, i->nr); /* left ids (to be check for single) */
+	pushInstruction(mb, q);
+
+	if (!q)
+		return NULL;
+	stmt *s = stmt_create(be->mvc->sa, st_uselect2);
+	if (s == NULL) {
+		freeInstruction(be->mb, q);
+		return NULL;
+	}
+
+	s->op1 = c;
+	s->op2 = i;
+	s->key = 0;
+	s->nrcols = c->nrcols;
+	s->nr = getDestVar(q);
+	s->q = q;
+	return s;
+}
+
+stmt *
+stmt_outerselect(backend *be, stmt *g, stmt *m, stmt *p, bool any, bool single)
 {
 	MalBlkPtr mb = be->mb;
 	InstrPtr q;
@@ -2140,13 +2303,14 @@ stmt_outerselect(backend *be, stmt *g, stmt *m, stmt *p, bool any)
 	q = pushArgument(mb, q, m->nr); /* mark flag */
 	q = pushArgument(mb, q, p->nr); /* predicate */
 	q = pushBit(mb, q, (any)?TRUE:FALSE);
+	q = pushBit(mb, q, (single)?TRUE:FALSE);
 	pushInstruction(mb, q);
 
 	if (!q)
 		return NULL;
 	stmt *s = stmt_create(be->mvc->sa, st_uselect2);
 	if (s == NULL) {
-		freeInstruction(q);
+		freeInstruction(be->mb, q);
 		return NULL;
 	}
 
@@ -2178,7 +2342,7 @@ stmt_markselect(backend *be, stmt *g, stmt *m, stmt *p, bool any)
 		return NULL;
 	stmt *s = stmt_create(be->mvc->sa, st_uselect2);
 	if (s == NULL) {
-		freeInstruction(q);
+		freeInstruction(be->mb, q);
 		return NULL;
 	}
 
@@ -2193,12 +2357,12 @@ stmt_markselect(backend *be, stmt *g, stmt *m, stmt *p, bool any)
 }
 
 stmt *
-stmt_markjoin(backend *be, stmt *l, stmt *r, bool final)
+stmt_markjoin(backend *be, stmt *l, stmt *r, bool nil_matches, bool final)
 {
 	MalBlkPtr mb = be->mb;
 	InstrPtr q;
 
-	q = newStmtArgs(mb, algebraRef, markjoinRef, 8);
+	q = newStmtArgs(mb, algebraRef, markjoinRef, 9);
 	q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
 	if (!final)
 		q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
@@ -2206,6 +2370,7 @@ stmt_markjoin(backend *be, stmt *l, stmt *r, bool final)
 	q = pushArgument(mb, q, r->nr); /* mark info mask */
 	q = pushNilBat(mb, q);
 	q = pushNilBat(mb, q);
+	q = pushBit(mb, q, nil_matches);    /* nil matches */
 	q = pushNil(mb, q, TYPE_lng);
 	pushInstruction(mb, q);
 
@@ -2213,7 +2378,7 @@ stmt_markjoin(backend *be, stmt *l, stmt *r, bool final)
 		return NULL;
 	stmt *s = stmt_create(be->mvc->sa, st_join);
 	if (s == NULL) {
-		freeInstruction(q);
+		freeInstruction(be->mb, q);
 		return NULL;
 	}
 
@@ -2280,8 +2445,8 @@ stmt_tunion(backend *be, stmt *op1, stmt *op2)
 		return s;
 	}
 
-	if (be->mvc->sa->eb.enabled)
-		eb_error(&be->mvc->sa->eb, be->mvc->errstr[0] ? be->mvc->errstr : mb->errors ? mb->errors : *GDKerrbuf ? GDKerrbuf : "out of memory", 1000);
+	if (ma_get_eb(be->mvc->sa)->enabled)
+		eb_error(ma_get_eb(be->mvc->sa), be->mvc->errstr[0] ? be->mvc->errstr : mb->errors ? mb->errors : *GDKerrbuf ? GDKerrbuf : "out of memory", 1000);
 	return NULL;
 }
 
@@ -2307,12 +2472,12 @@ stmt_tdiff(backend *be, stmt *op1, stmt *op2, stmt *lcand)
 	q = pushBit(mb, q, FALSE);    /* do not clear nils */
 	q = pushNil(mb, q, TYPE_lng); /* estimate */
 
-	bool enabled = be->mvc->sa->eb.enabled;
-	be->mvc->sa->eb.enabled = false;
+	bool enabled = ma_get_eb(be->mvc->sa)->enabled;
+	ma_get_eb(be->mvc->sa)->enabled = false;
 	stmt *s = stmt_create(be->mvc->sa, st_tdiff);
-	be->mvc->sa->eb.enabled = enabled;
+	ma_get_eb(be->mvc->sa)->enabled = enabled;
 	if (s == NULL) {
-		freeInstruction(q);
+		freeInstruction(be->mb, q);
 		goto bailout;
 	}
 
@@ -2327,13 +2492,13 @@ stmt_tdiff(backend *be, stmt *op1, stmt *op2, stmt *lcand)
 	return s;
 
   bailout:
-	if (be->mvc->sa->eb.enabled)
-		eb_error(&be->mvc->sa->eb, be->mvc->errstr[0] ? be->mvc->errstr : mb->errors ? mb->errors : *GDKerrbuf ? GDKerrbuf : "out of memory", 1000);
+	if (ma_get_eb(be->mvc->sa)->enabled)
+		eb_error(ma_get_eb(be->mvc->sa), be->mvc->errstr[0] ? be->mvc->errstr : mb->errors ? mb->errors : *GDKerrbuf ? GDKerrbuf : "out of memory", 1000);
 	return NULL;
 }
 
 stmt *
-stmt_tdiff2(backend *be, stmt *op1, stmt *op2, stmt *lcand)
+stmt_tdiff2(backend *be, stmt *op1, stmt *op2, stmt *lcand, bool is_semantics, bool any)
 {
 	InstrPtr q = NULL;
 	MalBlkPtr mb = be->mb;
@@ -2350,16 +2515,16 @@ stmt_tdiff2(backend *be, stmt *op1, stmt *op2, stmt *lcand)
 	else
 		q = pushNilBat(mb, q); /* left candidate */
 	q = pushNilBat(mb, q); /* right candidate */
-	q = pushBit(mb, q, FALSE);     /* nil matches */
-	q = pushBit(mb, q, TRUE);     /* not in */
+	q = pushBit(mb, q, is_semantics);     /* nil matches */
+	q = pushBit(mb, q, any);     /* not in */
 	q = pushNil(mb, q, TYPE_lng); /* estimate */
 
-	bool enabled = be->mvc->sa->eb.enabled;
-	be->mvc->sa->eb.enabled = false;
+	bool enabled = ma_get_eb(be->mvc->sa)->enabled;
+	ma_get_eb(be->mvc->sa)->enabled = false;
 	stmt *s = stmt_create(be->mvc->sa, st_tdiff);
-	be->mvc->sa->eb.enabled = enabled;
+	ma_get_eb(be->mvc->sa)->enabled = enabled;
 	if (s == NULL) {
-		freeInstruction(q);
+		freeInstruction(be->mb, q);
 		goto bailout;
 	}
 
@@ -2374,8 +2539,8 @@ stmt_tdiff2(backend *be, stmt *op1, stmt *op2, stmt *lcand)
 	return s;
 
   bailout:
-	if (be->mvc->sa->eb.enabled)
-		eb_error(&be->mvc->sa->eb, be->mvc->errstr[0] ? be->mvc->errstr : mb->errors ? mb->errors : *GDKerrbuf ? GDKerrbuf : "out of memory", 1000);
+	if (ma_get_eb(be->mvc->sa)->enabled)
+		eb_error(ma_get_eb(be->mvc->sa), be->mvc->errstr[0] ? be->mvc->errstr : mb->errors ? mb->errors : *GDKerrbuf ? GDKerrbuf : "out of memory", 1000);
 	return NULL;
 }
 
@@ -2398,12 +2563,12 @@ stmt_tinter(backend *be, stmt *op1, stmt *op2, bool single)
 	q = pushBit(mb, q, single?TRUE:FALSE);    /* max_one */
 	q = pushNil(mb, q, TYPE_lng); /* estimate */
 
-	bool enabled = be->mvc->sa->eb.enabled;
-	be->mvc->sa->eb.enabled = false;
+	bool enabled = ma_get_eb(be->mvc->sa)->enabled;
+	ma_get_eb(be->mvc->sa)->enabled = false;
 	stmt *s = stmt_create(be->mvc->sa, st_tinter);
-	be->mvc->sa->eb.enabled = enabled;
+	ma_get_eb(be->mvc->sa)->enabled = enabled;
 	if (s == NULL) {
-		freeInstruction(q);
+		freeInstruction(be->mb, q);
 		goto bailout;
 	}
 
@@ -2418,8 +2583,8 @@ stmt_tinter(backend *be, stmt *op1, stmt *op2, bool single)
 	return s;
 
   bailout:
-	if (be->mvc->sa->eb.enabled)
-		eb_error(&be->mvc->sa->eb, be->mvc->errstr[0] ? be->mvc->errstr : mb->errors ? mb->errors : *GDKerrbuf ? GDKerrbuf : "out of memory", 1000);
+	if (ma_get_eb(be->mvc->sa)->enabled)
+		eb_error(ma_get_eb(be->mvc->sa), be->mvc->errstr[0] ? be->mvc->errstr : mb->errors ? mb->errors : *GDKerrbuf ? GDKerrbuf : "out of memory", 1000);
 	return NULL;
 }
 
@@ -2442,6 +2607,12 @@ stmt_join_cand(backend *be, stmt *op1, stmt *op2, stmt *lcand, stmt *rcand, int 
 
 	assert (!single || cmptype == cmp_all);
 
+	if (anti) {
+		if (cmptype == cmp_equal)
+			cmptype = cmp_notequal;
+		else if (cmptype == cmp_notequal)
+			cmptype = cmp_equal;
+	}
 	switch (cmptype) {
 	case cmp_equal:
 		q = newStmtArgs(mb, algebraRef, sjt, 9);
@@ -2520,7 +2691,7 @@ stmt_join_cand(backend *be, stmt *op1, stmt *op2, stmt *lcand, stmt *rcand, int 
 		pushInstruction(mb, q);
 		break;
 	case cmp_all:	/* aka cross table */
-		q = newStmt(mb, algebraRef, inner?crossRef:outercrossRef);
+		q = newStmt(mb, algebraRef, inner?crossproductRef:outercrossproductRef);
 		if (q == NULL)
 			goto bailout;
 		q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
@@ -2558,8 +2729,8 @@ stmt_join_cand(backend *be, stmt *op1, stmt *op2, stmt *lcand, stmt *rcand, int 
 	return s;
 
   bailout:
-	if (be->mvc->sa->eb.enabled)
-		eb_error(&be->mvc->sa->eb, be->mvc->errstr[0] ? be->mvc->errstr : mb->errors ? mb->errors : *GDKerrbuf ? GDKerrbuf : "out of memory", 1000);
+	if (ma_get_eb(be->mvc->sa)->enabled)
+		eb_error(ma_get_eb(be->mvc->sa), be->mvc->errstr[0] ? be->mvc->errstr : mb->errors ? mb->errors : *GDKerrbuf ? GDKerrbuf : "out of memory", 1000);
 	return NULL;
 }
 
@@ -2599,12 +2770,12 @@ stmt_semijoin(backend *be, stmt *op1, stmt *op2, stmt *lcand, stmt *rcand, int i
 	q = pushBit(mb, q, single?TRUE:FALSE); /* max_one */
 	q = pushNil(mb, q, TYPE_lng);
 
-	bool enabled = be->mvc->sa->eb.enabled;
-	be->mvc->sa->eb.enabled = false;
+	bool enabled = ma_get_eb(be->mvc->sa)->enabled;
+	ma_get_eb(be->mvc->sa)->enabled = false;
 	stmt *s = stmt_create(be->mvc->sa, st_semijoin);
-	be->mvc->sa->eb.enabled = enabled;
+	ma_get_eb(be->mvc->sa)->enabled = enabled;
 	if (s == NULL) {
-		freeInstruction(q);
+		freeInstruction(be->mb, q);
 		goto bailout;
 	}
 
@@ -2621,8 +2792,8 @@ stmt_semijoin(backend *be, stmt *op1, stmt *op2, stmt *lcand, stmt *rcand, int i
 	return s;
 
   bailout:
-	if (be->mvc->sa->eb.enabled)
-		eb_error(&be->mvc->sa->eb, be->mvc->errstr[0] ? be->mvc->errstr : mb->errors ? mb->errors : *GDKerrbuf ? GDKerrbuf : "out of memory", 1000);
+	if (ma_get_eb(be->mvc->sa)->enabled)
+		eb_error(ma_get_eb(be->mvc->sa), be->mvc->errstr[0] ? be->mvc->errstr : mb->errors ? mb->errors : *GDKerrbuf ? GDKerrbuf : "out of memory", 1000);
 	return NULL;
 }
 
@@ -2681,8 +2852,8 @@ stmt_project(backend *be, stmt *op1, stmt *op2)
 		s->label = op2->label;
 		return s;
 	}
-	if (be->mvc->sa->eb.enabled)
-		eb_error(&be->mvc->sa->eb, be->mvc->errstr[0] ? be->mvc->errstr : be->mb->errors ? be->mb->errors : *GDKerrbuf ? GDKerrbuf : "out of memory", 1000);
+	if (ma_get_eb(be->mvc->sa)->enabled)
+		eb_error(ma_get_eb(be->mvc->sa), be->mvc->errstr[0] ? be->mvc->errstr : be->mb->errors ? be->mb->errors : *GDKerrbuf ? GDKerrbuf : "out of memory", 1000);
 	return NULL;
 }
 
@@ -2708,8 +2879,8 @@ stmt_project_delta(backend *be, stmt *col, stmt *upd)
 		return s;
 	}
 
-	if (be->mvc->sa->eb.enabled)
-		eb_error(&be->mvc->sa->eb, be->mvc->errstr[0] ? be->mvc->errstr : be->mb->errors ? be->mb->errors : *GDKerrbuf ? GDKerrbuf : "out of memory", 1000);
+	if (ma_get_eb(be->mvc->sa)->enabled)
+		eb_error(ma_get_eb(be->mvc->sa), be->mvc->errstr[0] ? be->mvc->errstr : be->mb->errors ? be->mb->errors : *GDKerrbuf ? GDKerrbuf : "out of memory", 1000);
 	return NULL;
 }
 
@@ -2728,12 +2899,12 @@ stmt_left_project(backend *be, stmt *op1, stmt *op2, stmt *op3)
 	q = pushArgument(mb, q, op2->nr);
 	q = pushArgument(mb, q, op3->nr);
 
-	bool enabled = be->mvc->sa->eb.enabled;
-	be->mvc->sa->eb.enabled = false;
+	bool enabled = ma_get_eb(be->mvc->sa)->enabled;
+	ma_get_eb(be->mvc->sa)->enabled = false;
 	stmt *s = stmt_create(be->mvc->sa, st_join);
-	be->mvc->sa->eb.enabled = enabled;
+	ma_get_eb(be->mvc->sa)->enabled = enabled;
 	if (s == NULL) {
-		freeInstruction(q);
+		freeInstruction(be->mb, q);
 		goto bailout;
 	}
 
@@ -2749,8 +2920,8 @@ stmt_left_project(backend *be, stmt *op1, stmt *op2, stmt *op3)
 	return s;
 
   bailout:
-	if (be->mvc->sa->eb.enabled)
-		eb_error(&be->mvc->sa->eb, be->mvc->errstr[0] ? be->mvc->errstr : mb->errors ? mb->errors : *GDKerrbuf ? GDKerrbuf : "out of memory", 1000);
+	if (ma_get_eb(be->mvc->sa)->enabled)
+		eb_error(ma_get_eb(be->mvc->sa), be->mvc->errstr[0] ? be->mvc->errstr : mb->errors ? mb->errors : *GDKerrbuf ? GDKerrbuf : "out of memory", 1000);
 	return NULL;
 }
 
@@ -2769,12 +2940,12 @@ stmt_dict(backend *be, stmt *op1, stmt *op2)
 	q = pushArgument(mb, q, op1->nr);
 	q = pushArgument(mb, q, op2->nr);
 
-	bool enabled = be->mvc->sa->eb.enabled;
-	be->mvc->sa->eb.enabled = false;
+	bool enabled = ma_get_eb(be->mvc->sa)->enabled;
+	ma_get_eb(be->mvc->sa)->enabled = false;
 	stmt *s = stmt_create(be->mvc->sa, st_join);
-	be->mvc->sa->eb.enabled = enabled;
+	ma_get_eb(be->mvc->sa)->enabled = enabled;
 	if (s == NULL) {
-		freeInstruction(q);
+		freeInstruction(be->mb, q);
 		return NULL;
 	}
 
@@ -2791,8 +2962,8 @@ stmt_dict(backend *be, stmt *op1, stmt *op2)
 	return s;
 
   bailout:
-	if (be->mvc->sa->eb.enabled)
-		eb_error(&be->mvc->sa->eb, be->mvc->errstr[0] ? be->mvc->errstr : mb->errors ? mb->errors : *GDKerrbuf ? GDKerrbuf : "out of memory", 1000);
+	if (ma_get_eb(be->mvc->sa)->enabled)
+		eb_error(ma_get_eb(be->mvc->sa), be->mvc->errstr[0] ? be->mvc->errstr : mb->errors ? mb->errors : *GDKerrbuf ? GDKerrbuf : "out of memory", 1000);
 	return NULL;
 }
 
@@ -2811,12 +2982,12 @@ stmt_for(backend *be, stmt *op1, stmt *min_val)
 	q = pushArgument(mb, q, op1->nr);
 	q = pushArgument(mb, q, min_val->nr);
 
-	bool enabled = be->mvc->sa->eb.enabled;
-	be->mvc->sa->eb.enabled = false;
+	bool enabled = ma_get_eb(be->mvc->sa)->enabled;
+	ma_get_eb(be->mvc->sa)->enabled = false;
 	stmt *s = stmt_create(be->mvc->sa, st_join);
-	be->mvc->sa->eb.enabled = enabled;
+	ma_get_eb(be->mvc->sa)->enabled = enabled;
 	if (s == NULL) {
-		freeInstruction(q);
+		freeInstruction(be->mb, q);
 		return NULL;
 	}
 
@@ -2833,8 +3004,8 @@ stmt_for(backend *be, stmt *op1, stmt *min_val)
 	return s;
 
   bailout:
-	if (be->mvc->sa->eb.enabled)
-		eb_error(&be->mvc->sa->eb, be->mvc->errstr[0] ? be->mvc->errstr : mb->errors ? mb->errors : *GDKerrbuf ? GDKerrbuf : "out of memory", 1000);
+	if (ma_get_eb(be->mvc->sa)->enabled)
+		eb_error(ma_get_eb(be->mvc->sa), be->mvc->errstr[0] ? be->mvc->errstr : mb->errors ? mb->errors : *GDKerrbuf ? GDKerrbuf : "out of memory", 1000);
 	return NULL;
 }
 
@@ -2875,7 +3046,7 @@ stmt_genjoin(backend *be, stmt *l, stmt *r, sql_subfunc *op, int anti, int swapp
 		goto bailout;
 	mod = sql_func_mod(op->func);
 	fimp = backend_function_imp(be, op->func);
-	fimp = sa_strconcat(be->mvc->sa, fimp, "join");
+	fimp = ma_strconcat(be->mvc->sa, fimp, "join");
 
 	/* filter qualifying tuples, return oids of h and tail */
 	q = newStmtArgs(mb, mod, fimp, list_length(l->op4.lval) + list_length(r->op4.lval) + 7);
@@ -2928,8 +3099,8 @@ stmt_genjoin(backend *be, stmt *l, stmt *r, sql_subfunc *op, int anti, int swapp
 	return s;
 
   bailout:
-	if (be->mvc->sa->eb.enabled)
-		eb_error(&be->mvc->sa->eb, be->mvc->errstr[0] ? be->mvc->errstr : mb->errors ? mb->errors : *GDKerrbuf ? GDKerrbuf : "out of memory", 1000);
+	if (ma_get_eb(be->mvc->sa)->enabled)
+		eb_error(ma_get_eb(be->mvc->sa), be->mvc->errstr[0] ? be->mvc->errstr : mb->errors ? mb->errors : *GDKerrbuf ? GDKerrbuf : "out of memory", 1000);
 	return NULL;
 }
 
@@ -3019,6 +3190,8 @@ dump_export_header(mvc *sql, MalBlkPtr mb, list *l, int file, const char * forma
 	if(tblPtr == NULL || nmePtr == NULL || tpePtr == NULL || lenPtr == NULL || scalePtr == NULL)
 		return -1;
 
+	allocator *ta = MT_thread_getallocator();
+	allocator_state ta_state = ma_open(ta);
 	for (n = l->h; n; n = n->next) {
 		stmt *c = n->data;
 		sql_subtype *t = tail_type(c);
@@ -3028,15 +3201,17 @@ dump_export_header(mvc *sql, MalBlkPtr mb, list *l, int file, const char * forma
 		const char *tn = (tname) ? tname : _empty;
 		const char *sn = (sname) ? sname : _empty;
 		const char *cn = column_name(sql->sa, c);
-		const char *ntn = sql_escape_ident(sql->ta, tn);
-		const char *nsn = sql_escape_ident(sql->ta, sn);
+		const char *ntn = sql_escape_ident(ta, tn);
+		const char *nsn = sql_escape_ident(ta, sn);
 		size_t fqtnl;
 		char *fqtn = NULL;
 
 		if (ntn && nsn && (fqtnl = strlen(ntn) + 1 + strlen(nsn) + 1) ){
-			fqtn = SA_NEW_ARRAY(sql->ta, char, fqtnl);
-			if (fqtn == NULL)
+			fqtn = SA_NEW_ARRAY(ta, char, fqtnl);
+			if (fqtn == NULL) {
+				ma_close(&ta_state);
 				return -1;
+			}
 			snprintf(fqtn, fqtnl, "%s.%s", nsn, ntn);
 			tblPtr = pushStr(mb, tblPtr, fqtn);
 			nmePtr = pushStr(mb, nmePtr, cn);
@@ -3044,10 +3219,12 @@ dump_export_header(mvc *sql, MalBlkPtr mb, list *l, int file, const char * forma
 			lenPtr = pushInt(mb, lenPtr, t->digits);
 			scalePtr = pushInt(mb, scalePtr, t->scale);
 			list = pushArgument(mb, list, c->nr);
-		} else
+		} else {
+			ma_close(&ta_state);
 			return -1;
+		}
 	}
-	sa_reset(sql->ta);
+	ma_close(&ta_state);
 	ret = getArg(list,0);
 	pushInstruction(mb,list);
 	return ret;
@@ -3098,8 +3275,8 @@ stmt_export(backend *be, stmt *t, const char *sep, const char *rsep, const char 
 	return s;
 
   bailout:
-	if (be->mvc->sa->eb.enabled)
-		eb_error(&be->mvc->sa->eb, be->mvc->errstr[0] ? be->mvc->errstr : mb->errors ? mb->errors : *GDKerrbuf ? GDKerrbuf : "out of memory", 1000);
+	if (ma_get_eb(be->mvc->sa)->enabled)
+		eb_error(ma_get_eb(be->mvc->sa), be->mvc->errstr[0] ? be->mvc->errstr : mb->errors ? mb->errors : *GDKerrbuf ? GDKerrbuf : "out of memory", 1000);
 	return NULL;
 }
 
@@ -3128,8 +3305,8 @@ stmt_export_bin(backend *be, stmt *colstmt, bool byteswap, const char *filename,
 	return s;
 
   bailout:
-	if (be->mvc->sa->eb.enabled)
-		eb_error(&be->mvc->sa->eb, be->mvc->errstr[0] ? be->mvc->errstr : mb->errors ? mb->errors : *GDKerrbuf ? GDKerrbuf : "out of memory", 1000);
+	if (ma_get_eb(be->mvc->sa)->enabled)
+		eb_error(ma_get_eb(be->mvc->sa), be->mvc->errstr[0] ? be->mvc->errstr : mb->errors ? mb->errors : *GDKerrbuf ? GDKerrbuf : "out of memory", 1000);
 	return NULL;
 }
 
@@ -3167,12 +3344,12 @@ stmt_trans(backend *be, int type, stmt *chain, stmt *name)
 	else
 		q = pushNil(mb, q, TYPE_str);
 
-	bool enabled = be->mvc->sa->eb.enabled;
-	be->mvc->sa->eb.enabled = false;
+	bool enabled = ma_get_eb(be->mvc->sa)->enabled;
+	ma_get_eb(be->mvc->sa)->enabled = false;
 	stmt *s = stmt_create(be->mvc->sa, st_trans);
-	be->mvc->sa->eb.enabled = enabled;
+	ma_get_eb(be->mvc->sa)->enabled = enabled;
 	if(!s) {
-		freeInstruction(q);
+		freeInstruction(be->mb, q);
 		goto bailout;
 	}
 	s->op1 = chain;
@@ -3184,8 +3361,8 @@ stmt_trans(backend *be, int type, stmt *chain, stmt *name)
 	return s;
 
   bailout:
-	if (be->mvc->sa->eb.enabled)
-		eb_error(&be->mvc->sa->eb, be->mvc->errstr[0] ? be->mvc->errstr : mb->errors ? mb->errors : *GDKerrbuf ? GDKerrbuf : "out of memory", 1000);
+	if (ma_get_eb(be->mvc->sa)->enabled)
+		eb_error(ma_get_eb(be->mvc->sa), be->mvc->errstr[0] ? be->mvc->errstr : mb->errors ? mb->errors : *GDKerrbuf ? GDKerrbuf : "out of memory", 1000);
 	return NULL;
 }
 
@@ -3241,6 +3418,8 @@ stmt_catalog(backend *be, int type, stmt *args)
 	case ddl_rename_schema:			ref = rename_schemaRef;		break;
 	case ddl_rename_table:			ref = rename_tableRef;		break;
 	case ddl_rename_column:			ref = rename_columnRef;		break;
+	case ddl_create_ustr:			ref = create_ustrRef;		break;
+	case ddl_drop_ustr:				ref = drop_ustrRef;			break;
 	default:
 		TRC_ERROR(SQL_EXECUTION, "Unknown catalog operation\n");
 		goto bailout;
@@ -3255,12 +3434,12 @@ stmt_catalog(backend *be, int type, stmt *args)
 		q = pushArgument(mb, q, c->nr);
 	}
 
-	bool enabled = be->mvc->sa->eb.enabled;
-	be->mvc->sa->eb.enabled = false;
+	bool enabled = ma_get_eb(be->mvc->sa)->enabled;
+	ma_get_eb(be->mvc->sa)->enabled = false;
 	stmt *s = stmt_create(be->mvc->sa, st_catalog);
-	be->mvc->sa->eb.enabled = enabled;
+	ma_get_eb(be->mvc->sa)->enabled = enabled;
 	if(!s) {
-		freeInstruction(q);
+		freeInstruction(be->mb, q);
 		goto bailout;
 	}
 	s->op1 = args;
@@ -3271,21 +3450,19 @@ stmt_catalog(backend *be, int type, stmt *args)
 	return s;
 
   bailout:
-	if (be->mvc->sa->eb.enabled)
-		eb_error(&be->mvc->sa->eb, be->mvc->errstr[0] ? be->mvc->errstr : mb->errors ? mb->errors : *GDKerrbuf ? GDKerrbuf : "out of memory", 1000);
+	if (ma_get_eb(be->mvc->sa)->enabled)
+		eb_error(ma_get_eb(be->mvc->sa), be->mvc->errstr[0] ? be->mvc->errstr : mb->errors ? mb->errors : *GDKerrbuf ? GDKerrbuf : "out of memory", 1000);
 	return NULL;
 }
 
 void
 stmt_set_nrcols(stmt *s)
 {
-	unsigned nrcols = 0;
-	int key = 1;
-	node *n;
-	list *l = s->op4.lval;
+	unsigned int nrcols = 0;
+	unsigned int key = 1;
 
 	assert(s->type == st_list);
-	for (n = l->h; n; n = n->next) {
+	for (node *n = s->op4.lval->h; n; n = n->next) {
 		stmt *f = n->data;
 
 		if (!f)
@@ -3305,9 +3482,8 @@ stmt_list(backend *be, list *l)
 	if (l == NULL)
 		return NULL;
 	stmt *s = stmt_create(be->mvc->sa, st_list);
-	if(!s) {
+	if(!s)
 		return NULL;
-	}
 	s->op4.lval = l;
 	stmt_set_nrcols(s);
 	return s;
@@ -3338,6 +3514,8 @@ dump_header(mvc *sql, MalBlkPtr mb, list *l)
 	if(tblPtr == NULL || nmePtr == NULL || tpePtr == NULL || lenPtr == NULL || scalePtr == NULL)
 		return NULL;
 
+	allocator *ta = MT_thread_getallocator();
+	allocator_state ta_state = ma_open(ta);
 	for (n = l->h; n; n = n->next) {
 		stmt *c = n->data;
 		sql_subtype *t = tail_type(c);
@@ -3347,14 +3525,16 @@ dump_header(mvc *sql, MalBlkPtr mb, list *l)
 		const char *tn = (tname) ? tname : _empty;
 		const char *sn = (sname) ? sname : _empty;
 		const char *cn = column_name(sql->sa, c);
-		const char *ntn = sql_escape_ident(sql->ta, tn);
-		const char *nsn = sql_escape_ident(sql->ta, sn);
+		const char *ntn = sql_escape_ident(ta, tn);
+		const char *nsn = sql_escape_ident(ta, sn);
 		size_t fqtnl;
 
 		if (ntn && nsn && (fqtnl = strlen(ntn) + 1 + strlen(nsn) + 1) ){
-			char *fqtn = SA_NEW_ARRAY(sql->ta, char, fqtnl);
-			if (fqtn == NULL)
+			char *fqtn = SA_NEW_ARRAY(ta, char, fqtnl);
+			if (fqtn == NULL) {
+				ma_close(&ta_state);
 				return NULL;
+			}
 			snprintf(fqtn, fqtnl, "%s.%s", nsn, ntn);
 			tblPtr = pushStr(mb, tblPtr, fqtn);
 			nmePtr = pushStr(mb, nmePtr, cn);
@@ -3364,10 +3544,12 @@ dump_header(mvc *sql, MalBlkPtr mb, list *l)
 			if (c->cand)
 				list = pushArgument(mb,list,c->cand->nr);
 			list = pushArgument(mb,list,c->nr);
-		} else
+		} else {
+			ma_close(&ta_state);
 			return NULL;
+		}
 	}
-	sa_reset(sql->ta);
+	ma_close(&ta_state);
 	pushInstruction(mb,list);
 	return list;
 }
@@ -3384,6 +3566,8 @@ stmt_output(backend *be, stmt *lst)
 
 	/* single value result, has a fast exit */
 	if (cnt == 1 && first->nrcols <= 0 ){
+		allocator *ta = MT_thread_getallocator();
+		allocator_state ta_state = ma_open(ta);
 		stmt *c = n->data;
 		sql_subtype *t = tail_type(c);
 		const char *tname = table_name(be->mvc->sa, c);
@@ -3392,20 +3576,24 @@ stmt_output(backend *be, stmt *lst)
 		const char *tn = (tname) ? tname : _empty;
 		const char *sn = (sname) ? sname : _empty;
 		const char *cn = column_name(be->mvc->sa, c);
-		const char *ntn = sql_escape_ident(be->mvc->ta, tn);
-		const char *nsn = sql_escape_ident(be->mvc->ta, sn);
+		const char *ntn = sql_escape_ident(ta, tn);
+		const char *nsn = sql_escape_ident(ta, sn);
 
 		if (ntn && nsn) {
 			size_t fqtnl = strlen(ntn) + 1 + strlen(nsn) + 1;
-			char *fqtn = SA_NEW_ARRAY(be->mvc->ta, char, fqtnl);
-			if (fqtn == NULL)
+			char *fqtn = SA_NEW_ARRAY(ta, char, fqtnl);
+			if (fqtn == NULL) {
+				ma_close(&ta_state);
 				return -1;
+			}
 			ok = 1;
 			snprintf(fqtn, fqtnl, "%s.%s", nsn, ntn);
 
 			q = newStmt(mb, sqlRef, resultSetRef);
-			if (q == NULL)
+			if (q == NULL) {
+				ma_close(&ta_state);
 				return -1;
+			}
 			getArg(q,0) = newTmpVariable(mb,TYPE_int);
 			q = pushStr(mb, q, fqtn);
 			q = pushStr(mb, q, cn);
@@ -3416,7 +3604,7 @@ stmt_output(backend *be, stmt *lst)
 			q = pushArgument(mb, q, c->nr);
 			pushInstruction(mb, q);
 		}
-		sa_reset(be->mvc->ta);
+		ma_close(&ta_state);
 		if (!ok)
 			return -1;
 	} else {
@@ -3457,12 +3645,12 @@ stmt_append(backend *be, stmt *c, stmt *a)
 	q = pushArgument(mb, q, c->nr);
 	q = pushArgument(mb, q, a->nr);
 	q = pushBit(mb, q, TRUE);
-	bool enabled = be->mvc->sa->eb.enabled;
-	be->mvc->sa->eb.enabled = false;
+	bool enabled = ma_get_eb(be->mvc->sa)->enabled;
+	ma_get_eb(be->mvc->sa)->enabled = false;
 	stmt *s = stmt_create(be->mvc->sa, st_append);
-	be->mvc->sa->eb.enabled = enabled;
+	ma_get_eb(be->mvc->sa)->enabled = enabled;
 	if(!s) {
-		freeInstruction(q);
+		freeInstruction(be->mb, q);
 		goto bailout;
 	}
 	s->op1 = c;
@@ -3475,8 +3663,8 @@ stmt_append(backend *be, stmt *c, stmt *a)
 	return s;
 
   bailout:
-	if (be->mvc->sa->eb.enabled)
-		eb_error(&be->mvc->sa->eb, be->mvc->errstr[0] ? be->mvc->errstr : mb->errors ? mb->errors : *GDKerrbuf ? GDKerrbuf : "out of memory", 1000);
+	if (ma_get_eb(be->mvc->sa)->enabled)
+		eb_error(ma_get_eb(be->mvc->sa), be->mvc->errstr[0] ? be->mvc->errstr : mb->errors ? mb->errors : *GDKerrbuf ? GDKerrbuf : "out of memory", 1000);
 	return NULL;
 }
 
@@ -3513,12 +3701,12 @@ stmt_append_bulk(backend *be, stmt *c, list *l)
 		stmt *a = n->data;
 		q = pushArgument(mb, q, a->nr);
 	}
-	bool enabled = be->mvc->sa->eb.enabled;
-	be->mvc->sa->eb.enabled = false;
+	bool enabled = ma_get_eb(be->mvc->sa)->enabled;
+	ma_get_eb(be->mvc->sa)->enabled = false;
 	stmt *s = stmt_create(be->mvc->sa, st_append_bulk);
-	be->mvc->sa->eb.enabled = enabled;
+	ma_get_eb(be->mvc->sa)->enabled = enabled;
 	if(!s) {
-		freeInstruction(q);
+		freeInstruction(be->mb, q);
 		goto bailout;
 	}
 	s->op1 = c;
@@ -3531,8 +3719,8 @@ stmt_append_bulk(backend *be, stmt *c, list *l)
 	return s;
 
   bailout:
-	if (be->mvc->sa->eb.enabled)
-		eb_error(&be->mvc->sa->eb, be->mvc->errstr[0] ? be->mvc->errstr : mb->errors ? mb->errors : *GDKerrbuf ? GDKerrbuf : "out of memory", 1000);
+	if (ma_get_eb(be->mvc->sa)->enabled)
+		eb_error(ma_get_eb(be->mvc->sa), be->mvc->errstr[0] ? be->mvc->errstr : mb->errors ? mb->errors : *GDKerrbuf ? GDKerrbuf : "out of memory", 1000);
 	return NULL;
 }
 
@@ -3549,12 +3737,12 @@ stmt_pack(backend *be, stmt *c, int n)
 		goto bailout;
 	q = pushArgument(mb, q, c->nr);
 	q = pushInt(mb, q, n);
-	bool enabled = be->mvc->sa->eb.enabled;
-	be->mvc->sa->eb.enabled = false;
+	bool enabled = ma_get_eb(be->mvc->sa)->enabled;
+	ma_get_eb(be->mvc->sa)->enabled = false;
 	stmt *s = stmt_create(be->mvc->sa, st_append);
-	be->mvc->sa->eb.enabled = enabled;
+	ma_get_eb(be->mvc->sa)->enabled = enabled;
 	if(!s) {
-		freeInstruction(q);
+		freeInstruction(be->mb, q);
 		goto bailout;
 	}
 	s->op1 = c;
@@ -3566,8 +3754,8 @@ stmt_pack(backend *be, stmt *c, int n)
 	return s;
 
   bailout:
-	if (be->mvc->sa->eb.enabled)
-		eb_error(&be->mvc->sa->eb, be->mvc->errstr[0] ? be->mvc->errstr : mb->errors ? mb->errors : *GDKerrbuf ? GDKerrbuf : "out of memory", 1000);
+	if (ma_get_eb(be->mvc->sa)->enabled)
+		eb_error(ma_get_eb(be->mvc->sa), be->mvc->errstr[0] ? be->mvc->errstr : mb->errors ? mb->errors : *GDKerrbuf ? GDKerrbuf : "out of memory", 1000);
 	return NULL;
 
 }
@@ -3585,12 +3773,12 @@ stmt_pack_add(backend *be, stmt *c, stmt *a)
 		goto bailout;
 	q = pushArgument(mb, q, c->nr);
 	q = pushArgument(mb, q, a->nr);
-	bool enabled = be->mvc->sa->eb.enabled;
-	be->mvc->sa->eb.enabled = false;
+	bool enabled = ma_get_eb(be->mvc->sa)->enabled;
+	ma_get_eb(be->mvc->sa)->enabled = false;
 	stmt *s = stmt_create(be->mvc->sa, st_append);
-	be->mvc->sa->eb.enabled = enabled;
+	ma_get_eb(be->mvc->sa)->enabled = enabled;
 	if(!s) {
-		freeInstruction(q);
+		freeInstruction(be->mb, q);
 		goto bailout;
 	}
 	s->op1 = c;
@@ -3603,13 +3791,13 @@ stmt_pack_add(backend *be, stmt *c, stmt *a)
 	return s;
 
   bailout:
-	if (be->mvc->sa->eb.enabled)
-		eb_error(&be->mvc->sa->eb, be->mvc->errstr[0] ? be->mvc->errstr : mb->errors ? mb->errors : *GDKerrbuf ? GDKerrbuf : "out of memory", 1000);
+	if (ma_get_eb(be->mvc->sa)->enabled)
+		eb_error(ma_get_eb(be->mvc->sa), be->mvc->errstr[0] ? be->mvc->errstr : mb->errors ? mb->errors : *GDKerrbuf ? GDKerrbuf : "out of memory", 1000);
 	return NULL;
 }
 
 stmt *
-stmt_claim(backend *be, sql_table *t, stmt *cnt)
+stmt_claim(backend *be, sql_table *t, stmt *cnt, int sync)
 {
 	MalBlkPtr mb = be->mb;
 	InstrPtr q = NULL;
@@ -3617,7 +3805,7 @@ stmt_claim(backend *be, sql_table *t, stmt *cnt)
 	if (!t || cnt->nr < 0)
 		goto bailout;
 	assert(t->s);				/* declared table */
-	q = newStmtArgs(mb, sqlRef, claimRef, 6);
+	q = newStmtArgs(mb, sqlRef, claimRef, sync?8:6);
 	if (q == NULL)
 		goto bailout;
 	/* returns offset or offsets */
@@ -3626,12 +3814,16 @@ stmt_claim(backend *be, sql_table *t, stmt *cnt)
 	q = pushSchema(mb, q, t);
 	q = pushStr(mb, q, t->base.name);
 	q = pushArgument(mb, q, cnt->nr);
-	bool enabled = be->mvc->sa->eb.enabled;
-	be->mvc->sa->eb.enabled = false;
+	if (sync) {
+		q = pushArgument(mb, q, sync);
+		q = pushArgument(mb, q, be->pp);
+	}
+	bool enabled = ma_get_eb(be->mvc->sa)->enabled;
+	ma_get_eb(be->mvc->sa)->enabled = false;
 	stmt *s = stmt_create(be->mvc->sa, st_claim);
-	be->mvc->sa->eb.enabled = enabled;
+	ma_get_eb(be->mvc->sa)->enabled = enabled;
 	if(!s) {
-		freeInstruction(q);
+		freeInstruction(be->mb, q);
 		goto bailout;
 	}
 	s->op1 = cnt;
@@ -3642,8 +3834,8 @@ stmt_claim(backend *be, sql_table *t, stmt *cnt)
 	return s;
 
   bailout:
-	if (be->mvc->sa->eb.enabled)
-		eb_error(&be->mvc->sa->eb, be->mvc->errstr[0] ? be->mvc->errstr : mb->errors ? mb->errors : *GDKerrbuf ? GDKerrbuf : "out of memory", 1000);
+	if (ma_get_eb(be->mvc->sa)->enabled)
+		eb_error(ma_get_eb(be->mvc->sa), be->mvc->errstr[0] ? be->mvc->errstr : mb->errors ? mb->errors : *GDKerrbuf ? GDKerrbuf : "out of memory", 1000);
 	return NULL;
 }
 
@@ -3665,8 +3857,8 @@ stmt_add_dependency_change(backend *be, sql_table *t, stmt *cnt)
 	return;
 
   bailout:
-	if (be->mvc->sa->eb.enabled)
-		eb_error(&be->mvc->sa->eb, be->mvc->errstr[0] ? be->mvc->errstr : be->mb->errors ? be->mb->errors : *GDKerrbuf ? GDKerrbuf : "out of memory", 1000);
+	if (ma_get_eb(be->mvc->sa)->enabled)
+		eb_error(ma_get_eb(be->mvc->sa), be->mvc->errstr[0] ? be->mvc->errstr : be->mb->errors ? be->mb->errors : *GDKerrbuf ? GDKerrbuf : "out of memory", 1000);
 }
 
 void
@@ -3687,8 +3879,8 @@ stmt_add_column_predicate(backend *be, sql_column *c)
 	return;
 
   bailout:
-	if (be->mvc->sa->eb.enabled)
-		eb_error(&be->mvc->sa->eb, be->mvc->errstr[0] ? be->mvc->errstr : be->mb->errors ? be->mb->errors : *GDKerrbuf ? GDKerrbuf : "out of memory", 1000);
+	if (ma_get_eb(be->mvc->sa)->enabled)
+		eb_error(ma_get_eb(be->mvc->sa), be->mvc->errstr[0] ? be->mvc->errstr : be->mb->errors ? be->mb->errors : *GDKerrbuf ? GDKerrbuf : "out of memory", 1000);
 }
 
 stmt *
@@ -3707,12 +3899,12 @@ stmt_replace(backend *be, stmt *r, stmt *id, stmt *val)
 	q = pushArgument(mb, q, id->nr);
 	q = pushArgument(mb, q, val->nr);
 	q = pushBit(mb, q, TRUE); /* forced */
-	bool enabled = be->mvc->sa->eb.enabled;
-	be->mvc->sa->eb.enabled = false;
+	bool enabled = ma_get_eb(be->mvc->sa)->enabled;
+	ma_get_eb(be->mvc->sa)->enabled = false;
 	stmt *s = stmt_create(be->mvc->sa, st_replace);
-	be->mvc->sa->eb.enabled = enabled;
+	ma_get_eb(be->mvc->sa)->enabled = enabled;
 	if(!s) {
-		freeInstruction(q);
+		freeInstruction(be->mb, q);
 		goto bailout;
 	}
 	s->op1 = r;
@@ -3727,8 +3919,8 @@ stmt_replace(backend *be, stmt *r, stmt *id, stmt *val)
 	return s;
 
   bailout:
-	if (be->mvc->sa->eb.enabled)
-		eb_error(&be->mvc->sa->eb, be->mvc->errstr[0] ? be->mvc->errstr : mb->errors ? mb->errors : *GDKerrbuf ? GDKerrbuf : "out of memory", 1000);
+	if (ma_get_eb(be->mvc->sa)->enabled)
+		eb_error(ma_get_eb(be->mvc->sa), be->mvc->errstr[0] ? be->mvc->errstr : mb->errors ? mb->errors : *GDKerrbuf ? GDKerrbuf : "out of memory", 1000);
 	return NULL;
 }
 
@@ -3745,6 +3937,7 @@ stmt_table_clear(backend *be, sql_table *t, int restart_sequences)
 			q = newStmt(mb, batRef, deleteRef);
 			if (q == NULL)
 				goto bailout;
+			q->argv[0] = l[i];
 			q = pushArgument(mb, q, l[i]);
 			pushInstruction(mb, q);
 		}
@@ -3770,8 +3963,8 @@ stmt_table_clear(backend *be, sql_table *t, int restart_sequences)
 	return s;
 
   bailout:
-	if (be->mvc->sa->eb.enabled)
-		eb_error(&be->mvc->sa->eb, be->mvc->errstr[0] ? be->mvc->errstr : mb->errors ? mb->errors : *GDKerrbuf ? GDKerrbuf : "out of memory", 1000);
+	if (ma_get_eb(be->mvc->sa)->enabled)
+		eb_error(ma_get_eb(be->mvc->sa), be->mvc->errstr[0] ? be->mvc->errstr : mb->errors ? mb->errors : *GDKerrbuf ? GDKerrbuf : "out of memory", 1000);
 	return NULL;
 }
 
@@ -3790,12 +3983,12 @@ stmt_exception(backend *be, stmt *cond, const char *errstr, int errcode)
 		goto bailout;
 	q = pushArgument(mb, q, cond->nr);
 	q = pushStr(mb, q, errstr);
-	bool enabled = be->mvc->sa->eb.enabled;
-	be->mvc->sa->eb.enabled = false;
+	bool enabled = ma_get_eb(be->mvc->sa)->enabled;
+	ma_get_eb(be->mvc->sa)->enabled = false;
 	stmt *s = stmt_create(be->mvc->sa, st_exception);
-	be->mvc->sa->eb.enabled = enabled;
+	ma_get_eb(be->mvc->sa)->enabled = enabled;
 	if(!s) {
-		freeInstruction(q);
+		freeInstruction(be->mb, q);
 		return NULL;
 	}
 	assert(cond);
@@ -3808,8 +4001,8 @@ stmt_exception(backend *be, stmt *cond, const char *errstr, int errcode)
 	return s;
 
   bailout:
-	if (be->mvc->sa->eb.enabled)
-		eb_error(&be->mvc->sa->eb, be->mvc->errstr[0] ? be->mvc->errstr : mb->errors ? mb->errors : *GDKerrbuf ? GDKerrbuf : "out of memory", 1000);
+	if (ma_get_eb(be->mvc->sa)->enabled)
+		eb_error(ma_get_eb(be->mvc->sa), be->mvc->errstr[0] ? be->mvc->errstr : mb->errors ? mb->errors : *GDKerrbuf ? GDKerrbuf : "out of memory", 1000);
 	return NULL;
 }
 
@@ -3961,12 +4154,12 @@ temporal_convert(backend *be, stmt *v, stmt *sel, sql_subtype *f, sql_subtype *t
 		}
 	}
 
-	bool enabled = be->mvc->sa->eb.enabled;
-	be->mvc->sa->eb.enabled = false;
+	bool enabled = ma_get_eb(be->mvc->sa)->enabled;
+	ma_get_eb(be->mvc->sa)->enabled = false;
 	stmt *s = stmt_create(be->mvc->sa, st_convert);
-	be->mvc->sa->eb.enabled = enabled;
+	ma_get_eb(be->mvc->sa)->enabled = enabled;
 	if(!s) {
-		freeInstruction(q);
+		freeInstruction(be->mb, q);
 		goto bailout;
 	}
 	s->op1 = v;
@@ -3982,19 +4175,20 @@ temporal_convert(backend *be, stmt *v, stmt *sel, sql_subtype *f, sql_subtype *t
 	return s;
 
   bailout:
-	if (be->mvc->sa->eb.enabled)
-		eb_error(&be->mvc->sa->eb, be->mvc->errstr[0] ? be->mvc->errstr : mb->errors ? mb->errors : *GDKerrbuf ? GDKerrbuf : "out of memory", 1000);
+	if (ma_get_eb(be->mvc->sa)->enabled)
+		eb_error(ma_get_eb(be->mvc->sa), be->mvc->errstr[0] ? be->mvc->errstr : mb->errors ? mb->errors : *GDKerrbuf ? GDKerrbuf : "out of memory", 1000);
 	return NULL;
 }
 
 stmt *
 stmt_convert(backend *be, stmt *v, stmt *sel, sql_subtype *f, sql_subtype *t)
 {
+	if (!v)
+		return NULL;
 	MalBlkPtr mb = be->mb;
 	InstrPtr q = NULL;
 	const char *convert = t->type->impl, *mod = calcRef;
 	int pushed = (v->cand && v->cand == sel), no_candidates = 0;
-	bool add_tz = false;
 	/* convert types and make sure they are rounded up correctly */
 
 	if (v->nr < 0)
@@ -4026,8 +4220,7 @@ stmt_convert(backend *be, stmt *v, stmt *sel, sql_subtype *f, sql_subtype *t)
 
 	if ((type_has_tz(f) && !type_has_tz(t) && !EC_VARCHAR(t->type->eclass)) || (!type_has_tz(f) && type_has_tz(t))) {
 		v = temporal_convert(be, v, sel, f, t, true);
-		sel = NULL;
-		pushed = 0;
+		pushed = 1;
 		if (EC_VARCHAR(f->type->eclass))
 			return v;
 	}
@@ -4079,15 +4272,13 @@ stmt_convert(backend *be, stmt *v, stmt *sel, sql_subtype *f, sql_subtype *t)
 		q = pushInt(mb, q, 3);
 	}
 	q = pushArgument(mb, q, v->nr);
-	if (add_tz)
-			q = pushLng(mb, q, be->mvc->timezone);
 	if (sel && !pushed && !v->cand) {
 		q = pushArgument(mb, q, sel->nr);
 		pushed = 1;
 	} else if (v->nrcols > 0 && !no_candidates) {
 		q = pushNilBat(mb, q);
 	}
-	if (!add_tz && (t->type->eclass == EC_DEC || EC_TEMP_FRAC(t->type->eclass) || EC_INTERVAL(t->type->eclass))) {
+	if (t->type->eclass == EC_DEC || EC_TEMP_FRAC(t->type->eclass) || EC_INTERVAL(t->type->eclass)) {
 		/* digits, scale of the result decimal */
 		q = pushInt(mb, q, t->digits);
 		if (!EC_TEMP_FRAC(t->type->eclass))
@@ -4122,12 +4313,12 @@ stmt_convert(backend *be, stmt *v, stmt *sel, sql_subtype *f, sql_subtype *t)
 */			//q = pushInt(mb, q, ((ValRecord)((atom*)(be->mvc)->args[1])->data).val.ival);
 	}
 
-	bool enabled = be->mvc->sa->eb.enabled;
-	be->mvc->sa->eb.enabled = false;
+	bool enabled = ma_get_eb(be->mvc->sa)->enabled;
+	ma_get_eb(be->mvc->sa)->enabled = false;
 	stmt *s = stmt_create(be->mvc->sa, st_convert);
-	be->mvc->sa->eb.enabled = enabled;
+	ma_get_eb(be->mvc->sa)->enabled = enabled;
 	if(!s) {
-		freeInstruction(q);
+		freeInstruction(be->mb, q);
 		goto bailout;
 	}
 	s->op1 = v;
@@ -4145,8 +4336,8 @@ stmt_convert(backend *be, stmt *v, stmt *sel, sql_subtype *f, sql_subtype *t)
 	return s;
 
   bailout:
-	if (be->mvc->sa->eb.enabled)
-		eb_error(&be->mvc->sa->eb, be->mvc->errstr[0] ? be->mvc->errstr : mb->errors ? mb->errors : *GDKerrbuf ? GDKerrbuf : "out of memory", 1000);
+	if (ma_get_eb(be->mvc->sa)->enabled)
+		eb_error(ma_get_eb(be->mvc->sa), be->mvc->errstr[0] ? be->mvc->errstr : mb->errors ? mb->errors : *GDKerrbuf ? GDKerrbuf : "out of memory", 1000);
 	return NULL;
 }
 
@@ -4182,7 +4373,7 @@ stmt_Nop(backend *be, stmt *ops, stmt *sel, sql_subfunc *f, stmt* rows)
 	InstrPtr q = NULL;
 	const char *mod = sql_func_mod(f->func), *fimp = backend_function_imp(be, f->func);
 	sql_subtype *tpe = NULL;
-	int push_cands = 0, default_nargs;
+	int push_cands = 0, default_nargs, identity = -1;
 	stmt *o = NULL, *card = NULL;
 
 	if (ops == NULL)
@@ -4200,6 +4391,14 @@ stmt_Nop(backend *be, stmt *ops, stmt *sel, sql_subfunc *f, stmt* rows)
 			if (c && o->nrcols < c->nrcols)
 				o = c;
 		}
+	}
+
+	/* handle identity */
+	if (be->pipeline && list_length(ops->op4.lval) == 1 && strcmp(f->func->base.name, "identity") == 0) {
+		InstrPtr q = newStmt(be->mb, "pipeline", "resultset");
+		pushInstruction(be->mb, q);
+		identity = getDestVar(q);
+		moveInstruction(be->mb, be->mb->stop-1, be->pp_pc++);
 	}
 
 	/* handle nullif */
@@ -4236,16 +4435,16 @@ stmt_Nop(backend *be, stmt *ops, stmt *sel, sql_subfunc *f, stmt* rows)
 	if (q == NULL) {
 		if (backend_create_subfunc(be, f, ops->op4.lval) < 0)
 			goto bailout;
-		mod = sql_func_mod(f->func);
-		fimp = convertMultiplexFcn(backend_function_imp(be, f->func));
+		mod = (identity<0)? sql_func_mod(f->func) : "pipeline";
+		fimp = (identity<0)? convertMultiplexFcn(backend_function_imp(be, f->func)) : "identity";
 		push_cands = f->func->type == F_FUNC && can_push_cands(sel, mod, fimp);
 		default_nargs = (f->res && list_length(f->res) ? list_length(f->res) : 1) + list_length(ops->op4.lval) + (o && o->nrcols > 0 ? 6 : 4);
 		if (rows) {
-			card = stmt_aggr(be, rows, NULL, NULL, sql_bind_func(be->mvc, "sys", "count", sql_bind_localtype("void"), NULL, F_AGGR, true, true), 1, 0, 1);
+			card = stmt_aggr_(be, rows, NULL, NULL, sql_bind_func(be->mvc, "sys", "count", sql_fetch_localtype(TYPE_void), NULL, F_AGGR, true, true), 1, 0, 1);
 			default_nargs++;
 		}
 
-		if (o && o->nrcols > 0 && f->func->type != F_LOADER && f->func->type != F_PROC) {
+		if (identity < 0 && o && o->nrcols > 0 && f->func->type != F_LOADER && f->func->type != F_PROC) {
 			sql_subtype *res = f->res->h->data;
 
 			q = newStmtArgs(mb, f->func->type == F_UNION ? batmalRef : malRef, multiplexRef, default_nargs);
@@ -4261,12 +4460,17 @@ stmt_Nop(backend *be, stmt *ops, stmt *sel, sql_subfunc *f, stmt* rows)
 			if (q == NULL)
 				goto bailout;
 
+			if (identity >= 0)
+				pushArgument(mb, q, identity);
 			if (rows)
 				q = pushArgument(mb, q, card->nr);
 			if (f->res && list_length(f->res)) {
 				sql_subtype *res = f->res->h->data;
 
-				setVarType(mb, getArg(q, 0), res->type->localtype);
+				if (identity >= 0)
+					setVarType(mb, getArg(q, 0), newBatType(res->type->localtype));
+				else
+					setVarType(mb, getArg(q, 0), res->type->localtype);
 			}
 		}
 		if (LANG_EXT(f->func->lang)) {
@@ -4277,15 +4481,6 @@ stmt_Nop(backend *be, stmt *ops, stmt *sel, sql_subfunc *f, stmt* rows)
 				q = pushPtr(mb, q, f);
 			else
 				q = pushPtr(mb, q, f->func);
-		}
-		if (f->func->lang == FUNC_LANG_C) {
-			q = pushBit(mb, q, 0);
-		} else if (f->func->lang == FUNC_LANG_CPP) {
-			q = pushBit(mb, q, 1);
-		}
-		if (f->func->lang == FUNC_LANG_R || f->func->lang >= FUNC_LANG_PY ||
-			f->func->lang == FUNC_LANG_C || f->func->lang == FUNC_LANG_CPP) {
-			q = pushStr(mb, q, f->func->query);
 		}
 		/* first dynamic output of copy* functions */
 		if (f->func->type == F_UNION || (f->func->type == F_LOADER && f->res != NULL))
@@ -4316,6 +4511,14 @@ stmt_Nop(backend *be, stmt *ops, stmt *sel, sql_subfunc *f, stmt* rows)
 			q = pushInt(mb, q, tpe->digits);
 			q = pushInt(mb, q, tpe->scale);
 		}
+		/* triggers without arguments need dependency on mvc var */
+		if (f->func->type == F_PROC && f->func->side_effect && list_empty(ops->op4.lval) &&
+				(strcmp(fimp, "update_schemas") == 0 ||
+				 strcmp(fimp, "update_tables") == 0)) {
+			q->argv[0] = be->mvc_var;
+			q->argv[1] = be->mvc_var;
+			q->argc++;
+		}
 		pushInstruction(mb, q);
 	}
 
@@ -4340,8 +4543,8 @@ stmt_Nop(backend *be, stmt *ops, stmt *sel, sql_subfunc *f, stmt* rows)
 	return s;
 
   bailout:
-	if (be->mvc->sa->eb.enabled)
-		eb_error(&be->mvc->sa->eb, be->mvc->errstr[0] ? be->mvc->errstr : mb->errors ? mb->errors : *GDKerrbuf ? GDKerrbuf : "out of memory", 1000);
+	if (ma_get_eb(be->mvc->sa)->enabled)
+		eb_error(ma_get_eb(be->mvc->sa), be->mvc->errstr[0] ? be->mvc->errstr : mb->errors ? mb->errors : *GDKerrbuf ? GDKerrbuf : "out of memory", 1000);
 	return NULL;
 }
 
@@ -4353,7 +4556,7 @@ stmt_direct_func(backend *be, InstrPtr q)
 		if(!s) {
 			return NULL;
 		}
-		s->flag = op_union;
+		s->flag = op_munion;
 		s->nrcols = 3;
 		s->nr = getDestVar(q);
 		s->q = q;
@@ -4374,8 +4577,9 @@ stmt_func(backend *be, stmt *ops, const char *name, sql_rel *rel, int f_union)
 		goto bailout;
 
 	if ((p = find_prop(rel->p, PROP_REMOTE)))
-		rel->p = prop_remove(rel->p, p);
+		rel->p = prop_remove(be->mvc->sa, rel->p, p);
 	/* sql_processrelation may split projections, so make sure the topmost relation only contains references */
+	int opt = rel->opt;
 	rel = rel_project(be->mvc->sa, rel, rel_projections(be->mvc, rel, NULL, 1, 1));
 	if (!(rel = sql_processrelation(be->mvc, rel, 0, 0, 1, 1)))
 		goto bailout;
@@ -4383,6 +4587,7 @@ stmt_func(backend *be, stmt *ops, const char *name, sql_rel *rel, int f_union)
 		p->p = rel->p;
 		rel->p = p;
 	}
+	rel->opt = opt;
 
 	if (monet5_create_relational_function(be->mvc, sql_private_module_name, name, rel, ops, NULL, 1) < 0)
 		goto bailout;
@@ -4411,12 +4616,12 @@ stmt_func(backend *be, stmt *ops, const char *name, sql_rel *rel, int f_union)
 	}
 
 	allocator *sa = be->mvc->sa;
-	bool enabled = be->mvc->sa->eb.enabled;
-	be->mvc->sa->eb.enabled = false;
+	bool enabled = ma_get_eb(be->mvc->sa)->enabled;
+	ma_get_eb(be->mvc->sa)->enabled = false;
 	stmt *o = NULL, *s = stmt_create(sa, st_func);
-	be->mvc->sa->eb.enabled = enabled;
+	ma_get_eb(be->mvc->sa)->enabled = enabled;
 	if(!s) {
-		freeInstruction(q);
+		freeInstruction(be->mb, q);
 		goto bailout;
 	}
 	s->op1 = ops;
@@ -4447,13 +4652,13 @@ stmt_func(backend *be, stmt *ops, const char *name, sql_rel *rel, int f_union)
 	return s;
 
   bailout:
-	if (be->mvc->sa->eb.enabled)
-		eb_error(&be->mvc->sa->eb, be->mvc->errstr[0] ? be->mvc->errstr : mb->errors ? mb->errors : *GDKerrbuf ? GDKerrbuf : "out of memory", 1000);
+	if (ma_get_eb(be->mvc->sa)->enabled)
+		eb_error(ma_get_eb(be->mvc->sa), be->mvc->errstr[0] ? be->mvc->errstr : mb->errors ? mb->errors : *GDKerrbuf ? GDKerrbuf : "out of memory", 1000);
 	return NULL;
 }
 
-stmt *
-stmt_aggr(backend *be, stmt *op1, stmt *grp, stmt *ext, sql_subfunc *op, int reduce, int no_nil, int nil_if_empty)
+static stmt *
+stmt_aggr_(backend *be, stmt *op1, stmt *grp, stmt *ext, sql_subfunc *op, int reduce, int no_nil, int nil_if_empty)
 {
 	MalBlkPtr mb = be->mb;
 	InstrPtr q = NULL;
@@ -4461,7 +4666,6 @@ stmt_aggr(backend *be, stmt *op1, stmt *grp, stmt *ext, sql_subfunc *op, int red
 	sql_subtype *res = op->res->h->data;
 	int restype = res->type->localtype;
 	bool complex_aggr = false;
-	int *stmt_nr = NULL;
 	int avg = 0;
 
 	if (op1->nr < 0)
@@ -4484,8 +4688,6 @@ stmt_aggr(backend *be, stmt *op1, stmt *grp, stmt *ext, sql_subfunc *op, int red
 	int argc = 1
 		+ 2 * avg
 		+ (LANG_EXT(op->func->lang) != 0)
-		+ 2 * (op->func->lang == FUNC_LANG_C || op->func->lang == FUNC_LANG_CPP)
-		+ (op->func->lang == FUNC_LANG_PY || op->func->lang == FUNC_LANG_R)
 		+ (op1->type != st_list ? 1 : list_length(op1->op4.lval))
 		+ (grp ? 4 : avg + 1);
 
@@ -4503,7 +4705,10 @@ stmt_aggr(backend *be, stmt *op1, stmt *grp, stmt *ext, sql_subfunc *op, int red
 			goto bailout;
 		setVarType(mb, getArg(q, 0), newBatType(restype));
 		if (avg) { /* for avg also return rest and count */
-			q = pushReturn(mb, q, newTmpVariable(mb, newBatType(TYPE_lng)));
+			/* TODO: check with the 'new-avg' branch (?). We'll
+ 			 * want to choose between avg/rest and avg+cnt */
+			if (restype != TYPE_dbl)
+				q = pushReturn(mb, q, newTmpVariable(mb, newBatType(TYPE_lng)));
 			q = pushReturn(mb, q, newTmpVariable(mb, newBatType(TYPE_lng)));
 		}
 	} else {
@@ -4511,9 +4716,13 @@ stmt_aggr(backend *be, stmt *op1, stmt *grp, stmt *ext, sql_subfunc *op, int red
 		if (q == NULL)
 			goto bailout;
 		if (complex_aggr) {
-			setVarType(mb, getArg(q, 0), restype);
+			/* TODO: why the extra "grp?newBatType(restype)"? */
+			setVarType(mb, getArg(q, 0), grp?newBatType(restype):restype);
 			if (avg) { /* for avg also return rest and count */
-				q = pushReturn(mb, q, newTmpVariable(mb, TYPE_lng));
+				/* TODO: check with the 'new-avg' branch (?). We'll
+				 * want to choose between avg/rest and avg+cnt */
+				if (restype != TYPE_dbl)
+					q = pushReturn(mb, q, newTmpVariable(mb, TYPE_lng));
 				q = pushReturn(mb, q, newTmpVariable(mb, TYPE_lng));
 			}
 		}
@@ -4521,34 +4730,16 @@ stmt_aggr(backend *be, stmt *op1, stmt *grp, stmt *ext, sql_subfunc *op, int red
 
 	if (LANG_EXT(op->func->lang))
 		q = pushPtr(mb, q, op->func);
-	if (op->func->lang == FUNC_LANG_R ||
-		op->func->lang >= FUNC_LANG_PY ||
-		op->func->lang == FUNC_LANG_C ||
-		op->func->lang == FUNC_LANG_CPP) {
-		if (!grp) {
-			setVarType(mb, getArg(q, 0), restype);
-		}
-		if (op->func->lang == FUNC_LANG_C) {
-			q = pushBit(mb, q, 0);
-		} else if (op->func->lang == FUNC_LANG_CPP) {
-			q = pushBit(mb, q, 1);
-		}
- 		q = pushStr(mb, q, op->func->query);
-	}
 
 	if (op1->type != st_list) {
 		q = pushArgument(mb, q, op1->nr);
 	} else {
-		int i;
 		node *n;
 
-		for (i=0, n = op1->op4.lval->h; n; n = n->next, i++) {
+		for (n = op1->op4.lval->h; n; n = n->next) {
 			stmt *op = n->data;
 
-			if (stmt_nr)
-				q = pushArgument(mb, q, stmt_nr[i]);
-			else
-				q = pushArgument(mb, q, op->nr);
+			q = pushArgument(mb, q, op->nr);
 		}
 	}
 	if (grp) {
@@ -4568,12 +4759,12 @@ stmt_aggr(backend *be, stmt *op1, stmt *grp, stmt *ext, sql_subfunc *op, int red
 		q = pushBit(mb, q, no_nil);
 	}
 
-	bool enabled = be->mvc->sa->eb.enabled;
-	be->mvc->sa->eb.enabled = false;
+	bool enabled = ma_get_eb(be->mvc->sa)->enabled;
+	ma_get_eb(be->mvc->sa)->enabled = false;
 	stmt *s = stmt_create(be->mvc->sa, st_aggr);
-	be->mvc->sa->eb.enabled = enabled;
+	ma_get_eb(be->mvc->sa)->enabled = enabled;
 	if(!s) {
-		freeInstruction(q);
+		freeInstruction(be->mb, q);
 		goto bailout;
 	}
 	s->op1 = op1;
@@ -4595,9 +4786,22 @@ stmt_aggr(backend *be, stmt *op1, stmt *grp, stmt *ext, sql_subfunc *op, int red
 	return s;
 
   bailout:
-	if (be->mvc->sa->eb.enabled)
-		eb_error(&be->mvc->sa->eb, be->mvc->errstr[0] ? be->mvc->errstr : mb->errors ? mb->errors : *GDKerrbuf ? GDKerrbuf : "out of memory", 1000);
+	if (ma_get_eb(be->mvc->sa)->enabled)
+		eb_error(ma_get_eb(be->mvc->sa), be->mvc->errstr[0] ? be->mvc->errstr : mb->errors ? mb->errors : *GDKerrbuf ? GDKerrbuf : "out of memory", 1000);
 	return NULL;
+}
+
+stmt *
+stmt_aggr(backend *be, stmt *op1, stmt *grp, stmt *ext, sql_subfunc *op, int reduce, int no_nil, int nil_if_empty)
+{
+	/* TODO: use the correct stmt_aggr function in rel_bin, instead of
+	 * (mis)use this function to distinguish pipeline or non-pipeline. Then
+	 * we can also remove '#include "sql_pp_statement.h"'
+	 */
+	if (be->pipeline)
+		return stmt_pp_aggr(be, op1, grp, ext, op, reduce, no_nil, nil_if_empty);
+	else
+		return stmt_aggr_(be, op1, grp, ext, op, reduce, no_nil, nil_if_empty);
 }
 
 static stmt *
@@ -4637,7 +4841,7 @@ stmt_alias(backend *be, stmt *op1, int label, const char *tname, const char *ali
 stmt *
 stmt_as(backend *be, stmt *s, stmt *org)
 {
-	assert(org->type == st_alias);
+	assert(org->label);
 	return stmt_alias_(be, s, org->label, org->tname, org->cname);
 }
 
@@ -4657,11 +4861,11 @@ tail_type(stmt *st)
 		case st_tunion:
 		case st_tdiff:
 		case st_tinter:
-			return sql_bind_localtype("oid");
+			return sql_fetch_localtype(TYPE_oid);
 		case st_uselect2:
 			if (!st->reduce)
-				return sql_bind_localtype("bit");
-			return sql_bind_localtype("oid");
+				return sql_fetch_localtype(TYPE_bit);
+			return sql_fetch_localtype(TYPE_oid);
 		case st_alias:
 			if (!st->op1)
 				return &st->op4.typeval;
@@ -4680,9 +4884,9 @@ tail_type(stmt *st)
 			return &st->op4.cval->type;
 		case st_idxbat:
 			if (hash_index(st->op4.idxval->type)) {
-				return sql_bind_localtype("lng");
+				return sql_fetch_localtype(TYPE_lng);
 			} else if (oid_index(st->op4.idxval->type)) {
-				return sql_bind_localtype("oid");
+				return sql_fetch_localtype(TYPE_oid);
 			}
 			/* fall through */
 		case st_join:
@@ -4697,11 +4901,11 @@ tail_type(stmt *st)
 		case st_group:
 		case st_tid:
 		case st_mirror:
-			return sql_bind_localtype("oid");
+			return sql_fetch_localtype(TYPE_oid);
 		case st_result:
 			return &st->op4.typeval;
 		case st_table_clear:
-			return sql_bind_localtype("lng");
+			return sql_fetch_localtype(TYPE_lng);
 		case st_aggr:
 		case st_Nop: {
 			list *res = st->op4.funcval->res;
@@ -4725,8 +4929,10 @@ tail_type(stmt *st)
 		case st_exception:
 			return NULL;
 		case st_table:
-			return sql_bind_localtype("bat");
+			return sql_fetch_battype();
 		default:
+			if (st->op4.typeval.type)
+				return &st->op4.typeval;
 			assert(0);
 			return NULL;
 		}
@@ -4763,7 +4969,7 @@ func_name(allocator *sa, const char *n1, const char *n2)
 	if (!sa)
 		return n1;
 	if (!n2)
-		return sa_strdup(sa, n1);
+		return ma_strdup(sa, n1);
 	l2 = _strlen(n2);
 
 	if (l2 > 16) {		/* only support short names */
@@ -4841,8 +5047,6 @@ _column_name(allocator *sa, stmt *st)
 	case st_var:
 	case st_temp:
 	case st_single:
-		if (sa)
-			return sa_strdup(sa, "single_value");
 		return "single_value";
 
 	case st_list:
@@ -4926,7 +5130,7 @@ stmt_cond(backend *be, stmt *cond, stmt *outer, int loop /* 0 if, 1 while */, in
 	if (cond->nr < 0)
 		goto bailout;
 	if (anti) {
-		sql_subtype *bt = sql_bind_localtype("bit");
+		sql_subtype *bt = sql_fetch_localtype(TYPE_bit);
 		sql_subfunc *not = sql_bind_func(be->mvc, "sys", "not", bt, NULL, F_FUNC, true, true);
 		sql_subfunc *or = sql_bind_func(be->mvc, "sys", "or", bt, bt, F_FUNC, true, true);
 		sql_subfunc *isnull = sql_bind_func(be->mvc, "sys", "isnull", bt, NULL, F_FUNC, true, true);
@@ -4961,12 +5165,12 @@ stmt_cond(backend *be, stmt *cond, stmt *outer, int loop /* 0 if, 1 while */, in
 		q = pushArgument(mb, q, c);
 	}
 
-	bool enabled = be->mvc->sa->eb.enabled;
-	be->mvc->sa->eb.enabled = false;
+	bool enabled = ma_get_eb(be->mvc->sa)->enabled;
+	ma_get_eb(be->mvc->sa)->enabled = false;
 	stmt *s = stmt_create(be->mvc->sa, st_cond);
-	be->mvc->sa->eb.enabled = enabled;
+	ma_get_eb(be->mvc->sa)->enabled = enabled;
 	if(!s) {
-		freeInstruction(q);
+		freeInstruction(be->mb, q);
 		goto bailout;
 	}
 	s->flag = be->mvc_var; /* keep the mvc_var of the outer context */
@@ -4977,8 +5181,8 @@ stmt_cond(backend *be, stmt *cond, stmt *outer, int loop /* 0 if, 1 while */, in
 	return s;
 
   bailout:
-	if (be->mvc->sa->eb.enabled)
-		eb_error(&be->mvc->sa->eb, be->mvc->errstr[0] ? be->mvc->errstr : mb->errors ? mb->errors : *GDKerrbuf ? GDKerrbuf : "out of memory", 1000);
+	if (ma_get_eb(be->mvc->sa)->enabled)
+		eb_error(ma_get_eb(be->mvc->sa), be->mvc->errstr[0] ? be->mvc->errstr : mb->errors ? mb->errors : *GDKerrbuf ? GDKerrbuf : "out of memory", 1000);
 	return NULL;
 }
 
@@ -4993,6 +5197,14 @@ stmt_control_end(backend *be, stmt *cond)
 
 	if (cond->loop) {	/* while */
 		/* redo barrier */
+		if (be->updates) {
+			q = newStmt(be->mb, sqlRef, mvcRef);
+			q->argv[0] = be->mvc_var;
+			q->argv[1] = be->mvc_var;
+			q->argc++;
+			pushInstruction(be->mb, q);
+			be->updates = false;
+		}
 		q = newAssignment(mb);
 		if (q == NULL)
 			goto bailout;
@@ -5009,12 +5221,12 @@ stmt_control_end(backend *be, stmt *cond)
 		q->barrier = EXITsymbol;
 	}
 	be->mvc_var = cond->flag; /* restore old mvc_var from before the barrier */
-	bool enabled = be->mvc->sa->eb.enabled;
-	be->mvc->sa->eb.enabled = false;
+	bool enabled = ma_get_eb(be->mvc->sa)->enabled;
+	ma_get_eb(be->mvc->sa)->enabled = false;
 	stmt *s = stmt_create(be->mvc->sa, st_control_end);
-	be->mvc->sa->eb.enabled = enabled;
+	ma_get_eb(be->mvc->sa)->enabled = enabled;
 	if(!s) {
-		freeInstruction(q);
+		freeInstruction(be->mb, q);
 		goto bailout;
 	}
 	s->op1 = cond;
@@ -5023,8 +5235,8 @@ stmt_control_end(backend *be, stmt *cond)
 	return s;
 
   bailout:
-	if (be->mvc->sa->eb.enabled)
-		eb_error(&be->mvc->sa->eb, be->mvc->errstr[0] ? be->mvc->errstr : mb->errors ? mb->errors : *GDKerrbuf ? GDKerrbuf : "out of memory", 1000);
+	if (ma_get_eb(be->mvc->sa)->enabled)
+		eb_error(ma_get_eb(be->mvc->sa), be->mvc->errstr[0] ? be->mvc->errstr : mb->errors ? mb->errors : *GDKerrbuf ? GDKerrbuf : "out of memory", 1000);
 	return NULL;
 }
 
@@ -5032,13 +5244,12 @@ stmt_control_end(backend *be, stmt *cond)
 static InstrPtr
 dump_cols(MalBlkPtr mb, list *l, InstrPtr q)
 {
-	int i;
 	node *n;
 
 	if (q == NULL)
 		return NULL;
 	q->retc = q->argc = 0;
-	for (i = 0, n = l->h; n; n = n->next, i++) {
+	for (n = l->h; n; n = n->next) {
 		stmt *c = n->data;
 
 		q = pushArgument(mb, q, c->nr);
@@ -5047,7 +5258,7 @@ dump_cols(MalBlkPtr mb, list *l, InstrPtr q)
 		return NULL;
 	q->retc = q->argc;
 	/* Let's make it a proper assignment */
-	for (i = 0, n = l->h; n; n = n->next, i++) {
+	for (n = l->h; n; n = n->next) {
 		stmt *c = n->data;
 
 		q = pushArgument(mb, q, c->nr);
@@ -5079,12 +5290,12 @@ stmt_return(backend *be, stmt *val, int nr_declared_tables)
 		q = pushArgument(mb, q, val->nr);
 	}
 
-	bool enabled = be->mvc->sa->eb.enabled;
-	be->mvc->sa->eb.enabled = false;
+	bool enabled = ma_get_eb(be->mvc->sa)->enabled;
+	ma_get_eb(be->mvc->sa)->enabled = false;
 	stmt *s = stmt_create(be->mvc->sa, st_return);
-	be->mvc->sa->eb.enabled = enabled;
+	ma_get_eb(be->mvc->sa)->enabled = enabled;
 	if(!s) {
-		freeInstruction(q);
+		freeInstruction(be->mb, q);
 		goto bailout;
 	}
 	s->op1 = val;
@@ -5095,8 +5306,8 @@ stmt_return(backend *be, stmt *val, int nr_declared_tables)
 	return s;
 
   bailout:
-	if (be->mvc->sa->eb.enabled)
-		eb_error(&be->mvc->sa->eb, be->mvc->errstr[0] ? be->mvc->errstr : mb->errors ? mb->errors : *GDKerrbuf ? GDKerrbuf : "out of memory", 1000);
+	if (ma_get_eb(be->mvc->sa)->enabled)
+		eb_error(ma_get_eb(be->mvc->sa), be->mvc->errstr[0] ? be->mvc->errstr : mb->errors ? mb->errors : *GDKerrbuf ? GDKerrbuf : "out of memory", 1000);
 	return NULL;
 }
 
@@ -5144,10 +5355,10 @@ stmt_assign(backend *be, const char *sname, const char *varname, stmt *val, int 
 	}
 	q = pushArgument(mb, q, val->nr);
 
-	bool enabled = be->mvc->sa->eb.enabled;
-	be->mvc->sa->eb.enabled = false;
+	bool enabled = ma_get_eb(be->mvc->sa)->enabled;
+	ma_get_eb(be->mvc->sa)->enabled = false;
 	stmt *s = stmt_create(be->mvc->sa, st_assign);
-	be->mvc->sa->eb.enabled = enabled;
+	ma_get_eb(be->mvc->sa)->enabled = enabled;
 	if(!s) {
 		goto bailout;
 	}
@@ -5158,8 +5369,8 @@ stmt_assign(backend *be, const char *sname, const char *varname, stmt *val, int 
 	return s;
 
   bailout:
-	if (be->mvc->sa->eb.enabled)
-		eb_error(&be->mvc->sa->eb, be->mvc->errstr[0] ? be->mvc->errstr : mb->errors ? mb->errors : *GDKerrbuf ? GDKerrbuf : "out of memory", 1000);
+	if (ma_get_eb(be->mvc->sa)->enabled)
+		eb_error(ma_get_eb(be->mvc->sa), be->mvc->errstr[0] ? be->mvc->errstr : mb->errors ? mb->errors : *GDKerrbuf ? GDKerrbuf : "out of memory", 1000);
 	return NULL;
 }
 
@@ -5179,12 +5390,12 @@ const_column(backend *be, stmt *val)
 	setVarType(mb, getArg(q, 0), newBatType(tt));
 	q = pushArgument(mb, q, val->nr);
 
-	bool enabled = be->mvc->sa->eb.enabled;
-	be->mvc->sa->eb.enabled = false;
+	bool enabled = ma_get_eb(be->mvc->sa)->enabled;
+	ma_get_eb(be->mvc->sa)->enabled = false;
 	stmt *s = stmt_create(be->mvc->sa, st_single);
-	be->mvc->sa->eb.enabled = enabled;
+	ma_get_eb(be->mvc->sa)->enabled = enabled;
 	if(!s) {
-		freeInstruction(q);
+		freeInstruction(be->mb, q);
 		goto bailout;
 	}
 	s->op1 = val;
@@ -5199,8 +5410,8 @@ const_column(backend *be, stmt *val)
 	return s;
 
   bailout:
-	if (be->mvc->sa->eb.enabled)
-		eb_error(&be->mvc->sa->eb, be->mvc->errstr[0] ? be->mvc->errstr : mb->errors ? mb->errors : *GDKerrbuf ? GDKerrbuf : "out of memory", 1000);
+	if (ma_get_eb(be->mvc->sa)->enabled)
+		eb_error(ma_get_eb(be->mvc->sa), be->mvc->errstr[0] ? be->mvc->errstr : mb->errors ? mb->errors : *GDKerrbuf ? GDKerrbuf : "out of memory", 1000);
 	return NULL;
 }
 
@@ -5230,18 +5441,19 @@ stmt_fetch(backend *be, stmt *val)
 	q = pushArgument(mb, q, val->nr);
 	q = pushOid(mb, q, 0);
 
-	bool enabled = be->mvc->sa->eb.enabled;
-	be->mvc->sa->eb.enabled = false;
+	bool enabled = ma_get_eb(be->mvc->sa)->enabled;
+	ma_get_eb(be->mvc->sa)->enabled = false;
 	stmt *s = stmt_create(be->mvc->sa, st_single);
-	be->mvc->sa->eb.enabled = enabled;
+	ma_get_eb(be->mvc->sa)->enabled = enabled;
 	if(!s) {
-		freeInstruction(q);
+		freeInstruction(be->mb, q);
 		goto bailout;
 	}
 	s->op1 = val;
 	s->op4.typeval = *ct;
 	s->nrcols = 0;
 
+	s->label = val->label;
 	s->tname = val->tname;
 	s->cname = val->cname;
 	s->nr = getDestVar(q);
@@ -5250,8 +5462,8 @@ stmt_fetch(backend *be, stmt *val)
 	return s;
 
   bailout:
-	if (be->mvc->sa->eb.enabled)
-		eb_error(&be->mvc->sa->eb, be->mvc->errstr[0] ? be->mvc->errstr : mb->errors ? mb->errors : *GDKerrbuf ? GDKerrbuf : "out of memory", 1000);
+	if (ma_get_eb(be->mvc->sa)->enabled)
+		eb_error(ma_get_eb(be->mvc->sa), be->mvc->errstr[0] ? be->mvc->errstr : mb->errors ? mb->errors : *GDKerrbuf ? GDKerrbuf : "out of memory", 1000);
 	return NULL;
 }
 
@@ -5264,10 +5476,30 @@ stmt_rename(backend *be, sql_exp *exp, stmt *s )
 	stmt *o = s;
 
 	if (!name && exp_is_atom(exp))
-		name = sa_strdup(be->mvc->sa, "single_value");
+		name = "single_value";
 	assert(name);
 	s = stmt_alias(be, s, label, rname, name);
 	if (o->flag & OUTER_ZERO)
 		s->flag |= OUTER_ZERO;
+	return s;
+}
+
+stmt *
+stmt_instruction(backend *be, InstrPtr p, stmt *op1 )
+{
+	stmt *s = stmt_create(be->mvc->sa, st_alias);
+	if(!s) {
+		return NULL;
+	}
+	s->op1 = op1;
+	s->nrcols = op1->nrcols;
+	s->key = op1->key;
+	s->aggr = op1->aggr;
+
+	s->label = op1->label;
+	s->tname = op1->tname;
+	s->cname = op1->cname;
+	s->nr = getArg(p, 0);
+	s->q = p;
 	return s;
 }

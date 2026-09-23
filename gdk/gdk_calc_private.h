@@ -3,18 +3,21 @@
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024, 2025 MonetDB Foundation;
- * Copyright August 2008 - 2023 MonetDB B.V.;
- * Copyright 1997 - July 2008 CWI.
+ * For copyright information, see the file debian/copyright.
  */
+
+#ifndef _GDK_CALC_PRIVATE_H_
+#define _GDK_CALC_PRIVATE_H_
 
 /* This file contains shared definitions for gdk_calc.c and gdk_aggr.c */
 
 #ifndef LIBGDK
 #error this file should not be included outside its source directory
 #endif
+
+#include "gdk.h"
 
 /* signed version of BUN */
 #if SIZEOF_BUN == SIZEOF_INT
@@ -33,23 +36,29 @@
 
 #define GT(a, b)	((bit) ((a) > (b)))
 
-#include "gdk_cand.h"
-
+#if defined(__aarch64__) && (!defined(__clang__) || __clang_major__ >= 21)
+/* compiling with clang on Ubuntu 24.04 on aarch64 (aka arm64) fails
+ * when using __builtin_mul_overflow, so we avoid using it when using
+ * the version of clang that is installed on said system (clang on
+ * Ubuntu 26.04 does work) */
 #ifdef __has_builtin
 #if __has_builtin(__builtin_add_overflow)
-#define OP_WITH_CHECK(lft, rgt, dst, op, max, on_overflow)		\
+#define OP_WITH_CHECK(lft, rgt, TYPE3, dst, op, max, on_overflow)	\
 	do {								\
+		TYPE3 old = dst;					\
 		if (__builtin_##op##_overflow(lft, rgt, &(dst)) ||	\
 		    (dst) < -(max) /*|| (dst) > (max)*/) {		\
+			dst = old;					\
 			on_overflow;					\
 		}							\
 	} while (0)
-#define UOP_WITH_CHECK(lft, rgt, dst, op, max, on_overflow)		\
+#define UOP_WITH_CHECK(lft, rgt, TYPE3, dst, op, max, on_overflow)		\
 	do {								\
 		if (__builtin_##op##_overflow(lft, rgt, &(dst))) {	\
 			on_overflow;					\
 		}							\
 	} while (0)
+#endif
 #endif
 #endif
 
@@ -76,9 +85,9 @@
 #ifdef OP_WITH_CHECK
 /* integer version using Gnu CC builtin function for overflow check */
 #define ADDI_WITH_CHECK(lft, rgt, TYPE3, dst, max, on_overflow)		\
-	OP_WITH_CHECK(lft, rgt, dst, add, max, on_overflow)
+	OP_WITH_CHECK(lft, rgt, TYPE3, dst, add, max, on_overflow)
 #define ADDU_WITH_CHECK(lft, rgt, TYPE3, dst, max, on_overflow)		\
-	UOP_WITH_CHECK(lft, rgt, dst, add, max, on_overflow)
+	UOP_WITH_CHECK(lft, rgt, TYPE3, dst, add, max, on_overflow)
 #else
 /* integer version using generic version */
 #define ADDI_WITH_CHECK(lft, rgt, TYPE3, dst, max, on_overflow) \
@@ -120,9 +129,9 @@
 #ifdef OP_WITH_CHECK
 /* integer version using Gnu CC builtin function for overflow check */
 #define SUBI_WITH_CHECK(lft, rgt, TYPE3, dst, max, on_overflow)		\
-	OP_WITH_CHECK(lft, rgt, dst, sub, max, on_overflow)
+	OP_WITH_CHECK(lft, rgt, TYPE3, dst, sub, max, on_overflow)
 #define SUBU_WITH_CHECK(lft, rgt, TYPE3, dst, max, on_overflow)		\
-	UOP_WITH_CHECK(lft, rgt, dst, sub, max, on_overflow)
+	UOP_WITH_CHECK(lft, rgt, TYPE3, dst, sub, max, on_overflow)
 #else
 /* integer version using generic version */
 #define SUBI_WITH_CHECK(lft, rgt, TYPE3, dst, max, on_overflow) \
@@ -157,9 +166,9 @@
 #ifdef OP_WITH_CHECK
 /* integer version using Gnu CC builtin function for overflow check */
 #define MULI4_WITH_CHECK(lft, rgt, TYPE3, dst, max, TYPE4, on_overflow) \
-	OP_WITH_CHECK(lft, rgt, dst, mul, max, on_overflow)
+	OP_WITH_CHECK(lft, rgt, TYPE3, dst, mul, max, on_overflow)
 #define MULU4_WITH_CHECK(lft, rgt, TYPE3, dst, max, TYPE4, on_overflow) \
-	OP_WITH_CHECK(lft, rgt, dst, mul, max, on_overflow)
+	OP_WITH_CHECK(lft, rgt, TYPE3, dst, mul, max, on_overflow)
 #else
 /* integer version using generic version */
 #define MULI4_WITH_CHECK(lft, rgt, TYPE3, dst, max, TYPE4, on_overflow) \
@@ -266,7 +275,7 @@
 #ifdef HAVE_HGE
 #ifdef OP_WITH_CHECK
 #define HGEMUL_CHECK(lft, rgt, dst, max, on_overflow)			\
-	OP_WITH_CHECK(lft, rgt, dst, mul, max, on_overflow)
+	OP_WITH_CHECK(lft, rgt, hge, dst, mul, max, on_overflow)
 #else
 #define HGEMUL_CHECK(lft, rgt, dst, max, on_overflow)			\
 	do {								\
@@ -808,3 +817,5 @@ BATcalcmuldivmod(BAT *b1, BAT *b2, BAT *s1, BAT *s2, int tp,
 				       struct canditer *restrict,
 				       oid, oid, const char *),
 		 const char *func);
+
+#endif	/* _GDK_CALC_PRIVATE_H_ */

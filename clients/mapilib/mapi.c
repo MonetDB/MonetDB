@@ -3,11 +3,9 @@
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024, 2025 MonetDB Foundation;
- * Copyright August 2008 - 2023 MonetDB B.V.;
- * Copyright 1997 - July 2008 CWI.
+ * For copyright information, see the file debian/copyright.
  */
 
 /*
@@ -1271,7 +1269,7 @@ mapi_impl_log_record(Mapi mid, const char *funcname, long line, const char *mark
 void
 mapi_impl_log_data(Mapi mid, const char *filename, long line, const char *mark, const char *start, size_t len)
 {
-	const char hexdigits[] = "0123456789abcdef";
+	static const char hexdigits[] = "0123456789abcdef";
 	if (mid->tracelog == NULL)
 		return;
 
@@ -1552,7 +1550,7 @@ add_error(struct MapiResultSet *result, char *error)
 	     (error[4] >= 'A' && error[4] <= 'Z'))) {
 		if (result->errorstr == NULL) {
 			/* remember SQLSTATE for first error */
-			strcpy_len(result->sqlstate, error,
+			strtcpy(result->sqlstate, error,
 				   sizeof(result->sqlstate));
 		}
 		/* skip SQLSTATE */
@@ -1794,10 +1792,16 @@ mapi_new(msettings *settings)
 	}
 	if (settings == NULL) {
 		settings = msettings_create();
-		if (settings == NULL) {
-			mapi_destroy(mid);
-			return NULL;
-		}
+	} else if (msettings_get_allocator(settings, NULL) != NULL) {
+		// it uses a custom allocator, reallocate using regular
+		msettings *old = settings;
+		settings = msettings_clone(old);
+		if (settings)
+			msettings_destroy(old);
+	}
+	if (settings == NULL) {
+		mapi_destroy(mid);
+		return NULL;
 	}
 	mid->settings = settings;
 	mid->blk.buf[0] = 0;
@@ -1923,11 +1927,9 @@ mapi_mapiuri(const char *url, const char *user, const char *pass, const char *la
 		return mid;
 	}
 
-	char *error_message = NULL;
-	if (!msettings_parse_url(mid->settings, url, &error_message)) {
-		char *msg = error_message ? error_message : "malloc failed";
-		mapi_setError(mid, msg, __func__, MERROR);
-		free(error_message);
+	const char *error_message = msettings_parse_url(mid->settings, url);
+	if (error_message) {
+		mapi_setError(mid, error_message, __func__, MERROR);
 		return mid;
 	}
 
@@ -2655,7 +2657,7 @@ mapi_param_store(MapiHdl hdl)
 				free(val);
 				break;
 			default:
-				strcpy_len(hdl->query + k, src, lim - k);
+				strtcpy(hdl->query + k, src, lim - k);
 				break;
 			}
 		}
@@ -2692,7 +2694,7 @@ read_line(Mapi mid)
 		ssize_t len;
 
 		if (mid->blk.lim - mid->blk.end < BLOCK) {
-			int len;
+			size_t len;
 
 			len = mid->blk.lim;
 			if (mid->blk.nxt <= BLOCK) {
@@ -2712,7 +2714,7 @@ read_line(Mapi mid)
 
 		/* fetch one more block */
 		if (mid->trace)
-			printf("fetch next block: start at:%d\n", mid->blk.end);
+			printf("fetch next block: start at:%zu\n", mid->blk.end);
 		for (;;) {
 			len = mnstr_read(mid->from, mid->blk.buf + mid->blk.end, 1, BLOCK);
 			if (len == -1 && mnstr_errnr(mid->from) == MNSTR_INTERRUPT) {
@@ -2746,7 +2748,7 @@ read_line(Mapi mid)
 			mid->blk.buf[mid->blk.end + 1] = '\n';
 			mid->blk.buf[mid->blk.end + 2] = 0;
 		}
-		mid->blk.end += (int) len;
+		mid->blk.end += len;
 	}
 	if (mid->trace) {
 		printf("got complete block: \n");
@@ -2757,7 +2759,7 @@ read_line(Mapi mid)
 	assert(nl);
 	*nl++ = 0;
 	reply = mid->blk.buf + mid->blk.nxt;
-	mid->blk.nxt = (int) (nl - mid->blk.buf);
+	mid->blk.nxt = nl - mid->blk.buf;
 
 	if (mid->trace)
 		printf("read_line:%s\n", reply);
@@ -3125,7 +3127,10 @@ parse_header_line(MapiHdl hdl, char *line, struct MapiResultSet *result)
 
 		if (result->fieldcnt > result->maxfields) {
 			REALLOC(result->fields, result->fieldcnt);
-			memset(result->fields + result->maxfields, 0, (result->fieldcnt - result->maxfields) * sizeof(*result->fields));
+			for (int i = result->maxfields; i < result->fieldcnt; i++)
+				result->fields[i] = (struct MapiColumn) {
+					.columnlength = -1,
+				};
 			result->maxfields = result->fieldcnt;
 		}
 
@@ -3160,7 +3165,10 @@ parse_header_line(MapiHdl hdl, char *line, struct MapiResultSet *result)
 		result->fieldcnt = n;
 		if (n > result->maxfields) {
 			REALLOC(result->fields, n);
-			memset(result->fields + result->maxfields, 0, (n - result->maxfields) * sizeof(*result->fields));
+			for (int i = result->maxfields; i < n; i++)
+				result->fields[i] = (struct MapiColumn) {
+					.columnlength = -1,
+				};
 			result->maxfields = n;
 		}
 	}
@@ -3189,7 +3197,7 @@ parse_header_line(MapiHdl hdl, char *line, struct MapiResultSet *result)
 		result->fieldcnt = n;
 		for (i = 0; i < n; i++) {
 			if (anchors[i])
-				result->fields[i].columnlength = atoi(anchors[i]);
+				result->fields[i].columnlength = (int64_t) strtoll(anchors[i], NULL, 10);
 		}
 	} else if (strcmp(tag, "table_name") == 0) {
 		result->fieldcnt = n;
@@ -3683,17 +3691,14 @@ mapi_query_part(MapiHdl hdl, const char *query, size_t size)
 	mid->active = hdl;
 	/* remember the query just for the error messages */
 	if (hdl->query == NULL) {
-		hdl->query = malloc(size + 1);
-		if (hdl->query) {
-			strcpy_len(hdl->query, query, size + 1);
-		}
+		hdl->query = strndup(query, size);
 	} else {
 		size_t sz = strlen(hdl->query);
 		char *q;
 
 		if (sz < 512 &&
 		    (q = realloc(hdl->query, sz + size + 1)) != NULL) {
-			strcpy_len(q + sz, query, size + 1);
+			strtcpy(q + sz, query, size + 1);
 			hdl->query = q;
 		}
 	}
@@ -3908,11 +3913,11 @@ mapi_fetch_line(MapiHdl hdl)
 		hdl->mid->active = hdl;
 		hdl->active = result;
 		mapi_log_record(hdl->mid, "W", "X" "export %d %" PRId64 "\n",
-				     result->tableid,
-				     result->cache.first + result->cache.tuplecount);
+				result->tableid,
+				result->cache.first + result->cache.tuplecount);
 		int e;
 		if ((e = mnstr_printf(hdl->mid->to, "X" "export %d %" PRId64 "\n",
-				 result->tableid,
+				      result->tableid,
 				      result->cache.first + result->cache.tuplecount)) < 0 ||
 		    (e = mnstr_flush(hdl->mid->to, MNSTR_FLUSH_DATA)) < 0)
 			check_stream(hdl->mid, hdl->mid->to, e, "sending export command", NULL);
@@ -4068,8 +4073,7 @@ unquote(const char *msg, char **str, const char **next, int endchar, size_t *len
 			p++;
 		}
 		len = s - msg;
-		*str = malloc(len + 1);
-		strcpy_len(*str, msg, len + 1);
+		*str = strndup(msg, len);
 
 		if (next)
 			*next = p;
@@ -4341,25 +4345,23 @@ mapi_slice_row(struct MapiResultSet *result, int cr)
 		free(p);
 	}
 	if (i != result->fieldcnt) {
-		int j;
-		for (j = 0; j < result->fieldcnt; j++) {
-			if (result->fields[j].columnname)
-				free(result->fields[j].columnname);
-			result->fields[j].columnname = NULL;
-			if (result->fields[j].columntype)
-				free(result->fields[j].columntype);
-			result->fields[j].columntype = NULL;
-			if (result->fields[j].tablename)
-				free(result->fields[j].tablename);
-			result->fields[j].tablename = NULL;
-			result->fields[j].columnlength = 0;
+		for (int j = 0; j < result->fieldcnt; j++) {
+			free(result->fields[j].columnname);
+			free(result->fields[j].columntype);
+			free(result->fields[j].tablename);
+			result->fields[j] = (struct MapiColumn) {
+				.columnlength = -1,
+			};
 		}
 	}
 	if (i > result->fieldcnt) {
 		result->fieldcnt = i;
 		if (i > result->maxfields) {
 			REALLOC(result->fields, i);
-			memset(result->fields + result->maxfields, 0, (i - result->maxfields) * sizeof(*result->fields));
+			for (int j = result->maxfields; j < i; j++)
+				result->fields[j] = (struct MapiColumn) {
+					.columnlength = -1,
+				};
 			result->maxfields = i;
 		}
 	}
@@ -4432,7 +4434,7 @@ mapi_fetch_all_rows(MapiHdl hdl)
 			mid->active = hdl;
 			hdl->active = result;
 			mapi_log_record(mid, "SEND", "X" "export %d %" PRId64 "\n",
-					     result->tableid, result->cache.first + result->cache.tuplecount);
+					result->tableid, result->cache.first + result->cache.tuplecount);
 			int e;
 			if ((e = mnstr_printf(mid->to, "X" "export %d %" PRId64 "\n",
 					      result->tableid, result->cache.first + result->cache.tuplecount)) < 0 ||
@@ -4573,14 +4575,65 @@ mapi_get_table(MapiHdl hdl, int fnr)
 	return 0;
 }
 
+#include "mutf8.h"
+
+static size_t
+strwidth(const char *s)
+{
+	if (s == NULL)
+		return 0;
+	size_t len = 0;
+
+	for (uint32_t state = 0, codepoint = 0; *s; s++) {
+		switch (decode(&state, &codepoint, (uint8_t) *s)) {
+		case UTF8_ACCEPT: {
+			int n = charwidth(codepoint);
+			if (n >= 0)
+				len += n;
+			else
+				len++;			/* assume width 1 if unprintable */
+			if (len >= (unsigned) INT_MAX)
+				return INT_MAX;
+			break;
+		}
+		default:
+			break;
+		case UTF8_REJECT:
+			assert(0);
+		}
+	}
+	return len;
+}
+
 int
 mapi_get_len(MapiHdl hdl, int fnr)
 {
 	struct MapiResultSet *result;
 
 	mapi_hdl_check0(hdl);
-	if ((result = hdl->result) != 0 && fnr >= 0 && fnr < result->fieldcnt)
-		return result->fields[fnr].columnlength;
+	if ((result = hdl->result) != 0 && fnr >= 0 && fnr < result->fieldcnt) {
+		if (result->fields[fnr].columnlength < 0) {
+			size_t maxlen = 0;
+			Mapi mid = hdl->mid;
+			if (mid->active && read_into_cache(mid->active, 0) != MOK)
+				return 0;
+			for (int i = 0; i < result->cache.writer; i++) {
+				if (result->cache.line[i].rows == NULL ||
+				    result->cache.line[i].rows[0] != '[')
+					continue;
+				mapi_slice_row(result, i);
+				size_t len = strwidth(result->cache.line[i].anchors[fnr]);
+				if (len > maxlen)
+					maxlen = len;
+				if (maxlen > (size_t) INT_MAX) {
+					maxlen = (size_t) INT_MAX;
+					break;
+				}
+			}
+			result->fields[fnr].columnlength = (int) maxlen;
+		}
+		return result->fields[fnr].columnlength > INT_MAX ? INT_MAX : (int) result->fields[fnr].columnlength;
+	}
 	mapi_setError(hdl->mid, "Illegal field number", __func__, MERROR);
 	return 0;
 }
@@ -4591,8 +4644,9 @@ mapi_get_digits(MapiHdl hdl, int fnr)
 	struct MapiResultSet *result;
 
 	mapi_hdl_check0(hdl);
-	if ((result = hdl->result) != 0 && fnr >= 0 && fnr < result->fieldcnt)
+	if ((result = hdl->result) != 0 && fnr >= 0 && fnr < result->fieldcnt) {
 		return result->fields[fnr].digits;
+	}
 	mapi_setError(hdl->mid, "Illegal field number", __func__, MERROR);
 	return 0;
 }

@@ -235,7 +235,7 @@ select sys.epoch(timestamp with time zone '2009-02-13 23:31:30.0+00:00')
 ----
 1234567890
 
-query R nosort
+query D nosort
 select epoch_ms(timestamp with time zone '2009-02-13 23:31:30.0+00:00')
 ----
 1234567890.000
@@ -300,10 +300,10 @@ select "second"(interval '24' second)
 ----
 24
 
-query R nosort
+query D nosort
 select "second"(timetz '15:35:02.002345+01:00')
 ----
-2.002
+2.002345
 
 query T nosort
 select sql_add(date '2021-12-31', interval '2' month)

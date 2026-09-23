@@ -129,18 +129,12 @@ SELECT c0 BETWEEN 10 AND 11 FROM rt3
 query IIII nosort
 SELECT c0 > 10 as myt, 4 BETWEEN 4 AND 4, c0 = 10 as myp, c0 BETWEEN 1 AND 1 as myp2 FROM t3 where t3.c0 = 1
 ----
-0
-1
-0
-1
+0	1	0	1
 
 query IIII nosort
 SELECT c0 > 10 as myt, 4 BETWEEN 4 AND 4, c0 = 10 as myp, c0 BETWEEN 1 AND 1 as myp2 FROM rt3 where rt3.c0 = 1
 ----
-0
-1
-0
-1
+0	1	0	1
 
 query I nosort
 SELECT c0 BETWEEN 2 AND 5 AS myproj FROM t3 ORDER BY myproj
@@ -229,50 +223,32 @@ SELECT 3 > (rt2.c0 ^ CAST(2 AS TINYINT)) * rt2.c0 FROM rt2
 query TTTTT nosort
 SELECT U&'&+000022' UESCAPE '&', U&'&+00005C' UESCAPE '&', ' ', '' as "'", '''' as " " from t3 where t3.c0 = 1
 ----
-"
-\
- 
-(empty)
-'
+"	\	 	(empty)	'
 
 query TTTTT nosort
 SELECT U&'&+000022' UESCAPE '&', U&'&+00005C' UESCAPE '&', ' ', '' as "'", '''' as " " from rt3 where rt3.c0 = 1
 ----
-"
-\
- 
-(empty)
-'
+"	\	 	(empty)	'
 
 query IIIII nosort
 SELECT 1 as "ups\", 2 as "\", 3 as """", 4 as """\", 5 as "\""" from t3 where t3.c0 = 1
 ----
-1
-2
-3
-4
-5
+1	2	3	4	5
 
 query IIIII nosort
 SELECT 1 as "ups\", 2 as "\", 3 as """", 4 as """\", 5 as "\""" from rt3 where rt3.c0 = 1
 ----
-1
-2
-3
-4
-5
+1	2	3	4	5
 
 query TT nosort
 SELECT "current_schema", current_user from t3 where t3.c0 = 1
 ----
-sys
-monetdb
+sys	monetdb
 
 query TT nosort
 SELECT "current_schema", current_user from rt3 where rt3.c0 = 1
 ----
-sys
-monetdb
+sys	monetdb
 
 query T nosort
 SELECT sql_min(t3.c0 || t3.c0, 3) as x from t3 ORDER BY x
@@ -304,35 +280,35 @@ SELECT CASE WHEN 1 BETWEEN 1 AND 2 THEN 3*6 END FROM rt3 where rt3.c0 = 1
 ----
 18
 
-query R nosort
+query D nosort
 SELECT 3 / 0.84 FROM t3 where t3.c0 = 1
 ----
 3.571
 
-query R nosort
+query D nosort
 SELECT 3 / 0.84 FROM rt3 where rt3.c0 = 1
 ----
 3.571
 
-query R nosort
+query D nosort
 SELECT CAST(2 AS DECIMAL) * 0.010 FROM t3 where t3.c0 = 1
 ----
 0.020
 
-query R nosort
+query D nosort
 SELECT CAST(2 AS DECIMAL) * 0.010 FROM rt3 where rt3.c0 = 1
 ----
 0.020
 
-query R nosort
+query D nosort
 SELECT sql_min(4, 7 - 0.5207499) FROM t3 where t3.c0 = 1
 ----
-4.000
+4.0000000
 
-query R nosort
+query D nosort
 SELECT sql_min(4, 7 - 0.5207499) FROM rt3 where rt3.c0 = 1
 ----
-4.000
+4.0000000
 
 query T nosort
 SELECT "insert"('99', 5, 8, '10S') FROM t3 where t3.c0 = 1
@@ -357,36 +333,22 @@ SELECT greatest('69', splitpart('', '191', 2)) FROM rt3 where rt3.c0 = 1
 query TTT nosort
 SELECT CAST(trim('14', 'abc') AS STRING(408)), CAST(trim('14', 'abc') AS VARCHAR(408)), CAST(trim('14', 'abc') AS CLOB) FROM t3 where t3.c0 = 1
 ----
-14
-14
-14
+14	14	14
 
 query TTT nosort
 SELECT CAST(trim('14', 'abc') AS STRING(408)), CAST(trim('14', 'abc') AS VARCHAR(408)), CAST(trim('14', 'abc') AS CLOB) FROM rt3 where rt3.c0 = 1
 ----
-14
-14
-14
+14	14	14
 
-query ITTTTT nosort
+query TTTTTT nosort
 SELECT NULL, 'NULL', 'null', cast(NULL as clob), cast('NULL' as clob), cast('null' as clob) FROM t3 where t3.c0 = 1
 ----
-NULL
-NULL
-null
-NULL
-NULL
-null
+NULL	NULL	null	NULL	NULL	null
 
-query ITTTTT nosort
+query TTTTTT nosort
 SELECT NULL, 'NULL', 'null', cast(NULL as clob), cast('NULL' as clob), cast('null' as clob) FROM rt3 where rt3.c0 = 1
 ----
-NULL
-NULL
-null
-NULL
-NULL
-null
+NULL	NULL	null	NULL	NULL	null
 
 query I nosort
 SELECT t3.c0 FROM t3 where (t3.c0) NOT IN (0.07564294, 211.0, 1, 2) ORDER BY t3.c0
@@ -612,9 +574,7 @@ END
 query III nosort
 SELECT testremote2(1), testremote2(2), testremote2(3)
 ----
-9
-8
-13
+9	8	13
 
 statement ok
 CREATE FUNCTION testremote3(" ugh "" _ , !😂?, " INT) RETURNS INT
@@ -638,8 +598,7 @@ END
 query II nosort
 SELECT testremote3(1), testremote4(UUID '39FcCcEE-5033-0d81-42Eb-Ac6fFaA9EF2d', JSON '""', 3)
 ----
-30
-12
+30	12
 
 statement ok
 CREATE FUNCTION testremote5(a INET, b JSON, c DATE) RETURNS INT
@@ -651,8 +610,7 @@ END
 query II nosort
 SELECT testremote5(INET '192.168.1.0/26', JSON '[1]', DATE '2010-01-01'), testremote5(NULL, NULL, NULL)
 ----
-12
-NULL
+12	NULL
 
 statement ok
     CREATE FUNCTION testremote6(a BLOB) RETURNS INT
@@ -663,9 +621,7 @@ statement ok
 query III nosort
 SELECT testremote6(BLOB 'AABB'), testremote6(BLOB 'CCDD'), testremote6(NULL)
 ----
-7
-16
-16
+7	16	16
 
 statement ok
     CREATE FUNCTION testremote7("😀😀😀😀😀😀😀😀😀😀😀😀😀😀😀" INT) RETURNS INT
@@ -676,8 +632,7 @@ statement ok
 query II nosort
 SELECT testremote7(2), testremote7(3)
 ----
-7
-16
+7	16
 
 statement ok
 create view v0(vc0, vc1) as (values (interval '2' second, 0.5))
@@ -830,15 +785,15 @@ SELECT count(0.3121149) FROM (select case when 2 > 1 then 0.3 end from (select 1
 36
 
 query I nosort
-SELECT CAST(2 AS REAL) BETWEEN 2 AND (t5.c0 / t5.c0)^5 AS X FROM t5 ORDER BY x NULLS LAST
+SELECT CAST(2 AS REAL) BETWEEN 2 AND power(t5.c0 / t5.c0,5) AS X FROM t5 ORDER BY x NULLS LAST
 ----
-1
-1
-1
-1
-1
-1
-1
+0
+0
+0
+0
+0
+0
+0
 NULL
 NULL
 NULL
@@ -846,15 +801,15 @@ NULL
 NULL
 
 query I nosort
-SELECT CAST(2 AS REAL) BETWEEN 2 AND (rt5.c0 / rt5.c0)^5 AS X FROM rt5 ORDER BY x NULLS LAST
+SELECT CAST(2 AS REAL) BETWEEN 2 AND power(rt5.c0 / rt5.c0,5) AS X FROM rt5 ORDER BY x NULLS LAST
 ----
-1
-1
-1
-1
-1
-1
-1
+0
+0
+0
+0
+0
+0
+0
 NULL
 NULL
 NULL
@@ -1075,21 +1030,15 @@ NULL
 NULL
 NULL
 
-query RTTT nosort
+query DTTT nosort
 SELECT abs(2.47), ltrim(count(*)), ltrim(count(*),count(*)), lower(count(*)) FROM t3 where t3.c0 = 1
 ----
-2.470
-1
-(empty)
-1
+2.47	1	(empty)	1
 
-query RTTT nosort
+query DTTT nosort
 SELECT abs(2.47), ltrim(count(*)), ltrim(count(*),count(*)), lower(count(*)) FROM rt3 where rt3.c0 = 1
 ----
-2.470
-1
-(empty)
-1
+2.47	1	(empty)	1
 
 query I nosort
 SELECT 1 FROM t3 LEFT OUTER JOIN (SELECT 1) x(x) ON 1 <> ALL(VALUES (t3.c0)) where t3.c0 = 1
@@ -1123,12 +1072,10 @@ query TTT nosort
 statement ok
 ROLLBACK
 
-# GDK reported error: hashjoin: more than one match
-statement error
+statement error /more than one match/
 SELECT CASE 1 WHEN 5 THEN ((SELECT t3.c0) INTERSECT (SELECT 9)) ELSE (VALUES (t3.c0), (1)) END FROM t3
 
-# GDK reported error: hashjoin: more than one match
-statement error
+statement error /more than one match/
 SELECT CASE 1 WHEN 5 THEN ((SELECT rt3.c0) INTERSECT (SELECT 9)) ELSE (VALUES (rt3.c0), (1)) END FROM rt3
 
 statement ok

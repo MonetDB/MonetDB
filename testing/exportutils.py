@@ -2,11 +2,9 @@
 #
 # This Source Code Form is subject to the terms of the Mozilla Public
 # License, v. 2.0.  If a copy of the MPL was not distributed with this
-# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+# file, You can obtain one at https://mozilla.org/MPL/2.0/.
 #
-# Copyright 2024, 2025 MonetDB Foundation;
-# Copyright August 2008 - 2023 MonetDB B.V.;
-# Copyright 1997 - July 2008 CWI.
+# For copyright information, see the file debian/copyright.
 
 import re
 import os
@@ -86,7 +84,8 @@ def process(line, funmac, macros, infunmac=False):
     return nline
 
 def readfile(f, funmac=None, macros=None, files=None, printdef=False, include=False):
-    data = open(f).read()
+    with open(f) as fil:
+        data = fil.read()
     dirname, f = os.path.split(f)
     data = commentre.sub(' ', data)
     data = data.replace('\\\n', '')
@@ -160,6 +159,7 @@ def preprocess(f, printdef=False, include=True):
 spcre = re.compile(r'\s+')
 strre = re.compile(r'([^ *])\*')
 comre = re.compile(r',\s*')
+attrre = re.compile(r' *__attribute__\(\([^()]*(\([^()]*\)[^()]*)*\)\)')
 
 def normalize(decl):
     decl = spcre.sub(' ', decl) \
@@ -171,6 +171,7 @@ def normalize(decl):
                 .replace('* ', '*') \
                 .replace(' ,', ',') \
                 .replace(')__attribute__', ') __attribute__')
+    decl = attrre.sub('', decl)
     decl = strre.sub(r'\1 *', decl)
     decl = comre.sub(', ', decl)
     decl = decl.replace('( *', ' (*').replace('* (*', '*(*')

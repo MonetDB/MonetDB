@@ -3,14 +3,13 @@
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024, 2025 MonetDB Foundation;
- * Copyright August 2008 - 2023 MonetDB B.V.;
- * Copyright 1997 - July 2008 CWI.
+ * For copyright information, see the file debian/copyright.
  */
 
 #include <curl/curl.h>
+#include "stream.h"
 
 #ifndef CURL_WRITEFUNC_ERROR
 #define CURL_WRITEFUNC_ERROR 0
@@ -53,9 +52,9 @@ open_urlstream(const char *url, char *errbuf)
 	if ((ret = curl_easy_setopt(handle, CURLOPT_ERRORBUFFER, errbuf)) != CURLE_OK ||
 	    (ret = curl_easy_setopt(handle, CURLOPT_URL, url)) != CURLE_OK ||
 	    (ret = curl_easy_setopt(handle, CURLOPT_WRITEDATA, s)) != CURLE_OK ||
-	    (ret = curl_easy_setopt(handle, CURLOPT_VERBOSE, 0)) != CURLE_OK ||
-	    (ret = curl_easy_setopt(handle, CURLOPT_NOSIGNAL, 1)) != CURLE_OK ||
-	    (ret = curl_easy_setopt(handle, CURLOPT_FAILONERROR, 1)) != CURLE_OK ||
+	    (ret = curl_easy_setopt(handle, CURLOPT_VERBOSE, 0L)) != CURLE_OK ||
+	    (ret = curl_easy_setopt(handle, CURLOPT_NOSIGNAL, 1L)) != CURLE_OK ||
+	    (ret = curl_easy_setopt(handle, CURLOPT_FAILONERROR, 1L)) != CURLE_OK ||
 	    (ret = curl_easy_setopt(handle, CURLOPT_WRITEFUNCTION, write_callback)) != CURLE_OK ||
 	    (ret = curl_easy_perform(handle)) != CURLE_OK) {
 		curl_easy_cleanup(handle);

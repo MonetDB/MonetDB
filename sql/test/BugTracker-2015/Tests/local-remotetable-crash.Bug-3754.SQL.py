@@ -1,4 +1,5 @@
-import os, pymonetdb
+from MonetDBtesting import tpymonetdb as pymonetdb
+import os
 
 db = os.getenv("TSTDB")
 port = int(os.getenv("MAPIPORT"))

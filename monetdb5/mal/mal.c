@@ -3,11 +3,9 @@
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024, 2025 MonetDB Foundation;
- * Copyright August 2008 - 2023 MonetDB B.V.;
- * Copyright 1997 - July 2008 CWI.
+ * For copyright information, see the file debian/copyright.
  */
 
 /* (author) M. Kersten */
@@ -15,9 +13,6 @@
 #include "mal.h"
 
 char monet_cwd[FILENAME_MAX] = { 0 };
-
-char monet_characteristics[4096];
-stream *maleventstream = 0;
 
 /* The compile time debugging flags are turned into bit masks, akin to GDK */
 lng MALdebug;
@@ -58,7 +53,7 @@ mal_version(void)
  */
 
 int
-mal_init(char *modules[], bool embedded, const char *initpasswd,
+mal_init(const char *const *modules, bool embedded, const char *initpasswd,
 		 const char *caller_revision)
 {
 /* Any error encountered here terminates the process
@@ -98,11 +93,9 @@ mal_init(char *modules[], bool embedded, const char *initpasswd,
 	if (err != MAL_SUCCEED) {
 		mal_client_reset();
 		TRC_CRITICAL(MAL_SERVER, "%s\n", err);
-		freeException(err);
 		return -1;
 	}
 	initProfiler();
-	initHeartbeat();
 	return 0;
 }
 
@@ -121,8 +114,6 @@ mal_reset(void)
 {
 	GDKprepareExit();
 	MCstopClients(0);
-	setHeartbeat(-1);
-	stopProfiler(0);
 	AUTHreset();
 	if (!GDKinmemory(0) && !GDKembedded()) {
 		str err = 0;
@@ -137,6 +128,7 @@ mal_reset(void)
 		}
 	}
 	mal_dataflow_reset();
+	mal_pipelines_reset();
 	mal_client_reset();
 	mal_linker_reset();
 	mal_resource_reset();
@@ -145,7 +137,6 @@ mal_reset(void)
 	mal_atom_reset();
 
 	memset((char *) monet_cwd, 0, sizeof(monet_cwd));
-	memset((char *) monet_characteristics, 0, sizeof(monet_characteristics));
 	mal_namespace_reset();
 	GDKreset(0);				// terminate all other threads
 }

@@ -3,11 +3,9 @@
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024, 2025 MonetDB Foundation;
- * Copyright August 2008 - 2023 MonetDB B.V.;
- * Copyright 1997 - July 2008 CWI.
+ * For copyright information, see the file debian/copyright.
  */
 
 /*
@@ -25,12 +23,13 @@
 #include <fitsio2.h>
 #include <longnam.h>
 
-#include "fits.h"
+#include "mal.h"
+#include "mal_client.h"
 #include "mutils.h"
 #include "sql_mvc.h"
 #include "sql_scenario.h"
 #include "sql_execute.h"
-#include "sql.h"
+#include "sql_monet_backend.h"
 #include "mal_exception.h"
 
 #define FITS_INS_COL "INSERT INTO sys.fits_columns(id, name, type, units, number, table_id) \
@@ -171,7 +170,8 @@ fits2subtype(sql_subtype *tpe, int t, long rep, long wid) /* type long used by f
 	return 1;
 }
 
-str FITSexportTable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+static str
+FITSexportTable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	str msg = MAL_SUCCEED;
 	str tname = *getArgReference_str(stk, pci, 1);
@@ -282,7 +282,7 @@ str FITSexportTable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	nrows = store->storage_api.count_col(tr, col, 0);
 	assert(nrows <= (size_t) GDK_oid_max);
 
-	snprintf(filename,BUFSIZ,"\n%s.fit",tname);
+	snprintf(filename,sizeof(filename),"\n%s.fit",tname);
 	TRC_INFO(FITS, "Filename: %s\n", filename);
 
 	MT_remove(filename);
@@ -565,7 +565,8 @@ str FITSexportTable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 
 
-str FITSdir(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+static str
+FITSdir(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	str msg = MAL_SUCCEED;
 	str dir = *getArgReference_str(stk, pci, 1);
@@ -608,7 +609,8 @@ str FITSdir(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	return msg;
 }
 
-str FITSdirpat(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+static str
+FITSdirpat(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	str msg = MAL_SUCCEED;
 	str dir = *getArgReference_str(stk, pci, 1);
@@ -636,7 +638,7 @@ str FITSdirpat(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		char fname[BUFSIZ];
 
 		s = stmt;
-		strcpy_len(fname, globbuf.gl_pathv[j], sizeof(fname));
+		strtcpy(fname, globbuf.gl_pathv[j], sizeof(fname));
 		status = 0;
 		fits_open_file(&fptr, fname, READONLY, &status);
 		if (status == 0) {
@@ -658,9 +660,10 @@ str FITSdirpat(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 
 
-str
-FITStest(int *res, str *fname)
+static str
+FITStest(Client ctx, int *res, str *fname)
 {
+	(void) ctx;
 	fitsfile *fptr;       /* pointer to the FITS file, defined in fitsio.h */
 	str msg = MAL_SUCCEED;
 	int status = 0, hdutype;
@@ -677,7 +680,8 @@ FITStest(int *res, str *fname)
 	return msg;
 }
 
-str FITSattach(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+static str
+FITSattach(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	mvc *m = NULL;
 	sql_trans *tr;
@@ -751,7 +755,7 @@ str FITSattach(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		s = fname;
 	else
 		s++;
-	if (strcpy_len(bname, s, sizeof(bname)) >= sizeof(bname)) {
+	if (strtcpy(bname, s, sizeof(bname)) == -1) {
 		fits_close_file(fptr, &status);
 		throw(MAL, "fits.attach", SQLSTATE(FI000) "File name too long\n");
 	}
@@ -907,7 +911,8 @@ str FITSattach(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	return MAL_SUCCEED;
 }
 
-str FITSloadTable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+static str
+FITSloadTable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	mvc *m = NULL;
 	sql_schema *sch;
@@ -1000,10 +1005,10 @@ str FITSloadTable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	for (j = 1; j <= cnum; j++) {
 		sql_column *col = NULL;
 		/*		fits_get_acolparms(fptr, j, cname, &tbcol, tunit, tform, &tscal, &tzero, tnull, tdisp, &status); */
-		snprintf(keywrd, 80, "TTYPE%d", j);
+		snprintf(keywrd, sizeof(keywrd), "TTYPE%d", j);
 		fits_read_key(fptr, TSTRING, keywrd, nm, NULL, &status);
 		if (status) {
-			snprintf(nm, FLEN_VALUE, "column_%d", j);
+			snprintf(nm, sizeof(nm), "column_%d", j);
 			status = 0;
 		}
 		cname[j - 1] = toLower(nm);
@@ -1114,7 +1119,7 @@ str FITSloadTable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		}
 		else {
 			BATiter bi = bat_iterator_nolock(tmp);
-			fits_read_col(fptr, tpcode[j - 1], j, 1, 1, rows, (void *) nilptr, (void *)BUNtloc(bi, 0), &anynull, &status);
+			fits_read_col(fptr, tpcode[j - 1], j, 1, 1, rows, (void *) nilptr, (void *)BUNtloc(&bi, 0), &anynull, &status);
 			BATsetcount(tmp, rows);
 			tmp->tsorted = false;
 			tmp->trevsorted = false;

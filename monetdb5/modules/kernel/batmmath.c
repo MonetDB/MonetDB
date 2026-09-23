@@ -3,11 +3,9 @@
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024, 2025 MonetDB Foundation;
- * Copyright August 2008 - 2023 MonetDB B.V.;
- * Copyright 1997 - July 2008 CWI.
+ * For copyright information, see the file debian/copyright.
  */
 
 #include "monetdb_config.h"
@@ -28,6 +26,7 @@ CMDscienceUNARY(MalStkPtr stk, InstrPtr pci,
 	BUN i;
 	BUN nils = 0;
 	int e = 0, ex = 0;
+	bool inf = false;
 	BATiter bi;
 
 	bid = *getArgReference_bat(stk, pci, 1);
@@ -69,6 +68,12 @@ CMDscienceUNARY(MalStkPtr stk, InstrPtr pci,
 				nils++;
 			} else {
 				fdst[i] = ffunc(fsrc[x]);
+				e = errno;
+				ex = fetestexcept(FE_INVALID | FE_DIVBYZERO | FE_OVERFLOW);
+				if (e != 0 || ex != 0) {
+					inf = isinf(fdst[i]);
+					break;
+				}
 			}
 		}
 		break;
@@ -83,6 +88,12 @@ CMDscienceUNARY(MalStkPtr stk, InstrPtr pci,
 				nils++;
 			} else {
 				ddst[i] = dfunc(dsrc[x]);
+				e = errno;
+				ex = fetestexcept(FE_INVALID | FE_DIVBYZERO | FE_OVERFLOW);
+				if (e != 0 || ex != 0) {
+					inf = isinf(ddst[i]);
+					break;
+				}
 			}
 		}
 		break;
@@ -91,23 +102,32 @@ CMDscienceUNARY(MalStkPtr stk, InstrPtr pci,
 		assert(0);
 	}
 	bat_iterator_end(&bi);
-	e = errno;
-	ex = fetestexcept(FE_INVALID | FE_DIVBYZERO | FE_OVERFLOW);
 	BBPunfix(b->batCacheid);
 	BBPreclaim(s);
 	if (e != 0 || ex != 0) {
 		const char *err;
+		const char *sqlstate;
 		char buf[128];
-		BBPunfix(bn->batCacheid);
-		if (e)
-			err = GDKstrerror(e, buf, 128);
-		else if (ex & FE_DIVBYZERO)
+		if (ex & FE_DIVBYZERO) {
 			err = "Divide by zero";
-		else if (ex & FE_OVERFLOW)
+			sqlstate = SQLSTATE(22012);
+		} else if (ex & FE_OVERFLOW || (e == ERANGE && inf)) {
 			err = "Overflow";
-		else
+			sqlstate = SQLSTATE(22003);
+		} else if (e == EDOM) {
+			err = "Invalid argument";
+			if (strncmp(malfunc, "batmmath.log", 12) == 0)
+				sqlstate = SQLSTATE(2201E);
+			else
+				sqlstate = SQLSTATE(22003);
+		} else if (e) {
+			err = GDKstrerror(e, buf, sizeof(buf));
+			sqlstate = "";
+		} else {
 			err = "Invalid result";
-		throw(MAL, malfunc, "Math exception: %s", err);
+			sqlstate = SQLSTATE(22023);
+		}
+		throw(MAL, malfunc, "%sMath exception: %s", sqlstate, err);
 	}
 
 	BATsetcount(bn, ci.ncand);
@@ -130,11 +150,12 @@ CMDscienceBINARY(MalStkPtr stk, InstrPtr pci,
 	bat bid;
 	BAT *bn, *b1 = NULL, *b2 = NULL, *s1 = NULL, *s2 = NULL;
 	int tp1, tp2;
-	struct canditer ci1 = (struct canditer) { 0 },
-		ci2 = (struct canditer) { 0 };
+	struct canditer ci1 = { 0 },
+		ci2 = { 0 };
 	oid x1, x2, off1, off2;
 	BUN i, ncand, nils = 0;
 	int e = 0, ex = 0;
+	bool inf = false;
 	BATiter b1i, b2i;
 
 	tp1 = stk->stk[getArg(pci, 1)].vtype;
@@ -229,6 +250,12 @@ CMDscienceBINARY(MalStkPtr stk, InstrPtr pci,
 					nils++;
 				} else {
 					fdst[i] = ffunc(fsrc1[x1], fsrc2[x2]);
+					e = errno;
+					ex = fetestexcept(FE_INVALID | FE_DIVBYZERO | FE_OVERFLOW);
+					if (e != 0 || ex != 0) {
+						inf = isinf(fdst[i]);
+						break;
+					}
 				}
 			}
 		} else if (b1) {
@@ -242,6 +269,12 @@ CMDscienceBINARY(MalStkPtr stk, InstrPtr pci,
 					nils++;
 				} else {
 					fdst[i] = ffunc(fsrc1[x1], fval2);
+					e = errno;
+					ex = fetestexcept(FE_INVALID | FE_DIVBYZERO | FE_OVERFLOW);
+					if (e != 0 || ex != 0) {
+						inf = isinf(fdst[i]);
+						break;
+					}
 				}
 			}
 		} else {				/* b2 == NULL */
@@ -255,6 +288,12 @@ CMDscienceBINARY(MalStkPtr stk, InstrPtr pci,
 					nils++;
 				} else {
 					fdst[i] = ffunc(fval1, fsrc2[x2]);
+					e = errno;
+					ex = fetestexcept(FE_INVALID | FE_DIVBYZERO | FE_OVERFLOW);
+					if (e != 0 || ex != 0) {
+						inf = isinf(fdst[i]);
+						break;
+					}
 				}
 			}
 		}
@@ -272,6 +311,12 @@ CMDscienceBINARY(MalStkPtr stk, InstrPtr pci,
 					nils++;
 				} else {
 					ddst[i] = dfunc(dsrc1[x1], dsrc2[x2]);
+					e = errno;
+					ex = fetestexcept(FE_INVALID | FE_DIVBYZERO | FE_OVERFLOW);
+					if (e != 0 || ex != 0) {
+						inf = isinf(ddst[i]);
+						break;
+					}
 				}
 			}
 		} else if (b1) {
@@ -285,6 +330,12 @@ CMDscienceBINARY(MalStkPtr stk, InstrPtr pci,
 					nils++;
 				} else {
 					ddst[i] = dfunc(dsrc1[x1], dval2);
+					e = errno;
+					ex = fetestexcept(FE_INVALID | FE_DIVBYZERO | FE_OVERFLOW);
+					if (e != 0 || ex != 0) {
+						inf = isinf(ddst[i]);
+						break;
+					}
 				}
 			}
 		} else {				/* b2 == NULL */
@@ -298,6 +349,12 @@ CMDscienceBINARY(MalStkPtr stk, InstrPtr pci,
 					nils++;
 				} else {
 					ddst[i] = dfunc(dval1, dsrc2[x2]);
+					e = errno;
+					ex = fetestexcept(FE_INVALID | FE_DIVBYZERO | FE_OVERFLOW);
+					if (e != 0 || ex != 0) {
+						inf = isinf(ddst[i]);
+						break;
+					}
 				}
 			}
 		}
@@ -305,8 +362,6 @@ CMDscienceBINARY(MalStkPtr stk, InstrPtr pci,
 	default:
 		assert(0);
 	}
-	e = errno;
-	ex = fetestexcept(FE_INVALID | FE_DIVBYZERO | FE_OVERFLOW);
 	bat_iterator_end(&b1i);
 	bat_iterator_end(&b2i);
 
@@ -326,17 +381,30 @@ CMDscienceBINARY(MalStkPtr stk, InstrPtr pci,
 		throw(MAL, malfunc, GDK_EXCEPTION);
 	if (e != 0 || ex != 0) {
 		const char *err;
+		const char *sqlstate;
 		char buf[128];
-		BBPunfix(bn->batCacheid);
-		if (e)
-			err = GDKstrerror(e, buf, 128);
-		else if (ex & FE_DIVBYZERO)
+		if (ex & FE_DIVBYZERO) {
 			err = "Divide by zero";
-		else if (ex & FE_OVERFLOW)
+			sqlstate = SQLSTATE(22012);
+		} else if (ex & FE_OVERFLOW || (e == ERANGE && inf)) {
 			err = "Overflow";
-		else
+			sqlstate = SQLSTATE(22003);
+		} else if (e == EDOM) {
+			err = "Invalid argument";
+			if (strncmp(malfunc, "batmmath.log", 12) == 0)
+				sqlstate = SQLSTATE(2201E);
+			else if (strcmp(malfunc, "batmmath.pow") == 0)
+				sqlstate = SQLSTATE(2201F);
+			else
+				sqlstate = SQLSTATE(22003);
+		} else if (e) {
+			err = GDKstrerror(e, buf, sizeof(buf));
+			sqlstate = "";
+		} else {
 			err = "Invalid result";
-		throw(MAL, malfunc, "Math exception: %s", err);
+			sqlstate = SQLSTATE(22023);
+		}
+		throw(MAL, malfunc, "%sMath exception: %s", sqlstate, err);
 	}
 	*getArgReference_bat(stk, pci, 0) = bn->batCacheid;
 	BBPkeepref(bn);
@@ -350,26 +418,6 @@ CMDscienceBINARY(MalStkPtr stk, InstrPtr pci,
 */
 	BBPreclaim(s2);
 	throw(MAL, malfunc, SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
-}
-
-#define scienceImpl(FUNC)												\
-static str																\
-CMDscience_bat_##FUNC(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) \
-{																		\
-	(void) cntxt;														\
-	(void) mb;															\
-																		\
-	return CMDscienceUNARY(stk, pci, FUNC##f, FUNC, "batmmath." #FUNC);	\
-}
-
-#define scienceBinaryImpl(FUNC)											\
-static str																\
-CMDscience_bat_##FUNC(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) \
-{																		\
-	(void) cntxt;														\
-	(void) mb;															\
-																		\
-	return CMDscienceBINARY(stk, pci, FUNC##f, FUNC, "batmmath." #FUNC); \
 }
 
 static str
@@ -425,33 +473,224 @@ CMDscience_bat_randintarg(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 	return MAL_SUCCEED;
 }
 
-scienceImpl(acos)
-scienceImpl(asin)
-scienceImpl(atan)
-scienceImpl(cos)
-scienceImpl(sin)
-scienceImpl(tan)
-scienceImpl(cot)
-scienceImpl(cosh)
-scienceImpl(sinh)
-scienceImpl(tanh)
-scienceImpl(radians)
-scienceImpl(degrees)
-scienceImpl(exp)
-scienceImpl(log)
-scienceImpl(log10)
-scienceImpl(log2)
-scienceImpl(sqrt)
-scienceImpl(cbrt)
-scienceImpl(ceil)
-scienceImpl(fabs)
-scienceImpl(floor)
-scienceBinaryImpl(atan2)
-scienceBinaryImpl(pow)
-scienceBinaryImpl(logbs)
+static str
+CMDscience_bat_acos(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	(void) cntxt;
+	(void) mb;
+
+	return CMDscienceUNARY(stk, pci, acosf, acos, "batmmath.acos");
+}
+
+static str
+CMDscience_bat_asin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	(void) cntxt;
+	(void) mb;
+
+	return CMDscienceUNARY(stk, pci, asinf, asin, "batmmath.asin");
+}
+
+static str
+CMDscience_bat_atan(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	(void) cntxt;
+	(void) mb;
+
+	return CMDscienceUNARY(stk, pci, atanf, atan, "batmmath.atan");
+}
+
+static str
+CMDscience_bat_cos(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	(void) cntxt;
+	(void) mb;
+
+	return CMDscienceUNARY(stk, pci, cosf, cos, "batmmath.cos");
+}
+
+static str
+CMDscience_bat_sin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	(void) cntxt;
+	(void) mb;
+
+	return CMDscienceUNARY(stk, pci, sinf, sin, "batmmath.sin");
+}
+
+static str
+CMDscience_bat_tan(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	(void) cntxt;
+	(void) mb;
+
+	return CMDscienceUNARY(stk, pci, tanf, tan, "batmmath.tan");
+}
+
+static str
+CMDscience_bat_cot(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	(void) cntxt;
+	(void) mb;
+
+	return CMDscienceUNARY(stk, pci, cotf, cot, "batmmath.cot");
+}
+
+static str
+CMDscience_bat_cosh(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	(void) cntxt;
+	(void) mb;
+
+	return CMDscienceUNARY(stk, pci, coshf, cosh, "batmmath.cosh");
+}
+
+static str
+CMDscience_bat_sinh(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	(void) cntxt;
+	(void) mb;
+
+	return CMDscienceUNARY(stk, pci, sinhf, sinh, "batmmath.sinh");
+}
+
+static str
+CMDscience_bat_tanh(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	(void) cntxt;
+	(void) mb;
+
+	return CMDscienceUNARY(stk, pci, tanhf, tanh, "batmmath.tanh");
+}
+
+static str
+CMDscience_bat_radians(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	(void) cntxt;
+	(void) mb;
+
+	return CMDscienceUNARY(stk, pci, radiansf, radians, "batmmath.radians");
+}
+
+static str
+CMDscience_bat_degrees(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	(void) cntxt;
+	(void) mb;
+
+	return CMDscienceUNARY(stk, pci, degreesf, degrees, "batmmath.degrees");
+}
+
+static str
+CMDscience_bat_exp(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	(void) cntxt;
+	(void) mb;
+
+	return CMDscienceUNARY(stk, pci, expf, exp, "batmmath.exp");
+}
+
+static str
+CMDscience_bat_log(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	(void) cntxt;
+	(void) mb;
+
+	return CMDscienceUNARY(stk, pci, logf, log, "batmmath.log");
+}
+
+static str
+CMDscience_bat_log10(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	(void) cntxt;
+	(void) mb;
+
+	return CMDscienceUNARY(stk, pci, log10f, log10, "batmmath.log10");
+}
+
+static str
+CMDscience_bat_log2(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	(void) cntxt;
+	(void) mb;
+
+	return CMDscienceUNARY(stk, pci, log2f, log2, "batmmath.log2");
+}
+
+static str
+CMDscience_bat_sqrt(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	(void) cntxt;
+	(void) mb;
+
+	return CMDscienceUNARY(stk, pci, sqrtf, sqrt, "batmmath.sqrt");
+}
+
+static str
+CMDscience_bat_cbrt(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	(void) cntxt;
+	(void) mb;
+
+	return CMDscienceUNARY(stk, pci, cbrtf, cbrt, "batmmath.cbrt");
+}
+
+static str
+CMDscience_bat_ceil(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	(void) cntxt;
+	(void) mb;
+
+	return CMDscienceUNARY(stk, pci, ceilf, ceil, "batmmath.ceil");
+}
+
+static str
+CMDscience_bat_fabs(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	(void) cntxt;
+	(void) mb;
+
+	return CMDscienceUNARY(stk, pci, fabsf, fabs, "batmmath.fabs");
+}
+
+static str
+CMDscience_bat_floor(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	(void) cntxt;
+	(void) mb;
+
+	return CMDscienceUNARY(stk, pci, floorf, floor, "batmmath.floor");
+}
+
+static str
+CMDscience_bat_atan2(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	(void) cntxt;
+	(void) mb;
+
+	return CMDscienceBINARY(stk, pci, atan2f, atan2, "batmmath.atan2");
+}
+
+static str
+CMDscience_bat_pow(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	(void) cntxt;
+	(void) mb;
+
+	return CMDscienceBINARY(stk, pci, powf, pow, "batmmath.pow");
+}
+
+static str
+CMDscience_bat_logbs(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
+	(void) cntxt;
+	(void) mb;
+
+	return CMDscienceBINARY(stk, pci, logbsf, logbs, "batmmath.logbs");
+}
 
 #include "mel.h"
-mel_func batmmath_init_funcs[] = {
+static mel_func batmmath_init_funcs[] = {
  pattern("batmmath", "asin", CMDscience_bat_asin, false, "", args(1,2, batarg("",dbl),batarg("x",dbl))),
  pattern("batmmath", "asin", CMDscience_bat_asin, false, "", args(1,3, batarg("",dbl),batarg("x",dbl),batarg("s",oid))),
  pattern("batmmath", "asin", CMDscience_bat_asin, false, "", args(1,2, batarg("",flt),batarg("x",flt))),

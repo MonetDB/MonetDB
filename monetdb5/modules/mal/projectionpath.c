@@ -3,11 +3,9 @@
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024, 2025 MonetDB Foundation;
- * Copyright August 2008 - 2023 MonetDB B.V.;
- * Copyright 1997 - July 2008 CWI.
+ * For copyright information, see the file debian/copyright.
  */
 
 #include "monetdb_config.h"
@@ -16,19 +14,18 @@
 #include "mal_exception.h"
 
 static str
-ALGprojectionpath(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+ALGprojectionpath(Client ctx, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	int i;
 	bat bid;
 	bat *r = getArgReference_bat(stk, pci, 0);
 	BAT *b, **joins = NULL;
 
-	(void) mb;
-	(void) cntxt;
+	(void) ctx;
 
 	if (pci->argc <= 1)
 		throw(MAL, "algebra.projectionpath", SQLSTATE(HY013) "INTERNAL ERROR");
-	joins = (BAT **) GDKzalloc(pci->argc * sizeof(BAT *));
+	joins = (BAT **) ma_zalloc(mb->ma, pci->argc * sizeof(BAT *));
 	if (joins == NULL)
 		throw(MAL, "algebra.projectionpath", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	for (i = pci->retc; i < pci->argc; i++) {
@@ -39,7 +36,6 @@ ALGprojectionpath(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				&& b->ttype != TYPE_msk)) {
 			while (--i >= pci->retc)
 				BBPunfix(joins[i - pci->retc]->batCacheid);
-			GDKfree(joins);
 			BBPreclaim(b);
 			throw(MAL, "algebra.projectionpath", "%s",
 				  b ? SEMANTIC_TYPE_MISMATCH : INTERNAL_BAT_ACCESS);
@@ -50,7 +46,6 @@ ALGprojectionpath(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	b = BATprojectchain(joins);
 	for (i = pci->retc; i < pci->argc; i++)
 		BBPunfix(joins[i - pci->retc]->batCacheid);
-	GDKfree(joins);
 	if (b) {
 		*r = b->batCacheid;
 		BBPkeepref(b);
@@ -60,7 +55,7 @@ ALGprojectionpath(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 
 #include "mel.h"
-mel_func projectionpath_init_funcs[] = {
+static mel_func projectionpath_init_funcs[] = {
  pattern("algebra", "projectionpath", ALGprojectionpath, false, "Routine to handle join paths.  The type analysis is rather tricky.", args(1,2, batargany("",0),batvarargany("l",0))),
  { .imp=NULL }
 };

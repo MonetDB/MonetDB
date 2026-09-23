@@ -3,11 +3,9 @@
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024, 2025 MonetDB Foundation;
- * Copyright August 2008 - 2023 MonetDB B.V.;
- * Copyright 1997 - July 2008 CWI.
+ * For copyright information, see the file debian/copyright.
  */
 
 #include "monetdb_config.h"
@@ -42,7 +40,6 @@ static void* monetdb_connect(void) {
 	conn->curmodule = conn->usermodule = userModule();
 	str msg;
 	if ((msg = SQLinitClient(conn, NULL, NULL, NULL)) != MAL_SUCCEED) {
-		freeException(msg);
 		return NULL;
 	}
 	((backend *) conn->sqlcontext)->mvc->session->auto_commit = 1;
@@ -59,7 +56,6 @@ static str monetdb_query(Client c, str query) {
 		retval = SQLautocommit(m);
 	if (retval != MAL_SUCCEED) {
 		printf("Failed to execute SQL query: %s\n", query);
-		freeException(retval);
 		exit(1);
 		return MAL_SUCCEED;
 	}
@@ -79,8 +75,7 @@ static void monetdb_disconnect(void* conn) {
 	if (!MCvalid((Client) conn)) {
 		return;
 	}
-	str msg = SQLexitClient((Client) conn);
-	freeException(msg);
+	(void) SQLexitClient((Client) conn);
 	MCcloseClient((Client) conn);
 }
 
@@ -92,6 +87,7 @@ static str monetdb_initialize(void) {
 	char prmodpath[FILENAME_MAX];
 	const char *modpath = NULL;
 	char *binpath = NULL;
+	allocator * volatile ma = NULL;
 
 	if (monetdb_initialized) return MAL_SUCCEED;
 	monetdb_initialized = 1;
@@ -101,7 +97,7 @@ static str monetdb_initialize(void) {
 		goto cleanup;
 	}
 
-	GDKfataljumpenable = 1;
+	GDKfataljumpenable = true;
 	if(setjmp(GDKfataljump) != 0) {
 		retval = GDKfatalmsg;
 		// we will get here if GDKfatal was called.
@@ -137,7 +133,7 @@ static str monetdb_initialize(void) {
 		 * bin/mserver5 -> ../
 		 * libX/monetdb5/lib/
 		 * probe libX = lib, lib32, lib64, lib/64 */
-		const char *libdirs[] = { "lib", "lib64", "lib/64", "lib32", NULL };
+		static const char *libdirs[] = { "lib", "lib64", "lib/64", "lib32", NULL };
 		size_t i;
 		struct stat sb;
 		if (binpath != NULL) {
@@ -248,14 +244,24 @@ static str monetdb_initialize(void) {
 		}
 	}
 
-	char *modules[2];
+	ma = MT_thread_getallocator();
+	if (!ma) {
+		if ((ma = create_allocator("MA_tls_main_shutdowntest", false)) == NULL) {
+			retval = GDKstrdup("Failed to create allocator");
+			goto cleanup;
+		}
+		MT_thread_setallocator(ma);
+		assert(MT_thread_getallocator() != NULL);
+	}
+
+	const char *modules[2];
 	modules[0] = "sql";
 	modules[1] = 0;
 	if (mal_init(modules, true, NULL, NULL) != 0) { // mal_init() does not return meaningful codes on failure
 		retval = GDKstrdup("mal_init() failed");
 		goto cleanup;
 	}
-	GDKfataljumpenable = 0;
+	GDKfataljumpenable = false;
 
 	if (retval != MAL_SUCCEED) {
 		printf("Failed to load SQL function: %s\n", retval);
@@ -276,9 +282,12 @@ static str monetdb_initialize(void) {
 	}
 
 	mo_free_options(set, setlen);
-
 	return MAL_SUCCEED;
 cleanup:
+	if (ma) {
+		ma_destroy(ma);
+		MT_thread_setallocator(NULL);
+	}
 	if (set)
 		mo_free_options(set, setlen);
 	monetdb_initialized = 0;
@@ -289,6 +298,11 @@ static void monetdb_shutdown(void) {
 	if (monetdb_initialized) {
 		mal_reset();
 		monetdb_initialized = 0;
+		allocator *ma = MT_thread_getallocator();
+		if (ma) {
+			ma_destroy(ma);
+			MT_thread_setallocator(NULL);
+		}
 	}
 }
 

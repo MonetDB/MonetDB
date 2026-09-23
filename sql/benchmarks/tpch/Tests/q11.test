@@ -1,5 +1,5 @@
 #Q11
-query IR nosort
+query ID nosort
 select
 	ps_partkey,
 	sum(ps_supplycost * ps_availqty) as value
@@ -29,5 +29,5 @@ order by
 	value desc
 ----
 1376
-13271249.890
+13271249.89
 

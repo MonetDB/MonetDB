@@ -3,11 +3,9 @@
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024, 2025 MonetDB Foundation;
- * Copyright August 2008 - 2023 MonetDB B.V.;
- * Copyright 1997 - July 2008 CWI.
+ * For copyright information, see the file debian/copyright.
  */
 
 /*
@@ -63,8 +61,10 @@ GDKfilepath(char *path, size_t pathlen, int farmid, const char *dir, const char 
 	const char *sep;
 
 	if (GDKinmemory(farmid)) {
-		if (strcpy_len(path, ":memory:", pathlen) >= pathlen)
+		if (strtcpy(path, ":memory:", pathlen) == -1) {
+			GDKerror("buffer too small\n");
 			return GDK_FAIL;
+		}
 		return GDK_SUCCEED;
 	}
 
@@ -82,18 +82,18 @@ GDKfilepath(char *path, size_t pathlen, int farmid, const char *dir, const char 
 	} else {
 		sep = DIR_SEP_STR;
 	}
-	size_t len;
+	ssize_t len;
 	if (farmid == NOFARM) {
-		len = strconcat_len(path, pathlen,
-				    dir ? dir : "", sep, name,
-				    ext ? "." : NULL, ext, NULL);
+		len = strtconcat(path, pathlen,
+				 dir ? dir : "", sep, name,
+				 ext ? "." : NULL, ext, NULL);
 	} else {
-		len = strconcat_len(path, pathlen,
-				    BBPfarms[farmid].dirname, DIR_SEP_STR,
-				    dir ? dir : "", sep, name,
-				    ext ? "." : NULL, ext, NULL);
+		len = strtconcat(path, pathlen,
+				 BBPfarms[farmid].dirname, DIR_SEP_STR,
+				 dir ? dir : "", sep, name,
+				 ext ? "." : NULL, ext, NULL);
 	}
-	if (len >= pathlen) {
+	if (len == -1) {
 		GDKerror("path name too long\n");
 		return GDK_FAIL;
 	}
@@ -109,7 +109,7 @@ GDKcreatedir(const char *dir)
 	char *r;
 	DIR *dirp;
 
-	TRC_DEBUG(IO_, "GDKcreatedir(%s)\n", dir);
+	TRC_DEBUG(IO, "GDKcreatedir(%s)\n", dir);
 	assert(!GDKinmemory(0));
 	if (!GDKembedded() && !MT_path_absolute(dir)) {
 		GDKerror("directory '%s' is not absolute\n", dir);
@@ -159,7 +159,7 @@ GDKremovedir(int farmid, const char *dirname)
 	if (GDKfilepath(dirnamestr, sizeof(dirnamestr), farmid, NULL, dirname, NULL) != GDK_SUCCEED)
 		return GDK_FAIL;
 
-	TRC_DEBUG(IO_, "GDKremovedir(%s)\n", dirnamestr);
+	TRC_DEBUG(IO, "GDKremovedir(%s)\n", dirnamestr);
 
 	if ((dirp = opendir(dirnamestr)) == NULL) {
 		return GDK_SUCCEED;
@@ -179,13 +179,13 @@ GDKremovedir(int farmid, const char *dirname)
 		ret = MT_remove(path);
 		if (ret == -1)
 			GDKsyserror("remove(%s) failed\n", path);
-		TRC_DEBUG(IO_, "Remove %s = %d\n", path, ret);
+		TRC_DEBUG(IO, "Remove %s = %d\n", path, ret);
 	}
 	closedir(dirp);
 	ret = MT_rmdir(dirnamestr);
 	if (ret != 0)
 		GDKsyserror("rmdir(%s) failed\n", dirnamestr);
-	TRC_DEBUG(IO_, "rmdir %s = %d\n", dirnamestr, ret);
+	TRC_DEBUG(IO, "rmdir %s = %d\n", dirnamestr, ret);
 	return ret ? GDK_FAIL : GDK_SUCCEED;
 }
 
@@ -230,6 +230,13 @@ GDKfdlocate(int farmid, const char *nme, const char *mode, const char *extension
 
 	if (strchr(mode, 'w')) {
 		flags |= O_WRONLY | O_CREAT;
+		/* HACK ALERT: text files also get truncated but binary
+		 * files not!  This is because mmap extend depends on
+		 * files not getting truncated, and a second hot
+		 * snapshot needs to completely overwrite a pre-existing
+		 * (from an earlier snapshot) BBP.dir file. */
+		if (strchr(mode, 'b') == NULL)
+			flags |= O_TRUNC;
 	} else if (!strchr(mode, '+')) {
 		flags |= O_RDONLY;
 	} else {
@@ -280,7 +287,7 @@ GDKfileopen(int farmid, const char *dir, const char *name, const char *extension
 	/* if name is null, try to get one from dir (in case it was a path) */
 	if (GDKfilepath(path, sizeof(path), farmid, dir, name, extension) == GDK_SUCCEED) {
 		FILE *f;
-		TRC_DEBUG(IO_, "GDKfileopen(%s)\n", path);
+		TRC_DEBUG(IO, "GDKfileopen(%s)\n", path);
 		f = MT_fopen(path, mode);
 		int err = errno;
 		errno = err;
@@ -330,7 +337,7 @@ GDKmove(int farmid, const char *dir1, const char *nme1, const char *ext1, const 
 		if (ret < 0 && report)
 			GDKsyserror("cannot rename %s to %s\n", path1, path2);
 
-		TRC_DEBUG(IO_, "Move %s %s = %d ("LLFMT" usec)\n", path1, path2, ret, GDKusec() - t0);
+		TRC_DEBUG(IO, "Move %s %s = %d ("LLFMT" usec)\n", path1, path2, ret, GDKusec() - t0);
 	} else {
 		ret = -1;
 	}
@@ -368,10 +375,13 @@ GDKextendf(int fd, size_t size, const char *fn)
 #ifdef HAVE_POSIX_FALLOCATE
 		/* posix_fallocate returns error number on failure,
 		 * not -1 :-( */
-		if ((rt = posix_fallocate(fd, stb.st_size, (off_t) size - stb.st_size)) == EINVAL)
-			/* on Solaris/OpenIndiana, this may mean that
-			 * the underlying file system doesn't support
-			 * the operation, so just resize the file */
+		rt = posix_fallocate(fd, stb.st_size, (off_t) size - stb.st_size);
+		if (rt != 0)
+			errno = rt;
+		if (rt == EINVAL || rt == EOPNOTSUPP)
+			/* some systems seem to return EINVAL and others
+			 * EOPNOTSUPP if the file system doesn't support
+			 * this operation */
 #endif
 #endif
 			/* we get here when (posix_)fallocate fails
@@ -386,7 +396,7 @@ GDKextendf(int fd, size_t size, const char *fn)
 				GDKsyserror("ftruncate to old size");
 		}
 	}
-	TRC_DEBUG(IO_, "GDKextend %s %zu -> %zu "LLFMT" usec%s\n",
+	TRC_DEBUG(IO, "GDKextend %s %zu -> %zu "LLFMT" usec%s\n",
 		  fn, (size_t) stb.st_size, size,
 		  GDKusec() - t0, rt != 0 ? " (failed)" : "");
 	/* posix_fallocate returns != 0 on failure, fallocate and
@@ -427,20 +437,21 @@ GDKextend(const char *fn, size_t size)
  * The primary concern here is to handle STORE_MMAP and STORE_MEM.
  */
 gdk_return
-GDKsave(int farmid, const char *nme, const char *ext, void *buf, size_t size, storage_t mode, bool dosync)
+GDKsave(int farmid, const char *nme, const char *ext, void *buf, size_t size,
+	storage_t mode, bool dosync)
 {
 	int err = 0;
 
-	TRC_DEBUG(IO_, "GDKsave: name=%s, ext=%s, mode %d, dosync=%d\n", nme, ext ? ext : "", (int) mode, dosync);
+	TRC_DEBUG(IO, "name=%s, ext=%s, mode %d, dosync=%d\n", nme, ext ? ext : "", (int) mode, dosync);
 
 	assert(!GDKinmemory(farmid));
 	if (mode == STORE_MMAP) {
 		if (dosync && size && !(ATOMIC_GET(&GDKdebug) & NOSYNCMASK))
 			err = MT_msync(buf, size);
 		if (err)
-			GDKerror("error on: name=%s, ext=%s, mode=%d\n",
+			GDKerror("msync failed: name=%s, ext=%s, mode=%d\n",
 				 nme, ext ? ext : "", (int) mode);
-		TRC_DEBUG(IO_, "MT_msync(buf %p, size %zu) = %d\n",
+		TRC_DEBUG(IO, "MT_msync(buf %p, size %zu) = %d\n",
 			  buf, size, err);
 	} else {
 		int fd;
@@ -459,7 +470,7 @@ GDKsave(int farmid, const char *nme, const char *ext, void *buf, size_t size, st
 					    (unsigned) MIN(1 << 30, size));
 				if (ret < 0) {
 					err = -1;
-					GDKsyserror("GDKsave: error %zd"
+					GDKsyserror("write: error %zd"
 						    " on: name=%s, ext=%s, "
 						    "mode=%d\n", ret, nme,
 						    ext ? ext : "", (int) mode);
@@ -467,13 +478,14 @@ GDKsave(int farmid, const char *nme, const char *ext, void *buf, size_t size, st
 				}
 				size -= ret;
 				buf = (void *) ((char *) buf + ret);
-				TRC_DEBUG(IO_, "Write(fd %d, buf %p"
+				TRC_DEBUG(IO, "Write(fd %d, buf %p"
 					  ", size %u) = %zd\n",
 					  fd, buf,
 					  (unsigned) MIN(1 << 30, size),
 					  ret);
 			}
-			if (dosync && !(ATOMIC_GET(&GDKdebug) & NOSYNCMASK)
+			if (!err && dosync
+			    && !(ATOMIC_GET(&GDKdebug) & NOSYNCMASK)
 #if defined(NATIVE_WIN32)
 			    && _commit(fd) < 0
 #elif defined(HAVE_FDATASYNC)
@@ -482,7 +494,7 @@ GDKsave(int farmid, const char *nme, const char *ext, void *buf, size_t size, st
 			    && fsync(fd) < 0
 #endif
 				) {
-				GDKsyserror("GDKsave: error on: name=%s, "
+				GDKsyserror("sync failed: name=%s, "
 					    "ext=%s, mode=%d\n", nme,
 					    ext ? ext : "", (int) mode);
 				err = -1;
@@ -492,10 +504,9 @@ GDKsave(int farmid, const char *nme, const char *ext, void *buf, size_t size, st
 				/* do not tolerate corrupt heap images
 				 * (BBPrecover on restart will kill
 				 * them) */
-				GDKerror("could not remove: name=%s, "
-					 "ext=%s, mode %d\n", nme,
-					 ext ? ext : "", (int) mode);
-				return GDK_FAIL;
+				GDKerror("could not remove after error: "
+					 "name=%s, ext=%s, mode %d\n",
+					 nme, ext ? ext : "", (int) mode);
 			}
 		} else {
 			err = -1;
@@ -522,7 +533,7 @@ GDKload(int farmid, const char *nme, const char *ext, size_t size, size_t *maxsi
 	assert(!GDKinmemory(farmid));
 	assert(size <= *maxsize);
 	assert(farmid != NOFARM || ext == NULL);
-	TRC_DEBUG(IO_, "GDKload: name=%s, ext=%s, mode %d\n", nme, ext ? ext : "", (int) mode);
+	TRC_DEBUG(IO, "GDKload: name=%s, ext=%s, mode %d\n", nme, ext ? ext : "", (int) mode);
 
 	if (mode == STORE_MEM) {
 		int fd = GDKfdlocate(farmid, nme, "rb", ext);
@@ -544,7 +555,7 @@ GDKload(int farmid, const char *nme, const char *ext, size_t size, size_t *maxsi
 					 * recognize that we're just
 					 * printing the value of ptr,
 					 * not its contents */
-					TRC_DEBUG(IO_, "read(dst %p, n_expected %zd, fd %d) = %zd\n", (void *)dst, n_expected, fd, n);
+					TRC_DEBUG(IO, "read(dst %p, n_expected %zd, fd %d) = %zd\n", (void *)dst, n_expected, fd, n);
 #endif
 
 					if (n <= 0)
@@ -584,18 +595,16 @@ GDKload(int farmid, const char *nme, const char *ext, size_t size, size_t *maxsi
 			nme = path;
 		}
 		if (nme != NULL && GDKextend(nme, size) == GDK_SUCCEED) {
-			int mod = MMAP_READ | MMAP_WRITE | MMAP_SEQUENTIAL;
+			int mod = MMAP_READ | MMAP_WRITE;
 
 			if (mode == STORE_PRIV)
 				mod |= MMAP_COPY;
-			else
-				mod |= MMAP_SYNC;
 			ret = GDKmmap(nme, mod, size);
 			if (ret != NULL) {
 				/* success: update allocated size */
 				*maxsize = size;
 			}
-			TRC_DEBUG(IO_, "mmap(NULL, 0, maxsize %zu, mod %d, path %s, 0) = %p\n", size, mod, nme, (void *)ret);
+			TRC_DEBUG(IO, "mmap(NULL, 0, maxsize %zu, mod %d, path %s, 0) = %p\n", size, mod, nme, (void *)ret);
 		}
 	}
 	return ret;
@@ -620,11 +629,11 @@ GDKload(int farmid, const char *nme, const char *ext, size_t size, size_t *maxsi
 static BAT *
 DESCload(int i)
 {
-	const char *s, *nme = BBP_physical(i);
+	const char *nme = BBP_physical(i);
 	BAT *b = NULL;
 	int tt;
 
-	TRC_DEBUG(IO_, "DESCload: %s\n", nme ? nme : "<noname>");
+	TRC_DEBUG(IO, "DESCload: %s\n", nme ? nme : "<noname>");
 
 	b = BBP_desc(i);
 
@@ -636,7 +645,8 @@ DESCload(int i)
 	MT_lock_set(&b->theaplock);
 	tt = b->ttype;
 	if (tt < 0) {
-		if ((tt = ATOMindex(s = ATOMunknown_name(tt))) < 0) {
+		const char *s = ATOMunknown_name(tt);
+		if ((tt = ATOMindex(s)) < 0) {
 			MT_lock_unset(&b->theaplock);
 			GDKerror("atom '%s' unknown, in BAT '%s'.\n", s, nme);
 			return NULL;
@@ -666,21 +676,25 @@ BATsave_iter(BAT *b, BATiter *bi, BUN size)
 
 	dosync = (BBP_status(b->batCacheid) & BBPPERSISTENT) != 0;
 	assert(!GDKinmemory(bi->h->farmid));
-	/* views cannot be saved, but make an exception for
-	 * force-remapped views */
-	if (isVIEW(b)) {
-		if (locked)
-			MT_rwlock_rdunlock(&b->thashlock);
-		GDKerror("%s is a view on %s; cannot be saved\n", BATgetId(b), BBP_logical(VIEWtparent(b)));
-		return GDK_FAIL;
-	}
 	if (!BATdirtybi(*bi)) {
 		if (locked)
 			MT_rwlock_rdunlock(&b->thashlock);
 		return GDK_SUCCEED;
 	}
+	/* views cannot be saved, but make an exception for
+	 * force-remapped views */
+	if ((bi->h != NULL && bi->h->parentid != b->batCacheid) ||
+	    (bi->vh != NULL && bi->vh->parentid != b->batCacheid && bi->vh->parentid != b->ustr)) {
+		if (locked)
+			MT_rwlock_rdunlock(&b->thashlock);
+		GDKerror("%s is a view on %s; cannot be saved\n", BATgetId(b), BBP_logical(VIEWtparent(b)));
+		assert(0);
+		return GDK_FAIL;
+	}
 
 	/* start saving data */
+	if (bi->type == TYPE_msk)
+		MT_lock_set(&b->theaplock);
 	if (bi->type != TYPE_void && bi->base == NULL) {
 		assert(BBP_status(b->batCacheid) & BBPSWAPPED);
 		if (dosync && !(ATOMIC_GET(&GDKdebug) & NOSYNCMASK)) {
@@ -703,7 +717,7 @@ BATsave_iter(BAT *b, BATiter *bi, BUN size)
 						    bi->h->filename);
 				close(fd);
 			}
-			if (bi->vh) {
+			if (bi->vh && !bi->ustr) {
 				fd = GDKfdlocate(bi->vh->farmid, bi->vh->filename, "rb+", NULL);
 				if (fd < 0) {
 					GDKsyserror("cannot open file %s for sync\n",
@@ -729,23 +743,25 @@ BATsave_iter(BAT *b, BATiter *bi, BUN size)
 		if ((!bi->copiedtodisk || bi->hdirty)
 		    && (err == GDK_SUCCEED && bi->type)) {
 			const char *tail = strchr(bi->h->filename, '.') + 1;
-			err = HEAPsave(bi->h, nme, tail, dosync, bi->hfree, &b->theaplock);
+			err = HEAPsave(bi->h, nme, tail, dosync, bi->hfree, bi->type == TYPE_msk ? NULL : &b->theaplock);
 		}
 		if (bi->vh
+		    && !bi->ustr
 		    && (!bi->copiedtodisk || bi->vhdirty)
 		    && ATOMvarsized(bi->type)
 		    && err == GDK_SUCCEED)
-			err = HEAPsave(bi->vh, nme, "theap", dosync, bi->vhfree, &b->theaplock);
+			err = HEAPsave(bi->vh, nme, "theap", dosync, bi->vhfree, bi->type == TYPE_msk ? NULL : &b->theaplock);
 	}
 
 	if (err == GDK_SUCCEED) {
-		MT_lock_set(&b->theaplock);
+		if (bi->type != TYPE_msk)
+			MT_lock_set(&b->theaplock);
 		if (b->theap != bi->h) {
 			assert(b->theap->dirty);
 			b->theap->wasempty = bi->h->wasempty;
 			b->theap->hasfile |= bi->h->hasfile;
 		}
-		if (b->tvheap && b->tvheap != bi->vh) {
+		if (!b->ustr && b->tvheap && b->tvheap != bi->vh) {
 			assert(b->tvheap->dirty);
 			b->tvheap->wasempty = bi->vh->wasempty;
 			b->tvheap->hasfile |= bi->vh->hasfile;
@@ -753,7 +769,7 @@ BATsave_iter(BAT *b, BATiter *bi, BUN size)
 		if (size != b->batCount) {
 			/* if the size doesn't match, the BAT must be dirty */
 			b->theap->dirty = true;
-			if (b->tvheap)
+			if (!b->ustr && b->tvheap)
 				b->tvheap->dirty = true;
 		}
 		/* there is something on disk now */
@@ -761,7 +777,8 @@ BATsave_iter(BAT *b, BATiter *bi, BUN size)
 		MT_lock_unset(&b->theaplock);
 		if (locked &&  b->thash && b->thash != (Hash *) 1)
 			BAThashsave(b, dosync);
-	}
+	} else if (bi->type == TYPE_msk)
+		MT_lock_unset(&b->theaplock);
 	if (locked)
 		MT_rwlock_rdunlock(&b->thashlock);
 	return err;
@@ -802,6 +819,8 @@ BATload_intern(bat bid, bool lock)
 	if (b->ttype != TYPE_void) {
 		b->theap->storage = b->theap->newstorage = STORE_INVALID;
 		if ((b->batCount == 0 ?
+		     ATOMstorage(b->ttype) == TYPE_msk ?
+		     HEAPalloc(b->theap, (b->batCapacity + 31) / 32, 4) :
 		     HEAPalloc(b->theap, b->batCapacity, b->twidth) :
 		     HEAPload(b->theap, b->theap->filename, NULL, b->batRestricted == BAT_READ)) != GDK_SUCCEED) {
 			HEAPfree(b->theap, false);
@@ -818,7 +837,7 @@ BATload_intern(bat bid, bool lock)
 	}
 
 	/* LOAD tail heap */
-	if (ATOMvarsized(b->ttype)) {
+	if (ATOMvarsized(b->ttype) && !b->ustr) {
 		b->tvheap->storage = b->tvheap->newstorage = STORE_INVALID;
 		if ((b->tvheap->free == 0 ?
 		     ATOMheap(b->ttype, b->tvheap, b->batCapacity) :
@@ -839,12 +858,7 @@ BATload_intern(bat bid, bool lock)
 	b->theap->parentid = b->batCacheid;
 
 	/* load succeeded; register it in BBP */
-	if (BBPcacheit(b, lock) != GDK_SUCCEED) {
-		HEAPfree(b->theap, false);
-		if (b->tvheap)
-			HEAPfree(b->tvheap, false);
-		return NULL;
-	}
+	BBPcacheit(b, lock);
 	return b;
 }
 
@@ -871,10 +885,11 @@ BATdelete(BAT *b)
 	PROPdestroy_nolock(b);
 	STRMPdestroy(b);
 	RTREEdestroy(b);
+	TSKdestroy(b);
 	if (b->theap) {
 		HEAPfree(b->theap, true);
 	}
-	if (b->tvheap) {
+	if (b->tvheap && !b->ustr) {
 		HEAPfree(b->tvheap, true);
 	}
 	b->batCopiedtodisk = false;
@@ -890,7 +905,7 @@ BATprintcolumns(stream *s, int argc, BAT *argv[])
 	int i;
 	BUN n, cnt;
 	struct colinfo {
-		ssize_t (*s) (str *, size_t *, const void *, bool);
+		ssize_t (*s) (allocator *ma, str *, size_t *, const void *, bool);
 		BATiter i;
 	} *colinfo;
 	char *buf;
@@ -910,7 +925,9 @@ BATprintcolumns(stream *s, int argc, BAT *argv[])
 		}
 	}
 
-	if ((colinfo = GDKmalloc(argc * sizeof(*colinfo))) == NULL) {
+	allocator *ta = MT_thread_getallocator();
+	allocator_state ta_state = ma_open(ta);
+	if ((colinfo = ma_alloc(ta, argc * sizeof(*colinfo))) == NULL) {
 		GDKerror("Cannot allocate memory\n");
 		return GDK_FAIL;
 	}
@@ -935,7 +952,7 @@ BATprintcolumns(stream *s, int argc, BAT *argv[])
 	for (n = 0, cnt = BATcount(argv[0]); n < cnt; n++) {
 		mnstr_write(s, "[ ", 1, 2);
 		for (i = 0; i < argc; i++) {
-			len = colinfo[i].s(&buf, &buflen, BUNtail(colinfo[i].i, n), true);
+			len = colinfo[i].s(ta, &buf, &buflen, BUNtail(&colinfo[i].i, n), true);
 			if (len < 0) {
 				rc = GDK_FAIL;
 				goto bailout;
@@ -951,8 +968,7 @@ BATprintcolumns(stream *s, int argc, BAT *argv[])
 	for (i = 0; i < argc; i++) {
 		bat_iterator_end(&colinfo[i].i);
 	}
-	GDKfree(buf);
-	GDKfree(colinfo);
+	ma_close(&ta_state);
 
 	return rc;
 }

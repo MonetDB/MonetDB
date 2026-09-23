@@ -3,11 +3,9 @@
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024, 2025 MonetDB Foundation;
- * Copyright August 2008 - 2023 MonetDB B.V.;
- * Copyright 1997 - July 2008 CWI.
+ * For copyright information, see the file debian/copyright.
  */
 
 /*
@@ -66,42 +64,4 @@ mal_unquote(char *msg)
 		s++;
 	}
 	*s = 0;						/* close string */
-}
-
-char *
-mal_quote(const char *msg, size_t size)
-{
-	char *s = GDKmalloc(size * 2 + 1);	/* we absolutely don't need more than this (until we start producing octal escapes */
-	char *t = s;
-
-	if (s == NULL)
-		return NULL;
-	while (size > 0) {
-		size--;
-		switch (*msg) {
-		case '"':
-			*t++ = '\\';
-			*t++ = '"';
-			break;
-		case '\n':
-			*t++ = '\\';
-			*t++ = 'n';
-			break;
-		case '\t':
-			*t++ = '\\';
-			*t++ = 't';
-			break;
-		case '\\':
-			*t++ = '\\';
-			*t++ = '\\';
-			break;
-		default:
-			*t++ = *msg;
-			break;
-		}
-		msg++;
-		/* also deal with binaries */
-	}
-	*t = 0;
-	return s;
 }

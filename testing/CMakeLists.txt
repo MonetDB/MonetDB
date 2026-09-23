@@ -3,11 +3,9 @@
 #
 # This Source Code Form is subject to the terms of the Mozilla Public
 # License, v. 2.0.  If a copy of the MPL was not distributed with this
-# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+# file, You can obtain one at https://mozilla.org/MPL/2.0/.
 #
-# Copyright 2024, 2025 MonetDB Foundation;
-# Copyright August 2008 - 2023 MonetDB B.V.;
-# Copyright 1997 - July 2008 CWI.
+# For copyright information, see the file debian/copyright.
 #]]
 
 set(PYTHON "${Python_EXECUTABLE}")
@@ -39,9 +37,6 @@ set(QXSOURCE "${CMAKE_SOURCE_DIR}")
 set(QXsysconfdir "${CMAKE_INSTALL_FULL_SYSCONFDIR}")
 set(SOURCE "${CMAKE_SOURCE_DIR}")
 
-if (HAVE_CUDF)
-  set(HAVE_CUDF_FALSE "#")
-endif(HAVE_CUDF)
 if (HAVE_CURL)
   set(HAVE_CURL_FALSE "#")
 endif(HAVE_CURL)
@@ -66,18 +61,18 @@ endif(HAVE_LIBLZMA)
 if (HAVE_LIBPCRE)
   set(HAVE_LIBPCRE_FALSE "#")
 endif(HAVE_LIBPCRE)
-if (HAVE_LIBPY3)
-  set(HAVE_LIBPY3_FALSE "#")
-endif(HAVE_LIBPY3)
-if (HAVE_LIBR)
-  set(HAVE_LIBR_FALSE "#")
-endif(HAVE_LIBR)
 if (HAVE_LIBXML)
   set(HAVE_LIBXML_FALSE "#")
 endif(HAVE_LIBXML)
 if (HAVE_LIBZ)
   set(HAVE_LIBZ_FALSE "#")
 endif(HAVE_LIBZ)
+if (HAVE_SNAPPY)
+  set(HAVE_SNAPPY_FALSE "#")
+endif(HAVE_SNAPPY)
+if (HAVE_ZSTD)
+  set(HAVE_ZSTD_FALSE "#")
+endif(HAVE_ZSTD)
 if (HAVE_NETCDF)
   set(HAVE_NETCDF_FALSE "#")
 endif(HAVE_NETCDF)
@@ -111,10 +106,6 @@ configure_file(Mz.py.in
   ${CMAKE_CURRENT_BINARY_DIR}/Mz.py
   @ONLY)
 
-configure_file(listexports.py.in
-  ${CMAKE_CURRENT_BINARY_DIR}/listexports.py
-  @ONLY)
-
 install(FILES
   ${CMAKE_CURRENT_BINARY_DIR}/Mtest.py
   PERMISSIONS ${PROGRAM_PERMISSIONS_DEFAULT}
@@ -131,10 +122,11 @@ if(PYTHON3_LIBDIR)
   install(FILES
     process.py
     __init__.py
-    ${CMAKE_CURRENT_BINARY_DIR}/listexports.py
+    listexports.py
     exportutils.py
     melcheck.py
     sqllogictest.py
+    tpymonetdb.py
     explain.py
     plan.py
     floatutil.py

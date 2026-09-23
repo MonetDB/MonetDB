@@ -3,11 +3,9 @@
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024, 2025 MonetDB Foundation;
- * Copyright August 2008 - 2023 MonetDB B.V.;
- * Copyright 1997 - July 2008 CWI.
+ * For copyright information, see the file debian/copyright.
  */
 
 /*
@@ -37,7 +35,7 @@ pushNilAt(MalBlkPtr mb, InstrPtr p, int pos)
 }
 
 static int
-OPTremapDirect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int idx,
+OPTremapDirect(Client ctx, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int idx,
 			   Module scope)
 {
 	str mod, fcn;
@@ -46,7 +44,7 @@ OPTremapDirect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int idx,
 	InstrPtr p;
 	const char *bufName, *fcnName;
 
-	(void) cntxt;
+	(void) ctx;
 	(void) stk;
 	int plus_one = getArgType(mb, pci, pci->retc) == TYPE_lng ? 1 : 0;
 	mod = VALget(&getVar(mb, getArg(pci, retc + 0 + plus_one))->value);
@@ -56,7 +54,7 @@ OPTremapDirect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int idx,
 		mod += 3;
 
 
-	snprintf(buf, 1024, "bat%s", mod);
+	snprintf(buf, sizeof(buf), "bat%s", mod);
 	bufName = putName(buf);
 	fcnName = putName(fcn);
 	if (bufName == NULL || fcnName == NULL)
@@ -106,9 +104,10 @@ OPTremapDirect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int idx,
 	/* now see if we can resolve the instruction */
 	typeChecker(scope, mb, p, idx, TRUE);
 	if (!p->typeresolved) {
-		freeInstruction(p);
+		freeInstruction(mb, p);
 		return 0;
 	}
+	//printf("#remapped: %s.%s\n", getModuleId(p), getFunctionId(p));
 	pushInstruction(mb, p);
 	return 1;
 }
@@ -145,7 +144,7 @@ OPTremapDirect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int idx,
  * counterpart.
  */
 static int
-OPTmultiplexInline(Client cntxt, MalBlkPtr mb, InstrPtr p, int pc)
+OPTmultiplexInline(Client ctx, MalBlkPtr mb, InstrPtr p, int pc)
 {
 	MalBlkPtr mq;
 	InstrPtr q = NULL, sig;
@@ -153,12 +152,12 @@ OPTmultiplexInline(Client cntxt, MalBlkPtr mb, InstrPtr p, int pc)
 	int i, j, k, m;
 	int refbat = 0, retc = p->retc;
 	bit *upgrade;
-	str msg;
+	allocator *ta = MT_thread_getallocator();
 
 
 	str mod = VALget(&getVar(mb, getArg(p, retc + 0))->value);
 	str fcn = VALget(&getVar(mb, getArg(p, retc + 1))->value);
-	//Symbol s = findSymbol(cntxt->usermodule, mod,fcn);
+	//Symbol s = findSymbol(ctx->usermodule, mod,fcn);
 	Symbol s = findSymbolInModule(getModule(putName(mod)), putName(fcn));
 
 	if (s == NULL || !isSideEffectFree(s->def)
@@ -173,8 +172,10 @@ OPTmultiplexInline(Client cntxt, MalBlkPtr mb, InstrPtr p, int pc)
 	}
 	sig = getInstrPtr(mq, 0);
 
-	upgrade = (bit *) GDKzalloc(sizeof(bit) * mq->vtop);
+	allocator_state ta_state = ma_open(ta);
+	upgrade = (bit *) ma_zalloc(ta, sizeof(bit) * mq->vtop);
 	if (upgrade == NULL) {
+		ma_close(&ta_state);
 		freeMalBlk(mq);
 		return 0;
 	}
@@ -228,16 +229,18 @@ OPTmultiplexInline(Client cntxt, MalBlkPtr mb, InstrPtr p, int pc)
 			&& getArgType(mq, q, 0) == TYPE_void
 			&& !isaBatType(getArgType(mq, q, 1))) {
 			/* handle nil assignment */
-			if (ATOMcmp(getArgGDKType(mq, q, 1),
-						VALptr(&getVar(mq, getArg(q, 1))->value),
-						ATOMnilptr(getArgType(mq, q, 1))) == 0) {
+			if (ATOMeq(getArgGDKType(mq, q, 1),
+					   VALptr(&getVar(mq, getArg(q, 1))->value),
+					   ATOMnilptr(getArgType(mq, q, 1)))) {
 				ValRecord cst;
 				int tpe = getArgType(mq, q, 1);
 
-				cst.vtype = tpe;
-				cst.bat = true;
-				cst.val.bval = bat_nil;
-				cst.len = 0;
+				cst = (ValRecord) {
+					.vtype = tpe,
+					.bat = true,
+					.val.bval = bat_nil,
+					.len = 0,
+				};
 				tpe = newBatType(tpe);
 				setVarType(mq, getArg(q, 0), tpe);
 				m = defConstant(mq, tpe, &cst);
@@ -252,7 +255,7 @@ OPTmultiplexInline(Client cntxt, MalBlkPtr mb, InstrPtr p, int pc)
 				setVarType(mq, getArg(q, 0), tpe);
 				setModuleId(q, algebraRef);
 				setFunctionId(q, projectRef);
-				q = pushArgument(mb, q, getArg(q, 1));
+				q = pushArgument(mq, q, getArg(q, 1));
 				mq->stmt[i] = q;
 				getArg(q, 1) = refbat;
 			}
@@ -270,7 +273,7 @@ OPTmultiplexInline(Client cntxt, MalBlkPtr mb, InstrPtr p, int pc)
 					|| q->barrier == LEAVEsymbol)
 					goto terminateMX;
 				if (getModuleId(q)) {
-					snprintf(buf, 1024, "bat%s", getModuleId(q));
+					snprintf(buf, sizeof(buf), "bat%s", getModuleId(q));
 					setModuleId(q, putName(buf));
 					q->typeresolved = false;
 					if (q->retc == 1 &&
@@ -321,7 +324,7 @@ OPTmultiplexInline(Client cntxt, MalBlkPtr mb, InstrPtr p, int pc)
 					}
 
 					/* now see if we can resolve the instruction */
-					typeChecker(cntxt->usermodule, mq, q, i, TRUE);
+					typeChecker(ctx->usermodule, mq, q, i, TRUE);
 					if (!q->typeresolved)
 						goto terminateMX;
 					break;
@@ -336,7 +339,7 @@ OPTmultiplexInline(Client cntxt, MalBlkPtr mb, InstrPtr p, int pc)
 					getArg(q, 1) = refbat;
 
 					q->typeresolved = false;
-					typeChecker(cntxt->usermodule, mq, q, i, TRUE);
+					typeChecker(ctx->usermodule, mq, q, i, TRUE);
 					if (!q->typeresolved)
 						goto terminateMX;
 					break;
@@ -348,17 +351,16 @@ OPTmultiplexInline(Client cntxt, MalBlkPtr mb, InstrPtr p, int pc)
 	if (mq->errors) {
   terminateMX:
 
+		ma_close(&ta_state);
 		freeMalBlk(mq);
-		GDKfree(upgrade);
 
 		/* ugh ugh, fallback to non inline, but optimized code */
-		msg = OPTmultiplexSimple(cntxt, s->def);
-		if (msg)
-			freeException(msg);
+		(void) OPTmultiplexSimple(ctx, s->def);
 		if (s->kind == FUNCTIONsymbol)
 			s->def->inlineProp = 0;
 		return 0;
 	}
+	ma_close(&ta_state);
 	/*
 	 * We have successfully constructed a variant
 	 * of the to-be-inlined function. Put it in place
@@ -367,10 +369,9 @@ OPTmultiplexInline(Client cntxt, MalBlkPtr mb, InstrPtr p, int pc)
 	 */
 	delArgument(p, 2);
 	delArgument(p, 1);
-	inlineMALblock(mb, pc, mq);
+	inlineMALblock(ctx, mb, pc, mq);
 
 	freeMalBlk(mq);
-	GDKfree(upgrade);
 	return 1;
 }
 
@@ -392,7 +393,7 @@ static const struct {
 };
 
 static int
-OPTremapSwitched(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
+OPTremapSwitched(Client ctx, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 				 int idx, Module scope)
 {
 	char *fcn;
@@ -414,10 +415,11 @@ OPTremapSwitched(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 			r = getArg(pci, 3);
 			getArg(pci, 3) = getArg(pci, 4);
 			getArg(pci, 4) = r;
-			r = OPTremapDirect(cntxt, mb, stk, pci, idx, scope);
+			r = OPTremapDirect(ctx, mb, stk, pci, idx, scope);
 
 			/* always restore the allocated function name */
 			getVarConstant(mb, getArg(pci, 2)).val.sval = fcn;
+			getVarConstant(mb, getArg(pci, 2)).allocated = false;
 			getVarConstant(mb, getArg(pci, 2)).len = strlen(fcn);
 
 			if (r)
@@ -432,11 +434,11 @@ OPTremapSwitched(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 }
 
 str
-OPTremapImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+OPTremapImplementation(Client ctx, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	InstrPtr *old, p;
 	int i, limit, slimit, actions = 0;
-	Module scope = cntxt->usermodule;
+	Module scope = ctx->usermodule;
 	str msg = MAL_SUCCEED;
 
 	for (i = 0; i < mb->stop; i++) {
@@ -469,35 +471,35 @@ OPTremapImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			int plus_one = getArgType(mb, p, p->retc) == TYPE_lng ? 1 : 0;
 			str mod = VALget(&getVar(mb, getArg(p, p->retc + 0 + plus_one))-> value);
 			str fcn = VALget(&getVar(mb, getArg(p, p->retc + 1 + plus_one))-> value);
-			//Symbol s = findSymbol(cntxt->usermodule, mod,fcn);
+			//Symbol s = findSymbol(ctx->usermodule, mod,fcn);
 			Symbol s = findSymbolInModule(getModule(putName(mod)), putName(fcn));
 
 			if (s && s->kind == FUNCTIONsymbol && s->def->inlineProp) {
 				pushInstruction(mb, p);
-				if (OPTmultiplexInline(cntxt, mb, p, mb->stop - 1)) {
+				if (OPTmultiplexInline(ctx, mb, p, mb->stop - 1)) {
 					actions++;
 				}
-			} else if (OPTremapDirect(cntxt, mb, stk, p, i, scope)
-					   || OPTremapSwitched(cntxt, mb, stk, p, i, scope)) {
-				freeInstruction(p);
+			} else if (OPTremapDirect(ctx, mb, stk, p, i, scope)
+					   || OPTremapSwitched(ctx, mb, stk, p, i, scope)) {
+				freeInstruction(mb, p);
 				actions++;
 			} else {
 				pushInstruction(mb, p);
 			}
-		} else if (p->argc == 4 && getModuleId(p) == aggrRef
+		} else if (0 && p->argc == 4 && getModuleId(p) == aggrRef
 				   && getFunctionId(p) == avgRef) {
 			/* group aggr.avg -> aggr.sum/aggr.count */
 			InstrPtr sum, avg, t, iszero;
 			InstrPtr cnt;
-			sum = copyInstruction(p);
+			sum = copyInstruction(mb, p);
 			if (sum == NULL) {
 				msg = createException(MAL, "optimizer.remap",
 									  SQLSTATE(HY013) MAL_MALLOC_FAIL);
 				break;
 			}
-			cnt = copyInstruction(p);
+			cnt = copyInstruction(mb, p);
 			if (cnt == NULL) {
-				freeInstruction(sum);
+				freeInstruction(mb, sum);
 				msg = createException(MAL, "optimizer.remap",
 									  SQLSTATE(HY013) MAL_MALLOC_FAIL);
 				break;
@@ -567,7 +569,7 @@ OPTremapImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			avg = pushArgument(mb, avg, getDestVar(cnt));
 			avg = pushNilBat(mb, avg);
 			avg = pushNilBat(mb, avg);
-			freeInstruction(p);
+			freeInstruction(mb, p);
 			pushInstruction(mb, avg);
 		} else {
 			pushInstruction(mb, p);
@@ -576,11 +578,10 @@ OPTremapImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	for (; i < slimit; i++)
 		if (old[i])
 			pushInstruction(mb, old[i]);
-	GDKfree(old);
 
 	/* Defense line against incorrect plans */
 	if (msg == MAL_SUCCEED && actions > 0) {
-		msg = chkTypes(cntxt->usermodule, mb, FALSE);
+		msg = chkTypes(ctx->usermodule, mb, FALSE);
 		if (!msg)
 			msg = chkFlow(mb);
 		if (!msg)

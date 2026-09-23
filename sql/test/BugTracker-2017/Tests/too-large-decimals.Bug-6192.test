@@ -16,12 +16,12 @@ INSERT INTO test_table4 VALUES (53142175)
 statement ok
 INSERT INTO test_table4 VALUES (53142)
 
-query R rowsort
+query D rowsort
 SELECT * FROM test_table4
 ----
-53142.000
-53142175.000
-531421754.000
+53142.00
+53142175.00
+531421754.00
 
 statement ok
 DROP TABLE test_table4

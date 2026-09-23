@@ -3,11 +3,9 @@
 #
 # This Source Code Form is subject to the terms of the Mozilla Public
 # License, v. 2.0.  If a copy of the MPL was not distributed with this
-# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+# file, You can obtain one at https://mozilla.org/MPL/2.0/.
 #
-# Copyright 2024, 2025 MonetDB Foundation;
-# Copyright August 2008 - 2023 MonetDB B.V.;
-# Copyright 1997 - July 2008 CWI.
+# For copyright information, see the file debian/copyright.
 #]]
 
 #[[
@@ -26,9 +24,11 @@ install(FILES
   25_debug.sql
   26_sysmon.sql
   27_rejects.sql
+  28_copy.sql
   39_analytics.sql
   40_json.sql
   42_md5sum.sql
+  44_inet46.sql
   45_uuid.sql
   46_profiler.sql
   47_regexp.sql

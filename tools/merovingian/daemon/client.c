@@ -3,11 +3,9 @@
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024, 2025 MonetDB Foundation;
- * Copyright August 2008 - 2023 MonetDB B.V.;
- * Copyright 1997 - July 2008 CWI.
+ * For copyright information, see the file debian/copyright.
  */
 
 #include "monetdb_config.h"
@@ -144,7 +142,15 @@ handleClient(void *data)
 #endif
 			MONETDB5_PASSWDHASH
 			);
-	mnstr_flush(fout, MNSTR_FLUSH_DATA);
+	if (mnstr_flush(fout, MNSTR_FLUSH_DATA) != 0) {
+		/* We succesfully accepted a connection but writing to it failed
+		 * immediately. This is likely to be a TCP-based health check that
+		 * closed the connection as soon as it was accepted. */
+		close_stream(fout);
+		close_stream(fdin);
+		self->dead = true;
+		return NO_ERR;
+	}
 
 	/* get response */
 	buf[0] = '\0';
@@ -469,7 +475,7 @@ acceptConnections(int socks[3])
 		}
 
 		/* Wait up to 5 seconds */
-		struct timeval tv = (struct timeval) {.tv_sec = 5};
+		struct timeval tv = {.tv_sec = 5};
 		retval = select(sock + 1, &fds, NULL, NULL, &tv);
 		sock = -1;
 #endif

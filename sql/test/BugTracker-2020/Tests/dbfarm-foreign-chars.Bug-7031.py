@@ -1,4 +1,5 @@
-import sys, os, tempfile, pymonetdb
+from MonetDBtesting import tpymonetdb as pymonetdb
+import sys, os, tempfile
 
 try:
     from MonetDBtesting import process
@@ -12,7 +13,7 @@ with tempfile.TemporaryDirectory() as farm_dir:
     with process.server(mapiport='0', dbname='mynode', dbfarm=mypath,
                         stdin=process.PIPE, stdout=process.PIPE,
                         stderr=process.PIPE) as prc:
-        conn = pymonetdb.connect(database='mynode', port=prc.dbport, autocommit=True)
+        conn = pymonetdb.connect(database=prc.usock or 'mynode', port=prc.dbport, autocommit=True)
         cur = conn.cursor()
 
         cur.execute('SELECT \'进起都家\';')

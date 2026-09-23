@@ -81,7 +81,7 @@ SELECT groupID, median(numValue) FROM sampleData GROUP BY groupID ORDER BY group
 5
 0
 
-query IR nosort
+query ID nosort
 SELECT R.groupID, CAST(AVG(1.0*R.numValue) AS DECIMAL(10,2)) AS medianValue
 FROM
 (    SELECT GroupID, numValue, ROW_NUMBER() OVER(PARTITION BY groupID ORDER BY NumValue) AS rowno
@@ -96,15 +96,15 @@ ON R.GroupID = G.GroupID AND R.rowNo BETWEEN N/2 AND N/2+N%2
 GROUP BY R.groupID ORDER by R.groupID
 ----
 1
-6.000
+6.00
 2
-5.000
+5.00
 3
-34.500
+34.50
 4
-18.000
+18.00
 5
-0.000
+0.00
 
 query IR nosort
 SELECT R.groupID, sqrt(SUM((R.n-G.a)*(R.n-G.a))/count(*)) AS stdev

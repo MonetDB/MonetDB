@@ -3,11 +3,9 @@
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024, 2025 MonetDB Foundation;
- * Copyright August 2008 - 2023 MonetDB B.V.;
- * Copyright 1997 - July 2008 CWI.
+ * For copyright information, see the file debian/copyright.
  */
 
 #ifdef _MSC_VER
@@ -22,6 +20,15 @@
 #define ODBCVER 0x0352		/* Important: this must be defined before include of sql.h and sqlext.h */
 #include <sql.h>
 #include <sqlext.h>
+
+#ifndef SIZEOF_LONG_INT
+#include <limits.h>
+#if LONG_MAX > INT_MAX
+#define SIZEOF_LONG_INT 8
+#else
+#define SIZEOF_LONG_INT 4
+#endif
+#endif
 
 static void
 prerr(SQLSMALLINT tpe, SQLHANDLE hnd, const char *func, const char *pref)
@@ -43,7 +50,7 @@ prerr(SQLSMALLINT tpe, SQLHANDLE hnd, const char *func, const char *pref)
 		 || (strcmp(pref,"Info") != 0)
 		 || (strcmp((char*)state,"01S02") != 0)
 		 || errnr != 0
-		 || (strncmp((char*)msg,"[MonetDB][ODBC Driver 11.", 25) != 0))
+		 || (strncmp((char*)msg,"[MonetDB][ODBC Driver ", 22) != 0))
 			fprintf(stderr, "%s: %s: SQLstate %s, Errnr %d, Message %s\n", func, pref, (char*)state, (int)errnr, (char*)msg);
 		break;
 	case SQL_INVALID_HANDLE:

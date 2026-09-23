@@ -1,4 +1,5 @@
-import os, sys, zipfile, pymonetdb
+from MonetDBtesting import tpymonetdb as pymonetdb
+import os, sys, zipfile
 
 TSTTRGDIR = os.environ['TSTTRGDIR']
 

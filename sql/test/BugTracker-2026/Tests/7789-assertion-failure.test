@@ -1,0 +1,2 @@
+statement error 42000!CHECK: subqueries not allowed inside check constraint
+CREATE TABLE v0 ( v1 BIGINT , v2 INT , v3 DOUBLE PRECISION CONSTRAINT x CHECK ( NOT CASE WHEN 255 BETWEEN v1 AND v3 THEN ( SELECT 127 UNION SELECT 97 ) END ) UNIQUE )

@@ -88,37 +88,16 @@ select count(*) over (rows between 3 preceding and 2 preceding),
 1
 
 query IIIIIII nosort
-select count(aa) over (partition by bb order by bb rows between 3 preceding and 2 preceding),
-       count(aa) over (partition by bb order by bb rows between 2 following and 3 following),
-       count(aa) over (partition by bb order by bb rows between 3 preceding and 3 preceding),
-       count(aa) over (partition by bb order by bb rows between 3 preceding and 9 preceding),
-       count(aa) over (partition by bb order by bb rows between current row and current row),
-       count(aa) over (partition by bb order by bb rows between 0 following and 0 following),
-       count(aa) over (partition by bb order by bb rows between 0 preceding and 0 preceding) from analytics
+select count(aa) over (partition by bb order by bb, aa nulls first rows between 3 preceding and 2 preceding),
+       count(aa) over (partition by bb order by bb, aa nulls first rows between 2 following and 3 following),
+       count(aa) over (partition by bb order by bb, aa nulls first rows between 3 preceding and 3 preceding),
+       count(aa) over (partition by bb order by bb, aa nulls first rows between 3 preceding and 9 preceding),
+       count(aa) over (partition by bb order by bb, aa nulls first rows between current row and current row),
+       count(aa) over (partition by bb order by bb, aa nulls first rows between 0 following and 0 following),
+       count(aa) over (partition by bb order by bb, aa nulls first rows between 0 preceding and 0 preceding) from analytics order by 1,2,3,4,5,6,7
 ----
 0
-1
 0
-0
-1
-1
-1
-0
-0
-0
-0
-1
-1
-1
-1
-0
-0
-0
-1
-1
-1
-0
-1
 0
 0
 0
@@ -139,20 +118,6 @@ select count(aa) over (partition by bb order by bb rows between 3 preceding and 
 1
 1
 0
-1
-0
-0
-1
-1
-1
-0
-0
-0
-0
-1
-1
-1
-1
 0
 0
 0
@@ -163,19 +128,103 @@ select count(aa) over (partition by bb order by bb rows between 3 preceding and 
 0
 0
 0
+1
+1
+1
+0
+1
 0
 0
 0
+0
+0
+0
+1
+0
+0
+1
+1
+1
+0
+1
+0
+0
+1
+1
+1
+1
+0
+0
+0
+1
+1
+1
+1
+0
+0
+0
+1
+1
+1
 
-query IIIIIII rowsort
+query IIIIIII nosort
 select cast(sum(aa) over (rows between 3 preceding and 2 preceding) as bigint),
        cast(sum(aa) over (rows between 2 following and 3 following) as bigint),
        cast(sum(aa) over (rows between 3 preceding and 3 preceding) as bigint),
        cast(sum(aa) over (rows between 3 preceding and 9 preceding) as bigint),
        cast(sum(aa) over (rows between current row and current row) as bigint),
        cast(sum(aa) over (rows between 0 following and 0 following) as bigint),
-       cast(sum(aa) over (rows between 0 preceding and 0 preceding) as bigint) from analytics
+       cast(sum(aa) over (rows between 0 preceding and 0 preceding) as bigint) from analytics order by 1 nulls first,2 nulls first,3 nulls first,4 nulls first,5 nulls first,6 nulls first,7 nulls first
 ----
+NULL
+5
+NULL
+NULL
+3
+3
+3
+NULL
+7
+NULL
+NULL
+15
+15
+15
+3
+NULL
+NULL
+NULL
+6
+6
+6
+5
+8
+5
+NULL
+4
+4
+4
+5
+10
+3
+NULL
+NULL
+NULL
+NULL
+7
+NULL
+3
+NULL
+8
+8
+8
+7
+14
+2
+NULL
+3
+3
+3
 10
 NULL
 4
@@ -197,148 +246,99 @@ NULL
 5
 5
 5
-3
-NULL
-NULL
-NULL
-6
-6
-6
-5
-10
-3
-NULL
-NULL
-NULL
-NULL
-5
-8
-5
-NULL
-4
-4
-4
-7
-14
-2
-NULL
-3
-3
-3
-7
-NULL
-3
-NULL
-8
-8
-8
-NULL
-5
-NULL
-NULL
-3
-3
-3
-NULL
-7
-NULL
-NULL
-15
-15
-15
 
 query IIIIIII nosort
-select cast(sum(aa) over (partition by bb order by bb rows between 3 preceding and 2 preceding) as bigint),
-       cast(sum(aa) over (partition by bb order by bb rows between 2 following and 3 following) as bigint),
-       cast(sum(aa) over (partition by bb order by bb rows between 3 preceding and 3 preceding) as bigint),
-       cast(sum(aa) over (partition by bb order by bb rows between 3 preceding and 9 preceding) as bigint),
-       cast(sum(aa) over (partition by bb order by bb rows between current row and current row) as bigint),
-       cast(sum(aa) over (partition by bb order by bb rows between 0 following and 0 following) as bigint),
-       cast(sum(aa) over (partition by bb order by bb rows between 0 preceding and 0 preceding) as bigint) from analytics
+select cast(sum(aa) over (partition by bb order by bb, aa nulls first rows between 3 preceding and 2 preceding) as bigint),
+       cast(sum(aa) over (partition by bb order by bb, aa nulls first rows between 2 following and 3 following) as bigint),
+       cast(sum(aa) over (partition by bb order by bb, aa nulls first rows between 3 preceding and 3 preceding) as bigint),
+       cast(sum(aa) over (partition by bb order by bb, aa nulls first rows between 3 preceding and 9 preceding) as bigint),
+       cast(sum(aa) over (partition by bb order by bb, aa nulls first rows between current row and current row) as bigint),
+       cast(sum(aa) over (partition by bb order by bb, aa nulls first rows between 0 following and 0 following) as bigint),
+       cast(sum(aa) over (partition by bb order by bb, aa nulls first rows between 0 preceding and 0 preceding) as bigint) from analytics order by 1 nulls first,2 nulls first,3 nulls first,4 nulls first,5 nulls first,6 nulls first,7 nulls first
 ----
 NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+3
+3
+3
+NULL
+NULL
+NULL
+NULL
+3
+3
+3
+NULL
+NULL
+NULL
+NULL
+6
+6
+6
+NULL
+NULL
+NULL
+NULL
+8
+8
+8
+NULL
 4
-NULL
-NULL
-3
-3
-3
-NULL
-NULL
 NULL
 NULL
 2
 2
 2
-3
+NULL
+8
+NULL
+NULL
+NULL
+NULL
+NULL
+NULL
+15
+NULL
+NULL
+5
+5
+5
+2
 NULL
 NULL
 NULL
 4
 4
 4
-NULL
-8
-NULL
-NULL
-NULL
-NULL
-NULL
-NULL
-NULL
-NULL
-NULL
-3
-3
-3
-NULL
-NULL
-NULL
-NULL
-8
-8
-8
-NULL
-6
-NULL
-NULL
-15
-15
-15
-NULL
-NULL
-NULL
-NULL
 5
-5
-5
+NULL
+NULL
+NULL
 15
-NULL
-NULL
-NULL
-6
-6
-6
-NULL
-NULL
-NULL
-NULL
-NULL
-NULL
-NULL
+15
+15
 
 query I nosort
-select min(aa) over (order by bb range between current row and unbounded following) from analytics
+select min(aa) over (order by bb, aa nulls first range between current row and unbounded following) from analytics order by 1 nulls last
 ----
 2
-2
-2
+3
 3
 3
 3
 5
 5
-5
+6
+15
 NULL
 
 query I nosort
@@ -346,17 +346,17 @@ select min(aa) over (order by bb range between current row and unbounded followi
 ----
 
 query I nosort
-select min(aa) over (partition by bb order by bb range between current row and unbounded following) from analytics
+select min(aa) over (partition by bb order by bb, aa nulls first range between current row and unbounded following) from analytics order by 1 nulls last
 ----
 2
-2
-2
 3
 3
 3
+4
 5
-5
-5
+6
+8
+15
 NULL
 
 query I nosort

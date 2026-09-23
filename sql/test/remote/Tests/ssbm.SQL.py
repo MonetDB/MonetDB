@@ -1,4 +1,5 @@
-import os, sys, glob, pymonetdb, threading, time, codecs, tempfile
+from MonetDBtesting import tpymonetdb as pymonetdb
+import os, sys, glob, threading, time, codecs, tempfile
 try:
     from MonetDBtesting import process
 except ImportError:
@@ -605,7 +606,7 @@ workers = []
 with tempfile.TemporaryDirectory() as tmpdir:
     os.mkdir(os.path.join(tmpdir, 'master'))
     with process.server(mapiport='0', dbname="master", dbfarm=os.path.join(tmpdir, 'master'), stdin = process.PIPE, stdout = process.PIPE, stderr=process.PIPE) as masterproc:
-        masterconn = pymonetdb.connect(database='', port=masterproc.dbport, autocommit=True)
+        masterconn = pymonetdb.connect(database=masterproc.usock or '', port=masterproc.dbport, autocommit=True)
 
         # split lineorder table into one file for each worker
         # this is as portable as an anvil
@@ -616,7 +617,8 @@ with tempfile.TemporaryDirectory() as tmpdir:
             shutil.rmtree(lineorderdir)
         if not os.path.exists(lineorderdir):
             os.makedirs(lineorderdir)
-        inputData = open(lineordertbl, 'r').read().split('\n')
+        with open(lineordertbl, 'r') as fil:
+            inputData = fil.read().split('\n')
         linesperslice = len(inputData) // nworkers + 1
         i = 0
         for lines in range(0, len(inputData), linesperslice):
@@ -648,7 +650,7 @@ with tempfile.TemporaryDirectory() as tmpdir:
                 workerrec['proc'] = process.server(mapiport='0', dbname=workerrec['dbname'], dbfarm=workerrec['dbfarm'], stdin = process.PIPE, stdout = process.PIPE, stderr=process.PIPE)
                 workerrec['port'] = workerrec['proc'].dbport
                 workerrec['mapi'] = 'mapi:monetdb://localhost:{}/{}'.format(workerrec['port'], workerdbname)
-                workerrec['conn'] = pymonetdb.connect(database=workerrec['dbname'], port=workerrec['port'], autocommit=True)
+                workerrec['conn'] = pymonetdb.connect(database=workerrec['proc'].usock or workerrec['dbname'], port=workerrec['port'], autocommit=True)
                 t = threading.Thread(target=worker_load, args = [workerrec])
                 t.start()
                 workerrec['loadthread'] = t

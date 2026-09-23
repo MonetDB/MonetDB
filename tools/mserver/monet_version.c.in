@@ -3,19 +3,19 @@
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024, 2025 MonetDB Foundation;
- * Copyright August 2008 - 2023 MonetDB B.V.;
- * Copyright 1997 - July 2008 CWI.
+ * For copyright information, see the file debian/copyright.
  */
 
 #include "monetdb_config.h"
+#include "gdk.h"
 #include "mal.h"
 #include "monet_version.h"
 #include "mutils.h"
 #ifdef HAVE_LIBPCRE
-#include <pcre.h>
+#define PCRE2_CODE_UNIT_WIDTH 8
+#include <pcre2.h>
 #endif
 #ifdef HAVE_LIBXML
 #include <libxml/xmlversion.h>
@@ -43,9 +43,10 @@ monet_version(void)
 
 	MT_init();  /* for MT_pagesize */
 	sz_mem_gb = (dbl)(MT_npages() * MT_pagesize()) / (1024.0 * 1024.0 * 1024.0);
-	cores = MT_check_nr_cores();
+	if ((cores = GDKnr_threads) == 0)
+		cores = MT_check_nr_cores();
 
-	printf("MonetDB 5 server %s", GDKversion());
+	printf("MonetDB 5 server %s", GDKversion(false));
 #ifdef MONETDB_RELEASE
 	printf(" (%s)", MONETDB_RELEASE);
 #else
@@ -64,9 +65,7 @@ monet_version(void)
 #ifndef MONETDB_RELEASE
 	printf("This is an unreleased version\n");
 #endif
-	printf("Copyright 2024, 2025 MonetDB Foundation;\n"
-		   "Copyright August 2008 - 2023 MonetDB B.V.;\n"
-		   "Copyright 1997 - July 2008 CWI.\n");
+	printf("Copyright (C) %s MonetDB Foundation.\n", &__DATE__[7]);
 	printf("Visit https://www.monetdb.org/ for further information\n");
 	printf("Found %.1fGiB available memory, %d available cpu core%s\n",
 			sz_mem_gb, cores, cores != 1 ? "s" : "");
@@ -82,12 +81,14 @@ monet_version(void)
 	 * combination and the date), we need to resort to some
 	 * run-time trickery since we can't do it with the
 	 * preprocessor */
-	print_libversion("libpcre",
-			 pcre_version(),
-			 XSTRING(Z PCRE_PRERELEASE)[1] == 0
-			 ? XSTRING(PCRE_MAJOR.PCRE_MINOR PCRE_DATE)
-			 : XSTRING(PCRE_MAJOR.PCRE_MINOR)
-			   XSTRING(PCRE_PRERELEASE PCRE_DATE));
+	char pcre_version[32];
+	pcre2_config(PCRE2_CONFIG_VERSION, pcre_version);
+	print_libversion("libpcre2",
+			 pcre_version,
+			 XSTRING(Z PCRE2_PRERELEASE)[1] == 0
+			 ? XSTRING(PCRE2_MAJOR.PCRE2_MINOR PCRE2_DATE)
+			 : XSTRING(PCRE2_MAJOR.PCRE2_MINOR)
+			   XSTRING(PCRE2_PRERELEASE PCRE2_DATE));
 #endif
 #ifdef HAVE_LIBXML
 	/* no run-time version available, so only compile time */

@@ -1,0 +1,54 @@
+query TIITTT nosort
+-- bug 1238867
+prepare select * from env() as env where 1 = ?
+----
+varchar
+1024
+0
+(empty)
+env
+name
+varchar
+2048
+0
+(empty)
+env
+value
+tinyint
+1
+0
+NULL
+NULL
+NULL
+
+statement error 42000!Cannot have a parameter (?) on both sides of an expression
+-- bug 1238959
+prepare select * from env() as env where ? = ?
+
+statement error 42000!Could not determine type for argument number 1
+-- bug 1238965
+prepare select ? from env() as env
+
+query TIITTT nosort
+-- bug 1240124
+prepare select * from env() as env where name in (?)
+----
+varchar
+1024
+0
+(empty)
+env
+name
+varchar
+2048
+0
+(empty)
+env
+value
+varchar
+1024
+0
+NULL
+NULL
+NULL
+

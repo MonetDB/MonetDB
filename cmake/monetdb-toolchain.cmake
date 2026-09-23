@@ -3,11 +3,9 @@
 #
 # This Source Code Form is subject to the terms of the Mozilla Public
 # License, v. 2.0.  If a copy of the MPL was not distributed with this
-# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+# file, You can obtain one at https://mozilla.org/MPL/2.0/.
 #
-# Copyright 2024, 2025 MonetDB Foundation;
-# Copyright August 2008 - 2023 MonetDB B.V.;
-# Copyright 1997 - July 2008 CWI.
+# For copyright information, see the file debian/copyright.
 #]]
 
 function(monetdb_default_compiler_options)
@@ -23,7 +21,6 @@ function(monetdb_default_compiler_options)
     if(${CMAKE_C_COMPILER_ID} STREQUAL "GNU")
       add_compile_options("-fsanitize=address")
       add_compile_options("-fno-omit-frame-pointer")
-      add_compile_definitions(SANITIZER)
       if(${CMAKE_VERSION} VERSION_GREATER_EQUAL "3.13.0")
         add_link_options("-fsanitize=address")
       else()
@@ -32,7 +29,6 @@ function(monetdb_default_compiler_options)
     elseif ("${CMAKE_C_COMPILER_ID}" MATCHES "^(Clang|AppleClang)$")
       add_compile_options("-fsanitize=address")
       add_compile_options("-fno-omit-frame-pointer")
-      add_compile_definitions(SANITIZER)
       if(${CMAKE_VERSION} VERSION_GREATER_EQUAL "3.13.0")
         add_link_options("-fsanitize=address")
       else()
@@ -47,7 +43,6 @@ function(monetdb_default_compiler_options)
     if(${CMAKE_C_COMPILER_ID} STREQUAL "GNU")
       add_compile_options("-fsanitize=undefined")
       add_compile_options("-fno-omit-frame-pointer")
-      add_compile_definitions(UNDEFINED)
       if(${CMAKE_VERSION} VERSION_GREATER_EQUAL "3.13.0")
         add_link_options("-fsanitize=undefined")
       else()
@@ -95,23 +90,14 @@ function(monetdb_default_compiler_options)
       add_compile_options("-Wextra")
       add_compile_options("-W")
 
-      add_option_if_available("-Werror-implicit-function-declaration")
       add_option_if_available("-Wpointer-arith")
       add_option_if_available("-Wundef")
       add_option_if_available("-Wformat=2")
       add_option_if_available("-Wformat-overflow=1")
-      if(${CMAKE_C_COMPILER_ID} MATCHES "^GNU$")
-	if(${CMAKE_C_COMPILER_VERSION} VERSION_LESS "9.5.0")
-	  # on Ubuntu 20.04 with gcc 9.4.0 when building a Release
-	  # version we get a warning (hence error) about possible
-	  # buffer overflow in a call to snprintf, this option avoids
-	  # that; I have no idea which version of gcc is safe, so the
-	  # test may have to be refined
-	  add_option_if_available("-Wno-format-truncation")
-	endif()
-      endif()
       add_option_if_available("-Wno-format-nonliteral")
-      #add_option_if_available("-Wformat-signedness") 	-- numpy messes this up
+      add_option_if_available("-Wformat-security")
+      add_option_if_available("-Wformat-signedness")
+      add_option_if_available("-Wformat-y2k")
       add_option_if_available("-Wno-cast-function-type")
       add_option_if_available("-Winit-self")
       add_option_if_available("-Winvalid-pch")

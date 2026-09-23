@@ -1,4 +1,5 @@
-import os, pymonetdb
+from MonetDBtesting import tpymonetdb as pymonetdb
+import os
 import subprocess
 
 db = os.getenv("TSTDB")

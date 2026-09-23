@@ -1,0 +1,37 @@
+query III rowsort
+WITH t(id, k, v) AS (
+  VALUES
+    (1, DATE '2024-01-01', 10),
+    (2, DATE '2024-01-02', 20),
+    (3, CAST(NULL AS DATE), 30),
+    (4, DATE '2024-01-03', 40),
+    (5, CAST(NULL AS DATE), 50)
+)
+SELECT id,
+  SUM(v) OVER (
+    ORDER BY k ASC NULLS LAST
+    RANGE BETWEEN INTERVAL '1' DAY PRECEDING AND CURRENT ROW
+  ) AS actual_nulls_last,
+  SUM(v) OVER (
+    ORDER BY k ASC NULLS FIRST
+    RANGE BETWEEN INTERVAL '1' DAY PRECEDING AND CURRENT ROW
+  ) AS actual_nulls_first
+FROM t
+ORDER BY id
+----
+1
+10
+10
+2
+30
+30
+3
+80
+80
+4
+60
+60
+5
+80
+80
+

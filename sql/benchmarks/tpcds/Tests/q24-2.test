@@ -1,4 +1,4 @@
-query TTTR nosort
+query TTTD nosort
 -- query 24-2
 with ssales as
 (select c_last_name
@@ -26,7 +26,7 @@ where ss_ticket_number = sr_ticket_number
   and c_current_addr_sk = ca_address_sk
   and c_birth_country <> upper(ca_country)
   and s_zip = ca_zip
-  and s_market_id = 8
+  and s_market_id=8
 group by c_last_name
         ,c_first_name
         ,s_store_name
@@ -55,17 +55,17 @@ order by c_last_name
 Hamlin
 Heather
 able
-149.650
+149.65
 Martin
 Harold
 bar
-5834.880
+5834.88
 Nall
 Mike
 able
-999.700
+999.70
 Southern
 Jeannie
 bar
-446.310
+446.31
 

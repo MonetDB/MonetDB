@@ -3,11 +3,9 @@
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024, 2025 MonetDB Foundation;
- * Copyright August 2008 - 2023 MonetDB B.V.;
- * Copyright 1997 - July 2008 CWI.
+ * For copyright information, see the file debian/copyright.
  */
 
 /*
@@ -19,18 +17,73 @@
 #include "monetdb_config.h"
 #include <string.h>
 #include "sql_mvc.h"
-#include "sql.h"
+#include "sql_monet_backend.h"
 #ifndef __clang_major__		/* stupid include file gdal/cpl_port.h */
 #define __clang_major__ 0
 #endif
-#include "shp.h"
+#include "mal.h"
+#include "mal_client.h"
+
+/* these were previously defined in monetdb_config.h */
+#undef HAVE_DLFCN_H
+#undef HAVE_FCNTL_H
+#undef HAVE_ICONV
+#undef HAVE_STRINGS_H
+#include <gdal.h>
+#include <ogr_api.h>
 #include <cpl_conv.h>		/* for CPLFree */
 #include "sql_execute.h"
 #include "mal_exception.h"
 
 #include "libgeom.h"
 
-GDALWConnection * GDALWConnect(char * source) {
+OGRErr OSRExportToProj4(OGRSpatialReferenceH, char **);
+OGRErr OSRExportToWkt(OGRSpatialReferenceH, char **);
+const char *OSRGetAttrValue(OGRSpatialReferenceH hSRS, const char *pszName, int iChild);
+
+/* CURRENT_TIMESTAMP() ?*/
+#define INSFILE \
+	"INSERT INTO files(id,path) \
+	 VALUES(%d, '%s');"
+#define INSSHP \
+	"INSERT INTO shapefiles(shapefileid, fileid, mbb, srid, datatable) \
+	 VALUES(%d, %d, NULL, %d, '%s');"
+#define INSSHPDBF \
+	"INSERT INTO shapefiles_dbf(shapefileid, attr, datatype) \
+	 VALUES('%d', '%s', '%s');"
+#define CRTTBL \
+	"CREATE TABLE %s (gid SERIAL, %s);"
+#define INSTD \
+	"INSERT INTO %s (%s) VALUES (%s);"
+
+typedef struct
+{
+	const char *fieldName;
+	const char *fieldType;
+} GDALWSimpleFieldDef;
+
+typedef struct
+{
+	char *source;
+	OGRDataSourceH handler;
+	const char *layername;
+	OGRLayerH layer;
+	OGRSFDriverH driver;
+	OGRFieldDefnH *fieldDefinitions;
+	int numFieldDefinitions;
+} GDALWConnection;
+
+typedef struct
+{
+	int epsg;
+	const char *authName;
+	const char *srsText;
+	const char *proj4Text;
+} GDALWSpatialInfo;
+
+static GDALWConnection *
+GDALWConnect(char * source)
+{
 	GDALWConnection * conn = NULL;
 	OGRFeatureDefnH featureDefn;
 	int fieldCount, i;
@@ -72,13 +125,17 @@ GDALWConnection * GDALWConnect(char * source) {
 	return conn;
 }
 
-void GDALWClose(GDALWConnection * conn) {
+static void
+GDALWClose(GDALWConnection *conn)
+{
 	free(conn->fieldDefinitions);
 	OGRReleaseDataSource(conn->handler);
 	free(conn);
 }
 
-GDALWSimpleFieldDef * GDALWGetSimpleFieldDefinitions(GDALWConnection conn) {
+static GDALWSimpleFieldDef *
+GDALWGetSimpleFieldDefinitions(GDALWConnection conn)
+{
 	int i;
 	GDALWSimpleFieldDef * columns;
 	OGRFieldDefnH fieldDefn;
@@ -100,7 +157,10 @@ GDALWSimpleFieldDef * GDALWGetSimpleFieldDefinitions(GDALWConnection conn) {
 	return columns;
 }
 
-void GDALWPrintRecords(GDALWConnection conn) {
+#if 0
+static void
+GDALWPrintRecords(GDALWConnection conn)
+{
 	char * wkt;
 	int i;
 	OGRFeatureH feature;
@@ -127,8 +187,11 @@ void GDALWPrintRecords(GDALWConnection conn) {
 		OGR_F_Destroy(feature);
 	}
 }
+#endif
 
-GDALWSpatialInfo GDALWGetSpatialInfo(GDALWConnection conn) {
+static GDALWSpatialInfo
+GDALWGetSpatialInfo(GDALWConnection conn)
+{
 	GDALWSpatialInfo spatialInfo;
 	OGRSpatialReferenceH spatialRef = OGR_L_GetSpatialRef(conn.layer);
 	char * proj4, * srsText, * srid;
@@ -153,8 +216,11 @@ GDALWSpatialInfo GDALWGetSpatialInfo(GDALWConnection conn) {
 }
 
 //Using SQL query
-str createSHPtable(Client cntxt, str schemaname, str tablename, GDALWConnection shp_conn, GDALWSimpleFieldDef *field_definitions) {
+static str
+createSHPtable(Client cntxt, str schemaname, str tablename, GDALWConnection shp_conn, GDALWSimpleFieldDef *field_definitions)
+{
 	unsigned int size = BUFSIZ;
+	size_t temp_len = 0;
 	char *buf = NULL, *temp_buf = GDKmalloc(BUFSIZ * sizeof(char));
 	char *nameToLowerCase = NULL;
 	str msg = MAL_SUCCEED;
@@ -177,21 +243,23 @@ str createSHPtable(Client cntxt, str schemaname, str tablename, GDALWConnection 
 			temp_buf = GDKrealloc(temp_buf, size);
 		}
 		nameToLowerCase = toLower(field_definitions[i].fieldName);
+		temp_len = strlen(temp_buf);
 		if (strcmp(field_definitions[i].fieldType, "Integer") == 0)
 		{
-			sprintf(temp_buf + strlen(temp_buf), "\"%s\" INT, ", nameToLowerCase);
+			snprintf(temp_buf + temp_len, size - temp_len, "\"%s\" INT, ", nameToLowerCase);
 		}
 		else if (strcmp(field_definitions[i].fieldType, "Real") == 0)
 		{
-			sprintf(temp_buf + strlen(temp_buf), "\"%s\" FLOAT, ", nameToLowerCase);
+			snprintf(temp_buf + temp_len, size - temp_len, "\"%s\" FLOAT, ", nameToLowerCase);
 		}
 		else
-			sprintf(temp_buf + strlen(temp_buf), "\"%s\" STRING, ", nameToLowerCase);
+			snprintf(temp_buf + temp_len, size - temp_len, "\"%s\" STRING, ", nameToLowerCase);
 		GDKfree(nameToLowerCase);
 	}
 
 	//Each shapefile table has one geom column
-	sprintf(temp_buf + strlen(temp_buf), "geom GEOMETRY ");
+	temp_len = strlen(temp_buf);
+	snprintf(temp_buf + temp_len, size - temp_len, "geom GEOMETRY ");
 
 	//Concat the schema name with the table name
 	size_t schemaTableSize = strlen(schemaname) + strlen(tablename) + 3;
@@ -210,7 +278,9 @@ str createSHPtable(Client cntxt, str schemaname, str tablename, GDALWConnection 
 	return msg;
 }
 
-str loadSHPtable(mvc *m, sql_schema *sch, str schemaname, str tablename, GDALWConnection shp_conn, GDALWSimpleFieldDef *field_definitions, GDALWSpatialInfo spatial_info) {
+static str
+loadSHPtable(mvc *m, sql_schema *sch, str schemaname, str tablename, GDALWConnection shp_conn, GDALWSimpleFieldDef *field_definitions, GDALWSpatialInfo spatial_info)
+{
 	sql_table *data_table = NULL;
 	sql_column **cols;
 	BAT **colsBAT;
@@ -390,7 +460,9 @@ unfree:
 	return msg;
 }
 
-static str SHPloadInternal (Client cntxt, MalBlkPtr mb, str filename, str schemaname, str tablename) {
+static str
+SHPloadInternal(Client cntxt, MalBlkPtr mb, str filename, str schemaname, str tablename)
+{
 	str msg = MAL_SUCCEED;
 	mvc *m = NULL;
 	sql_schema *sch = NULL;
@@ -452,7 +524,8 @@ static str SHPloadInternal (Client cntxt, MalBlkPtr mb, str filename, str schema
 
 /* TODO: Use Shapefile table to avoid loading the same file more than once, or allow the user to load as many times as he wants? */
 /* Attach and load single shp file given its file name and output table name */
-str SHPloadSchema(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+static str
+SHPloadSchema(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	/* Shapefile name (argument 1) */
 	str filename = *(str *)getArgReference(stk, pci, 1);
@@ -463,7 +536,9 @@ str SHPloadSchema(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	return SHPloadInternal(cntxt,mb,filename,schemaname,tablename);
 }
 
-str SHPload(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
+static str
+SHPload(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+{
 	/* Shapefile name (argument 1) */
 	str filename = *(str *)getArgReference(stk, pci, 1);
 	/* Output table name (argument 3) */

@@ -3,21 +3,17 @@
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024, 2025 MonetDB Foundation;
- * Copyright August 2008 - 2023 MonetDB B.V.;
- * Copyright 1997 - July 2008 CWI.
+ * For copyright information, see the file debian/copyright.
  */
 
 #include "monetdb_config.h"
 #include "opt_querylog.h"
-#include "gdk_time.h"
 #include "querylog.h"
 
 str
-OPTquerylogImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
-						  InstrPtr pci)
+OPTquerylogImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	int i, limit, slimit, actions = 0;
 	InstrPtr p = 0, *old = mb->stmt, q, r;
@@ -31,13 +27,12 @@ OPTquerylogImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 	if (!QLOGisset())
 		goto wrapup;
 
-	(void) stk;					/* to fool compilers */
+	(void) stk;
 	(void) cntxt;
 	/* gather information */
 	for (i = 1; i < mb->stop; i++) {
 		p = getInstrPtr(mb, i);
-		if (getModuleId(p) && idcmp(getModuleId(p), "querylog") == 0
-			&& idcmp(getFunctionId(p), "define") == 0) {
+		if (getModuleId(p) == querylogRef && getFunctionId(p) == defineRef) {
 			defineQuery = p;
 			getVarConstant(mb, getArg(p, 3)).val.lval = GDKusec() - getVarConstant(mb, getArg(p, 3)).val.lval;
 		}
@@ -54,7 +49,7 @@ OPTquerylogImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 
 	pushInstruction(mb, old[0]);
 	/* run the querylog.define operation */
-	defineQuery = copyInstruction(defineQuery);
+	defineQuery = copyInstruction(mb, defineQuery);
 	if (defineQuery == NULL) {
 		msg = createException(MAL, "optimizer.querylog",
 							  SQLSTATE(HY013) MAL_MALLOC_FAIL);
@@ -70,7 +65,7 @@ OPTquerylogImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 	/* collect the initial statistics */
 	q = newStmt(mb, "clients", "getUsername");
 	if (q == NULL) {
-		freeInstruction(defineQuery);
+		freeInstruction(mb, defineQuery);
 		msg = createException(MAL, "optimizer.querylog",
 							  SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto bailout;
@@ -80,7 +75,7 @@ OPTquerylogImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 	defineQuery = pushArgument(mb, defineQuery, name);
 	q = newStmt(mb, mtimeRef, "current_timestamp");
 	if (q == NULL) {
-		freeInstruction(defineQuery);
+		freeInstruction(mb, defineQuery);
 		msg = createException(MAL, "optimizer.querylog",
 							  SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto bailout;
@@ -143,8 +138,8 @@ OPTquerylogImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 		p = old[i];
 
 		if (getModuleId(p) == sqlRef
-			&& (idcmp(getFunctionId(p), "exportValue") == 0
-				|| idcmp(getFunctionId(p), "exportResult") == 0)) {
+			&& (strcmp(getFunctionId(p), "exportValue") == 0
+				|| strcmp(getFunctionId(p), "exportResult") == 0)) {
 
 			q = newStmt(mb, alarmRef, "usec");
 			if (q == NULL) {
@@ -288,7 +283,6 @@ OPTquerylogImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 	for (; i < slimit; i++)
 		if (old[i])
 			pushInstruction(mb, old[i]);
-	GDKfree(old);
 	if (msg == MAL_SUCCEED) {
 		/* Defense line against incorrect plans */
 		msg = chkTypes(cntxt->usermodule, mb, FALSE);

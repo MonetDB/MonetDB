@@ -3,11 +3,9 @@
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024, 2025 MonetDB Foundation;
- * Copyright August 2008 - 2023 MonetDB B.V.;
- * Copyright 1997 - July 2008 CWI.
+ * For copyright information, see the file debian/copyright.
  */
 
 #include "monetdb_config.h"
@@ -104,7 +102,7 @@
 		INIT_0;							\
 		if (ci.tpe == cand_dense) {				\
 			if (grps) {					\
-				MT_thread_setalgorithm("GRP_compare_consecutive_values, dense, groups"); \
+				MT_thread_setalgorithm("GRP_compare_consecutive_values, dense, groups", __func__); \
 				TIMEOUT_LOOP_IDX(r, ci.ncand, qry_ctx) { \
 					p = canditer_next_dense(&ci) - hseqb; \
 					INIT_1;				\
@@ -121,7 +119,7 @@
 				TIMEOUT_CHECK(qry_ctx,			\
 					      GOTO_LABEL_TIMEOUT_HANDLER(error, qry_ctx)); \
 			} else {					\
-				MT_thread_setalgorithm("GRP_compare_consecutive_values, dense, !groups"); \
+				MT_thread_setalgorithm("GRP_compare_consecutive_values, dense, !groups", __func__); \
 				TIMEOUT_LOOP_IDX(r, ci.ncand, qry_ctx) { \
 					p = canditer_next_dense(&ci) - hseqb; \
 					INIT_1;				\
@@ -139,7 +137,7 @@
 			}						\
 		} else {						\
 			if (grps) {					\
-				MT_thread_setalgorithm("GRP_compare_consecutive_values, !dense, groups"); \
+				MT_thread_setalgorithm("GRP_compare_consecutive_values, !dense, groups", __func__); \
 				TIMEOUT_LOOP_IDX(r, ci.ncand, qry_ctx) { \
 					p = canditer_next(&ci) - hseqb;	\
 					INIT_1;				\
@@ -156,7 +154,7 @@
 				TIMEOUT_CHECK(qry_ctx,			\
 					      GOTO_LABEL_TIMEOUT_HANDLER(error, qry_ctx)); \
 			} else {					\
-				MT_thread_setalgorithm("GRP_compare_consecutive_values, !dense, !groups"); \
+				MT_thread_setalgorithm("GRP_compare_consecutive_values, !dense, !groups", __func__); \
 				TIMEOUT_LOOP_IDX(r, ci.ncand, qry_ctx) { \
 					p = canditer_next(&ci) - hseqb;	\
 					INIT_1;				\
@@ -175,28 +173,20 @@
 		}							\
 	} while(0)
 
-#define flt_neq(a, b)	(is_flt_nil(a) ? !is_flt_nil(b) : is_flt_nil(b) || (a) != (b))
-#define dbl_neq(a, b)	(is_dbl_nil(a) ? !is_dbl_nil(b) : is_dbl_nil(b) || (a) != (b))
-#define bte_neq(a, b)	((a) != (b))
-#define sht_neq(a, b)	((a) != (b))
-#define int_neq(a, b)	((a) != (b))
-#define lng_neq(a, b)	((a) != (b))
-#define hge_neq(a, b)	((a) != (b))
-
 #define GRP_compare_consecutive_values_tpe(TYPE)		\
 	GRP_compare_consecutive_values(				\
 	/* INIT_0 */	const TYPE *w = (TYPE *) bi.base;	\
 			TYPE pw = 0			,	\
 	/* INIT_1 */					,	\
-	/* DIFFER */	TYPE##_neq(w[p], pw)		,	\
+	/* DIFFER */	!is_##TYPE##_eq(w[p], pw)	,	\
 	/* KEEP   */	pw = w[p]				\
 	)
 
 #define GRP_compare_consecutive_values_any()			\
 	GRP_compare_consecutive_values(				\
 	/* INIT_0 */	pv = NULL			,	\
-	/* INIT_1 */	v = BUNtail(bi, p)		,	\
-	/* DIFFER */	cmp(v, pv) != 0			,	\
+	/* INIT_1 */	v = BUNtail(&bi, p)		,	\
+	/* DIFFER */	!eq(v, pv)			,	\
 	/* KEEP   */	pv = v					\
 	)
 
@@ -207,7 +197,7 @@
 		pgrp[grps[0]] = 0;					\
 		j = 0;							\
 		if (ci.tpe == cand_dense) {				\
-			MT_thread_setalgorithm("GRP_subscan_old_groups, dense"); \
+			MT_thread_setalgorithm("GRP_subscan_old_groups, dense", __func__); \
 			TIMEOUT_LOOP_IDX(r, ci.ncand, qry_ctx) {	\
 				p = canditer_next_dense(&ci) - hseqb;	\
 				INIT_1;					\
@@ -249,7 +239,7 @@
 			TIMEOUT_CHECK(qry_ctx,				\
 				      GOTO_LABEL_TIMEOUT_HANDLER(error, qry_ctx)); \
 		} else {						\
-			MT_thread_setalgorithm("GRP_subscan_old_groups, !dense"); \
+			MT_thread_setalgorithm("GRP_subscan_old_groups, !dense", __func__); \
 			TIMEOUT_LOOP_IDX(r, ci.ncand, qry_ctx) {	\
 				p = canditer_next(&ci) - hseqb;		\
 				INIT_1;					\
@@ -293,33 +283,20 @@
 		}							\
 	} while(0)
 
-#define flt_equ(a, b)	(is_flt_nil(a) ? is_flt_nil(b) : !is_flt_nil(b) && (a) == (b))
-#define dbl_equ(a, b)	(is_dbl_nil(a) ? is_dbl_nil(b) : !is_dbl_nil(b) && (a) == (b))
-#define bte_equ(a, b)	((a) == (b))
-#define sht_equ(a, b)	((a) == (b))
-#define int_equ(a, b)	((a) == (b))
-#define lng_equ(a, b)	((a) == (b))
-#define hge_equ(a, b)	((a) == (b))
-#ifdef HAVE_HGE
-#define uuid_equ(a, b)	((a).h == (b).h)
-#else
-#define uuid_equ(a, b)	(memcmp((a).u, (b).u, UUID_SIZE) == 0)
-#endif
-
 #define GRP_subscan_old_groups_tpe(TYPE)			\
 	GRP_subscan_old_groups(					\
 	/* INIT_0 */	const TYPE *w = (TYPE *) bi.base;	\
 			TYPE pw = 0			,	\
 	/* INIT_1 */					,	\
-	/* EQUAL  */	TYPE##_equ(w[p], pw)		,	\
+	/* EQUAL  */	is_##TYPE##_eq(w[p], pw)	,	\
 	/* KEEP   */	pw = w[p]				\
 	)
 
 #define GRP_subscan_old_groups_any()				\
 	GRP_subscan_old_groups(					\
 	/* INIT_0 */	pv = NULL			,	\
-	/* INIT_1 */	v = BUNtail(bi, p)		,	\
-	/* EQUAL  */	cmp(v, pv) == 0			,	\
+	/* INIT_1 */	v = BUNtail(&bi, p)		,	\
+	/* EQUAL  */	eq(v, pv)			,	\
 	/* KEEP   */	pv = v					\
 	)
 
@@ -343,7 +320,7 @@
 		INIT_0;							\
 		assert(grps == NULL);					\
 		if (ci.tpe == cand_dense) {				\
-			MT_thread_setalgorithm(phash ? "GRP_use_existing_hash_table, dense, parent hash" : "GRP_use_existing_hash_table, dense"); \
+			MT_thread_setalgorithm(phash ? "GRP_use_existing_hash_table, dense, parent hash" : "GRP_use_existing_hash_table, dense", __func__); \
 			TIMEOUT_LOOP_IDX(r, ci.ncand, qry_ctx) {	\
 				oid o = canditer_next_dense(&ci);	\
 				p = o - hseqb + lo;			\
@@ -379,7 +356,7 @@
 			TIMEOUT_CHECK(qry_ctx,				\
 				      GOTO_LABEL_TIMEOUT_HANDLER(error, qry_ctx)); \
 		} else {						\
-			MT_thread_setalgorithm(phash ? "GRP_use_existing_hash_table, !dense, parent hash" : "GRP_use_existing_hash_table, !dense"); \
+			MT_thread_setalgorithm(phash ? "GRP_use_existing_hash_table, !dense, parent hash" : "GRP_use_existing_hash_table, !dense", __func__); \
 			TIMEOUT_LOOP_IDX(r, ci.ncand, qry_ctx) {	\
 				oid o = canditer_next(&ci);		\
 				p = o - hseqb + lo;			\
@@ -421,14 +398,14 @@
 	GRP_use_existing_hash_table(				\
 	/* INIT_0 */	const TYPE *w = (TYPE *) bi.base,	\
 	/* INIT_1 */					,	\
-	/* EQUAL  */	TYPE##_equ(w[p], w[hb])			\
+	/* EQUAL  */	is_##TYPE##_eq(w[p], w[hb])		\
 	)
 
 #define GRP_use_existing_hash_table_any()			\
 	GRP_use_existing_hash_table(				\
 	/* INIT_0 */					,	\
-	/* INIT_1 */	v = BUNtail(bi, p)		,	\
-	/* EQUAL  */	cmp(v, BUNtail(bi, hb)) == 0		\
+	/* INIT_1 */	v = BUNtail(&bi, p)		,	\
+	/* EQUAL  */	eq(v, BUNtail(&bi, hb))			\
 	)
 
 /* reverse the bits of an OID value */
@@ -502,7 +479,7 @@ ctz(oid x)
 #define GRP_create_partial_hash_table_core(INIT_1,HASH,EQUAL,ASSERT,GRPTST) \
 	do {								\
 		if (ci.tpe == cand_dense) {				\
-			MT_thread_setalgorithm("GRP_create_partial_hash_table, dense"); \
+			MT_thread_setalgorithm("GRP_create_partial_hash_table, dense", __func__); \
 			TIMEOUT_LOOP_IDX(r, ci.ncand, qry_ctx) {	\
 				p = canditer_next_dense(&ci) - hseqb;	\
 				INIT_1;					\
@@ -536,7 +513,7 @@ ctz(oid x)
 			TIMEOUT_CHECK(qry_ctx,				\
 				      GOTO_LABEL_TIMEOUT_HANDLER(error, qry_ctx)); \
 		} else {						\
-			MT_thread_setalgorithm("GRP_create_partial_hash_table, !dense"); \
+			MT_thread_setalgorithm("GRP_create_partial_hash_table, !dense", __func__); \
 			TIMEOUT_LOOP_IDX(r, ci.ncand, qry_ctx) {	\
 				p = canditer_next(&ci) - hseqb;		\
 				INIT_1;					\
@@ -593,15 +570,15 @@ ctz(oid x)
 	/* INIT_0 */	const TYPE *w = (TYPE *) bi.base,	\
 	/* INIT_1 */					,	\
 	/* HASH   */	hash_##TYPE(hs, &w[p])		,	\
-	/* EQUAL  */	TYPE##_equ(w[p], w[hb])			\
+	/* EQUAL  */	is_##TYPE##_eq(w[p], w[hb])		\
 	)
 
 #define GRP_create_partial_hash_table_any()			\
 	GRP_create_partial_hash_table(				\
 	/* INIT_0 */					,	\
-	/* INIT_1 */	v = BUNtail(bi, p)		,	\
+	/* INIT_1 */	v = BUNtail(&bi, p)		,	\
 	/* HASH   */	hash_any(hs, v)			,	\
-	/* EQUAL  */	cmp(v, BUNtail(bi, hb)) == 0		\
+	/* EQUAL  */	eq(v, BUNtail(&bi, hb))			\
 	)
 
 #define GRP_small_values(BG, BV, GV)					\
@@ -659,7 +636,7 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 {
 	BAT *gn = NULL, *en = NULL, *hn = NULL;
 	int t;
-	int (*cmp)(const void *, const void *);
+	bool (*eq)(const void *, const void *);
 	const oid *grps = NULL;
 	oid *restrict ngrps, ngrp, prev = 0, hseqb = 0;
 	oid *restrict exts = NULL;
@@ -689,6 +666,9 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 	assert(s == NULL || BATttype(s) == TYPE_oid);
 	canditer_init(&ci, b, s);
 	bi = bat_iterator(b);
+
+	allocator *ta = MT_thread_getallocator();
+	allocator_state ta_state = ma_open(ta);
 
 	/* g is NULL or [oid(dense),oid] and same size as b or s */
 	assert(g == NULL || BATttype(g) == TYPE_oid || BATcount(g) == 0);
@@ -738,6 +718,7 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 			  ALGOOPTBATPAR(e), ALGOOPTBATPAR(h),
 			  subsorted ? "true" : "false", ALGOOPTBATPAR(gn),
 			  ALGOOPTBATPAR(en), ALGOOPTBATPAR(hn), GDKusec() - t0);
+		ma_close(&ta_state);
 		return GDK_SUCCEED;
 	}
 	assert(!BATtdense(b));
@@ -798,6 +779,7 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 				  subsorted ? "true" : "false",
 				  ALGOOPTBATPAR(gn), ALGOOPTBATPAR(en),
 				  ALGOOPTBATPAR(hn), GDKusec() - t0);
+			ma_close(&ta_state);
 			return GDK_SUCCEED;
 		}
 		if ((extents == NULL || e != NULL) &&
@@ -838,11 +820,12 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 				  subsorted ? "true" : "false",
 				  ALGOOPTBATPAR(gn), ALGOOPTBATPAR(en),
 				  ALGOOPTBATPAR(hn), GDKusec() - t0);
+			ma_close(&ta_state);
 			return GDK_SUCCEED;
 		}
 	}
 	assert(g == NULL || !BATtdense(g)); /* i.e. g->ttype == TYPE_oid */
-	cmp = ATOMcompare(bi.type);
+	eq = ATOMequal(bi.type);
 	gn = COLnew(hseqb, TYPE_oid, ci.ncand, TRANSIENT);
 	if (gn == NULL)
 		goto error;
@@ -897,7 +880,7 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 	/* for strings we can use the offset instead of the actual
 	 * string values if we know that the strings in the string
 	 * heap are unique */
-	if (t == TYPE_str && GDK_ELIMDOUBLES(bi.vh)) {
+	if (t == TYPE_str && bi.vkey) {
 		switch (bi.width) {
 		case 1:
 			t = TYPE_bte;
@@ -1000,7 +983,7 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 			j = (BUN) m + 1;
 		}
 		/* array to maintain last time we saw each old group */
-		pgrp = GDKmalloc(sizeof(BUN) * j);
+		pgrp = ma_alloc(ta, sizeof(BUN) * j);
 		if (pgrp == NULL)
 			goto error;
 		/* initialize to impossible position */
@@ -1036,8 +1019,6 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 			GRP_subscan_old_groups_any();
 			break;
 		}
-
-		GDKfree(pgrp);
 	} else if (g == NULL &&
 		   (BATcheckhash(b) ||
 		    ((!bi.transient ||
@@ -1183,7 +1164,7 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 		hs->heaplink.parentid = b->batCacheid;
 		if (snprintf(hs->heaplink.filename, sizeof(hs->heaplink.filename), "%s.thshgrpl%x", nme, (unsigned) MT_getpid()) >= (int) sizeof(hs->heaplink.filename) ||
 		    snprintf(hs->heapbckt.filename, sizeof(hs->heapbckt.filename), "%s.thshgrpb%x", nme, (unsigned) MT_getpid()) >= (int) sizeof(hs->heapbckt.filename) ||
-		    HASHnew(hs, bi.type, BATcount(b), nbucket, BUN_NONE, false) != GDK_SUCCEED) {
+		    HASHnew(hs, t, BATcount(b), nbucket, BUN_NONE, false) != GDK_SUCCEED) {
 			GDKfree(hs);
 			hs = NULL;
 			GDKerror("cannot allocate hash table\n");
@@ -1280,6 +1261,7 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 		HEAPfree(&hs->heaplink, true);
 		GDKfree(hs);
 	}
+	ma_close(&ta_state);
 	bat_iterator_end(&bi);
 	if (extents) {
 		BATsetcount(en, (BUN) ngrp);
@@ -1289,7 +1271,10 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 		en->tnonil = true;
 		en->tnil = false;
 		en->tunique_est = (double)ngrp;
-		*extents = virtualize(en);
+		/* don't virtulize `en` probably because we don't want the heap
+		 * to disappear
+		 */
+		*extents = en;
 	}
 	if (histo) {
 		BATsetcount(hn, (BUN) ngrp);
@@ -1314,7 +1299,9 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 	gn->tunique_est = (double)ngrp;
 	*groups = gn;
 	if (!g && !e && !s) {
+		MT_lock_set(&b->theaplock);
 		b->tunique_est = (double)ngrp;
+		MT_lock_unset(&b->theaplock);
 	}
 	TRC_DEBUG(ALGO, "b=" ALGOBATFMT ",s=" ALGOOPTBATFMT
 		  ",g=" ALGOOPTBATFMT ",e=" ALGOOPTBATFMT
@@ -1329,6 +1316,7 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 		  ALGOOPTBATPAR(hn), algomsg, GDKusec() - t0);
 	return GDK_SUCCEED;
   error:
+	ma_close(&ta_state);
 	bat_iterator_end(&bi);
 	if (hs != NULL && hs != b->thash) {
 		HEAPfree(&hs->heaplink, true);

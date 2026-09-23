@@ -2,11 +2,9 @@
 #
 # This Source Code Form is subject to the terms of the Mozilla Public
 # License, v. 2.0.  If a copy of the MPL was not distributed with this
-# file, You can obtain one at http://mozilla.org/MPL/2.0/.
+# file, You can obtain one at https://mozilla.org/MPL/2.0/.
 #
-# Copyright 2024, 2025 MonetDB Foundation;
-# Copyright August 2008 - 2023 MonetDB B.V.;
-# Copyright 1997 - July 2008 CWI.
+# For copyright information, see the file debian/copyright.
 
 from hashlib import sha256
 import logging
@@ -116,7 +114,8 @@ attempt('refuse_wrong_cert', 'server1', 'verify failed', cert=certpath('ca2.crt'
 # For example, `localhost.localdomain` instead of `localhost`.
 # The client should refuse to let the connection proceed.
 
-attempt('refuse_wrong_host', 'server1', 'verify failed', host='localhost.localdomain', cert=certpath('ca1.crt'))
+althost = os.environ.get('TSTALTLOCALHOST', 'localhost.localdomain')
+attempt('refuse_wrong_host', 'server1', 'verify failed', host=althost, cert=certpath('ca1.crt'))
 
 # refuse_tlsv12
 #
@@ -166,10 +165,7 @@ attempt('connect_server_name', 'sni', None, cert=certpath('ca1.crt'))
 # indicates that the implementation successfully negotiated ALPN protocol
 # "mapi/9".
 
-####### Temporarily disable the ALPN header.
-####### TODO re-enable it when test systemcertificates.py no longer relies
-####### on connecting to an HTTPS server. (Which is an ugly hack in the first place!)
-# attempt('connect_alpn_mapi9', 'alpn_mapi9', None, cert=certpath('ca1.crt'))
+attempt('connect_alpn_mapi9', 'alpn_mapi9', None, cert=certpath('ca1.crt'))
 
 # connect_right_hash
 #

@@ -3,11 +3,9 @@
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024, 2025 MonetDB Foundation;
- * Copyright August 2008 - 2023 MonetDB B.V.;
- * Copyright 1997 - July 2008 CWI.
+ * For copyright information, see the file debian/copyright.
  */
 
 /*
@@ -81,7 +79,9 @@ sql_update_var(mvc *m, sql_schema *s, const char *name, const ValRecord *ptr)
 			} else {
 				m->sql_optimizer = (int) sgn;
 			}
-		} else if (strcmp(name, "current_schema") == 0 || strcmp(name, "current_role") == 0) {
+		} else if (strcmp(name, "current_schema") == 0 ||
+				   strcmp(name, "current_role") == 0 ||
+				   strcmp(name, "current_user") == 0) {
 			if (VALisnil(ptr))
 				throw(SQL,"sql.update_var", SQLSTATE(HY009)
 					  "Variable '%s.%s' cannot be NULL", s->base.name, name);
@@ -91,6 +91,9 @@ sql_update_var(mvc *m, sql_schema *s, const char *name, const ValRecord *ptr)
 			else if (strcmp(name, "current_role") == 0 && !mvc_set_role(m, ptr->val.sval))
 				throw(SQL,"sql.update_var", SQLSTATE(HY009)
 					  "Role (%s) missing\n", ptr->val.sval);
+			else if (strcmp(name, "current_user") == 0 && !mvc_set_user(m, ptr->val.sval))
+				throw(SQL,"sql.update_var", SQLSTATE(HY009)
+					  "Switching to user %s not allowed\n", ptr->val.sval);
 		}
 	}
 	return NULL;
@@ -113,10 +116,10 @@ sql_create_env(mvc *m, sql_schema *s)
 		f->instantiated = TRUE;
 
 	res = sa_list(m->sa);
-	list_append(res, sql_create_arg(m->sa, "schema", sql_bind_localtype("str"), ARG_OUT));
-	list_append(res, sql_create_arg(m->sa, "name", sql_bind_localtype("str"), ARG_OUT));
-	list_append(res, sql_create_arg(m->sa, "type", sql_bind_localtype("str"), ARG_OUT));
-	list_append(res, sql_create_arg(m->sa, "value", sql_bind_localtype("str"), ARG_OUT));
+	list_append(res, sql_create_arg(m->sa, "schema", sql_fetch_localtype(TYPE_str), ARG_OUT));
+	list_append(res, sql_create_arg(m->sa, "name", sql_fetch_localtype(TYPE_str), ARG_OUT));
+	list_append(res, sql_create_arg(m->sa, "type", sql_fetch_localtype(TYPE_str), ARG_OUT));
+	list_append(res, sql_create_arg(m->sa, "value", sql_fetch_localtype(TYPE_str), ARG_OUT));
 
 	/* add function */
 	ops = sa_list(m->sa);

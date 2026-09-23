@@ -3,11 +3,9 @@
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024, 2025 MonetDB Foundation;
- * Copyright August 2008 - 2023 MonetDB B.V.;
- * Copyright 1997 - July 2008 CWI.
+ * For copyright information, see the file debian/copyright.
  */
 
 #include "monetdb_config.h"
@@ -34,17 +32,17 @@ qc_create(allocator *sa, int clientid, int seqnr)
 static void
 cq_delete(int clientid, cq *q)
 {
-	if (q->name)
+	if (q->name && q->f && q->f->instantiated)
 		backend_freecode(NULL, clientid, q->name);
 	/* q, params and name are allocated using sa, ie need to be delete last */
 	if (q->sa)
-		sa_destroy(q->sa);
+		ma_destroy(q->sa);
 }
 
 static void
 cq_restart(int clientid, cq *q)
 {
-	if (q->f->imp)
+	if (q->f && q->f->imp && q->f->instantiated)
 		backend_freecode(NULL, clientid, q->f->imp);
 	q->f->instantiated = false;
 }
@@ -148,7 +146,7 @@ qc_insert(qc *cache, allocator *sa, sql_rel *r, symbol *s, list *params, mapi_qu
 	n->type = type;
 	n->count = 1;
 	namelen = 5 + ((n->id+7)>>3) + ((cache->clientid+7)>>3);
-	char *name = sa_alloc(sa, namelen);
+	char *name = ma_alloc(sa, namelen);
 	n->no_mitosis = no_mitosis;
 	n->created = timestamp_current();
 	if (!name)
@@ -180,6 +178,7 @@ qc_insert(qc *cache, allocator *sa, sql_rel *r, symbol *s, list *params, mapi_qu
 		.query = cmd,
 		.ops = params,
 		.res = res,
+		.sa = sa,
 	};
 	base_init(sa, &f->base, 0, true, NULL);
 	f->base.new = 1;

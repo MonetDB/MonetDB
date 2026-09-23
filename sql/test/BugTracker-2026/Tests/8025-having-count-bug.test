@@ -1,0 +1,67 @@
+statement ok
+CREATE TABLE t0(c1 INTEGER, c2 INTEGER)
+
+statement ok
+CREATE TABLE t1(c0 INTEGER, c2 INTEGER)
+
+statement ok
+CREATE TABLE t2(c0 INTEGER)
+
+statement ok
+CREATE TABLE t3(c0 INTEGER)
+
+statement ok rowcount 1
+INSERT INTO t0 VALUES (8, -1)
+
+statement ok rowcount 1
+INSERT INTO t1 VALUES (2, 99)
+
+statement ok rowcount 1
+INSERT INTO t2 VALUES (1)
+
+statement ok rowcount 1
+INSERT INTO t3 VALUES (3)
+
+-- Ground truth: one group, cardinality 1
+query II rowsort
+SELECT t0.c1, COUNT(*) AS n
+FROM t3 INNER JOIN t1 ON t3.c0 = t1.c0 RIGHT JOIN t2 ON t1.c2 = t2.c0, t0
+WHERE t0.c2 < 0
+GROUP BY t0.c1
+----
+8
+1
+
+-- Q1  base: COUNT predicate in HAVING
+query II rowsort
+SELECT t0.c1, COUNT(*) AS n
+FROM t3 INNER JOIN t1 ON t3.c0 = t1.c0 RIGHT JOIN t2 ON t1.c2 = t2.c0, t0
+WHERE t0.c2 < 0
+GROUP BY t0.c1
+HAVING COUNT(*) > 0
+----
+8
+1
+
+-- Q2  moved: same COUNT predicate as a derived-table boolean
+query I rowsort
+SELECT ref0 FROM (
+  SELECT t0.c1 AS ref0, (COUNT(*) > 0) AS ref1
+  FROM t3 INNER JOIN t1 ON t3.c0 = t1.c0 RIGHT JOIN t2 ON t1.c2 = t2.c0, t0
+  WHERE t0.c2 < 0
+  GROUP BY t0.c1
+) AS s WHERE ref1
+----
+8
+
+statement ok
+DROP TABLE t0
+
+statement ok
+DROP TABLE t1
+
+statement ok
+DROP TABLE t2
+
+statement ok
+DROP TABLE t3

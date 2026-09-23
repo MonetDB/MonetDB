@@ -3,11 +3,9 @@
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024, 2025 MonetDB Foundation;
- * Copyright August 2008 - 2023 MonetDB B.V.;
- * Copyright 1997 - July 2008 CWI.
+ * For copyright information, see the file debian/copyright.
  */
 
 #ifndef LIBGEOM_H
@@ -119,7 +117,7 @@ libgeom_export const char *geom_type2str(int t, int flag);
 typedef struct wkb {
 	int len;
 	int srid;
-	char data[];
+	char data[] __attribute__((__counted_by__(len)));
 } wkb;
 
 typedef struct {
@@ -131,7 +129,7 @@ typedef struct {
 
 libgeom_export gdk_return libgeom_init(void);
 
-#define mbr_nil mbrFromGeos(NULL);
+#define mbr_nil mbrFromGeos(NULL, NULL);
 
 libgeom_export bool is_wkb_nil(const wkb *wkbp);
 libgeom_export GEOSGeom wkb2geos(const wkb *geomWKB);

@@ -3,11 +3,9 @@
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024, 2025 MonetDB Foundation;
- * Copyright August 2008 - 2023 MonetDB B.V.;
- * Copyright 1997 - July 2008 CWI.
+ * For copyright information, see the file debian/copyright.
  */
 
 #include "monetdb_config.h"
@@ -39,12 +37,21 @@ keyword_key(char *k, int *l)
 }
 
 int
-keywords_insert(char *k, int token)
+keywords_insert(const char *oldk, int token)
 {
 	keyword *kw = MNEW(keyword);
-	if(kw) {
+	char *k = NULL;
+	allocator *ta = MT_thread_getallocator();
+	allocator_state ta_state = ma_open(ta);
+	if (GDKtolower(ta, &k, &(size_t){0}, oldk) != GDK_SUCCEED) {
+		ma_close(&ta_state);
+		return -1;
+	}
+	k = GDKstrdup(k);
+	ma_close(&ta_state);
+	if (kw != NULL && k != NULL) {
 		int len = 0;
-		int bucket = keyword_key(k = toLower(k), &len) & HASH_MASK;
+		int bucket = keyword_key(k, &len) & HASH_MASK;
 #ifndef NDEBUG
 		/* no duplicate keywords */
 		keyword *kw2;

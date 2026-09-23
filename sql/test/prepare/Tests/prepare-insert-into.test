@@ -1,0 +1,247 @@
+statement ok
+START TRANSACTION
+
+statement ok
+CREATE TABLE "TestBulkDataInsert" (c1 BIGINT NOT NULL PRIMARY KEY, c2 VARCHAR(50) NOT NULL, c3 CLOB)
+
+statement ok
+INSERT INTO "TestBulkDataInsert" SELECT * FROM (VALUES(1,'1a','1b'),(2,'2a','2b'),(3,'3a','3b')) vt3(c1,c2,c3)
+
+query TIITTT nosort
+PREPARE INSERT INTO "TestBulkDataInsert" SELECT * FROM (VALUES(?,?,?)) vt3(c1,c2,c3)
+----
+bigint
+63
+0
+NULL
+NULL
+NULL
+varchar
+50
+0
+NULL
+NULL
+NULL
+varchar
+0
+0
+NULL
+NULL
+NULL
+
+statement ok
+exec <LAST_PREPARE_ID>(4, '4a', '4b')
+
+query TIITTT nosort
+PREPARE INSERT INTO "TestBulkDataInsert" SELECT * FROM (VALUES(?,?,?),(?,?,?)) vt3(c1,c2,c3)
+----
+bigint
+63
+0
+NULL
+NULL
+NULL
+varchar
+50
+0
+NULL
+NULL
+NULL
+varchar
+0
+0
+NULL
+NULL
+NULL
+bigint
+63
+0
+NULL
+NULL
+NULL
+varchar
+50
+0
+NULL
+NULL
+NULL
+varchar
+0
+0
+NULL
+NULL
+NULL
+
+statement ok
+exec <LAST_PREPARE_ID>(5, '5a', '5b', 6, '6b', '6b')
+
+query TIITTT nosort
+PREPARE INSERT INTO "TestBulkDataInsert" SELECT * FROM (VALUES(?,?,?),(?,?,?),(?,?,?)) vt3(c1,c2,c3)
+----
+bigint
+63
+0
+NULL
+NULL
+NULL
+varchar
+50
+0
+NULL
+NULL
+NULL
+varchar
+0
+0
+NULL
+NULL
+NULL
+bigint
+63
+0
+NULL
+NULL
+NULL
+varchar
+50
+0
+NULL
+NULL
+NULL
+varchar
+0
+0
+NULL
+NULL
+NULL
+bigint
+63
+0
+NULL
+NULL
+NULL
+varchar
+50
+0
+NULL
+NULL
+NULL
+varchar
+0
+0
+NULL
+NULL
+NULL
+
+statement ok
+exec <LAST_PREPARE_ID>(7, '7a', '7b', 8, '8b', '8b', 9, '9b', '9b')
+
+query TIITTT nosort
+PREPARE INSERT INTO "TestBulkDataInsert" SELECT * FROM (VALUES(10,'10a','10b'),(11,'11a','11b'),(?,?,?)) vt3(c1,c2,c3)
+----
+tinyint
+4
+0
+NULL
+NULL
+NULL
+varchar
+3
+0
+NULL
+NULL
+NULL
+varchar
+3
+0
+NULL
+NULL
+NULL
+
+statement ok
+exec <LAST_PREPARE_ID>(12, '12a', '12b')
+
+query TIITTT nosort
+PREPARE INSERT INTO "TestBulkDataInsert" SELECT * FROM (SELECT ?,?,?) vt3(c1,c2,c3)
+----
+bigint
+63
+0
+NULL
+NULL
+NULL
+varchar
+50
+0
+NULL
+NULL
+NULL
+varchar
+0
+0
+NULL
+NULL
+NULL
+
+statement ok
+exec <LAST_PREPARE_ID>(13, '13a', '13b')
+
+query TIITTT nosort
+PREPARE INSERT INTO "TestBulkDataInsert" SELECT * FROM ((SELECT 14,?,'14b') UNION ALL (SELECT ?,'15a',?)) vt3(c1,c2,c3)
+----
+varchar
+3
+0
+NULL
+NULL
+NULL
+tinyint
+4
+0
+NULL
+NULL
+NULL
+varchar
+3
+0
+NULL
+NULL
+NULL
+
+statement ok
+exec <LAST_PREPARE_ID>('14a', 15, '15b')
+
+query TIITTT nosort
+PREPARE INSERT INTO "TestBulkDataInsert" SELECT * FROM ((VALUES (16,?,'16b')) UNION ALL (VALUES (?,'17a',?))) vt3(c1,c2,c3)
+----
+varchar
+3
+0
+NULL
+NULL
+NULL
+tinyint
+5
+0
+NULL
+NULL
+NULL
+varchar
+3
+0
+NULL
+NULL
+NULL
+
+statement ok
+exec <LAST_PREPARE_ID>('16a', 17, '17b')
+
+statement ok
+SELECT * FROM "TestBulkDataInsert"
+
+statement ok
+DROP TABLE "TestBulkDataInsert"
+
+statement ok
+ROLLBACK
+

@@ -3,11 +3,9 @@
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024, 2025 MonetDB Foundation;
- * Copyright August 2008 - 2023 MonetDB B.V.;
- * Copyright 1997 - July 2008 CWI.
+ * For copyright information, see the file debian/copyright.
  */
 
 /* The SQL code generator can not always look ahead to avoid
@@ -51,7 +49,7 @@ OPTpostfixImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 					   || getFunctionId(p) == joinRef
 					   || getFunctionId(p) == thetajoinRef
 					   || /*getFunctionId(p) == outerjoinRef || */
-					   getFunctionId(p) == crossRef) {
+					   getFunctionId(p) == crossproductRef) {
 				int is_first_ret_not_used = getVarEolife(mb, getArg(p, p->retc - 2)) == i;
 				int is_second_ret_not_used = getVarEolife(mb, getArg(p, p->retc - 1)) == i;
 
@@ -92,7 +90,7 @@ OPTpostfixImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 						   (getFunctionId(p) == joinRef
 							|| (getFunctionId(p) == thetajoinRef
 								&& isVarConstant(mb, getArg(p, 6)))
-							|| (getFunctionId(p) == crossRef
+							|| (getFunctionId(p) == crossproductRef
 								&& getVarConstant(mb, getArg(p, 4)).val.btval != 1 /*not single */ ))) {
 					/* Can't swap arguments on single cross products */
 					/* swap join inputs */
@@ -100,7 +98,7 @@ OPTpostfixImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 					getArg(p, 3) ^= getArg(p, 2);
 					getArg(p, 2) ^= getArg(p, 3);
 
-					if (getFunctionId(p) != crossRef) {	/* swap candidate lists */
+					if (getFunctionId(p) != crossproductRef) {	/* swap candidate lists */
 						getArg(p, 4) ^= getArg(p, 5);
 						getArg(p, 5) ^= getArg(p, 4);
 						getArg(p, 4) ^= getArg(p, 5);
@@ -180,13 +178,13 @@ OPTpostfixImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 		}
 	}
 	/* Defense line against incorrect plans */
-	if (actions) {
+	//if (actions) {
 		// msg = chkTypes(cntxt->usermodule, mb, FALSE);
 		// if (!msg)
 		//      msg = chkFlow(mb);
 		// if (!msg)
 		//      msg = chkDeclarations(mb);
-	}
+	//}
 	/* keep actions taken as a fake argument */
 	(void) pushInt(mb, pci, actions);
 	return msg;

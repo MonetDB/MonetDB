@@ -3,15 +3,13 @@
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024, 2025 MonetDB Foundation;
- * Copyright August 2008 - 2023 MonetDB B.V.;
- * Copyright 1997 - July 2008 CWI.
+ * For copyright information, see the file debian/copyright.
  */
 
 #include "monetdb_config.h"
-#include "sql.h"
+#include "sql_monet_backend.h"
 #include "mal_instruction.h"
 
 #define do_date_trunc(val, DIVISOR)					\
@@ -50,8 +48,9 @@ truncate_check(const char *scale)
 }
 
 str
-bat_date_trunc(bat *res, const str *scale, const bat *bid)
+bat_date_trunc(Client ctx, bat *res, const str *scale, const bat *bid)
 {
+	(void) ctx;
 	BAT *b, *bn;
 	oid lo, hi;
 	const timestamp *bt;
@@ -193,8 +192,9 @@ bat_date_trunc(bat *res, const str *scale, const bat *bid)
 	} while (0)
 
 str
-date_trunc(timestamp *dt, const str *scale, const timestamp *bt)
+date_trunc(Client ctx, timestamp *dt, const str *scale, const timestamp *bt)
 {
+	(void) ctx;
 	str msg = MAL_SUCCEED;
 	date days;
 

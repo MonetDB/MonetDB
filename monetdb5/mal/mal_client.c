@@ -3,11 +3,9 @@
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024, 2025 MonetDB Foundation;
- * Copyright August 2008 - 2023 MonetDB B.V.;
- * Copyright 1997 - July 2008 CWI.
+ * For copyright information, see the file debian/copyright.
  */
 
 /*
@@ -56,6 +54,7 @@
 
 int MAL_MAXCLIENTS = 0;
 ClientRec *mal_clients = NULL;
+bool default_pipeline_mode = false;
 
 void
 mal_client_reset(void)
@@ -104,7 +103,7 @@ MCinit(void)
 int
 MCpushClientInput(Client c, bstream *new_input, int listing, const char *prompt)
 {
-	ClientInput *x = (ClientInput *) GDKmalloc(sizeof(ClientInput));
+	ClientInput *x = (ClientInput *) ma_alloc(c->ma, sizeof(ClientInput));
 	if (x == 0)
 		return -1;
 	*x = (ClientInput) {
@@ -139,7 +138,6 @@ MCpopClientInput(Client c)
 	c->prompt = x->prompt;
 	c->promptlength = strlen(c->prompt);
 	c->bak = x->next;
-	GDKfree(x);
 }
 
 static Client
@@ -148,6 +146,10 @@ MCnewClient(void)
 	for (Client c = mal_clients; c < mal_clients + MAL_MAXCLIENTS; c++) {
 		if (c->idx == -1) {
 			assert(c->mode == FREECLIENT);
+			assert(c->qryctx.errorallocator == NULL);
+			c->qryctx.errorallocator = create_allocator("error allocator", true);
+			if (c->qryctx.errorallocator == NULL)
+				return NULL;
 			c->mode = RUNCLIENT;
 			c->idx = (int) (c - mal_clients);
 			return c;
@@ -182,24 +184,13 @@ MCgetClient(int id)
  */
 
 static void
-MCresetProfiler(stream *fdout)
-{
-	MT_lock_set(&mal_profileLock);
-	if (fdout == maleventstream) {
-		maleventstream = NULL;
-		profilerStatus = 0;
-		profilerMode = 0;
-	}
-	MT_lock_unset(&mal_profileLock);
-}
-
-static void
 MCexitClient(Client c)
 {
-	MCresetProfiler(c->fdout);
 	// Remove any left over constant symbols
-	if (c->curprg)
-		resetMalBlk(c->curprg->def);
+	if (c->curprg) {
+		freeMalBlk(c->curprg->def);
+		c->curprg->def = NULL;
+	}
 	if (c->father == NULL) {	/* normal client */
 		if (c->fdout && c->fdout != GDKstdout)
 			close_stream(c->fdout);
@@ -215,13 +206,6 @@ MCexitClient(Client c)
 		c->qryctx.bs = NULL;
 	}
 	assert(c->query == NULL);
-	if (profilerStatus > 0) {
-		lng Tend = GDKusec();
-		profilerEvent(NULL,
-					  &(struct NonMalEvent)
-					  { CLIENT_END, c, Tend, NULL, NULL, 0,
-					  Tend - (c->session) });
-	}
 }
 
 static Client
@@ -236,6 +220,8 @@ MCinitClientRecord(Client c, oid user, bstream *fin, stream *fout)
 
 	c->fdin = fin ? fin : bstream_create(GDKstdin, 0);
 	if (c->fdin == NULL) {
+		ma_destroy(c->qryctx.errorallocator);
+		c->qryctx.errorallocator = NULL;
 		c->mode = FREECLIENT;
 		c->idx = -1;
 		TRC_ERROR(MAL_SERVER, "No stdin channel available\n");
@@ -256,37 +242,42 @@ MCinitClientRecord(Client c, oid user, bstream *fin, stream *fout)
 	c->usermodule = c->curmodule = 0;
 
 	c->father = NULL;
-	c->idle = c->login = c->lastcmd = time(0);
+	c->idle = 0;
+	c->login = c->lastcmd = time(0);
 	c->session = GDKusec();
-	strcpy_len(c->optimizer, "default_pipe", sizeof(c->optimizer));
+	strtcpy(c->optimizer, "default_pipe", sizeof(c->optimizer));
 	c->workerlimit = 0;
 	c->memorylimit = 0;
 	c->querytimeout = 0;
 	c->sessiontimeout = 0;
 	c->logical_sessiontimeout = 0;
+	c->idletimeout = 0;
 	c->qryctx.starttime = 0;
 	c->qryctx.endtime = 0;
 	ATOMIC_SET(&c->qryctx.datasize, 0);
 	c->qryctx.maxmem = 0;
 	c->maxmem = 0;
-	c->errbuf = 0;
+	c->qryctx.pipeline_mode = default_pipeline_mode;
 
 	c->prompt = PROMPT1;
 	c->promptlength = strlen(c->prompt);
 
 	c->profticks = c->profstmt = c->profevents = NULL;
 	c->error_row = c->error_fld = c->error_msg = c->error_input = NULL;
-	c->sqlprofiler = 0;
+	c->sqlprofiler = false;
 	c->blocksize = BLOCK;
 	c->protocol = PROTOCOL_9;
 
 	c->filetrans = false;
 	c->handshake_options = NULL;
 	c->query = NULL;
+	c->ma = create_allocator("MA_Client", false);
 
 	char name[MT_NAME_LEN];
 	snprintf(name, sizeof(name), "Client%d->s", (int) (c - mal_clients));
 	MT_sema_init(&c->s, 0, name);
+	snprintf(name, sizeof(name), "Client%d-errlock", (int) (c - mal_clients));
+	MT_lock_init(&c->error_lock, name);
 	return c;
 }
 
@@ -303,11 +294,6 @@ MCinitClient(oid user, bstream *fin, stream *fout)
 	}
 	MT_lock_unset(&mal_contextLock);
 
-	if (c && profilerStatus > 0)
-		profilerEvent(NULL,
-					  &(struct NonMalEvent)
-					  { CLIENT_START, c, c->session, NULL, NULL, 0, 0 }
-	);
 	return c;
 }
 
@@ -324,17 +310,7 @@ MCinitClientThread(Client c)
 	 * the proper IO descriptors.
 	 */
 	c->mythread = MT_thread_getname();
-	c->errbuf = GDKerrbuf;
-	if (c->errbuf == NULL) {
-		char *n = GDKzalloc(GDKMAXERRLEN);
-		if (n == NULL) {
-			MCresetProfiler(c->fdout);
-			return -1;
-		}
-		GDKsetbuf(n);
-		c->errbuf = GDKerrbuf;
-	} else
-		c->errbuf[0] = 0;
+	GDKclrerr();
 	return 0;
 }
 
@@ -380,47 +356,35 @@ MCcloseClient(Client c)
 	c->scenario = NULL;
 	c->prompt = NULL;
 	c->promptlength = -1;
-	if (c->errbuf) {
-		/* no client threads in embedded mode */
-		GDKsetbuf(NULL);
-		if (c->father == NULL)
-			GDKfree(c->errbuf);
-		c->errbuf = NULL;
-	}
 	if (c->usermodule)
 		freeModule(c->usermodule);
 	c->usermodule = c->curmodule = 0;
 	c->father = 0;
-	strcpy_len(c->optimizer, "default_pipe", sizeof(c->optimizer));
+	strtcpy(c->optimizer, "default_pipe", sizeof(c->optimizer));
 	c->workerlimit = 0;
 	c->memorylimit = 0;
 	c->querytimeout = 0;
 	c->qryctx.endtime = 0;
 	c->sessiontimeout = 0;
 	c->logical_sessiontimeout = 0;
+	c->idletimeout = 0;
 	c->user = oid_nil;
 	if (c->username) {
-		GDKfree(c->username);
 		c->username = 0;
 	}
 	if (c->peer) {
-		GDKfree(c->peer);
 		c->peer = 0;
 	}
 	if (c->client_hostname) {
-		GDKfree(c->client_hostname);
 		c->client_hostname = 0;
 	}
 	if (c->client_application) {
-		GDKfree(c->client_application);
 		c->client_application = 0;
 	}
 	if (c->client_library) {
-		GDKfree(c->client_library);
 		c->client_library = 0;
 	}
 	if (c->client_remark) {
-		GDKfree(c->client_remark);
 		c->client_remark = 0;
 	}
 	c->client_pid = 0;
@@ -442,20 +406,24 @@ MCcloseClient(Client c)
 		BBPunfix(c->error_input->batCacheid);
 		c->error_row = c->error_fld = c->error_msg = c->error_input = NULL;
 	}
-	c->sqlprofiler = 0;
-	free(c->handshake_options);
+	c->sqlprofiler = false;
 	c->handshake_options = NULL;
 	MT_thread_set_qry_ctx(NULL);
-	assert(c->qryctx.datasize == 0);
+	//assert(strcmp(MT_thread_getname(), "main-thread") == 0 || c->qryctx.datasize == 0);
 	MT_sema_destroy(&c->s);
+	MT_lock_destroy(&c->error_lock);
 	MT_lock_set(&mal_contextLock);
 	c->idle = c->login = c->lastcmd = 0;
+	ma_destroy(c->qryctx.errorallocator);
+	c->qryctx.errorallocator = NULL;
 	if (shutdowninprogress) {
 		c->mode = BLOCKCLIENT;
 	} else {
 		c->mode = FREECLIENT;
 		c->idx = -1;
 	}
+	ma_destroy(c->ma);
+	c->ma = NULL;
 	MT_lock_unset(&mal_contextLock);
 }
 
@@ -632,26 +600,22 @@ MCsetClientInfo(Client c, const char *property, const char *value)
 	switch (discriminant) {
 		case 'H':
 			if (strcasecmp(property, "ClientHostname") == 0) {
-				GDKfree(c->client_hostname);
-				c->client_hostname = value ? GDKstrdup(value) : NULL;
+				c->client_hostname = value ? ma_strdup(c->ma, value) : NULL;
 			}
 			break;
 		case 'A':
 			if (strcasecmp(property, "ApplicationName") == 0) {
-				GDKfree(c->client_application);
-				c->client_application = value ? GDKstrdup(value) : NULL;
+				c->client_application = value ? ma_strdup(c->ma, value) : NULL;
 			}
 			break;
 		case 'L':
 			if (strcasecmp(property, "ClientLibrary") == 0) {
-				GDKfree(c->client_library);
-				c->client_library = value ? GDKstrdup(value) : NULL;
+				c->client_library = value ? ma_strdup(c->ma, value) : NULL;
 			}
 			break;
 		case 'R':
 			if (strcasecmp(property, "ClientRemark") == 0) {
-				GDKfree(c->client_remark);
-				c->client_remark = value ? GDKstrdup(value) : NULL;
+				c->client_remark = value ? ma_strdup(c->ma, value) : NULL;
 			}
 			break;
 		case 'P':

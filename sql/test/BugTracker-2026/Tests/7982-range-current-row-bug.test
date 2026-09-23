@@ -1,0 +1,32 @@
+statement ok
+CREATE TABLE t7982(id INT, k INT, v INT)
+
+statement ok
+INSERT INTO t7982 VALUES (1, 1, 10), (2, 2, 20), (3, 2, 30)
+
+query IIII rowsort
+SELECT id, k,
+  COUNT(v) OVER (
+    ORDER BY k
+    RANGE BETWEEN CURRENT ROW AND CURRENT ROW
+  ) AS actual,
+  (SELECT COUNT(r.v) FROM t7982 r WHERE r.k = t7982.k) AS expected
+FROM t7982
+ORDER BY id
+----
+1
+1
+1
+1
+2
+2
+2
+2
+3
+2
+2
+2
+
+statement ok
+DROP TABLE IF EXISTS t7982
+

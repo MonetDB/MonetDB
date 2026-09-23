@@ -3,11 +3,9 @@
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024, 2025 MonetDB Foundation;
- * Copyright August 2008 - 2023 MonetDB B.V.;
- * Copyright 1997 - July 2008 CWI.
+ * For copyright information, see the file debian/copyright.
  */
 
 /*
@@ -123,17 +121,17 @@ newODBCStmt(ODBCDbc *dbc)
  * and save usage of the handle and prevent crashes as much as possible.
  *
  * Precondition: none
- * Postcondition: returns 1 if it is a valid statement handle,
- * 	returns 0 if is invalid and thus an unusable handle.
+ * Postcondition: returns true if it is a valid statement handle,
+ * 	returns false if is invalid and thus an unusable handle.
  */
-int
+bool
 isValidStmt(ODBCStmt *stmt)
 {
 #ifdef ODBCDEBUG
-	if (!(stmt &&stmt->Type == ODBC_STMT_MAGIC_NR))
+	if (!(stmt && stmt->Type == ODBC_STMT_MAGIC_NR))
 		ODBCLOG("stmt %p not a valid statement handle\n", stmt);
 #endif
-	return stmt &&stmt->Type == ODBC_STMT_MAGIC_NR;
+	return stmt && stmt->Type == ODBC_STMT_MAGIC_NR;
 }
 
 
@@ -165,7 +163,7 @@ addStmtError(ODBCStmt *stmt, const char *SQLState, const char *errMsg, int nativ
  * The error object itself is removed from the error list.
  * The caller is now responsible for freeing the error object memory.
  *
- * Precondition: stmt and error must be valid
+ * Precondition: stmt must be valid
  * Postcondition: returns a ODBCError object or null when no error is available.
  */
 ODBCError *

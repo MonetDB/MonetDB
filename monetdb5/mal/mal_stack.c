@@ -3,11 +3,9 @@
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024, 2025 MonetDB Foundation;
- * Copyright August 2008 - 2023 MonetDB B.V.;
- * Copyright 1997 - July 2008 CWI.
+ * For copyright information, see the file debian/copyright.
  */
 
 /*
@@ -52,19 +50,35 @@
 /* #define DEBUG_MAL_STACK*/
 
 MalStkPtr
-newGlobalStack(int size)
+newGlobalStack(allocator *ma, int size)
 {
 	MalStkPtr s;
 
-	s = (MalStkPtr) GDKzalloc(stackSize(size));
+	s = (MalStkPtr) ma? ma_alloc(ma, stackSize(size)) : GDKmalloc(stackSize(size));
 	if (!s)
 		return NULL;
+	s->allocated = !ma;
 	s->stksize = size;
+	s->stktop = s->stkbot = s->stkdepth = s->calldepth = 0;
+	s->keepAlive = s->keepTmps = 0;
+	s->admit = s->wrapup = NULL;
+
+	s->status = 0;
+	s->pcup = 0;
+	s->tag = 0;
+	s->memory = 0;
+	s->up = NULL;
+	s->blk = NULL;
+	for(int i = 0; i < size; i++) {
+		s->stk[i].vtype = 0;
+		s->stk[i].bat = false;
+		s->stk[i].allocated = false;
+	}
 	return s;
 }
 
 MalStkPtr
-reallocGlobalStack(MalStkPtr old, int cnt)
+reallocGlobalStack(allocator *ma, MalStkPtr old, int cnt)
 {
 	int k;
 	MalStkPtr s;
@@ -72,13 +86,14 @@ reallocGlobalStack(MalStkPtr old, int cnt)
 	if (old->stksize > cnt)
 		return old;
 	k = ((cnt / STACKINCR) + 1) * STACKINCR;
-	s = newGlobalStack(k);
+	s = newGlobalStack(ma, k);
 	if (!s) {
 		return NULL;
 	}
 	memcpy(s, old, stackSize(old->stksize));
 	s->stksize = k;
-	GDKfree(old);
+	if (old->allocated)
+		GDKfree(old);
 	return s;
 }
 
@@ -89,7 +104,7 @@ reallocGlobalStack(MalStkPtr old, int cnt)
  * it may happen that entries are never set to a real value.
  * This can be recognized by the vtype component
  */
-static void
+void
 clearStack(MalStkPtr s)
 {
 	ValPtr v;
@@ -99,15 +114,23 @@ clearStack(MalStkPtr s)
 		return;
 
 	i = s->stktop;
-	for (v = s->stk; i > 0; i--, v++)
+	for (v = s->stk; i > 0; i--, v++) {
 		if (v->bat) {
 			BBPrelease(v->val.bval);
 			v->bat = false;
-		} else if (ATOMextern(v->vtype) && v->val.pval) {
-			GDKfree(v->val.pval);
-			v->vtype = 0;
-			v->val.pval = NULL;
+		} else if (v->allocated && ATOMextern(v->vtype)) {
+			if (v->vtype == TYPE_str && v->val.sval) {
+				GDKfree(v->val.sval);
+				v->val.sval = NULL;
+			}
+			else if (v->val.pval) {
+				GDKfree(v->val.pval);
+				v->val.pval = NULL;
+			}
 		}
+		v->allocated = false;
+		v->vtype = 0;
+	}
 	s->stkbot = 0;
 }
 
@@ -122,6 +145,7 @@ freeStack(MalStkPtr stk)
 {
 	if (stk != NULL) {
 		clearStack(stk);
-		GDKfree(stk);
+		if (stk->allocated)
+			GDKfree(stk);
 	}
 }

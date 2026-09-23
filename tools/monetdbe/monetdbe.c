@@ -3,11 +3,9 @@
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024, 2025 MonetDB Foundation;
- * Copyright August 2008 - 2023 MonetDB B.V.;
- * Copyright 1997 - July 2008 CWI.
+ * For copyright information, see the file debian/copyright.
  */
 
 #include "monetdb_config.h"
@@ -33,7 +31,7 @@
 #include "mapi.h"
 #include "monetdbe_mapi.h"
 #include "remote.h"
-#include "sql.h"
+#include "sql_monet_backend.h"
 #include "sql_result.h"
 #include "mutils.h"
 
@@ -176,9 +174,8 @@ monetdbe_version(void)
 static void
 clear_error( monetdbe_database_internal *mdbe)
 {
-	if (mdbe->msg)
-		freeException(mdbe->msg);
 	mdbe->msg = NULL;
+	ma_reset(mdbe->c->qryctx.errorallocator);
 }
 
 static char*
@@ -186,9 +183,7 @@ set_error( monetdbe_database_internal *mdbe, char *err)
 {
 	if (!err)
 		return err;
-	if (mdbe->msg) /* keep first error */
-		freeException(err);
-	else
+	if (mdbe->msg == NULL) /* keep first error */
 		mdbe->msg = err;
 	return mdbe->msg;
 }
@@ -205,9 +200,7 @@ commit_action(mvc* m, monetdbe_database_internal *mdbe, monetdbe_result **result
 
 	if (mdbe->msg != MAL_SUCCEED || commit_msg != MAL_SUCCEED) {
 		if (res_internal) {
-			char* other = monetdbe_cleanup_result_internal(mdbe, res_internal);
-			if (other)
-				freeException(other);
+			(void) monetdbe_cleanup_result_internal(mdbe, res_internal);
 		}
 		if (result)
 			*result = NULL;
@@ -404,7 +397,7 @@ monetdbe_query_internal(monetdbe_database_internal *mdbe, char* query, monetdbe_
 	m->runs = NULL;
 	m->label = 0;
 	if (m->sa)
-		m->sa = sa_reset(m->sa);
+		ma_reset(m->sa);
 	m->scanner.mode = LINE_N;
 	m->scanner.rs = c->fdin;
 	mvc_query_processed(m);
@@ -437,6 +430,7 @@ cleanup:
 	if (nq)
 		GDKfree(nq);
 	MSresetInstructions(c->curprg->def, 1);
+	freeVariables(c, c->curprg->def, NULL, 1);
 	if (fdin_changed) { //c->fdin was set
 		bstream_destroy(c->fdin);
 		c->fdin = old_bstream;
@@ -460,7 +454,7 @@ monetdbe_close_remote(monetdbe_database_internal *mdbe)
 		clear_error(mdbe);
 	}
 
-	if ( (mdbe->msg = RMTdisconnect(NULL, &(const char *){mdbe->mid})) != MAL_SUCCEED) {
+	if ( (mdbe->msg = RMTdisconnect(mdbe->c, NULL, &(const char *){mdbe->mid})) != MAL_SUCCEED) {
 		err = 1;
 		clear_error(mdbe);
 	}
@@ -478,9 +472,7 @@ monetdbe_close_internal(monetdbe_database_internal *mdbe)
 
 	if (validate_database_handle_noerror(mdbe)) {
 		open_dbs--;
-		char *msg = SQLexitClient(mdbe->c);
-		if (msg)
-			freeException(msg);
+		(void) SQLexitClient(mdbe->c);
 		MCcloseClient(mdbe->c);
 	}
 	GDKfree(mdbe);
@@ -566,7 +558,9 @@ monetdbe_open_internal(monetdbe_database_internal *mdbe, monetdbe_options *opts 
 	mdbe->c->workerlimit = monetdbe_workers_internal(mdbe, opts);
 	mdbe->c->memorylimit = monetdbe_memory_internal(mdbe, opts);
 	mdbe->c->querytimeout = monetdbe_querytimeout_internal(mdbe, opts);
-	mdbe->c->sessiontimeout = monetdbe_sessiontimeout_internal(mdbe, opts);
+	mdbe->c->logical_sessiontimeout = monetdbe_sessiontimeout_internal(mdbe, opts);
+	if (mdbe->c->logical_sessiontimeout > 0)
+		mdbe->c->sessiontimeout = mdbe->c->logical_sessiontimeout * LL_CONSTANT(1000000) + GDKusec();
 	if (mdbe->msg)
 		goto cleanup;
 	if (mdbe->c->usermodule == NULL) {
@@ -578,12 +572,10 @@ monetdbe_open_internal(monetdbe_database_internal *mdbe, monetdbe_options *opts 
 		goto cleanup;
 	m->session->auto_commit = 1;
 	if (!m->pa)
-		m->pa = sa_create(NULL);
+		m->pa = create_allocator(NULL, false);
 	if (!m->sa)
-		m->sa = sa_create(m->pa);
-	if (!m->ta)
-		m->ta = sa_create(m->pa);
-	if (!m->pa || !m->sa || !m->ta) {
+		m->sa = create_allocator(NULL, false);
+	if (!m->pa || !m->sa) {
 		set_error(mdbe, createException(SQL, "monetdbe.monetdbe_open_internal", MAL_MALLOC_FAIL));
 		goto cleanup;
 	}
@@ -623,7 +615,7 @@ monetdbe_startup(monetdbe_database_internal *mdbe, const char* dbdir, monetdbe_o
 	int workers, memory;
 	gdk_return gdk_res;
 
-	GDKfataljumpenable = 1;
+	GDKfataljumpenable = true;
 
 	if(setjmp(GDKfataljump) != 0) {
 		assert(0);
@@ -638,7 +630,7 @@ monetdbe_startup(monetdbe_database_internal *mdbe, const char* dbdir, monetdbe_o
 
 	if (monetdbe_embedded_initialized) {
 		set_error(mdbe, createException(MAL, "monetdbe.monetdbe_startup", "MonetDBe is already initialized"));
-		GDKfataljumpenable = 0;
+		GDKfataljumpenable = false;
 		return;
 	}
 
@@ -771,7 +763,7 @@ monetdbe_startup(monetdbe_database_internal *mdbe, const char* dbdir, monetdbe_o
 	if (dbdir && !monetdbe_embedded_url)
 		set_error(mdbe, createException(MAL, "monetdbe.monetdbe_startup", MAL_MALLOC_FAIL));
 cleanup:
-	GDKfataljumpenable = 0;
+	GDKfataljumpenable = false;
 	if (mdbe->msg)
 		monetdbe_shutdown_internal();
 }
@@ -811,14 +803,15 @@ monetdbe_open_remote(monetdbe_database_internal *mdbe, monetdbe_options *opts) {
 
 	Client c = mdbe->c;
 
-	assert(!c->curprg);
+	Symbol curprg = c->curprg;
 
-	const char mod[] = "user";
+	static const char mod[] = "user";
 	char nme[16];
 	const char *name = number2name(nme, sizeof(nme), ++((backend*)  c->sqlcontext)->remote);
 	c->curprg = newFunction(putName(mod), putName(name), FUNCTIONsymbol);
 
 	if (c->curprg == NULL) {
+		c->curprg = curprg;
 		set_error(mdbe, createException(MAL, "monetdbe.monetdbe_open_remote", MAL_MALLOC_FAIL));
 		return -2;
 	}
@@ -848,7 +841,7 @@ monetdbe_open_remote(monetdbe_database_internal *mdbe, monetdbe_options *opts) {
 	if (p == NULL) {
 		set_error(mdbe, createException(MAL, "monetdbe.monetdbe_open_remote", MAL_MALLOC_FAIL));
 		freeSymbol(c->curprg);
-		c->curprg= NULL;
+		c->curprg = curprg;
 		return -2;
 	}
 	pushInstruction(mb, p);
@@ -857,7 +850,7 @@ monetdbe_open_remote(monetdbe_database_internal *mdbe, monetdbe_options *opts) {
 	if (q == NULL) {
 		set_error(mdbe, createException(MAL, "monetdbe.monetdbe_open_remote", MAL_MALLOC_FAIL));
 		freeSymbol(c->curprg);
-		c->curprg= NULL;
+		c->curprg = curprg;
 		return -2;
 	}
 	q->barrier= RETURNsymbol;
@@ -867,23 +860,25 @@ monetdbe_open_remote(monetdbe_database_internal *mdbe, monetdbe_options *opts) {
 
 	if ( (mdbe->msg = chkProgram(c->usermodule, mb)) != MAL_SUCCEED ) {
 		freeSymbol(c->curprg);
-		c->curprg= NULL;
+		c->curprg = curprg;
 		return -2;
 	}
-	MalStkPtr stk = prepareMALstack(mb, mb->vsize);
+	MalStkPtr stk = prepareMALstack(mb->ma, mb, mb->vsize);
 	if (!stk) {
 		set_error(mdbe, createException(MAL, "monetdbe.monetdbe_open_remote", MAL_MALLOC_FAIL));
 		freeSymbol(c->curprg);
-		c->curprg= NULL;
+		c->curprg = curprg;
 		return -2;
 	}
 	stk->keepAlive = TRUE;
 	c->qryctx.starttime = GDKusec();
 	c->qryctx.endtime = c->querytimeout ? c->qryctx.starttime + c->querytimeout : 0;
+	if (c->qryctx.endtime == 0 || c->sessiontimeout < c->qryctx.endtime)
+		c->qryctx.endtime = c->sessiontimeout;
 	if ( (mdbe->msg = runMALsequence(c, mb, 1, 0, stk, 0, 0)) != MAL_SUCCEED ) {
 		freeStack(stk);
 		freeSymbol(c->curprg);
-		c->curprg= NULL;
+		c->curprg = curprg;
 		return -2;
 	}
 
@@ -891,7 +886,7 @@ monetdbe_open_remote(monetdbe_database_internal *mdbe, monetdbe_options *opts) {
 		set_error(mdbe, createException(MAL, "monetdbe.monetdbe_open_remote", MAL_MALLOC_FAIL));
 		freeStack(stk);
 		freeSymbol(c->curprg);
-		c->curprg= NULL;
+		c->curprg = curprg;
 		return -2;
 	}
 
@@ -899,7 +894,7 @@ monetdbe_open_remote(monetdbe_database_internal *mdbe, monetdbe_options *opts) {
 	freeStack(stk);
 
 	freeSymbol(c->curprg);
-	c->curprg= NULL;
+	c->curprg = curprg;
 
 	return 0;
 }
@@ -1003,8 +998,8 @@ monetdbe_load_extension(monetdbe_database dbhdl, const char *file)
 	if ((mdbe->msg = validate_database_handle(mdbe, "embedded.monetdbe_dump_database")) != MAL_SUCCEED) {
 		return mdbe->msg;
 	}
-	char *modules[2];
-	modules[0] = (char*)file;
+	const char *modules[2];
+	modules[0] = file;
 	modules[1] = NULL;
 	char *msg = loadLibrary(file, -1);
 	if (msg)
@@ -1230,7 +1225,7 @@ monetdbe_prepare_cb(void* context, char* tblname, columnar_result* results, size
 	BATiter bcolumn_iter = {0};
 	BATiter btable_iter = {0};
 	BATiter bimpl_iter = {0};
-	char* function = NULL;
+	const char* function = NULL;
 	Symbol prg = NULL;
 	MalBlkPtr mb = NULL;
 	InstrPtr o = NULL, e = NULL, r = NULL;
@@ -1272,7 +1267,7 @@ monetdbe_prepare_cb(void* context, char* tblname, columnar_result* results, size
 	bcolumn_iter		= bat_iterator(bcolumn);
 	btable_iter		= bat_iterator(btable);
 	bimpl_iter		= bat_iterator(bimpl);
-	function		=  BUNtvar(btable_iter, BATcount(btable)-1);
+	function		=  BUNtvar(&btable_iter, BATcount(btable)-1);
 
 	{
 		assert (((backend*)  mdbe->c->sqlcontext)->remote < INT_MAX);
@@ -1334,11 +1329,11 @@ monetdbe_prepare_cb(void* context, char* tblname, columnar_result* results, size
 
 	for (size_t i = 0; i < nparams; i++) {
 
-		const char *table	= BUNtvar(btable_iter, i);
+		const char *table	= BUNtvar(&btable_iter, i);
 		sql_type *t = SA_ZNEW(sa, sql_type);
-		const char *name = BUNtvar(btype_iter, i);
+		const char *name = BUNtvar(&btype_iter, i);
 		t->base.name = SA_STRDUP(sa, name);
-		const char *impl = BUNtvar(bimpl_iter, i);
+		const char *impl = BUNtvar(&bimpl_iter, i);
 		t->impl	= SA_STRDUP(sa, impl);
 		t->localtype = ATOMindex(t->impl);
 
@@ -1370,7 +1365,7 @@ monetdbe_prepare_cb(void* context, char* tblname, columnar_result* results, size
 		else {
 			// output argument
 
-			const char *column = BUNtvar(bcolumn_iter, i);
+			const char *column = BUNtvar(&bcolumn_iter, i);
 			sql_exp * c = exp_column(sa, table, column, st, CARD_MULTI, true, false, false);
 			append(rets, c);
 		}
@@ -1407,8 +1402,8 @@ monetdbe_prepare_cb(void* context, char* tblname, columnar_result* results, size
 	insertSymbol(mdbe->c->usermodule, prg);
 
 cleanup:
-	freeInstruction(e);
-	freeInstruction(r);
+	freeInstruction(mb, e);
+	freeInstruction(mb, r);
 	if (bcolumn) {
 		bat_iterator_end(&btype_iter);
 		bat_iterator_end(&bcolumn_iter);
@@ -1433,7 +1428,7 @@ cleanup:
 static char*
 monetdbe_query_remote(monetdbe_database_internal *mdbe, char* query, monetdbe_result** result, monetdbe_cnt* affected_rows, int *prepare_id)
 {
-	const char mod[] = "user";
+	static const char mod[] = "user";
 	char nme[16];
 
 	Client c = mdbe->c;
@@ -1466,7 +1461,7 @@ monetdbe_query_remote(monetdbe_database_internal *mdbe, char* query, monetdbe_re
 		size_t query_len, input_query_len, prep_len = 0;
 		input_query_len = strlen(query);
 		query_len = input_query_len + 3;
-		const char PREPARE[] = "PREPARE ";
+		static const char PREPARE[] = "PREPARE ";
 		prep_len = sizeof(PREPARE)-1;
 		query_len += prep_len;
 		char *nq = NULL;
@@ -1714,7 +1709,10 @@ monetdbe_bind(monetdbe_statement *stmt, void *data, size_t i)
 		}
 		VALset(&stmt_internal->data[i], tpe, b);
 	} else if (tpe == TYPE_str) {
-		char *val = GDKstrdup(data);
+		backend *b = stmt_internal->mdbe->c->sqlcontext;
+		if (!b->mvc->sa)
+			b->mvc->sa = create_allocator(NULL, false);
+		char *val = ma_strdup(b->mvc->sa, data);
 
 		if (val == NULL) {
 			set_error(stmt_internal->mdbe, createException(MAL, "monetdbe.monetdbe_bind", MAL_MALLOC_FAIL));
@@ -1774,7 +1772,6 @@ monetdbe_execute(monetdbe_statement *stmt, monetdbe_result **result, monetdbe_cn
 	}
 
 cleanup:
-	GDKfree(glb);
 	return commit_action(m, stmt_internal->mdbe, result, res_internal);
 }
 
@@ -1873,7 +1870,7 @@ monetdbe_get_columns_remote(monetdbe_database_internal *mdbe, const char* schema
 		return mdbe->msg;
 	}
 
-	int len = snprintf(buf, 1024, "SELECT * FROM %s%s%s\"%s\" WHERE FALSE;",
+	int len = snprintf(buf, sizeof(buf), "SELECT * FROM %s%s%s\"%s\" WHERE FALSE;",
 					   escaped_schema_name ? "\"" : "",  escaped_schema_name ? escaped_schema_name : "",
 					   escaped_schema_name ? escaped_schema_name : "\".", escaped_table_name);
 	GDKfree(escaped_schema_name);
@@ -2120,7 +2117,7 @@ append_create_remote_append_mal_program(
 			msg = createException(SQL, "monetdbe.monetdbe_append", MAL_MALLOC_FAIL);
 			goto cleanup;
 		}
-		tpe->base.name = sa_strdup(m->sa, columns[i].name);
+		tpe->base.name = ma_strdup(m->sa, columns[i].name);
 		tpe->localtype = monetdbe_2_gdk_type((monetdbe_types) columns[i].type);
 		tpe->digits = columns[i].sql_type.digits;
 		tpe->scale = columns[i].sql_type.scale;
@@ -2357,7 +2354,7 @@ remote_cleanup:
 			BAT *bn = NULL;
 
 			if (mtype != c->type.type->localtype) {
-				set_error(mdbe, createException(SQL, "monetdbe.monetdbe_append", "Cannot append %d into column '%s'", input[i]->type, c->base.name));
+				set_error(mdbe, createException(SQL, "monetdbe.monetdbe_append", "Cannot append %u into column '%s'", (unsigned) input[i]->type, c->base.name));
 				goto cleanup;
 			}
 
@@ -2408,7 +2405,7 @@ remote_cleanup:
 			for (size_t j=0; j<cnt; j++) {
 				if (!d[j]) {
 					d[j] = (char*) nil;
-				} else if (!checkUTF8(d[j])) {
+				} else if (!checkUTF8(d[j], NULL)) {
 					set_error(mdbe, createException(SQL, "monetdbe.monetdbe_append", "Incorrectly encoded UTF-8"));
 					goto cleanup;
 				}
@@ -2592,7 +2589,7 @@ remote_cleanup:
 			InstrPtr p = newFcnCall(mb, remoteRef, putRef);
 			if (p == NULL) {
 				set_error(mdbe, createException(MAL, "monetdbe.monetdbe_append", MAL_MALLOC_FAIL));
-				freeInstruction(e);
+				freeInstruction(mb, e);
 				freeSymbol(prg);
 				goto cleanup;
 			}
@@ -2743,9 +2740,8 @@ monetdbe_result_fetch(monetdbe_result* mres, monetdbe_column** res, size_t colum
 
 		j = 0;
 		li = bat_iterator(b);
-		BATloop(b, p, q)
-		{
-			const char *t = (const char*)BUNtvar(li, p);
+		BATloop(&li, p, q) {
+			const char *t = (const char*)BUNtvar(&li, p);
 			if (strcmp(t, str_nil) == 0) {
 				bat_data->data[j] = NULL;
 			} else {
@@ -2822,9 +2818,8 @@ monetdbe_result_fetch(monetdbe_result* mres, monetdbe_column** res, size_t colum
 		j = 0;
 
 		li = bat_iterator(b);
-		BATloop(b, p, q)
-		{
-			const blob *t = (const blob *)BUNtvar(li, p);
+		BATloop(&li, p, q) {
+			const blob *t = (const blob *)BUNtvar(&li, p);
 			if (t->nitems == ~(size_t)0) {
 				bat_data->data[j].size = 0;
 				bat_data->data[j].data = NULL;
@@ -2860,15 +2855,14 @@ monetdbe_result_fetch(monetdbe_result* mres, monetdbe_column** res, size_t colum
 		j = 0;
 
 		li = bat_iterator(b);
-		BATloop(b, p, q)
-		{
-			const void *t = BUNtail(li, p);
+		BATloop(&li, p, q) {
+			const void *t = BUNtail(&li, p);
 			if (BATatoms[bat_type].atomCmp(t, BATatoms[bat_type].atomNull) == 0) {
 				bat_data->data[j] = NULL;
 			} else {
 				char *sresult = NULL;
 				size_t length = 0;
-				if (BATatoms[bat_type].atomToStr(&sresult, &length, t, true) == 0) {
+				if (BATatoms[bat_type].atomToStr(m->sa, &sresult, &length, t, true) == 0) {
 					bat_iterator_end(&li);
 					set_error(mdbe, createException(MAL, "monetdbe.monetdbe_result_fetch", "Failed to convert element to string"));
 					goto cleanup;

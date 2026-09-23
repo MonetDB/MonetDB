@@ -3,11 +3,9 @@
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024, 2025 MonetDB Foundation;
- * Copyright August 2008 - 2023 MonetDB B.V.;
- * Copyright 1997 - July 2008 CWI.
+ * For copyright information, see the file debian/copyright.
  */
 
 /*
@@ -46,7 +44,11 @@
  * Precondition: inStr != NULL
  * Postcondition: returns a newly allocated null terminated string
  */
-extern char *dupODBCstring(const SQLCHAR *inStr, size_t length);
+static inline char *
+dupODBCstring(const SQLCHAR *inStr, size_t length)
+{
+	return strndup((const char *) inStr, length);
+}
 
 /*
  * Utility macro to fix up args that represent an ODBC string.  If len
@@ -87,7 +89,7 @@ extern char *dupODBCstring(const SQLCHAR *inStr, size_t length);
 			ret;						\
 		}							\
 		if (buf && (buflen) > 0) {				\
-			_l = strcpy_len((char *) (buf), (str) ? (const char *) (str) : "", (buflen)); \
+			_l = strlcpy((char *) (buf), (str) ? (const char *) (str) : "", (buflen)); \
 		} else {						\
 			_l = (str) ? (lent) (strlen) : 0;		\
 		}							\

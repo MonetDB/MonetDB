@@ -1,0 +1,163 @@
+statement ok
+--deallocate all the prepared statements from the current directory run (but does the client reconnect after each test?)
+deallocate all
+
+query TIITTT nosort
+prepare select "system" or ? from sys._tables WHERE false
+----
+boolean
+1
+0
+(empty)
+%1
+%1
+boolean
+1
+0
+NULL
+NULL
+NULL
+
+query T nosort
+select "statement" from prepared_statements
+----
+prepare select "system" or ? from sys._tables where false@;
+
+query IITIITTT nosort
+select "inout", "number", "type", "type_digits", "type_scale", "schema", "table", "column" from prepared_statements_args
+----
+0
+0
+boolean
+1
+0
+NULL
+%1
+%1
+1
+1
+boolean
+1
+0
+NULL
+NULL
+NULL
+
+query TIITIITTT nosort
+select "prep"."statement", "inout", "number", "type", "type_digits", "type_scale", "schema", "table", "column"
+from prepared_statements prep
+inner join prepared_statements_args psa on prep."statementid" = psa."statementid"
+----
+prepare select "system" or ? from sys._tables where false@;
+0
+0
+boolean
+1
+0
+NULL
+%1
+%1
+prepare select "system" or ? from sys._tables where false@;
+1
+1
+boolean
+1
+0
+NULL
+NULL
+NULL
+
+query I nosort
+EXEC <LAST_PREPARE_ID>(false)
+----
+
+query T nosort
+select "statement" from prepared_statements
+----
+prepare select "system" or ? from sys._tables where false@;
+
+query IITIITTT nosort
+select "inout", "number", "type", "type_digits", "type_scale", "schema", "table", "column" from prepared_statements_args
+----
+0
+0
+boolean
+1
+0
+NULL
+%1
+%1
+1
+1
+boolean
+1
+0
+NULL
+NULL
+NULL
+
+statement ok
+deallocate <LAST_PREPARE_ID>
+
+query T nosort
+select "statement" from prepared_statements
+----
+
+query IITIITTT nosort
+select "inout", "number", "type", "type_digits", "type_scale", "schema", "table", "column" from prepared_statements_args
+----
+
+statement error 42000!EXEC: PREPARED Statement missing '0'
+exec <LAST_PREPARE_ID>(false)
+
+statement error 07003!No prepared statement with id: 0
+DEALLOCATE <LAST_PREPARE_ID>
+
+query TIITTT nosort
+prepare select "system" or ? from sys._tables WHERE false
+----
+boolean
+1
+0
+(empty)
+%1
+%1
+boolean
+1
+0
+NULL
+NULL
+NULL
+
+query I nosort
+execute <LAST_PREPARE_ID>(false)
+----
+
+statement ok
+DEALLOCATE prepare all
+
+statement error 42000!EXEC: PREPARED Statement missing '1'
+EXECUTE <LAST_PREPARE_ID>(false)
+
+query T nosort
+select "statement" from prepared_statements
+----
+
+query IITIITTT nosort
+select "inout", "number", "type", "type_digits", "type_scale", "schema", "table", "column" from prepared_statements_args
+----
+
+statement error 07003!No prepared statement with id: 100000
+DEALLOCATE 100000
+
+statement ok
+DEALLOCATE ALL
+
+query T nosort
+select "statement" from prepared_statements
+----
+
+query IITIITTT nosort
+select "inout", "number", "type", "type_digits", "type_scale", "schema", "table", "column" from prepared_statements_args
+----
+

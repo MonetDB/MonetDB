@@ -16,8 +16,8 @@ with tempfile.TemporaryDirectory() as farm_dir:
     os.mkdir(os.path.join(farm_dir, 'db1'))
 
     with server_start(["--set", "sql_debug=64"]) as srv:
-        with SQLTestCase() as tc:
-            tc.connect(username="monetdb", password="monetdb", port=srv.dbport, database='db1')
+        with SQLTestCase(server=srv) as tc:
+            tc.connect(username="monetdb", password="monetdb", port=srv.dbport, database='db1', usock=srv.usock)
             tc.execute("""
             CREATE USER "skyserver" WITH PASSWORD 'skyserver' NAME 'sky server' SCHEMA
             "sys";
@@ -27,8 +27,8 @@ with tempfile.TemporaryDirectory() as farm_dir:
         srv.communicate()
 
     with server_start() as srv:
-        with SQLTestCase() as tc:
-            tc.connect(username="monetdb", password="monetdb", port=srv.dbport, database='db1')
+        with SQLTestCase(server=srv) as tc:
+            tc.connect(username="monetdb", password="monetdb", port=srv.dbport, database='db1', usock=srv.usock)
             tc.execute("""
             select u.name, u.fullname, s.name as default_schema from sys.users u, sys.schemas s where u.default_schema = s.id and u.name like '%skyserver%';
             """).assertSucceeded().assertRowCount(1).assertDataResultMatch([("skyserver","sky server","sky")])

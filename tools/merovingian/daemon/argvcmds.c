@@ -3,11 +3,9 @@
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024, 2025 MonetDB Foundation;
- * Copyright August 2008 - 2023 MonetDB B.V.;
- * Copyright 1997 - July 2008 CWI.
+ * For copyright information, see the file debian/copyright.
  */
 
 #include "monetdb_config.h"
@@ -89,7 +87,7 @@ command_create(int argc, char *argv[])
 	char path[2048];
 	char *p;
 	char *dbfarm;
-	confkeyval phrase[2];
+	confkeyval phrase[1];
 
 	if (argc != 2) {
 		command_help(2, &argv[-1]);
@@ -99,21 +97,21 @@ command_create(int argc, char *argv[])
 	dbfarm = argv[1];
 
 	/* check if dbfarm actually exists */
-	strcpy_len(path, dbfarm, sizeof(path));
+	strtcpy(path, dbfarm, sizeof(path));
 	p = path;
 	while ((p = strchr(p + 1, '/')) != NULL) {
 		*p = '\0';
 		if (mkdir(path, 0755) == -1 && errno != EEXIST) {
 			fprintf(stderr,
-				"unable to create directory '%s': %s\n",
-				path, strerror(errno));
+					"unable to create directory '%s': %s\n",
+					path, strerror(errno));
 			return(1);
 		}
 		*p = '/';
 	}
 	if (mkdir(dbfarm, 0755) == -1 && errno != EEXIST) {
 		fprintf(stderr, "unable to create directory '%s': %s\n",
-			dbfarm, strerror(errno));
+				dbfarm, strerror(errno));
 		return(1);
 	}
 
@@ -123,9 +121,9 @@ command_create(int argc, char *argv[])
 		return(1);
 	}
 
-	phrase[0].key = "control";
-	phrase[0].val = "false";
-	phrase[1].key = NULL;
+	/* phrase[0].key = "control"; */
+	/* phrase[0].val = "false"; */
+	/* phrase[1].key = NULL; */
 	if (writeProps(phrase, dbfarm) != 0) {
 		fprintf(stderr, "unable to create file in directory '%s': %s\n",
 				dbfarm, strerror(errno));

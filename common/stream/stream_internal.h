@@ -3,11 +3,9 @@
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024, 2025 MonetDB Foundation;
- * Copyright August 2008 - 2023 MonetDB B.V.;
- * Copyright 1997 - July 2008 CWI.
+ * For copyright information, see the file debian/copyright.
  */
 
 // All this used to be at the top of stream.c. Much of it is probably
@@ -61,6 +59,9 @@
 #ifdef HAVE_LIBLZ4
 #include <lz4.h>
 #include <lz4frame.h>
+#endif
+#ifdef HAVE_PTHREAD_H
+#include <pthread.h>
 #endif
 
 #ifndef SHUT_RD
@@ -119,22 +120,22 @@
 
 #ifdef HAVE_HGE
 #define huge_int_SWAP(h)					\
-	((hge) (((((uhge) 0xff <<   0) & (uhge) (h)) << 120) |	\
-		((((uhge) 0xff <<   8) & (uhge) (h)) << 104) |	\
-		((((uhge) 0xff <<  16) & (uhge) (h)) <<  88) |	\
-		((((uhge) 0xff <<  24) & (uhge) (h)) <<  72) |	\
-		((((uhge) 0xff <<  32) & (uhge) (h)) <<  56) |	\
-		((((uhge) 0xff <<  40) & (uhge) (h)) <<  40) |	\
-		((((uhge) 0xff <<  48) & (uhge) (h)) <<  24) |	\
-		((((uhge) 0xff <<  56) & (uhge) (h)) <<   8) |	\
-		((((uhge) 0xff <<  64) & (uhge) (h)) >>   8) |	\
-		((((uhge) 0xff <<  72) & (uhge) (h)) >>  24) |	\
-		((((uhge) 0xff <<  80) & (uhge) (h)) >>  40) |	\
-		((((uhge) 0xff <<  88) & (uhge) (h)) >>  56) |	\
-		((((uhge) 0xff <<  96) & (uhge) (h)) >>  72) |	\
-		((((uhge) 0xff << 104) & (uhge) (h)) >>  88) |	\
-		((((uhge) 0xff << 112) & (uhge) (h)) >> 104) |	\
-		((((uhge) 0xff << 120) & (uhge) (h)) >> 120)))
+	((int128_t) (((((uint128_t) 0xff <<   0) & (uint128_t) (h)) << 120) |	\
+		((((uint128_t) 0xff <<   8) & (uint128_t) (h)) << 104) |	\
+		((((uint128_t) 0xff <<  16) & (uint128_t) (h)) <<  88) |	\
+		((((uint128_t) 0xff <<  24) & (uint128_t) (h)) <<  72) |	\
+		((((uint128_t) 0xff <<  32) & (uint128_t) (h)) <<  56) |	\
+		((((uint128_t) 0xff <<  40) & (uint128_t) (h)) <<  40) |	\
+		((((uint128_t) 0xff <<  48) & (uint128_t) (h)) <<  24) |	\
+		((((uint128_t) 0xff <<  56) & (uint128_t) (h)) <<   8) |	\
+		((((uint128_t) 0xff <<  64) & (uint128_t) (h)) >>   8) |	\
+		((((uint128_t) 0xff <<  72) & (uint128_t) (h)) >>  24) |	\
+		((((uint128_t) 0xff <<  80) & (uint128_t) (h)) >>  40) |	\
+		((((uint128_t) 0xff <<  88) & (uint128_t) (h)) >>  56) |	\
+		((((uint128_t) 0xff <<  96) & (uint128_t) (h)) >>  72) |	\
+		((((uint128_t) 0xff << 104) & (uint128_t) (h)) >>  88) |	\
+		((((uint128_t) 0xff << 112) & (uint128_t) (h)) >> 104) |	\
+		((((uint128_t) 0xff << 120) & (uint128_t) (h)) >> 120)))
 #endif
 
 
@@ -165,27 +166,23 @@ struct stream {
 	int (*fsetpos)(stream *restrict s, fpos_t *restrict p);
 	void (*update_timeout)(stream *s);
 	int (*isalive)(const stream *s);
-	int (*getoob)(const stream *s);
-	int (*putoob)(const stream *s, char val);
+	int (*getoob)(stream *s);
+	int (*putoob)(stream *s, char val);
 	mnstr_error_kind errkind;
 	char errmsg[1024]; // avoid allocation on error. We don't have THAT many streams..
 };
 
-#ifdef __CYGWIN__
-#define __visibility__(a)
-#endif
-
 void mnstr_va_set_error(stream *s, mnstr_error_kind kind, const char *fmt, va_list ap)
 	__attribute__((__visibility__("hidden")));
 
-void mnstr_set_error_errno(stream *s, mnstr_error_kind kind, const char *fmt, ...)
+void mnstr_set_error_errno(stream *s, mnstr_error_kind kind, _In_z_ _Printf_format_string_ const char *fmt, ...)
 	__attribute__((__format__(__printf__, 3, 4)))
 	__attribute__((__visibility__("hidden")));
 
 void mnstr_copy_error(stream *dst, stream *src)
 	__attribute__((__visibility__("hidden")));
 
-void mnstr_set_open_error(const char *name, int errnr, const char *fmt, ...)
+void mnstr_set_open_error(const char *name, int errnr, _In_z_ _Printf_format_string_ const char *fmt, ...)
 	__attribute__((__format__(__printf__, 3, 4)))
 	__attribute__((__visibility__("hidden")));
 
@@ -259,12 +256,20 @@ stream *open_lz4wastream(const char *restrict filename, const char *restrict mod
  * bs2.c should be dropped.*/
 typedef struct bs bs;
 struct bs {
-	unsigned nr;		/* how far we got in buf */
-	unsigned itotal;	/* amount available in current read block */
+#if !defined(HAVE_PTHREAD_H) && defined(WIN32)
+	CRITICAL_SECTION lock;
+#else
+	pthread_mutex_t lock;
+#endif
+	uint16_t nr;		/* how far we got in buf */
+	uint16_t itotal;	/* amount available in current read block */
+	bool seenflush;
+	bool seenoob;
+	unsigned char oobval;
 	int64_t blks;		/* read/written blocks (possibly partial) */
 	int64_t bytes;		/* read/written bytes */
 	char buf[BLOCK];	/* the buffered data (minus the size of
-				 * size-short */
+						 * size-short */
 };
 ssize_t bs_read(stream *restrict ss, void *restrict buf, size_t elmsize, size_t cnt)
 	__attribute__((__visibility__("hidden")));

@@ -3,11 +3,9 @@
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024, 2025 MonetDB Foundation;
- * Copyright August 2008 - 2023 MonetDB B.V.;
- * Copyright 1997 - July 2008 CWI.
+ * For copyright information, see the file debian/copyright.
  */
 
 /*
@@ -22,7 +20,6 @@
 #include <readline/readline.h>
 #include <readline/history.h>
 #include "ReadlineTools.h"
-#define LIBMUTILS 1
 #include "mutils.h"
 
 #ifdef HAVE_STRINGS_H
@@ -238,7 +235,7 @@ mal_command_generator(const char *text, int state)
 	}
 	/* try the server to answer */
 	if (!state) {
-		char *c;
+		const char *c;
 		c = strstr(text, ":=");
 		if (c)
 			text = c + 2;
@@ -308,7 +305,7 @@ continue_completion(rl_completion_func_t * func)
 static void
 readline_show_error(const char *msg) {
 	rl_save_prompt();
-	rl_message(msg);
+	rl_message("%s", msg);
 	rl_restore_prompt();
 	rl_clear_message();
 }
@@ -370,7 +367,7 @@ invoke_editor(int cnt, int key) {
 		}
 	}
 
-	snprintf(editor_command, BUFFER_SIZE, "%s %s", editor, template);
+	snprintf(editor_command, sizeof(editor_command), "%s %s", editor, template);
 	if (system(editor_command) != 0) {
 		readline_show_error("invoke_editor: Starting editor failed\n");
 		goto bailout;
@@ -416,7 +413,7 @@ invoke_editor(int cnt, int key) {
 
 	return 0;
 
-bailout:
+  bailout:
 	if (fp)
 		fclose(fp);
 	free(read_buff);
@@ -473,9 +470,9 @@ init_readline(Mapi mid, const char *lang, bool save_history)
 	if (save_history) {
 		int len;
 		if (getenv("HOME") != NULL) {
-			len = snprintf(_history_file, FILENAME_MAX,
-				 "%s/.mapiclient_history_%s",
-				 getenv("HOME"), language);
+			len = snprintf(_history_file, sizeof(_history_file),
+				       "%s/.mapiclient_history_%s",
+				       getenv("HOME"), language);
 			if (len == -1 || len >= FILENAME_MAX)
 				fprintf(stderr, "Warning: history filename path is too large\n");
 			else

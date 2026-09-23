@@ -25,7 +25,7 @@ __ DA_
 .. _solutions: https://www.monetdbsolutions.com
 __ solutions_
 
-.. _mpl: http://mozilla.org/MPL/2.0/
+.. _mpl: https://mozilla.org/MPL/2.0/
 __ mpl_
 
 .. _MonetDB: https://dev.monetdb.org/hg/MonetDB/
@@ -65,7 +65,6 @@ Available options are:
 Option              Explanation
 =================   ===============================================================================================
 ASSERT              Enable asserts (default=ON for development sources, OFF for tarball installation)
-CINTEGRATION        Enable support for C UDFs (default=ON except on Windows)
 CMAKE_SUMMARY       Show a summary of the cmake configuration (for debug purposes, default=OFF)
 CMAKE_UNITTESTS     Build and run the unittest for the build system (default=OFF)
 FITS                Enable support for FITS
@@ -73,8 +72,6 @@ GEOM                Enable support for geom module (using libgeos library)
 INT128              Enable support for 128-bit integers (if compiler supports them)
 NETCDF              Enable support for netcdf
 ODBC                Compile the MonetDB ODBC driver
-PY3INTEGRATION      Enable support for Python 3 integration into MonetDB
-RINTEGRATION        Enable support for R integration into MonetDB
 SANITIZER           Enable support for the GCC address sanitizer (default=OFF)
 SHP                 Enable support for ESRI Shapefiles
 STRICT              Enable strict compiler flags (default=ON for development sources, OFF for tarball installation)
@@ -97,30 +94,32 @@ Required and Optional Packages
 ..............................
 
 On Fedora, the following packages are required:
-``bison``, ``cmake``, ``gcc``, ``pkgconf``, ``python3``.
+``bison``, ``cmake``, ``gcc``, ``pkgconf``, ``python3``,
+``xxhash-devel``.
 
 The following packages are optional but recommended:
-``bzip2-devel``, ``lz4-devel``, ``openssl-devel``, ``pcre-devel``,
+``bzip2-devel``, ``lz4-devel``, ``openssl-devel``, ``pcre2-devel``,
 ``readline-devel``, ``xz-devel``, ``zlib-devel``.
 
 The following packages are optional:
 ``cfitsio-devel``, ``gdal-devel``, ``geos-devel``, ``libasan``,
 ``libcmocka-devel``, ``libcurl-devel``, ``libxml2-devel``,
-``netcdf-devel``, ``proj-devel``, ``python3-devel``, ``python3-numpy``,
-``R-core-devel``, ``unixODBC-devel``, ``valgrind-devel``.
+``netcdf-devel``, ``proj-devel``, ``unixODBC-devel``,
+``valgrind-devel``.
 
 On Ubuntu and Debian the following packages are required:
-``bison``, ``cmake``, ``gcc``, ``pkg-config``, ``python3``.
+``bison``, ``cmake``, ``gcc``, ``pkg-config``, ``python3``,
+``libxxhash-dev``.
 
 The following packages are optional but recommended:
-``libbz2-dev``, ``liblz4-dev``, ``libpcre3-dev``, ``libreadline-dev``,
-``liblzma-dev``, ``libssl-dev``, ``zlib1g-dev``.
+``libbz2-dev``, ``liblz4-dev``, ``liblzma-dev``, ``libpcre2-dev``,
+``libreadline-dev``, ``libssl-dev``, ``zlib1g-dev``.
 
 The following packages are optional:
 ``libasan5``, ``libcfitsio-dev``, ``libcmocka-dev``,
 ``libcurl4-gnutls-dev``, ``libgdal-dev``, ``libgeos-dev``,
-``libnetcdf-dev``, ``libproj-dev``, ``libxml2-dev``, ``python3-dev``,
-``python3-numpy``, ``r-base-dev``, ``unixodbc-dev``, ``valgrind``.
+``libnetcdf-dev``, ``libproj-dev``, ``libxml2-dev``, ``unixodbc-dev``,
+``valgrind``.
 
 ``cmake`` must be at least version 3.12, ``python`` must be at least
 version 3.5.
@@ -143,12 +142,16 @@ __ developers_
 Copyright Notice
 ================
 
+.. When updating copyright year, also update debian/copyright.
+
 SPDX-License-Identifier: MPL-2.0
 
 This Source Code Form is subject to the terms of the Mozilla Public
 License, v. 2.0.  If a copy of the MPL was not distributed with this
-file, You can obtain one at http://mozilla.org/MPL/2.0/.
+file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-Copyright 2024, 2025 MonetDB Foundation;
+Copyright 2024 - 2026 MonetDB Foundation;
 Copyright August 2008 - 2023 MonetDB B.V.;
 Copyright 1997 - July 2008 CWI.
+
+Also see the file ``debian/copyright``.

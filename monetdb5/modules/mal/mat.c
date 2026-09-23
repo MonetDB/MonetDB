@@ -3,11 +3,9 @@
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024, 2025 MonetDB Foundation;
- * Copyright August 2008 - 2023 MonetDB B.V.;
- * Copyright 1997 - July 2008 CWI.
+ * For copyright information, see the file debian/copyright.
  */
 
 /*
@@ -34,6 +32,9 @@
 #include "mal_resolve.h"
 #include "mal_exception.h"
 #include "mal_interpreter.h"
+#include "mal_pipelines.h"
+#include "pp_mat.h"
+#include "pipeline.h"
 
 /*
  * The pack is an ordinary multi BAT insert. Oid synchronistion
@@ -59,6 +60,16 @@ MATpackInternal(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	for (i = 1; i < p->argc; i++) {
 		bat bid = stk->stk[getArg(p, i)].val.bval;
 		b = BBPquickdesc(bid);
+		mat_t *mp = (mat_t *) b->pl_io;
+		if (mp && mp->pl_io.type == PIPELINE_IO_MAT) {
+			bn = pack_mat(b);
+			if (bn == NULL)
+				throw(MAL, "mat.pack", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+			*ret = bn->batCacheid;
+			BBPkeepref(bn);
+			return MAL_SUCCEED;
+		}
+
 		if (b) {
 			if (tt == TYPE_any)
 				tt = b->ttype;
@@ -129,11 +140,22 @@ MATpackIncrement(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	size_t newsize;
 
 	(void) cntxt;
-	b = BATdescriptor(stk->stk[getArg(p, 1)].val.ival);
+	b = BATdescriptor(stk->stk[getArg(p, 1)].val.bval);
 	if (b == NULL)
 		throw(MAL, "mat.pack", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 
 	if (getArgType(mb, p, 2) == TYPE_int) {
+		mat_t *mp = (mat_t *) b->pl_io;
+		if (mp && mp->pl_io.type == PIPELINE_IO_MAT) {
+			bn = pack_mat(b);
+			if (bn == NULL)
+				throw(MAL, "mat.pack", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+			*ret = bn->batCacheid;
+			BBPunfix(b->batCacheid);
+			BBPkeepref(bn);
+			return MAL_SUCCEED;
+		}
+
 		/* first step, estimate with some slack */
 		pieces = stk->stk[getArg(p, 2)].val.ival;
 		int tt = ATOMtype(b->ttype);
@@ -145,6 +167,15 @@ MATpackIncrement(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 			BBPunfix(b->batCacheid);
 			throw(MAL, "mat.pack", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		}
+		if (tt == TYPE_str && b->ustr) {
+			MT_thread_setalgorithm("convert to ustr", __func__);
+			BAT *bu = BATdescriptor(b->ustr);
+			gdk_return rc = BATconvert2ustr(bn, bu);
+			BBPreclaim(bu);
+			if (rc != GDK_SUCCEED)
+				TRC_WARNING(GDK, "convert to ustr failed");
+		}
+
 		/* allocate enough space for the vheap, but not for strings,
 		 * since BATappend does clever things for strings, and not for
 		 * vheap views since they may well get shared */
@@ -172,7 +203,6 @@ MATpackIncrement(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 			BBPunfix(b->batCacheid);
 			throw(MAL, "mat.pack", GDK_EXCEPTION);
 		}
-		bn->tunique_est = b->tunique_est;
 		bn->unused = (pieces - 1);	/* misuse "unused" field */
 		BBPunfix(b->batCacheid);
 		if (bn->tnil && bn->tnonil) {
@@ -209,7 +239,6 @@ MATpackIncrement(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 			throw(MAL, "mat.pack", GDK_EXCEPTION);
 		}
 		BBPunfix(bb->batCacheid);
-		b->tunique_est += bb->tunique_est;
 		b->unused--;
 		if (b->unused == 0 && (b = BATsetaccess(b, BAT_READ)) == NULL)
 			throw(MAL, "mat.pack", GDK_EXCEPTION);
@@ -263,8 +292,8 @@ MATpackValues(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 }
 
 #include "mel.h"
-mel_func mat_init_funcs[] = {
- pattern("mat", "new", MATpack, false, "Define a Merge Association Table (MAT). Fall back to the pack operation\nwhen this is called ", args(1,2, batargany("",1),batvarargany("b",1))),
+static mel_func mat_init_funcs[] = {
+ pattern("mat", "new", MATpack, false, "Define a Merge Association Table (MAT). Fall back to the pack operation when this is called", args(1,2, batargany("",1),batvarargany("b",1))),
  pattern("bat", "pack", MATpackValues, false, "Materialize the values into a BAT. Avoiding a clash with mat.pack() in mergetable", args(1,2, batargany("",1),varargany("",1))),
  pattern("mat", "pack", MATpackValues, false, "Materialize the MAT (of values) into a BAT", args(1,2, batargany("",1),varargany("",1))),
  pattern("mat", "pack", MATpack, false, "Materialize the MAT into a BAT", args(1,2, batargany("",1),batvarargany("b",1))),

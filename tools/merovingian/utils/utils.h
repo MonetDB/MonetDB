@@ -3,11 +3,9 @@
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024, 2025 MonetDB Foundation;
- * Copyright August 2008 - 2023 MonetDB B.V.;
- * Copyright 1997 - July 2008 CWI.
+ * For copyright information, see the file debian/copyright.
  */
 
 #ifndef _SEEN_UTILS_H
@@ -53,7 +51,7 @@ char *getConfVal(confkeyval *list, const char *key);
 int getConfNum(confkeyval *list, const char *key);
 char *setConfVal(confkeyval *ckv, const char *val);
 char *setConfValForKey(confkeyval *list, const char *key, const char *val);
-void secondsToString(char *buf, time_t t, int longness);
+void secondsToString(char *buf, size_t buflen, time_t t, int longness);
 void abbreviateString(char *ret, const char *in, size_t width);
 void generateSalt(char *buf, unsigned int len);
 char *generatePassphraseFile(const char *path);

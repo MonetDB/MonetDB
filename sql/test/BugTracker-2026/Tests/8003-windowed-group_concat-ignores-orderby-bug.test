@@ -1,0 +1,28 @@
+statement ok
+CREATE TABLE t8003(id INT, s VARCHAR(10))
+
+statement ok rowcount 3
+INSERT INTO t8003 VALUES (1, 'b'), (2, 'c'), (3, 'a')
+
+query ITT rowsort
+SELECT id,
+  GROUP_CONCAT(s ORDER BY s) OVER (
+    ROWS BETWEEN UNBOUNDED PRECEDING AND UNBOUNDED FOLLOWING
+  ) AS actual,
+  (SELECT GROUP_CONCAT(r.s ORDER BY r.s) FROM t8003 r) AS expected
+FROM t8003
+ORDER BY id
+----
+1
+a,b,c
+a,b,c
+2
+a,b,c
+a,b,c
+3
+a,b,c
+a,b,c
+
+statement ok
+DROP TABLE t8003
+

@@ -3,29 +3,30 @@
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024, 2025 MonetDB Foundation;
- * Copyright August 2008 - 2023 MonetDB B.V.;
- * Copyright 1997 - July 2008 CWI.
+ * For copyright information, see the file debian/copyright.
  */
 
 #ifndef _GDK_TIME_H_
 #define _GDK_TIME_H_
 
-#include <time.h>			/* for time_t */
+#include "gdk.h"		/* we need gdk_export and time.h */
 
 typedef int date;			/* we use 26 bits out of 32 */
 #define date_nil			((date) {int_nil})
 #define is_date_nil(x)			((x) == date_nil)
+#define is_date_eq(x, y)		((x) == (y))
 
 typedef lng daytime;			/* we use 37 bits out of 64 */
 #define daytime_nil			((daytime) {lng_nil})
 #define is_daytime_nil(x)		((x) == daytime_nil)
+#define is_daytime_eq(x, y)		((x) == (y))
 
 typedef lng timestamp;			/* we use 26+37=63 bits out of 64 */
 #define timestamp_nil			((timestamp) {lng_nil})
 #define is_timestamp_nil(x)		((x) == timestamp_nil)
+#define is_timestamp_eq(x, y)		((x) == (y))
 
 /* functions to manipulate date, daytime, and timestamp values */
 #define HOUR_USEC	(60*60*LL_CONSTANT(1000000)) /* usec in an hour */
@@ -116,18 +117,18 @@ gdk_export lng timestamp_diff(timestamp t1, timestamp t2)
 	__attribute__((__const__));
 
 /* interfaces for GDK level atoms date, daytime, and timestamp */
-gdk_export ssize_t date_fromstr(const char *buf, size_t *len, date **d, bool external);
-gdk_export ssize_t date_tostr(str *buf, size_t *len, const date *val, bool external);
-gdk_export ssize_t daytime_tz_fromstr(const char *buf, size_t *len, daytime **d, bool external);
-gdk_export ssize_t daytime_fromstr(const char *buf, size_t *len, daytime **d, bool external);
-gdk_export ssize_t daytime_precision_tostr(str *buf, size_t *len, const daytime dt, int precision, bool external);
-gdk_export ssize_t daytime_tostr(str *buf, size_t *len, const daytime *val, bool external);
-gdk_export ssize_t timestamp_fromstr(const char *buf, size_t *len, timestamp **d, bool external);
-gdk_export ssize_t timestamp_tz_fromstr(const char *buf, size_t *len, timestamp **ret, bool external);
-gdk_export ssize_t timestamp_tostr(str *buf, size_t *len, const timestamp *val, bool external);
-gdk_export ssize_t timestamp_precision_tostr(str *buf, size_t *len, timestamp val, int precision, bool external);
+gdk_export ssize_t date_fromstr(allocator *ma, const char *buf, size_t *len, date **d, bool external);
+gdk_export ssize_t date_tostr(allocator *ma, str *buf, size_t *len, const date *val, bool external);
+gdk_export ssize_t daytime_tz_fromstr(allocator *ma, const char *buf, size_t *len, daytime **d, bool external);
+gdk_export ssize_t daytime_fromstr(allocator *ma, const char *buf, size_t *len, daytime **d, bool external);
+gdk_export ssize_t daytime_precision_tostr(allocator *ma, str *buf, size_t *len, const daytime dt, int precision, bool external);
+gdk_export ssize_t daytime_tostr(allocator *ma, str *buf, size_t *len, const daytime *val, bool external);
+gdk_export ssize_t timestamp_fromstr(allocator *ma, const char *buf, size_t *len, timestamp **d, bool external);
+gdk_export ssize_t timestamp_tz_fromstr(allocator *ma, const char *buf, size_t *len, timestamp **ret, bool external);
+gdk_export ssize_t timestamp_tostr(allocator *ma, str *buf, size_t *len, const timestamp *val, bool external);
+gdk_export ssize_t timestamp_precision_tostr(allocator *ma, str *buf, size_t *len, timestamp val, int precision, bool external);
 
-gdk_export ssize_t sql_daytime_fromstr(const char *buf, daytime *d, long tz_sec, bool tzlocal);
-gdk_export ssize_t sql_timestamp_fromstr(const char *buf, timestamp *d, long tz_sec, bool tzlocal);
+gdk_export ssize_t sql_daytime_fromstr(allocator *ma, const char *buf, daytime *d, long tz_sec, bool tzlocal);
+gdk_export ssize_t sql_timestamp_fromstr(allocator *ma, const char *buf, timestamp *d, long tz_sec, bool tzlocal);
 
 #endif	/* _GDK_TIME_H_ */

@@ -3,11 +3,9 @@
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024, 2025 MonetDB Foundation;
- * Copyright August 2008 - 2023 MonetDB B.V.;
- * Copyright 1997 - July 2008 CWI.
+ * For copyright information, see the file debian/copyright.
  */
 
 /*
@@ -29,50 +27,49 @@
 #include "mal_authorize.h"
 #include "mal_internal.h"
 #include "opt_pipes.h"
-#include "gdk_time.h"
 
 static str
-CLTsetListing(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+CLTsetListing(Client ctx, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	(void) mb;
-	*getArgReference_int(stk, pci, 0) = cntxt->listing;
-	cntxt->listing = *getArgReference_int(stk, pci, 1);
+	*getArgReference_int(stk, pci, 0) = ctx->listing;
+	ctx->listing = *getArgReference_int(stk, pci, 1);
 	return MAL_SUCCEED;
 }
 
 static str
-CLTgetClientId(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+CLTgetClientId(Client ctx, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	(void) mb;
-	if (cntxt - mal_clients < 0 || cntxt - mal_clients >= MAL_MAXCLIENTS)
+	if (ctx - mal_clients < 0 || ctx - mal_clients >= MAL_MAXCLIENTS)
 		throw(MAL, "clients.getClientId", "Illegal client index");
-	*getArgReference_int(stk, pci, 0) = (int) (cntxt - mal_clients);
+	*getArgReference_int(stk, pci, 0) = (int) (ctx - mal_clients);
 	return MAL_SUCCEED;
 }
 
 static str
-CLTgetScenario(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+CLTgetScenario(Client ctx, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	(void) mb;
-	if (cntxt->scenario)
-		*getArgReference_str(stk, pci, 0) = GDKstrdup(cntxt->scenario);
+	if (ctx->scenario)
+		*getArgReference_str(stk, pci, 0) = ma_strdup(mb->ma, ctx->scenario);
 	else
-		*getArgReference_str(stk, pci, 0) = GDKstrdup("nil");
+		*getArgReference_str(stk, pci, 0) = "nil";
 	if (*getArgReference_str(stk, pci, 0) == NULL)
 		throw(MAL, "clients.getScenario", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	return MAL_SUCCEED;
 }
 
 static str
-CLTsetScenario(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+CLTsetScenario(Client ctx, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	str msg = MAL_SUCCEED;
 
 	(void) mb;
-	msg = setScenario(cntxt, *getArgReference_str(stk, pci, 1));
+	msg = setScenario(ctx, *getArgReference_str(stk, pci, 1));
 	*getArgReference_str(stk, pci, 0) = 0;
 	if (msg == NULL) {
-		*getArgReference_str(stk, pci, 0) = GDKstrdup(cntxt->scenario);
+		*getArgReference_str(stk, pci, 0) = ma_strdup(mb->ma, ctx->scenario);
 		if (*getArgReference_str(stk, pci, 0) == NULL)
 			throw(MAL, "clients.setScenario", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
@@ -82,7 +79,7 @@ CLTsetScenario(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 static void
 CLTtimeConvert(time_t l, char *s)
 {
-	struct tm localt = (struct tm) { 0 };
+	struct tm localt = { 0 };
 
 	(void) localtime_r(&l, &localt);
 
@@ -95,7 +92,7 @@ CLTtimeConvert(time_t l, char *s)
 }
 
 static str
-CLTInfo(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+CLTInfo(Client ctx, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	bat *ret = getArgReference_bat(stk, pci, 0);
 	bat *ret2 = getArgReference_bat(stk, pci, 1);
@@ -110,21 +107,21 @@ CLTInfo(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		throw(MAL, "clients.info", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 
-	(void) snprintf(buf, sizeof(buf), "" LLFMT "", (lng) cntxt->user);
+	(void) snprintf(buf, sizeof(buf), "" LLFMT "", (lng) ctx->user);
 	if (BUNappend(b, "user", false) != GDK_SUCCEED ||
 		BUNappend(bn, buf, false) != GDK_SUCCEED)
 		goto bailout;
 
 	if (BUNappend(b, "scenario", false) != GDK_SUCCEED ||
-		BUNappend(bn, cntxt->scenario, false) != GDK_SUCCEED)
+		BUNappend(bn, ctx->scenario, false) != GDK_SUCCEED)
 		goto bailout;
 
-	(void) snprintf(buf, sizeof(buf), "%d", cntxt->listing);
+	(void) snprintf(buf, sizeof(buf), "%d", ctx->listing);
 	if (BUNappend(b, "listing", false) != GDK_SUCCEED ||
 		BUNappend(bn, buf, false) != GDK_SUCCEED)
 		goto bailout;
 
-	CLTtimeConvert(cntxt->login, buf);
+	CLTtimeConvert(ctx->login, buf);
 	if (BUNappend(b, "login", false) != GDK_SUCCEED ||
 		BUNappend(bn, buf, false) != GDK_SUCCEED)
 		goto bailout;
@@ -141,8 +138,9 @@ CLTInfo(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 
 static str
-CLTLogin(bat *nme, bat *ret)
+CLTLogin(Client ctx, bat *nme, bat *ret)
 {
+	(void) ctx;
 	BAT *b = COLnew(0, TYPE_str, 12, TRANSIENT);
 	BAT *u = COLnew(0, TYPE_oid, 12, TRANSIENT);
 	int i;
@@ -173,14 +171,14 @@ CLTLogin(bat *nme, bat *ret)
 }
 
 static str
-CLTquit(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+CLTquit(Client ctx, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	str msg = MAL_SUCCEED;
-	int idx = cntxt->idx;
-	(void) mb;					/* fool compiler */
+	int idx = ctx->idx;
+	(void) mb;
 
 	if (pci->argc == 2) {
-		if (cntxt->user == MAL_ADMIN)
+		if (ctx->user == MAL_ADMIN)
 			idx = *getArgReference_int(stk, pci, 1);
 		else
 			throw(MAL, "clients.quit",
@@ -193,7 +191,7 @@ CLTquit(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	/* A user can only quit a session under the same id */
 	MT_lock_set(&mal_contextLock);
 	if (mal_clients[idx].mode == FREECLIENT)
-		msg = createException(MAL, "clients.stop",
+		msg = createException(MAL, "clients.quit",
 							  "Session not active anymore");
 	else
 		mal_clients[idx].mode = FINISHCLIENT;
@@ -203,13 +201,13 @@ CLTquit(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 /* Stopping a client in a soft manner by setting the time out marker */
 static str
-CLTstop(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+CLTstop(Client ctx, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	int idx = cntxt->idx;
+	int idx = ctx->idx;
 	str msg = MAL_SUCCEED;
 
 	(void) mb;
-	if (cntxt->user != MAL_ADMIN)
+	if (ctx->user != MAL_ADMIN)
 		throw(MAL, "clients.stop",
 			  SQLSTATE(42000) "Administrator rights required");
 
@@ -230,14 +228,14 @@ CLTstop(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 
 static str
-CLTsetoptimizer(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+CLTsetoptimizer(Client ctx, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	int idx = cntxt->idx;
+	int idx = ctx->idx;
 	str opt, msg = MAL_SUCCEED;
 
 	(void) mb;
 	if (pci->argc == 3) {
-		if (cntxt->user == MAL_ADMIN) {
+		if (ctx->user == MAL_ADMIN) {
 			idx = *getArgReference_int(stk, pci, 1);
 			opt = *getArgReference_str(stk, pci, 2);
 		} else {
@@ -262,21 +260,21 @@ CLTsetoptimizer(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		msg = createException(MAL, "clients.setoptimizer",
 							  "Session not active anymore");
 	else
-		strcpy_len(mal_clients[idx].optimizer, opt,
-				   sizeof(mal_clients[idx].optimizer));
+		strtcpy(mal_clients[idx].optimizer, opt,
+				sizeof(mal_clients[idx].optimizer));
 	MT_lock_unset(&mal_contextLock);
 	return msg;
 }
 
 static str
-CLTsetworkerlimit(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+CLTsetworkerlimit(Client ctx, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	str msg = MAL_SUCCEED;
-	int idx = cntxt->idx, limit;
+	int idx = ctx->idx, limit;
 
 	(void) mb;
 	if (pci->argc == 3) {
-		if (cntxt->user == MAL_ADMIN) {
+		if (ctx->user == MAL_ADMIN) {
 			idx = *getArgReference_int(stk, pci, 1);
 			limit = *getArgReference_int(stk, pci, 2);
 		} else {
@@ -304,7 +302,7 @@ CLTsetworkerlimit(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		if (limit == 0) {
 			if (mal_clients[idx].maxworkers > 0)
 				limit = mal_clients[idx].maxworkers;
-		} else if (cntxt->user != MAL_ADMIN &&
+		} else if (ctx->user != MAL_ADMIN &&
 				   mal_clients[idx].maxworkers > 0 &&
 				   mal_clients[idx].maxworkers < limit) {
 			limit = mal_clients[idx].maxworkers;
@@ -316,14 +314,14 @@ CLTsetworkerlimit(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 
 static str
-CLTsetmemorylimit(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+CLTsetmemorylimit(Client ctx, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	str msg = MAL_SUCCEED;
-	int idx = cntxt->idx, limit;
+	int idx = ctx->idx, limit;
 
 	(void) mb;
 	if (pci->argc == 3) {
-		if (cntxt->user == MAL_ADMIN) {
+		if (ctx->user == MAL_ADMIN) {
 			idx = *getArgReference_sht(stk, pci, 1);
 			limit = *getArgReference_int(stk, pci, 2);
 		} else {
@@ -353,7 +351,7 @@ CLTsetmemorylimit(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		if (mlimit == 0) {
 			if (mal_clients[idx].maxmem > 0)
 				mlimit = mal_clients[idx].maxmem;
-		} else if (cntxt->user != MAL_ADMIN &&
+		} else if (ctx->user != MAL_ADMIN &&
 				   mal_clients[idx].maxmem > 0 &&
 				   mal_clients[idx].maxmem < mlimit) {
 			mlimit = mal_clients[idx].maxmem;
@@ -366,13 +364,13 @@ CLTsetmemorylimit(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 
 static str
-CLTstopSession(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+CLTstopSession(Client ctx, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	str msg = MAL_SUCCEED;
-	int idx = cntxt->idx;
+	int idx = ctx->idx;
 	(void) mb;
 
-	if (cntxt->user != MAL_ADMIN) {
+	if (ctx->user != MAL_ADMIN) {
 		throw(MAL, "clients.stopsession",
 			  SQLSTATE(42000) "Administrator rights required");
 	}
@@ -395,12 +393,12 @@ CLTstopSession(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 /* Queries can be temporarily suspended */
 static str
-CLTsuspend(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+CLTsuspend(Client ctx, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	str msg = MAL_SUCCEED;
-	int idx = cntxt->idx;
+	int idx = ctx->idx;
 
-	if (cntxt->user != MAL_ADMIN)
+	if (ctx->user != MAL_ADMIN)
 		throw(MAL, "clients.suspend",
 			  SQLSTATE(42000) "Administrator rights required");
 
@@ -421,12 +419,12 @@ CLTsuspend(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 
 static str
-CLTwakeup(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+CLTwakeup(Client ctx, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	str msg = MAL_SUCCEED;
-	int idx = cntxt->idx;
+	int idx = ctx->idx;
 
-	if (cntxt->user != MAL_ADMIN)
+	if (ctx->user != MAL_ADMIN)
 		throw(MAL, "clients.wakeup",
 			  SQLSTATE(42000) "Administrator rights required");
 
@@ -448,14 +446,14 @@ CLTwakeup(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 /* set query timeout based in seconds, converted into microseconds */
 static str
-CLTqueryTimeout(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+CLTqueryTimeout(Client ctx, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	str msg = MAL_SUCCEED;
-	int qto, idx = cntxt->idx;
+	int qto, idx = ctx->idx;
 	(void) mb;
 
 	if (pci->argc == 3) {
-		if (cntxt->user == MAL_ADMIN) {
+		if (ctx->user == MAL_ADMIN) {
 			idx = *getArgReference_int(stk, pci, 1);
 			qto = *getArgReference_int(stk, pci, 2);
 		} else {
@@ -486,10 +484,10 @@ CLTqueryTimeout(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 // set query timeout based in microseconds
 static str
-CLTqueryTimeoutMicro(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+CLTqueryTimeoutMicro(Client ctx, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	str msg = MAL_SUCCEED;
-	int idx = cntxt->idx;
+	int idx = ctx->idx;
 	lng qto = *getArgReference_lng(stk, pci, 1);
 	(void) mb;
 
@@ -507,6 +505,8 @@ CLTqueryTimeoutMicro(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		QryCtx *qry_ctx = MT_thread_get_qry_ctx();
 		if (qry_ctx) {
 			qry_ctx->endtime = qry_ctx->starttime && qto ? qry_ctx->starttime + qto : 0;
+			if (qry_ctx->endtime == 0 || ctx->sessiontimeout < qry_ctx->endtime)
+				qry_ctx->endtime = ctx->sessiontimeout;
 		}
 	}
 	MT_lock_unset(&mal_contextLock);
@@ -515,14 +515,14 @@ CLTqueryTimeoutMicro(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 /* Set the current session timeout in seconds */
 static str
-CLTsessionTimeout(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+CLTsessionTimeout(Client ctx, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	str msg = MAL_SUCCEED;
-	int sto = -1, idx = cntxt->idx;
+	int sto = -1, idx = ctx->idx;
 	(void) mb;
 
 	if (pci->argc == 3) {
-		if (cntxt->user == MAL_ADMIN) {
+		if (ctx->user == MAL_ADMIN) {
 			idx = *getArgReference_int(stk, pci, 1);
 			sto = *getArgReference_int(stk, pci, 2);
 		} else {
@@ -546,8 +546,8 @@ CLTsessionTimeout(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		msg = createException(MAL, "clients.setsessiontimeout",
 							  "Session not active anymore");
 	else {
-		mal_clients[idx].sessiontimeout = sto > 0 ? (lng) sto *1000000 + (GDKusec() - mal_clients[idx].session) : 0;
-		mal_clients[idx].logical_sessiontimeout = (lng) sto;
+		mal_clients[idx].sessiontimeout = sto > 0 ? sto * LL_CONSTANT(1000000) + GDKusec() : 0;
+		mal_clients[idx].logical_sessiontimeout = sto;
 	}
 	MT_lock_unset(&mal_contextLock);
 	return msg;
@@ -555,7 +555,7 @@ CLTsessionTimeout(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 /* Retrieve the session time out */
 static str
-CLTgetProfile(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+CLTgetProfile(Client ctx, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	str *opt = getArgReference_str(stk, pci, 0);
 	int *qto = getArgReference_int(stk, pci, 1);
@@ -563,12 +563,12 @@ CLTgetProfile(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	int *wlim = getArgReference_int(stk, pci, 3);
 	int *mlim = getArgReference_int(stk, pci, 4);
 	(void) mb;
-	if (!(*opt = GDKstrdup(cntxt->optimizer)))
+	if (!(*opt = ma_strdup(mb->ma, ctx->optimizer)))
 		throw(MAL, "clients.getProfile", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-	*qto = (int) (cntxt->querytimeout / 1000000);
-	*sto = (int) (cntxt->sessiontimeout / 1000000);
-	*wlim = cntxt->workerlimit;
-	*mlim = cntxt->memorylimit;
+	*qto = (int) (ctx->querytimeout / 1000000);
+	*sto = ctx->logical_sessiontimeout;
+	*wlim = ctx->workerlimit;
+	*mlim = ctx->memorylimit;
 	return MAL_SUCCEED;
 }
 
@@ -576,8 +576,9 @@ CLTgetProfile(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
  * with a message from the interpreter.
  * This value should be set to minutes to avoid a lengthy log */
 static str
-CLTsetPrintTimeout(void *ret, const int *secs)
+CLTsetPrintTimeout(Client ctx, void *ret, const int *secs)
 {
+	(void) ctx;
 	(void) ret;
 	if (is_int_nil(*secs))
 		setqptimeout(0);
@@ -587,16 +588,17 @@ CLTsetPrintTimeout(void *ret, const int *secs)
 }
 
 static str
-CLTmd5sum(str *ret, const char *const *pw)
+CLTmd5sum(Client ctx, str *ret, const char *const *pw)
 {
+	allocator *ma = ctx->curprg->def->ma;
 	if (strNil(*pw)) {
-		*ret = GDKstrdup(str_nil);
+		*ret = (char *) str_nil;
 	} else {
 		char *mret = mcrypt_MD5Sum(*pw, strlen(*pw));
 
 		if (!mret)
 			throw(MAL, "clients.md5sum", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-		*ret = GDKstrdup(mret);
+		*ret = ma_strdup(ma, mret);
 		free(mret);
 	}
 	if (*ret == NULL)
@@ -605,16 +607,17 @@ CLTmd5sum(str *ret, const char *const *pw)
 }
 
 static str
-CLTsha1sum(str *ret, const char *const *pw)
+CLTsha1sum(Client ctx, str *ret, const char *const *pw)
 {
+	allocator *ma = ctx->curprg->def->ma;
 	if (strNil(*pw)) {
-		*ret = GDKstrdup(str_nil);
+		*ret = (char *) str_nil;
 	} else {
 		char *mret = mcrypt_SHA1Sum(*pw, strlen(*pw));
 
 		if (!mret)
 			throw(MAL, "clients.sha1sum", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-		*ret = GDKstrdup(mret);
+		*ret = ma_strdup(ma, mret);
 		free(mret);
 	}
 	if (*ret == NULL)
@@ -623,16 +626,17 @@ CLTsha1sum(str *ret, const char *const *pw)
 }
 
 static str
-CLTripemd160sum(str *ret, const char *const *pw)
+CLTripemd160sum(Client ctx, str *ret, const char *const *pw)
 {
+	allocator *ma = ctx->curprg->def->ma;
 	if (strNil(*pw)) {
-		*ret = GDKstrdup(str_nil);
+		*ret = (char *) str_nil;
 	} else {
 		char *mret = mcrypt_RIPEMD160Sum(*pw, strlen(*pw));
 
 		if (!mret)
 			throw(MAL, "clients.ripemd160sum", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-		*ret = GDKstrdup(mret);
+		*ret = ma_strdup(ma, mret);
 		free(mret);
 	}
 	if (*ret == NULL)
@@ -641,10 +645,11 @@ CLTripemd160sum(str *ret, const char *const *pw)
 }
 
 static str
-CLTsha2sum(str *ret, const char *const *pw, const int *bits)
+CLTsha2sum(Client ctx, str *ret, const char *const *pw, const int *bits)
 {
+	allocator *ma = ctx->curprg->def->ma;
 	if (strNil(*pw) || is_int_nil(*bits)) {
-		*ret = GDKstrdup(str_nil);
+		*ret = (char *) str_nil;
 	} else {
 		char *mret = 0;
 		switch (*bits) {
@@ -667,7 +672,7 @@ CLTsha2sum(str *ret, const char *const *pw, const int *bits)
 		}
 		if (!mret)
 			throw(MAL, "clients.sha2sum", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-		*ret = GDKstrdup(mret);
+		*ret = ma_strdup(ma, mret);
 		free(mret);
 	}
 	if (*ret == NULL)
@@ -676,15 +681,16 @@ CLTsha2sum(str *ret, const char *const *pw, const int *bits)
 }
 
 static str
-CLTbackendsum(str *ret, const char *const *pw)
+CLTbackendsum(Client ctx, str *ret, const char *const *pw)
 {
+	allocator *ma = ctx->curprg->def->ma;
 	if (strNil(*pw)) {
-		*ret = GDKstrdup(str_nil);
+		*ret = (char *) str_nil;
 	} else {
 		char *mret = mcrypt_BackendSum(*pw, strlen(*pw));
 		if (mret == NULL)
 			throw(MAL, "clients.backendsum", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-		*ret = GDKstrdup(mret);
+		*ret = ma_strdup(ma, mret);
 		free(mret);
 	}
 	if (*ret == NULL)
@@ -693,19 +699,19 @@ CLTbackendsum(str *ret, const char *const *pw)
 }
 
 static str
-CLTgetUsername(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+CLTgetUsername(Client ctx, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	str *ret = getArgReference_str(stk, pci, 0);
 	(void) mb;
 
-	*ret = GDKstrdup(cntxt->username);
+	*ret = ma_strdup(mb->ma, ctx->username);
 	return MAL_SUCCEED;
 }
 
 static str
-CLTgetPasswordHash(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+CLTgetPasswordHash(Client ctx, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	(void) cntxt;
+	(void) ctx;
 	(void) mb;
 	(void) stk;
 	(void) pci;
@@ -715,9 +721,9 @@ CLTgetPasswordHash(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 
 static str
-CLTcheckPermission(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+CLTcheckPermission(Client ctx, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	(void) cntxt;
+	(void) ctx;
 	(void) mb;
 	(void) stk;
 	(void) pci;
@@ -727,7 +733,7 @@ CLTcheckPermission(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 
 str
-CLTshutdown(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+CLTshutdown(Client ctx, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	str *ret = getArgReference_str(stk, pci, 0);
 	int delay;
@@ -742,7 +748,7 @@ CLTshutdown(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	delay = *getArgReference_bte(stk, pci, 1);
 
-	if (cntxt->user != MAL_ADMIN)
+	if (ctx->user != MAL_ADMIN)
 		throw(MAL, "mal.shutdown",
 			  SQLSTATE(42000) "Administrator rights required");
 	if (is_int_nil(delay))
@@ -751,15 +757,15 @@ CLTshutdown(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		throw(MAL, "mal.shutdown", "Delay cannot be negative");
 	if (is_bit_nil(force))
 		throw(MAL, "mal.shutdown", "Force cannot be NULL");
-	MCstopClients(cntxt);
+	MCstopClients(ctx);
 	do {
 		if ((leftover = MCactiveClients() - 1))
 			MT_sleep_ms(1000);
 		delay--;
 	} while (delay > 0 && leftover > 1);
 	if (delay == 0 && leftover > 1)
-		snprintf(buf, 1024, "%d client sessions still running", leftover);
-	*ret = GDKstrdup(buf);
+		snprintf(buf, sizeof(buf), "%d client sessions still running", leftover);
+	*ret = ma_strdup(mb->ma, buf);
 	if (force)
 		GDKprepareExit();
 	if (*ret == NULL)
@@ -768,38 +774,38 @@ CLTshutdown(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 
 static str
-CLTgetSessionID(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+CLTgetSessionID(Client ctx, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	(void) mb;
 	(void) stk;
 	(void) pci;
-	*getArgReference_int(stk, pci, 0) = cntxt->idx;
+	*getArgReference_int(stk, pci, 0) = ctx->idx;
 	return MAL_SUCCEED;
 }
 
 static str
-CLTsetClientInfo(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+CLTsetClientInfo(Client ctx, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	(void)mb;
 	str property = *getArgReference_str(stk, pci, 1);
 	str value = *getArgReference_str(stk, pci, 2);
 
-	MCsetClientInfo(cntxt, property, value);
+	MCsetClientInfo(ctx, property, value);
 	return MAL_SUCCEED;
 }
 
 #include "mel.h"
-mel_func clients_init_funcs[] = {
- pattern("clients", "setListing", CLTsetListing, true, "Turn on/off echo of MAL instructions:\n1 - echo input,\n2 - show mal instruction,\n4 - show details of type resolutoin, \n8 - show binding information.", args(1,2, arg("",int),arg("flag",int))),
+static mel_func clients_init_funcs[] = {
+ pattern("clients", "setListing", CLTsetListing, true, "Turn on/off echo of MAL instructions: 1 - echo input, 2 - show mal instruction, 4 - show details of type resolutoin, 8 - show binding information.", args(1,2, arg("",int),arg("flag",int))),
  pattern("clients", "getId", CLTgetClientId, false, "Return a number that uniquely represents the current client.", args(1,1, arg("",int))),
  pattern("clients", "getInfo", CLTInfo, false, "Pseudo bat with client attributes.", args(2,2, batarg("",str),batarg("",str))),
  pattern("clients", "getScenario", CLTgetScenario, false, "Retrieve current scenario name.", args(1,1, arg("",str))),
  pattern("clients", "setScenario", CLTsetScenario, true, "Switch to other scenario handler, return previous one.", args(1,2, arg("",str),arg("msg",str))),
  pattern("clients", "quit", CLTquit, true, "Terminate the client session.", args(1,1, arg("",void))),
- pattern("clients", "quit", CLTquit, true, "Terminate the session for a single client using a soft error.\nIt is the privilege of the console user.", args(1,2, arg("",void),arg("idx",int))),
+ pattern("clients", "quit", CLTquit, true, "Terminate the session for a single client using a soft error. It is the privilege of the console user.", args(1,2, arg("",void),arg("idx",int))),
  command("clients", "getLogins", CLTLogin, false, "Pseudo bat of client id and login time.", args(2,2, batarg("user",oid),batarg("start",str))),
  pattern("clients", "stop", CLTstop, true, "Stop the query execution at the next eligible statement.", args(0,1, arg("id",int))),
- pattern("clients", "suspend", CLTsuspend, true, "Put a client process to sleep for some time.\nIt will simple sleep for a second at a time, until\nthe awake bit has been set in its descriptor", args(1,2, arg("",void),arg("id",int))),
+ pattern("clients", "suspend", CLTsuspend, true, "Put a client process to sleep for some time. It will simple sleep for a second at a time, until the awake bit has been set in its descriptor", args(1,2, arg("",void),arg("id",int))),
  pattern("clients", "wakeup", CLTwakeup, true, "Wakeup a client process", args(1,2, arg("",void),arg("id",int))),
  pattern("clients", "getprofile", CLTgetProfile, false, "Retrieve the profile settings for a client", args(5,5, arg("opt",str),arg("q",int),arg("s",int),arg("w",int),arg("m",int))),
  pattern("clients", "setQryTimeoutMicro", CLTqueryTimeoutMicro, true, "", args(1,2, arg("",void),arg("n",lng))),
@@ -816,7 +822,7 @@ mel_func clients_init_funcs[] = {
  pattern("clients", "stopsession", CLTstopSession, true, "Stop a particular session", args(1,2, arg("",void),arg("sid",int))),
  command("clients", "setprinttimeout", CLTsetPrintTimeout, true, "Print running query every so many seconds.", args(1,2, arg("",void),arg("n",int))),
  pattern("clients", "shutdown", CLTshutdown, true, "", args(1,2, arg("",str),arg("delay",bte))),
- pattern("clients", "shutdown", CLTshutdown, true, "Close all other client connections. Return if it succeeds.\nIf forced is set then always stop the system the hard way", args(1,3, arg("",str),arg("delay",bte),arg("forced",bit))),
+ pattern("clients", "shutdown", CLTshutdown, true, "Close all other client connections. Return if it succeeds. If forced is set then always stop the system the hard way", args(1,3, arg("",str),arg("delay",bte),arg("forced",bit))),
  command("clients", "md5sum", CLTmd5sum, false, "Return hex string representation of the MD5 hash of the given string", args(1,2, arg("",str),arg("pw",str))),
  command("clients", "sha1sum", CLTsha1sum, false, "Return hex string representation of the SHA-1 hash of the given string", args(1,2, arg("",str),arg("pw",str))),
  command("clients", "sha2sum", CLTsha2sum, false, "Return hex string representation of the SHA-2 hash with bits of the given string", args(1,3, arg("",str),arg("pw",str),arg("bits",int))),

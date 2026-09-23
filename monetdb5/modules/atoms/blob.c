@@ -3,11 +3,9 @@
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024, 2025 MonetDB Foundation;
- * Copyright August 2008 - 2023 MonetDB B.V.;
- * Copyright 1997 - July 2008 CWI.
+ * For copyright information, see the file debian/copyright.
  */
 
 /*
@@ -39,12 +37,14 @@
 #include "mal_exception.h"
 
 static str
-BLOBnitems(int *ret, blob **b)
+BLOBnitems(Client ctx, int *ret, blob **b)
 {
+	(void) ctx;
 	if (is_blob_nil(*b)) {
 		*ret = int_nil;
+	} else if ((*b)->nitems > (size_t) GDK_int_max) {
+		*ret = -1;
 	} else {
-		assert((*b)->nitems < INT_MAX);
 		*ret = (int) (*b)->nitems;
 	}
 	return MAL_SUCCEED;
@@ -89,26 +89,28 @@ BLOBnitems_bulk(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (ci1.tpe == cand_dense) {
 		for (BUN i = 0; i < ci1.ncand; i++) {
 			oid p1 = (canditer_next_dense(&ci1) - off1);
-			const blob *b = BUNtvar(bi, p1);
+			const blob *b = BUNtvar(&bi, p1);
 
 			if (is_blob_nil(b)) {
 				vals[i] = int_nil;
 				nils = true;
+			} else if (b->nitems > (size_t) GDK_int_max) {
+				vals[i] = -1;
 			} else {
-				assert((int) b->nitems < INT_MAX);
 				vals[i] = (int) b->nitems;
 			}
 		}
 	} else {
 		for (BUN i = 0; i < ci1.ncand; i++) {
 			oid p1 = (canditer_next(&ci1) - off1);
-			const blob *b = BUNtvar(bi, p1);
+			const blob *b = BUNtvar(&bi, p1);
 
 			if (is_blob_nil(b)) {
 				vals[i] = int_nil;
 				nils = true;
+			} else if (b->nitems > (size_t) GDK_int_max) {
+				vals[i] = -1;
 			} else {
-				assert((int) b->nitems < INT_MAX);
 				vals[i] = (int) b->nitems;
 			}
 		}
@@ -130,10 +132,11 @@ BLOBnitems_bulk(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 }
 
 static str
-BLOBtoblob(blob **retval, const char *const *s)
+BLOBtoblob(Client ctx, blob **retval, const char *const *s)
 {
+	allocator *ma = ctx->curprg->def->ma;
 	size_t len = strLen(*s);
-	blob *b = (blob *) GDKmalloc(blobsize(len));
+	blob *b = (blob *) ma_alloc(ma, blobsize(len));
 
 	if (b == NULL)
 		throw(MAL, "blob.toblob", SQLSTATE(HY013) MAL_MALLOC_FAIL);
@@ -144,12 +147,13 @@ BLOBtoblob(blob **retval, const char *const *s)
 }
 
 static str
-BLOBblob_blob(blob **d, const blob *const*s)
+BLOBblob_blob(Client ctx, blob **d, const blob *const*s)
 {
+	allocator *ma = ctx->curprg->def->ma;
 	size_t len = blobsize((*s)->nitems);
 	blob *b;
 
-	*d = b = GDKmalloc(len);
+	*d = b = ma_alloc(ma, len);
 	if (b == NULL)
 		throw(MAL, "blob", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	b->nitems = (*s)->nitems;
@@ -159,8 +163,9 @@ BLOBblob_blob(blob **d, const blob *const*s)
 }
 
 static str
-BLOBblob_blob_bulk(bat *res, const bat *bid, const bat *sid)
+BLOBblob_blob_bulk(Client ctx, bat *res, const bat *bid, const bat *sid)
 {
+	(void) ctx;
 	BAT *b = NULL, *s = NULL, *dst = NULL;
 	BATiter bi;
 	str msg = NULL;
@@ -195,7 +200,7 @@ BLOBblob_blob_bulk(bat *res, const bat *bid, const bat *sid)
 	if (ci.tpe == cand_dense) {
 		for (BUN i = 0; i < ci.ncand; i++) {
 			oid p = (canditer_next_dense(&ci) - off);
-			const blob *v = BUNtvar(bi, p);
+			const blob *v = BUNtvar(&bi, p);
 
 			if (tfastins_nocheckVAR(dst, i, v) != GDK_SUCCEED) {
 				msg = createException(SQL, "batcalc.blob_blob_bulk",
@@ -207,7 +212,7 @@ BLOBblob_blob_bulk(bat *res, const bat *bid, const bat *sid)
 	} else {
 		for (BUN i = 0; i < ci.ncand; i++) {
 			oid p = (canditer_next(&ci) - off);
-			const blob *v = BUNtvar(bi, p);
+			const blob *v = BUNtvar(&bi, p);
 
 			if (tfastins_nocheckVAR(dst, i, v) != GDK_SUCCEED) {
 				msg = createException(SQL, "batcalc.blob_blob_bulk",
@@ -238,20 +243,22 @@ BLOBblob_blob_bulk(bat *res, const bat *bid, const bat *sid)
 }
 
 static str
-BLOBblob_fromstr(blob **b, const char *const*s)
+BLOBblob_fromstr(Client ctx, blob **b, const char *const*s)
 {
+	allocator *ma = ctx->curprg->def->ma;
 	size_t len = 0;
 
-	if (BATatoms[TYPE_blob].atomFromStr(*s, &len, (void **) b, false) < 0)
+	if (BATatoms[TYPE_blob].atomFromStr(ma, *s, &len, (void **) b, false) < 0)
 		throw(MAL, "blob", GDK_EXCEPTION);
 	return MAL_SUCCEED;
 }
 
 static str
-BLOBblob_fromstr_bulk(bat *res, const bat *bid, const bat *sid)
+BLOBblob_fromstr_bulk(Client ctx, bat *res, const bat *bid, const bat *sid)
 {
 	BAT *b, *s = NULL, *bn;
 
+	(void) ctx;
 	if ((b = BATdescriptor(*bid)) == NULL)
 		throw(MAL, "batcalc.blob", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	if (sid && !is_bat_nil(*sid) && (s = BATdescriptor(*sid)) == NULL) {

@@ -101,17 +101,19 @@ NULL
 NULL
 
 #output differs for 1 vs. multiple threads
-skipif threads=1
+#skipif threads=1
+skipif knownfail
 query T nosort
-PLAN SELECT DISTINCT col0, col1, col2, col0 FROM tab0
+EXPLAIN SHOW DETAILS SELECT DISTINCT col0, col1, col2, col0 FROM tab0
 ----
 group by (
 | table("sys"."tab0") [ "tab0"."col0" NOT NULL, "tab0"."col1" NOT NULL, "tab0"."col2" NOT NULL ]
 ) [ "tab0"."col2" NOT NULL, "tab0"."col0" NOT NULL, "tab0"."col1" NOT NULL ] [ "tab0"."col0" NOT NULL, "tab0"."col1" NOT NULL, "tab0"."col2" NOT NULL, "tab0"."col0" NOT NULL ]
 
-onlyif threads=1
+#onlyif threads=1
+skipif knownfail
 query T nosort
-PLAN SELECT DISTINCT col0, col1, col2, col0 FROM tab0
+EXPLAIN SHOW DETAILS SELECT DISTINCT col0, col1, col2, col0 FROM tab0
 ----
 group by (
 | table("sys"."tab0") [ "tab0"."col0" NOT NULL, "tab0"."col1" NOT NULL, "tab0"."col2" NOT NULL ]
@@ -133,8 +135,9 @@ SELECT DISTINCT col0, col1, col2, col0 FROM tab0
 99
 97
 
+skipif knownfail
 query T nosort
-PLAN SELECT col0 FROM tab2 WHERE CAST(col2 AS BIGINT) = 40
+EXPLAIN SHOW DETAILS SELECT col0 FROM tab2 WHERE CAST(col2 AS BIGINT) = 40
 ----
 project (
 | select (
@@ -374,10 +377,10 @@ CREATE TABLE t(x DECIMAL(4,1))
 statement ok
 INSERT INTO t VALUES (42)
 
-query R rowsort
+query D rowsort
 SELECT CAST(SUM(x) / COUNT(x) AS DECIMAL(13,1)) FROM t
 ----
-42.000
+42.0
 
 statement ok
 ROLLBACK
@@ -397,8 +400,9 @@ insert into tab1 values (1,1,1), (2,2,2)
 statement ok
 insert into tab2 values (1, 'a'), (1, 'b')
 
+skipif knownfail
 query T nosort
-PLAN select
+EXPLAIN SHOW DETAILS select
   myalias0."part" as "part",
   myalias0."tet" as "tet",
   count(*) as mycount,

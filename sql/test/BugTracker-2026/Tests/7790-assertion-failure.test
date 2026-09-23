@@ -1,0 +1,22 @@
+statement ok
+CREATE TABLE v0 ( v1 REAL )
+
+query R nosort
+SELECT v1 / 2147483647 / ( v1 ) * ( v1 - -128 ) FROM v0
+----
+
+-- next query strangely reports: received 7 columns, expected 1 columns
+query R nosort
+SELECT v1 / 2147483647 / ( v1 ) * ( v1 - -128 ) FROM v0 WHERE v0 . v1 IN ( SELECT LAG ( 76 ) OVER ( ORDER BY v1 ) - v1 AS v2 )
+----
+
+-- sql/backends/monet5/rel_bin.c:5715: rel2bin_insert: Assertion `!n && !m' failed.
+statement ok
+CREATE TABLE v3 AS SELECT v1 / 2147483647 / ( v1 ) * ( v1 - -128 ) FROM v0 WHERE v0 . v1 IN ( SELECT LAG ( 76 ) OVER ( ORDER BY v1 ) - v1 AS v2 )
+
+statement ok
+DROP TABLE IF EXISTS v3
+
+statement ok
+DROP TABLE v0
+

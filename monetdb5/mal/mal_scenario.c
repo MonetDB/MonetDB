@@ -3,11 +3,9 @@
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024, 2025 MonetDB Foundation;
- * Copyright August 2008 - 2023 MonetDB B.V.;
- * Copyright 1997 - July 2008 CWI.
+ * For copyright information, see the file debian/copyright.
  */
 
 /*
@@ -81,11 +79,11 @@ static struct SCENARIO scenarioRec[MAXSCEN] = {
 		.name = "mal",
 		.language = "mal",
 		.initClient = "MALinitClient",
-		.initClientCmd = (init_client) MALinitClient,
+		.initClientCmd = MALinitClient,
 		.exitClient = "MALexitClient",
-		.exitClientCmd = (exit_client) MALexitClient,
+		.exitClientCmd = MALexitClient,
 		.engine = "MALengine",
-		.engineCmd = (engine_fptr) MALengine,
+		.engineCmd = MALengine,
 	},
 	{
 		.name = NULL,
@@ -248,14 +246,14 @@ resetScenario(Client c)
 
 	scen = findScenario(c->scenario);
 	if (scen != NULL && scen->exitClientCmd) {
-		str msg = (*scen->exitClientCmd) (c);
-		freeException(msg);
+		(void) (*scen->exitClientCmd) (c);
 	}
 
 	c->scenario = NULL;
 	c->initClient = NULL;
 	c->exitClient = NULL;
 	c->engine = NULL;
+	ma_destroy(c->qryctx.errorallocator);
 }
 
 /*
@@ -282,7 +280,7 @@ runScenarioBody(Client c)
 	MT_thread_setworking("engine");
 	while (c->mode > FINISHCLIENT && !GDKexiting()) {
 		c->engine(c);
-		assert(c->curprg->def->errors == NULL);
+		assert(!c->curprg || c->curprg->def->errors == NULL);
 	}
 	if (!GDKexiting() && GDKerrbuf && GDKerrbuf[0])
 		mnstr_printf(c->fdout, "!GDKerror: %s\n", GDKerrbuf);

@@ -3,11 +3,9 @@
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024, 2025 MonetDB Foundation;
- * Copyright August 2008 - 2023 MonetDB B.V.;
- * Copyright 1997 - July 2008 CWI.
+ * For copyright information, see the file debian/copyright.
  */
 
 /*
@@ -24,7 +22,6 @@
 #include "gdk_private.h"
 #include "mutils.h"
 #include <unistd.h>
-#include <string.h>     /* strncpy */
 
 #ifdef HAVE_FCNTL_H
 # include <fcntl.h>
@@ -48,9 +45,9 @@
 #if defined(__GNUC__) && defined(HAVE_VALGRIND)
 #include <valgrind.h>
 #else
-#define VALGRIND_MALLOCLIKE_BLOCK(addr, sizeB, rzB, is_zeroed)
-#define VALGRIND_FREELIKE_BLOCK(addr, rzB)
-#define VALGRIND_RESIZEINPLACE_BLOCK(addr, oldSizeB, newSizeB, rzB)
+#define VALGRIND_MALLOCLIKE_BLOCK(addr, sizeB, rzB, is_zeroed) ((void) 0)
+#define VALGRIND_FREELIKE_BLOCK(addr, rzB) ((void) 0)
+#define VALGRIND_RESIZEINPLACE_BLOCK(addr, oldSizeB, newSizeB, rzB) ((void) 0)
 #endif
 
 #ifndef MAP_NORESERVE
@@ -326,7 +323,7 @@ MT_mmap(const char *path, int mode, size_t len)
 	int fd;
 	void *ret;
 
-	fd = open(path, O_CREAT | ((mode & MMAP_WRITE) ? O_RDWR : O_RDONLY) | O_CLOEXEC, MONETDB_MODE);
+	fd = open(path, ((mode & MMAP_WRITE) ? O_RDWR : O_RDONLY) | O_CLOEXEC, MONETDB_MODE);
 	if (fd < 0) {
 		GDKsyserror("open %s failed\n", path);
 		return NULL;
@@ -708,37 +705,24 @@ MT_getrss(void)
 	return 0;
 }
 
-/* Windows mmap keeps a global list of base addresses for complex
- * (remapped) memory maps the reason is that each remapped segment
- * needs to be unmapped separately in the end. */
-
 void *
 MT_mmap(const char *path, int mode, size_t len)
 {
 	DWORD mode0 = FILE_READ_ATTRIBUTES | FILE_READ_DATA;
 	DWORD mode1 = FILE_SHARE_READ | FILE_SHARE_WRITE;
-	DWORD mode2 = mode & MMAP_ADVISE;
+	DWORD mode2;
 	DWORD mode3 = PAGE_READONLY;
 	int mode4 = FILE_MAP_READ;
 	SECURITY_ATTRIBUTES sa;
 	HANDLE h1, h2;
 	void *ret;
-	wchar_t *wpath = utf8towchar(path);
+	wchar_t *wpath = utf8toutf16(path);
 	if (wpath == NULL)
 		return NULL;
 
+	static_assert(SIZEOF_WCHAR_T == 2, "wchar_t on Windows expected to be 2 bytes");
 	if (mode & MMAP_WRITE) {
 		mode0 |= FILE_APPEND_DATA | FILE_WRITE_ATTRIBUTES | FILE_WRITE_DATA;
-	}
-	if (mode2 == MMAP_RANDOM || mode2 == MMAP_DONTNEED) {
-		mode2 = FILE_FLAG_RANDOM_ACCESS;
-	} else if (mode2 == MMAP_SEQUENTIAL || mode2 == MMAP_WILLNEED) {
-		mode2 = FILE_FLAG_SEQUENTIAL_SCAN;
-	} else {
-		mode2 = FILE_FLAG_NO_BUFFERING;
-	}
-	if (mode & MMAP_SYNC) {
-		mode2 |= FILE_FLAG_WRITE_THROUGH;
 	}
 	if (mode & MMAP_COPY) {
 		mode3 = PAGE_WRITECOPY;
@@ -747,7 +731,7 @@ MT_mmap(const char *path, int mode, size_t len)
 		mode3 = PAGE_READWRITE;
 		mode4 = FILE_MAP_WRITE;
 	}
-	mode2 |= FILE_ATTRIBUTE_NOT_CONTENT_INDEXED;
+	mode2 = FILE_ATTRIBUTE_NOT_CONTENT_INDEXED;
 	sa.nLength = sizeof(SECURITY_ATTRIBUTES);
 	sa.bInheritHandle = TRUE;
 	sa.lpSecurityDescriptor = 0;
@@ -897,7 +881,7 @@ dlopen(const char *file, int mode)
 {
 	(void) mode;
 	if (file != NULL) {
-		wchar_t *wfile = utf8towchar(file);
+		wchar_t *wfile = utf8toutf16(file);
 		if (wfile == NULL)
 			return NULL;
 		void *ret = LoadLibraryW(wfile);
@@ -1022,7 +1006,7 @@ strerror_r(int errnum, char *buf, size_t buflen)
 	char *msg;
 	MT_lock_set(&strerrlock);
 	msg = strerror(errnum);
-	strcpy_len(buf, msg, buflen);
+	strtcpy(buf, msg, buflen);
 	MT_lock_unset(&strerrlock);
 	return 0;
 }

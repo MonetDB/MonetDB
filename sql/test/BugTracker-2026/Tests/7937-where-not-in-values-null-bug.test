@@ -1,0 +1,36 @@
+statement ok
+CREATE TABLE t (a int primary key, b int)
+
+statement ok
+INSERT INTO t VALUES (0, 0)
+
+-- next query returns a row but should not return a row
+query II nosort
+SELECT * FROM t WHERE a NOT IN (VALUES (null))
+----
+
+query II nosort
+SELECT * FROM t WHERE b NOT IN (VALUES (null))
+----
+
+statement ok
+DROP TABLE t
+
+-- it appears the bug is due to a not null constraint for column a (which is added implicitly for primary key columns)
+statement ok
+CREATE TABLE t (a int not null, b int)
+
+statement ok
+INSERT INTO t VALUES (0, 0)
+
+-- next query returns a row but should not return a row
+query II nosort
+SELECT * FROM t WHERE a NOT IN (VALUES (null))
+----
+
+query II nosort
+SELECT * FROM t WHERE b NOT IN (VALUES (null))
+----
+
+statement ok
+DROP TABLE t

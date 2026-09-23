@@ -38,6 +38,12 @@ select * from generate_series(0,10,2) where value <5
 4
 
 query I rowsort
+select * from sys.generate_series(10,0,-3) where value < 6
+----
+1
+4
+
+query I rowsort
 select * from generate_series(0,10,2) where value =4
 ----
 4

@@ -3,11 +3,9 @@
  *
  * This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0.  If a copy of the MPL was not distributed with this
- * file, You can obtain one at http://mozilla.org/MPL/2.0/.
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/.
  *
- * Copyright 2024, 2025 MonetDB Foundation;
- * Copyright August 2008 - 2023 MonetDB B.V.;
- * Copyright 1997 - July 2008 CWI.
+ * For copyright information, see the file debian/copyright.
  */
 
 #include "monetdb_config.h"
@@ -44,43 +42,48 @@
 #include "optimizer_private.h"
 #include "mal_interpreter.h"
 
-#define optcall(TEST, OPT)												\
+#define optcall(OPT)													\
 	do {																\
-		if (TEST) {														\
-			if ((msg = OPT(cntxt, mb, stk, pci)) != MAL_SUCCEED)		\
-				goto bailout;											\
-			actions += *(int*)getVarValue(mb, getArg(pci, pci->argc - 1)); \
-			delArgument(pci, pci->argc - 1); /* keep number of argc low, so 'pci' is not reallocated */ \
-		}																\
+		if ((msg = OPT(cntxt, mb, stk, pci)) != MAL_SUCCEED)			\
+			goto bailout;												\
+		actions += *(int*)getVarValue(mb, getArg(pci, pci->argc - 1));	\
+		delArgument(pci, pci->argc - 1); /* keep number of argc low, so 'pci' is not reallocated */ \
 	} while (0)
 
 str
-OPTminimalfastImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
+OPTminimalpipeImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 							 InstrPtr pci)
 {
 	str msg = MAL_SUCCEED;
-	int generator = 0, multiplex = 0, actions = 0;
+	bool generator = false, multiplex = true;
+	int actions = 0;
 
 	/* perform a single scan through the plan to determine which optimizer steps to skip */
 	for (int i = 0; i < mb->stop; i++) {
 		InstrPtr q = getInstrPtr(mb, i);
-		if (getModuleId(q) == generatorRef)
-			generator = 1;
-		if (getFunctionId(q) == multiplexRef)
-			multiplex = 1;
+		if (getModuleId(q) == generatorRef) {
+			generator = true;
+			if (multiplex)
+				break;
+		}
+		if (getFunctionId(q) == multiplexRef) {
+			multiplex = true;
+			if (generator)
+				break;
+		}
 	}
 
-	optcall(true, OPTinlineImplementation);
-	optcall(true, OPTremapImplementation);
-	optcall(true, OPTemptybindImplementation);
-	optcall(true, OPTdeadcodeImplementation);
-	optcall(true, OPTforImplementation);
-	optcall(true, OPTdictImplementation);
-	optcall(multiplex, OPTmultiplexImplementation);
-	optcall(generator, OPTgeneratorImplementation);
-	optcall(profilerStatus, OPTprofilerImplementation);
-	optcall(profilerStatus, OPTcandidatesImplementation);
-	optcall(true, OPTgarbageCollectorImplementation);
+	optcall(OPTinlineImplementation);
+	optcall(OPTremapImplementation);
+	optcall(OPTemptybindImplementation);
+	optcall(OPTdeadcodeImplementation);
+	optcall(OPTforImplementation);
+	optcall(OPTdictImplementation);
+	if (multiplex)
+		optcall(OPTmultiplexImplementation);
+	if (generator)
+		optcall(OPTgeneratorImplementation);
+	optcall(OPTgarbageCollectorImplementation);
 
 	/* Defense line against incorrect plans  handled by optimizer steps */
 	/* keep actions taken as a fake argument */
@@ -90,51 +93,71 @@ OPTminimalfastImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 }
 
 str
-OPTdefaultfastImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
+OPTdefaultpipeImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 							 InstrPtr pci)
 {
 	str msg = MAL_SUCCEED;
-	int generator = 0, multiplex = 0, actions = 0;
+	bool generator = false, multiplex = false;
+	bool no_mitosis = cntxt->no_mitosis;
+	bool recursive = strcmp(pci->fcnname, "recursivepipe") == 0;
+	bool sequential = strcmp(pci->fcnname, "sequentialpipe") == 0;
+	int actions = 0;
 
-	/* perform a single scan through the plan to determine which optimizer steps to skip */
+	/* perform a single scan through the plan to determine which
+	 * optimizer steps to skip */
 	for (int i = 0; i < mb->stop; i++) {
 		InstrPtr q = getInstrPtr(mb, i);
-		if (getModuleId(q) == generatorRef)
-			generator = 1;
-		if (getFunctionId(q) == multiplexRef)
-			multiplex = 1;
+		if (getModuleId(q) == generatorRef) {
+			generator = true;
+			if (multiplex)
+				break;
+		}
+		if (getFunctionId(q) == multiplexRef) {
+			multiplex = true;
+			if (generator)
+				break;
+		}
 	}
+	if (pci->fcnname != defaultpipeRef)
+		no_mitosis = true;
 
-	optcall(true, OPTinlineImplementation);
-	optcall(true, OPTremapImplementation);
-	optcall(true, OPTcostModelImplementation);
-	optcall(true, OPTcoercionImplementation);
-	optcall(true, OPTaliasesImplementation);
-	optcall(true, OPTevaluateImplementation);
-	optcall(true, OPTemptybindImplementation);
-	optcall(true, OPTdeadcodeImplementation);
-	optcall(true, OPTpushselectImplementation);
-	optcall(true, OPTaliasesImplementation);
-	optcall(true, OPTforImplementation);
-	optcall(true, OPTdictImplementation);
-	optcall(true, OPTmitosisImplementation);
-	optcall(true, OPTmergetableImplementation);
-	optcall(true, OPTaliasesImplementation);
-	optcall(true, OPTconstantsImplementation);
-	optcall(true, OPTcommonTermsImplementation);
-	optcall(true, OPTprojectionpathImplementation);
-	optcall(true, OPTdeadcodeImplementation);
-	optcall(true, OPTreorderImplementation);
-	optcall(true, OPTmatpackImplementation);
-	optcall(true, OPTdataflowImplementation);
-	optcall(true, OPTquerylogImplementation);
-	optcall(multiplex, OPTmultiplexImplementation);
-	optcall(generator, OPTgeneratorImplementation);
-	optcall(profilerStatus, OPTprofilerImplementation);
-	optcall(profilerStatus, OPTcandidatesImplementation);
-	optcall(true, OPTdeadcodeImplementation);
-	optcall(true, OPTpostfixImplementation);
-	optcall(true, OPTgarbageCollectorImplementation);
+	optcall(OPTinlineImplementation);
+	optcall(OPTremapImplementation);
+	optcall(OPTcostModelImplementation);
+	optcall(OPTcoercionImplementation);
+	optcall(OPTaliasesImplementation);
+	optcall(OPTevaluateImplementation);
+	if (!recursive)
+		optcall(OPTemptybindImplementation);
+	optcall(OPTdeadcodeImplementation);
+	optcall(OPTpushselectImplementation);
+	optcall(OPTaliasesImplementation);
+	optcall(OPTforImplementation);
+	optcall(OPTdictImplementation);
+	if (!no_mitosis) {
+		optcall(OPTmitosisImplementation);
+		optcall(OPTmergetableImplementation); /* depends on mitosis */
+	}
+	optcall(OPTaliasesImplementation);
+	optcall(OPTconstantsImplementation);
+	if (!recursive)
+		optcall(OPTcommonTermsImplementation);
+	optcall(OPTprojectionpathImplementation);
+	optcall(OPTdeadcodeImplementation);
+	if (!no_mitosis) {
+		optcall(OPTmatpackImplementation); /* depends on mergetable */
+		optcall(OPTreorderImplementation); /* depends on mitosis */
+	}
+	if (!sequential && !recursive)
+		optcall(OPTdataflowImplementation);
+	optcall(OPTquerylogImplementation);
+	if (multiplex)
+		optcall(OPTmultiplexImplementation);
+	if (generator)
+		optcall(OPTgeneratorImplementation);
+	optcall(OPTdeadcodeImplementation);
+	optcall(OPTpostfixImplementation);
+	optcall(OPTgarbageCollectorImplementation);
 
 	/* Defense line against incorrect plans  handled by optimizer steps */
 	/* keep actions taken as a fake argument */
