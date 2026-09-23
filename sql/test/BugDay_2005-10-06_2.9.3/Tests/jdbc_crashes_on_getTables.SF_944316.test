@@ -1,4 +1,4 @@
-query ITTTTIIITT nosort
+query TTTTTTTTTT nosort
 SELECT * FROM (
 	SELECT
 		null AS "TABLE_CAT",

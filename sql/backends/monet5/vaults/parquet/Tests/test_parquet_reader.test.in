@@ -52,8 +52,8 @@ SELECT * FROM '$QTSTSRCDIR/data/manyrowgroups.parquet' order by 1 limit 50
 89
 90
 
-query I
-SELECT * FROM '$QTSTSRCDIR/data/manyrowgroups2.parquet' order by 1 limit 50;
+query I nosort
+SELECT * FROM '$QTSTSRCDIR/data/manyrowgroups2.parquet' order by 1 limit 50
 ----
 42
 42
@@ -106,33 +106,33 @@ SELECT * FROM '$QTSTSRCDIR/data/manyrowgroups2.parquet' order by 1 limit 50;
 89
 90
 
-query R
-SELECT * FROM '$QTSTSRCDIR/data/arrow/int32_decimal.parquet' order by 1 limit 50;
+query D nosort
+SELECT * FROM '$QTSTSRCDIR/data/arrow/int32_decimal.parquet' order by 1 limit 50
 ----
-1.000
-2.000
-3.000
-4.000
-5.000
-6.000
-7.000
-8.000
-9.000
-10.000
-11.000
-12.000
-13.000
-14.000
-15.000
-16.000
-17.000
-18.000
-19.000
-20.000
-21.000
-22.000
-23.000
-24.000
+1.00
+2.00
+3.00
+4.00
+5.00
+6.00
+7.00
+8.00
+9.00
+10.00
+11.00
+12.00
+13.00
+14.00
+15.00
+16.00
+17.00
+18.00
+19.00
+20.00
+21.00
+22.00
+23.00
+24.00
 
 #query I
 #SELECT * FROM '$QTSTSRCDIR/data/map.parquet' limit 50;
@@ -199,8 +199,8 @@ SELECT * FROM '$QTSTSRCDIR/data/bug687_nulls.parquet' limit 50
 ----
 500 values hashing to 6b5f21b8d327152ac02f2c0e2ff2909a
 
-query TTII
-SELECT * FROM '$QTSTSRCDIR/data/bug1554.parquet' order by 1 limit 50;
+query TIII nosort
+SELECT * FROM '$QTSTSRCDIR/data/bug1554.parquet' order by 1 limit 50
 ----
 200 values hashing to 20e0f9c45c1c9694022138bdc4f3f474
 
@@ -242,8 +242,8 @@ SELECT * FROM '$QTSTSRCDIR/data/bug1554.parquet' order by 1 limit 50;
 #{'str_field': hello, 'f64_field': NULL}
 #{'str_field': NULL, 'f64_field': 1.23}
 
-query T
-SELECT * FROM '$QTSTSRCDIR/data/arrow/byte_array_decimal.parquet' limit 50;
+query D nosort
+SELECT * FROM '$QTSTSRCDIR/data/arrow/byte_array_decimal.parquet' limit 50
 ----
 1.00
 2.00
@@ -309,7 +309,7 @@ SELECT * FROM '$QTSTSRCDIR/data/arrow/byte_array_decimal.parquet' limit 50;
 #----
 #0ALGERIA0 haggle. carefully final deposits detect slyly agai
 #1ARGENTINA1al foxes promise slyly according to the regular accounts. bold requests alon
-#2BRAZIL1y alongside of the pending deposits. carefully special packages are about the ironic forges. slyly special 
+#2BRAZIL1y alongside of the pending deposits. carefully special packages are about the ironic forges. slyly special
 #3CANADA1eas hang ironic, silent packages. slyly regular packages are furiously over the tithes. fluffily bold
 #4EGYPT4y above the carefully unusual theodolites. final dugouts are quickly across the furiously regular d
 #5ETHIOPIA0ven packages wake quickly. regu
@@ -317,7 +317,7 @@ SELECT * FROM '$QTSTSRCDIR/data/arrow/byte_array_decimal.parquet' limit 50;
 #7GERMANY3l platelets. regular accounts x-ray: unusual, regular acco
 #8INDIA2ss excuses cajole slyly across the packages. deposits print aroun
 #9INDONESIA2 slyly express asymptotes. regular deposits haggle slyly. carefully ironic hockey players sleep blithely. carefull
-#10IRAN4efully alongside of the slyly final dependencies. 
+#10IRAN4efully alongside of the slyly final dependencies.
 #11IRAQ4nic deposits boost atop the quickly final requests? quickly regula
 #12JAPAN2ously. final, express gifts cajole a
 #13JORDAN4ic deposits are blithely about the carefully regular pa
@@ -328,7 +328,7 @@ SELECT * FROM '$QTSTSRCDIR/data/arrow/byte_array_decimal.parquet' limit 50;
 #18CHINA2c dependencies. furiously express notornis sleep slyly regular accounts. ideas sleep. depos
 #19ROMANIA3ular asymptotes are about the furious multipliers. express dependencies nag above the ironically ironic account
 #20SAUDI ARABIA4ts. silent requests haggle. closely express packages sleep across the blithely
-#21VIETNAM2hely enticingly express accounts. even, final 
+#21VIETNAM2hely enticingly express accounts. even, final
 #22RUSSIA3 requests against the platelets use never according to the quickly regular pint
 #23UNITED KINGDOM3eans boost carefully special requests. accounts are. carefull
 #24UNITED STATES1y final packages. slow foxes cajole quickly. quickly silent platelets breach ironic accounts. unusual pinto be
@@ -337,7 +337,7 @@ SELECT * FROM '$QTSTSRCDIR/data/arrow/byte_array_decimal.parquet' limit 50;
 #SELECT * FROM parquet_scan('data/parquet-testing/lineitem-top10000.gzip.parquet') limit 50;
 #----
 #1155190770611721168.230.040.02NO1996-03-131996-02-121996-03-22DELIVER IN PERSONTRUCKegular courts above the
-#167310731123645983.160.090.06NO1996-04-121996-02-281996-04-20TAKE BACK RETURNMAILly final dependencies: slyly bold 
+#167310731123645983.160.090.06NO1996-04-121996-02-281996-04-20TAKE BACK RETURNMAILly final dependencies: slyly bold
 #16370037013813309.60.10.02NO1996-01-291996-03-051996-01-31TAKE BACK RETURNREG AIRriously. regular, express dep
 #12132463342828955.640.090.06NO1996-04-211996-03-301996-05-16NONEAIRlites. fluffily even de
 #124027153452422824.480.10.04NO1996-03-301996-03-141996-04-01NONEFOB pending foxes. slyly re
@@ -345,12 +345,12 @@ SELECT * FROM '$QTSTSRCDIR/data/arrow/byte_array_decimal.parquet' limit 50;
 #2106170119113844694.460.00.05NO1997-01-281997-01-141997-02-02TAKE BACK RETURNRAILven requests. deposits breach a
 #34297179814554058.050.060.0RF1994-02-021994-01-041994-02-23NONEAIRongside of the furiously brave acco
 #319036654024946796.470.10.0RF1993-11-091993-12-201993-11-24TAKE BACK RETURNRAIL unusual accounts. eve
-#3128449347432739890.880.060.07AF1994-01-161993-11-221994-01-23DELIVER IN PERSONSHIPnal foxes wake. 
+#3128449347432739890.880.060.07AF1994-01-161993-11-221994-01-23DELIVER IN PERSONSHIPnal foxes wake.
 #3293801883422618.760.010.06AF1993-12-041994-01-071994-01-01NONETRUCKy. fluffily pending d
 #318309565052832986.520.040.0RF1993-12-141994-01-101994-01-01TAKE BACK RETURNFOBages nag slyly pending
 #362143966262628733.640.10.02AF1993-10-291993-12-181993-11-04TAKE BACK RETURNRAILges sleep after the caref
 #488035556013030690.90.030.08NO1996-01-101995-12-141996-01-18DELIVER IN PERSONREG AIR- quickly regular packages sleep. idly
-#5108570857111523678.550.020.04RF1994-10-311994-08-311994-11-20NONEAIRts wake furiously 
+#5108570857111523678.550.020.04RF1994-10-311994-08-311994-11-20NONEAIRts wake furiously
 #5123927392822650723.920.070.08RF1994-10-161994-09-251994-10-19NONEFOBsts use slyly quickly special instruc
 #5375313535073426.50.080.03AF1994-08-081994-10-131994-08-26DELIVER IN PERSONAIReodolites. fluffily unusual
 #6139636215013761998.310.080.03AF1992-04-271992-05-151992-05-02TAKE BACK RETURNTRUCKp furiously special foxes
@@ -359,10 +359,10 @@ SELECT * FROM '$QTSTSRCDIR/data/arrow/byte_array_decimal.parquet' limit 50;
 #794780979934681639.880.10.07NO1996-01-151996-03-271996-02-03COLLECT CODMAIL unusual reques
 #7163073307442831809.960.030.04NO1996-03-211996-04-081996-04-20NONEFOB. slyly special requests haggl
 #7151894944053873943.820.080.01NO1996-02-111996-02-241996-02-18DELIVER IN PERSONTRUCKns haggle carefully ironic deposits. bl
-#779251175963543058.750.060.03NO1996-01-161996-02-231996-01-22TAKE BACK RETURNFOBjole. excuses wake carefully alongside of 
+#779251175963543058.750.060.03NO1996-01-161996-02-231996-01-22TAKE BACK RETURNFOBjole. excuses wake carefully alongside of
 #71572382269756476.150.040.02NO1996-02-101996-03-261996-02-13NONEFOBithely regula
 #3282704772112847227.60.050.08NO1995-10-231995-08-271995-10-26TAKE BACK RETURNTRUCKsleep quickly. req
-#3219792144123264605.440.020.0NO1995-08-141995-10-071995-08-27COLLECT CODAIRlithely regular deposits. fluffily 
+#3219792144123264605.440.020.0NO1995-08-141995-10-071995-08-27COLLECT CODAIRlithely regular deposits. fluffily
 #32441616666322210.320.090.02NO1995-08-071995-10-071995-08-23DELIVER IN PERSONAIR express accounts wake according to the
 #3227437744446582.960.090.03NO1995-08-041995-10-011995-09-03NONEREG AIRe slyly final pac
 #3285811832054479059.640.050.06NO1995-08-281995-08-201995-09-14DELIVER IN PERSONAIRsymptotes nag according to the ironic depo
@@ -373,14 +373,14 @@ SELECT * FROM '$QTSTSRCDIR/data/arrow/byte_array_decimal.parquet' limit 50;
 #3333918391944175928.310.090.0RF1993-11-091994-01-241993-11-11TAKE BACK RETURNMAILunusual packages doubt caref
 #348836287111317554.680.00.07NO1998-10-231998-09-141998-11-06NONEREG AIRnic accounts. deposits are alon
 #3489414192322230875.020.080.06NO1998-10-091998-10-161998-10-12NONEFOBthely slyly p
-#341695444577369681.240.020.06NO1998-10-301998-09-201998-11-05NONEFOBar foxes sleep 
+#341695444577369681.240.020.06NO1998-10-301998-09-201998-11-05NONEFOBar foxes sleep
 #35450295112432410.80.020.0NO1996-02-211996-01-031996-03-18TAKE BACK RETURNFOB, regular tithe
 #35161940445723468065.960.060.08NO1996-01-221996-01-061996-01-27DELIVER IN PERSONRAILs are carefully against the f
-#3512089684333713418.230.060.04NO1996-01-191995-12-221996-01-29NONEMAIL the carefully regular 
+#3512089684333713418.230.060.04NO1996-01-191995-12-221996-01-29NONEMAIL the carefully regular
 #3585175768442529004.250.060.05NO1995-11-261995-12-251995-12-21DELIVER IN PERSONSHIP quickly unti
 #35119917494053465854.940.080.06NO1995-11-081996-01-151995-11-26COLLECT CODMAIL. silent, unusual deposits boost
-#3530762326662847397.280.030.02NO1996-02-011995-12-241996-02-28COLLECT CODRAILly alongside of 
-#36119767976814275043.920.090.0NO1996-02-031996-01-211996-02-23COLLECT CODSHIP careful courts. special 
+#3530762326662847397.280.030.02NO1996-02-011995-12-241996-02-28COLLECT CODRAILly alongside of
+#36119767976814275043.920.090.0NO1996-02-031996-01-211996-02-23COLLECT CODSHIP careful courts. special
 #3722630513314062105.20.090.03AF1992-07-211992-08-011992-08-15NONEREG AIRluffily regular requests. slyly final acco
 #37126782180723970542.420.050.02AF1992-07-021992-08-181992-07-28TAKE BACK RETURNRAILthe final requests. ca
 #3712903540534378083.70.050.08AF1992-07-101992-07-061992-08-02DELIVER IN PERSONTRUCKiously ste

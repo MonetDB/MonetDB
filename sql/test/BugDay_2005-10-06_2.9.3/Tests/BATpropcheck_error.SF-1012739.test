@@ -1,4 +1,4 @@
-query ITTTIT nosort
+query TTTTIT nosort
 SELECT
     null AS "TABLE_CAT",
     "schemas"."name" AS "TABLE_SCHEM",

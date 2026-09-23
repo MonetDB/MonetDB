@@ -1,10 +1,7 @@
 query RRRR nosort
 SELECT exp ( 1 ) , exp ( 10 ) , exp ( 1.000000 ) , exp ( 10.000000 )
 ----
-2.718
-22026.466
-2.718
-22026.466
+2.718	22026.466	2.718	22026.466
 
 query I rowsort
 SELECT 10 AS x UNION SELECT 11 AS x UNION SELECT * FROM generate_series ( 1 , 3 ) UNION SELECT 13 AS x ORDER BY count ( * ) OVER ( ORDER BY 1 NULLS LAST GROUPS BETWEEN CURRENT ROW AND UNBOUNDED FOLLOWING )
@@ -15,21 +12,15 @@ SELECT 10 AS x UNION SELECT 11 AS x UNION SELECT * FROM generate_series ( 1 , 3 
 13
 2
 
-query RRRR nosort
+query DDDD nosort
 SELECT sql_min ( 1.200000 , 5 ) , least ( 1.200000 , 5 ) , sql_max ( 1.200000 , 5 ) , greatest ( 1.200000 , 5 )
 ----
-1.200
-1.200
-5.000
-5.000
+1.200000	1.200000	5.000000	5.000000
 
 query RRRR nosort
 SELECT log ( 2.000000 ) , ln ( 2 ) , log ( 2 , 64.000000 ) , log10 ( 100.000000 )
 ----
-0.693
-0.693
-6.000
-2.000
+0.693	0.693	6.000	2.000
 
 -- Math exception: Numerical argument out of domain
 statement error Math exception: ...
@@ -68,15 +59,14 @@ SELECT pi ( )
 query RR nosort
 SELECT power ( 2 , 5 ) , power ( 2 , 31 )
 ----
-32.000
-2147483648.000
+32.000	2147483648.000
 
-query R nosort
+query I nosort
 SELECT 2144156907 / -2147483648
 ----
-0.000
+0
 
-query R nosort
+query D nosort
 SELECT 2144156907.0 / -2147483648.0
 ----
 -0.998

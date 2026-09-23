@@ -4,7 +4,7 @@ CREATE TABLE t8018 (x INT)
 statement ok rowcount 1
 INSERT INTO t8018 VALUES (1)
 
-query TI nosort
+query II nosort
 SELECT flagged.b, flagged.x
 FROM (
     SELECT (ranked.x IN (SELECT 1)) AS b,
@@ -32,7 +32,7 @@ FROM (
 ) AS flagged
 WHERE flagged.b = TRUE
 
-query TI nosort
+query II nosort
 SELECT * FROM v8018
 ----
 
@@ -60,8 +60,7 @@ query II nosort
 SELECT COUNT(*), COALESCE(MAX(row_count), -1)
 FROM t8018_count
 ----
-1
-0
+1	0
 
 statement ok
 DROP TABLE IF EXISTS t8018_count
