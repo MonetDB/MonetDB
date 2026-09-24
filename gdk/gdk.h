@@ -458,7 +458,7 @@ typedef struct QryCtx {
 	ATOMIC_TYPE datasize;
 	ATOMIC_BASE_TYPE maxmem;
 	allocator *errorallocator;
-	bool oahash_enabled;
+	bool pipeline_mode;
 } QryCtx;
 
 gdk_export bool THRhighwater(void);
@@ -919,7 +919,7 @@ gdk_export void MT_tls_set(MT_TLS_t key, void *val);
 gdk_export void *MT_tls_get(MT_TLS_t key);
 
 #ifdef LOCK_STATS
-gdk_export void GDKlockstatistics(int);
+gdk_export void GDKlockstatistics(FILE *outf, int);
 gdk_export MT_Lock * volatile GDKlocklist;
 gdk_export ATOMIC_FLAG GDKlocklistlock;
 gdk_export ATOMIC_TYPE GDKlockcnt;
@@ -1119,7 +1119,8 @@ gdk_export void MT_cond_broadcast(MT_Cond *cond);
 
 gdk_export size_t MT_getrss(void);
 
-gdk_export bool MT_path_absolute(const char *path);
+gdk_export bool MT_path_absolute(const char *path)
+	__attribute__((__nonnull__(1)));
 
 
 /*
@@ -3792,7 +3793,7 @@ gdk_export gdk_return BBPdir_last(int n, char *buf, size_t bufsize, FILE *obbpf,
 
 gdk_export BUN GDKL3_size;
 
-gdk_export void GDKprintinforegister(void (*func)(void));
+gdk_export void GDKprintinforegister(void (*func)(FILE *));
 gdk_export void GDKprintinfo(void);
 
 gdk_export const char *GDKgetenv(const char *name);

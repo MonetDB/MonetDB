@@ -16,6 +16,8 @@
 #include "rel_pphash.h"
 #include "rel_rewriter.h"
 #include "rel_physical.h"
+#include "rel_util.h"
+#include "sql_list.h"
 #include "sql_pp_statement.h"
 #include "bin_partition_by_value.h"
 #include "mal_builder.h"
@@ -708,7 +710,7 @@ rel2bin_oahash_cart(backend *be, sql_rel *rel, list *refs, stmt *stmts_ht, stmt 
 			qL = pushInt(be->mb, qL, 0);
 			pushInstruction(be->mb, qL);
 
-			InstrPtr q = newStmtArgs(be->mb, calcRef, "and", 3);
+			InstrPtr q = newStmtArgs(be->mb, calcRef, andRef, 3);
 			q = pushArgument(be->mb, q, qR->argv[0]);
 			q = pushArgument(be->mb, q, qL->argv[0]);
 			pushInstruction(be->mb, q);
@@ -756,7 +758,7 @@ rel2bin_oahash_groupjoin(backend *be, sql_rel *rel, list *refs)
 	assert(!list_empty(rel->attr));
 	stmt *sub = NULL, *probe_sub = NULL;
 	list *jexps = sa_list(be->mvc->sa), *sexps = sa_list(be->mvc->sa), *probe_side = NULL, *hash_side = NULL;
-	split_join_exps_pp(rel, jexps, sexps, false);
+	split_join_exps(rel, jexps, sexps, false /* anti */, true /* eqonly */);
 	stmt *probed_ids = NULL, *hash_ids = NULL;
 	stmt *prb_mrk = NULL;
 	bool mark = false, exist = true;
@@ -842,7 +844,7 @@ rel2bin_oahash_innerjoin(backend *be, sql_rel *rel, list *refs)
 	bool hf = false;
 	stmt *sub = NULL, *probed_ids = NULL;
 	list *jexps = sa_list(be->mvc->sa), *sexps = sa_list(be->mvc->sa), *probe_side = NULL, *hash_side = NULL;
-	split_join_exps_pp(rel, jexps, sexps, false);
+	split_join_exps(rel, jexps, sexps, false /* anti */, true /* eqonly */);
 	bool single = rel->single && !list_empty(sexps);
 
 	/* start new parallel block after join. NB get_need_pipeline has side effect! */
@@ -873,7 +875,7 @@ rel2bin_oahash_leftouterjoin(backend *be, sql_rel *rel, list *refs)
 {
 	stmt *sub = NULL, *probe_sub = NULL;
 	list *jexps = sa_list(be->mvc->sa), *sexps = sa_list(be->mvc->sa), *probe_side = NULL, *hash_side = NULL;
-	split_join_exps_pp(rel, jexps, sexps, false);
+	split_join_exps(rel, jexps, sexps, false /* anti */, true /* eqonly */);
 	stmt *probed_ids = NULL, *hash_ids = NULL;
 	stmt *prb_mrk = NULL;
 
@@ -969,7 +971,7 @@ rel2bin_oahash_rightouterjoin(backend *be, sql_rel *rel, list *refs)
 	bool hf = false;
 	stmt *sub = NULL, *probed_ids = NULL;
 	list *jexps = sa_list(be->mvc->sa), *sexps = sa_list(be->mvc->sa), *probe_side = NULL, *hash_side = NULL;
-	split_join_exps_pp(rel, jexps, sexps, false);
+	split_join_exps(rel, jexps, sexps, false /* anti */, true /* eqonly */);
 	bool single = rel->single && !list_empty(sexps);
 
 	stmt *hsh_mrk = NULL;
@@ -1156,7 +1158,7 @@ rel2bin_oahash_fullouterjoin(backend *be, sql_rel *rel, list *refs)
 	// existing leftjoin code, extended to mark the matched payloads
 	stmt *sub = NULL, *probe_sub = NULL;
 	list *jexps = sa_list(sql->sa), *sexps = sa_list(sql->sa), *probe_side = NULL, *hash_side = NULL;
-	split_join_exps_pp(rel, jexps, sexps, false);
+	split_join_exps(rel, jexps, sexps, false /* anti */, true /* eqonly */);
 	stmt *probed_ids = NULL, *hash_ids = NULL;
 	stmt *m = NULL, *hsh_mrk = NULL;
 
@@ -1317,7 +1319,7 @@ rel2bin_oahash_semi(backend *be, sql_rel *rel, list *refs)
 	list *probe_side = NULL, *hash_side = NULL;
 
 	list *jexps = sa_list(be->mvc->sa), *sexps = sa_list(be->mvc->sa);
-	split_join_exps_pp(rel, jexps, sexps, false);
+	split_join_exps(rel, jexps, sexps, false /* anti */, true /* eqonly */);
 
 	bool anti = (list_length(jexps) == 1 && rel->op == op_anti);
 	bool hf = false;
@@ -1336,7 +1338,7 @@ rel2bin_oahash_semi(backend *be, sql_rel *rel, list *refs)
 		probe_sub = sub = _start_pp(be, rel_prb->l, false, refs, NULL);
 		if (!sub) return NULL;
 
-		stmt *prb_res = oahash_probe(be, rel, rel->exps, exps_cmp_prb, stmts_ht, sub, anti, false/*groupjoin*/, !list_empty(sexps)/*has_outerselect*/, &nulls, NULL);
+		stmt *prb_res = oahash_probe(be, rel, rel->exps, exps_cmp_prb, stmts_ht, sub, anti, false /* groupjoin */, false /* has_outerselect */, &nulls, NULL);
 		if (prb_res == NULL) return NULL;
 
 		/*** PROJECT RESULT PHASE ***/

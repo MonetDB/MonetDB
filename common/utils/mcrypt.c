@@ -306,9 +306,9 @@ mcrypt_BackendSum(const char *string, size_t len)
  */
 char *
 mcrypt_hashPassword(
-		const char *algo,
-		const char *password,
-		const char *challenge)
+	const char *algo,
+	const char *password,
+	const char *challenge)
 {
 	unsigned char md[64];	/* should be SHA512_DIGEST_LENGTH */
 	char ret[sizeof(md) * 2 + 1];
@@ -386,29 +386,29 @@ mcrypt_hashPassword(
 	}
 
 	snprintf(ret, sizeof(ret),
-			"%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x"
-			"%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x"
-			"%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x"
-			"%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x"
-			"%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x"
-			"%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x"
-			"%02x%02x%02x%02x",
-			md[0], md[1], md[2], md[3],
-			md[4], md[5], md[6], md[7],
-			md[8], md[9], md[10], md[11],
-			md[12], md[13], md[14], md[15],
-			md[16], md[17], md[18], md[19],
-			md[20], md[21], md[22], md[23],
-			md[24], md[25], md[26], md[27],
-			md[28], md[29], md[30], md[31],
-			md[32], md[33], md[34], md[35],
-			md[36], md[37], md[38], md[39],
-			md[40], md[41], md[42], md[43],
-			md[44], md[45], md[46], md[47],
-			md[48], md[49], md[50], md[51],
-			md[52], md[53], md[54], md[55],
-			md[56], md[57], md[58], md[59],
-			md[60], md[61], md[62], md[63]);
+		 "%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x"
+		 "%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x"
+		 "%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x"
+		 "%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x"
+		 "%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x"
+		 "%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x"
+		 "%02x%02x%02x%02x",
+		 md[0], md[1], md[2], md[3],
+		 md[4], md[5], md[6], md[7],
+		 md[8], md[9], md[10], md[11],
+		 md[12], md[13], md[14], md[15],
+		 md[16], md[17], md[18], md[19],
+		 md[20], md[21], md[22], md[23],
+		 md[24], md[25], md[26], md[27],
+		 md[28], md[29], md[30], md[31],
+		 md[32], md[33], md[34], md[35],
+		 md[36], md[37], md[38], md[39],
+		 md[40], md[41], md[42], md[43],
+		 md[44], md[45], md[46], md[47],
+		 md[48], md[49], md[50], md[51],
+		 md[52], md[53], md[54], md[55],
+		 md[56], md[57], md[58], md[59],
+		 md[60], md[61], md[62], md[63]);
 	ret[len] = '\0';
 
 	return strdup(ret);

@@ -244,6 +244,28 @@ pqc_find_subtype(mvc *sql, const pqc_schema_element *pse)
 				return tpe;
 			break;
 		case inttype:
+			if (!pse->isSigned) {
+				switch(pse->precision) {
+					case 8:
+						if (sql_find_subtype(tpe, "smallint", pse->precision + 1, 0))
+							return tpe;
+						break;
+					case 16:
+						if (sql_find_subtype(tpe, "int", pse->precision + 1, 0))
+							return tpe;
+						break;
+					case 32:
+						if (sql_find_subtype(tpe, "bigint", pse->precision + 1, 0))
+							return tpe;
+						break;
+					case 64:
+						if (sql_find_subtype(tpe, "hugeint", pse->precision + 1, 0))
+							return tpe;
+						break;
+				}
+			}
+			if (pse->precision == 8 && sql_find_subtype(tpe, "tinyint", pse->precision, 0))
+				return tpe;
 			if (pse->precision == 8 && sql_find_subtype(tpe, "tinyint", pse->precision, 0))
 				return tpe;
 			if (pse->precision == 16 && sql_find_subtype(tpe, "smallint", pse->precision, 0))
@@ -252,7 +274,6 @@ pqc_find_subtype(mvc *sql, const pqc_schema_element *pse)
 				return tpe;
 			if (pse->precision == 64 && sql_find_subtype(tpe, "bigint", pse->precision, 0))
 				return tpe;
-			//if (pse->size == 96 && sql_find_subtype(tpe, "hugeint", pse->precision, 0))
 			if (pse->precision == 96 && sql_find_subtype(tpe, "timestamp", 6, 0))
 				return tpe;
 			break;
@@ -321,18 +342,27 @@ pqc_find_localtype(const pqc_schema_element *pse)
 				return TYPE_bte;
 			break;
 		case inttype:
-			//if (pse->size == 8)
-			if (pse->precision == 8)
-				return TYPE_bte;
-			//if (pse->size == 16)
-			if (pse->precision == 16)
-				return TYPE_sht;
-			//if (pse->size == 32)
-			if (pse->precision == 32)
-				return TYPE_int;
-			//if (pse->size == 64)
-			if (pse->precision == 64)
-				return TYPE_lng;
+			if (!pse->isSigned) {
+				if (pse->precision == 8)
+					return TYPE_sht;
+				if (pse->precision == 16)
+					return TYPE_int;
+				if (pse->precision == 32)
+					return TYPE_lng;
+#ifdef HAVE_HGE
+				if (pse->precision == 64)
+					return TYPE_hge;
+#endif
+			} else {
+				if (pse->precision == 8)
+					return TYPE_bte;
+				if (pse->precision == 16)
+					return TYPE_sht;
+				if (pse->precision == 32)
+					return TYPE_int;
+				if (pse->precision == 64)
+						return TYPE_lng;
+			}
 			if (pse->precision == 96)
 				return TYPE_timestamp;
 #ifdef HAVE_HGE
@@ -391,7 +421,7 @@ pqc_relation(mvc *sql, sql_subfunc *f, char *filename, list *res_exps, char *tna
 	if (filename && strchr(filename, '*')) {
 		glob_t pglob = {};
 		if (glob(filename, GLOB_ERR, NULL, &pglob) < 0)
-			throw(SQL, SQLSTATE(42000), "parquet" "Could not open parquet file %s", filename);
+			throw(SQL, "parquet", SQLSTATE(42000) "Could not open parquet file %s", filename);
 		if (pglob.gl_pathc)
 			filename = ma_strdup(sql->sa, pglob.gl_pathv[0]);
 		if (est)
@@ -400,7 +430,7 @@ pqc_relation(mvc *sql, sql_subfunc *f, char *filename, list *res_exps, char *tna
 	}
 #endif
 	if (pqc_open(&pq, filename) < 0)
-		throw(SQL, SQLSTATE(42000), "parquet" "Could not open parquet file %s", filename);
+		throw(SQL, "parquet", SQLSTATE(42000) "Could not open parquet file %s", filename);
 
 	allocator *ma = MT_thread_getallocator();
 	if (pqc_read_schema(pq) < 0) {
@@ -409,8 +439,8 @@ pqc_relation(mvc *sql, sql_subfunc *f, char *filename, list *res_exps, char *tna
 			err = ma_strdup(ma, err);
 		pqc_close(pq);
 		if (err)
-			throw(SQL, SQLSTATE(42000), "parquet" "Could not read parquet file %s schema data, %s", filename, err);
-		throw(SQL, SQLSTATE(42000), "parquet" "Could not read parquet file %s schema data", filename);
+			throw(SQL, "parquet", SQLSTATE(42000) "Could not read parquet file %s schema data, %s", filename, err);
+		throw(SQL, "parquet", SQLSTATE(42000) "Could not read parquet file %s schema data", filename);
 	}
 
 	pqc_filemetadata *fmd = pqc_get_filemetadata(pq);
@@ -422,7 +452,7 @@ pqc_relation(mvc *sql, sql_subfunc *f, char *filename, list *res_exps, char *tna
 		if (0)
 		if (pse->nchildren != (nr-1)) {
 			pqc_close(pq);
-			throw(SQL, SQLSTATE(42000), "parquet" "Data in file %s is not tabular", filename);
+			throw(SQL, "parquet", SQLSTATE(42000) "Data in file %s is not tabular", filename);
 		}
 		f->tname = tname;
 		if (0)
@@ -432,7 +462,7 @@ pqc_relation(mvc *sql, sql_subfunc *f, char *filename, list *res_exps, char *tna
 			if (e->nchildren || e->repetition == 2) {
 				char *nme = e->name?ma_strdup(ma, e->name):NULL;
 				pqc_close(pq);
-				throw(SQL, SQLSTATE(42000), "parquet" "Data in file %s is not tabular (column %s has repetition)", filename, nme);
+				throw(SQL, "parquet", SQLSTATE(42000) "Data in file %s is not tabular (column %s has repetition)", filename, nme);
 			}
 		}
 		list *types = sa_list(sql->sa), *names = sa_list(sql->sa);
@@ -902,7 +932,7 @@ PARQUETopen(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		glob_t pglob = {};
 		if (glob(f, GLOB_ERR, NULL, &pglob) < 0) {
 			BBPreclaim(b);
-			throw(SQL, SQLSTATE(42000), "parquet" "Could not open parquet file %s", f);
+			throw(SQL, "parquet", SQLSTATE(42000) "Could not open parquet file %s", f);
 		}
 		b->pl_io = (struct pipeline_io*)pqcmc_create(&pglob, nrows);
 	} else

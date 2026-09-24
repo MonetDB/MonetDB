@@ -1,7 +1,7 @@
 statement ok
 CREATE TABLE v0 ( v1 INT , v2 INT )
 
-query I nosort
+query T nosort
 SELECT LEAD ( 'x' , 'x' , TRUE ) OVER ( PARTITION BY v1 ORDER BY v2 >= v2 IS NOT NULL ) FROM v0 WHERE v2 > -1
 ----
 

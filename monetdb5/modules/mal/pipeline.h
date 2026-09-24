@@ -26,7 +26,7 @@
 #define pipeline_get_thread_private_pipeline() MT_thread_getdata()
 #define pipeline_set_thread_private_pipeline(p) MT_thread_setdata(p)
 
-#define SLICE_SIZE 100000
+#define SLICE_SIZE (128*1024)
 
 // TODO a better way to define/add/register sinks, similar to types
 #define PIPELINE_IO_HASH_TABLE 1

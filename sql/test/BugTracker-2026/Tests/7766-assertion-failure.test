@@ -11,10 +11,10 @@ SELECT v1 AS v4 FROM v0 AS v3 GROUP BY v2
 -- sql/backends/monet5/rel_bin.c:1899: exp_bin: Assertion `s' failed.
 --statement error 42000!SELECT: cannot use non GROUP BY column 'v1' in query results without an aggregate function
 -- for now return because of resolving complexity
-query I
+query R nosort
 SELECT MAX ( ( SELECT v1 AS v4 FROM v0 AS v3 GROUP BY v2 ) ) FROM v0
 ----
-33296913
+33296913.000
 
 statement ok
 DROP TABLE v0

@@ -375,10 +375,10 @@ copyInstructionArgs(MalBlkPtr mb, const InstrRecord *p, int args)
 	if (new == NULL)
 		return new;
 	memcpy(new, p, offsetof(InstrRecord, argv) + p->maxarg * sizeof(p->argv[0]));
+	new->maxarg = args;
 	if (args > p->maxarg)
 		memset(new->argv + p->maxarg, 0, (args - p->maxarg) * sizeof(new->argv[0]));
 	new->typeresolved = false;
-	new->maxarg = args;
 	return new;
 }
 
@@ -912,9 +912,9 @@ pushArgument(MalBlkPtr mb, InstrPtr p, int varid)
 		if (mb->errors)
 			return p;
 	}							/* protect against the case that the instruction is malloced in isolation */
-	if (mb->maxarg < p->maxarg)
-		mb->maxarg = p->maxarg;
 	p->argv[p->argc++] = varid;
+	if (mb->maxarg < p->argc)
+		mb->maxarg = p->argc;
 	return p;
 }
 

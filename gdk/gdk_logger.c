@@ -4061,27 +4061,37 @@ log_tstart(logger *lg, bool flushnow, ulng *file_id)
 }
 
 void
-log_printinfo(logger *lg)
+log_printinfo(FILE *outf, logger *lg)
 {
 	if (!rotation_trylock(lg, 1000)) {
-		printf("Logger is currently locked, so no logger information\n");
+		fprintf(outf, "Logger is currently locked, so no logger information\n");
 		return;
 	}
-	printf("logger %s:\n", lg->fn);
-	printf("current log file "ULLFMT", last handled log file "ULLFMT"\n",
-	       lg->id, lg->saved_id);
-	printf("current transaction id %d, saved transaction id %d\n",
-	       lg->tid, lg->saved_tid);
-	printf("number of flushers: %d\n", (int) ATOMIC_GET(&lg->nr_flushers));
-	printf("number of catalog entries "BUNFMT", of which "BUNFMT" deleted\n",
-	       lg->catalog_bid->batCount, lg->dcatalog->batCount);
+	fprintf(outf, "logger %s:\n", lg->fn);
+	fprintf(outf, "current log file " ULLFMT ", last handled log file "
+		ULLFMT "\n",
+		lg->id, lg->saved_id);
+	fprintf(outf, "current transaction id %d, saved transaction id %d\n",
+		lg->tid, lg->saved_tid);
+	fprintf(outf, "number of flushers: %d\n",
+		(int) ATOMIC_GET(&lg->nr_flushers));
+	fprintf(outf, "number of catalog entries " BUNFMT ", of which " BUNFMT
+		" deleted\n",
+		lg->catalog_bid->batCount, lg->dcatalog->batCount);
 	for (logged_range *p = lg->pending; p; p = p->next) {
 		char buf[32];
 		if ((lg->debug & 128 || lg->inmemory) ||
 		    p->output_log == NULL ||
 		    snprintf(buf, sizeof(buf), ", file size %"PRIu64, (uint64_t) getfilepos(getFile(lg->current->output_log))) >= (int) sizeof(buf))
 			buf[0] = 0;
-		printf("pending range "ULLFMT": drops %"PRIu64", last_ts %"PRIu64", flushed_ts %"PRIu64", refcount %"PRIu64"%s%s\n", p->id, (uint64_t) ATOMIC_GET(&p->drops), (uint64_t) ATOMIC_GET(&p->last_ts), (uint64_t) ATOMIC_GET(&p->flushed_ts), (uint64_t) ATOMIC_GET(&p->refcount), buf, p == lg->current ? " (current)" : "");
+		fprintf(outf, "pending range " ULLFMT ": drops %" PRIu64 ","
+			" last_ts %" PRIu64 ", flushed_ts %" PRIu64 ","
+			" refcount %" PRIu64 "%s%s\n",
+			p->id, (uint64_t) ATOMIC_GET(&p->drops),
+			(uint64_t) ATOMIC_GET(&p->last_ts),
+			(uint64_t) ATOMIC_GET(&p->flushed_ts),
+			(uint64_t) ATOMIC_GET(&p->refcount),
+			buf, p == lg->current ? " (current)" : "");
 	}
 	rotation_unlock(lg);
 }

@@ -125,7 +125,7 @@ stpecpy(char *restrict dst, char *end, const char *restrict src)
  * bytes to dst; return the combined length of the src strings; dst is
  * guaranteed to be NULL-terminated (if n > 0) */
 mutils_export size_t strlconcat(char *restrict dst, size_t n,
-								const char *restrict src, ...)
+				const char *restrict src, ...)
 	__attribute__((__access__(write_only, 1, 2)))
 	__attribute__((__nonnull__(1)))
 	__attribute__((__sentinel__));
@@ -135,7 +135,7 @@ mutils_export size_t strlconcat(char *restrict dst, size_t n,
  * combined length of the src strings; dst is guaranteed to be
  * NULL-terminated (if n > 0) */
 mutils_export ssize_t strtconcat(char *restrict dst, size_t n,
-								 const char *restrict src, ...)
+				 const char *restrict src, ...)
 	__attribute__((__access__(write_only, 1, 2)))
 	__attribute__((__nonnull__(1)))
 	__attribute__((__sentinel__));
