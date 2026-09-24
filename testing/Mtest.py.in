@@ -279,6 +279,7 @@ CONDITIONALS = {
     'HAVE_LIBZ'            : '@HAVE_LIBZ_FALSE@',
     'HAVE_SNAPPY'          : '@HAVE_SNAPPY_FALSE@',
     'HAVE_ZSTD'            : '@HAVE_ZSTD_FALSE@',
+    'HAVE_HTSLIB'          : '@HAVE_HTSLIB_FALSE@',
     'HAVE_NETCDF'          : '@HAVE_NETCDF_FALSE@',
     'HAVE_ODBC'            : '@HAVE_ODBC_FALSE@',
     'HAVE_OPENSSL'         : '@HAVE_OPENSSL_FALSE@',
