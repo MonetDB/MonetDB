@@ -526,8 +526,8 @@ blob_read_dict( pqc_creader_t *cr, uint32_t num_values)
 
 		data += sizeof(int);
 		blob *b = (blob*)buf;
-		memcpy(b->data, data, len);
 		b->nitems = len;
+		memcpy(b->data, data, len);
 		offsets[i] = (int) (buf - obuf);
 		rc[i] = buf;
 		buf += (sizeof(size_t)+len+15)&(~15);

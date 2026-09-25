@@ -1304,16 +1304,18 @@ typedef union {
 } inet4;
 typedef union {
 #ifdef HAVE_HGE
-	hge align;		/* force alignment, only used for equality */
+	uint128_t align;	/* force alignment, only used for equality */
 #else
-	lng align[2];		/* force alignment, not otherwise used */
+	uint64_t align[2];	/* force alignment, not otherwise used */
 #endif
-	uint8_t hex[16];
+	uint8_t hex[16] __attribute__((__nonstring__));
 } inet6;
 
 #define SIZEOF_OID	SIZEOF_SIZE_T
 typedef size_t oid;
-#define OIDFMT		"%zu"
+/* macro in the style of <inttypes.h> for formatting oid */
+#define PRIuOID		"zu"
+#define OIDFMT		"%" PRIuOID
 
 typedef int bat;		/* Index into BBP */
 typedef void *ptr;		/* Internal coding of types */
@@ -1328,9 +1330,9 @@ typedef char *str;
 
 typedef union {
 #ifdef HAVE_HGE
-	hge h;			/* force alignment, only used for equality */
+	uint128_t h;		/* force alignment, only used for equality */
 #else
-	lng l[2];		/* force alignment, not otherwise used */
+	uint64_t l[2];		/* force alignment, not otherwise used */
 #endif
 	uint8_t u[UUID_SIZE] __attribute__((__nonstring__));
 } uuid;
@@ -1344,8 +1346,12 @@ gdk_export size_t blobsize(size_t nitems) __attribute__((__const__));
 
 #define SIZEOF_LNG		8
 #define LL_CONSTANT(val)	INT64_C(val)
-#define LLFMT			"%" PRId64
-#define ULLFMT			"%" PRIu64
+#define PRIdLNG			PRId64
+#define PRIuLNG			PRIu64
+#define PRIxLNG			PRIx64
+#define PRIoLNG			PRIo64
+#define LLFMT			"%" PRIdLNG
+#define ULLFMT			"%" PRIuLNG
 #define LLSCN			"%" SCNd64
 #define ULLSCN			"%" SCNu64
 
@@ -1375,12 +1381,8 @@ typedef oid var_t;		/* type used for heap index of var-sized BAT */
 
 typedef oid BUN;		/* BUN position */
 #define SIZEOF_BUN	SIZEOF_OID
+#define PRIuBUN		PRIuOID
 #define BUNFMT		OIDFMT
-/* alternatively:
-typedef size_t BUN;
-#define SIZEOF_BUN	SIZEOF_SIZE_T
-#define BUNFMT		"%zu"
-*/
 #if SIZEOF_BUN == SIZEOF_INT
 #define BUN_NONE ((BUN) INT_MAX)
 #else

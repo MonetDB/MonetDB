@@ -1,4 +1,4 @@
 #invalid_parquet
 HAVE_SNAPPY?test_parquet_reader
 HAVE_DATA_PATH&HAVE_ZSTD&HAVE_SNAPPY?parquet_testing
-HAVE_DATA_PATH&test_parquet_unsigned
+HAVE_DATA_PATH&HAVE_SNAPPY?test_parquet_unsigned

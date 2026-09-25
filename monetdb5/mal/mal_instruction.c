@@ -375,10 +375,10 @@ copyInstructionArgs(MalBlkPtr mb, const InstrRecord *p, int args)
 	if (new == NULL)
 		return new;
 	memcpy(new, p, offsetof(InstrRecord, argv) + p->maxarg * sizeof(p->argv[0]));
+	new->maxarg = args;
 	if (args > p->maxarg)
 		memset(new->argv + p->maxarg, 0, (args - p->maxarg) * sizeof(new->argv[0]));
 	new->typeresolved = false;
-	new->maxarg = args;
 	return new;
 }
 
