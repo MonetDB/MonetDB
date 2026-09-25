@@ -150,7 +150,7 @@ ht_create(int type, size_t size, hash_table *p, int vkey)
 		Type *vals = ht->vals; \
 		for (gid i = 0; i < ht->size; i++) \
 		{ \
-			gid g = ht->gids[i]; \
+			gid g = (gid) ATOMIC_GET(&ht->gids[i]);	\
 			if (g) { \
 				mnstr_printf(fdout, "#| %7lld ", (long long) i); \
 				if (ht->pgids) \
@@ -163,7 +163,7 @@ ht_create(int type, size_t size, hash_table *p, int vkey)
 			} \
 		} \
 	} while (0)
-void 
+void
 ht_print(stream *fdout, BAT *b)
 {
 	hash_table *ht = (hash_table*)b->pl_io;
@@ -180,10 +180,10 @@ ht_print(stream *fdout, BAT *b)
 			mnstr_printf(fdout, "#|   HSH   |   GID   | VAL\n");
 		}
 		switch(ht->type) {
-			case TYPE_bit: 
+			case TYPE_bit:
 				prnt(bit);
 				break;
-			case TYPE_bte: 
+			case TYPE_bte:
 				prnt(bte);
 				break;
 			case TYPE_sht:
