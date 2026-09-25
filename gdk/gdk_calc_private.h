@@ -253,20 +253,20 @@
 	} while (0)
 #define LNGMULU_CHECK(lft, rgt, dst, max, on_overflow)			\
 	do {								\
-		ulng a = (lft), b = (rgt);				\
-		unsigned int a1, a2, b1, b2;				\
-		ulng c;							\
+		uint64_t a = (lft), b = (rgt);				\
+		uint32_t a1, a2, b1, b2;				\
+		uint64_t c;						\
 									\
-		a1 = (unsigned int) (a >> 32);				\
-		a2 = (unsigned int) a;					\
-		b1 = (unsigned int) (b >> 32);				\
-		b2 = (unsigned int) b;					\
+		a1 = (uint32_t) (a >> 32);				\
+		a2 = (uint32_t) a;					\
+		b1 = (uint32_t) (b >> 32);				\
+		b2 = (uint32_t) b;					\
 		/* result = (a1*b1<<64) + (a1*b2+a2*b1<<32) + a2*b2 */	\
 		if ((a1 == 0 || b1 == 0) &&				\
-		    ((c = (ulng) a1 * b2 + (ulng) a2 * b1) & (~(ulng)0 << 31)) == 0 && \
-		    (((c = (c << 32) + (ulng) a2 * b2) & ((ulng) 1 << 63)) == 0 && \
-		     (c) <= (ulng) (max))) {				\
-			(dst) = (ulng) c;				\
+		    ((c = a1 * b2 + a2 * b1) & (~(uint64_t)0 << 32)) == 0 && \
+		    (~(uint64_t)0 - (c <<= 32)) >= (a1 = a2 * b2) &&	\
+		    (c += a1) <= (max)) {				\
+			(dst) = c;					\
 		} else {						\
 			on_overflow;					\
 		}							\
@@ -279,6 +279,8 @@
 #ifdef OP_WITH_CHECK
 #define HGEMUL_CHECK(lft, rgt, dst, max, on_overflow)			\
 	OP_WITH_CHECK(lft, rgt, hge, dst, mul, max, on_overflow)
+#define HGEMULU_CHECK(lft, rgt, dst, max, on_overflow)			\
+	UOP_WITH_CHECK(lft, rgt, hge, dst, mul, max, on_overflow)
 #else
 #define HGEMUL_CHECK(lft, rgt, dst, max, on_overflow)			\
 	do {								\
@@ -303,8 +305,28 @@
 		if ((a1 == 0 || b1 == 0) &&				\
 		    ((c = (uhge) a1 * b2 + (uhge) a2 * b1) & (~(uhge)0 << 63)) == 0 && \
 		    (((c = (c << 64) + (uhge) a2 * b2) & ((uhge) 1 << 127)) == 0) && \
-		    (c) <= (uhge) (max)) {				\
+		    c <= (uhge) (max)) {				\
 			(dst) = sign * (hge) c;				\
+		} else {						\
+			on_overflow;					\
+		}							\
+	} while (0)
+#define HGEMULU_CHECK(lft, rgt, dst, max, on_overflow)			\
+	do {								\
+		uint128_t a = (lft), b = (rgt);				\
+		uint64_t a1, a2, b1, b2;				\
+		uint128_t c;						\
+									\
+		a1 = (uint64_t) (a >> 64);				\
+		a2 = (uint64_t) a;					\
+		b1 = (uint64_t) (b >> 64);				\
+		b2 = (uint64_t) b;					\
+		/* result = (a1*b1<<128) + ((a1*b2+a2*b1)<<64) + a2*b2 */ \
+		if ((a1 == 0 || b1 == 0) &&				\
+		    ((c = a1 * b2 + a2 * b1) & (~(uint128_t)0 << 64)) == 0 && \
+		    (~(uint128_t)0 - (c <<= 64)) >= (a1 = a2 * b2) &&	\
+		    (c += a1) <= (max)) {				\
+			(dst) = c;					\
 		} else {						\
 			on_overflow;					\
 		}							\
