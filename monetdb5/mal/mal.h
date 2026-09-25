@@ -224,7 +224,7 @@ typedef struct MALSTK {
 
 	struct MALSTK *up;			/* stack trace list */
 	struct MALBLK *blk;			/* associated definition */
-	ValRecord stk[];
+	ValRecord stk[] __attribute__((__counted_by__(stksize)));
 } MalStack, *MalStkPtr;
 
 #endif /*  _MAL_H */

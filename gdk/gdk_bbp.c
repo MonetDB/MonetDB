@@ -4878,7 +4878,7 @@ typedef struct gdk_callback {
 	lng last_called; // timestamp GDKusec
 	gdk_return (*func)(int argc, void *argv[]);
 	struct gdk_callback *next;
-	void *argv[];
+	void *argv[] __attribute__((__counted_by__(argc)));
 } gdk_callback;
 
 static struct {
