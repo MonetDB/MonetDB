@@ -1296,16 +1296,18 @@ typedef union {
 } inet4;
 typedef union {
 #ifdef HAVE_HGE
-	hge align;		/* force alignment, only used for equality */
+	uint128_t align;	/* force alignment, only used for equality */
 #else
-	lng align[2];		/* force alignment, not otherwise used */
+	uint64_t align[2];	/* force alignment, not otherwise used */
 #endif
-	uint8_t hex[16];
+	uint8_t hex[16] __attribute__((__nonstring__));
 } inet6;
 
 #define SIZEOF_OID	SIZEOF_SIZE_T
 typedef size_t oid;
-#define OIDFMT		"%zu"
+/* macro in the style of <inttypes.h> for formatting oid */
+#define PRIuOID		"zu"
+#define OIDFMT		"%" PRIuOID
 
 typedef int bat;		/* Index into BBP */
 typedef void *ptr;		/* Internal coding of types */
@@ -1320,9 +1322,9 @@ typedef char *str;
 
 typedef union {
 #ifdef HAVE_HGE
-	hge h;			/* force alignment, only used for equality */
+	uint128_t h;		/* force alignment, only used for equality */
 #else
-	lng l[2];		/* force alignment, not otherwise used */
+	uint64_t l[2];		/* force alignment, not otherwise used */
 #endif
 	uint8_t u[UUID_SIZE] __attribute__((__nonstring__));
 } uuid;
@@ -1336,8 +1338,12 @@ gdk_export size_t blobsize(size_t nitems) __attribute__((__const__));
 
 #define SIZEOF_LNG		8
 #define LL_CONSTANT(val)	INT64_C(val)
-#define LLFMT			"%" PRId64
-#define ULLFMT			"%" PRIu64
+#define PRIdLNG			PRId64
+#define PRIuLNG			PRIu64
+#define PRIxLNG			PRIx64
+#define PRIoLNG			PRIo64
+#define LLFMT			"%" PRIdLNG
+#define ULLFMT			"%" PRIuLNG
 #define LLSCN			"%" SCNd64
 #define ULLSCN			"%" SCNu64
 
@@ -1367,12 +1373,8 @@ typedef oid var_t;		/* type used for heap index of var-sized BAT */
 
 typedef oid BUN;		/* BUN position */
 #define SIZEOF_BUN	SIZEOF_OID
+#define PRIuBUN		PRIuOID
 #define BUNFMT		OIDFMT
-/* alternatively:
-typedef size_t BUN;
-#define SIZEOF_BUN	SIZEOF_SIZE_T
-#define BUNFMT		"%zu"
-*/
 #if SIZEOF_BUN == SIZEOF_INT
 #define BUN_NONE ((BUN) INT_MAX)
 #else
@@ -4698,23 +4700,41 @@ gdk_export ValPtr VALcopy(allocator *va, ValPtr dst, const ValRecord *src)
 gdk_export ValPtr VALinit(allocator *va, ValPtr d, int tpe, const void *s)
 	__attribute__((__access__(write_only, 2)));
 
-gdk_export allocator *create_allocator(const char *, bool use_lock);
+gdk_export allocator *create_allocator(const char *, bool use_lock)
+	__attribute__((__warn_unused_result__));
 gdk_export bool ma_tmp_active(const allocator *sa);
 gdk_export void ma_reset(allocator *sa);
-gdk_export void *ma_alloc(allocator *sa,  size_t sz);
-gdk_export void *ma_zalloc(allocator *sa,  size_t sz);
-gdk_export void *ma_realloc(allocator *sa,  void *ptr, size_t sz, size_t osz);
+gdk_export void *ma_alloc(allocator *sa,  size_t sz)
+	__attribute__((__malloc__))
+	__attribute__((__alloc_size__(2)))
+	__attribute__((__warn_unused_result__));
+gdk_export void *ma_zalloc(allocator *sa,  size_t sz)
+	__attribute__((__malloc__))
+	__attribute__((__alloc_size__(2)))
+	__attribute__((__warn_unused_result__));
+gdk_export void *ma_realloc(allocator *sa,  void *ptr, size_t sz, size_t osz)
+	__attribute__((__alloc_size__(3)))
+	__attribute__((__warn_unused_result__));
 gdk_export void ma_destroy(allocator *sa);
-gdk_export char *ma_strndup(allocator *sa, const char *s, size_t l);
-gdk_export char *ma_strdup(allocator *sa, const char *s);
-gdk_export char *ma_strconcat(allocator *sa, const char *s1, const char *s2);
+gdk_export char *ma_strndup(allocator *sa, const char *s, size_t l)
+	__attribute__((__malloc__))
+	__attribute__((__warn_unused_result__));
+gdk_export char *ma_strdup(allocator *sa, const char *s)
+	__attribute__((__malloc__))
+	__attribute__((__warn_unused_result__));
+gdk_export char *ma_strconcat(allocator *sa, const char *s1, const char *s2)
+	__attribute__((__malloc__))
+	__attribute__((__warn_unused_result__));
+gdk_export char *ma_copy(allocator *sa, char *s, size_t l)
+	__attribute__((__alloc_size__(3)))
+	__attribute__((__malloc__))
+	__attribute__((__warn_unused_result__));
 gdk_export const char *ma_name(allocator *sa);
 gdk_export allocator_state ma_open(allocator *sa);  /* open new frame of tempory allocations */
 gdk_export void ma_close(const allocator_state *); /* close temporary frame, reset to old state */
 gdk_export void ma_free(allocator *sa, void *);
 gdk_export exception_buffer *ma_get_eb(allocator *sa)
        __attribute__((__pure__));
-gdk_export char *ma_copy(allocator *sa, char *s, size_t l);
 
 gdk_export int ma_info(allocator *sa, char *buf, size_t buflen, const char *pref);
 

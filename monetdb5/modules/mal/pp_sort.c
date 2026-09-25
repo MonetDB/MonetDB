@@ -706,7 +706,7 @@ typedef struct sop_t {
 	MT_Lock l;
 
 	part_t *h, *t;
-	part_t *workers[];
+	part_t *workers[] __attribute__((__counted_by__(nr_workers)));
 } sop_t;
 
 static void
@@ -756,6 +756,7 @@ SOPnew(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	if (!q)
 		throw(MAL, "sop.new", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 
+	q->nr_workers = nr_workers;
 	q->nr = 0;
 	q->h = NULL;
 	q->t = NULL;

@@ -569,7 +569,7 @@ load_zero_terminated_text(BAT *bat, stream *s, int *eof_reached, int width, bool
 		size_t consumed;
 		msg = insert_nul_terminated_values(&state, &bs->buf[bs->pos], bs->len - bs->pos, &consumed);
 		#ifdef DEBUG_PRINTFS
-		fprintf(stderr, "# consumed %zu, left_over=%zu, batcount=%zu\n", consumed, state.left_over, BATcount(bat));
+		fprintf(stderr, "# consumed %zu, left_over=%zu, batcount="BUNFMT"\n", consumed, state.left_over, BATcount(bat));
 		#endif
 		if (msg != MAL_SUCCEED)
 			goto end;
