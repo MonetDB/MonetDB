@@ -92,6 +92,7 @@ sam_list_append(list * nameslist, char * name, list * typelist, sql_subtype * mt
 /* nr of sam/bam file alignment info columns */
 #define SAM_NR_COLS  11
 #define SAM_MAX_STR_SIZE 4096
+#define BAM_MAX_QNAME_LEN 256
 
 #define SAM_RELATION 1
 #define SAM_LOADER   2
@@ -447,6 +448,8 @@ SAMprelude(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void)pci;
 	fl_register("sam", &sam_relation, &sam_load);
 	fl_register("bam", &sam_relation, &sam_load);
+	/* disable logging on htslib level */
+	hts_verbose = HTS_LOG_OFF;
 	return MAL_SUCCEED;
 }
 
