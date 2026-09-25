@@ -411,7 +411,7 @@ GDKanalyticaldiff(BAT *b, BAT *p, const bit *restrict npbit, int tpe)
 			TPE2 olimit = LIMIT;				\
 			v = bp[k];					\
 			for (j = k; ; j--) {				\
-				SUB_WITH_CHECK(v, bp[j], TPE1, calc, GDK_##TPE1##_max, goto calc_overflow); \
+				SUBU_WITH_CHECK(v, bp[j], TPE1, calc, GDK_##TPE1##_max, goto calc_overflow); \
 				if (calc > olimit) {			\
 					j++;				\
 					break;				\
@@ -471,7 +471,7 @@ GDKanalyticaldiff(BAT *b, BAT *p, const bit *restrict npbit, int tpe)
 			TPE2 olimit = LIMIT;				\
 			v = bp[k];					\
 			for (j = k + 1; j < i; j++) {			\
-				SUB_WITH_CHECK(v, bp[j], TPE1, calc, GDK_##TPE1##_max, goto calc_overflow); \
+				SUBU_WITH_CHECK(v, bp[j], TPE1, calc, GDK_##TPE1##_max, goto calc_overflow); \
 				if (calc > olimit)			\
 					break;				\
 			}						\

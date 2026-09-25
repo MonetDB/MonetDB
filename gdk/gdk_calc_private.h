@@ -54,7 +54,9 @@
 	} while (0)
 #define UOP_WITH_CHECK(lft, rgt, TYPE3, dst, op, max, on_overflow)		\
 	do {								\
+		TYPE3 old = dst;					\
 		if (__builtin_##op##_overflow(lft, rgt, &(dst))) {	\
+			dst = old;					\
 			on_overflow;					\
 		}							\
 	} while (0)
@@ -94,10 +96,11 @@
 	ADD_WITH_CHECK(lft, rgt, TYPE3, dst, max, on_overflow)
 #define ADDU_WITH_CHECK(lft, rgt, TYPE3, dst, max, on_overflow) \
 	do {							\
-		if ((max) - (rgt) < (lft)) {			\
+		TYPE3 old = dst;				\
+		dst = (TYPE3) ((lft) + (rgt));			\
+		if (dst < (lft) || dst < (rgt)) {		\
+			dst = old;				\
 			on_overflow;				\
-		} else {					\
-			(dst) = (TYPE3) (lft) + (rgt);		\
 		}						\
 	} while (0)
 #endif

@@ -1685,11 +1685,11 @@ BATsum(void *resout, int tp, BAT *b, BAT *s, bool skip_nils, bool nil_if_empty, 
 					else				\
 						gid = (oid) i;		\
 				}					\
-				HGEMUL_CHECK(vals[i],			\
-					     prods[gid],		\
-					     prods[gid],		\
-					     GDK_uhge_max,		\
-					     goto overflow);		\
+				HGEMULU_CHECK(vals[i],			\
+					      prods[gid],		\
+					      prods[gid],		\
+					      GDK_uhge_max,		\
+					      goto overflow);		\
 			}						\
 		}							\
 		TIMEOUT_CHECK(qry_ctx,					\
@@ -1750,7 +1750,7 @@ BATsum(void *resout, int tp, BAT *b, BAT *s, bool skip_nils, bool nil_if_empty, 
 					else				\
 						gid = (oid) i;		\
 				}					\
-				LNGMUL_CHECK(				\
+				LNGMULU_CHECK(				\
 					vals[i],			\
 					prods[gid],			\
 					prods[gid],			\
@@ -4300,23 +4300,26 @@ BATgroupavg3combine(BAT *avg, BAT *rem, BAT *cnt, BAT *g, BAT *e, bool skip_nils
 									\
 		/* first try to calculate the sum of all values into a */ \
 		/* lng/hge */						\
-		TIMEOUT_LOOP(ci.ncand, qry_ctx) {			\
-			i = canditer_next(&ci) - b->hseqbase;		\
-			x = ((const TYPE *) src)[i];			\
-			ADDU_WITH_CHECK(x, sum,				\
-					lng_hge, sum,			\
-					GDK_##lng_hge##_max,		\
-					goto overflow##TYPE);		\
-			/* don't count value until after overflow check */ \
-			n++;						\
-		}							\
-		/* the sum fit, so now we can calculate the average */	\
-		*avg = n > 0 ? (dbl) sum / n : dbl_nil;			\
-		if (0) {						\
+		if (!inout) {						\
+			TIMEOUT_LOOP(ci.ncand, qry_ctx) {		\
+				i = canditer_next(&ci) - b->hseqbase;	\
+				x = ((const TYPE *) src)[i];		\
+				ADDU_WITH_CHECK(x, usum,		\
+						lng_hge, usum,		\
+						GDK_##lng_hge##_max,	\
+						goto overflow##TYPE);	\
+				/* don't count value until after */	\
+				/* overflow check */			\
+				n++;					\
+			}						\
+			/* the sum fits, so now we can calculate the */	\
+			/* average */					\
+			*avg = n > 0 ? (dbl) usum / n : dbl_nil;	\
+		} else {						\
 		  overflow##TYPE:					\
 			/* we get here if sum(x[0],...,x[i]) doesn't */	\
-			/* fit in a lng/hge but sum(x[0],...,x[i-1]) did */ \
-			/* the variable sum contains that sum */	\
+			/* fit in a ulng/uhge but sum(x[0],...,x[i-1]) did */ \
+			/* the variable usum contains that sum */	\
 			/* the rest of the calculation is done */	\
 			/* according to the loop invariant described */	\
 			/* in the below loop */				\
@@ -4324,20 +4327,10 @@ BATgroupavg3combine(BAT *avg, BAT *rem, BAT *cnt, BAT *g, BAT *e, bool skip_nils
 			/* overflow possible) */			\
 			assert(n > 0);					\
 			if (!inout) {					\
-				if (sum >= 0) {				\
-					a = (TYPE) (sum / n); /* this fits */ \
-					r = (lng) (sum % n);		\
-				} else {				\
-					sum = -sum;			\
-					a = - (TYPE) (sum / n); /* this fits */ \
-					r = (lng) (sum % n);		\
-					if (r) {			\
-						a--;			\
-						r = n - r;		\
-					}				\
-				}					\
+				a = (TYPE) (usum / n); /* this fits */	\
+				r = (lng) (usum % n);			\
 			} else {					\
-				a = (TYPE) sum;				\
+				a = (TYPE) usum;			\
 			}						\
 			/* we have to redo the last candidate */	\
 			if (idx)					\
@@ -4389,12 +4382,29 @@ BATcalcavg(BAT *b, BAT *s, dbl *avg, BUN *vals, int scale, bool inout)
 	BUN idx = 0;
 #ifdef HAVE_HGE
 	hge sum = 0;
+	uhge usum = 0;
 #else
 	lng sum = 0;
+	ulng usum = 0;
 #endif
 	struct canditer ci;
 	const void *restrict src;
 	lng t0 = 0;
+	bool isunsigned;
+	switch (b->ttype) {
+	case TYPE_ubte:
+	case TYPE_usht:
+	case TYPE_uint:
+	case TYPE_ulng:
+#ifdef HAVE_HGE
+	case TYPE_uhge:
+#endif
+		isunsigned = true;
+		break;
+	default:
+		isunsigned = false;
+		break;
+	}
 
 	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
 
@@ -4407,6 +4417,7 @@ BATcalcavg(BAT *b, BAT *s, dbl *avg, BUN *vals, int scale, bool inout)
 			if (scale != 0)
 				a *= pow(10.0, (double) scale);
 			if (a < 0) {
+				assert(!isunsigned);
 				fprt = modf(-a, &iprt);
 				if (fprt > 0) {
 					iprt = -iprt - 1;
@@ -4422,20 +4433,34 @@ BATcalcavg(BAT *b, BAT *s, dbl *avg, BUN *vals, int scale, bool inout)
 			 * rounding */
 			r = (lng) (fprt * n + 0.5);
 #ifdef HAVE_HGE
-			sum = (hge) iprt;
-			if (sum < 0) {
-				if ((GDK_hge_max - r) / n > -sum) {
-					sum = sum * n + r;
+			if (isunsigned) {
+				assert(iprt >= 0);
+				assert(r >= 0);
+				usum = (uhge) iprt;
+
+				if ((GDK_uhge_max - r) / n > usum) {
+					usum = usum * n + r;
 					inout = false;
 				}
 			} else {
-				if ((GDK_hge_max - r) / n > sum) {
-					sum = sum * n + r;
-					inout = false;
+				sum = (hge) iprt;
+				if (sum < 0) {
+					if ((GDK_hge_max - r) / n > -sum) {
+						sum = sum * n + r;
+						inout = false;
+					}
+				} else {
+					if ((GDK_hge_max - r) / n > sum) {
+						sum = sum * n + r;
+						inout = false;
+					}
 				}
 			}
 #else
-			sum = (lng) iprt;
+			if (isunsigned)
+				usum = (ulng) iprt;
+			else
+				sum = (lng) iprt;
 #endif
 		} else {
 			inout = false;
