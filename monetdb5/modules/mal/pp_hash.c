@@ -152,10 +152,10 @@ ht_create(int type, size_t size, hash_table *p, int vkey)
 		{ \
 			gid g = (gid) ATOMIC_GET(&ht->gids[i]);	\
 			if (g) { \
-				mnstr_printf(fdout, "#| %7lld ", (long long) i); \
+				mnstr_printf(fdout, "#| %7"PRIuOID" ", i); \
 				if (ht->pgids) \
-					mnstr_printf(fdout,  "| %7lld ", (long long) ht->pgids[g]); \
-				mnstr_printf(fdout,  "| %7lld ", (long long) (g-1)); \
+					mnstr_printf(fdout,  "| %7"PRIuOID" ", ht->pgids[g]); \
+				mnstr_printf(fdout,  "| %7"PRIuOID" ", g - 1); \
 				if (is_##Type##_nil(vals[g])) \
 					mnstr_printf(fdout, "| NIL\n"); \
 				else \
