@@ -4700,23 +4700,41 @@ gdk_export ValPtr VALcopy(allocator *va, ValPtr dst, const ValRecord *src)
 gdk_export ValPtr VALinit(allocator *va, ValPtr d, int tpe, const void *s)
 	__attribute__((__access__(write_only, 2)));
 
-gdk_export allocator *create_allocator(const char *, bool use_lock);
+gdk_export allocator *create_allocator(const char *, bool use_lock)
+	__attribute__((__warn_unused_result__));
 gdk_export bool ma_tmp_active(const allocator *sa);
 gdk_export void ma_reset(allocator *sa);
-gdk_export void *ma_alloc(allocator *sa,  size_t sz);
-gdk_export void *ma_zalloc(allocator *sa,  size_t sz);
-gdk_export void *ma_realloc(allocator *sa,  void *ptr, size_t sz, size_t osz);
+gdk_export void *ma_alloc(allocator *sa,  size_t sz)
+	__attribute__((__malloc__))
+	__attribute__((__alloc_size__(2)))
+	__attribute__((__warn_unused_result__));
+gdk_export void *ma_zalloc(allocator *sa,  size_t sz)
+	__attribute__((__malloc__))
+	__attribute__((__alloc_size__(2)))
+	__attribute__((__warn_unused_result__));
+gdk_export void *ma_realloc(allocator *sa,  void *ptr, size_t sz, size_t osz)
+	__attribute__((__alloc_size__(3)))
+	__attribute__((__warn_unused_result__));
 gdk_export void ma_destroy(allocator *sa);
-gdk_export char *ma_strndup(allocator *sa, const char *s, size_t l);
-gdk_export char *ma_strdup(allocator *sa, const char *s);
-gdk_export char *ma_strconcat(allocator *sa, const char *s1, const char *s2);
+gdk_export char *ma_strndup(allocator *sa, const char *s, size_t l)
+	__attribute__((__malloc__))
+	__attribute__((__warn_unused_result__));
+gdk_export char *ma_strdup(allocator *sa, const char *s)
+	__attribute__((__malloc__))
+	__attribute__((__warn_unused_result__));
+gdk_export char *ma_strconcat(allocator *sa, const char *s1, const char *s2)
+	__attribute__((__malloc__))
+	__attribute__((__warn_unused_result__));
+gdk_export char *ma_copy(allocator *sa, char *s, size_t l)
+	__attribute__((__alloc_size__(3)))
+	__attribute__((__malloc__))
+	__attribute__((__warn_unused_result__));
 gdk_export const char *ma_name(allocator *sa);
 gdk_export allocator_state ma_open(allocator *sa);  /* open new frame of tempory allocations */
 gdk_export void ma_close(const allocator_state *); /* close temporary frame, reset to old state */
 gdk_export void ma_free(allocator *sa, void *);
 gdk_export exception_buffer *ma_get_eb(allocator *sa)
        __attribute__((__pure__));
-gdk_export char *ma_copy(allocator *sa, char *s, size_t l);
 
 gdk_export int ma_info(allocator *sa, char *buf, size_t buflen, const char *pref);
 
