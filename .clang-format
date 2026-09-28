@@ -40,9 +40,11 @@ ContinuationIndentWidth: 8
 EnumTrailingComma: Leave
 ForEachMacros:
   - BATloop
+  - CAND_LOOP
+  - CAND_LOOP_IDX
+  - TIMEOUT_LOOP
   - TIMEOUT_LOOP_IDX
   - TIMEOUT_LOOP_IDX_DECL
-  - TIMEOUT_LOOP
 IfMacros: 
   - TRC_CRITICAL_IF
   - TRC_ERROR_IF
