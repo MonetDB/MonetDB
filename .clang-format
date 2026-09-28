@@ -40,9 +40,11 @@ ContinuationIndentWidth: 8
 EnumTrailingComma: Leave
 ForEachMacros:
   - BATloop
+  - CAND_LOOP
+  - CAND_LOOP_IDX
+  - TIMEOUT_LOOP
   - TIMEOUT_LOOP_IDX
   - TIMEOUT_LOOP_IDX_DECL
-  - TIMEOUT_LOOP
 IfMacros: 
   - TRC_CRITICAL_IF
   - TRC_ERROR_IF
@@ -81,8 +83,6 @@ StatementAttributeLikeMacros:
   - fits_export
   - gdk_export
   - generator_export
-  - geom_export
-  - libgeom_export
   - mal_export
   - mapi_export
   - monetdbe_export
@@ -96,21 +96,31 @@ StatementAttributeLikeMacros:
   - sql_export
   - udf_export
 TypeNames:
+  - adapter_t
   - allocator
+  - allocator_state
+  - atomDesc
   - ATOMIC_BASE_TYPE
+  - ATOMIC_FLAG
+  - ATOMIC_PTR_TYPE
   - ATOMIC_TYPE
   - bat
   - BAT
   - BATiter
   - bit
+  - blob
+  - BBPrec
   - bte
   - BUN
   - BUN2type
   - BUN4type
   - BUN8type
+  - ccand_t
+  - component_t
   - date
   - daytime
   - dbl
+  - exception_buffer
   - FILE
   - flt
   - gdk_callback_func
@@ -118,15 +128,20 @@ TypeNames:
   - Hash
   - Heap
   - hge
+  - inet4
+  - inet6
   - __int128_t
+  - int128_t
   - int16_t
   - int32_t
   - int64_t
   - int8_t
+  - layer_t
   - lng
   - log_bid
   - logger
   - log_id
+  - log_level_t
   - Mapi
   - MapiHdl
   - MapiMsg
@@ -134,15 +149,19 @@ TypeNames:
   - MT_Cond
   - MT_Id
   - MT_Lock
+  - MT_RWLock
   - MT_Sema
+  - MT_TLS_t
   - off_t
   - oid
   - old_logger
   - PROPrec
   - ptr
   - QryCtx
+  - role_t
   - RTree
   - sht
+  - storage_t
   - str
   - stream
   - stridx_t
@@ -150,11 +169,15 @@ TypeNames:
   - timestamp
   - time_t
   - trans
+  - uhge
+  - uint128_t
   - uint16_t
   - uint32_t
   - uint64_t
   - uint8_t
   - ulng
   - url
+  - uuid
+  - ValPtr
   - ValRecord
   - var_t
