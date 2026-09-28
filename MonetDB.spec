@@ -938,7 +938,6 @@ install -d -m 0775 "${RPM_BUILD_ROOT}"%{_rundir}/monetdb
 
 # remove unwanted stuff
 rm -f "${RPM_BUILD_ROOT}"%{_libdir}/monetdb5*/lib_microbenchmark*.so
-rm -f "${RPM_BUILD_ROOT}"%{_libdir}/monetdb5*/lib_udf*.so
 rm -f "${RPM_BUILD_ROOT}"%{_bindir}/monetdb_mtest.sh
 
 %if %{without compat} && %{with selinux}
