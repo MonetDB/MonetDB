@@ -83,8 +83,6 @@ StatementAttributeLikeMacros:
   - fits_export
   - gdk_export
   - generator_export
-  - geom_export
-  - libgeom_export
   - mal_export
   - mapi_export
   - monetdbe_export

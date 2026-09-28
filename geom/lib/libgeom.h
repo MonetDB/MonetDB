@@ -18,16 +18,6 @@
  * The geom library is based on the geos (Geometry Engine Open Source) library.
  */
 
-#ifdef WIN32
-#ifndef LIBGEOM
-#define libgeom_export extern __declspec(dllimport)
-#else
-#define libgeom_export extern __declspec(dllexport)
-#endif
-#else
-#define libgeom_export extern
-#endif
-
 #define GEOS_USE_ONLY_R_API 1
 #include <geos_c.h>
 #ifdef HAVE_PROJ
@@ -96,7 +86,7 @@ Type values:
 
 */
 
-libgeom_export GEOSContextHandle_t libgeom_tls(void);
+extern GEOSContextHandle_t libgeom_tls(void);
 #define geoshandle (libgeom_tls())
 
 typedef enum wkb_type {
@@ -112,7 +102,7 @@ typedef enum wkb_type {
 	wkbGeometryCollection_mdb = 8
 } wkb_type;
 
-libgeom_export const char *geom_type2str(int t, int flag);
+extern const char *geom_type2str(int t, int flag);
 
 typedef struct wkb {
 	int len;
@@ -127,11 +117,11 @@ typedef struct {
 	wkb wkb;
 } geom_geometry;
 
-libgeom_export gdk_return libgeom_init(void);
+extern gdk_return libgeom_init(void);
 
 #define mbr_nil mbrFromGeos(NULL, NULL);
 
-libgeom_export bool is_wkb_nil(const wkb *wkbp);
-libgeom_export GEOSGeom wkb2geos(const wkb *geomWKB);
+extern bool is_wkb_nil(const wkb *wkbp);
+extern GEOSGeom wkb2geos(const wkb *geomWKB);
 
 #endif /* LIBGEOM_H */
