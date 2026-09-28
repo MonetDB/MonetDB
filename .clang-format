@@ -80,7 +80,6 @@ SpaceInEmptyParentheses: false
 SpacesInParens: Never
 SpacesInSquareBrackets: false
 StatementAttributeLikeMacros:
-  - fits_export
   - gdk_export
   - generator_export
   - mal_export
@@ -89,12 +88,8 @@ StatementAttributeLikeMacros:
   - moptions_export
   - mutils_export
   - mvc_export
-  - netcdf_export
-  - orderidx_export
-  - shp_export
   - sql5_export
   - sql_export
-  - udf_export
 TypeNames:
   - adapter_t
   - allocator
