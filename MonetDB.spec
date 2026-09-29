@@ -97,7 +97,7 @@ Group: Applications/Databases
 License: MPL-2.0
 URL: https://www.monetdb.org/
 BugURL: https://github.com/MonetDB/MonetDB/issues
-Source: https://www.monetdb.org/downloads/sources/Dec2025-SP3/MonetDB-%{version}.tar.bz2
+Source: https://www.monetdb.org/downloads/sources/Dec2025-SP4/MonetDB-%{version}.tar.bz2
 
 BuildRequires: systemd-rpm-macros
 BuildRequires: cmake >= 3.12
@@ -1087,6 +1087,29 @@ rm "${RPM_BUILD_ROOT}"%{_unitdir}/monetdbd.service
 %endif
 
 %changelog
+* Tue Sep 29 2026 Sjoerd Mullender <sjoerd@acm.org> - 11.55.9-20260929
+- Rebuilt.
+- GH#7922: Wrong result path split between `SUM() OVER (... RANGE ...)`
+  and an equivalent correlated aggregate rewrite
+- GH#7959: prepared statement freed twice
+- GH#7960: A batch ending in a recursive CTE with a `LIKE` predicate
+  crashes during MAL pushselect optimization (`isLikeOp`).
+- GH#7970: Redundant INNER JOIN predicate avoids a large intermediate
+  result before a LEFT JOIN
+- GH#7971: Server crash on PREPARE when a parameter is cast to DECIMAL
+  without precision
+- GH#7977: prepare should fail on optimization errors.
+- GH#7978: memory leak on recompile of prepared statements
+- GH#7979: lots of prepare statements could give: undefined function error.
+- GH#7981: `NOT` over a false self-comparison returns `false`
+- GH#7991: Window `GROUP_CONCAT` mishandles a NULL separator
+- GH#7999: `NOT (NOT (x > c))` returns extra rows
+- GH#8006: `field()` function returns multiple rows when the searched
+  value appears more than once
+- GH#8023: Query Timeouts for many-core servers with Docker limitations
+- GH#8027: `HAVING` keeps a group whose boolean is FALSE; the same boolean
+  prints TRUE in SELECT and is FALSE under `WHERE` on its alias
+
 * Mon Jun 15 2026 Sjoerd Mullender <sjoerd@acm.org> - 11.55.7-20260615
 - Rebuilt.
 - GH#7729: MonetDB server (Mar2025-SP2-release) crashes at `tail_type`
