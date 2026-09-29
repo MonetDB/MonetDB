@@ -6,7 +6,7 @@
 #
 # For copyright information, see the file debian/copyright.
 
-%global version 11.55.9
+%global version 11.55.10
 
 # Use bcond_with to add a --with option; i.e., "without" is default.
 # Use bcond_without to add a --without option; i.e., "with" is default.
