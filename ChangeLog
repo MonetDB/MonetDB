@@ -1,6 +1,11 @@
 # ChangeLog file for devel
 # This file is updated with Maddlog
 
+* Mon Sep 28 2026 Sjoerd Mullender <sjoerd@acm.org>
+- The example udf extension module has been removed.  For example
+  extensions, see https://www.monetdb.org/hg/MonetDB-extend/.  Note that
+  the udf module was not loaded automatically on startup of the server.
+
 * Thu Sep 17 2026 Sjoerd Mullender <sjoerd@acm.org>
 - It is now possible to use --set usr1_outputfile=... to specify a file
   where the output for the SIGUSR1 signal is to be written.  The file
