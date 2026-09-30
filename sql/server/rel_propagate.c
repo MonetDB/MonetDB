@@ -260,7 +260,7 @@ add_check_count(mvc *sql,  sql_exp *a, sql_exp *b)
 	if (!a)
 		return b;
 	sql_subtype *lng = sql_fetch_localtype(TYPE_lng);
-    sql_subfunc *add = sql_bind_func_result(sql, "sys", "sql_add", F_FUNC, true, lng, 2, lng, lng);
+	sql_subfunc *add = sql_bind_func_result(sql, "sys", "sql_add", F_FUNC, true, lng, 2, lng, lng);
 	return exp_binop(sql->sa, a, b, add);
 }
 

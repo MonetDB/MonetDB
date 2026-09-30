@@ -26,7 +26,7 @@ static void
 obj_lock_init( MT_Lock *l, char c, sqlid id)
 {
 	char name[MT_NAME_LEN];
-    snprintf(name, sizeof(name), "%clock%d", c, id); /* fits */
+	snprintf(name, sizeof(name), "%clock%d", c, id); /* fits */
 	MT_lock_init(l, name);
 }
 
