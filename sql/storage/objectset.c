@@ -43,9 +43,9 @@ typedef struct objectversion {
 } objectversion;
 
 typedef struct versionhead  {
-    struct versionhead * prev;
-    struct versionhead * next;
-    objectversion* ov;
+	struct versionhead * prev;
+	struct versionhead * next;
+	objectversion* ov;
 } versionhead ;
 
 typedef struct objectset {

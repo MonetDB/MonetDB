@@ -435,7 +435,7 @@ _create_relational_remote_body(mvc *m, const char *mod, const char *name, sql_re
 	if (!temp)
 		GDKfree(username);
 	pwlen = strlen(password);
-    pwhash = (char*)ma_alloc(ta, pwlen + 2);
+	pwhash = (char*)ma_alloc(ta, pwlen + 2);
 	if (pwhash == NULL) {
 		goto cleanup;
 	}

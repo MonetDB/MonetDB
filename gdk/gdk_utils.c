@@ -2543,7 +2543,7 @@ ma_close(const allocator_state *state)
 bool
 ma_tmp_active(const allocator *a)
 {
-    return a && (a->tmp_used > 0);
+	return a && (a->tmp_used > 0);
 }
 
 #undef ma_free
