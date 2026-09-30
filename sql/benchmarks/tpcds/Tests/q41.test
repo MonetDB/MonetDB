@@ -1,3 +1,5 @@
+hash-threshold 1000
+
 query T nosort
 -- query 41
 select  distinct(i_product_name)

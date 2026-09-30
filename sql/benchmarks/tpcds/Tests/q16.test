@@ -1,3 +1,5 @@
+hash-threshold 1000
+
 query IDD nosort
 -- query 16
 select
@@ -29,7 +31,5 @@ and not exists(select *
 order by count(distinct cs_order_number)
 limit 100
 ----
-236
-1062963.89
--214910.61
+236	1062963.89	-214910.61
 
