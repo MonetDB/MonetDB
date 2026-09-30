@@ -80,6 +80,8 @@ hashge = False                  # may get updated at start of testing
 
 skipidx = re.compile(r'create index .* \b(asc|desc)\b', re.I)
 
+hash_threshold = 100            # default value for hash-threshold
+
 
 class UnsafeDirectoryHandler(pymonetdb.SafeDirectoryHandler):
     def __init__(self, srcdir, data_dir:Optional[Path]=None, **kwargs):
@@ -149,7 +151,7 @@ class SQLLogic:
         self.hostname = None
         self.port = None
         self.approve = None
-        self.threshold = 100
+        self.threshold = hash_threshold
         self.seenerr = False    # there was an error before timeout
         self.timedout = False   # there was a timeout
         self.__last = ''
@@ -173,7 +175,7 @@ class SQLLogic:
     def connect(self, username='monetdb', password='monetdb',
                 hostname='localhost', port=None, database=None, usock=None,
                 language='sql', data_dir: Optional[Path]=None,
-                threshold: Optional[int]=100,
+                threshold: Optional[int]=hash_threshold,
                 timeout: Optional[int]=0, alltests=False,
                 server=None):
         self.starttime = time.time()
@@ -907,6 +909,9 @@ class SQLLogic:
         else:
             self.crs.execute(f'clients.setsessiontimeout({timeout}:int)')
         skiprest = False
+        if self.threshold != hash_threshold:
+            self.writeline(f'hash-threshold {self.threshold}')
+            self.writeline()
         while True:
             skipping = skiprest
             line = self.readline()
@@ -975,9 +980,11 @@ class SQLLogic:
                     words = line.split(maxsplit=2)
             hashlabel = None
             if words[0] == 'hash-threshold':
-                self.threshold = int(words[1])
-                self.writeline(line.rstrip())
-                self.writeline()
+                threshold = int(words[1])
+                if threshold != self.threshold:
+                    self.threshold = threshold
+                    self.writeline(line.rstrip())
+                    self.writeline()
             elif words[0] == 'statement':
                 expected_err_code = None
                 expected_err_msg = None
@@ -1137,7 +1144,7 @@ if __name__ == '__main__':
                         help='file in which to produce a new .test file '
                         'with updated results')
     parser.add_argument('--hash-threshold', action='store',
-                        type=int, default=100,
+                        type=int, default=hash_threshold,
                         help='default hash-threshold value')
     parser.add_argument('--define', action='append',
                         help='define substitution for $var as var=replacement'
