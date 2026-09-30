@@ -1,4 +1,6 @@
-query TTTIIIIRIIIIRIIIIR rowsort
+hash-threshold 1000
+
+query TTTIIIIRIIIIRIIIIR nosort
 -- query 35a
 select
   ca_state,
@@ -59,5 +61,5 @@ select
           cd_dep_college_count
  limit 100
 ----
-1800 values hashing to 1d2ac51e16f61668fdfcded8eb917f10
+1800 values hashing to 86c162969882cb545e292aecd3488c56
 

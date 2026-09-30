@@ -1,4 +1,6 @@
-query TTTTDDDDDDD rowsort
+hash-threshold 1000
+
+query TTTTDDDDDDD nosort
 -- query 18
 select  i_item_id,
         ca_country,
@@ -32,5 +34,5 @@ select  i_item_id,
 	i_item_id
  limit 100
 ----
-1100 values hashing to a4be1e167a153143355ebebe0c798274
+1100 values hashing to 3154a950bf172f1637a0b1f539618501
 

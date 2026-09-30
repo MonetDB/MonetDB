@@ -1,3 +1,5 @@
+hash-threshold 1000
+
 query TIIIDITIIIDI nosort
 -- query 14a-2
  with  cross_items as

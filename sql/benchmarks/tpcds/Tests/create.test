@@ -49,7 +49,7 @@ create table date_dim
 (
     d_date_sk                 integer               not null,
     d_date_id                 char(16)              not null,
-    d_date                    date                          ,
+    d_date                    date                  not null,
     d_month_seq               integer                       ,
     d_week_seq                integer                       ,
     d_quarter_seq             integer                       ,
@@ -115,7 +115,7 @@ create table time_dim
 (
     t_time_sk                 integer               not null,
     t_time_id                 char(16)              not null,
-    t_time                    integer                       ,
+    t_time                    integer               not null,
     t_hour                    integer                       ,
     t_minute                  integer                       ,
     t_second                  integer                       ,
@@ -264,7 +264,7 @@ create table customer
     c_birth_country           varchar(20)                   ,
     c_login                   char(13)                      ,
     c_email_address           char(50)                      ,
-    c_last_review_date        integer                       ,
+    c_last_review_date        char(10)                      ,
     primary key (c_customer_sk)
 )
 
