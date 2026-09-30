@@ -333,17 +333,17 @@ exp_timezone(visitor *v, sql_rel *rel, sql_exp *e, int depth)
 		sql_subfunc *f = e->f;
 		const char *fname = f->func->base.name;
 		if (list_length(l) == 2) {
-		   if (strcmp(fname, "timestamp_to_str") == 0 || strcmp(fname, "time_to_str") == 0) {
-                sql_exp *e = l->h->data;
-                sql_subtype *t = exp_subtype(e);
-                if (t->type->eclass == EC_TIMESTAMP_TZ || t->type->eclass == EC_TIME_TZ) {
-                    sql_exp *offset = exp_atom_lng(v->sql->sa, v->sql->timezone);
-                    list_append(l, offset);
-                }
-            } else if (strcmp(fname, "str_to_timestamp") == 0 || strcmp(fname, "str_to_time") == 0 || strcmp(fname, "str_to_date") == 0) {
-                sql_exp *offset = exp_atom_lng(v->sql->sa, v->sql->timezone);
-                list_append(l, offset);
-            }
+			if (strcmp(fname, "timestamp_to_str") == 0 || strcmp(fname, "time_to_str") == 0) {
+				sql_exp *e = l->h->data;
+				sql_subtype *t = exp_subtype(e);
+				if (t->type->eclass == EC_TIMESTAMP_TZ || t->type->eclass == EC_TIME_TZ) {
+					sql_exp *offset = exp_atom_lng(v->sql->sa, v->sql->timezone);
+					list_append(l, offset);
+				}
+			} else if (strcmp(fname, "str_to_timestamp") == 0 || strcmp(fname, "str_to_time") == 0 || strcmp(fname, "str_to_date") == 0) {
+				sql_exp *offset = exp_atom_lng(v->sql->sa, v->sql->timezone);
+				list_append(l, offset);
+			}
 		}
 	}
 	return e;

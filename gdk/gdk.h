@@ -1775,7 +1775,7 @@ gdk_export allocator_state ma_open(allocator *sa);  /* open new frame of tempory
 gdk_export void ma_close(const allocator_state *); /* close temporary frame, reset to old state */
 gdk_export void ma_free(allocator *sa, void *);
 gdk_export exception_buffer *ma_get_eb(allocator *sa)
-       __attribute__((__pure__));
+	__attribute__((__pure__));
 
 gdk_export int ma_info(allocator *sa, char *buf, size_t buflen, const char *pref);
 

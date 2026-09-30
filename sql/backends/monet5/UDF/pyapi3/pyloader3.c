@@ -46,9 +46,9 @@ pyapi_list_length(list *l)
 
 str
 PYAPI3PyAPIevalLoader(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci) {
-    sql_func * sqlfun;
-    sql_subfunc * sqlmorefun;
-    str exprStr;
+	sql_func * sqlfun;
+	sql_subfunc * sqlmorefun;
+	str exprStr;
 
 	const int additional_columns = 2;
 	int i = 1, ai = 0;

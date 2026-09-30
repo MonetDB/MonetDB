@@ -53,7 +53,7 @@ validate_bit(void *dst_, size_t count, int width, const char *filename)
 					throw(SQL, "convert", SQLSTATE(22003) "decimal out of range in %s", filename); \
 			} \
 		} \
-    } while (0)
+	} while (0)
 
 
 static str

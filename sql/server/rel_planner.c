@@ -97,7 +97,7 @@ memoitem_create( list *memo, allocator *sa, const char *lname, const char *rname
 		name = merge_names(sa, lname, rname);
 	if (memo_find(memo, name))
 		return NULL;
-       	mi = SA_NEW(sa, memoitem);
+	mi = SA_NEW(sa, memoitem);
 	mi->name = ma_strdup(sa, name);
 	mi->joins = (rname)?sa_list(sa):NULL;
 	mi->done = (rname)?0:1;

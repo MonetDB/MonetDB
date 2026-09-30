@@ -1305,7 +1305,7 @@ argument(Client ctx, mel_func *curFunc, mel_arg *curArg)
 		int tt = getBatType(type);
 		if (tt != TYPE_any) {
 			assert(strlen(BATatoms[tt].name) < 14);
-            strcpy(curArg->type, BATatoms[tt].name);
+			strcpy(curArg->type, BATatoms[tt].name);
 		}
 		if (isaBatType(type))
 			curArg->isbat = true;
@@ -1320,7 +1320,7 @@ argument(Client ctx, mel_func *curFunc, mel_arg *curArg)
 		int tt = getBatType(type);
 		if (tt != TYPE_any) {
 			assert(strlen(BATatoms[tt].name) < 14);
-            strcpy(curArg->type, BATatoms[tt].name);
+			strcpy(curArg->type, BATatoms[tt].name);
 		}
 		if (isaBatType(type))
 			curArg->isbat = true;

@@ -100,7 +100,7 @@ libgeom_export GEOSContextHandle_t libgeom_tls(void);
 #define geoshandle (libgeom_tls())
 
 typedef enum wkb_type {
-    // TODO: deprecated	type REMOVE
+	// TODO: deprecated	type REMOVE
 	//wkbGeometry_mbd = 0,
 	wkbPoint_mdb = 1,
 	wkbLineString_mdb = 2,

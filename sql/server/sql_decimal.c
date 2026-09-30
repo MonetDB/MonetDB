@@ -18,9 +18,9 @@ decimal_from_str(const char *dec, int* digits, int* scale, int* has_errors)
 {
 
 #ifdef HAVE_HGE
-    const hge max0 = GDK_hge_max / 10, max1 = GDK_hge_max % 10;
+	const hge max0 = GDK_hge_max / 10, max1 = GDK_hge_max % 10;
 #else
-    const lng max0 = GDK_lng_max / 10, max1 = GDK_lng_max % 10;
+	const lng max0 = GDK_lng_max / 10, max1 = GDK_lng_max % 10;
 #endif
 
 	assert(digits);

@@ -63,9 +63,9 @@ str unicode_to_timestamp(allocator *, wchar_t *ptr, size_t maxsize, timestamp *v
 
 //using macros, create a number of str_to_<type>, unicode_to_<type> and pyobject_to_<type> functions (we are Java now)
 #define CONVERSION_FUNCTION_HEADER_FACTORY(tpe)          \
-    str str_to_##tpe(allocator *, const char *ptr, size_t maxsize, tpe *value);          \
-    str unicode_to_##tpe(allocator *, wchar_t *ptr, size_t maxsize, tpe *value);                  \
-    str pyobject_to_##tpe(allocator *, PyObject **ptr, size_t maxsize, tpe *value);
+	str str_to_##tpe(allocator *, const char *ptr, size_t maxsize, tpe *value);	\
+	str unicode_to_##tpe(allocator *, wchar_t *ptr, size_t maxsize, tpe *value); \
+	str pyobject_to_##tpe(allocator *, PyObject **ptr, size_t maxsize, tpe *value);
 
 CONVERSION_FUNCTION_HEADER_FACTORY(bte)
 CONVERSION_FUNCTION_HEADER_FACTORY(oid)

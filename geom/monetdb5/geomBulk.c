@@ -767,11 +767,11 @@ wkbTransform_bat_cand(bat *outBAT_id, bat *inBAT_id, bat *s_id, int *srid_src, i
 
 	//Create PROJ transformation object with PROJ strings passed as argument
 	P = proj_create_crs_to_crs(PJ_DEFAULT_CTX,
-                               *proj4_src_str,
-                               *proj4_dst_str,
-                               NULL);
+							   *proj4_src_str,
+							   *proj4_dst_str,
+							   NULL);
 	if (P==0)
-        throw(MAL, "batgeom.Transform", SQLSTATE(38000) "PROJ initialization failed");
+		throw(MAL, "batgeom.Transform", SQLSTATE(38000) "PROJ initialization failed");
 
 	//get the descriptor of the BAT
 	if ((inBAT = BATdescriptor(*inBAT_id)) == NULL) {

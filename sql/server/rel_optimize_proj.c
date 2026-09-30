@@ -895,7 +895,7 @@ rel_split_project_(visitor *v, sql_rel *rel, int top)
 		return NULL;
 
 	if (v->opt >= 0 && rel->opt >= v->opt) /* only once */
-        return rel;
+		return rel;
 
 	if (is_project(rel->op) && list_length(rel->exps) && (is_groupby(rel->op) || rel->l) && !need_distinct(rel) && !is_single(rel)) {
 		list *exps = rel->exps;
@@ -951,7 +951,7 @@ rel_split_project_(visitor *v, sql_rel *rel, int top)
 			return NULL;
 	}
 	if (rel && v->opt >= 0)
-        rel->opt = v->opt;
+		rel->opt = v->opt;
 	return rel;
 }
 

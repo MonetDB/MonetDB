@@ -22,16 +22,16 @@
 static InstrPtr
 pushNilAt(MalBlkPtr mb, InstrPtr p, int pos)
 {
-    int i;
+	int i;
 
-    p = pushNilBat(mb, p);   /* push at end */
+	p = pushNilBat(mb, p);   /* push at end */
     if (mb->errors == NULL) {
 		int arg = getArg(p, p->argc - 1);
-        for (i = p->argc - 1; i > pos; i--)
-            getArg(p, i) = getArg(p, i - 1);
-        getArg(p, pos) = arg;
-    }
-    return p;
+		for (i = p->argc - 1; i > pos; i--)
+			getArg(p, i) = getArg(p, i - 1);
+		getArg(p, pos) = arg;
+	}
+	return p;
 }
 
 static int

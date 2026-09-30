@@ -3276,7 +3276,7 @@ rel_binop_(mvc *sql, sql_rel *rel, sql_exp *l, sql_exp *r, char *sname, char *fn
 	/* swap complex types (intervals) to left side of +, * */
 	if (t1 && t2 && is_commutative(sname, fname)) {
 		if ((EC_INTERVAL(t1->type->eclass) && EC_TEMP(t2->type->eclass)) ||
-           ((!EC_TEMP(t1->type->eclass) && !EC_INTERVAL(t1->type->eclass)) && EC_INTERVAL(t2->type->eclass))) {
+			((!EC_TEMP(t1->type->eclass) && !EC_INTERVAL(t1->type->eclass)) && EC_INTERVAL(t2->type->eclass))) {
 			sql_subtype *tmp = t1;
 			t1 = t2;
 			t2 = tmp;
@@ -3332,20 +3332,20 @@ inplace_func(mvc *sql)
 {
 	sql_func *f = SA_NEW(sql->sa, sql_func);
 
-    *f = (sql_func) {
-        .mod = "",
-        .imp = "",
-        .type = F_PROC,
-        .lang = FUNC_LANG_INT,
-        .query = NULL,
-        .ops = sql->params,
-        .res = NULL,
-    };
-    base_init(sql->sa, &f->base, 0, true, NULL);
-    f->base.new = 1;
-    f->base.id = -1;
-    f->base.name = "-1";
-    f->instantiated = TRUE;
+	*f = (sql_func) {
+		.mod = "",
+		.imp = "",
+		.type = F_PROC,
+		.lang = FUNC_LANG_INT,
+		.query = NULL,
+		.ops = sql->params,
+		.res = NULL,
+	};
+	base_init(sql->sa, &f->base, 0, true, NULL);
+	f->base.new = 1;
+	f->base.id = -1;
+	f->base.name = "-1";
+	f->instantiated = TRUE;
 	return f;
 }
 
@@ -3462,8 +3462,10 @@ rel_nop(sql_query *query, sql_rel **rel, symbol *se, int fs, exp_kind ek)
 		sql_subtype *t1 = tl->h->data;
 		sql_subtype *t2 = tl->t->data;
 
-		if (t1 && t2 && ((EC_INTERVAL(t1->type->eclass) && EC_TEMP(t2->type->eclass)) ||
-           ((!EC_TEMP(t1->type->eclass) && !EC_INTERVAL(t1->type->eclass)) && EC_INTERVAL(t2->type->eclass)))) {
+		if (t1 && t2 &&
+			((EC_INTERVAL(t1->type->eclass) && EC_TEMP(t2->type->eclass)) ||
+			 ((!EC_TEMP(t1->type->eclass) && !EC_INTERVAL(t1->type->eclass)) &&
+			  EC_INTERVAL(t2->type->eclass)))) {
 			list_revert(exps);
 			list_revert(tl);
 		}

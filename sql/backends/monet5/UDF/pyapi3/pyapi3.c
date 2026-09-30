@@ -880,7 +880,7 @@ bailout:
 static str
 PyAPI3prelude(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-    (void)cntxt; (void)mb; (void)stk; (void)pci;
+	(void)cntxt; (void)mb; (void)stk; (void)pci;
 	return PYAPI3PyAPIprelude();
 }
 
@@ -888,7 +888,7 @@ static str
 PyAPI3epilogue(Client cntxt, void *ret)
 {
 	(void)cntxt;
-    (void)ret;
+	(void)ret;
 	MT_lock_set(&pyapiLock);
 	if (pyapiInitialized) {
 		PyGILState_STATE gstate;
@@ -899,7 +899,7 @@ PyAPI3epilogue(Client cntxt, void *ret)
 		(void)gstate;
 	}
 	MT_lock_unset(&pyapiLock);
-    return MAL_SUCCEED;
+	return MAL_SUCCEED;
 }
 
 #include "mel.h"

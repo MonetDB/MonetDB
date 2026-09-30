@@ -239,7 +239,7 @@ typedef struct store_functions {
 	prop_col_fptr unique_col;
 	prop_col_fptr double_elim_col; /* varsize col with double elimination */
 	proprec_col_fptr col_stats;
-    col_set_range_fptr col_set_range; /* set range properties to the column low level structures */
+	col_set_range_fptr col_set_range; /* set range properties to the column low level structures */
 	col_not_null_fptr col_not_null;	/* switch not null property */
 	col_subtype_fptr col_subtype;	/* switch types */
 

@@ -260,12 +260,12 @@ wkbCollectAggr(Client ctx, wkb **out, const bat *bid) {
 	if (*out == NULL)
 		msg = createException(MAL, "geom.ConvexHull", SQLSTATE(38000) "Geos operation geos2wkb failed");
 
-    // Cleanup
-    // Data ownership has been transferred from unionGroup elements to
-    // collection. Check libgeos GEOSGeom_createCollection_r(geoshandle, ) for more.
-    bat_iterator_end(&bi);
-    GEOSGeom_destroy_r(geoshandle, collection);
-    BBPunfix(b->batCacheid);
+	// Cleanup
+	// Data ownership has been transferred from unionGroup elements to
+	// collection. Check libgeos GEOSGeom_createCollection_r(geoshandle, ) for more.
+	bat_iterator_end(&bi);
+	GEOSGeom_destroy_r(geoshandle, collection);
+	BBPunfix(b->batCacheid);
 
 	return msg;
 }
@@ -682,11 +682,11 @@ wkbTransform(Client ctx, wkb **transformedWKB, wkb **geomWKB, int *srid_src, int
 	}
 	//Create PROJ transformation object with PROJ strings passed as argument
 	P = proj_create_crs_to_crs(PJ_DEFAULT_CTX,
-                               *proj4_src_str,
-                               *proj4_dst_str,
-                               NULL);
+							   *proj4_src_str,
+							   *proj4_dst_str,
+							   NULL);
 	if (P==0)
-        throw(MAL, "geom.Transform", SQLSTATE(38000) "PROJ initialization failed");
+		throw(MAL, "geom.Transform", SQLSTATE(38000) "PROJ initialization failed");
 
 	/* get the geosGeometry from the wkb */
 	geosGeometry = wkb2geos(*geomWKB);

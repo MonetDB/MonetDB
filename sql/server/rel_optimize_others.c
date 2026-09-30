@@ -1020,7 +1020,7 @@ rel_dce_sub(visitor *v, sql_rel *rel)
 	if (!rel)
 		return rel;
 	if (v->opt >= 0 && rel->opt >= v->opt) /* only once */
-        return rel;
+		return rel;
 
 	/*
 	 * Mark used up until the next project
@@ -1031,7 +1031,7 @@ rel_dce_sub(visitor *v, sql_rel *rel)
 	rel = rel_remove_unused(v->sql, rel);
 	rel_dce_down(v, rel, 1);
 	if (rel && v->opt >= 0)
-        rel->opt = v->opt;
+		rel->opt = v->opt;
 	return rel;
 }
 
@@ -1043,7 +1043,7 @@ rel_add_projects(visitor *v, sql_rel *rel)
 		return rel;
 
 	if (v->opt >= 0 && rel->opt >= v->opt) /* only once */
-        return rel;
+		return rel;
 
 	switch(rel->op) {
 	case op_basetable:
@@ -1118,7 +1118,7 @@ rel_add_projects(visitor *v, sql_rel *rel)
 		break;
 	}
 	if (rel && v->opt >= 0)
-        rel->opt = v->opt;
+		rel->opt = v->opt;
 	return rel;
 }
 

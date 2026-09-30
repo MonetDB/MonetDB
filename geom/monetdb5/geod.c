@@ -1254,59 +1254,59 @@ geodeticEdgeBoundingBox(const CartPoint3D* p1, const CartPoint3D* p2, BoundingBo
 	CartPoint2D s1, s2, ep, o;
 	int rotation_to_origin, rotation_to_ep;
 
-    // check coinciding points
+	// check coinciding points
 	if (FP_EQUALS(p1->x,p2->x) && FP_EQUALS(p1->y,p2->y) && FP_EQUALS(p1->z,p2->z))
 		return MAL_SUCCEED;
-    // check antipodal points
+	// check antipodal points
 	if (FP_EQUALS(p1->x,-p2->x) && FP_EQUALS(p1->y,-p2->y) && FP_EQUALS(p1->z,-p2->z))
 		throw(MAL, "geom.geodeticEdgeBoundingBox", SQLSTATE(38000) "Antipodal edge");
 
-    // create the great circle plane coord system (p1, p3)
-    // pn = p1 x p2
-    // p3 = pn x p1
+	// create the great circle plane coord system (p1, p3)
+	// pn = p1 x p2
+	// p3 = pn x p1
 	// TODO handle the narrow and wide angle cases
 	pn = crossProduct(p1,p2);
 	normalize3D(&pn);
 	p3 = crossProduct(&pn,p1);
 	normalize3D(&p3);
 
-    // represent p1, p2 with (s1, s2) 2-D space
-    // s1.x = 1, s1.y = 0
-    // s2.x = p2 * p1, s2.y = p2 * p3
+	// represent p1, p2 with (s1, s2) 2-D space
+	// s1.x = 1, s1.y = 0
+	// s2.x = p2 * p1, s2.y = p2 * p3
 	s1.x = 1;
 	s1.y = 0;
 	s2.x = dotProduct(p2, p1);
 	s2.y = dotProduct(p2, &p3);
-    // 2-D space origin
-    // O.x = 0, O.y = 0
+	// 2-D space origin
+	// O.x = 0, O.y = 0
 	o.x = 0;
 	o.y = 0;
 
-    // create 3D endpoints E.x, E.-x, ...
-    // E.x = (1, 0, 0), E.-x = (-1, 0, 0) ...
+	// create 3D endpoints E.x, E.-x, ...
+	// E.x = (1, 0, 0), E.-x = (-1, 0, 0) ...
 	memset(e, 0, sizeof(CartPoint2D) * 6);
 	e[0].x = e[1].y = e[2].z = 1;
 	e[3].x = e[4].y = e[5].z = -1;
 
-    // find the rotation between s1->s2 and s1->O
-    // rot = norm( vec(s1,s2) x vec(s1,0))
+	// find the rotation between s1->s2 and s1->O
+	// rot = norm( vec(s1,s2) x vec(s1,0))
 	rotation_to_origin = angleRotation(s1,s2,o);
 
-    // for every endpoint E
+	// for every endpoint E
 	for (int i = 0; i < 6; i++) {
 		// project the endpoint in the 2-D space
 		ep.x = dotProduct(&e[i],p1);
 		ep.y = dotProduct(&e[i],&p3);
-        // re-normalize it e.g. EP (for endpoint_projection)
+		// re-normalize it e.g. EP (for endpoint_projection)
 		normalize2D(&ep);
-        // ep_rot = norm( vec(s1,s2) x vec(s1,EP_end) )
+		// ep_rot = norm( vec(s1,s2) x vec(s1,EP_end) )
 		rotation_to_ep = angleRotation(s1,s2,ep);
 		if (rotation_to_origin != rotation_to_ep) {
 			// convert the 2-D EP into 3-D space
 			ep3d.x = ep.x * p1->x + ep.y * p3.x;
 			ep3d.y = ep.x * p1->y + ep.y * p3.y;
 			ep3d.z = ep.x * p1->z + ep.y * p3.z;
-            // expand the mbox in order to include 3-D representation of EP
+			// expand the mbox in order to include 3-D representation of EP
 			boundingBoxAddPoint(mbox,ep3d);
 		}
 	}

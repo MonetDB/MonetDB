@@ -41,7 +41,7 @@ sql_set_stats(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci, int type)
 	if (!c || !t || !s)
 		throw(SQL, "sql.set_stats", SQLSTATE(42000) "Cannot not find Column '%s.%s.%s'", sch, tbl, col);
 	sql_trans *tr = m->session->tr;
-    sqlstore *store = tr->store;
+	sqlstore *store = tr->store;
 	if (type > 0) {
 		if (getArgType(mb, pci, 4) != c->type.type->localtype)
 			throw(SQL, "sql.set_stats", SQLSTATE(42000) "Wrong value type '%s'", BATatoms[getArgType(mb, pci, 4)].name);
