@@ -54,21 +54,16 @@ ORDER BY t1.v
 
 -- Note: standalone query with sum window function works
 -- Note that the value -1107885.2362935220 doesn't fit in a DECIMAL(16,10), so the chosen DECIMAL(16,10) data type for column wa is too small
-query IT nosort
+query ID nosort
 SELECT v, SUM(od) OVER (PARTITION BY p ORDER BY ot ASC) AS wa
 FROM t_bug13
 ORDER BY v
 ----
--32768
--664731.1417765797
--851
--443154.0945178753
--805
--221577.0472590154
-0
--886308.1890351286
-722
--1107885.2362935220
+-32768	-664731.1417765797
+-851	-443154.0945178753
+-805	-221577.0472590154
+0	-886308.1890351286
+722	-1107885.2362935220
 
 statement ok
 DROP TABLE t_bug13

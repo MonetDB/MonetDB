@@ -139,14 +139,16 @@ lock_isset(MT_Lock *l)
 
 /* function used for debugging */
 void
-GDKlockstatistics(int what)
+GDKlockstatistics(FILE *outf, int what)
 {
 	MT_Lock *l;
 	int n = 0;
 
-	printf("Locks:\n");
+	if (outf == NULL)
+		outf = stdout;
+	fprintf(outf, "Locks:\n");
 	if (ATOMIC_TAS(&GDKlocklistlock) != 0) {
-		printf("GDKlocklistlock is set, so cannot access lock list\n");
+		fprintf(outf, "GDKlocklistlock is set, so cannot access lock list\n");
 		return;
 	}
 	if (what == -1) {
@@ -159,28 +161,28 @@ GDKlockstatistics(int what)
 		return;
 	}
 	GDKlocklist = sortlocklist(GDKlocklist);
-	printf("%-18s\t%s\t%s\t%s\t%s\t%s\t%s\n",
-	       "lock name", "count", "content", "sleep",
-	       "locked", "locker", "thread");
+	fprintf(outf, "%-18s\t%s\t%s\t%s\t%s\t%s\t%s\n",
+		"lock name", "count", "content", "sleep",
+		"locked", "locker", "thread");
 	for (l = GDKlocklist; l; l = l->next) {
 		n++;
 		if (what == 0 ||
 		    (what == 1 && l->count) ||
 		    (what == 2 && ATOMIC_GET(&l->contention)) ||
 		    (what == 3 && lock_isset(l)))
-			printf("%-18s\t%zu\t%zu\t%zu\t%s\t%s\t%s\n",
-			       l->name, l->count,
-			       (size_t) ATOMIC_GET(&l->contention),
-			       (size_t) ATOMIC_GET(&l->sleep),
-			       lock_isset(l) ? "locked" : "",
-			       l->locker ? l->locker : "",
-			       l->thread ? l->thread : "");
+			fprintf(outf, "%-18s\t%zu\t%zu\t%zu\t%s\t%s\t%s\n",
+				l->name, l->count,
+				(size_t) ATOMIC_GET(&l->contention),
+				(size_t) ATOMIC_GET(&l->sleep),
+				lock_isset(l) ? "locked" : "",
+				l->locker ? l->locker : "",
+				l->thread ? l->thread : "");
 	}
-	printf("Number of locks: %d\n", n);
-	printf("Total lock count: %zu\n", (size_t) ATOMIC_GET(&GDKlockcnt));
-	printf("Lock contention:  %zu\n", (size_t) ATOMIC_GET(&GDKlockcontentioncnt));
-	printf("Lock sleep count: %zu\n", (size_t) ATOMIC_GET(&GDKlocksleepcnt));
-	fflush(stdout);
+	fprintf(outf, "Number of locks: %d\n", n);
+	fprintf(outf, "Total lock count: %zu\n", (size_t) ATOMIC_GET(&GDKlockcnt));
+	fprintf(outf, "Lock contention:  %zu\n", (size_t) ATOMIC_GET(&GDKlockcontentioncnt));
+	fprintf(outf, "Lock sleep count: %zu\n", (size_t) ATOMIC_GET(&GDKlocksleepcnt));
+	fflush(outf);
 	ATOMIC_CLEAR(&GDKlocklistlock);
 }
 
@@ -293,28 +295,36 @@ THRhighwater(void)
 }
 
 void
-dump_threads(void)
+dump_threads(FILE *outf)
 {
 	char buf[1024];
+
+	if (outf == NULL)
+		outf = stdout;
+
 #if defined(HAVE_PTHREAD_MUTEX_TIMEDLOCK) && defined(HAVE_CLOCK_GETTIME)
 	struct timespec ts;
 	clock_gettime(CLOCK_REALTIME, &ts);
 	ts.tv_sec++;		/* give it a second */
 	if (pthread_mutex_timedlock(&posthread_lock, &ts) != 0) {
-		printf("Threads are currently locked, so no thread information\n");
+		fprintf(outf,
+			"Threads are currently locked, "
+			"so no thread information\n");
 		return;
 	}
 #else
 	if (!thread_lock_try()) {
 		MT_sleep_ms(1000);
 		if (!thread_lock_try()) {
-		printf("Threads are currently locked, so no thread information\n");
+			fprintf(outf,
+				"Threads are currently locked, "
+				"so no thread information\n");
 			return;
 		}
 	}
 #endif
 	if (!GDK_TRACER_TEST(M_DEBUG, THRD))
-		printf("Threads:\n");
+		fprintf(outf, "Threads:\n");
 	for (struct mtthread *t = mtthreads; t; t = t->next) {
 		MT_Lock *lk = ATOMIC_PTR_GET(&t->lockwait);
 		MT_Sema *sm = ATOMIC_PTR_GET(&t->semawait);
@@ -332,7 +342,8 @@ dump_threads(void)
 #ifdef HAVE_GETTID
 				   "LWP %ld, "
 #endif
-				   "%"PRIu32" free bats, waiting for %s%s%s, working on %.200s",
+				   "%" PRIu32 " free bats, waiting for %s%s%s, "
+				   "working on %.200s",
 				   t->threadname,
 				   t->tid,
 #ifdef HAVE_PTHREAD_H
@@ -356,9 +367,11 @@ dump_threads(void)
 		}
 #endif
 		TRC_DEBUG_IF(THRD)
-			TRC_DEBUG_ENDIF(THRD, "%s%s\n", buf, pos >= (int) sizeof(buf) ? "..." : "");
+			TRC_DEBUG_ENDIF(THRD, "%s%s\n", buf,
+					pos >= (int) sizeof(buf) ? "..." : "");
 		else
-			printf("%s%s\n", buf, pos >= (int) sizeof(buf) ? "..." : "");
+			fprintf(outf, "%s%s\n", buf,
+				pos >= (int) sizeof(buf) ? "..." : "");
 	}
 	thread_unlock();
 }
@@ -1177,6 +1190,40 @@ MT_kill_threads(void)
 }
 
 int
+parse_cpuset(FILE *f)
+{
+	int ncpu = 0;
+	char buf[512];
+	char *p = fgets(buf, 512, f);
+	if (p != NULL) {
+		/* syntax is: ranges of CPU numbers separated by comma;
+		 * a range is either a single CPU id, or two IDs
+		 * separated by a minus; any deviation causes the file
+		 * to be ignored */
+		for (;;) {
+			char *q;
+			unsigned fst = strtoul(p, &q, 10);
+			if (q == p)
+				return 0;
+			ncpu++;
+			if (*q == '-') {
+				p = q + 1;
+				unsigned lst = strtoul(p, &q, 10);
+				if (q == p || lst <= fst)
+					return 0;
+				ncpu += lst - fst;
+			}
+			if (*q == '\n')
+				break;
+			if (*q != ',')
+				return 0;
+			p = q + 1;
+		}
+	}
+	return ncpu;
+}
+
+int
 MT_check_nr_cores(void)
 {
 	int ncpus = -1;
@@ -1220,38 +1267,28 @@ MT_check_nr_cores(void)
 
 #ifndef WIN32
 	/* get the number of allocated cpus from the cgroup settings */
-	FILE *f = fopen("/sys/fs/cgroup/cpuset/cpuset.cpus", "r");
+	FILE *f = fopen("/sys/fs/cgroup/cpuset/cpuset.cpus", "r"); /* v1 */
+	if (f == NULL)
+		f = fopen("/sys/fs/cgroup/cpuset.cpus.effective", "r"); /* v2 */
 	if (f != NULL) {
-		char buf[512];
-		char *p = fgets(buf, 512, f);
+		int ncpu = parse_cpuset(f);
 		fclose(f);
-		if (p != NULL) {
-			/* syntax is: ranges of CPU numbers separated
-			 * by comma; a range is either a single CPU
-			 * id, or two IDs separated by a minus; any
-			 * deviation causes the file to be ignored */
-			int ncpu = 0;
-			for (;;) {
-				char *q;
-				unsigned fst = strtoul(p, &q, 10);
-				if (q == p)
-					return ncpus;
-				ncpu++;
-				if (*q == '-') {
-					p = q + 1;
-					unsigned lst = strtoul(p, &q, 10);
-					if (q == p || lst <= fst)
-						return ncpus;
-					ncpu += lst - fst;
-				}
-				if (*q == '\n')
-					break;
-				if (*q != ',')
-					return ncpus;
-				p = q + 1;
+		if (ncpu > 0 && ncpu < ncpus)
+			ncpus = ncpu;
+	} else {
+		f = fopen("/sys/fs/cgroup/cpu.max", "r");
+		if (f != NULL) {
+			uint64_t quota, period;
+			/* there should either be two numbers, or the
+			 * word "max" followed by a number; the latter
+			 * case is ignored by the fscanf not returning
+			 * 2 */
+			if (fscanf(f, "%" SCNu64 " %" SCNu64, &quota, &period) == 2 && period > 0) {
+				int ncpu = quota / period;
+				if (ncpu < ncpus)
+					ncpus = ncpu;
 			}
-			if (ncpu < ncpus)
-				return ncpu;
+			fclose(f);
 		}
 	}
 #endif

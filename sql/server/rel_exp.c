@@ -2151,50 +2151,50 @@ exp_is_cmp_exp_is_false(sql_exp* e)
 static inline bool
 exp_single_bound_cmp_exp_is_false(sql_exp* e)
 {
-    assert(e->type == e_cmp);
-    sql_exp* l = e->l;
-    sql_exp* r = e->r;
-    assert(e->f == NULL);
-    assert (l && r);
+	assert(e->type == e_cmp);
+	sql_exp* l = e->l;
+	sql_exp* r = e->r;
+	assert(e->f == NULL);
+	assert (l && r);
 
 	if (e->flag == cmp_equal) {
 		if (exp_is_false(e->l) && exp_is_true(e->r))
 			return true;
 	}
-    return exp_is_null(l) || exp_is_null(r);
+	return exp_is_null(l) || exp_is_null(r);
 }
 
 static inline bool
 exp_two_sided_bound_cmp_exp_is_false(sql_exp* e)
 {
-    assert(e->type == e_cmp);
-    sql_exp* v = e->l;
-    sql_exp* l = e->r;
-    sql_exp* h = e->f;
-    assert (v && l && h);
+	assert(e->type == e_cmp);
+	sql_exp* v = e->l;
+	sql_exp* l = e->r;
+	sql_exp* h = e->f;
+	assert (v && l && h);
 
-    return is_anti(e) ? exp_is_null(v) || (exp_is_null(l) && exp_is_null(h)) : false;
+	return is_anti(e) ? exp_is_null(v) || (exp_is_null(l) && exp_is_null(h)) : false;
 }
 
 static inline bool
 exp_regular_cmp_exp_is_false(sql_exp* e)
 {
-    assert(e->type == e_cmp);
+	assert(e->type == e_cmp);
 
 	if (is_any(e))
 		return false;
-    if (e -> f)
+	if (e -> f)
 		return exp_two_sided_bound_cmp_exp_is_false(e);
-    if (is_semantics(e) && !is_any(e))
+	if (is_semantics(e) && !is_any(e))
 		return exp_is_cmp_exp_is_false(e);
-    else
+	else
 		return exp_single_bound_cmp_exp_is_false(e);
 }
 
 static inline bool
 exp_con_exp_is_false(sql_exp* e)
 {
-    assert(e->type == e_cmp && e->flag == cmp_con);
+	assert(e->type == e_cmp && e->flag == cmp_con);
 	if (is_anti(e))
 		return false;
 	list* exps = e->l;
@@ -2208,7 +2208,7 @@ exp_con_exp_is_false(sql_exp* e)
 static inline bool
 exp_dis_exp_is_false(sql_exp* e)
 {
-    assert(e->type == e_cmp && e->flag == cmp_dis);
+	assert(e->type == e_cmp && e->flag == cmp_dis);
 	list* exps = e->l;
 	if (is_anti(e))
 		return false;
@@ -2222,21 +2222,21 @@ exp_dis_exp_is_false(sql_exp* e)
 static inline bool
 exp_cmp_exp_is_false(sql_exp* e)
 {
-    assert(e->type == e_cmp);
+	assert(e->type == e_cmp);
 
-    switch (e->flag) {
-    case cmp_gt:
-    case cmp_gte:
-    case cmp_lte:
-    case cmp_lt:
-    case cmp_equal:
-    case cmp_notequal:
+	switch (e->flag) {
+	case cmp_gt:
+	case cmp_gte:
+	case cmp_lte:
+	case cmp_lt:
+	case cmp_equal:
+	case cmp_notequal:
 		return exp_regular_cmp_exp_is_false(e);
-    case cmp_con:
+	case cmp_con:
 		return exp_con_exp_is_false(e);
-    case cmp_dis:
+	case cmp_dis:
 		return exp_dis_exp_is_false(e);
-    default:
+	default:
 		return false;
 	}
 }
@@ -4460,13 +4460,13 @@ list_find_exp(const list *exps, sql_exp *e)
 sql_exp*
 topn_limit(sql_rel *rel)
 {
-    if (rel->exps) {
-        sql_exp *limit = rel->exps->h->data;
-        if (exp_is_null(limit)) /* If the limit is NULL, ignore the value */
-            return NULL;
-        return limit;
-    }
-    return NULL;
+	if (rel->exps) {
+		sql_exp *limit = rel->exps->h->data;
+		if (exp_is_null(limit)) /* If the limit is NULL, ignore the value */
+			return NULL;
+		return limit;
+	}
+	return NULL;
 }
 
 int

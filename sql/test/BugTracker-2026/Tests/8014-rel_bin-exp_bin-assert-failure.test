@@ -1,0 +1,126 @@
+statement ok
+CREATE TABLE ctas_bug (
+    c1 INT PRIMARY KEY,
+    c2 VARCHAR(20),
+    c4 INT,
+    c6 VARCHAR(10)
+)
+
+statement ok rowcount 4
+INSERT INTO ctas_bug VALUES
+    (1, 'a', 10, 'x'),
+    (2, 'b', 20, 'y'),
+    (3, 'c', 30, 'z'),
+    (4, 'd', 40, 'w')
+
+query I nosort
+SELECT COUNT(*)
+FROM (
+    SELECT (c1 / NULLIF(c1, 0)) AS x,
+           COUNT(DISTINCT c4) AS y,
+           c6 AS z
+    FROM ctas_bug
+    WHERE c1 < 4
+    GROUP BY (c1 / NULLIF(c1, 0)), c1, c6
+) AS q
+----
+3
+
+query IIT nosort
+SELECT (c1 / NULLIF(c1, 0)) AS x,
+       COUNT(DISTINCT c4) AS y,
+       c6 AS z
+FROM ctas_bug
+WHERE c1 < 4
+GROUP BY (c1 / NULLIF(c1, 0)), c1, c6
+ORDER BY c1
+----
+1
+1
+x
+1
+1
+y
+1
+1
+z
+
+-- next query logs server msgs:
+--    exp_bin: CRITICAL: Could not find %4.%4
+--    exp_bin: ERROR: Query: 'select (c1 / nullif(c1, 0)) as x,
+--  and  assert(s);  fails at: sql/backends/monet5/rel_bin.c:1914
+query IIT nosort
+SELECT (c1 / NULLIF(c1, 0)) AS x,
+       COUNT(DISTINCT c4) AS y,
+       c6 AS z
+FROM ctas_bug
+WHERE c1 < 4
+GROUP BY (c1 / NULLIF(c1, 0)), c1, c6
+----
+1
+1
+x
+1
+1
+y
+1
+1
+z
+
+statement ok
+CREATE TEMPORARY TABLE ctas_bug_tmp AS
+SELECT (c1 / NULLIF(c1, 0)) AS x,
+       COUNT(DISTINCT c4) AS y,
+       c6 AS z
+FROM ctas_bug
+WHERE c1 < 4
+GROUP BY (c1 / NULLIF(c1, 0)), c1, c6
+ON COMMIT PRESERVE ROWS
+
+query I nosort
+SELECT COUNT(*) FROM ctas_bug_tmp
+----
+3
+
+statement ok
+CREATE TEMPORARY TABLE ctas_bug_tmp_ordered AS
+SELECT (c1 / NULLIF(c1, 0)) AS x,
+       COUNT(DISTINCT c4) AS y,
+       c6 AS z
+FROM ctas_bug
+WHERE c1 < 4
+GROUP BY (c1 / NULLIF(c1, 0)), c1, c6
+ORDER BY c1
+ON COMMIT PRESERVE ROWS
+
+query I nosort
+SELECT COUNT(*) FROM ctas_bug_tmp_ordered
+----
+3
+
+statement ok
+CREATE UNLOGGED TABLE ctas_bug_unl AS
+SELECT (c1 / NULLIF(c1, 0)) AS x,
+       COUNT(DISTINCT c4) AS y,
+       c6 AS z
+FROM ctas_bug
+WHERE c1 < 4
+GROUP BY (c1 / NULLIF(c1, 0)), c1, c6
+
+query I nosort
+SELECT COUNT(*) FROM ctas_bug_unl
+----
+3
+
+statement ok
+DROP TABLE ctas_bug_unl
+
+statement ok
+DROP TABLE ctas_bug_tmp_ordered
+
+statement ok
+DROP TABLE ctas_bug_tmp
+
+statement ok
+DROP TABLE ctas_bug
+

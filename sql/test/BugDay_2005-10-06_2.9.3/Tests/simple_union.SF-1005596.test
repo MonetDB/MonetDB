@@ -5,7 +5,7 @@ create table test (
 	id3 int null
 )
 
-query TTTTTIIITT nosort
+query TTTTTTTTTT nosort
 SELECT * FROM (
     SELECT 'demo' AS "TABLE_CAT",
         "schemas"."name" AS "TABLE_SCHEM",
@@ -136,14 +136,5 @@ WHERE 1 = 1 AND
      ("TABLE_TYPE" LIKE 'TABLE' OR "TABLE_TYPE" LIKE 'VIEW')
 ORDER BY "TABLE_TYPE", "TABLE_SCHEM", "TABLE_NAME"
 ----
-demo
-sys
-test
-TABLE
-(empty)
-NULL
-NULL
-NULL
-rowid
-SYSTEM
+demo	sys	test	TABLE	(empty)	NULL	NULL	NULL	rowid	SYSTEM
 

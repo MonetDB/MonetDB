@@ -68,7 +68,7 @@ exp_getcard(mvc *sql, sql_rel *rel, sql_exp *e)
 
 		if (c) {
 			int de = mvc_is_duplicate_eliminated(sql, c);
-			if (de && (((lng)1)<<(de*8)) < cnt)
+			if (de && de < 8 && (((lng)1)<<(de*8)) < cnt)
 				cnt = (((lng)1)<<(de*8));
 		}
 	}
@@ -112,10 +112,10 @@ rel_groupby_2_phases(mvc *sql, sql_rel *rel)
 				break;
 			}
 			card *= lcard; /* TODO check for overflow */
+			if (card > 64*1024) /* TODO add tunable */
+				return false;
 		}
 	}
-	if (card > 64*1024) /* TODO add tunable */
-		return false;
 	for(node *n = rel->exps->h; n; n = n->next ) {
 		sql_exp *e = n->data;
 

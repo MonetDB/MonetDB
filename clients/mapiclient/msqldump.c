@@ -57,7 +57,7 @@ int
 #ifdef _MSC_VER
 wmain(int argc, wchar_t **wargv)
 #else
-main(int argc, char **argv)
+	main(int argc, char **argv)
 #endif
 {
 	int port = 0;
@@ -285,13 +285,13 @@ main(int argc, char **argv)
 	if (out == NULL) {
 		if (output)
 			fprintf(stderr, "cannot open file: %s: %s\n",
-					output, mnstr_peek_error(NULL));
+				output, mnstr_peek_error(NULL));
 		else if (outputdir)
 			fprintf(stderr, "cannot open file: %s%cdump.sql: %s\n",
-					outputdir, DIR_SEP, mnstr_peek_error(NULL));
+				outputdir, DIR_SEP, mnstr_peek_error(NULL));
 		else
 			fprintf(stderr, "failed to allocate stream: %s\n",
-					mnstr_peek_error(NULL));
+				mnstr_peek_error(NULL));
 		exit(2);
 	}
 	if (!quiet) {

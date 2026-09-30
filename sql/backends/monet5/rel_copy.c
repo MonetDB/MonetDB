@@ -67,7 +67,7 @@ emit_pipelined_loop(
 {
 	InstrPtr q;
 	int alloc = allocation_size(block_size);
-    int streams_type = ATOMindex("streams");
+	int streams_type = ATOMindex("streams");
 
 	// Determine the number of records to read
 	int var_nrecords = getLngConstant(mb, nrecords_or_minusone >= 0 ? nrecords_or_minusone : GDK_lng_max);
@@ -112,7 +112,7 @@ emit_pipelined_loop(
 	q = pushArgument(mb, q, var_line_sep);
 	q = pushArgument(mb, q, var_quote_char);
 	q = pushStr(mb, q, null_representation);
-	q = pushBit(mb, q, escape);
+	q = pushBit(mb, q, escape || onclient );
 	if (fixed_width == NULL)
 		fixed_width = (str)str_nil;
 	q = pushStr(mb, q, fixed_width);
@@ -272,7 +272,7 @@ exp2bin_copyparpipe(backend *be, sql_exp *copyfrom)
 				q = pushStr(mb, q, dec_skip);
 				pushInstruction(mb, q);
 
-		} else if (type->eclass == EC_STRING) {
+		} else if (type->eclass == EC_STRING || type->eclass == EC_CHAR) {
 				q = newStmt(mb, "copy", "parse_string");
 				q = pushArgument(mb, q, our_block);
 				q = pushArgument(mb, q, var_indices);

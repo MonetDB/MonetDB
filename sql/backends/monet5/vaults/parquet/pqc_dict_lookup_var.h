@@ -60,13 +60,13 @@ pqc_dict_lookup( pqc_creader_t *cr, void *output, int64_t nrows, int64_t pos, si
 					pos += (sh)/8;
 			} else if (nr_bits < 16) {
 				for(; i < nrows && j < cr->remaining; j++, i++) {
-					uint16_t v = pqc_sht(get_uint16(data+pos));
+					uint16_t v = get_uint16(data+pos);
 					uint32_t idx = (v >> sh)&mask;
 					sh += nr_bits;
 					if (sh >= 16) {
 						pos+=2;
 						sh -= 16;
-						uint16_t v = pqc_sht(get_uint16(data+pos));
+						uint16_t v = get_uint16(data+pos);
 						idx |= (v << (nr_bits-sh))&mask;
 					}
 					assert(idx < cr->dict_num_values);
@@ -76,13 +76,13 @@ pqc_dict_lookup( pqc_creader_t *cr, void *output, int64_t nrows, int64_t pos, si
 					pos += (sh)/8;
 			} else if (nr_bits < 32) {
 				for(; i < nrows && j < cr->remaining; j++, i++) {
-					uint32_t v = pqc_int(get_uint32(data+pos));
+					uint32_t v = get_uint32(data+pos);
 					uint32_t idx = (v >> sh)&mask;
 					sh += nr_bits;
 					if (sh >= 32) {
 						pos+=4;
 						sh -= 32;
-						uint32_t v = pqc_int(get_uint32(data+pos));
+						uint32_t v = get_uint32(data+pos);
 						idx |= (v << (nr_bits-sh))&mask;
 					}
 					assert(idx < cr->dict_num_values);
@@ -156,13 +156,13 @@ pqc_dict_lookup( pqc_creader_t *cr, void *output, int64_t nrows, int64_t pos, si
 				}
 			} else if (nr_bits < 16) {
 				for (; i < nrows && j < m; j++, i++) {
-					uint16_t v = pqc_sht(get_uint16(data+pos));
+					uint16_t v = get_uint16(data+pos);
 					uint32_t idx = (v >> sh)&mask;
 					sh += nr_bits;
 					if (sh >= 16) {
 						pos+=2;
 						sh -= 16;
-						uint16_t v = pqc_sht(get_uint16(data+pos));
+						uint16_t v = get_uint16(data+pos);
 						idx |= (v << (nr_bits-sh))&mask;
 					}
 					assert(idx < cr->dict_num_values);
@@ -177,13 +177,13 @@ pqc_dict_lookup( pqc_creader_t *cr, void *output, int64_t nrows, int64_t pos, si
 				}
 			} else if (nr_bits < 32) {
 				for (; i < nrows && j < m; j++, i++) {
-					uint32_t v = pqc_int(get_uint32(data+pos));
+					uint32_t v = get_uint32(data+pos);
 					uint32_t idx = (v >> sh)&mask;
 					sh += nr_bits;
 					if (sh >= 32) {
 						pos+=4;
 						sh -= 32;
-						uint32_t v = pqc_int(get_uint32(data+pos));
+						uint32_t v = get_uint32(data+pos);
 						idx |= (v << (nr_bits-sh))&mask;
 					}
 					assert(idx < cr->dict_num_values);
@@ -219,7 +219,7 @@ pqc_dict_lookup( pqc_creader_t *cr, void *output, int64_t nrows, int64_t pos, si
 			}
 		} else if (nr_bits <= 16) { /* rle */
 			len>>=1;
-			uint16_t idx = pqc_sht(get_uint16(data+pos));
+			uint16_t idx = get_uint16(data+pos);
 			pos += 2;
 			for(; i < nrows && j < len; j++, i++)
 				dst[i] = offset+offsets[idx];
@@ -230,7 +230,7 @@ pqc_dict_lookup( pqc_creader_t *cr, void *output, int64_t nrows, int64_t pos, si
 			}
 		} else if (nr_bits <= 32) { /* rle */
 			len>>=1;
-			uint32_t idx = pqc_int(get_uint32(data+pos));
+			uint32_t idx = get_uint32(data+pos);
 			pos += 4;
 			for(; i < nrows && j < len; j++, i++)
 				dst[i] = offset+offsets[idx];

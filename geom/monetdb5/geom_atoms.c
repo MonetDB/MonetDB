@@ -502,8 +502,8 @@ BUN
 mbrHASH(const void *ATOM)
 {
 	const mbr *atom = ATOM;
-	return ATOMhash(TYPE_flt, &atom->xmin) ^ ATOMhash(TYPE_flt, &atom->ymin) ^
-		ATOMhash(TYPE_flt, &atom->xmax) ^ ATOMhash(TYPE_flt, &atom->ymax);
+	return fltHash(&atom->xmin) ^ fltHash(&atom->ymin) ^
+		fltHash(&atom->xmax) ^ fltHash(&atom->ymax);
 }
 
 const void *
@@ -1153,7 +1153,7 @@ mbrIntersects(Client ctx, bit *out, mbr** mbr1, mbr** mbr2) {
 	if (((*mbr1)->ymax < (*mbr2)->ymin) || ((*mbr1)->ymin > (*mbr2)->ymax))
 		(*out) = false;
 	else if (((*mbr1)->xmax < (*mbr2)->xmin) || ((*mbr1)->xmin > (*mbr2)->xmax))
-    	(*out) = false;
+		(*out) = false;
 	else
 		(*out) = true;
 	return MAL_SUCCEED;

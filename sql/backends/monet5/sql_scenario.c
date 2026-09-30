@@ -88,8 +88,9 @@ static str master_password = NULL;
 #include "mal.h"
 #include "mal_client.h"
 
+__attribute__((__nonnull__(1)))
 static void
-CLIENTprintinfo(void)
+CLIENTprintinfo(FILE *outf)
 {
 	int nrun = 0, nfinish = 0, nblock = 0;
 	struct tm tm;
@@ -97,10 +98,12 @@ CLIENTprintinfo(void)
 	int pos;
 
 	if (!MT_lock_trytime(&mal_contextLock, 1000)) {
-		printf("Clients are currently locked, so no client information\n");
+		fprintf(outf,
+				"Clients are currently locked,"
+				" so no client information\n");
 		return;
 	}
-	printf("Clients:\n");
+	fprintf(outf, "Clients:\n");
 	for (Client c = mal_clients; c < mal_clients + MAL_MAXCLIENTS; c++) {
 		switch (c->mode) {
 		case RUNCLIENT:
@@ -179,7 +182,7 @@ CLIENTprintinfo(void)
 			if (s)
 				pos += snprintf(buf + pos, sizeof(buf) - pos,
 								", query: %s", s);
-			printf("%s\n", buf);
+			fprintf(outf, "%s\n", buf);
 			break;
 		case FINISHCLIENT:
 			/* finishing */
@@ -194,15 +197,18 @@ CLIENTprintinfo(void)
 		}
 	}
 	MT_lock_unset(&mal_contextLock);
-	printf("%d active clients, %d finishing clients, %d blocked clients; max: %d\n",
-		   nrun, nfinish, nblock, MAL_MAXCLIENTS);
+	fprintf(outf,
+			"%d active clients, %d finishing clients, %d blocked clients;"
+			" max: %d\n",
+			nrun, nfinish, nblock, MAL_MAXCLIENTS);
 }
 
+__attribute__((__nonnull__(1)))
 static void
-SQLprintinfo(void)
+SQLprintinfo(FILE *outf)
 {
-	CLIENTprintinfo();
-	store_printinfo(SQLstore);
+	CLIENTprintinfo(outf);
+	store_printinfo(outf, SQLstore);
 }
 
 str
@@ -969,9 +975,7 @@ shouldStop(void *data)
 			((backend *) c->sqlcontext)->mvc->session->tr->active &&
 			time(NULL)- c->idle > c->idletimeout)
 			return true;
-		if (c->sessiontimeout &&
-			c->session &&
-			(GDKusec() - c->session) > c->sessiontimeout)
+		if (c->sessiontimeout && GDKusec() >= c->sessiontimeout)
 			return true;
 	}
 	return false;
@@ -1237,7 +1241,7 @@ SQLreader(Client c, backend *be)
 			}
 		}
 	}
-	if ( (c->sessiontimeout && (GDKusec() - c->session) > c->sessiontimeout) || !go || (strncmp(CURRENT(c), "\\q", 2) == 0)) {
+	if ( (c->sessiontimeout && GDKusec() >= c->sessiontimeout) || !go || (strncmp(CURRENT(c), "\\q", 2) == 0)) {
 		in->pos = in->len;	/* skip rest of the input */
 		MT_lock_set(&mal_contextLock);
 		c->mode = FINISHCLIENT;
@@ -1728,6 +1732,8 @@ SQLparser(Client c, backend *be)
 
 	c->qryctx.starttime = GDKusec();
 	c->qryctx.endtime = c->querytimeout ? c->qryctx.starttime + c->querytimeout : 0;
+	if (c->qryctx.endtime == 0 || c->sessiontimeout < c->qryctx.endtime)
+		c->qryctx.endtime = c->sessiontimeout;
 
 	if ((msg = SQLtrans(m)) != MAL_SUCCEED) {
 		c->mode = FINISHCLIENT;

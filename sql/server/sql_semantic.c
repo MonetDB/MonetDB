@@ -325,7 +325,7 @@ _dup_subaggr(allocator *sa, sql_func *a, sql_subtype *member)
 	ares->func = a;
 	if (IS_FILT(a)) {
 		ares->res = sa_list(sa);
-        list_append(ares->res, sql_fetch_localtype(TYPE_bit));
+		list_append(ares->res, sql_fetch_localtype(TYPE_bit));
 	} else if (IS_FUNC(a) || IS_UNION(a) || IS_ANALYTIC(a) || IS_AGGR(a)) { /* not needed for PROC */
 		if (a->res) {
 			ares->res = sa_list(sa);

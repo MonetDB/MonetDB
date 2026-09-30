@@ -75,7 +75,7 @@ getFarmPath(char *pathbuf, size_t size, const char *extra)
 		snprintf(pathbuf, size, "%s", _sabaoth_internal_dbfarm);
 	} else {
 		snprintf(pathbuf, size, "%s%c%s",
-				 _sabaoth_internal_dbfarm, DIR_SEP, extra);
+			 _sabaoth_internal_dbfarm, DIR_SEP, extra);
 	}
 
 	return(NULL);
@@ -95,11 +95,11 @@ getDBPath(char *pathbuf, size_t size, const char *extra)
 
 	if (extra == NULL) {
 		snprintf(pathbuf, size, "%s%c%s",
-				 _sabaoth_internal_dbfarm, DIR_SEP, _sabaoth_internal_dbname);
+			 _sabaoth_internal_dbfarm, DIR_SEP, _sabaoth_internal_dbname);
 	} else {
 		snprintf(pathbuf, size, "%s%c%s%c%s",
-				 _sabaoth_internal_dbfarm, DIR_SEP,
-				 _sabaoth_internal_dbname, DIR_SEP, extra);
+			 _sabaoth_internal_dbfarm, DIR_SEP,
+			 _sabaoth_internal_dbname, DIR_SEP, extra);
 	}
 
 	return(NULL);
@@ -116,9 +116,9 @@ msab_isuuid(const char *restrict s)
 
 	/* hyphens at correct locations */
 	if (s[8] != '-' ||
-		s[13] != '-' ||
-		s[18] != '-' ||
-		s[23] != '-')
+	    s[13] != '-' ||
+	    s[18] != '-' ||
+	    s[23] != '-')
 		return 0;
 	/* only hexadecimals and hyphens */
 	while (*s) {
@@ -174,9 +174,9 @@ msab_init(const char *dbfarm, const char *dbname)
 	/* remove trailing slashes, newlines and spaces */
 	len--;
 	while (len > 0 && (
-			   _sabaoth_internal_dbfarm[len] == '/' ||
-			   _sabaoth_internal_dbfarm[len] == '\n' ||
-			   _sabaoth_internal_dbfarm[len] == ' ')) {
+		       _sabaoth_internal_dbfarm[len] == '/' ||
+		       _sabaoth_internal_dbfarm[len] == '\n' ||
+		       _sabaoth_internal_dbfarm[len] == ' ')) {
 		_sabaoth_internal_dbfarm[len] = '\0';
 		len--;
 	}
@@ -198,11 +198,11 @@ msab_init(const char *dbfarm, const char *dbname)
 				len = offsetof(struct dbe, path) + strlen(tmp) + 2;
 				while ((e = readdir(d)) != NULL) {
 					if (msab_isuuid(e->d_name) &&
-						(db = malloc(strlen(e->d_name) + len)) != NULL) {
+					    (db = malloc(strlen(e->d_name) + len)) != NULL) {
 						db->next = dbe;
 						dbe = db;
 						snprintf(db->path, len - offsetof(struct dbe, path),
-								 "%s%c%s", tmp, DIR_SEP, e->d_name);
+							 "%s%c%s", tmp, DIR_SEP, e->d_name);
 					}
 				}
 				closedir(d);
@@ -318,7 +318,7 @@ msab_marchScenario(const char *lang)
 		return(NULL);
 	}
 	snprintf(buf, sizeof(buf), "failed to open file: %s (%s)",
-			 strerror(errno), pathbuf);
+		 strerror(errno), pathbuf);
 	return(strdup(buf));
 }
 
@@ -362,7 +362,7 @@ msab_retreatScenario(const char *lang)
 				len = strlen(buf) + 1;
 				if (fwrite(buf, 1, len, f) < len) {
 					snprintf(buf, sizeof(buf), "failed to write: %s (%s)",
-							 strerror(errno), pathbuf);
+						 strerror(errno), pathbuf);
 					(void)fclose(f);
 					return(strdup(buf));
 				}
@@ -371,7 +371,7 @@ msab_retreatScenario(const char *lang)
 				return(NULL);
 			} else if (written) {
 				snprintf(buf, sizeof(buf), "failed to open file: %s (%s)",
-						 strerror(errno), pathbuf);
+					 strerror(errno), pathbuf);
 				return strdup(buf);
 			}
 			(void) MT_remove(pathbuf);
@@ -380,7 +380,7 @@ msab_retreatScenario(const char *lang)
 			if (ferror(f)) {
 				/* some error */
 				snprintf(buf, sizeof(buf), "failed to write: %s (%s)",
-						 strerror(errno), pathbuf);
+					 strerror(errno), pathbuf);
 				(void)fclose(f);
 				return strdup(buf);
 			}
@@ -412,7 +412,7 @@ msab_marchConnection(const char *host, const int port)
 
 	if (port <= 0 && host[0] != '/')
 		return(strdup("UNIX domain connections should be given as "
-					  "absolute path"));
+			      "absolute path"));
 
 	if ((f = MT_fopen(pathbuf, "a")) != NULL) {
 		/* append to the file */
@@ -429,7 +429,7 @@ msab_marchConnection(const char *host, const int port)
 	} else {
 		char buf[FILENAME_MAX + 1024];
 		snprintf(buf, sizeof(buf), "failed to open file: %s (%s)",
-				 strerror(errno), pathbuf);
+			 strerror(errno), pathbuf);
 		return(strdup(buf));
 	}
 }
@@ -496,7 +496,7 @@ msab_registerStarting(void)
 	} else {
 		char buf[2*FILENAME_MAX];
 		snprintf(buf, sizeof(buf), "failed to open file: %s (%s)",
-				 strerror(errno), pathbuf);
+			 strerror(errno), pathbuf);
 		return(strdup(buf));
 	}
 
@@ -566,7 +566,7 @@ msab_registerStop(void)
 	} else {
 		char buf[2*FILENAME_MAX];
 		snprintf(buf, sizeof(buf), "failed to open file: %s (%s)",
-				 strerror(errno), pathbuf);
+			 strerror(errno), pathbuf);
 		return(strdup(buf));
 	}
 
@@ -595,7 +595,7 @@ msab_pickSecret(char **generated_secret)
 	if (MT_remove(pathbuf) < 0 && errno != ENOENT) {
 		char err[FILENAME_MAX + 512];
 		snprintf(err, sizeof(err), "unable to remove '%s': %s",
-				 pathbuf, strerror(errno));
+			 pathbuf, strerror(errno));
 		return strdup(err);
 	}
 
@@ -651,14 +651,14 @@ msab_pickSecret(char **generated_secret)
 	if ((fd = MT_open(pathbuf, O_CREAT | O_WRONLY | O_CLOEXEC)) == -1) {
 		char err[FILENAME_MAX + 512];
 		snprintf(err, sizeof(err), "unable to open '%s': %s",
-				 pathbuf, strerror(errno));
+			 pathbuf, strerror(errno));
 		free(secret);
 		return strdup(err);
 	}
 	if ((f = fdopen(fd, "w")) == NULL) {
 		char err[FILENAME_MAX + 512];
 		snprintf(err, sizeof(err), "unable to open '%s': %s",
-				 pathbuf, strerror(errno));
+			 pathbuf, strerror(errno));
 		close(fd);
 		(void)MT_remove(pathbuf);
 		free(secret);
@@ -670,7 +670,7 @@ msab_pickSecret(char **generated_secret)
 	if (error) {
 		char err[512];
 		snprintf(err, sizeof(err), "cannot write secret: %s",
-				 strerror(errno));
+			 strerror(errno));
 		(void)MT_remove(pathbuf);
 		free(secret);
 		return strdup(err);
@@ -749,7 +749,7 @@ msab_getSingleStatus(const char *pathbuf, const char *dbname, sabdb *next)
 	 *   same signature, we assume running if the uplog states so.
 	 */
 	snprintf(buf, sizeof(buf), "%s/%s/%s", pathbuf, dbname,
-			 _sabaoth_internal_uuid);
+		 _sabaoth_internal_uuid);
 	if (MT_stat(buf, &statbuf) == 0) {
 		/* database has the same process signature as ours, which
 		 * means, it must be us, rely on the uplog state */
@@ -762,7 +762,7 @@ msab_getSingleStatus(const char *pathbuf, const char *dbname, sabdb *next)
 			} else if (data[0] == '\t') {
 				/* see if the database has finished starting */
 				snprintf(buf, sizeof(buf), "%s/%s/%s",
-						 pathbuf, dbname, STARTEDFILE);
+					 pathbuf, dbname, STARTEDFILE);
 				if (MT_stat(buf, &statbuf) == -1) {
 					sdb->state = SABdbStarting;
 				} else {
@@ -774,7 +774,7 @@ msab_getSingleStatus(const char *pathbuf, const char *dbname, sabdb *next)
 			(void)fclose(f);
 		}
 	} else if (snprintf(buf, sizeof(buf), "%s/%s/%s", pathbuf, dbname, ".gdk_lock"),
-			   ((fd = MT_lockf(buf, F_TLOCK)) == -2)) {
+		   ((fd = MT_lockf(buf, F_TLOCK)) == -2)) {
 		/* Locking failed; this can be because the lockfile couldn't
 		 * be created.  Probably there is no Mserver running for
 		 * that case also.
@@ -919,7 +919,7 @@ msab_getStatus(sabdb** ret, const char *dbname)
 
 	if (dbname && strpbrk(dbname, "/\\") != NULL) {
 		snprintf(data, sizeof(data),
-				 "database name contains disallowed characters");
+			 "database name contains disallowed characters");
 		return strdup(data);
 	}
 	/* scan the parent for directories */
@@ -933,7 +933,7 @@ msab_getStatus(sabdb** ret, const char *dbname)
 	d = opendir(pathbuf);
 	if (d == NULL) {
 		snprintf(data, sizeof(data), "failed to open directory %s: %s",
-				 pathbuf, strerror(errno));
+			 pathbuf, strerror(errno));
 		return(strdup(data));
 	}
 	while ((e = readdir(d)) != NULL) {
@@ -1084,7 +1084,7 @@ msab_getUplogInfo(sabuplog *ret, const sabdb *db)
 	} else {
 		char buf[2*FILENAME_MAX];
 		snprintf(buf, sizeof(buf), "could not open file %s: %s",
-				 log, strerror(errno));
+			 log, strerror(errno));
 		return(strdup(buf));
 	}
 
@@ -1133,18 +1133,18 @@ msab_serialise(char **ret, const sabdb *db)
 
 	/* sabdb + sabuplog structs in one */
 	snprintf(buf, sizeof(buf), "sabdb:" SABDBVER ":"
-			 "%s,%s,%d,%d,%s,"
-			 "%d,%d,%d,"
-			 "%" PRId64 ",%" PRId64 ",%" PRId64 ","
-			 "%" PRId64 ",%" PRId64 ",%" PRId64 ","
-			 "%d,%f,%f",
-			 db->dbname, db->uri ? db->uri : "", db->locked,
-			 (int) db->state, scens,
-			 dbu.startcntr, dbu.stopcntr, dbu.crashcntr,
-			 (int64_t) dbu.avguptime, (int64_t) dbu.maxuptime,
-			 (int64_t) dbu.minuptime, (int64_t) dbu.lastcrash,
-			 (int64_t) dbu.laststart, (int64_t) dbu.laststop,
-			 dbu.crashavg1, dbu.crashavg10, dbu.crashavg30);
+		 "%s,%s,%d,%d,%s,"
+		 "%d,%d,%d,"
+		 "%" PRId64 ",%" PRId64 ",%" PRId64 ","
+		 "%" PRId64 ",%" PRId64 ",%" PRId64 ","
+		 "%d,%f,%f",
+		 db->dbname, db->uri ? db->uri : "", db->locked,
+		 (int) db->state, scens,
+		 dbu.startcntr, dbu.stopcntr, dbu.crashcntr,
+		 (int64_t) dbu.avguptime, (int64_t) dbu.maxuptime,
+		 (int64_t) dbu.minuptime, (int64_t) dbu.lastcrash,
+		 (int64_t) dbu.laststart, (int64_t) dbu.laststop,
+		 dbu.crashavg1, dbu.crashavg10, dbu.crashavg30);
 
 	*ret = strdup(buf);
 	return(NULL);
@@ -1166,7 +1166,7 @@ msab_deserialise(sabdb **ret, const char *sdb)
 
 	if (strncmp(sdb, "sabdb:", 6) != 0) {
 		snprintf(buf, sizeof(buf),
-				 "string is not a sabdb struct: %s", sdb);
+			 "string is not a sabdb struct: %s", sdb);
 		return(strdup(buf));
 	}
 	sdb += 6;
@@ -1185,14 +1185,14 @@ msab_deserialise(sabdb **ret, const char *sdb)
 	 * SABdbStarting state never occurs. */
 	if (strncmp(sdb, SABDBVER ":", sizeof(SABDBVER)) != 0) {
 		snprintf(buf, sizeof(buf),
-				 "string has unsupported version: %s", sdb);
+			 "string has unsupported version: %s", sdb);
 		return(strdup(buf));
 	}
 	sdb += sizeof(SABDBVER);
 	lasts = strchr(sdb, ',');
 	if (lasts == NULL) {
 		snprintf(buf, sizeof(buf),
-				 "string does not contain dbname: %s", sdb);
+			 "string does not contain dbname: %s", sdb);
 		return(strdup(buf));
 	}
 	dbname = strndup(sdb, lasts - sdb);
@@ -1200,7 +1200,7 @@ msab_deserialise(sabdb **ret, const char *sdb)
 	lasts = strchr(sdb, ',');
 	if (lasts == NULL) {
 		snprintf(buf, sizeof(buf),
-				 "string does not contain uri: %s", sdb);
+			 "string does not contain uri: %s", sdb);
 		free(dbname);
 		return(strdup(buf));
 	}
@@ -1212,13 +1212,13 @@ msab_deserialise(sabdb **ret, const char *sdb)
 		free(uri);
 		free(dbname);
 		snprintf(buf, sizeof(buf),
-				 "string does not contain locked state: %s", lasts);
+			 "string does not contain locked state: %s", lasts);
 		return(strdup(buf));
 	case 1:
 		free(uri);
 		free(dbname);
 		snprintf(buf, sizeof(buf),
-				 "string does not contain state: %s", lasts);
+			 "string does not contain state: %s", lasts);
 		return(strdup(buf));
 	case -1:
 		free(uri);
@@ -1230,7 +1230,7 @@ msab_deserialise(sabdb **ret, const char *sdb)
 	sdb += n;
 	if (*sdb++ != ',' || (lasts = strchr(sdb, ',')) == NULL) {
 		snprintf(buf, sizeof(buf),
-				 "string does not contain scenarios: %s", lasts);
+			 "string does not contain scenarios: %s", lasts);
 		free(uri);
 		free(dbname);
 		return(strdup(buf));
@@ -1253,51 +1253,51 @@ msab_deserialise(sabdb **ret, const char *sdb)
 		return strdup("should not happen");
 	case 0:
 		snprintf(buf, sizeof(buf),
-				 "string does not contain startcounter: %s", sdb);
+			 "string does not contain startcounter: %s", sdb);
 		goto bailout;
 	case 1:
 		snprintf(buf, sizeof(buf),
-				 "string does not contain stopcounter: %s", sdb);
+			 "string does not contain stopcounter: %s", sdb);
 		goto bailout;
 	case 2:
 		snprintf(buf, sizeof(buf),
-				 "string does not contain crashcounter: %s", sdb);
+			 "string does not contain crashcounter: %s", sdb);
 		goto bailout;
 	case 3:
 		snprintf(buf, sizeof(buf),
-				 "string does not contain avguptime: %s", sdb);
+			 "string does not contain avguptime: %s", sdb);
 		goto bailout;
 	case 4:
 		snprintf(buf, sizeof(buf),
-				 "string does not contain maxuptime: %s", sdb);
+			 "string does not contain maxuptime: %s", sdb);
 		goto bailout;
 	case 5:
 		snprintf(buf, sizeof(buf),
-				 "string does not contain minuptime: %s", sdb);
+			 "string does not contain minuptime: %s", sdb);
 		goto bailout;
 	case 6:
 		snprintf(buf, sizeof(buf),
-				 "string does not contain lastcrash: %s", sdb);
+			 "string does not contain lastcrash: %s", sdb);
 		goto bailout;
 	case 7:
 		snprintf(buf, sizeof(buf),
-				 "string does not contain laststart: %s", sdb);
+			 "string does not contain laststart: %s", sdb);
 		goto bailout;
 	case 8:
 		snprintf(buf, sizeof(buf),
-				 "string does not contain laststop: %s", sdb);
+			 "string does not contain laststop: %s", sdb);
 		goto bailout;
 	case 9:
 		snprintf(buf, sizeof(buf),
-				 "string does not contain crashavg1: %s", sdb);
+			 "string does not contain crashavg1: %s", sdb);
 		goto bailout;
 	case 10:
 		snprintf(buf, sizeof(buf),
-				 "string does not contain crashavg10: %s", sdb);
+			 "string does not contain crashavg10: %s", sdb);
 		goto bailout;
 	case 11:
 		snprintf(buf, sizeof(buf),
-				 "string does not contain crashavg30: %s", sdb);
+			 "string does not contain crashavg30: %s", sdb);
 		goto bailout;
 	case 12:
 		break;
@@ -1305,8 +1305,8 @@ msab_deserialise(sabdb **ret, const char *sdb)
 	sdb += n;
 	if (*sdb) {
 		snprintf(buf, sizeof(buf),
-				 "string contains additional garbage after crashavg30: %s",
-				 sdb);
+			 "string contains additional garbage after crashavg30: %s",
+			 sdb);
 		goto bailout;
 	}
 

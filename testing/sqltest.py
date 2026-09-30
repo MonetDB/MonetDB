@@ -476,6 +476,9 @@ class MclientTestResult(TestCaseResult, RunnableTestResult):
         if os.getenv('MTEST_APPROVE'):
             with open(fout+'.newtest', 'w') as f:
                 f.write(self.output or '')
+            if os.getenv('MTEST_APPROVE') == 'REPLACE':
+                with open(os.path.join(os.getenv('TSTSRCDIR'), fout), 'w') as f:
+                    f.write(self.output or '')
         return self
 
     def assertMatchStableError(self, ferr, ignore_err_messages=False, ratio=0.95):

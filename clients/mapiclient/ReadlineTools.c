@@ -413,7 +413,7 @@ invoke_editor(int cnt, int key) {
 
 	return 0;
 
-bailout:
+  bailout:
 	if (fp)
 		fclose(fp);
 	free(read_buff);
@@ -471,8 +471,8 @@ init_readline(Mapi mid, const char *lang, bool save_history)
 		int len;
 		if (getenv("HOME") != NULL) {
 			len = snprintf(_history_file, sizeof(_history_file),
-				 "%s/.mapiclient_history_%s",
-				 getenv("HOME"), language);
+				       "%s/.mapiclient_history_%s",
+				       getenv("HOME"), language);
 			if (len == -1 || len >= FILENAME_MAX)
 				fprintf(stderr, "Warning: history filename path is too large\n");
 			else

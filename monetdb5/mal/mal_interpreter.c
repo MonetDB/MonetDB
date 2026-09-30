@@ -542,9 +542,7 @@ runMALsequence(Client cntxt, MalBlkPtr mb, int startpc,
 		runtimeProfileInit(cntxt, mb, stk);
 		runtimeProfileBegin(cntxt, mb, stk, getInstrPtr(mb, 0),
 							&runtimeProfileFunction);
-		if (cntxt->sessiontimeout
-			&& cntxt->qryctx.starttime - cntxt->session >
-			cntxt->sessiontimeout) {
+		if (cntxt->sessiontimeout && GDKusec() >= cntxt->sessiontimeout) {
 			runtimeProfileFinish(cntxt, mb, stk);
 			ma_close(&ta_state);
 			throw(MAL, "mal.interpreter",

@@ -104,12 +104,9 @@ q_dequeue(Queue *q)
 		return NULL;
 	MT_lock_set(&q->l);
 	{
-		int i = q->last - 1;
-
-		r = q->data[i];
-		assert (i >= 0);
+		r = q->data[0];
 		q->last--;
-		memmove(q->data + i, q->data + i + 1, (q->last - i) * sizeof(q->data[0]));
+		memmove(q->data, q->data + 1, (q->last) * sizeof(q->data[0]));
 	}
 	MT_lock_unset(&q->l);
 	return r;
@@ -154,10 +151,10 @@ stack_copy(allocator *ma, MalStkPtr stk, int start)
 				if(VALcopy(ma, lhs, rhs) == NULL)
 					break;
 			} else if (rhs->bat) {
-                lhs->bat = rhs->bat;
-                lhs->vtype = rhs->vtype;
-                lhs->len = 0;
-                lhs->val.bval = bat_nil;
+				lhs->bat = rhs->bat;
+				lhs->vtype = rhs->vtype;
+				lhs->len = 0;
+				lhs->val.bval = bat_nil;
 			} else {
 				VALinit(ma, lhs, rhs->vtype, ATOMnilptr(rhs->vtype));
 			}
@@ -172,12 +169,12 @@ stack_copy(allocator *ma, MalStkPtr stk, int start)
 static void
 thread_runoncpu(int cpu)
 {
-        cpu_set_t cpuset;
+	cpu_set_t cpuset;
 
 //printf("run on %d\n", cpu);
-        CPU_ZERO(&cpuset);
-        CPU_SET(cpu , &cpuset);
-        sched_setaffinity(0, sizeof(cpuset), &cpuset);
+	CPU_ZERO(&cpuset);
+	CPU_SET(cpu , &cpuset);
+	sched_setaffinity(0, sizeof(cpuset), &cpuset);
 }
 #endif
 
@@ -287,6 +284,7 @@ runMALpipelines(Client cntxt, MalBlkPtr mb, int startpc, int stoppc, int maxpart
 	Pipelines *s = GDKmalloc(sizeof(Pipelines));
 	if (!s)
 		throw(MAL, "pipelines", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+	MT_lock_set(&pipelineLock);
 	bool profiler = cntxt->sqlprofiler;
 	*s = (Pipelines) {
 		.mb = mb,
@@ -317,14 +315,37 @@ runMALpipelines(Client cntxt, MalBlkPtr mb, int startpc, int stoppc, int maxpart
 		s->channel[i] = 0;
 	MT_cond_init(&s->cond, "pipeline-workers");
 	/* somehow get number of workers from statement/barrier */
-	for (int i = 0; i < s->nr_workers; i++)
-		q_enqueue(workers[i].q, s);
+	int j = s->nr_workers;
+	while (j) {
+		for (int i = 0; i < GDKnr_threads && j > 0; i++)
+			if (!workers[i].q->last)
+				j--;
+		if (j < s->nr_workers) {
+			/* run with less threads ?? */
+			s->nr_workers -= j;
+			for (int i = 0, k = s->nr_workers; i < GDKnr_threads && k > 0; i++) {
+				if (!workers[i].q->last) {
+					q_enqueue(workers[i].q, s);
+					k--;
+				}
+			}
+			j = 0;
+		}
+		if (j) {
+			/* here we should wait */
+	MT_lock_unset(&pipelineLock);
+			MT_sleep_ms(100);
+	MT_lock_set(&pipelineLock);
+		}
+	}
 
+	MT_lock_unset(&pipelineLock);
 	/* wait for result */
 	for (int i = 0; i < s->nr_workers; i++)
 		MT_sema_down(&s->s);
 	MT_sema_destroy(&s->s);
 	MT_lock_destroy(&s->l);
+	MT_lock_set(&pipelineLock);
 	bool has_sink = (s->sink != 0);
 	str err = s->error;
 	if (err) {
@@ -357,6 +378,7 @@ runMALpipelines(Client cntxt, MalBlkPtr mb, int startpc, int stoppc, int maxpart
 	}
 	GDKfree(s);
 	cntxt->sqlprofiler = profiler;
+	MT_lock_unset(&pipelineLock);
 	if (restart) /* TODO move into new loop around pipeline */
 		return runMALpipelines(cntxt, mb, startpc, stoppc, maxparts, sink, stk);
 	return has_sink ? NULL : err;

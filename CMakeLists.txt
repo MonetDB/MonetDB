@@ -75,6 +75,14 @@ endif()
 monetdb_configure_sizes()
 
 include(GNUInstallDirs)
+# work around FreeBSD forcing CMAKE_INSTALL_FULL_LOCALSTATEDIR to /var
+# we keep whatever FreeBSD comes up with (/var) if the prefix is / or
+# starts with /usr or /opt, but for other prefixes (e.g. home directory)
+# we set the variable to prefix + var.
+if(CMAKE_SYSTEM_NAME MATCHES "^FreeBSD$" AND NOT "${CMAKE_INSTALL_PREFIX}" STREQUAL "/" AND NOT "${CMAKE_INSTALL_PREFIX}" MATCHES "^/usr$" AND NOT "${CMAKE_INSTALL_PREFIX}" MATCHES "^/usr/" AND NOT "${CMAKE_INSTALL_PREFIX}" MATCHES "^/opt/")
+  set(CMAKE_INSTALL_FULL_LOCALSTATEDIR "${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_LOCALSTATEDIR}")
+endif()
+
 # The documentation is unclear on what is the best location to install
 # the configuration for the exported targets, especially when building
 # the packages (deb/rpm). For now set the variable to a reasonable value

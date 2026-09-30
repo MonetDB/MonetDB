@@ -18,4 +18,5 @@ userCallFunction
 withGrantOption
 user_default_role
 user_default_schema
+user_create_external_func
 create_user_options

@@ -1,4 +1,4 @@
-import pymonetdb
+from MonetDBtesting import tpymonetdb as pymonetdb
 import os
 
 h = os.getenv('MAPIHOST')

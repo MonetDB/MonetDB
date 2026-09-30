@@ -4,7 +4,7 @@ import sys
 import tempfile
 import time
 import typing
-import pymonetdb
+from MonetDBtesting import tpymonetdb as pymonetdb
 import shutil
 
 sys.stdout = sys.stderr

@@ -919,7 +919,7 @@ LOCKEDAGGRnull(Client ctx, bat *result, const bit *hadnull)
 	return err;
 }
 
-#define unique_(Type, BaseType, INIT_ALLOCATOR, INIT_ITER, IS_NIL, NEW_VAL, HASH_VAL, VAL_NOT_EQUAL, VAL_ASSIGN, ITER_DONE, NEXTK) \
+#define unique_(Type, INIT_ALLOCATOR, INIT_ITER, IS_NIL, NEW_VAL, HASH_VAL, VAL_NOT_EQUAL, VAL_ASSIGN, ITER_DONE, NEXTK) \
 	if (tt == TYPE_##Type) {											\
 		int slots = 0;													\
 		gid slot = 0;													\
@@ -970,49 +970,19 @@ LOCKEDAGGRnull(Client ctx, bat *result, const bit *hadnull)
 
 #define unique(Type)							\
 	unique_(Type,								\
-			Type,								\
-			,									\
+			(void) 0,							\
 			Type *bp = Tloc(b, 0),				\
 			is_##Type##_nil(bp[i]),				\
-			,									\
-			(gid)_hash_##Type(bp[i]),			\
-			vals[g] != bp[i],					\
+			(void) 0,							\
+			(gid)Type##Hash(bp + i),			\
+			!is_##Type##_eq(vals[g], bp[i]),	\
 			vals[g] = bp[i],					\
-			,									\
+			(void) 0,							\
 			nextk								\
-		)
-
-#define funique(Type, BaseType)											\
-	unique_(Type,														\
-			BaseType,													\
-			,															\
-			Type *bp = Tloc(b, 0),										\
-			is_##Type##_nil(bp[i]),										\
-			,															\
-			(gid)_hash_##Type(*(((BaseType*)bp)+i)),					\
-			(!(is_##Type##_nil(bp[i]) && is_##Type##_nil(vals[g])) && vals[g] != bp[i]), \
-			vals[g] = bp[i],											\
-			,															\
-			nextk														\
-		)
-
-#define cunique(Type, BaseType)											\
-	unique_(Type,														\
-			BaseType,													\
-			,															\
-			Type *bp = Tloc(b, 0),										\
-			is_##Type##_nil(bp[i]),										\
-			,															\
-			(gid)_hash_##Type(*(((BaseType*)bp)+i)),					\
-			(!(is_##Type##_nil(bp[i]) && is_##Type##_nil(vals[g])) && h->cmp(vals+g, bp+i) != 0), \
-			vals[g] = bp[i],											\
-			,															\
-			nextk														\
 		)
 
 #define aunique_(Type,CType)						\
 	unique_(Type,									\
-			Type,									\
 			allocator *ma = h->allocators[p->wid],	\
 			BATiter bi = bat_iterator(b),			\
 			VarHeapVal(bi.base,i,bi.width) == 0,	\
@@ -1026,7 +996,6 @@ LOCKEDAGGRnull(Client ctx, bat *result, const bit *hadnull)
 
 #define aunique(Type,CType)						\
 	unique_(Type,								\
-			Type,								\
 			,									\
 			BATiter bi = bat_iterator(b),		\
 			VarHeapVal(bi.base,i,bi.width) == 0,\
@@ -1134,18 +1103,16 @@ LALGunique(Client ctx, bat *rid, bat *uid, bat *bid, bat *sid, bit *Skip_nil)
 			unique(sht);
 			unique(int);
 			unique(date);
-			cunique(inet4, int);
+			unique(inet4);
 			unique(lng);
 			unique(daytime);
 			unique(timestamp);
 #ifdef HAVE_HGE
 			unique(hge);
 #endif
-			funique(flt, int);
-			funique(dbl, lng);
-#ifdef HAVE_HGE
-			cunique(uuid, hge);
-#endif
+			unique(flt);
+			unique(dbl);
+			unique(uuid);
 			if (local_storage) {
 				aunique_(str,const char *);
 			} else {
@@ -1184,7 +1151,7 @@ LALGunique_keepnil(Client ctx, bat *rid, bat *uid, bat *bid, bat *sid)
 	return LALGunique(ctx, rid, uid, bid, sid, &f);
 }
 
-#define gunique_(Type, BaseType, INIT_ALLOCATOR, INIT_ITER, IS_NIL, NEW_VAL, HASH_VAL, VAL_NOT_EQUAL, VAL_ASSIGN, ITER_DONE, NEXTK) \
+#define gunique_(Type, INIT_ALLOCATOR, INIT_ITER, IS_NIL, NEW_VAL, HASH_VAL, VAL_NOT_EQUAL, VAL_ASSIGN, ITER_DONE, NEXTK) \
 	if (tt == TYPE_##Type) {											\
 		int slots = 0;													\
 		gid slot = 0;													\
@@ -1238,49 +1205,19 @@ LALGunique_keepnil(Client ctx, bat *rid, bat *uid, bat *bid, bat *sid)
 
 #define gunique(Type)							\
 	gunique_(Type,								\
-			 Type,								\
 			 ,									\
 			 Type *bp = Tloc(b, 0),				\
 			is_##Type##_nil(bp[i]),				\
 			 ,									\
-			 (gid)_hash_##Type(bp[i]),			\
-			 vals[g] != bp[i],					\
+			 (gid)Type##Hash(bp + i),			\
+			 !is_##Type##_eq(vals[g], bp[i]),	\
 			 vals[g] = bp[i],					\
 			 ,									\
 			 nextk								\
 		)
 
-#define gfunique(Type, BaseType)										\
-	gunique_(Type,														\
-			 BaseType,													\
-			 ,															\
-			 Type *bp = Tloc(b, 0),										\
-			is_##Type##_nil(bp[i]),										\
-			 ,															\
-			 (gid)_hash_##Type(*(((BaseType*)bp)+i)),					\
-			 (!(is_##Type##_nil(bp[i]) && is_##Type##_nil(vals[g])) && vals[g] != bp[i]), \
-			 vals[g] = bp[i],											\
-			 ,															\
-			 nextk														\
-		)
-
-#define gcunique(Type, BaseType)										\
-	gunique_(Type,														\
-			 BaseType,													\
-			 ,															\
-			 Type *bp = Tloc(b, 0),										\
-			 is_##Type##_nil(bp[i]),									\
-			 ,															\
-			 (gid)_hash_##Type(*(((BaseType*)bp)+i)),					\
-			 (!(is_##Type##_nil(bp[i]) && is_##Type##_nil(vals[g])) && h->cmp(vals+g, bp+i) != 0), \
-			 vals[g] = bp[i],											\
-			 ,															\
-			 nextk														\
-		)
-
 #define gaunique_(Type,CType)						\
 	gunique_(Type,									\
-			 Type,									\
 			 allocator *ma = h->allocators[p->wid], \
 			 BATiter bi = bat_iterator(b),			\
 			 VarHeapVal(bi.base,i,bi.width) == 0,	\
@@ -1294,7 +1231,6 @@ LALGunique_keepnil(Client ctx, bat *rid, bat *uid, bat *bid, bat *sid)
 
 #define gaunique(Type,CType)						\
 	gunique_(Type,									\
-			 Type,									\
 			 ,										\
 			 BATiter bi = bat_iterator(b),			\
 			 VarHeapVal(bi.base,i,bi.width) == 0,	\
@@ -1404,18 +1340,16 @@ LALGgroup_unique(Client ctx, bat *rid, bat *uid, bat *bid, bat *sid, bat *Gid, b
 			gunique(sht);
 			gunique(int);
 			gunique(date);
-			gcunique(inet4, int);
+			gunique(inet4);
 			gunique(lng);
 			gunique(daytime);
 			gunique(timestamp);
 #ifdef HAVE_HGE
 			gunique(hge);
 #endif
-			gfunique(flt, int);
-			gfunique(dbl, lng);
-#ifdef HAVE_HGE
-			gcunique(uuid, hge);
-#endif
+			gunique(flt);
+			gunique(dbl);
+			gunique(uuid);
 			if (local_storage) {
 				gaunique_(str,const char *);
 			} else {
@@ -1455,7 +1389,7 @@ LALGgroup_unique_keepnil(Client ctx, bat *rid, bat *uid, bat *bid, bat *sid, bat
 	return LALGgroup_unique(ctx, rid, uid, bid, sid, Gid, &f);
 }
 
-#define group_(Type, BaseType, INIT_ALLOCATOR, INIT_ITER, NEW_VAL, HASH_VAL, VAL_NOT_EQUAL, VAL_ASSIGN, ITER_NEXT, NEXTK) \
+#define group_(Type, INIT_ALLOCATOR, INIT_ITER, NEW_VAL, HASH_VAL, VAL_NOT_EQUAL, VAL_ASSIGN, ITER_NEXT, NEXTK) \
 	int slots = 0;														\
 	gid slot = 0;														\
 	INIT_ITER;															\
@@ -1501,12 +1435,11 @@ LALGgroup_unique_keepnil(Client ctx, bat *rid, bat *uid, bat *bid, bat *sid, bat
 #define group(Type)								\
 	if (tt == TYPE_##Type) {					\
 		group_(Type,							\
-			   Type,							\
 			   ,								\
 			   Type *bp = Tloc(b, 0),			\
 			   ,								\
-			   (gid)_hash_##Type(bp[i]),		\
-			   vals[g] != bp[i],				\
+			   (gid)Type##Hash(bp + i),			\
+			   !is_##Type##_eq(vals[g], bp[i]),	\
 			   vals[g] = bp[i],					\
 			   ,								\
 			   nextk							\
@@ -1525,7 +1458,7 @@ LALGgroup_unique_keepnil(Client ctx, bat *rid, bat *uid, bat *bid, bat *sid, bat
 			bool fnd = 0;										\
 			gid g = 0;											\
 			for(; !fnd; ) {										\
-				gid k = (gid)_hash_oid(oid_nil)&h->mask;		\
+				gid k = (gid)oidHash(&oid_nil)&h->mask;			\
 				g = ATOMIC_GET_GID(h->gids+k);					\
 				for(;g && vals[g] != bpi;) {					\
 					k++;										\
@@ -1559,11 +1492,10 @@ LALGgroup_unique_keepnil(Client ctx, bat *rid, bat *uid, bat *bid, bat *sid, bat
 		} else {												\
 			assert(BATtdense(b));								\
 			group_(oid,											\
-				   oid,											\
 				   ,											\
 				   oid bp = b->tseqbase,						\
 				   oid bpi = bp+i,								\
-				   (gid)_hash_oid(bpi),							\
+				   (gid)oidHash(&bpi),							\
 				   vals[g] != bpi,								\
 				   vals[g] = bpi,								\
 				   ,											\
@@ -1572,25 +1504,9 @@ LALGgroup_unique_keepnil(Client ctx, bat *rid, bat *uid, bat *bid, bat *sid, bat
 				}												\
 	}
 
-#define fgroup(Type, BaseType)											\
-	if (tt == TYPE_##Type) {											\
-		group_(Type,													\
-			   BaseType,												\
-			   ,														\
-			   Type *bp = Tloc(b, 0),									\
-			   ,														\
-			   (gid)_hash_##Type(*(((BaseType*)bp)+i)),					\
-			   (!(is_##Type##_nil(bp[i]) && is_##Type##_nil(vals[g])) && vals[g] != bp[i]), \
-			   vals[g] = bp[i],											\
-			   ,														\
-			   nextk													\
-			)															\
-			}
-
 #define agroup_(Type,P)													\
 	if (ATOMstorage(tt) == TYPE_str) {									\
 		group_(Type,													\
-			   Type,													\
 			   allocator *ma = h->allocators[p->wid],					\
 			   BATiter bi = bat_iterator(b),							\
 			   var_t off = VarHeapVal(bi.base,i,bi.width);				\
@@ -1603,7 +1519,6 @@ LALGgroup_unique_keepnil(Client ctx, bat *rid, bat *uid, bat *bid, bat *sid, bat
 			)															\
 			} else {													\
 		group_(Type,													\
-			   Type,													\
 			   allocator *ma = h->allocators[p->wid],					\
 			   BATiter bi = bat_iterator(b),							\
 			   var_t off = VarHeapVal(bi.base,i,bi.width);				\
@@ -1619,7 +1534,6 @@ LALGgroup_unique_keepnil(Client ctx, bat *rid, bat *uid, bat *bid, bat *sid, bat
 #define agroup(Type)													\
 	if (ATOMvarsized(tt)) {												\
 		group_(Type,													\
-			   Type,													\
 			   ,														\
 			   BATiter bi = bat_iterator(b),							\
 			   var_t off = VarHeapVal(bi.base,i,bi.width);				\
@@ -1636,7 +1550,6 @@ LALGgroup_unique_keepnil(Client ctx, bat *rid, bat *uid, bat *bid, bat *sid, bat
 	assert(h->hsh && h->cmp);						\
 	int w = b->twidth;								\
 	group_(char,									\
-		   char,									\
 		   ,										\
 		   char *ivals = Tloc(b, 0),				\
 		   ,										\
@@ -1750,8 +1663,8 @@ LALGgroup(Client ctx, bat *rid, bat *uid, bat *bid)
 #ifdef HAVE_HGE
 			else group(hge)
 #endif
-			else fgroup(flt, int)
-			else fgroup(dbl, lng)
+			else group(flt)
+			else group(dbl)
 			else if (ATOMvarsized(tt)) {
 				if (local_storage) {
 					agroup_(str, p)
@@ -1794,7 +1707,7 @@ error:
 	return err;
 }
 
-#define derive_(Type, BaseType, INIT_ALLOCATOR, INIT_ITER, NEW_VAL, HASH_VAL, VAL_NOT_EQUAL, VAL_ASSIGN, ITER_NEXT, NEXTK) \
+#define derive_(Type, INIT_ALLOCATOR, INIT_ITER, NEW_VAL, HASH_VAL, VAL_NOT_EQUAL, VAL_ASSIGN, ITER_NEXT, NEXTK) \
 	int slots = 0;														\
 	gid slot = 0;														\
 	INIT_ITER;															\
@@ -1840,30 +1753,28 @@ error:
 	}																	\
 	ITER_NEXT;
 
-#define derive(Type)							\
-	if (tt == TYPE_##Type) {					\
-		derive_(Type,							\
-				Type,							\
-				,								\
-				Type *bp = Tloc(b, 0),			\
-				,								\
-				(gid)_hash_##Type(bp[i]),		\
-				vals[g] != bp[i],				\
-				vals[g] = bp[i],				\
-				,								\
-				nextk							\
-			)									\
+#define derive(Type)								\
+	if (tt == TYPE_##Type) {						\
+		derive_(Type,								\
+				,									\
+				Type *bp = Tloc(b, 0),				\
+				,									\
+				(gid)Type##Hash(bp + i),			\
+				!is_##Type##_eq(vals[g], bp[i]),	\
+				vals[g] = bp[i],					\
+				,									\
+				nextk								\
+			)										\
 			}
 
 #define vderive()								\
 	if (tt == TYPE_void) {						\
 		assert(BATtdense(b));					\
 		derive_(oid,							\
-				oid,							\
 				,								\
 				oid bp = b->tseqbase,			\
 				oid bpi = bp+i,					\
-				(gid)_hash_oid(bpi),			\
+				(gid)oidHash(&bpi),				\
 				vals[g] != bpi,					\
 				vals[g] = bpi,					\
 				,								\
@@ -1871,25 +1782,9 @@ error:
 			)									\
 			}
 
-#define fderive(Type, BaseType)											\
-	if (tt == TYPE_##Type) {											\
-		derive_(Type,													\
-				BaseType,												\
-				,														\
-				Type *bp = Tloc(b, 0),									\
-				,														\
-				(gid)_hash_##Type(*(((BaseType*)bp)+i)),				\
-				(!(is_##Type##_nil(bp[i]) && is_##Type##_nil(vals[g])) && vals[g] != bp[i]), \
-				vals[g] = bp[i],										\
-				,														\
-				nextk													\
-			)															\
-			}
-
 #define aderive_(Type, P)												\
 	if (ATOMstorage(tt) == TYPE_str) {									\
 		derive_(Type,													\
-				Type,													\
 				allocator *ma = h->allocators[P->wid],					\
 				BATiter bi = bat_iterator(b),							\
 				var_t off = VarHeapVal(bi.base,i,bi.width);				\
@@ -1902,7 +1797,6 @@ error:
 			)															\
 			} else {													\
 		derive_(Type,													\
-				Type,													\
 				allocator *ma = h->allocators[P->wid],					\
 				BATiter bi = bat_iterator(b),							\
 				var_t off = VarHeapVal(bi.base,i,bi.width);				\
@@ -1918,7 +1812,6 @@ error:
 #define aderive(Type)													\
 	if (ATOMvarsized(tt)) {												\
 		derive_(Type,													\
-				Type,													\
 				,														\
 				BATiter bi = bat_iterator(b),							\
 				var_t off = VarHeapVal(bi.base,i,bi.width);				\
@@ -2049,8 +1942,8 @@ LALGderive(Client ctx, bat *rid, bat *uid, bat *Gid, bat *Ph, bat *bid)
 #ifdef HAVE_HGE
 			else derive(hge)
 #endif
-			else fderive(flt, int)
-			else fderive(dbl, lng)
+			else derive(flt)
+			else derive(dbl)
 			else if (ATOMvarsized(tt)) {
 				if (local_storage) {
 					aderive_(str,p)
@@ -2186,7 +2079,7 @@ error:
 	} while(0)
 
 /* inout := algebra.project(groupid, val) */
-/* this (possibly) overwrites the values, therefor for expensive (var) types we
+/* this (possibly) overwrites the values, therefore for expensive (var) types we
  * only write offsets (ie use the heap from the parent) */
 static str
 //LALGconstant(bat *rid, bat *gid, void *val)
@@ -2401,7 +2294,7 @@ error:
 	}
 
 /* result := ialgebra.projection(groupid, input) */
-/* this (possibly) overwrites the values, therefor for expensive (var) types we
+/* this (possibly) overwrites the values, therefore for expensive (var) types we
  * only write offsets (ie use the heap from the parent) */
 static str
 LALGprojection(Client ctx, bat *rid, bat *gid, bat *bid)
@@ -2520,7 +2413,7 @@ LALGprojection(Client ctx, bat *rid, bat *gid, bat *bid)
 	/* get max id from gid */
 	if (ATOMvarsized(r->ttype) && cnt < max)
 		memset(Tloc(r, cnt), 0, r->twidth*(max-cnt));
-	cnt = BATcount(b);
+	cnt = BATcount(g);
 	if (!tt)
 		r->tseqbase = b->tseqbase;
 	if (tt && cnt) {

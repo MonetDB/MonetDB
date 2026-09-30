@@ -3589,7 +3589,7 @@ rel_binop_(mvc *sql, sql_rel *rel, sql_exp *l, sql_exp *r, char *sname, char *fn
 	/* swap complex types (intervals) to left side of +, * */
 	if (t1 && t2 && is_commutative(sname, fname)) {
 		if ((EC_INTERVAL(t1->type->eclass) && EC_TEMP(t2->type->eclass)) ||
-           ((!EC_TEMP(t1->type->eclass) && !EC_INTERVAL(t1->type->eclass)) && EC_INTERVAL(t2->type->eclass))) {
+			((!EC_TEMP(t1->type->eclass) && !EC_INTERVAL(t1->type->eclass)) && EC_INTERVAL(t2->type->eclass))) {
 			sql_subtype *tmp = t1;
 			t1 = t2;
 			t2 = tmp;
@@ -3775,8 +3775,10 @@ rel_nop(sql_query *query, sql_rel **rel, symbol *se, int fs, exp_kind ek)
 		sql_subtype *t1 = tl->h->data;
 		sql_subtype *t2 = tl->t->data;
 
-		if (t1 && t2 && ((EC_INTERVAL(t1->type->eclass) && EC_TEMP(t2->type->eclass)) ||
-           ((!EC_TEMP(t1->type->eclass) && !EC_INTERVAL(t1->type->eclass)) && EC_INTERVAL(t2->type->eclass)))) {
+		if (t1 && t2 &&
+			((EC_INTERVAL(t1->type->eclass) && EC_TEMP(t2->type->eclass)) ||
+			 ((!EC_TEMP(t1->type->eclass) && !EC_INTERVAL(t1->type->eclass)) &&
+			  EC_INTERVAL(t2->type->eclass)))) {
 			list_revert(exps);
 			list_revert(tl);
 		}

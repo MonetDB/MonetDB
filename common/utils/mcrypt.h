@@ -33,7 +33,8 @@ mutils_export char *mcrypt_SHA384Sum(const char *string, size_t len);
 mutils_export char *mcrypt_SHA512Sum(const char *string, size_t len);
 mutils_export char *mcrypt_RIPEMD160Sum(const char *string, size_t len);
 mutils_export char *mcrypt_BackendSum(const char *string, size_t len);
-mutils_export char *mcrypt_hashPassword(const char *algo, const char *password, const char *challenge);
+mutils_export char *mcrypt_hashPassword(const char *algo, const char *password,
+					const char *challenge);
 
 #define SHA_DIGEST_LENGTH    20
 #define SHA224_DIGEST_LENGTH 28

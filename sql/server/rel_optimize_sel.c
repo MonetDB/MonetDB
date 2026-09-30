@@ -372,21 +372,22 @@ exp_merge_range(visitor *v, sql_rel *rel, list *exps)
 				sql_exp *f = m->data;
 				sql_exp *lf = f->l;
 				sql_exp *rf = f->r;
+				sql_exp *lle = le, *lre = re;
 
 				if (f->type == e_cmp && f->flag < cmp_equal && !f->f  &&
 				    rf->card > CARD_ATOM && !is_anti(f)) {
 					sql_exp *ne, *t;
 					int swap = 0, lt = 0, gt = 0;
 					comp_type ef = (comp_type) e->flag, ff = (comp_type) f->flag;
-					int c_re = is_numeric_upcast(re), c_rf = is_numeric_upcast(rf);
-					int c_le = is_numeric_upcast(le), c_lf = is_numeric_upcast(lf), c;
+					int c_re = is_numeric_upcast(lre), c_rf = is_numeric_upcast(rf);
+					int c_le = is_numeric_upcast(lle), c_lf = is_numeric_upcast(lf), c;
 					sql_subtype super;
 
 					/* both swapped ? */
 					if (exp_match_exp(c_re?re->l:re, c_rf?rf->l:rf)) {
-						t = re;
-						re = le;
-						le = t;
+						t = lre;
+						lre = lle;
+						lle = t;
 						c = c_re; c_re = c_le; c_le = c;
 						ef = swap_compare(ef);
 						t = rf;
@@ -397,16 +398,16 @@ exp_merge_range(visitor *v, sql_rel *rel, list *exps)
 					}
 
 					/* is left swapped ? */
-					if (exp_match_exp(c_re?re->l:re, c_lf?lf->l:lf)) {
-						t = re;
-						re = le;
-						le = t;
+					if (exp_match_exp(c_re?lre->l:lre, c_lf?lf->l:lf)) {
+						t = lre;
+						lre = lle;
+						lle = t;
 						c = c_re; c_re = c_le; c_le = c;
 						ef = swap_compare(ef);
 					}
 
 					/* is right swapped ? */
-					if (exp_match_exp(c_le?le->l:le, c_rf?rf->l:rf)) {
+					if (exp_match_exp(c_le?lle->l:lle, c_rf?rf->l:rf)) {
 						t = rf;
 						rf = lf;
 						lf = t;
@@ -414,7 +415,7 @@ exp_merge_range(visitor *v, sql_rel *rel, list *exps)
 						ff = swap_compare(ff);
 					}
 
-					if (!exp_match_exp(c_le?le->l:le, c_lf?lf->l:lf))
+					if (!exp_match_exp(c_le?lle->l:lle, c_lf?lf->l:lf))
 						continue;
 
 					/* for now only   c1 <[=] x <[=] c2 */
@@ -426,18 +427,18 @@ exp_merge_range(visitor *v, sql_rel *rel, list *exps)
 					if (lt && (ff == cmp_lt || ff == cmp_lte))
 						continue;
 
-					cmp_supertype(&super, exp_subtype(le), exp_subtype(lf), false);
+					cmp_supertype(&super, exp_subtype(lle), exp_subtype(lf), false);
 					if (!(rf = exp_check_type(v->sql, &super, rel, rf, type_equal)) ||
-						!(le = exp_check_type(v->sql, &super, rel, le, type_equal)) ||
-						!(re = exp_check_type(v->sql, &super, rel, re, type_equal))) {
+						!(lle = exp_check_type(v->sql, &super, rel, lle, type_equal)) ||
+						!(lre = exp_check_type(v->sql, &super, rel, lre, type_equal))) {
 							v->sql->session->status = 0;
 							v->sql->errstr[0] = 0;
 							continue;
 						}
 					if (!swap)
-						ne = exp_compare2(v->sql->sa, le, re, rf, compare2range(ef, ff), 0);
+						ne = exp_compare2(v->sql->sa, lle, lre, rf, compare2range(ef, ff), 0);
 					else
-						ne = exp_compare2(v->sql->sa, le, rf, re, compare2range(ff, ef), 0);
+						ne = exp_compare2(v->sql->sa, lle, rf, lre, compare2range(ff, ef), 0);
 
 					list_remove_data(exps, NULL, e);
 					list_remove_data(exps, NULL, f);
@@ -1767,8 +1768,8 @@ rel_join_use_fk(visitor *v, sql_rel *rel)
 static sql_rel *
 rel_optimize_joins_topdown_(visitor *v, sql_rel *rel)
 {
-	bool oahash_enabled = MT_thread_get_qry_ctx()->oahash_enabled;
-	if (oahash_enabled)
+	bool pipeline_mode = MT_thread_get_qry_ctx()->pipeline_mode;
+	if (pipeline_mode)
 		rel = transitivity_rule(v, rel);
 	rel = rel_join_use_fk(v, rel);
 	return rel;
@@ -3570,7 +3571,7 @@ order_joins_bushy2( visitor *v, list *rels, list *exps)
 static sql_rel *
 order_joins(visitor *v, list *rels, list *exps)
 {
-	bool oahash_enabled = MT_thread_get_qry_ctx()->oahash_enabled;
+	bool pipeline_mode = MT_thread_get_qry_ctx()->pipeline_mode;
 	sql_rel *top = NULL, *l = NULL, *r = NULL, *f = NULL;
 	sql_exp *cje;
 	node *djn;
@@ -3677,7 +3678,7 @@ order_joins(visitor *v, list *rels, list *exps)
 		rsingle = is_single(r);
 		reset_single(r);
 		top = rel_crossproduct(v->sql->sa, l, r, op_join);
-		if (oahash_enabled)
+		if (pipeline_mode)
 			top = rel_get_statistics_(v, top); /* we need stats */
 		if (rsingle)
 			set_single(r);
@@ -3938,7 +3939,7 @@ static sql_rel *rel_join_order_(visitor *v, sql_rel *rel);
 sql_rel *
 reorder_join(visitor *v, sql_rel *rel)
 {
-	bool oahash_enabled = MT_thread_get_qry_ctx()->oahash_enabled;
+	bool pipeline_mode = MT_thread_get_qry_ctx()->pipeline_mode;
 
 	list *exps, *rels;
 	allocator *ta = MT_thread_getallocator();
@@ -3965,7 +3966,7 @@ reorder_join(visitor *v, sql_rel *rel)
 			int cnt = list_length(exps);
 			rel->exps = exps;
 			if (list_length(rel->exps) != cnt) {
-				if (oahash_enabled)
+				if (pipeline_mode)
 					rel->exps = order_join_expressions_pp(v->sql, exps, rels);
 				else
 					rel->exps = order_join_expressions(v->sql, exps, rels);
@@ -3980,7 +3981,7 @@ reorder_join(visitor *v, sql_rel *rel)
 		get_relations(v, rel, rels);
 		if (list_length(rels) > 1) {
 			rels = push_in_join_down(v->sql, rels, exps);
-			if (oahash_enabled)
+			if (pipeline_mode)
 				rel = order_joins_bushy2(v, rels, exps);
 			else
 				rel = order_joins(v, rels, exps);
@@ -4075,9 +4076,9 @@ rel_join_order(visitor *v, global_props *gp, sql_rel *rel)
 run_optimizer
 bind_join_order(visitor *v, global_props *gp)
 {
-	bool oahash_enabled = MT_thread_get_qry_ctx()->oahash_enabled;
+	bool pipeline_mode = MT_thread_get_qry_ctx()->pipeline_mode;
 	int flag = v->sql->sql_optimizer;
-	return !oahash_enabled && gp->opt_level == 1 && gp->opt_cycle < 10 && !gp->cnt[op_update] && (gp->cnt[op_join] || gp->cnt[op_left] ||
+	return !pipeline_mode && gp->opt_level == 1 && gp->opt_cycle < 10 && !gp->cnt[op_update] && (gp->cnt[op_join] || gp->cnt[op_left] ||
 		gp->cnt[op_right] || gp->cnt[op_full]) && (flag & join_order) ? rel_join_order : NULL;
 }
 
@@ -5154,7 +5155,7 @@ rel_push_select_down(visitor *v, sql_rel *rel)
 		v->changes++;
 	}
 	if (is_select(rel->op) && !exps_has_group_filter(rel->exps) &&
-     	    r && is_munion(r->op) && !is_recursive(r) && !list_empty(r->exps) && !rel_is_ref(r) && !is_single(r) && !list_empty(exps)) {
+		r && is_munion(r->op) && !is_recursive(r) && !list_empty(r->exps) && !rel_is_ref(r) && !is_single(r) && !list_empty(exps)) {
 		sql_rel *u = r;
 		list *rels = u->l, *nrels = sa_list(v->sql->sa);
 		for(node *n = rels->h; n; n = n->next) {

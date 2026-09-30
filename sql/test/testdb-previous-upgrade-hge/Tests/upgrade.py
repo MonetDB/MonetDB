@@ -64,7 +64,7 @@ if len(sys.argv) == 2 and sys.argv[1] == 'upgrade':
     for b in bits:
         for a in arch:
             for h in hge:
-                f = 'upgrade.stable.out{}{}{}'.format(b, a, h)
+                f = f'upgrade.stable.out{b}{a}{h}'
                 found = os.path.exists(f)
                 if found:
                     break
@@ -84,6 +84,14 @@ if len(sys.argv) == 2 and sys.argv[1] == 'upgrade':
                                      fromfile='expected', tofile='received'):
         sys.stderr.write(line)
         xit = 1
+    approve = os.getenv('MTEST_APPROVE')
+    if approve:
+        if approve == 'REPLACE':
+            fn = os.path.join(os.getenv('TSTSRCDIR'), f)
+        else:
+            fn = os.path.join(os.getenv('TSTTRGDIR'), f'{f}.new')
+        with open(fn, 'w') as fil:
+            fil.writelines(srvout)
 else:
     sys.stdout.writelines(srvout)
 

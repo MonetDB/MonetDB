@@ -591,6 +591,11 @@ rel_push_project_up_(visitor *v, sql_rel *rel)
 					return rel;
 				if (e->alias.label && exps_bind_nid(r_exps, e->alias.label))
 					return rel;
+				/* handle old style duplicates needed for remote plans */
+				if ((e->l && exps_bind_column2(r_exps, e->l, e->r, NULL) != NULL) ||
+				   (exps_bind_column(r_exps, e->r, NULL, NULL, 1) != NULL && (!e->l || !e->r))) {
+					return rel;
+				}
 			}
 			/* conflict with new left expressions */
 			for(n = r_exps->h; n; n = n->next) {
@@ -602,6 +607,11 @@ rel_push_project_up_(visitor *v, sql_rel *rel)
 					return rel;
 				if (e->alias.label && exps_bind_nid(l_exps, e->alias.label))
 					return rel;
+				/* handle old style duplicates needed for remote plans */
+				if ((e->l && exps_bind_column2(l_exps, e->l, e->r, NULL) != NULL) ||
+				   (exps_bind_column(l_exps, e->r, NULL, NULL, 1) != NULL && (!e->l || !e->r))) {
+					return rel;
+				}
 			}
 		}
 
@@ -849,7 +859,7 @@ rel_split_project_(visitor *v, sql_rel *rel, int top)
 		return NULL;
 
 	if (v->opt >= 0 && rel->opt >= v->opt) /* only once */
-        return rel;
+		return rel;
 
 	if (is_project(rel->op) && list_length(rel->exps) && (is_groupby(rel->op) || rel->l) && !need_distinct(rel) && !is_single(rel)) {
 		list *exps = rel->exps;
@@ -905,7 +915,7 @@ rel_split_project_(visitor *v, sql_rel *rel, int top)
 			return NULL;
 	}
 	if (rel && v->opt >= 0)
-        rel->opt = v->opt;
+		rel->opt = v->opt;
 	return rel;
 }
 
@@ -2342,9 +2352,8 @@ rel_reduce_groupby_exps(visitor *v, sql_rel *rel)
 				i += (j == i);
 			}
 		}
-		if (i) { /* forall tables find pkey and
-				remove useless other columns */
-			/* TODO also remove group by columns which are related to
+		if (i) { /* forall tables find pkey and remove useless other columns */
+			/* This also removes group by columns which are related to
 			 * the other columns using a foreign-key join (n->1), ie 1
 			 * on the to be removed side.
 			 */
@@ -2427,8 +2436,7 @@ rel_reduce_groupby_exps(visitor *v, sql_rel *rel)
 							append(ngbe, e);
 					}
 					rel->r = ngbe;
-					/* rewrite gbe and aggr, in the aggr list */
-					if (0)
+					/* rewrite gbe and aggr, in the aggr list, as they may refer to the removed expressions */
 					for (m = rel->exps->h; m; m = m->next ){
 						sql_exp *e = m->data;
 						int fnd = 0;
@@ -2436,13 +2444,11 @@ rel_reduce_groupby_exps(visitor *v, sql_rel *rel)
 						for (l = 0, n = gbe->h; l < k && n && !fnd; l++, n = n->next) {
 							sql_exp *gb = n->data;
 
-							if (scores[l] == -1 && exp_refers(gb, e)) {
-								/*
+							if (scores[l] == -1 && exp_refers(gb, e) && gb->alias.label != gb->nid) {
 								sql_exp *rs = exp_column(v->sql->sa, gb->l?gb->l:exp_relname(gb), gb->r?gb->r:exp_name(gb), exp_subtype(gb), rel->card, has_nil(gb), is_unique(gb), is_intern(gb));
 								exp_setalias(rs, e->alias.label, exp_find_rel_name(e), exp_name(e));
+								rs->nid = gb->nid;
 								e = rs;
-								*/
-								assert(e->alias.label == e->nid);
 								fnd = 1;
 							}
 						}
@@ -3355,7 +3361,7 @@ rel_project_select_exp(visitor *v, sql_rel *rel)
 static sql_rel *
 rel_optimize_projections_(visitor *v, sql_rel *rel)
 {
-	bool oahash_enabled = MT_thread_get_qry_ctx()->oahash_enabled;
+	bool pipeline_mode = MT_thread_get_qry_ctx()->pipeline_mode;
 	rel = rel_project_cse(v, rel);
 	rel = rel_project_select_exp(v, rel);
 	rel = rel_use_equality_exps(v, rel);
@@ -3370,11 +3376,11 @@ rel_optimize_projections_(visitor *v, sql_rel *rel)
 		rel = rel_simplify_groupby_columns(v, rel);
 	}
 	rel = rel_groupby_cse(v, rel);
-	if (!oahash_enabled) rel = rel_push_aggr_down(v, rel);
+	if (!pipeline_mode) rel = rel_push_aggr_down(v, rel);
 	rel = rel_push_groupby_down(v, rel);
 	rel = rel_reduce_groupby_exps(v, rel);
 	rel = rel_distinct_aggregate_on_unique_values(v, rel);
-	if (!oahash_enabled) rel = rel_groupby_distinct(v, rel);
+	if (!pipeline_mode) rel = rel_groupby_distinct(v, rel);
 	rel = rel_push_count_down(v, rel);
 
 	/* only when value_based_opt is on, ie not for dependency resolution */
@@ -3531,8 +3537,8 @@ rel_merge_unions(visitor *v, sql_rel *rel)
 static inline sql_rel *
 rel_push_join_down_munion(visitor *v, sql_rel *rel)
 {
-	bool oahash_enabled = MT_thread_get_qry_ctx()->oahash_enabled;
-	if (!oahash_enabled && ((is_join(rel->op) && !is_outerjoin(rel->op) && !is_single(rel)) || is_semi(rel->op))) {
+	bool pipeline_mode = MT_thread_get_qry_ctx()->pipeline_mode;
+	if (!pipeline_mode && ((is_join(rel->op) && !is_outerjoin(rel->op) && !is_single(rel)) || is_semi(rel->op))) {
 		sql_rel *l = rel->l, *r = rel->r, *ol = l, *or = r;
 		list *exps = rel->exps, *attr = rel->attr;
 		sql_exp *je = NULL;

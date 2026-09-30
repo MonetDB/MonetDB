@@ -13,6 +13,7 @@
 #include "opt_mitosis.h"
 #include "mal_interpreter.h"
 
+#define MAXSLICES 128			/* to be refined */
 #define MIN_PART_SIZE 100000	/* minimal record count per partition */
 #define MAX_PARTS2THREADS_RATIO 4	/* There should be at most this multiple more of partitions than threads */
 
@@ -21,16 +22,20 @@ str
 OPTmitosisImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 						 InstrPtr pci)
 {
-	int i, j, limit, slimit, pieces = 1, mito_parts = 0,
-		mito_size = 0, mt = -1, nr_cols = 0, nr_aggrs = 0,
-		nr_maps = 0;
+	int i, j, limit, slimit, pieces = 1, mito_parts = 0;
+	int mito_size = 0, mt = -1, nr_cols = 0, nr_aggrs = 0;
+	int nr_maps = 0;
 	uint32_t row_size = 0;
-	str schema = 0, table = 0;
-	BUN r = 0, rowcnt = 0;		/* table should be sizeable to consider parallel execution */
+	const char *schema = NULL;
+	const char *table = NULL;
+	BUN r = 0;
+	BUN rowcnt = 0;		/* table should be sizeable to consider parallel execution */
 	InstrPtr p, q, *old, target = 0;
-	size_t argsize = 6 * sizeof(lng), m = 0;
+	size_t argsize = 6 * sizeof(lng);
+	size_t m = 0;
 	/*       estimate size per operator estimate:   4 args + 2 res */
-	int threads = GDKnr_threads ? GDKnr_threads : 1, maxparts = MAXSLICES;
+	int threads = GDKnr_threads ? GDKnr_threads : 1;
+	int maxparts = MAXSLICES;
 	str msg = MAL_SUCCEED;
 
 	/* if the user has associated limitation on the number of threads, respect it in the
@@ -59,7 +64,7 @@ OPTmitosisImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 
 		/* mitosis/mergetable bailout conditions */
 		/* Crude protection against self join explosion */
-		if (p->retc == 2 && isMatJoinOp(p))
+		if (p->retc == 2 && isMatJoinOp(p) && threads < maxparts)
 			maxparts = threads;
 
 		nr_aggrs += (p->argc > 2 && getModuleId(p) == aggrRef);
@@ -181,7 +186,7 @@ OPTmitosisImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 		 * |threads| partitions at a time fit in memory,
 		 * i.e., (threads*(rowcnt/pieces) <= m),
 		 * i.e., (rowcnt/pieces <= m/threads),
-		 * i.e., (pieces => rowcnt/(m/threads))
+		 * i.e., (pieces >= rowcnt/(m/threads))
 		 * (assuming that (m > threads*MIN_PART_SIZE)) */
 		/* the number of pieces affects SF-100, going beyond 8x increases
 		 * the optimizer costs beyond the execution time
@@ -212,6 +217,12 @@ OPTmitosisImplementation(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 	mito_size = GDKgetenv_int("mito_size", 0);
 	if (mito_size > 0)
 		pieces = (int) ((rowcnt * row_size) / (mito_size * 1024));
+	mito_size = GDKgetenv_int("min_mito_rows", 0);
+	if (mito_size > 0 && pieces > 1 && rowcnt / pieces < (BUN) mito_size)
+		pieces = (int) (rowcnt / mito_size);
+	mito_parts = GDKgetenv_int("max_mito_parts", 0);
+	if (mito_parts > 0 && pieces > mito_parts)
+		pieces = mito_parts;
 
 	if (pieces <= 1) {
 		pieces = 0;

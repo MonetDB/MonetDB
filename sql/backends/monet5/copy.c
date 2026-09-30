@@ -370,6 +370,54 @@ find_end_of_lines1(struct scan_state *st, BUN *newlines_count, BUN maxcount )
 }
 
 static const unsigned char *
+find_end_of_lines2(struct scan_state *st, BUN *newlines_count, BUN maxcount )
+{
+	bool found = true;
+	int quote_char = st->quote_char;
+	int line_sep0 = st->line_sep_str[0];
+	int line_sep1 = st->line_sep_str[1];
+	bool escape_enabled = st->escape_enabled;
+	unsigned char *end = st->end;
+	// these are updated
+	unsigned char *pos = st->pos;
+	bool quoted = st->quoted;
+	bool escape_pending = st->escape_pending;
+
+	BUN newline_count = 0;
+	const unsigned char *latest_pos = NULL;
+	while (found && pos < end && newline_count < maxcount) {
+		found = false;
+		for (; pos < end; pos++) {
+			if (escape_pending) {
+				escape_pending = false;
+				continue;
+			}
+			if (escape_enabled && *pos == '\\') {
+				escape_pending = true;
+				continue;
+			}
+			bool is_quote = (quote_char != 0 && *pos == quote_char);
+			quoted ^= is_quote;
+			if (!quoted && *pos == line_sep0 && pos[1] == line_sep1) {
+				found = true;
+				break;
+			}
+		}
+		if (found) {
+			*pos = 0;
+			pos+=2;
+			newline_count++;
+			latest_pos = pos;
+		}
+	}
+	st->pos = pos;
+	st->quoted = quoted;
+	st->escape_pending = escape_pending;
+	*newlines_count = newline_count;
+	return latest_pos;
+}
+
+static const unsigned char *
 find_end_of_linesN(struct scan_state *st, BUN *newlines_count, BUN maxcount )
 {
 	bool found = true;
@@ -455,6 +503,8 @@ COPYfixlines(lng *ret_linecount, BUN *e, reader *r, int wid, struct error_handli
 	const unsigned char *latest_pos = NULL;
 	if (state.line_sep_len == 1 && !state.quote_char && !state.escape_enabled)
 		latest_pos = find_end_of_lines1nn(&state, &newline_count, r->maxcount);
+	else if (state.line_sep_len == 2)
+		latest_pos = find_end_of_lines2(&state, &newline_count, r->maxcount);
 	else if (state.line_sep_len == 1)
 		latest_pos = find_end_of_lines1(&state, &newline_count, r->maxcount);
 	else
@@ -551,7 +601,10 @@ COPYsplitlines(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		p->p->master_counter = (p->p->nr_workers*-2);
 
 	if (!r->done && !r->error)
-		(void)pipeline_get_token(p, 0, p->wid, &r->done);
+		if (pipeline_get_token(p, 0, p->wid, &r->done) < 0) {
+			r->error = true;
+			goto end;
+		}
 
 	if (!r->done)
 		p->seqnr = (int)r->bs->seq[p->wid];
@@ -579,7 +632,6 @@ COPYsplitlines(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if (!r->error && !r->done && r->offset) {
 		lng skipped = COPYskiplines(r, p->wid);
 		r->offset -= (BUN)skipped;
-		//r->linecount += skipped; ??
 	}
 
 	lng line_count = 0;
@@ -597,7 +649,10 @@ COPYsplitlines(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			goto end;
 		}
 		if (r->can_jump)
-			(void)pipeline_get_token(p, 1, p->wid, &r->done);
+			if (pipeline_get_token(p, 1, p->wid, &r->done) < 0) {
+				r->error = true;
+				goto end;
+			}
 		r->linecount += line_count;
 		state.end = state.start + e;
 		if (e)

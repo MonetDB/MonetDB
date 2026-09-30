@@ -53,8 +53,6 @@ OPTreorderImplementation(Client ctx, MalBlkPtr mb, MalStkPtr stk,
 	int top[MAXSLICES] = { 0 };
 	int barriers[MAXSLICES] = { 0 }, btop = 0, off = 0;
 
-	for (i = 0; i < MAXSLICES; i++)
-		top[i] = 0;
 	if (MB_LARGE(mb)) {
 		goto wrapup;
 	}

@@ -249,7 +249,7 @@ typedef struct store_functions {
 	prop_col_fptr unique_col;
 	prop_col_fptr double_elim_col; /* varsize col with double elimination */
 	proprec_col_fptr col_stats;
-    col_set_range_fptr col_set_range; /* set range properties to the column low level structures */
+	col_set_range_fptr col_set_range; /* set range properties to the column low level structures */
 	col_not_null_fptr col_not_null;	/* switch not null property */
 	col_subtype_fptr col_subtype;	/* switch types */
 
@@ -576,6 +576,8 @@ extern BAT *FORdecompress_(BAT *o, lng minval, int tt, role_t role);
 extern int FORprepare4append(BAT **noffsets, BAT *vals, lng minval, int tt);
 extern int FORprepare4append_vals(void **noffsets, void *vals, BUN cnt, lng minval, int vtype, int ft);
 
-extern void store_printinfo(sqlstore *store);
+extern void store_printinfo(FILE *outf, sqlstore *store)
+	__attribute__((__nonnull__(1)))
+	__attribute__((__nonnull__(2)));
 
 #endif /*SQL_STORAGE_H */

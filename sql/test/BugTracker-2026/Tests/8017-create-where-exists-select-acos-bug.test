@@ -1,0 +1,95 @@
+statement ok
+CREATE TABLE t8017 (x INT)
+
+statement ok rowcount 1
+INSERT INTO t8017 VALUES (2)
+
+-- ACOS(x) is an unused EXISTS projection and must not be evaluated.
+query I nosort
+SELECT COUNT(*) AS result
+FROM t8017 AS outer_row
+WHERE EXISTS (
+    SELECT ACOS(inner_row.x)
+    FROM t8017 AS inner_row
+)
+----
+1
+
+statement ok
+CREATE VIEW t8017_view AS
+SELECT COUNT(*) AS result
+FROM t8017 AS outer_row
+WHERE EXISTS (
+    SELECT ACOS(inner_row.x)
+    FROM t8017 AS inner_row
+)
+
+query I nosort
+SELECT result FROM t8017_view
+----
+1
+
+-- next statement fails with 22003!Math exception: Invalid argument
+statement ok
+CREATE TEMPORARY TABLE t8017_tmp AS
+SELECT COUNT(*) AS result
+FROM t8017 AS outer_row
+WHERE EXISTS (
+    SELECT ACOS(inner_row.x)
+    FROM t8017 AS inner_row
+)
+ON COMMIT PRESERVE ROWS
+
+query I nosort
+SELECT result FROM t8017_tmp
+----
+1
+
+-- next statement fails with 22003!Math exception: Invalid argument
+statement ok
+CREATE TABLE t8017_ctas AS
+SELECT COUNT(*) AS result
+FROM t8017 AS outer_row
+WHERE EXISTS (
+    SELECT ACOS(inner_row.x)
+    FROM t8017 AS inner_row
+)
+
+query I nosort
+SELECT result FROM t8017_ctas
+----
+1
+
+statement ok
+CREATE TABLE t8017_target (result BIGINT)
+
+-- next statement fails with 22003!Math exception: Invalid argument
+statement ok rowcount 1
+INSERT INTO t8017_target
+SELECT COUNT(*) AS result
+FROM t8017 AS outer_row
+WHERE EXISTS (
+    SELECT ACOS(inner_row.x)
+    FROM t8017 AS inner_row
+)
+
+query I nosort
+SELECT result FROM t8017_target
+----
+1
+
+statement ok
+DROP TABLE IF EXISTS t8017_target
+
+statement ok
+DROP TABLE IF EXISTS t8017_ctas
+
+statement ok
+DROP TABLE IF EXISTS t8017_tmp
+
+statement ok
+DROP VIEW IF EXISTS t8017_view
+
+statement ok
+DROP TABLE t8017
+

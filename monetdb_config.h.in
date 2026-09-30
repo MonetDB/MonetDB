@@ -182,7 +182,6 @@
 // optional code: libraries that may or may not be available,
 // optional extensions
 #cmakedefine HAVE_BROTLI 1
-#cmakedefine HAVE_CUDF 1
 #cmakedefine HAVE_CURL 1
 #cmakedefine HAVE_FITS 1
 #cmakedefine HAVE_GEOM 1
@@ -209,7 +208,11 @@
 #cmakedefine WITH_TCMALLOC 1
 #cmakedefine WITH_MALLOC "@WITH_MALLOC@"
 
-#cmakedefine SANITIZER 1
+// with new enough xxhash library we can inline everything
+#cmakedefine XXH_INLINE_ALL 1
+
+#cmakedefine SANITIZER 1		/* address sanitizer */
+#cmakedefine UNDEFINED 1		/* undefined behavior sanitizer */
 
 #define BUILD_TYPE "@BUILD_TYPE@"
 #define EXTRA_C_FLAGS "@EXTRA_C_FLAGS@"
@@ -496,7 +499,7 @@ strndup(const char *s, size_t n)
 }
 #endif
 
-#if !defined(SANITIZER) && (defined(__x86_64__) || defined(__amd64__))
+#if !defined(SANITIZER) && !defined(UNDEFINED) && (defined(__x86_64__) || defined(__amd64__))
 /* we can do unaligned access (e.g. read 8-byte value from a location
  * which is not a multiple of 8; the list can be extended when we learn
  * about more architectures */
@@ -606,7 +609,7 @@ gmtime_r(const time_t *restrict timep, struct tm *restrict result)
 		static void f(void);										 \
 		__declspec(allocate(".CRT$XCU")) void (*f##_)(void) = f;	 \
 		__pragma(comment(linker,"/include:" q #f "_"))				 \
-        static void f(void)
+		static void f(void)
 #ifdef _WIN64
 	#define LIB_STARTUP_FUNC(f) _LIB_STARTUP_FUNC_(f,"")
 #else

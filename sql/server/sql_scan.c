@@ -1665,12 +1665,12 @@ scanner(YYSTYPE * yylval, void *parm, bool log)
 			if (nxt == STRING) {
 				next = 0;
 				uescape = yylval->sval;
-                if (strlen(uescape) != 1 || strchr("\"'0123456789abcdefABCDEF+ \t\n\r\f", *uescape) != NULL) {
-                    sqlformaterror(c, SQLSTATE(22019) "%s", "UESCAPE must be one character");
+				if (strlen(uescape) != 1 || strchr("\"'0123456789abcdefABCDEF+ \t\n\r\f", *uescape) != NULL) {
+					sqlformaterror(c, SQLSTATE(22019) "%s", "UESCAPE must be one character");
 					return LEX_ERROR;
-                }
+				}
 			} else {
-                sqlformaterror(c, SQLSTATE(22019) "%s", "UESCAPE character missing");
+				sqlformaterror(c, SQLSTATE(22019) "%s", "UESCAPE character missing");
 				return LEX_ERROR;
 			}
 		}

@@ -173,20 +173,12 @@
 		}							\
 	} while(0)
 
-#define flt_neq(a, b)	(is_flt_nil(a) ? !is_flt_nil(b) : is_flt_nil(b) || (a) != (b))
-#define dbl_neq(a, b)	(is_dbl_nil(a) ? !is_dbl_nil(b) : is_dbl_nil(b) || (a) != (b))
-#define bte_neq(a, b)	((a) != (b))
-#define sht_neq(a, b)	((a) != (b))
-#define int_neq(a, b)	((a) != (b))
-#define lng_neq(a, b)	((a) != (b))
-#define hge_neq(a, b)	((a) != (b))
-
 #define GRP_compare_consecutive_values_tpe(TYPE)		\
 	GRP_compare_consecutive_values(				\
 	/* INIT_0 */	const TYPE *w = (TYPE *) bi.base;	\
 			TYPE pw = 0			,	\
 	/* INIT_1 */					,	\
-	/* DIFFER */	TYPE##_neq(w[p], pw)		,	\
+	/* DIFFER */	!is_##TYPE##_eq(w[p], pw)	,	\
 	/* KEEP   */	pw = w[p]				\
 	)
 
@@ -291,25 +283,12 @@
 		}							\
 	} while(0)
 
-#define flt_equ(a, b)	(is_flt_nil(a) ? is_flt_nil(b) : !is_flt_nil(b) && (a) == (b))
-#define dbl_equ(a, b)	(is_dbl_nil(a) ? is_dbl_nil(b) : !is_dbl_nil(b) && (a) == (b))
-#define bte_equ(a, b)	((a) == (b))
-#define sht_equ(a, b)	((a) == (b))
-#define int_equ(a, b)	((a) == (b))
-#define lng_equ(a, b)	((a) == (b))
-#ifdef HAVE_HGE
-#define hge_equ(a, b)	((a) == (b))
-#define uuid_equ(a, b)	((a).h == (b).h)
-#else
-#define uuid_equ(a, b)	(memcmp((a).u, (b).u, UUID_SIZE) == 0)
-#endif
-
 #define GRP_subscan_old_groups_tpe(TYPE)			\
 	GRP_subscan_old_groups(					\
 	/* INIT_0 */	const TYPE *w = (TYPE *) bi.base;	\
 			TYPE pw = 0			,	\
 	/* INIT_1 */					,	\
-	/* EQUAL  */	TYPE##_equ(w[p], pw)		,	\
+	/* EQUAL  */	is_##TYPE##_eq(w[p], pw)	,	\
 	/* KEEP   */	pw = w[p]				\
 	)
 
@@ -419,7 +398,7 @@
 	GRP_use_existing_hash_table(				\
 	/* INIT_0 */	const TYPE *w = (TYPE *) bi.base,	\
 	/* INIT_1 */					,	\
-	/* EQUAL  */	TYPE##_equ(w[p], w[hb])			\
+	/* EQUAL  */	is_##TYPE##_eq(w[p], w[hb])		\
 	)
 
 #define GRP_use_existing_hash_table_any()			\
@@ -591,7 +570,7 @@ ctz(oid x)
 	/* INIT_0 */	const TYPE *w = (TYPE *) bi.base,	\
 	/* INIT_1 */					,	\
 	/* HASH   */	hash_##TYPE(hs, &w[p])		,	\
-	/* EQUAL  */	TYPE##_equ(w[p], w[hb])			\
+	/* EQUAL  */	is_##TYPE##_eq(w[p], w[hb])		\
 	)
 
 #define GRP_create_partial_hash_table_any()			\

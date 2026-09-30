@@ -1,4 +1,4 @@
-query I rowsort
+query T rowsort
     SELECT (NULL)
 ----
 NULL

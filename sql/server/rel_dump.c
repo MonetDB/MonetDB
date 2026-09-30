@@ -783,8 +783,8 @@ rel_print_rel(mvc *sql, stream  *fout, sql_rel *rel, int depth, list *refs, int 
 			exps_print(sql, fout, rel->attr, depth, refs, 1, 0, decorate, 0);
 	} 	break;
 	case op_buildhash:
-    case op_probehash:
-    case op_partition:
+	case op_probehash:
+	case op_partition:
 		if (rel->op == op_buildhash)
 			mnstr_printf(fout, "buildhash(");
 		else if (rel->op == op_probehash)
@@ -875,9 +875,9 @@ rel_print_refs(mvc *sql, stream* fout, sql_rel *rel, int depth, list *refs, int 
 		break;
 	case op_project:
 	case op_select:
-    case op_buildhash:
-    case op_probehash:
-    case op_partition:
+	case op_buildhash:
+	case op_probehash:
+	case op_partition:
 	case op_groupby:
 	case op_topn:
 	case op_sample:

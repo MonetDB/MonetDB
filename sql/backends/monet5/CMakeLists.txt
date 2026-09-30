@@ -147,6 +147,7 @@ target_sources(sql
   rel_pptopn.c rel_pptopn.h
   rel_physical.c rel_physical.h
   rel_predicates.c rel_predicates.h
+  rel_util.c rel_util.h
   bin_partition.c bin_partition.h
   bin_partition_by_slice.c bin_partition_by_slice.h
   bin_partition_by_value.c bin_partition_by_value.h
@@ -234,9 +235,6 @@ install(TARGETS
   DESTINATION ${CMAKE_INSTALL_LIBDIR})
 
 add_subdirectory(generator)
-if(WITH_UDF)
-  add_subdirectory(UDF)
-endif()
 if(WITH_VAULTS)
   add_subdirectory(vaults)
 endif()

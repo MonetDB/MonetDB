@@ -268,12 +268,7 @@ INSERT INTO "t0" VALUES (3), (2)
 query IIIIII rowsort
 select * from t0 join (values (1, 2, 3, 4, 5)) as sub0(a,b,c,d,e) on t0.c0 = 3
 ----
-3
-1
-2
-3
-4
-5
+3	1	2	3	4	5
 
 statement ok
 ROLLBACK
@@ -594,7 +589,7 @@ CREATE TABLE t1(c2 CLOB)
 statement ok rowcount 3
 INSERT INTO t1(c2) VALUES('aaa'), ('y2qxM9H'), (')pI')
 
-query I rowsort
+query T rowsort
 SELECT min(NULL) FROM t1
 ----
 NULL

@@ -1,0 +1,96 @@
+statement ok
+CREATE TABLE t8028(c0 VARCHAR(128) NOT NULL)
+
+statement ok rowcount 10
+INSERT INTO t8028(c0) VALUES ('d'), ('a'), ('qg'), ('a'), ('r'), ('A'), ('a'), ('nlbMr4'), ('1274735242'), ('a')
+
+query T rowsort
+SELECT COALESCE(t8028.c0, '__NULL__') AS sig
+FROM t8028
+GROUP BY ROLLUP (t8028.c0)
+----
+1274735242
+A
+__NULL__
+a
+d
+nlbMr4
+qg
+r
+
+query T rowsort
+SELECT COALESCE(t8028.c0, '__NULL__') AS sig
+FROM t8028
+GROUP BY ROLLUP (t8028.c0)
+HAVING (t8028.c0 <> 'a')
+----
+1274735242
+A
+d
+nlbMr4
+qg
+r
+
+query T rowsort
+SELECT COALESCE(t8028.c0, '__NULL__') AS sig
+FROM t8028
+GROUP BY ROLLUP (t8028.c0)
+HAVING (t8028.c0 <> 'a') OR (t8028.c0 IS NULL)
+----
+1274735242
+A
+__NULL__
+d
+nlbMr4
+qg
+r
+
+query T rowsort
+SELECT COALESCE(CAST(t8028.c0 AS VARCHAR(256)), '__NULL__') AS sig
+FROM t8028
+GROUP BY ROLLUP (t8028.c0)
+HAVING (t8028.c0 <> 'a') OR (t8028.c0 IS NULL)
+----
+1274735242
+A
+__NULL__
+d
+nlbMr4
+qg
+r
+
+-- Q1  DQR base: HAVING on the ROLLUP grouping key
+query T rowsort
+SELECT DISTINCT COALESCE(CAST(t8028.c0 AS VARCHAR(256)), '__NULL__') AS sig
+FROM t8028
+GROUP BY ROLLUP (t8028.c0)
+HAVING (t8028.c0 <> 'a') OR (t8028.c0 IS NULL)
+----
+1274735242
+A
+__NULL__
+d
+nlbMr4
+qg
+r
+
+-- Q2  DQR moved: same boolean as ref1
+query T rowsort
+SELECT DISTINCT ref0 FROM (
+  SELECT COALESCE(CAST(t8028.c0 AS VARCHAR(256)), '__NULL__') AS ref0,
+         ((t8028.c0 <> 'a') OR (t8028.c0 IS NULL)) AS ref1
+  FROM t8028
+  GROUP BY ROLLUP (t8028.c0)
+) AS s WHERE ref1
+----
+1274735242
+A
+__NULL__
+d
+nlbMr4
+qg
+r
+
+statement ok
+DROP TABLE t8028
+

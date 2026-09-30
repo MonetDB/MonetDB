@@ -81,6 +81,14 @@ hashge = False                  # may get updated at start of testing
 
 skipidx = re.compile(r'create index .* \b(asc|desc)\b', re.I)
 
+# SQL/GDK types that are represented with an I column type
+inttypes = ('boolean', 'tinyint', 'smallint', 'int', 'bigint', 'hugeint',
+            'bit', 'sht', 'lng', 'hge', 'oid', 'void')
+# SQL/GDK types that are represented with a R column type
+flttypes =('double', 'real', 'flt', 'dbl')
+
+hash_threshold = 100            # default value for hash-threshold
+
 
 class UnsafeDirectoryHandler(pymonetdb.SafeDirectoryHandler):
     def __init__(self, srcdir, data_dir:Optional[Path]=None, **kwargs):
@@ -153,7 +161,7 @@ class SQLLogic:
         self.hostname = None
         self.port = None
         self.approve = None
-        self.threshold = 100
+        self.threshold = hash_threshold
         self.seenerr = False    # there was an error before timeout
         self.timedout = False   # there was a timeout
         self.__last = ''
@@ -177,19 +185,22 @@ class SQLLogic:
     def connect(self, username='monetdb', password='monetdb',
                 hostname='localhost', port=None, database=None, usock=None,
                 language='sql', data_dir: Optional[Path]=None,
-                threshold: Optional[int]=100,
+                threshold: Optional[int]=hash_threshold,
                 timeout: Optional[int]=0, alltests=False,
                 server=None):
         self.starttime = time.time()
         self.language = language
         self.hostname = hostname
         if server is not None:
-            if port is None:
-                port = server.dbport
-            if database is None:
-                database = server.dbname
-            if usock is None:
-                usock = server.usock
+            if port is None and database is None and usock is None and server.urls:
+                database = server.urls[0]
+            else:
+                if port is None:
+                    port = server.dbport
+                if database is None:
+                    database = server.dbname
+                if usock is None:
+                    usock = server.usock
         self.port = port
         self.database = database or 'demo'
         self.timeout = timeout
@@ -289,7 +300,7 @@ class SQLLogic:
     def drop(self):
         if self.language != 'sql':
             return
-        self.crs.execute('select s.name, t.name, case when t.type in (select table_type_id from sys.table_types where table_type_name like \'%VIEW%\') then \'VIEW\' else \'TABLE\' end from sys.tables t, sys.schemas s where not t.system and t.schema_id = s.id')
+        self.crs.execute("select s.name, t.name, case when t.type in (select table_type_id from sys.table_types where table_type_name like '%VIEW%') then 'VIEW' else 'TABLE' end from sys.tables t, sys.schemas s where not t.system and t.schema_id = s.id")
         for row in self.crs.fetchall():
             try:
                 self.crs.execute(f'drop {row[2]} "{dq(row[0])}"."{dq(row[1])}" cascade')
@@ -332,7 +343,7 @@ class SQLLogic:
         self.crs.execute("select sqlname from sys.types where systemname is null order by id desc")
         for row in self.crs.fetchall():
             try:
-                self.crs.execute('drop type "{}"'.format(row[0]))
+                self.crs.execute(f'drop type "{row[0]}"')
             except pymonetdb.Error:
                 pass
 
@@ -454,7 +465,7 @@ class SQLLogic:
                         elif row[i] in ('false', 'False'):
                             nrow.append('0')
                         else:
-                            nrow.append('%d' % row[i])
+                            nrow.append(f'{int(row[i]):d}')
                     elif columns[i] == 'T':
                         if row[i] == '' or row[i] == b'':
                             nrow.append('(empty)')
@@ -462,7 +473,7 @@ class SQLLogic:
                             nval = []
                             if isinstance(row[i], bytes):
                                 for c in row[i]:
-                                    c = '%02X' % c
+                                    c = f'{c:02X}'
                                     nval.append(c)
                             else:
                                 for c in str(row[i]):
@@ -481,7 +492,7 @@ class SQLLogic:
                     elif columns[i] == 'D':
                         nrow.append(str(row[i]))
                     elif columns[i] == 'R':
-                        nrow.append('%.3f' % row[i])
+                        nrow.append(f'{row[i]:.3f}')
                     else:
                         self.raise_error('incorrect column type indicator')
                 except TypeError:
@@ -507,7 +518,7 @@ class SQLLogic:
             print(message, file=self.out)
             if exception:
                 print(exception.rstrip('\n'), file=self.out)
-            print("query started on line %d of file %s" % (self.qline, self.name),
+            print(f"query started on line {self.qline} of file {self.name}",
                   file=self.out)
             print("query text:", file=self.out)
             print(query, file=self.out)
@@ -583,15 +594,17 @@ class SQLLogic:
         if crs.description:
             rescols = []
             for desc in crs.description:
-                if desc.type_code in ('boolean', 'tinyint', 'smallint', 'int', 'bigint', 'hugeint', 'bit', 'sht', 'lng', 'hge', 'oid', 'void'):
+                if desc.type_code in inttypes:
                     rescols.append('I')
                 elif desc.type_code == 'decimal':
                     rescols.append('D') # extension
-                elif desc.type_code in ('double', 'real', 'flt', 'dbl'):
+                elif desc.type_code in flttypes:
                     rescols.append('R')
                 else:
                     rescols.append('T')
             rescols = ''.join(rescols)
+            # if columns != rescols:
+            #     print(self.name, self.line, columns, rescols, file=sys.stderr)
             if len(crs.description) != len(columns):
                 self.query_error(query, f'received {len(crs.description)} columns, expected {len(columns)} columns', data=data)
                 columns = rescols
@@ -634,7 +647,7 @@ class SQLLogic:
             for col in ndata:
                 if expected is not None:
                     if i < len(expected) and col != expected[i]:
-                        self.query_error(query, 'unexpected value; received "%s", expected "%s"' % (col, expected[i]))
+                        self.query_error(query, f'unexpected value; received "{col}", expected "{expected[i]}"')
                         err = True
                     i += 1
                 m.update(bytes(col, encoding='utf-8'))
@@ -707,7 +720,7 @@ class SQLLogic:
                 for col in row:
                     if expected is not None:
                         if i < len(expected) and col != expected[i]:
-                            self.query_error(query, 'unexpected value; received "%s", expected "%s"' % (col, expected[i]))
+                            self.query_error(query, f'unexpected value; received "{col}", expected "{expected[i]}"')
                             err = True
                         i += 1
                     m.update(bytes(col, encoding='utf-8'))
@@ -788,10 +801,10 @@ class SQLLogic:
             resh = resm.hexdigest()
         if not err:
             if hashlabel is not None and hashlabel in self.hashes and self.hashes[hashlabel][0] != h:
-                self.query_error(query, 'query hash differs from previous query at line %d' % self.hashes[hashlabel][1], data=data)
+                self.query_error(query, f'query hash differs from previous query at line {self.hashes[hashlabel][1]}', data=data)
                 err = True
             elif hash is not None and h != hash:
-                self.query_error(query, 'hash mismatch; received: "%s", expected: "%s"' % (h, hash), data=data)
+                self.query_error(query, f'hash mismatch; received: "{h}", expected: "{hash}"', data=data)
                 err = True
         if hashlabel is not None and hashlabel not in self.hashes:
             if hash is not None:
@@ -916,6 +929,9 @@ class SQLLogic:
         else:
             self.crs.execute(f'clients.setsessiontimeout({timeout}:int)')
         skiprest = False
+        if self.threshold != hash_threshold:
+            self.writeline(f'hash-threshold {self.threshold}')
+            self.writeline()
         while True:
             skipping = skiprest
             line = self.readline()
@@ -996,9 +1012,11 @@ class SQLLogic:
                     words = line.split(maxsplit=2)
             hashlabel = None
             if words[0] == 'hash-threshold':
-                self.threshold = int(words[1])
-                self.writeline(line.rstrip())
-                self.writeline()
+                threshold = int(words[1])
+                if threshold != self.threshold:
+                    self.threshold = threshold
+                    self.writeline(line.rstrip())
+                    self.writeline()
             elif words[0] == 'statement':
                 expected_err_code = None
                 expected_err_msg = None
@@ -1081,7 +1099,7 @@ class SQLLogic:
                     hash = None
                     expected = []
                     while line and line != '\n':
-                        expected.append(line.rstrip('\n'))
+                        expected.extend(line.rstrip('\n').split('\t'))
                         line = self.readline()
                     nresult = len(expected)
                 if not skipping:
@@ -1095,8 +1113,19 @@ class SQLLogic:
                             self.writeline(line.rstrip(), replace=True)
                         if result1[0] == 'query':
                             self.writeline('----')
-                            for line in result2:
-                                self.writeline(line)
+                            if result1[2] in ('rowsort', 'nosort'):
+                                line = []
+                                ncols = len(result1[1])
+                                for val in result2:
+                                    line.append(val)
+                                    if len(line) == ncols:
+                                        self.writeline('\t'.join(line))
+                                        line = []
+                                if line:
+                                    self.writeline('\t'.join(line))
+                            else:
+                                for line in result2:
+                                    self.writeline(line)
                 if skipping:
                     self.writeline(qrline.rstrip())
                     for line in query:
@@ -1150,7 +1179,7 @@ def main():
                         help='file in which to produce a new .test file '
                         'with updated results')
     parser.add_argument('--hash-threshold', action='store',
-                        type=int, default=100,
+                        type=int, default=hash_threshold,
                         help='default hash-threshold value')
     parser.add_argument('--define', action='append',
                         help='define substitution for $var as var=replacement'

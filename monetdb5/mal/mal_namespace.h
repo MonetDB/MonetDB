@@ -25,6 +25,7 @@
 	FUNC(alter_set_table); \
 	FUNC(alter_table); \
 	FUNC(alter_user); \
+	FUNC(and); \
 	FUNC(append); \
 	FUNC(appendBulk); \
 	FUNC(assert); \

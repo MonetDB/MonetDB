@@ -3048,14 +3048,6 @@ vkeyjoin(BAT **r1p, BAT **r2p, BAT **r3p, BAT *l, BAT *r,
 	return GDK_FAIL;
 }
 
-#define EQ_int(a, b)	((a) == (b))
-#define EQ_lng(a, b)	((a) == (b))
-#ifdef HAVE_HGE
-#define EQ_uuid(a, b)	((a).h == (b).h)
-#else
-#define EQ_uuid(a, b)	(memcmp((a).u, (b).u, UUID_SIZE) == 0)
-#endif
-
 #define HASHJOIN(TYPE)							\
 	do {								\
 		TYPE *rvals = ri.base;					\
@@ -3080,7 +3072,7 @@ vkeyjoin(BAT **r1p, BAT **r2p, BAT **r3p, BAT *l, BAT *r,
 				     rb != BUN_NONE;			\
 				     rb = HASHgetlink(hsh, rb)) {	\
 					ro = canditer_idx(rci, rb);	\
-					if (!EQ_##TYPE(v, rvals[ro - r->hseqbase])) \
+					if (!is_##TYPE##_eq(v, rvals[ro - r->hseqbase])) \
 						continue;		\
 					if (only_misses) {		\
 						nr++;			\
@@ -3095,7 +3087,7 @@ vkeyjoin(BAT **r1p, BAT **r2p, BAT **r3p, BAT *l, BAT *r,
 				     rb != BUN_NONE;			\
 				     rb = HASHgetlink(hsh, rb)) {	\
 					if (rb >= rl && rb < rh &&	\
-					    EQ_##TYPE(v, rvals[rb]) &&	\
+					    is_##TYPE##_eq(v, rvals[rb]) && \
 					    canditer_contains(rci, ro = (oid) (rb - roff + rseq))) { \
 						if (only_misses) {	\
 							nr++;		\
@@ -3111,7 +3103,7 @@ vkeyjoin(BAT **r1p, BAT **r2p, BAT **r3p, BAT *l, BAT *r,
 				     rb != BUN_NONE;			\
 				     rb = HASHgetlink(hsh, rb)) {	\
 					if (rb >= rl && rb < rh &&	\
-					    EQ_##TYPE(v, rvals[rb])) {	\
+					    is_##TYPE##_eq(v, rvals[rb])) { \
 						if (only_misses) {	\
 							nr++;		\
 							break;		\

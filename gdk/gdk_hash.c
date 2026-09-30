@@ -668,24 +668,6 @@ BAThashsave(BAT *b, bool dosync)
 	BAThashsave_intern(b, dosync);
 }
 
-#define EQbte(a, b)	((a) == (b))
-#define EQsht(a, b)	((a) == (b))
-#define EQint(a, b)	((a) == (b))
-#define EQlng(a, b)	((a) == (b))
-#ifdef HAVE_HGE
-#define EQhge(a, b)	((a) == (b))
-#endif
-#define EQflt(a, b)	(is_flt_nil(a) ? is_flt_nil(b) : (a) == (b))
-#define EQdbl(a, b)	(is_dbl_nil(a) ? is_dbl_nil(b) : (a) == (b))
-#define EQinet4(a, b)	((a).align == (b).align)
-#ifdef HAVE_HGE
-#define EQuuid(a, b)	((a).h == (b).h)
-#define EQinet6(a, b)	((a).align == (b).align)
-#else
-#define EQuuid(a, b)	(memcmp((a).u, (b).u, UUID_SIZE) == 0)
-#define EQinet6(a, b)	(memcmp((a).hex, (b).hex, sizeof(inet6)) == 0)
-#endif
-
 #define starthash(TYPE)							\
 	do {								\
 		const TYPE *restrict v = (const TYPE *) BUNtloc(bi, 0);	\
@@ -701,7 +683,7 @@ BAThashsave(BAT *b, bool dosync)
 				for (hb = hget;				\
 				     hb != BUN_NONE;			\
 				     hb = HASHgetlink(h, hb)) {		\
-					if (EQ##TYPE(v[o - b->hseqbase], v[hb])) \
+					if (is_##TYPE##_eq(v[o - b->hseqbase], v[hb])) \
 						break;			\
 				}					\
 				h->nunique += hb == BUN_NONE;		\
@@ -724,7 +706,7 @@ BAThashsave(BAT *b, bool dosync)
 				for (hb = hget;				\
 				     hb != BUN_NONE;			\
 				     hb = HASHgetlink(h, hb)) {		\
-					if (EQ##TYPE(v[o - b->hseqbase], v[hb])) \
+					if (is_##TYPE##_eq(v[o - b->hseqbase], v[hb])) \
 						break;			\
 				}					\
 				h->nunique += hb == BUN_NONE;		\

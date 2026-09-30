@@ -1,6 +1,6 @@
 import tarfile
 from MonetDBtesting import process
-import pymonetdb
+from MonetDBtesting import tpymonetdb as pymonetdb
 import sys
 import shutil
 import os

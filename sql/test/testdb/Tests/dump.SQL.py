@@ -1,4 +1,5 @@
 import sys
+import os
 
 try:
     from MonetDBtesting import process
@@ -27,13 +28,23 @@ if len(sys.argv) == 2 and sys.argv[1] in ('dump', 'dump-nogeom'):
         if res is not None:
             points = ptsre.sub(r'(\g<0>)', res.group('points'))
             output[i] = line[:res.start('points')] + points + line[res.end('points'):]
-    stableout = '{}.stable.out'.format(sys.argv[1])
+    stableout = f'{sys.argv[1]}.stable.out'
     with open(stableout, encoding='utf-8') as fil:
         stable = fil.readlines()
     import difflib
     for line in difflib.unified_diff(stable, output,
                                      fromfile='expected', tofile='received'):
         sys.stderr.write(line)
+    approve = os.getenv('MTEST_APPROVE')
+    if approve:
+        if approve == 'REPLACE':
+            fn = os.path.join(os.getenv('TSTSRCDIR'),
+                              f'{sys.argv[1]}.stable.out')
+        else:
+            fn = os.path.join(os.getenv('TSTTRGDIR'),
+                              f'{sys.argv[1]}.stable.out.new')
+        with open(fn, 'w') as f:
+            f.writelines(out)
 else:
     sys.stdout.writelines(out)
 

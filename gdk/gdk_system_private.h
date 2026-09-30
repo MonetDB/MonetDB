@@ -19,7 +19,7 @@
 
 #include "gdk.h"
 
-void dump_threads(void)
+void dump_threads(FILE *outf)
 	__attribute__((__visibility__("hidden")));
 void join_detached_threads(void)
 	__attribute__((__visibility__("hidden")));
@@ -27,6 +27,9 @@ bool MT_kill_threads(void)
 	__attribute__((__visibility__("hidden")));
 bool MT_thread_override_limits(void)
 	__attribute__((__visibility__("hidden")));
+int parse_cpuset(FILE *f)
+	__attribute__((__visibility__("hidden")));
+
 #ifdef NATIVE_WIN32
 #define GDKwinerror(...)						\
 	do {								\

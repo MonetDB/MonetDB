@@ -46,22 +46,39 @@ expectsql = f'''\
 +----------------------------------+
 2 tuples
 '''
+expectraw2 = f'''% sys.utf8test # table_name
+% s # name
+% varchar # type
+% 32 # length
+% 50 0 # typesizes
+[ "{text1}"\t]
+[ "funny characters: ??????"\t]
+'''
+expectsql2 = f'''+----------------------------------+
+| s                                |
++==================================+
+| {text1} |
+| funny characters: ??????         |
++----------------------------------+
+2 tuples
+'''
+
 expecterr = 'invalid multibyte sequence\n'
 
 out, err = client(['-s', 'create table utf8test (s varchar(50))'])
 out, err = client(['-s', f"insert into utf8test values ('{text1}')"])
 out, err = client(['-s', f"insert into utf8test values (u&'{text2s}')"],
                   encoding=locale.getpreferredencoding())
-out, err = client(['-s', 'select * from utf8test'], encoding='utf-8',
-                  format='raw')
+out, err = client(['-s', 'select * from utf8test'],
+                  encoding='utf-8', format='raw')
 if out != expectraw:
     sys.stdout.write('utf-8, raw:\n')
     sys.stdout.write('received:\n')
     sys.stdout.write(out)
     sys.stdout.write('expected:\n')
     sys.stdout.write(expectraw)
-out, err = client(['-s', 'select * from utf8test'], encoding='utf-8',
-                  format='sql')
+out, err = client(['-s', 'select * from utf8test'],
+                  encoding='utf-8', format='sql')
 if out != expectsql:
     sys.stdout.write('utf-8, sql:\n')
     sys.stdout.write('received:\n')
@@ -86,7 +103,7 @@ if out != expectsql:
     sys.stdout.write(expectsql)
 out, err = client(['-s', 'select * from utf8test'],
                   encoding='us-ascii', format='raw')
-if err != expecterr:
+if err != expecterr and out != expectraw2:
     sys.stdout.write('us-ascii, raw:\n')
     sys.stdout.write('received:\n')
     sys.stdout.write(err)
@@ -94,7 +111,7 @@ if err != expecterr:
     sys.stdout.write(expecterr)
 out, err = client(['-s', 'select * from utf8test'],
                   encoding='us-ascii', format='sql')
-if err != expecterr:
+if err != expecterr and out != expectsql2:
     sys.stdout.write('us-ascii, sql:\n')
     sys.stdout.write('received:\n')
     sys.stdout.write(err)

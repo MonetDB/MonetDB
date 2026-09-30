@@ -16,6 +16,8 @@
 #include "rel_pphash.h"
 #include "rel_rewriter.h"
 #include "rel_physical.h"
+#include "rel_util.h"
+#include "sql_list.h"
 #include "sql_pp_statement.h"
 #include "bin_partition_by_value.h"
 #include "mal_builder.h"
@@ -49,7 +51,7 @@ static stmt *
 _start_pp(backend *be, sql_rel *rel, bit buildphase, list *refs, stmt *shared_ht)
 {
 	if (buildphase && get_pipeline(be)) {
-        sql_error(be->mvc, 10, SQLSTATE(42000) "Internal error: hash-join cannot start within a pipelines block");
+		sql_error(be->mvc, 10, SQLSTATE(42000) "Internal error: hash-join cannot start within a pipelines block");
 		return NULL;
 	}
 	if (!be->pp) {
@@ -376,9 +378,9 @@ groupjoin_mark( list *attr )
 {
 	bool mark = false;
 	if (!list_empty(attr) && list_length(attr) == 1) {
-        sql_exp *e = attr->h->data;
-        if (exp_is_atom(e))
-            mark = true;
+		sql_exp *e = attr->h->data;
+		if (exp_is_atom(e))
+			mark = true;
 	}
 	return mark;
 }
@@ -477,12 +479,12 @@ rel2bin_oahash_select(backend *be, stmt *sub, list *sexps, sql_rel *rel, bool ha
 				s = sql_Nop_(be, "ifthenelse", s, stmt_bool(be, 0), stmt_bool(be, 1), NULL);
 			}
 
-            if (s && s->nrcols == 0) {
-                stmt *l = bin_find_smallest_column(be, sub);
-                s = stmt_uselect(be, stmt_const(be, l, s), stmt_bool(be, 1), cmp_equal, sel, 0, 0);
-            } else if (s) {
-                s = stmt_uselect(be, s, stmt_bool(be, 1), cmp_equal, sel, 0, 0);
-            }
+			if (s && s->nrcols == 0) {
+				stmt *l = bin_find_smallest_column(be, sub);
+				s = stmt_uselect(be, stmt_const(be, l, s), stmt_bool(be, 1), cmp_equal, sel, 0, 0);
+			} else if (s) {
+				s = stmt_uselect(be, s, stmt_bool(be, 1), cmp_equal, sel, 0, 0);
+			}
 		} else {
 			s = exp_bin(be, en->data, sub, NULL, NULL, NULL, NULL, sel, 0, 1, 0);
 			if (s && s->nrcols == 0) {
@@ -708,7 +710,7 @@ rel2bin_oahash_cart(backend *be, sql_rel *rel, list *refs, stmt *stmts_ht, stmt 
 			qL = pushInt(be->mb, qL, 0);
 			pushInstruction(be->mb, qL);
 
-			InstrPtr q = newStmtArgs(be->mb, calcRef, "and", 3);
+			InstrPtr q = newStmtArgs(be->mb, calcRef, andRef, 3);
 			q = pushArgument(be->mb, q, qR->argv[0]);
 			q = pushArgument(be->mb, q, qL->argv[0]);
 			pushInstruction(be->mb, q);
@@ -756,19 +758,19 @@ rel2bin_oahash_groupjoin(backend *be, sql_rel *rel, list *refs)
 	assert(!list_empty(rel->attr));
 	stmt *sub = NULL, *probe_sub = NULL;
 	list *jexps = sa_list(be->mvc->sa), *sexps = sa_list(be->mvc->sa), *probe_side = NULL, *hash_side = NULL;
-	split_join_exps_pp(rel, jexps, sexps, false);
+	split_join_exps(rel, jexps, sexps, false /* anti */, true /* eqonly */);
 	stmt *probed_ids = NULL, *hash_ids = NULL;
 	stmt *prb_mrk = NULL;
 	bool mark = false, exist = true;
 
 	if (list_length(rel->attr) == 1) {
-        sql_exp *e = rel->attr->h->data;
-        if (exp_is_atom(e)) {
-            mark = true;
-        	if (exp_is_false(e))
-            	exist = false;
+		sql_exp *e = rel->attr->h->data;
+		if (exp_is_atom(e)) {
+			mark = true;
+			if (exp_is_false(e))
+				exist = false;
 		}
-    }
+	}
 
 	int neededpp = (rel->spb || rel->partition) && get_need_pipeline(be);
 	(void)neededpp;
@@ -842,7 +844,7 @@ rel2bin_oahash_innerjoin(backend *be, sql_rel *rel, list *refs)
 	bool hf = false;
 	stmt *sub = NULL, *probed_ids = NULL;
 	list *jexps = sa_list(be->mvc->sa), *sexps = sa_list(be->mvc->sa), *probe_side = NULL, *hash_side = NULL;
-	split_join_exps_pp(rel, jexps, sexps, false);
+	split_join_exps(rel, jexps, sexps, false /* anti */, true /* eqonly */);
 	bool single = rel->single && !list_empty(sexps);
 
 	/* start new parallel block after join. NB get_need_pipeline has side effect! */
@@ -873,7 +875,7 @@ rel2bin_oahash_leftouterjoin(backend *be, sql_rel *rel, list *refs)
 {
 	stmt *sub = NULL, *probe_sub = NULL;
 	list *jexps = sa_list(be->mvc->sa), *sexps = sa_list(be->mvc->sa), *probe_side = NULL, *hash_side = NULL;
-	split_join_exps_pp(rel, jexps, sexps, false);
+	split_join_exps(rel, jexps, sexps, false /* anti */, true /* eqonly */);
 	stmt *probed_ids = NULL, *hash_ids = NULL;
 	stmt *prb_mrk = NULL;
 
@@ -969,7 +971,7 @@ rel2bin_oahash_rightouterjoin(backend *be, sql_rel *rel, list *refs)
 	bool hf = false;
 	stmt *sub = NULL, *probed_ids = NULL;
 	list *jexps = sa_list(be->mvc->sa), *sexps = sa_list(be->mvc->sa), *probe_side = NULL, *hash_side = NULL;
-	split_join_exps_pp(rel, jexps, sexps, false);
+	split_join_exps(rel, jexps, sexps, false /* anti */, true /* eqonly */);
 	bool single = rel->single && !list_empty(sexps);
 
 	stmt *hsh_mrk = NULL;
@@ -1156,7 +1158,7 @@ rel2bin_oahash_fullouterjoin(backend *be, sql_rel *rel, list *refs)
 	// existing leftjoin code, extended to mark the matched payloads
 	stmt *sub = NULL, *probe_sub = NULL;
 	list *jexps = sa_list(sql->sa), *sexps = sa_list(sql->sa), *probe_side = NULL, *hash_side = NULL;
-	split_join_exps_pp(rel, jexps, sexps, false);
+	split_join_exps(rel, jexps, sexps, false /* anti */, true /* eqonly */);
 	stmt *probed_ids = NULL, *hash_ids = NULL;
 	stmt *m = NULL, *hsh_mrk = NULL;
 
@@ -1317,7 +1319,7 @@ rel2bin_oahash_semi(backend *be, sql_rel *rel, list *refs)
 	list *probe_side = NULL, *hash_side = NULL;
 
 	list *jexps = sa_list(be->mvc->sa), *sexps = sa_list(be->mvc->sa);
-	split_join_exps_pp(rel, jexps, sexps, false);
+	split_join_exps(rel, jexps, sexps, false /* anti */, true /* eqonly */);
 
 	bool anti = (list_length(jexps) == 1 && rel->op == op_anti);
 	bool hf = false;
@@ -1336,7 +1338,7 @@ rel2bin_oahash_semi(backend *be, sql_rel *rel, list *refs)
 		probe_sub = sub = _start_pp(be, rel_prb->l, false, refs, NULL);
 		if (!sub) return NULL;
 
-		stmt *prb_res = oahash_probe(be, rel, rel->exps, exps_cmp_prb, stmts_ht, sub, anti, false/*groupjoin*/, !list_empty(sexps)/*has_outerselect*/, &nulls, NULL);
+		stmt *prb_res = oahash_probe(be, rel, rel->exps, exps_cmp_prb, stmts_ht, sub, anti, false /* groupjoin */, false /* has_outerselect */, &nulls, NULL);
 		if (prb_res == NULL) return NULL;
 
 		/*** PROJECT RESULT PHASE ***/
@@ -1389,11 +1391,11 @@ stmt *
 rel2bin_oahash(backend *be, sql_rel *rel, list *refs)
 {
 	/* TODO: delay single check until after sexps */
-    if (is_semi(rel->op)) {
-        return rel2bin_oahash_semi(be, rel, refs);
-    } else if (!list_empty(rel->attr)) {
-        return rel2bin_oahash_groupjoin(be, rel, refs);
-    } else if (is_outerjoin(rel->op)) {
+	if (is_semi(rel->op)) {
+		return rel2bin_oahash_semi(be, rel, refs);
+	} else if (!list_empty(rel->attr)) {
+		return rel2bin_oahash_groupjoin(be, rel, refs);
+	} else if (is_outerjoin(rel->op)) {
 		if (rel->op == op_full) {
 			return rel2bin_oahash_fullouterjoin(be, rel, refs);
 		} else if (rel->op == op_right /*&& rel->single */) {
@@ -1401,8 +1403,8 @@ rel2bin_oahash(backend *be, sql_rel *rel, list *refs)
 		} else {
 			return rel2bin_oahash_leftouterjoin(be, rel, refs);
 		}
-    } else {
-        assert(is_innerjoin(rel->op));
-        return rel2bin_oahash_innerjoin(be, rel, refs);
-    }
+	} else {
+		assert(is_innerjoin(rel->op));
+		return rel2bin_oahash_innerjoin(be, rel, refs);
+	}
 }

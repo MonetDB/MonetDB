@@ -538,7 +538,7 @@ main(int argc, char **av)
 			}
 			/* debugging options */
 			if (strcmp(long_options[option_index].name, "pipeline") == 0) {
-				default_oahash_enabled = true;
+				default_pipeline_mode = true;
 				break;
 			}
 			if (strcmp(long_options[option_index].name, "algorithms") == 0) {
@@ -685,7 +685,7 @@ main(int argc, char **av)
 
 	if (debug & (1U << 19)) {
 		debug &= ~(1U << 19);
-		default_oahash_enabled = true;
+		default_pipeline_mode = true;
 	}
 
 	if (debug)

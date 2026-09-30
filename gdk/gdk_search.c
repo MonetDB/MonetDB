@@ -88,12 +88,12 @@
 #define flt_LE(a, b)	(is_flt_nil(a) || (!is_flt_nil(b) && (a) <= (b)))
 #define flt_GT(a, b)	(!is_flt_nil(a) && (is_flt_nil(b) || (a) > (b)))
 #define flt_GE(a, b)	(is_flt_nil(b) || (!is_flt_nil(a) && (a) >= (b)))
-#define flt_EQ(a, b)	(is_flt_nil(a) ? is_flt_nil(b) : !is_flt_nil(b) && (a) == (b))
+#define flt_EQ(a, b)	is_flt_eq(a, b)
 #define dbl_LT(a, b)	(!is_dbl_nil(b) && (is_dbl_nil(a) || (a) < (b)))
 #define dbl_LE(a, b)	(is_dbl_nil(a) || (!is_dbl_nil(b) && (a) <= (b)))
 #define dbl_GT(a, b)	(!is_dbl_nil(a) && (is_dbl_nil(b) || (a) > (b)))
 #define dbl_GE(a, b)	(is_dbl_nil(b) || (!is_dbl_nil(a) && (a) >= (b)))
-#define dbl_EQ(a, b)	(is_dbl_nil(a) ? is_dbl_nil(b) : !is_dbl_nil(b) && (a) == (b))
+#define dbl_EQ(a, b)	is_dbl_eq(a, b)
 
 #define BINSEARCHFUNC(TYPE)						\
 BUN									\

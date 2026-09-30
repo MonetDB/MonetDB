@@ -15,10 +15,10 @@ new Pipeline engine.
 
 Players
 =======
-
+.. code-block:: text
   list_length(rel->attr) == 1:     group mark join
-    |-> atom(TRUE):   IN, EXISTS
-    |-> atom(FALSE):  NOT IN, NOT EXISTS
+    -> atom(TRUE):    IN, EXISTS
+    -> atom(FALSE):   NOT IN, NOT EXISTS
   rel->exps:          join and selection exps
   rel->{l,r}->exps:   projections exps of {left, right}-hand side
   rel->{l,r}->attr:   join exps of {left, right}-hand side
@@ -30,14 +30,14 @@ Players
   hsh_mrk:            mark matched for right outer and full outer, TRUE/FALSE/NIL
 
   stmt *stmts_ht:     an st_list containing all components of a hash table
-    |-> l             a list of build_table stmts for every hash column
-    |->op1            a list of projection stmts for every payload column
+    -> l             a list of build_table stmts for every hash column
+    ->op1            a list of projection stmts for every payload column
                       (optional: only when projection columns from the hash side are needed)
-    |->op2            a stmt containing the GIDs of the payload column
+    ->op2            a stmt containing the GIDs of the payload column
                       (optional: only when frequencies are needed)
-    |->op3            a stmt containing the frequencies of the GIDs
+    ->op3            a stmt containing the frequencies of the GIDs
                       (optional: only needed for single joins)
-    |->op4            ???
+    ->op4            ???
 
 Implementation
 ==============

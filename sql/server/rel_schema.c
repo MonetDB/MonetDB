@@ -304,7 +304,7 @@ table_constraint_name(allocator *ta, mvc *sql, symbol *s, sql_schema *ss, sql_ta
 				nme2 = name2;
 				found = ol_find_name(t->keys, nme2) || mvc_bind_key(sql, ss, nme2);
 			} while (found);
-			buf = SA_NEW_ARRAY(ta, char, buflen);
+			buf = SA_NEW_ARRAY(ta, char, buflen + 1);
 			strcpy(buf, nme2);
 			return buf;
 		default:
@@ -831,6 +831,9 @@ column_options(sql_query *query, dlist *opt_list, sql_schema *ss, sql_table *t, 
 					return SQL_ERR;
 				case -5:
 					(void) sql_error(sql, 02, SQLSTATE(42000) "DISTINCT STRING COLUMN option: column is not a (var)char column");
+					return SQL_ERR;
+				case -6:
+					(void) sql_error(sql, 02, SQLSTATE(42000) "DISTINCT STRING COLUMN option: no such distinct string column '%s.%s'", qname_schema(s->data.lval) ? qname_schema(s->data.lval) : ss->base.name, qname_schema_object(s->data.lval));
 					return SQL_ERR;
 				default:
 					break;

@@ -1,4 +1,4 @@
-query TTTTTT rowsort
+query IITTTT rowsort
 WITH t(s) AS (
   VALUES ('a'), ('b')
 )
@@ -12,16 +12,6 @@ SELECT GROUP_CONCAT(s, CAST(NULL AS VARCHAR(1))) OVER () =
        ,(SELECT GROUP_CONCAT(r.s,'') FROM t AS r) as gce2
 FROM t
 ----
-True
-True
-ab
-ab
-ab
-ab
-True
-True
-ab
-ab
-ab
-ab
+1	1	ab	ab	ab	ab
+1	1	ab	ab	ab	ab
 

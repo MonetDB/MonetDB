@@ -48,6 +48,15 @@ if __name__ == '__main__':
     if opts.stableout is not None:
         stableout = opts.stableout
         check = True
+    if not approve and \
+       os.getenv('MTEST_APPROVE') and \
+       not os.path.exists(os.path.join(os.getenv('TSTSRCDIR'),
+                                       f'{stableout}.src')):
+        if os.getenv('MTEST_APPROVE') == 'REPLACE':
+            approve = os.path.join(os.getenv('TSTSRCDIR'), stableout)
+        else:
+            approve = os.path.join(os.getenv('TSTTRGDIR'),
+                                   'check.stable.out.new')
 
 xit = 0
 output = []
@@ -602,6 +611,9 @@ if check:
             fromfile='expected', tofile='received'):
         sys.stderr.write(line)
         xit = 1
+    if type(approve) == str:
+        with open(approve, 'w') as f:
+            f.writelines(output)
 elif approve:
     approve.writelines(output)
 else:

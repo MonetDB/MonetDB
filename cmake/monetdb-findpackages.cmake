@@ -18,6 +18,7 @@ if(${XXHASH_VERSION} VERSION_GREATER_EQUAL "0.8.0")
   # with version at least 0.8.0 we inline all xxhash functions so we
   # don't need the library
   set(XXHASH_LDFLAGS "")
+  set(XXH_INLINE_ALL 1)
 endif()
 
 find_package(Python3 COMPONENTS Interpreter Development)

@@ -1,5 +1,5 @@
 -- with the 'WHERE ( SELECT group_concat ( '' ) ....' part disabled it generates an error
-statement error 22018!conversion of string to type dbl failed.
+statement error 22018!conversion of string to type bte failed.
 SELECT MIN ( x )
  FROM ( WITH RECURSIVE x ( x ) AS
          ( WITH RECURSIVE x ( x ) AS (
@@ -23,7 +23,7 @@ SELECT MIN ( x )
 
 
 -- original query crashes in list_append_node (l=0x7fc5b41e5800, n=0x7fc5b4170f80) at /home/dinther/dev/dev/MonetDB/sql/common/sql_list.c:154
-query T nosort
+statement error 42000!SELECT: cannot use non GROUP BY column 'x.x' in query results without an aggregate function
 SELECT MIN ( x )
  FROM ( WITH RECURSIVE x ( x ) AS
          ( WITH RECURSIVE x ( x ) AS (
@@ -44,5 +44,3 @@ SELECT MIN ( x )
    SELECT x * ( 10 - x ) AS x
      FROM x
       ) AS x
-----
-

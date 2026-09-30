@@ -333,7 +333,7 @@ readdir(DIR *dir)
 	if (dir->just_opened)
 		dir->just_opened = FALSE;
 	else if (!FindNextFileW(dir->find_file_handle,
-			       (LPWIN32_FIND_DATAW) dir->find_file_data))
+				(LPWIN32_FIND_DATAW) dir->find_file_data))
 		return NULL;
 	base = utf16toutf8(basename(((LPWIN32_FIND_DATAW) dir->find_file_data)->cFileName));
 	if (base == NULL)
@@ -451,8 +451,8 @@ MT_lockf(const char *filename, int mode)
 		/* didn't find the locked file, try opening the file
 		 * directly */
 		fh = CreateFileW(wfilename,
-				GENERIC_READ | GENERIC_WRITE, 0,
-				NULL, OPEN_ALWAYS, FILE_ATTRIBUTE_NOT_CONTENT_INDEXED, NULL);
+				 GENERIC_READ | GENERIC_WRITE, 0,
+				 NULL, OPEN_ALWAYS, FILE_ATTRIBUTE_NOT_CONTENT_INDEXED, NULL);
 		free(wfilename);
 		if (fh == INVALID_HANDLE_VALUE)
 			return -2;
@@ -682,14 +682,13 @@ MT_access(const char *pathname, int mode)
 
 #if defined(HAVE_LOCKF) && defined(__MACH__)
 /* lockf() seems to be there, but I didn't find any header file that
-   declares the prototype ... */
+ * declares the prototype ... */
 extern int lockf(int fd, int cmd, off_t len);
 #endif
 
 #ifndef HAVE_LOCKF
 /* Cygwin implementation: struct flock is there, but lockf() is
-   missing.
- */
+ * missing. */
 static int
 lockf(int fd, int cmd, off_t len)
 {
@@ -803,7 +802,7 @@ get_bin_path(void)
 	char buf[PATH_MAX];
 	uint32_t size = PATH_MAX;
 	if (_NSGetExecutablePath(buf, &size) == 0 &&
-			realpath(buf, _bin_path) != NULL)
+	    realpath(buf, _bin_path) != NULL)
 		return _bin_path;
 #elif defined(BSD) && defined(KERN_PROC_PATHNAME)  /* BSD */
 	int mib[4];
@@ -833,7 +832,7 @@ get_bin_path(void)
 #else  /* try Linux approach, also works on Cygwin */
 	ssize_t n;
 	if ((n = readlink("/proc/self/exe", _bin_path, sizeof(_bin_path))) != -1
-		&& (size_t) n < sizeof(_bin_path)) {
+	    && (size_t) n < sizeof(_bin_path)) {
 		_bin_path[n] = 0;
 		return _bin_path;
 	}
