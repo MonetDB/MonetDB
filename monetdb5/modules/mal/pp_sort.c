@@ -706,7 +706,7 @@ typedef struct sop_t {
 	MT_Lock l;
 
 	part_t *h, *t;
-	part_t *workers[];
+	part_t *workers[] __attribute__((__counted_by__(nr_workers)));
 } sop_t;
 
 static void
@@ -727,7 +727,7 @@ sop_done(sop_t *q, int wid, int nr_workers, bool redo)
 	(void)redo;
 	(void)nr_workers;
 	int res = 0;
-    assert(q->pl_io.type == PIPELINE_IO_SOP);
+	assert(q->pl_io.type == PIPELINE_IO_SOP);
 
 	MT_lock_set(&q->l);
 	assert(q->workers[wid] == 0);
@@ -756,6 +756,7 @@ SOPnew(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	if (!q)
 		throw(MAL, "sop.new", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 
+	q->nr_workers = nr_workers;
 	q->nr = 0;
 	q->h = NULL;
 	q->t = NULL;

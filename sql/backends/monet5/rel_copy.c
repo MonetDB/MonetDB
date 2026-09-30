@@ -66,7 +66,7 @@ emit_pipelined_loop(
 {
 	InstrPtr q;
 	int alloc = allocation_size(block_size);
-    int streams_type = ATOMindex("streams");
+	int streams_type = ATOMindex("streams");
 
 	// Determine the number of records to read
 	int var_nrecords = getLngConstant(mb, nrecords_or_minusone >= 0 ? nrecords_or_minusone : GDK_lng_max);

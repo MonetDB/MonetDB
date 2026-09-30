@@ -244,7 +244,7 @@ pqc_open( pqc_file **PQ, char *fn)
 		return -1;
 	}
 	struct stat stb;
-    if (MT_stat(fn, &stb) != 0) {
+	if (MT_stat(fn, &stb) != 0) {
 		pqc_destroy(pq);
 		return -1;
 	}

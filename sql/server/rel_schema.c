@@ -304,7 +304,7 @@ table_constraint_name(allocator *ta, mvc *sql, symbol *s, sql_schema *ss, sql_ta
 				nme2 = name2;
 				found = ol_find_name(t->keys, nme2) || mvc_bind_key(sql, ss, nme2);
 			} while (found);
-			buf = SA_NEW_ARRAY(ta, char, buflen);
+			buf = SA_NEW_ARRAY(ta, char, buflen + 1);
 			strcpy(buf, nme2);
 			return buf;
 		default:

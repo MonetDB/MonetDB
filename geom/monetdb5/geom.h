@@ -40,7 +40,7 @@ extern str mbrFromMBR(Client ctx, mbr **w, mbr **src)
 	__attribute__((__visibility__("hidden")));
 extern str wkbFromWKB(Client ctx, wkb **w, wkb **src)
 	__attribute__((__visibility__("hidden")));
-//Is it needed?? geom_export str wkbFromWKB_bat(bat* outBAT_id, bat* inBAT_id);
+//Is it needed?? extern str wkbFromWKB_bat(bat* outBAT_id, bat* inBAT_id);
 
 /* The WKB we use is the EWKB used also in PostGIS
  * because we decided that it is easire to carry around
@@ -84,7 +84,7 @@ extern str wkbAsText_bat(Client ctx, bat *inBAT_id, bat *outBAT_id, int *withSRI
 
 extern str wkbAsBinary(Client ctx, char**, wkb**)
 	__attribute__((__visibility__("hidden")));
-//geom_export str wkbFromBinary(Client ctx, wkb**, const char**);
+//extern str wkbFromBinary(Client ctx, wkb**, const char**);
 extern str wkbFromBinaryWithBuffer(allocator *ma, wkb **geomWKB, size_t *len, const char **inStr)
 	__attribute__((__visibility__("hidden")));
 
@@ -136,7 +136,7 @@ extern str wkbDWithinMbr(Client ctx, bit*, wkb**, wkb**, mbr**, mbr**, dbl*)
 //LocateAlong
 //LocateBetween
 
-//geom_export str wkbFromString(wkb**, str*);
+//extern str wkbFromString(wkb**, str*);
 
 extern str wkbMakePoint(Client ctx, wkb**, dbl*, dbl*, dbl*, dbl*, int*)
 	__attribute__((__visibility__("hidden")));
@@ -297,7 +297,7 @@ extern str wkbContains_geom_bat(Client ctx, bat* outBAT_id, wkb** geomWKB, bat* 
 extern str wkbContains_bat_geom(Client ctx, bat* outBAT_id, bat* inBAT_id, wkb** geomWKB)
 	__attribute__((__visibility__("hidden")));
 
-//geom_export str wkbFilter_bat(bat* aBATfiltered_id, bat* bBATfiltered_id, bat* aBAT_id, bat* bBAT_id);
+//extern str wkbFilter_bat(bat* aBATfiltered_id, bat* bBATfiltered_id, bat* aBAT_id, bat* bBAT_id);
 extern str wkbFilter_geom_bat(Client ctx, bat* BATfiltered_id, wkb** geomWKB, bat* BAToriginal_id)
 	__attribute__((__visibility__("hidden")));
 extern str wkbFilter_bat_geom(Client ctx, bat* BATfiltered_id, bat* BAToriginal_id, wkb** geomWKB)
