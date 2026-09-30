@@ -308,7 +308,14 @@ has_schema_max_memory(Mapi mid)
 	if (answer >= 0)
 		return answer;
 
-	if ((hdl = mapi_query(mid, "select id from sys._columns where table_id = (select id from sys._tables where name = 'db_user_info' and schema_id = 2000) and name = 'max_memory'")) == NULL ||
+	if ((hdl = mapi_query(mid,
+			      "SELECT id "
+			      "FROM sys._columns "
+			      "WHERE table_id = (SELECT id"
+			      "                  FROM sys._tables"
+			      "                  WHERE name = 'db_user_info'"
+			      "                    AND schema_id = 2000)"
+			      "  AND name = 'max_memory'")) == NULL ||
 	    mapi_error(mid))
 		goto bailout;
 	ret = mapi_get_row_count(hdl) == 1;
@@ -346,9 +353,9 @@ has_remote_user_info_table(Mapi mid)
 		return answer;
 
 	if ((hdl = mapi_query(mid,
-			      "select id from sys._tables"
-			      " where name = 'remote_user_info'"
-			      " and schema_id = 2000")) == NULL ||
+			      "SELECT id FROM sys._tables"
+			      " WHERE name = 'remote_user_info'"
+			      " AND schema_id = 2000")) == NULL ||
 	    mapi_error(mid))
 		goto bailout;
 	ret = mapi_get_row_count(hdl) == 1;
@@ -385,9 +392,9 @@ has_check_constraint(Mapi mid)
 		return answer;
 
 	if ((hdl = mapi_query(mid,
-			      "select id from sys.functions"
-			      " where schema_id = 2000"
-			      " and name = 'check_constraint'")) == NULL ||
+			      "SELECT id FROM sys.functions"
+			      " WHERE schema_id = 2000"
+			      " AND name = 'check_constraint'")) == NULL ||
 	    mapi_error(mid))
 		goto bailout;
 	ret = mapi_get_row_count(hdl) == 1;
@@ -526,7 +533,7 @@ dump_foreign_keys(Mapi mid, const char *schema, const char *tname, const char *t
 			"  AND fkt.schema_id = fs.id "
 			"  AND fkt.system = FALSE "
 			"ORDER BY fs.name, fkt.name, "
-			"fkk.name, fkkc.nr";
+			"         fkk.name, fkkc.nr";
 	}
 	hdl = mapi_query(mid, query);
 	if (query != NULL && maxquerylen != 0)
@@ -923,7 +930,8 @@ dump_column_definition(Mapi mid, stream *sqlf, const char *schema,
 			 "       us.name, "		/* 6 */
 			 "       uo.name "		/* 7 */
 			 "FROM sys._columns c "
-			 "     LEFT OUTER JOIN sys.dependencies d ON c.id = d.depend_id "
+			 "     LEFT OUTER JOIN sys.dependencies d"
+			 "          ON c.id = d.depend_id "
 			 "     LEFT OUTER JOIN sys.objects uo ON d.id = uo.id "
 			 "     LEFT OUTER JOIN sys.schemas us ON uo.nr = us.id "
 			 "WHERE c.table_id = %s "
@@ -939,9 +947,10 @@ dump_column_definition(Mapi mid, stream *sqlf, const char *schema,
 			 "       us.name, "		/* 6 */
 			 "       uo.name "		/* 7 */
 			 "FROM sys._columns c "
-			 "     LEFT OUTER JOIN sys.dependencies d ON c.id = d.depend_id "
+			 "     LEFT OUTER JOIN sys.dependencies d"
+			 "          ON c.id = d.depend_id "
 			 "     LEFT OUTER JOIN sys.objects uo ON d.id = uo.id "
-			 "     LEFT OUTER JOIN sys.schemas us ON uo.nr = us.id, "
+			 "     LEFT OUTER JOIN sys.schemas us ON uo.nr = us.id,"
 			 "     sys._tables t, "
 			 "     sys.schemas s "
 			 "WHERE c.table_id = t.id "
@@ -1112,7 +1121,7 @@ dump_column_definition(Mapi mid, stream *sqlf, const char *schema,
 			 "       k.name, "		/* 2 */
 			 "       kc.id, "		/* 3 */
 			 "       k.type, "		/* 4 */
-			 "       %s " /* 5 */
+			 "       %s "			/* 5 */
 			 "FROM sys.objects kc, "
 			 "     sys.keys k "
 			 "WHERE kc.id = k.id "
@@ -1126,7 +1135,7 @@ dump_column_definition(Mapi mid, stream *sqlf, const char *schema,
 			 "       k.name, "		/* 2 */
 			 "       kc.id, "		/* 3 */
 			 "       k.type, "		/* 4 */
-			 "       %s " /* 5 */
+			 "       %s "			/* 5 */
 			 "FROM sys.objects kc, "
 			 "     sys.keys k, "
 			 "     sys.schemas s, "
@@ -1311,7 +1320,9 @@ describe_table(Mapi mid, const char *schema, const char *tname,
 				 "FROM sys.schemas s, "
 				 "     sys.functions f "
 				 "WHERE s.id = f.schema_id "
-				 "  AND f.id IN (SELECT id FROM sys.dependencies WHERE depend_id = '%d')",
+				 "  AND f.id IN (SELECT id"
+				 "               FROM sys.dependencies"
+				 "               WHERE depend_id = '%d')",
 				 table_id);
 			if ((hdl = mapi_query(mid, query)) == NULL || mapi_error(mid))
 				goto bailout;
@@ -1360,9 +1371,18 @@ describe_table(Mapi mid, const char *schema, const char *tname,
 			char *rt_hash = NULL;
 			if (has_remote_user_info_table(mid)) {
 				snprintf(query, maxquerylen,
-					 "SELECT username, sys.decypher(password) "
-					 "FROM sys.remote_user_info where table_id = (select t.id from sys._tables t, sys.schemas s where "
-					 "     t.schema_id = s.id and s.name = '%s' and t.name = '%s')", schema, tname);
+					 "SELECT username,"
+					 "       sys.decypher(password) "
+					 "FROM sys.remote_user_info "
+					 "WHERE table_id = (SELECT t.id"
+					 "                  FROM sys._tables t,"
+					 "                       sys.schemas s"
+					 "                  WHERE "
+					 "                   t.schema_id = s.id"
+					 "                    AND s.name = '%s'"
+					 "                    AND t.name = '%s'"
+					 "                 )",
+					 schema, tname);
 			} else {
 				snprintf(query, maxquerylen,
 					 "SELECT username, hash "
@@ -1387,7 +1407,10 @@ describe_table(Mapi mid, const char *schema, const char *tname,
 		} else if (type == 3) { /* A merge table might be partitioned */
 			int properties = 0;
 
-			snprintf(query, maxquerylen, "SELECT tp.type FROM sys.table_partitions tp WHERE tp.table_id = '%d'", table_id);
+			snprintf(query, maxquerylen,
+				 "SELECT tp.type "
+				 "FROM sys.table_partitions tp "
+				 "WHERE tp.table_id = '%d'", table_id);
 			if ((hdl = mapi_query(mid, query)) == NULL || mapi_error(mid))
 				goto bailout;
 			while (mapi_fetch_row(hdl) != 0)
@@ -1402,13 +1425,27 @@ describe_table(Mapi mid, const char *schema, const char *tname,
 
 				if (column) { /* by column */
 					snprintf(query, maxquerylen,
-						 "SELECT c.name FROM sys.schemas s, sys._tables t, sys._columns c, sys.table_partitions tp "
-						 "WHERE s.name = '%s' AND t.name = '%s' AND s.id = t.schema_id AND t.id = c.table_id "
-						 "  AND c.id = tp.column_id", s, t);
+						 "SELECT c.name "
+						 "FROM sys.schemas s,"
+						 "     sys._tables t,"
+						 "     sys._columns c,"
+						 "     sys.table_partitions tp "
+						 "WHERE s.name = '%s'"
+						 "  AND t.name = '%s'"
+						 "  AND s.id = t.schema_id"
+						 "  AND t.id = c.table_id "
+						 "  AND c.id = tp.column_id",
+						 s, t);
 				} else { /* by expression */
 					snprintf(query, maxquerylen,
-						 "SELECT tp.expression FROM sys.schemas s, sys._tables t, sys.table_partitions tp "
-						 "WHERE s.name = '%s' AND t.name = '%s' AND s.id = t.schema_id AND t.id = tp.table_id",
+						 "SELECT tp.expression "
+						 "FROM sys.schemas s,"
+						 "     sys._tables t,"
+						 "     sys.table_partitions tp "
+						 "WHERE s.name = '%s'"
+						 "  AND t.name = '%s'"
+						 "  AND s.id = t.schema_id"
+						 "  AND t.id = tp.table_id",
 						 s, t);
 				}
 				if ((hdl = mapi_query(mid, query)) == NULL || mapi_error(mid))
@@ -1439,8 +1476,8 @@ describe_table(Mapi mid, const char *schema, const char *tname,
 			 "     sys.schemas s, "
 			 "     sys._tables AS t, "
 			 "     (VALUES (0, 'INDEX'), "
-			 "     (4, 'IMPRINTS INDEX'), "
-			 "     (5, 'ORDERED INDEX')) AS it (id, idx) "
+			 "             (4, 'IMPRINTS INDEX'), "
+			 "             (5, 'ORDERED INDEX')) AS it (id, idx) "
 			 "WHERE i.table_id = t.id "
 			 "  AND i.id = kc.id "
 			 "  AND t.id = c.table_id "
@@ -1491,7 +1528,12 @@ describe_table(Mapi mid, const char *schema, const char *tname,
 			 "SELECT i.name, c.remark "
 			 "FROM sys.idxs i, sys.comments c "
 			 "WHERE i.id = c.id "
-			 "  AND i.table_id = (SELECT id FROM sys._tables WHERE schema_id = (select id FROM sys.schemas WHERE name = '%s') AND name = '%s') "
+			 "  AND i.table_id = (SELECT id"
+			 "                    FROM sys._tables"
+			 "                    WHERE schema_id = (SELECT id"
+			 "                                     FROM sys.schemas"
+			 "                                   WHERE name = '%s')"
+			 "                      AND name = '%s') "
 			 "ORDER BY i.name",
 			 s, t);
 		if ((hdl = mapi_query(mid, query)) == NULL || mapi_error(mid))
@@ -1509,7 +1551,12 @@ describe_table(Mapi mid, const char *schema, const char *tname,
 		 "SELECT col.name, com.remark "
 		 "FROM sys._columns col, sys.comments com "
 		 "WHERE col.id = com.id "
-		 "  AND col.table_id = (SELECT id FROM sys._tables WHERE schema_id = (SELECT id FROM sys.schemas WHERE name = '%s') AND name = '%s') "
+		 "  AND col.table_id = (SELECT id"
+		 "                      FROM sys._tables"
+		 "                      WHERE schema_id = (SELECT id"
+		 "                                         FROM sys.schemas"
+		 "                                         WHERE name = '%s')"
+		 "                        AND name = '%s') "
 		 "ORDER BY col.number",
 		 s, t);
 	if ((hdl = mapi_query(mid, query)) == NULL || mapi_error(mid))
@@ -1592,7 +1639,8 @@ describe_sequence(Mapi mid, const char *schema, const char *tname, stream *sqlf)
 
 	snprintf(query, maxquerylen,
 		 "SELECT c.remark, q.* "
-		 "FROM sys.sequences seq LEFT OUTER JOIN sys.comments c ON seq.id = c.id, "
+		 "FROM sys.sequences seq LEFT OUTER JOIN sys.comments c"
+		 "                            ON seq.id = c.id, "
 		 "     sys.schemas s, "
 		 "     sys.describe_sequences q "
 		 "WHERE s.id = seq.schema_id "
@@ -1690,7 +1738,8 @@ describe_schema(Mapi mid, const char *sname, stream *sqlf)
 	snprintf(schemas, sizeof(schemas),
 		 "SELECT s.name, a.name, c.remark "
 		 "FROM sys.auths a, "
-		 "     sys.schemas s LEFT OUTER JOIN sys.comments c ON s.id = c.id "
+		 "     sys.schemas s LEFT OUTER JOIN sys.comments c"
+		 "                        ON s.id = c.id "
 		 "WHERE s.\"authorization\" = a.id "
 		 "  AND s.name = '%s' "
 		 "ORDER BY s.name",
@@ -1983,8 +2032,12 @@ dump_table_storage(Mapi mid, const char *schema, const char *tname, stream *sqlf
 	snprintf(query, maxquerylen,
 		 "SELECT name, storage FROM sys._columns "
 		 "WHERE storage NOT LIKE 'USTR%%' "
-		 "  AND table_id = (SELECT id FROM sys._tables WHERE name = '%s' "
-		 "  AND schema_id = (SELECT id FROM sys.schemas WHERE name = '%s'))",
+		 "  AND table_id = (SELECT id"
+		 "                  FROM sys._tables"
+		 "                  WHERE name = '%s' "
+		 "                    AND schema_id = (SELECT id"
+		 "                                     FROM sys.schemas"
+		 "                                     WHERE name = '%s'))",
 		 t, s);
 	if ((hdl = mapi_query(mid, query)) == NULL || mapi_error(mid))
 		goto bailout;
@@ -2030,7 +2083,10 @@ dump_table_access(Mapi mid, const char *schema, const char *tname, stream *sqlf)
 
 	snprintf(query, maxquerylen,
 		 "SELECT t.access FROM sys._tables t, sys.schemas s "
-		 "WHERE s.name = '%s' AND t.schema_id = s.id AND t.name = '%s' AND t.access in (1, 2)",
+		 "WHERE s.name = '%s'"
+		 "  AND t.schema_id = s.id"
+		 "  AND t.name = '%s'"
+		 "  AND t.access in (1, 2)",
 		 s, t);
 	if ((hdl = mapi_query(mid, query)) == NULL || mapi_error(mid))
 		goto bailout;
@@ -2166,7 +2222,13 @@ dump_table(Mapi mid, const char *schema, const char *tname, stream *sqlf,
 				fprintf(stderr, "malloc failure\n");
 				goto doreturn;
 			}
-			snprintf(query, qlen, "SELECT s.name, t.name FROM sys._tables t, sys.schemas s WHERE t.schema_id = s.id AND s.name LIKE '%s' AND t.name LIKE '%s' ORDER BY t.id", s, t);
+			snprintf(query, qlen,
+				 "SELECT s.name, t.name "
+				 "FROM sys._tables t, sys.schemas s "
+				 "WHERE t.schema_id = s.id"
+				 "  AND s.name LIKE '%s'"
+				 "  AND t.name LIKE '%s' "
+				 "ORDER BY t.id", s, t);
 			free(s);
 			free(t);
 			MapiHdl hdl = mapi_query(mid, query);
@@ -2278,8 +2340,10 @@ dump_function(Mapi mid, stream *sqlf, const char *fid, bool hashge)
 		             "       c.remark "
 			     "FROM sys.functions f "
 			     "     JOIN sys.schemas s ON f.schema_id = s.id "
-			     "     JOIN sys.function_types ft ON f.type = ft.function_type_id "
-			     "     LEFT OUTER JOIN sys.comments c ON f.id = c.id "
+			     "     JOIN sys.function_types ft"
+			     "          ON f.type = ft.function_type_id "
+			     "     LEFT OUTER JOIN sys.comments c"
+			     "          ON f.id = c.id "
 			     "WHERE f.id = %s",
 			     fid);
 	assert(query_len < (int) query_size);
@@ -2606,7 +2670,8 @@ dump_functions(Mapi mid, stream *sqlf, char set_schema, const char *sname, const
 			query_len += snprintf(query + query_len, query_size - query_len, "AND NOT f.system ");
 		}
 	}
-	query_len += snprintf(query + query_len, query_size - query_len, "ORDER BY f.func, f.id");
+	query_len += snprintf(query + query_len, query_size - query_len,
+			      "ORDER BY f.func, f.id");
 	assert(query_len < (int) query_size);
 	if (query_len >= (int) query_size) {
 		free(query);
@@ -2670,11 +2735,13 @@ dump_database(Mapi mid, stream *sqlf, const char *ddir, const char *ext, bool de
 		"SELECT s.name, "
 		"       t.systemname, "
 		"       t.sqlname "
-		"FROM sys.types t LEFT JOIN sys.schemas s ON s.id = t.schema_id "
+		"FROM sys.types t LEFT JOIN sys.schemas s"
+		"                      ON s.id = t.schema_id "
 		"WHERE t.eclass = 18 "
 		"  AND (t.schema_id <> 2000 "
 		"       OR (t.schema_id = 2000 "
-		"           AND t.sqlname NOT IN ('mbr','url','inet','json','uuid','inet4','inet6')))"
+		"           AND t.sqlname NOT IN ('mbr','url','inet','json',"
+		"                                 'uuid','inet4','inet6')))"
 		"ORDER BY s.name, t.sqlname";
 	const char *users =
 		has_schema_max_memory(mid) ?
@@ -2687,7 +2754,8 @@ dump_database(Mapi mid, stream *sqlf, const char *ddir, const char *ext, bool de
 		"       ui.max_workers, "
 		"       ui.optimizer, "
 		"       au.name "
-		"FROM sys.db_user_info ui LEFT OUTER JOIN sys.auths au on ui.default_role = au.id, "
+		"FROM sys.db_user_info ui LEFT OUTER JOIN sys.auths au"
+		"                              ON ui.default_role = au.id, "
 		"     sys.schemas s "
 		"WHERE ui.default_schema = s.id "
 		"  AND ui.name <> 'monetdb' "
@@ -2732,7 +2800,8 @@ dump_database(Mapi mid, stream *sqlf, const char *ddir, const char *ext, bool de
 		"FROM sys.schemas s, sys.tables t, "
 		"     sys.auths a, sys.privileges p, "
 		"     sys.auths g, "
-		"     (VALUES (0, ''), (1, ' WITH GRANT OPTION')) AS go (id, opt) "
+		"     (VALUES (0, ''),"
+		"             (1, ' WITH GRANT OPTION')) AS go (id, opt) "
 		"WHERE p.obj_id = t.id "
 		"  AND p.auth_id = a.id "
 		"  AND t.schema_id = s.id "
@@ -2753,7 +2822,8 @@ dump_database(Mapi mid, stream *sqlf, const char *ddir, const char *ext, bool de
 		"     sys.privileges p, "
 		"     sys.auths g, "
 		"     sys.privilege_codes pc, "
-		"     (VALUES (0, ''), (1, ' WITH GRANT OPTION')) AS go (id, opt) "
+		"     (VALUES (0, ''),"
+		"             (1, ' WITH GRANT OPTION')) AS go (id, opt) "
 		"WHERE p.obj_id = c.id "
 		"  AND c.table_id = t.id "
 		"  AND p.auth_id = a.id "
@@ -2777,13 +2847,15 @@ dump_database(Mapi mid, stream *sqlf, const char *ddir, const char *ext, bool de
 		"       go.opt, "
 		"       ft.function_type_keyword "
 		"FROM sys.schemas s, "
-		"     sys.functions f LEFT OUTER JOIN sys.args a ON f.id = a.func_id, "
+		"     sys.functions f LEFT OUTER JOIN sys.args a"
+		"                          ON f.id = a.func_id, "
 		"     sys.auths au, "
 		"     sys.privileges p, "
 		"     sys.auths g, "
 		"     sys.function_types ft, "
 		"     sys.privilege_codes pc, "
-		"     (VALUES (0, ''), (1, ' WITH GRANT OPTION')) AS go (id, opt) "
+		"     (VALUES (0, ''),"
+		"             (1, ' WITH GRANT OPTION')) AS go (id, opt) "
 		"WHERE NOT f.system "
 		"  AND s.id = f.schema_id "
 		"  AND f.id = p.obj_id "
@@ -2793,20 +2865,22 @@ dump_database(Mapi mid, stream *sqlf, const char *ddir, const char *ext, bool de
 		"  AND f.type = ft.function_type_id "
 		"  AND p.grantable = go.id "
 		"ORDER BY s.name, "
-		"f.name, "
-		"au.name, "
-		"g.name, "
-		"p.grantable, "
-		"f.id, "
-		"a.inout DESC, "
-		"a.number";
+		"         f.name, "
+		"         au.name, "
+		"         g.name, "
+		"         p.grantable, "
+		"         f.id, "
+		"         a.inout DESC, "
+		"         a.number";
 	static const char global_grants[] =
 		"SELECT a.name, pc.grnt, g.name, go.opt "
 		"FROM sys.privileges p, "
 		"     sys.auths a, "
 		"     sys.auths g, "
-		"     (VALUES (0, 'COPY INTO'), (1, 'COPY FROM')) AS pc (id, grnt), "
-		"     (VALUES (0, ''), (1, ' WITH GRANT OPTION')) AS go (id, opt) "
+		"     (VALUES (0, 'COPY INTO'),"
+		"             (1, 'COPY FROM')) AS pc (id, grnt), "
+		"     (VALUES (0, ''),"
+		"             (1, ' WITH GRANT OPTION')) AS go (id, opt) "
 		"WHERE p.obj_id = 0 "
 		"  AND p.auth_id = a.id "
 		"  AND p.grantor = g.id "
@@ -2815,7 +2889,8 @@ dump_database(Mapi mid, stream *sqlf, const char *ddir, const char *ext, bool de
 		"ORDER BY a.name, g.name, go.opt";
 	static const char schemas[] =
 		"SELECT s.name, a.name, rem.remark "
-		"FROM sys.schemas s LEFT OUTER JOIN sys.comments rem ON s.id = rem.id, "
+		"FROM sys.schemas s LEFT OUTER JOIN sys.comments rem"
+		"                        ON s.id = rem.id, "
 		"     sys.auths a "
 		"WHERE s.\"authorization\" = a.id "
 		"  AND s.system = FALSE "
@@ -2823,13 +2898,17 @@ dump_database(Mapi mid, stream *sqlf, const char *ddir, const char *ext, bool de
 	static const char sequences1[] =
 		"SELECT sch.name, seq.name, rem.remark "
 		"FROM sys.schemas sch, "
-		"     sys.sequences seq LEFT OUTER JOIN sys.comments rem ON seq.id = rem.id "
+		"     sys.sequences seq LEFT OUTER JOIN sys.comments rem"
+		"                            ON seq.id = rem.id "
 		"WHERE sch.id = seq.schema_id "
 		"ORDER BY sch.name, seq.name";
 	static const char sequences2[] =
 		"SELECT * FROM sys.describe_sequences ORDER BY sch, seq";
 	static const char ustrs[] =
-		"SELECT s.name, o.name FROM sys.objects o, sys.schemas s WHERE o.nr = s.id ORDER BY s.name, o.name";
+		"SELECT s.name, o.name "
+		"FROM sys.objects o, sys.schemas s "
+		"WHERE o.nr = s.id "
+		"ORDER BY s.name, o.name";
 	static const char tables[] =
 		"SELECT t.id AS id, "
 		"       s.name AS sname, "
@@ -2848,26 +2927,26 @@ dump_database(Mapi mid, stream *sqlf, const char *ddir, const char *ext, bool de
 		"       subq.t2name, "
 		"       table_partitions.type "
 		"FROM (SELECT t1.id, "
-		"     t1.type, "
-		"     s1.name AS s1name, "
-		"     t1.name AS t1name, "
-		"     s2.name AS s2name, "
-		"     t2.name AS t2name "
-		"     FROM sys.schemas s1, "
-		"     sys._tables t1, "
-		"     sys.dependencies d, "
-		"     sys.schemas s2, "
-		"     sys._tables t2 "
-		"WHERE t1.type IN (3, 6) "
-		"  AND t1.schema_id = s1.id "
-		"  AND s1.name <> 'tmp' "
-		"  AND t1.system = FALSE "
-		"  AND t1.id = d.depend_id "
-		"  AND d.id = t2.id "
-		"  AND t2.schema_id = s2.id "
-		"ORDER BY t1.id, t2.id) subq "
-		"LEFT OUTER JOIN sys.table_partitions "
-		"ON subq.id = table_partitions.table_id "
+		"             t1.type, "
+		"             s1.name AS s1name, "
+		"             t1.name AS t1name, "
+		"             s2.name AS s2name, "
+		"             t2.name AS t2name "
+		"      FROM sys.schemas s1, "
+		"           sys._tables t1, "
+		"           sys.dependencies d, "
+		"           sys.schemas s2, "
+		"           sys._tables t2 "
+		"      WHERE t1.type IN (3, 6) "
+		"        AND t1.schema_id = s1.id "
+		"        AND s1.name <> 'tmp' "
+		"        AND t1.system = FALSE "
+		"        AND t1.id = d.depend_id "
+		"        AND d.id = t2.id "
+		"        AND t2.schema_id = s2.id "
+		"      ORDER BY t1.id, t2.id) subq "
+		"    LEFT OUTER JOIN sys.table_partitions "
+		"         ON subq.id = table_partitions.table_id "
 		"ORDER BY subq.s1name, subq.t1name, subq.s2name, subq.t2name";
 	/* we must dump views, functions/procedures and triggers in order
 	 * of creation since they can refer to each other */
