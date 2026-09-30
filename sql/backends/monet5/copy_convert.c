@@ -276,17 +276,17 @@ string_sharing_bat(BUN cnt, const char *base)
 	if ((hp = GDKmalloc(sizeof(Heap))) == NULL){
 		BBPreclaim(b);
 		return NULL;
-    }
+	}
 	char *nme = BBP_physical(b->batCacheid);
-    *hp = (Heap) {
+	*hp = (Heap) {
 		.farmid = 1,//BBPselectfarm(b->batRole, b->ttype, varheap), // find the inmemory farm
-        .parentid = b->batCacheid,
-        .dirty = true,
-        .refs = ATOMIC_VAR_INIT(1),
+		.parentid = b->batCacheid,
+		.dirty = true,
+		.refs = ATOMIC_VAR_INIT(1),
 		.storage = STORE_NOWN,
 		.free = GDK_ELIMLIMIT,
 		.size = GDK_ELIMLIMIT,
-    };
+	};
 	strtconcat(hp->filename, sizeof(hp->filename), nme, ".theap", NULL);
 	hp->base = (char*)base;
 	b->tvheap = hp;

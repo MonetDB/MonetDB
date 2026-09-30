@@ -4194,13 +4194,13 @@ list_find_exp(const list *exps, sql_exp *e)
 sql_exp*
 topn_limit(sql_rel *rel)
 {
-    if (rel->exps) {
-        sql_exp *limit = rel->exps->h->data;
-        if (exp_is_null(limit)) /* If the limit is NULL, ignore the value */
-            return NULL;
-        return limit;
-    }
-    return NULL;
+	if (rel->exps) {
+		sql_exp *limit = rel->exps->h->data;
+		if (exp_is_null(limit)) /* If the limit is NULL, ignore the value */
+			return NULL;
+		return limit;
+	}
+	return NULL;
 }
 
 int
@@ -4480,4 +4480,3 @@ exps_has_group_filter(list *exps)
 	}
 	return false;
 }
-

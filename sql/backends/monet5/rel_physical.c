@@ -243,7 +243,7 @@ rel_partition(visitor *v, mvc *sql, sql_rel *rel)
 		return sql_error(sql, 10, SQLSTATE(42000) "Query too complex: running out of stack space");
 
 	if (v->opt >= 0 && rel->opt >= v->opt) /* only once */
-        return 0;
+		return 0;
 
 	switch (rel->op) {
 	case op_basetable:
@@ -306,14 +306,14 @@ rel_partition(visitor *v, mvc *sql, sql_rel *rel)
 		if ((IS_TABLE_PROD_FUNC(rel->flag) || rel->flag == TABLE_FROM_RELATION) && rel->l)
 			rel_partition(v, sql, rel->l);
 		sql_exp *op = rel->r;
-        if (rel->flag != TRIGGER_WRAPPER && op) {
-            sql_subfunc *f = op->f;
-            if (f->func->pipeline) {
+		if (rel->flag != TRIGGER_WRAPPER && op) {
+			sql_subfunc *f = op->f;
+			if (f->func->pipeline) {
 				if (strcmp(f->func->base.name, "file_loader") == 0 || strcmp(f->func->base.name, "copyfrom") == 0) {
 					rel = rel_dup(rel);
 					f->pipeline = true;
 				}
-            }
+			}
 		}
 		break;
 	default:
@@ -321,7 +321,7 @@ rel_partition(visitor *v, mvc *sql, sql_rel *rel)
 		break;
 	}
 	if (rel && v->opt >= 0)
-        rel->opt = v->opt;
+		rel->opt = v->opt;
 	return rel;
 }
 
@@ -453,12 +453,12 @@ do_oahash_join(visitor *v, sql_rel *rel, int *side)
 		}
 	}
 	// TODO groupjoin other then mark/exist
-    if (list_length(rel->attr) == 1) {
-        sql_exp *e = rel->attr->h->data;
-        if (exp_is_atom(e))
+	if (list_length(rel->attr) == 1) {
+		sql_exp *e = rel->attr->h->data;
+		if (exp_is_atom(e))
 			return 1;
 		return 0;
-    }
+	}
 	return 1;
 }
 
@@ -775,7 +775,7 @@ rel_pipeline(visitor *v, sql_rel *rel, bool materialize, int pb)
 	int res = 0, lres = 0, rres = 0;
 
 	if (v->opt >= 0 && rel->opt >= v->opt) /* only once */
-        return 0;
+		return 0;
 
 	if (mvc_highwater(v->sql)) {
 		sql_error(v->sql, 10, SQLSTATE(42000) "Query too complex: running out of stack space");
@@ -1154,9 +1154,9 @@ rel_pipeline(visitor *v, sql_rel *rel, bool materialize, int pb)
 		if ((IS_TABLE_PROD_FUNC(rel->flag) || rel->flag == TABLE_FROM_RELATION) && rel->l)
 			res = rel_pipeline(v, rel->l, false, pb);
 		sql_exp *op = rel->r;
-        if (rel->flag != TRIGGER_WRAPPER && op) {
-            sql_subfunc *f = op->f;
-            if (/*f->func->lang == FUNC_LANG_INT &&*/ f->func->pipeline) {
+		if (rel->flag != TRIGGER_WRAPPER && op) {
+			sql_subfunc *f = op->f;
+			if (/*f->func->lang == FUNC_LANG_INT &&*/ f->func->pipeline) {
 				res = pb;
 				if (pb) {
 					f->pipeline = true;
@@ -1167,7 +1167,7 @@ rel_pipeline(visitor *v, sql_rel *rel, bool materialize, int pb)
 					rel = rel_dup(rel);
 					f->pipeline = true;
 				}
-            }
+			}
 		}
 	} else if (is_physical(rel->op)) {
 		res = rel_pipeline(v, rel->l, false, pb);
@@ -1176,7 +1176,7 @@ rel_pipeline(visitor *v, sql_rel *rel, bool materialize, int pb)
 	}
 	v->parent = p;
 	if (rel && v->opt >= 0)
-        rel->opt = v->opt;
+		rel->opt = v->opt;
 
 	BUN hash = rel_hash(rel);
 	prop *hashp = rel->p = prop_create(v->sql->sa, PROP_HASH, rel->p);

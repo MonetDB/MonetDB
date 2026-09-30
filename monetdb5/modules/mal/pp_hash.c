@@ -564,7 +564,7 @@ OAHASHhashmark_init(Client ctx, bat *res, const bat *ht_sink, const bat *payload
 		}
 	}
 
-    hash_table *h = (hash_table*)ht->pl_io;
+	hash_table *h = (hash_table*)ht->pl_io;
 	if (hp)
 		h = (hash_table*)hp->pl_io;
 	/* assert(h && h->pl_io.type == PIPELINE_IO_HASH_TABLE); */
@@ -2710,7 +2710,7 @@ OAHASHomprobe_cmbd(Client ctx, bat *PRB_oid, bat *HSH_slotid, bat *PRB_mark, con
 	lng *freq = NULL;
 	str err = NULL;
 
-    assert(((*single) && frequency) || !(*single));
+	assert(((*single) && frequency) || !(*single));
 
 	k = BATdescriptor(*PRB_key);
 	s = BATdescriptor(*PRB_selected);

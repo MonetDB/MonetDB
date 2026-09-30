@@ -727,7 +727,7 @@ sop_done(sop_t *q, int wid, int nr_workers, bool redo)
 	(void)redo;
 	(void)nr_workers;
 	int res = 0;
-    assert(q->pl_io.type == PIPELINE_IO_SOP);
+	assert(q->pl_io.type == PIPELINE_IO_SOP);
 
 	MT_lock_set(&q->l);
 	assert(q->workers[wid] == 0);

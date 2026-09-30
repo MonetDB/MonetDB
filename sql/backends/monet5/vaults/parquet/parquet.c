@@ -312,11 +312,11 @@ pqc_find_subtype(mvc *sql, const pqc_schema_element *pse)
 					return tpe;
 				}
 			}
-            break;
+			break;
 		case listtype:
 			if (sql_find_subtype(tpe, "oid", 0, 0))
 				return tpe;
-            break;
+			break;
 		case blobtype:
 			if (pse->physical_type == PT_BYTE_ARRAY) { /* byte array */
 				if (sql_find_subtype(tpe, "blob", pse->precision, pse->scale)) {
@@ -1472,8 +1472,8 @@ bailout:
 static mel_func parquet_init_funcs[] = {
 	pattern("parquet", "prelude", PARQUETprelude, false, "", noargs),
 	command("parquet", "epilogue", PARQUETepilogue, false, "", noargs),
-    pattern("parquet", "open", PARQUETopen, true, "Create resource for shared reading from parquet file", args(1, 3, batarg("", oid), arg("f", str), arg("nrows", lng))),
-    pattern("parquet", "read", PARQUETread, false, "read part of parquet file", args(1, 3, batargany("", 1), batarg("p", oid), arg("colno", int))),
+	pattern("parquet", "open", PARQUETopen, true, "Create resource for shared reading from parquet file", args(1, 3, batarg("", oid), arg("f", str), arg("nrows", lng))),
+	pattern("parquet", "read", PARQUETread, false, "read part of parquet file", args(1, 3, batargany("", 1), batarg("p", oid), arg("colno", int))),
 	pattern("parquet", "schema", PARQUETschema, false, "Read parquet schema",
 		   	args(10,11,
 			   	batarg("name", str),

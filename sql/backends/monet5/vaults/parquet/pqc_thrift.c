@@ -62,9 +62,9 @@ pqc_get_int32( char *in, uint32_t *V)
 		v |= (uint32_t)(byte & 0x7f) << shift;
 		shift += 7;
 		if (!(byte & 0x80)) {
-      			*V = v;
-      			return nr;
-    		}
+			*V = v;
+			return nr;
+		}
 		if (nr >= 5)
 			return -1;
 	}
@@ -76,7 +76,7 @@ pqc_get_zint32( char *in, uint32_t *V)
 {
 	int err = pqc_get_int32(in, V);
 	if (err >= 0)
-      		*V = zigzag_to_i32(*V);
+		*V = zigzag_to_i32(*V);
 	return err;
 }
 
@@ -92,9 +92,9 @@ pqc_get_int64( char *in, uint64_t *V)
 		v |= (uint64_t)(byte & 0x7f) << shift;
 		shift += 7;
 		if (!(byte & 0x80)) {
-      			*V = v;
-      			return nr;
-    		}
+			*V = v;
+			return nr;
+		}
 		if (nr >= 10)
 			return -1;
 	}
@@ -106,7 +106,7 @@ pqc_get_zint64( char *in, uint64_t *V)
 {
 	int err = pqc_get_int64(in, V);
 	if (err >= 0)
-      		*V = zigzag_to_i64(*V);
+		*V = zigzag_to_i64(*V);
 	return err;
 }
 
