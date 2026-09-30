@@ -1,3 +1,5 @@
+hash-threshold 1000
+
 query D nosort
 -- query 92
 select

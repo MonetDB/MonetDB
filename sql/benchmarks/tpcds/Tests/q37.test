@@ -1,3 +1,5 @@
+hash-threshold 1000
+
 query TTD nosort
 -- query 37
 select  i_item_id
@@ -15,7 +17,5 @@ select  i_item_id
  order by i_item_id
  limit 100
 ----
-AAAAAAAAHFMBAAAA
-Jobs crack at all public countries. Possible, traditional initiatives will make british problems. Fiscal years call extremely just growing pupils. Soon dutch voices
-86.11
+AAAAAAAAHFMBAAAA	Jobs crack at all public countries. Possible, traditional initiatives will make british problems. Fiscal years call extremely just growing pupils. Soon dutch voices	86.11
 

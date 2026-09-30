@@ -1,3 +1,5 @@
+hash-threshold 1000
+
 query I nosort
 -- query 96
 select  count(*)
