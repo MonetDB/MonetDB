@@ -5355,8 +5355,7 @@ str_vacuum_callback_args_free(int argc, void *argv[])
 	// free up sname, tname, cname. First pointer points to sqlstore so leave it.
 	GDKfree(argv[1]); // sname
 	GDKfree(argv[2]); // tname
-	if (argv[3])
-		GDKfree(argv[3]); // cname
+	GDKfree(argv[3]); // cname
 	return GDK_SUCCEED;
 }
 
@@ -5406,6 +5405,9 @@ SQLstr_auto_vacuum(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		throw(SQL, "sql.str_auto_vacuum", SQLSTATE(42000) "Cannot vacuum compressed column");
 
 	if (!(sname_copy = GDKstrdup(sname)) || !(tname_copy = GDKstrdup(tname)) || (cname && !(cname_copy = GDKstrdup(cname)))) {
+		GDKfree(sname_copy);
+		GDKfree(tname_copy);
+		GDKfree(cname_copy);
 		throw(SQL, "sql.str_auto_vacuum", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 	void *argv[4] = {m->store, sname_copy, tname_copy, cname_copy};
