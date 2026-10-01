@@ -205,3 +205,4 @@ KNOWNFAIL?8026-having-expression-bug
 8027-having-expression-issue
 KNOWNFAIL?8028-coalesce-groupby-rollup-having-bug
 KNOWNFAIL?8030-inner-join-group-by-bug
+8035-alter-type
