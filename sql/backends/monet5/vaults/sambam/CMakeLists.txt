@@ -9,13 +9,13 @@
 #]]
 
 if(HAVE_HTSLIB)
-  add_library(sambam MODULE)
+  add_library(htslib MODULE)
 
-  target_sources(sambam
+  target_sources(htslib
     PRIVATE
     sambam.c)
 
-  target_include_directories(sambam
+  target_include_directories(htslib
     PRIVATE
     $<$<BOOL:${HTSLIB_FOUND}>:${HTSLIB_INCLUDE_DIRS}>
     $<TARGET_PROPERTY:mal,INTERFACE_INCLUDE_DIRECTORIES>
@@ -28,17 +28,17 @@ if(HAVE_HTSLIB)
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
     $<INSTALL_INTERFACE:${INCLUDEDIR}/monetdb>)
 
-  set_target_properties(sambam
+  set_target_properties(htslib
     PROPERTIES
     NO_SONAME ON
     OUTPUT_NAME
-    _sambam)
+    _htslib)
 
-  target_compile_definitions(sambam
+  target_compile_definitions(htslib
     PRIVATE
     LIBHTSLIB)
 
-  target_link_libraries(sambam
+  target_link_libraries(htslib
     PRIVATE
     monetdb_config_header
     bat
@@ -46,13 +46,13 @@ if(HAVE_HTSLIB)
     sqlinclude
     HTSLIB::HTSLIB)
 
-  install(TARGETS sambam
+  install(TARGETS htslib
     DESTINATION ${CMAKE_INSTALL_LIBDIR}/monetdb5-${MONETDB_VERSION}
-    COMPONENT sambam)
+    COMPONENT htslib)
 
   if(WIN32)
     install(FILES
-      $<TARGET_PDB_FILE:sambam>
+      $<TARGET_PDB_FILE:htslib>
       DESTINATION ${CMAKE_INSTALL_LIBDIR}/monetdb5-${MONETDB_VERSION}
       OPTIONAL)
   endif()
