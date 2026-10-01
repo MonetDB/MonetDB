@@ -9,8 +9,8 @@
  */
 
 /*
- * This file contains a reader of aligmnent data from *.sam and *.bam files
- * and load it into a transient MonetDB table consisting of 11 columns.
+ * This file contains a reader of aligmnent data from *.sam, *.bam and *.cram files
+ * and load the alignment data into a transient MonetDB table consisting of 12 columns.
  * SAM stands for Sequence Alignment Map. Ref: https://en.wikipedia.org/wiki/SAM_(file_format)
  * BAM stands for Binary Alignment Map.   Ref: https://en.wikipedia.org/wiki/BAM_(file_format)
  * BAM is the compressed binary representation of SAM (Sequence Alignment Map).
@@ -24,23 +24,22 @@
  * or aligner specific information.
  * Ref: https://samtools.github.io/hts-specs/SAMv1.pdf
  *
- * We use the htslib library for reading data from *.sam and *.bam files.
- * Ref: https://github.com/samtools/htslib
- * To install this library and its include files, follow instructions at:
- * https://github.com/samtools/htslib/blob/develop/INSTALL
- * Note: when you issue last step 'make install' you need root privileges so do a 'sudo make install' instead.
+ * We use the htslib library for reading data from *.sam, *.bam and *.cram files.
+ * Ref: https://github.com/samtools/htslib  and  https://www.htslib.org/
+ * To install this library and its include files on Fedora, do: sudo dnf install htslib-devel
  *
  * Limitations:
  * - Only the alignment data is converted into bats, not the header information as it has a different table format.
  * - We currently only read the first 11 mandatory columns. Thus ignoring any additonal columns of info.
  * - The topn filter is not yet implemented.
  * - *.cram files are not yet supported.
+ * - The estimated nr of BUNs (used during bat_create()) is not yet set.
  *
  * Author: Martin van Dinther
  */
 
 #include "monetdb_config.h"
-#include "gdk.h"			// COLnew(), bunfastapp()
+#include "gdk.h"		// COLnew(), bunfastapp()
 #include "mal_builder.h"	// newStmtArgs(), pushStr()
 #include "rel_exp.h"		// exp_column()
 #include "rel_file_loader.h"	// fl_register(), fl_unregister()
@@ -48,6 +47,18 @@
 
 #include <htslib/sam.h>	// it includes hts.h
 /* note there is no <htslib/bam.h> */
+
+#ifndef BAM_MAX_QNAME_LEN
+#define BAM_MAX_QNAME_LEN 254
+#endif
+
+/* nr of sam/bam file alignment info columns */
+#define SAM_NR_COLS  12
+#define SAM_MAX_STR_SIZE 4096
+
+#define SAM_RELATION 1
+#define SAM_LOADER   2
+
 
 /* copied from monetdb5/modules/mal/tablet.c */
 static BAT *
@@ -89,23 +100,77 @@ sam_list_append(list * nameslist, char * name, list * typelist, sql_subtype * mt
 	}
 }
 
-/* nr of sam/bam file alignment info columns */
-#define SAM_NR_COLS  11
-#define SAM_MAX_STR_SIZE 4096
+/// printauxdata - prints aux data
+/** @param buf - string buffer
+ *  @param pos - offset in buffer
+ *  @param type - aux type
+ *  @param idx - index in array, -1 when not an array type
+ *  @param data - aux data
+ *  recurses when the data is array type
+returns new pos
+*/
+static
+size_t printauxdata(char *buf, size_t bufsize, char type, int32_t idx, const uint8_t *data)
+{
+	uint32_t auxBcnt = 0;
+	uint32_t i = 0;
+	char auxBType = 'Z';
+	size_t pos = 0;
 
-#ifndef BAM_MAX_QNAME_LEN
-#define BAM_MAX_QNAME_LEN 254
-#endif
-
-#define SAM_RELATION 1
-#define SAM_LOADER   2
+	//the tag is already queried and ensured to exist and the type is retrieved from the tag data, also iterated within index for arrays, so no error is expected here.
+	//when these apis are used explicitly, these error conditions needs to be handled based on return value and errno
+	switch(type) {
+	case 'A':	//byte data
+		pos += snprintf(buf, bufsize - pos, "%c", bam_aux2A(data));
+		break;
+	case 'c':	//signed 1 byte data
+		pos += snprintf(buf, bufsize - pos, "%d", (int8_t)(idx > -1 ? bam_auxB2i(data, idx) : bam_aux2i(data)));
+		break;
+	case 'C':   //unsigned 1 byte data
+		pos += snprintf(buf, bufsize - pos, "%u", (uint32_t)(uint8_t)(idx > -1 ? bam_auxB2i(data, idx) : bam_aux2i(data)));
+		break;
+	case 's':   //signed 2 byte data
+		pos += snprintf(buf, bufsize - pos, "%d", (int16_t)(idx > -1 ? bam_auxB2i(data, idx) : bam_aux2i(data)));
+		break;
+	case 'S':  //unsigned 2 byte data
+		pos += snprintf(buf, bufsize - pos, "%u", (uint32_t)(uint16_t)(idx > -1 ? bam_auxB2i(data, idx) : bam_aux2i(data)));
+		break;
+	case 'i':	//signed 4 byte data
+		pos += snprintf(buf, bufsize - pos, "%d", (int32_t)(idx > -1 ? bam_auxB2i(data, idx) : bam_aux2i(data)));
+		break;
+	case 'I':	//unsigned 4 byte data
+		pos += snprintf(buf, bufsize - pos, "%u", (uint32_t)(idx > -1 ? bam_auxB2i(data, idx) : bam_aux2i(data)));
+		break;
+	case 'f':	 //floating point data, 4 bytes
+	case 'd':
+		pos += snprintf(buf, bufsize - pos, "%g", (float)(idx > -1 ? bam_auxB2f(data, idx) : bam_aux2f(data)));
+		break;
+	case 'H':	//array of hex data
+	case 'Z':	//array of char data
+		pos += snprintf(buf, bufsize - pos, "%s", bam_aux2Z(data));
+		break;
+	case 'B':	//array of char/int/float
+		auxBcnt = bam_auxB_len(data);	//length of array
+		auxBType = bam_aux_type(data + 1);	//type of element in array
+		pos += snprintf(buf, bufsize - pos, "%c", auxBType);
+		for (i = 0; i < auxBcnt; ++i) {	//iterate the array
+			pos += snprintf(buf + pos, bufsize - pos, ",");
+			//calling recursively  with index to reuse a few lines
+			pos += printauxdata(buf + pos, bufsize - pos, auxBType, i, data);
+		}
+		break;
+	default:
+		break;
+	}
+	return pos;
+}
 
 /*
  * sam_query() contains the logic for both sam_relation() and SAMloader() functions.
  * the caller argument is SAM_RELATION when called from sam_relation() or SAM_LOADER when called from SAMloader().
  */
 static str
-sam_query(int caller, mvc *sql, sql_subfunc *f, char *filename, list *res_exps, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+sam_query(int caller, mvc *sql, sql_subfunc *f, char *filename, list *res_exps, lng nrows, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	assert(caller == SAM_RELATION || caller == SAM_LOADER);
 
@@ -120,6 +185,7 @@ sam_query(int caller, mvc *sql, sql_subfunc *f, char *filename, list *res_exps, 
 	sam_hdr_t *in_samhdr = NULL;
 	samFile *infile = NULL;
 	char * errmsg = NULL;
+	BUN estimate = 256;
 
 	if (!(bamdata = bam_init1())) {
 		errmsg = "baminit1() failed to allocate memory";
@@ -130,7 +196,6 @@ sam_query(int caller, mvc *sql, sql_subfunc *f, char *filename, list *res_exps, 
 	if (!(infile = sam_open(filename, "r"))) {
 		/* TODO sam_open() logs error msg to stderr when it fails:
 			[E::hts_open_format] Failed to open file "file1.sam" : No such file or directory
-			We need to prevent this logging to stderr.
 		 */
 		errmsg = "Could not open sam/bam file";
 		/* errmsg = RUNTIME_FILE_NOT_FOUND; */
@@ -143,7 +208,7 @@ sam_query(int caller, mvc *sql, sql_subfunc *f, char *filename, list *res_exps, 
 		goto end;
 	}
 
-	/* Alignment data section in a sam/bam/cram file defines 11 mandatory columns
+	/* Alignment data section in a sam/bam/cram file defines 11 mandatory columns:
 		Ref: https://samtools.github.io/hts-specs/SAMv1.pdf  secction 1.4
 		Col Field Type Regexp/Range Brief description
 		1 QNAME String [!-?A-~]{1,254} Query template NAME
@@ -157,13 +222,10 @@ sam_query(int caller, mvc *sql, sql_subfunc *f, char *filename, list *res_exps, 
 		9 TLEN Int [−2^31 + 1, 2^31 − 1] observed Template LENgth
 		10 SEQ String \*|[A-Za-z=.]+ segment SEQuence
 		11 QUAL String [!-~]+ ASCII of Phred-scaled base QUALity+33
-	 */
-
-	/* TODO extend with 2 (or more) optional fields (all varchar4096),
-		Ref: https://samtools.github.io/hts-specs/SAMv1.pdf  secction 1.5
-		Col Field Type Regexp/Range Brief description
+		and 2 optional columns:
 		12 SAM_AUX String
 		13 SAM_RGAUX String
+		Ref: https://samtools.github.io/hts-specs/SAMv1.pdf  secction 1.5
 	 */
 
 	/* when called from sam_relation() */
@@ -188,8 +250,8 @@ sam_query(int caller, mvc *sql, sql_subfunc *f, char *filename, list *res_exps, 
 		sam_list_append(nameslist, "tlen",  typelist, int31, res_exps, sql, 0);
 		sam_list_append(nameslist, "seq",   typelist, varchar4096, res_exps, sql, 0);
 		sam_list_append(nameslist, "qual",  typelist, varchar4096, res_exps, sql, 0);
-		/* TODO extend with 2 (or more) optional fields,
-		sam_list_append(nameslist, "sam_aux",   typelist, varchar4096, res_exps, sql, 1);
+		sam_list_append(nameslist, "sam_aux", typelist, varchar4096, res_exps, sql, 1);
+		/* TODO extend with more optional fields
 		sam_list_append(nameslist, "sam_rgaux", typelist, varchar4096, res_exps, sql, 1);
 		*/
 
@@ -203,7 +265,7 @@ sam_query(int caller, mvc *sql, sql_subfunc *f, char *filename, list *res_exps, 
 	/* when called from SAMloader() */
 	if (caller == SAM_LOADER) {
 		typedef struct {
-			int battype;	/* MonetDB atom type, used to create the BAT */
+			// int battype;	/* MonetDB atom type, used to create the BAT */
 			BAT * bat;		/* MonetDB BAT */
 		} rescol_t;
 
@@ -220,8 +282,8 @@ sam_query(int caller, mvc *sql, sql_subfunc *f, char *filename, list *res_exps, 
 		for (col = 0; col < SAM_NR_COLS; col++) {
 			int battype = getBatType(getArgType(mb, pci, col));
 			TRC_DEBUG(LOADER, "Before create BAT %d type %d\n", col+1, battype);
-			colmetadata[col].battype = battype;
-			BAT * b = bat_create(battype, 0);
+			// colmetadata[col].battype = battype;
+			BAT * b = bat_create(battype, estimate);
 			if (b) {
 				colmetadata[col].bat = b;
 				TRC_DEBUG(LOADER, "Created BAT %d\n", col+1);
@@ -242,16 +304,18 @@ sam_query(int caller, mvc *sql, sql_subfunc *f, char *filename, list *res_exps, 
 		int i = 0;
 		int int_val = 0;
 		sht sht_val = 0;
-		unsigned long row = 0;
+		lng row = 0;
 		char buf[SAM_MAX_STR_SIZE +1];	// buffer for composing string values
 		size_t pos = 0;
 		while ((ret_r = sam_read1(infile, in_samhdr, bamdata)) >= 0)
 		{
 			// TODO implement filters here (such as topn or quality filter) which exclude rows to be bunfastapp-ed
+			if (nrows > 0 && row > nrows)
+				break;
 
 			//QNAME FLAG RNAME POS MAPQ CIGAR RNEXT PNEXT TLEN SEQ QUAL [TAG:TYPE:VALUE]…
 			row++;
-			TRC_DEBUG(LOADER, "Fetched row %lu\n", row);
+			TRC_DEBUG(LOADER, "Fetched row %ld\n", row);
 
 			if (gdkret == GDK_SUCCEED) {
 				/* 1 QNAME String [!-?A-~]{1,254} Query template NAME */
@@ -289,12 +353,12 @@ sam_query(int caller, mvc *sql, sql_subfunc *f, char *filename, list *res_exps, 
 			}
 			if (gdkret == GDK_SUCCEED) {
 				/* 7 RNEXT String \*|=|[:rname:∧*=][:rname:]* Reference name of the mate/next read */
-				const char * tidname = sam_hdr_tid2name(in_samhdr, bamdata->core.tid);
+				const char * tidname = sam_hdr_tid2name(in_samhdr, bamdata->core.mtid);
 				gdkret = bunfastapp(colmetadata[6].bat, (void *) tidname? tidname: "");
 			}
 			if (gdkret == GDK_SUCCEED) {
 				/* 8 PNEXT Int [0, 2^31 − 1] Position of the mate/next read */
-				int_val = bamdata->core.flag;
+				int_val = bamdata->core.mtid;
 				gdkret = bunfastapp(colmetadata[7].bat, (void *) &int_val);
 			}
 			if (gdkret == GDK_SUCCEED) {
@@ -308,7 +372,7 @@ sam_query(int caller, mvc *sql, sql_subfunc *f, char *filename, list *res_exps, 
 				uint8_t *data = bam_get_seq(bamdata);
 				for (i = 0; i < bamdata->core.l_qseq ; ++i) {	//sequence length
 					//retrieves the base from (internal compressed) sequence data
-				buf[pos++] = (char) seq_nt16_str[bam_seqi(data, i)];
+					buf[pos++] = (char) seq_nt16_str[bam_seqi(data, i)];
 				}
 				buf[pos] = '\0';
 				gdkret = bunfastapp(colmetadata[9].bat, (void *) buf);
@@ -323,11 +387,25 @@ sam_query(int caller, mvc *sql, sql_subfunc *f, char *filename, list *res_exps, 
 				buf[pos] = '\0';
 				gdkret = bunfastapp(colmetadata[10].bat, (void *) buf);
 			}
-
-			/* TODO extend with 2 (or more) optional fields (all varchar4096),
-				Ref: https://samtools.github.io/hts-specs/SAMv1.pdf  secction 1.5
-				bam_get_aux(bamdata)
-			 */
+			if (gdkret == GDK_SUCCEED) {
+				/* optional field: sam_aux  TAG:TYPE:VALUE
+					Ref: https://samtools.github.io/hts-specs/SAMv1.pdf  secction 1.5
+					Ref: https://github.com/samtools/htslib/blob/1.24/samples/dump_aux.c
+				 */
+				pos = 0;
+				// convert aux into a string
+				uint8_t * aux = bam_aux_first(bamdata);
+				while (aux) {
+					char aux_type = bam_aux_type(aux);
+					if (pos > 0)
+						buf[pos++] = ' ';	// add a separator between multiple TAG:TYPE:VALUE
+					pos += snprintf(buf + pos, sizeof(buf) - pos, "%.2s:%c:", bam_aux_tag(aux), NULL != strchr("cCsSiI", aux_type) ? 'i' : aux_type);
+					pos += printauxdata(buf + pos, sizeof(buf) - pos, aux_type, -1, aux);
+					aux = bam_aux_next(bamdata, aux);
+				}
+				buf[pos] = '\0';
+				gdkret = bunfastapp(colmetadata[11].bat, (void *) (pos > 0 ? buf : str_nil));
+			}
 
 			if (gdkret != GDK_SUCCEED) {
 				TRC_ERROR(LOADER, "bunfastapp(b, val) failed!\n");
@@ -384,19 +462,24 @@ sam_relation(mvc *sql, sql_subfunc *f, char *filename, list *res_exps, char *tna
 {
 	(void) tname;
 	(void) est;
-	return sam_query(SAM_RELATION, sql, f, filename, res_exps, NULL, NULL, NULL);
+	return sam_query(SAM_RELATION, sql, f, filename, res_exps, -1, NULL, NULL, NULL);
 }
 
 static void *
 sam_load(void *BE, sql_subfunc *f, char *filename, sql_exp *topn)
 {
 	backend *be = (backend*)BE;
+	lng nrows = -1;
+
 	if (!f)
 		return NULL;
 
-	(void)topn;
+	if (topn) {
+		lng v = (topn->type == e_atom) ? ((atom*)topn->l)->data.val.lval : 0;
+		nrows = v;
+	}
 
-	InstrPtr q = newStmtArgs(be->mb, "sam", "loader", list_length(f->coltypes) + 2);
+	InstrPtr q = newStmtArgs(be->mb, "sam", "loader", list_length(f->coltypes) + 3);
 	if (q == NULL)
 		return NULL;
 
@@ -418,6 +501,7 @@ sam_load(void *BE, sql_subfunc *f, char *filename, sql_exp *topn)
 	}
 	q = pushStr(be->mb, q, filename);
 	q = pushPtr(be->mb, q, f);
+	q = pushLng(be->mb, q, nrows);
 	pushInstruction(be->mb, q);
 	return stmt_list(be, l);
 }
@@ -438,8 +522,9 @@ SAMloader(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		return msg;
 
 	str filename = *getArgReference_str(stk, pci, pci->retc);
-	sql_subfunc *f = *(sql_subfunc**)getArgReference_ptr(stk, pci, pci->retc+1);
-	return sam_query(SAM_LOADER, be->mvc, f, filename, NULL, mb, stk, pci);
+	sql_subfunc *f = *(sql_subfunc**)getArgReference_ptr(stk, pci, pci->retc +1);
+	lng nrows = *getArgReference_lng(stk, pci, pci->retc +2);
+	return sam_query(SAM_LOADER, be->mvc, f, filename, NULL, nrows, mb, stk, pci);
 }
 
 static str
@@ -451,6 +536,7 @@ SAMprelude(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void)pci;
 	fl_register("sam", &sam_relation, &sam_load);
 	fl_register("bam", &sam_relation, &sam_load);
+	fl_register("cram", &sam_relation, &sam_load);
 	/* disable logging on htslib level, see htslib/hts_log.h */
 	hts_set_log_level(HTS_LOG_OFF);
 	return MAL_SUCCEED;
@@ -463,6 +549,7 @@ SAMepilogue(Client cntxt, void *ret)
 	(void)ret;
 	fl_unregister("sam");
 	fl_unregister("bam");
+	fl_unregister("cram");
 	return MAL_SUCCEED;
 }
 
@@ -472,7 +559,8 @@ SAMepilogue(Client cntxt, void *ret)
 static mel_func sam_init_funcs[] = {
 	pattern("sam", "prelude", SAMprelude, false, "", noargs),
 	command("sam", "epilogue", SAMepilogue, false, "", noargs),
-	pattern("sam", "loader", SAMloader, true, "Import alignment data from a .sam/.bam file", args(1,3, batvarargany("",0),arg("filename",str),arg("func",ptr))),
+	// pattern("sam", "loader", SAMloader, true, "Import alignment data from a .sam/bam/cram file", args(1, 3, batvarargany("",0), arg("filename",str), arg("func",ptr))),
+	pattern("sam", "loader", SAMloader, true, "Import alignment data from a .sam/bam/cram file", args(1, 4, batvarargany("",0), arg("filename",str), arg("func",ptr), arg("nrows", lng))),
 { .imp=NULL }
 };
 
