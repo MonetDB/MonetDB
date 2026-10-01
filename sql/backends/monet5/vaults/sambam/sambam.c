@@ -451,8 +451,8 @@ SAMprelude(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void)pci;
 	fl_register("sam", &sam_relation, &sam_load);
 	fl_register("bam", &sam_relation, &sam_load);
-	/* disable logging on htslib level */
-	hts_verbose = HTS_LOG_OFF;
+	/* disable logging on htslib level, see htslib/hts_log.h */
+	hts_set_log_level(HTS_LOG_OFF);
 	return MAL_SUCCEED;
 }
 
