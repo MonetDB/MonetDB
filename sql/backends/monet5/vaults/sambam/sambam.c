@@ -40,7 +40,7 @@
  */
 
 #include "monetdb_config.h"
-#include "gdk.h"		// COLnew(), bunfastapp()
+#include "gdk.h"			// COLnew(), bunfastapp()
 #include "mal_builder.h"	// newStmtArgs(), pushStr()
 #include "rel_exp.h"		// exp_column()
 #include "rel_file_loader.h"	// fl_register(), fl_unregister()
@@ -92,7 +92,10 @@ sam_list_append(list * nameslist, char * name, list * typelist, sql_subtype * mt
 /* nr of sam/bam file alignment info columns */
 #define SAM_NR_COLS  11
 #define SAM_MAX_STR_SIZE 4096
-#define BAM_MAX_QNAME_LEN 256
+
+#ifndef BAM_MAX_QNAME_LEN
+#define BAM_MAX_QNAME_LEN 254
+#endif
 
 #define SAM_RELATION 1
 #define SAM_LOADER   2
