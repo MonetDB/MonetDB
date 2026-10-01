@@ -30,10 +30,10 @@
  *
  * Limitations:
  * - Only the alignment data is converted into bats, not the header information as it has a different table format.
- * - We currently only read the first 11 mandatory columns. Thus ignoring any additonal columns of info.
- * - The topn filter is not yet implemented.
+ * - We read the first 12 columns including SAM_AUX.
  * - *.cram files are not yet supported.
- * - The estimated nr of BUNs (used during bat_create()) is not yet set.
+ * - The estimated nr of BUNs (used during bat_create()) is currently hardcoded to 1024 or nrows when nrows >= 0.
+ *   It could be optimised based on the file size and file extension type.
  *
  * Author: Martin van Dinther
  */
@@ -46,13 +46,13 @@
 #include "sql_monet_backend.h"	// backend, getBackendContext()
 
 #include <htslib/sam.h>	// it includes hts.h
-/* note there is no <htslib/bam.h> */
+/* note: there is no <htslib/bam.h> */
 
 #ifndef BAM_MAX_QNAME_LEN
 #define BAM_MAX_QNAME_LEN 254
 #endif
 
-/* nr of sam/bam file alignment info columns */
+/* nr of sam/bam file alignment info columns we read */
 #define SAM_NR_COLS  12
 #define SAM_MAX_STR_SIZE 4096
 
@@ -185,7 +185,6 @@ sam_query(int caller, mvc *sql, sql_subfunc *f, char *filename, list *res_exps, 
 	sam_hdr_t *in_samhdr = NULL;
 	samFile *infile = NULL;
 	char * errmsg = NULL;
-	BUN estimate = 256;
 
 	if (!(bamdata = bam_init1())) {
 		errmsg = "baminit1() failed to allocate memory";
@@ -264,25 +263,20 @@ sam_query(int caller, mvc *sql, sql_subfunc *f, char *filename, list *res_exps, 
 
 	/* when called from SAMloader() */
 	if (caller == SAM_LOADER) {
-		typedef struct {
-			// int battype;	/* MonetDB atom type, used to create the BAT */
-			BAT * bat;		/* MonetDB BAT */
-		} rescol_t;
-
-		rescol_t * colmetadata = (rescol_t *) GDKmalloc(SAM_NR_COLS * sizeof(rescol_t));
-		if (colmetadata == NULL) {
-			errmsg = "GDKzalloc colmetadata[SAM_NR_COLS] failed.";
-			goto end;
-		}
-
 		assert(mb);
 		assert(pci);
+
+		typedef struct {
+			BAT * bat;
+		} rescol_t;
+
+		rescol_t colmetadata[SAM_NR_COLS];
+		BUN estimate = (nrows >= 0 ? (BUN)nrows : 1024);
 		int col;
-		/* make bats with right atom type */
+		/* make bats with right atom type and initial size */
 		for (col = 0; col < SAM_NR_COLS; col++) {
 			int battype = getBatType(getArgType(mb, pci, col));
 			TRC_DEBUG(LOADER, "Before create BAT %d type %d\n", col+1, battype);
-			// colmetadata[col].battype = battype;
 			BAT * b = bat_create(battype, estimate);
 			if (b) {
 				colmetadata[col].bat = b;
@@ -294,7 +288,6 @@ sam_query(int caller, mvc *sql, sql_subfunc *f, char *filename, list *res_exps, 
 					col--;
 					BBPreclaim(colmetadata[col].bat);
 				}
-				GDKfree(colmetadata);
 				goto end;
 			}
 		}
@@ -307,15 +300,15 @@ sam_query(int caller, mvc *sql, sql_subfunc *f, char *filename, list *res_exps, 
 		lng row = 0;
 		char buf[SAM_MAX_STR_SIZE +1];	// buffer for composing string values
 		size_t pos = 0;
-		while ((ret_r = sam_read1(infile, in_samhdr, bamdata)) >= 0)
-		{
-			// TODO implement filters here (such as topn or quality filter) which exclude rows to be bunfastapp-ed
-			if (nrows > 0 && row > nrows)
+		while ((ret_r = sam_read1(infile, in_samhdr, bamdata)) >= 0) {
+			/* when nrows is set, stop reading when nrows is reached */
+			if (nrows >= 0 && row >= nrows)
 				break;
 
 			//QNAME FLAG RNAME POS MAPQ CIGAR RNEXT PNEXT TLEN SEQ QUAL [TAG:TYPE:VALUE]…
 			row++;
 			TRC_DEBUG(LOADER, "Fetched row %ld\n", row);
+// if (nrows >= 0) fprintf(stdout, "Fetched row %ld. nrows = %ld\n", row, nrows);
 
 			if (gdkret == GDK_SUCCEED) {
 				/* 1 QNAME String [!-?A-~]{1,254} Query template NAME */
@@ -393,7 +386,7 @@ sam_query(int caller, mvc *sql, sql_subfunc *f, char *filename, list *res_exps, 
 					Ref: https://github.com/samtools/htslib/blob/1.24/samples/dump_aux.c
 				 */
 				pos = 0;
-				// convert aux into a string
+				// convert aux triplets into a string
 				uint8_t * aux = bam_aux_first(bamdata);
 				while (aux) {
 					char aux_type = bam_aux_type(aux);
@@ -430,8 +423,6 @@ sam_query(int caller, mvc *sql, sql_subfunc *f, char *filename, list *res_exps, 
 			}
 			TRC_DEBUG(LOADER, "col %d pass bat %d\n", col, b->ttype);
 		}
-		/* free locally allocated memory */
-		GDKfree(colmetadata);
 	} /* end of: if (caller == SAM_LOADER) */
 
   end:
@@ -559,7 +550,6 @@ SAMepilogue(Client cntxt, void *ret)
 static mel_func sam_init_funcs[] = {
 	pattern("sam", "prelude", SAMprelude, false, "", noargs),
 	command("sam", "epilogue", SAMepilogue, false, "", noargs),
-	// pattern("sam", "loader", SAMloader, true, "Import alignment data from a .sam/bam/cram file", args(1, 3, batvarargany("",0), arg("filename",str), arg("func",ptr))),
 	pattern("sam", "loader", SAMloader, true, "Import alignment data from a .sam/bam/cram file", args(1, 4, batvarargany("",0), arg("filename",str), arg("func",ptr), arg("nrows", lng))),
 { .imp=NULL }
 };

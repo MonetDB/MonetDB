@@ -1,4 +1,4 @@
-# test reading files: file1.bam
+-- test reading file: file1.bam
 
 statement error 42000!SELECT: file_loader function failed 'Could not open sam/bam file'
 SELECT count(*) FROM file_loader('file1.bam')
