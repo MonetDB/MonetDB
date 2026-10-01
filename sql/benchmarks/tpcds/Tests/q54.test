@@ -1,3 +1,5 @@
+hash-threshold 1000
+
 query III nosort
 -- query 54
 with my_customers as (
@@ -54,7 +56,5 @@ with my_customers as (
  order by segment, num_customers
  limit 100
 ----
-11860
-1
-593000
+11860	1	593000
 

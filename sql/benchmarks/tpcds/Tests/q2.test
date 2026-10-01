@@ -1,3 +1,5 @@
+hash-threshold 1000
+
 query IDDDDDDD nosort
 -- query 2
 with wscs as

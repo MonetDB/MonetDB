@@ -331,6 +331,9 @@ PPmerge_any( bat *Rzzl, bat *Rzzb, bat *Rzza, BAT *lcol, BAT *rcol, bit desc, bi
 				}
 			}
 			int v1 = (int)l, v2 = (int)-b, v3 = (int)-a;
+			/* zzl stores len of run from one of the sides, side flips starting at left */
+			/* b store number of equal values at end of run */
+			/* a store number of equal values at start of next run */
 			if (BUNappend(rzzl, &v1, TRUE) != GDK_SUCCEED ||
 				BUNappend(rzzb, &v2, TRUE) != GDK_SUCCEED ||
 				BUNappend(rzza, &v3, TRUE) != GDK_SUCCEED) {
