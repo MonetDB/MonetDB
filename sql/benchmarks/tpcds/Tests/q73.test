@@ -1,4 +1,6 @@
-query TTTTII rowsort
+hash-threshold 1000
+
+query TTTTII nosort
 -- query 73
 select c_last_name
        ,c_first_name
@@ -26,34 +28,9 @@ select c_last_name
       and cnt between 1 and 5
     order by cnt desc, c_last_name asc
 ----
-Dion
-Alva
-Mrs.
-N
-113766
-4
-Greene
-Clarence
-NULL
-N
-1541
-5
-Peterson
-Chantell
-Miss
-N
-47551
-5
-Scott
-Anne
-Dr.
-N
-86396
-5
-Wheeler
-Ashley
-Mrs.
-N
-174863
-5
+Greene	Clarence	NULL	N	1541	5
+Peterson	Chantell	Miss	N	47551	5
+Scott	Anne	Dr.	N	86396	5
+Wheeler	Ashley	Mrs.	N	174863	5
+Dion	Alva	Mrs.	N	113766	4
 

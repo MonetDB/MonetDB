@@ -2109,6 +2109,13 @@ pqc_read_page_chunk( pqc_reader_t *r, pqc_creader_t *cr, void *output /*fixed si
 		for(uint64_t i=0; i< nrows; i++)
 			*(r-i) = *(l-i);
 	} else
+#else
+	if (r->pse->precision == 64 && !r->pse->isSigned) {
+		int64_t *l = output;
+		for(uint64_t i=0; i< nrows; i++)
+			if (l[i] < 0)
+				return -1;
+	} else
 #endif
 	if (r->pse->precision == 32 && !r->pse->isSigned) {
 		uint32_t *l = output;

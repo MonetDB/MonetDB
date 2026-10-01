@@ -234,9 +234,6 @@ install(TARGETS
   DESTINATION ${CMAKE_INSTALL_LIBDIR})
 
 add_subdirectory(generator)
-if(WITH_UDF)
-  add_subdirectory(UDF)
-endif()
 if(WITH_VAULTS)
   add_subdirectory(vaults)
 endif()

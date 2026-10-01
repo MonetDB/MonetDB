@@ -1,4 +1,6 @@
-query RDDD rowsort
+hash-threshold 1000
+
+query RDDD nosort
 -- query 13
 select avg(ss_quantity)
        ,avg(ss_ext_sales_price)
@@ -49,8 +51,5 @@ select avg(ss_quantity)
   and ss_net_profit between 50 and 250
      ))
 ----
-31.000
-2551.86
-2365.94
-14195.66
+31.000	2551.86	2365.94	14195.66
 

@@ -165,12 +165,8 @@ option(MONETDB_STATIC
   "Enable static compilation mode"
   OFF)
 
-option(WITH_UDF
-  "Include UDF support"
-  ON)
-
 option(WITH_VAULTS
-  "Include UDF support"
+  "Include vault support"
   ON)
 
 option(WITH_MEROVINGIAN

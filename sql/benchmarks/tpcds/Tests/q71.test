@@ -1,4 +1,6 @@
-query ITIID rowsort
+hash-threshold 1000
+
+query ITIID nosort
 -- query 71
 select i_brand_id brand_id, i_brand brand,t_hour,t_minute,
  	sum(ext_price) ext_price
@@ -37,5 +39,5 @@ select i_brand_id brand_id, i_brand brand,t_hour,t_minute,
  group by i_brand, i_brand_id,t_hour,t_minute
  order by ext_price desc, i_brand_id
 ----
-5090 values hashing to f953fd4af6bb272edf1ee41b52ca8103
+5090 values hashing to 3ccf8b9429aab9bbd68739cc55300ba1
 

@@ -1572,7 +1572,7 @@ rel_psm(sql_query *query, symbol *s)
 			if (!params)
 				return NULL;
 			ret = rel_semantic(query, s->data.lval->h->data.sym);
-            query->last_rel = ret;
+			query->last_rel = ret;
 			if (ret)
 				ret = rel_psm_stmt(sql->sa, rel_psm_call(query, s->data.lval->h->next->data.sym));
 			ret = rel_list(sql->sa, query->last_rel, ret);

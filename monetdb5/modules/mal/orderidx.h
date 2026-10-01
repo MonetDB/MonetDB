@@ -17,18 +17,8 @@
 #include "mal_interpreter.h"
 #include "mal_namespace.h"
 
-#ifdef WIN32
-#ifndef LIBMONETDB5
-#define orderidx_export extern __declspec(dllimport)
-#else
-#define orderidx_export extern __declspec(dllexport)
-#endif
-#else
-#define orderidx_export extern
-#endif
-
-orderidx_export str OIDXcreateImplementation(Client cntxt, int tpe, BAT *b,
-											 int pieces);
-orderidx_export str OIDXdropImplementation(Client cntxt, BAT *b);
+mal_export str OIDXcreateImplementation(Client cntxt, int tpe, BAT *b,
+										int pieces);
+mal_export str OIDXdropImplementation(Client cntxt, BAT *b);
 
 #endif /* _OIDX_H */

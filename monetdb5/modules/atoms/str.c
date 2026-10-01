@@ -1965,7 +1965,7 @@ scan_loop_strselect(BAT *rl, BATiter *li, struct canditer *lci, const char *r,
 		rl->tnil = false;
 	}
 
-	TRC_DEBUG(ALGO, "%s, l=%s #%zu [%s], cl=%s #%zu, time="LLFMT"usecs)\n",
+	TRC_DEBUG(ALGO, "%s, l=%s #"BUNFMT" [%s], cl=%s #"BUNFMT", time="LLFMT"usecs)\n",
 			  fname,
 			  BATgetId(li->b), li->count, ATOMname(li->b->ttype),
 			  lci->s ? BATgetId(lci->s) : "NULL", lci->ncand,
@@ -2217,7 +2217,7 @@ nested_loop_strjoin(BAT *rl, BAT *rr, BATiter *li, BATiter *ri,
 		}
 	}
 
-	TRC_DEBUG(ALGO, "(%s, %s, l=%s #%zu [%s], r=%s #%zu [%s], cl=%s #%zu, cr=%s #%zu, time="LLFMT"usecs)\n",
+	TRC_DEBUG(ALGO, "(%s, %s, l=%s #"BUNFMT" [%s], r=%s #"BUNFMT" [%s], cl=%s #"BUNFMT", cr=%s #"BUNFMT", time="LLFMT"usecs)\n",
 			  fname, "nested_loop_strjoin",
 			  BATgetId(li->b), li->count, ATOMname(li->b->ttype),
 			  BATgetId(ri->b), ri->count, ATOMname(ri->b->ttype),
@@ -2460,7 +2460,7 @@ bigram_strjoin(BAT *rl, BAT *rr, BATiter *li, BATiter *ri,
 
 	ma_close(&ta_state);
 
-	TRC_DEBUG(ALGO, "(%s, %s, l=%s #%zu [%s], r=%s #%zu [%s], cl=%s #%zu, cr=%s #%zu, time="LLFMT"usecs)\n",
+	TRC_DEBUG(ALGO, "(%s, %s, l=%s #"BUNFMT" [%s], r=%s #"BUNFMT" [%s], cl=%s #"BUNFMT", cr=%s #"BUNFMT", time="LLFMT"usecs)\n",
 			  fname, "bigram_strjoin",
 			  BATgetId(li->b), li->count, ATOMname(li->b->ttype),
 			  BATgetId(ri->b), ri->count, ATOMname(ri->b->ttype),

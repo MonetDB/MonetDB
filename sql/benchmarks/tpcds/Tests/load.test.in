@@ -1,3 +1,5 @@
+hash-threshold 1000
+
 statement ok
 START TRANSACTION
 

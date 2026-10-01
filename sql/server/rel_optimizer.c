@@ -50,7 +50,7 @@ rel_properties(visitor *v, sql_rel *rel)
 	if (is_groupby(rel->op) && rel->exps) {
 		for(node *n = rel->exps->h; n; n = n->next) {
 			sql_exp *e = n->data;
-                        sql_subfunc *sf = e->f;
+			sql_subfunc *sf = e->f;
 			if (e->type == e_aggr && sf->func->type == F_AGGR && !sf->func->s && !strcmp(sf->func->base.name, "fsum"))  /* handle fsum use classic */
 				gp->complex_modify |= 1;
 		}

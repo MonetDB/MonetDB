@@ -331,6 +331,9 @@ PPmerge_any( bat *Rzzl, bat *Rzzb, bat *Rzza, BAT *lcol, BAT *rcol, bit desc, bi
 				}
 			}
 			int v1 = (int)l, v2 = (int)-b, v3 = (int)-a;
+			/* zzl stores len of run from one of the sides, side flips starting at left */
+			/* b store number of equal values at end of run */
+			/* a store number of equal values at start of next run */
 			if (BUNappend(rzzl, &v1, TRUE) != GDK_SUCCEED ||
 				BUNappend(rzzb, &v2, TRUE) != GDK_SUCCEED ||
 				BUNappend(rzza, &v3, TRUE) != GDK_SUCCEED) {
@@ -706,7 +709,7 @@ typedef struct sop_t {
 	MT_Lock l;
 
 	part_t *h, *t;
-	part_t *workers[];
+	part_t *workers[] __attribute__((__counted_by__(nr_workers)));
 } sop_t;
 
 static void
@@ -727,7 +730,7 @@ sop_done(sop_t *q, int wid, int nr_workers, bool redo)
 	(void)redo;
 	(void)nr_workers;
 	int res = 0;
-    assert(q->pl_io.type == PIPELINE_IO_SOP);
+	assert(q->pl_io.type == PIPELINE_IO_SOP);
 
 	MT_lock_set(&q->l);
 	assert(q->workers[wid] == 0);
@@ -756,6 +759,7 @@ SOPnew(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 	if (!q)
 		throw(MAL, "sop.new", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 
+	q->nr_workers = nr_workers;
 	q->nr = 0;
 	q->h = NULL;
 	q->t = NULL;

@@ -1,4 +1,6 @@
-query I rowsort
+hash-threshold 1000
+
+query I nosort
 -- query 48
 select sum (ss_quantity)
  from store_sales, store, customer_demographics, customer_address, date_dim

@@ -2817,6 +2817,9 @@ set_stats_col(sql_trans *tr, sql_column *c, double *unique_est, char *min, char 
 			if ((b = bind_col_no_view(tr, c, RDONLY))) {
 				MT_lock_set(&b->theaplock);
 				b->tunique_est = *unique_est;
+				BUN ucnt = (BUN)(*unique_est);
+				if (ucnt == BATcount(b))
+					b->tkey = true;
 				MT_lock_unset(&b->theaplock);
 				bat_destroy(b);
 			}

@@ -150,12 +150,12 @@ ht_create(int type, size_t size, hash_table *p, int vkey)
 		Type *vals = ht->vals; \
 		for (gid i = 0; i < ht->size; i++) \
 		{ \
-			gid g = ht->gids[i]; \
+			gid g = (gid) ATOMIC_GET(&ht->gids[i]);	\
 			if (g) { \
-				mnstr_printf(fdout, "#| %7lld ", (long long) i); \
+				mnstr_printf(fdout, "#| %7"PRIuOID" ", i); \
 				if (ht->pgids) \
-					mnstr_printf(fdout,  "| %7lld ", (long long) ht->pgids[g]); \
-				mnstr_printf(fdout,  "| %7lld ", (long long) (g-1)); \
+					mnstr_printf(fdout,  "| %7"PRIuOID" ", ht->pgids[g]); \
+				mnstr_printf(fdout,  "| %7"PRIuOID" ", g - 1); \
 				if (is_##Type##_nil(vals[g])) \
 					mnstr_printf(fdout, "| NIL\n"); \
 				else \
@@ -163,7 +163,7 @@ ht_create(int type, size_t size, hash_table *p, int vkey)
 			} \
 		} \
 	} while (0)
-void 
+void
 ht_print(stream *fdout, BAT *b)
 {
 	hash_table *ht = (hash_table*)b->pl_io;
@@ -180,10 +180,10 @@ ht_print(stream *fdout, BAT *b)
 			mnstr_printf(fdout, "#|   HSH   |   GID   | VAL\n");
 		}
 		switch(ht->type) {
-			case TYPE_bit: 
+			case TYPE_bit:
 				prnt(bit);
 				break;
-			case TYPE_bte: 
+			case TYPE_bte:
 				prnt(bte);
 				break;
 			case TYPE_sht:
@@ -564,7 +564,7 @@ OAHASHhashmark_init(Client ctx, bat *res, const bat *ht_sink, const bat *payload
 		}
 	}
 
-    hash_table *h = (hash_table*)ht->pl_io;
+	hash_table *h = (hash_table*)ht->pl_io;
 	if (hp)
 		h = (hash_table*)hp->pl_io;
 	/* assert(h && h->pl_io.type == PIPELINE_IO_HASH_TABLE); */
@@ -2710,7 +2710,7 @@ OAHASHomprobe_cmbd(Client ctx, bat *PRB_oid, bat *HSH_slotid, bat *PRB_mark, con
 	lng *freq = NULL;
 	str err = NULL;
 
-    assert(((*single) && frequency) || !(*single));
+	assert(((*single) && frequency) || !(*single));
 
 	k = BATdescriptor(*PRB_key);
 	s = BATdescriptor(*PRB_selected);

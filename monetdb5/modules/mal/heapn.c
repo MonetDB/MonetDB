@@ -1309,7 +1309,7 @@ HEAPproject(Client ctx, bat *rid, bat *pos, bat *sel, bat *in)
 	Pipeline *p = pipeline_get_thread_private_pipeline(); /* last arg should move to first argument .. */
 	BAT *r = NULL, *P = BATdescriptor(*pos), *S = BATdescriptor(*sel), *b = BATdescriptor(*in);
 	int err = 0;
-    char *errmsg = NULL;
+	char *errmsg = NULL;
 
 	if (!P || !S || !b) {
 		if (P)
@@ -1390,10 +1390,10 @@ HEAPproject(Client ctx, bat *rid, bat *pos, bat *sel, bat *in)
 	}
 	if (BATcapacity(r) < size) {
 		if (BATextend(r, size) != GDK_SUCCEED) {
-            errmsg = createException(MAL, "heapn.project", MAL_MALLOC_FAIL);
+			errmsg = createException(MAL, "heapn.project", MAL_MALLOC_FAIL);
 			err = 1;
-            goto error;
-        }
+			goto error;
+		}
 	}
 
 	if (size && !err) {
@@ -1983,13 +1983,13 @@ HEAPgroups(Client ctx, bat *rid, bat *pid, bat *gid)
 
 #include "mel.h"
 static mel_func heapn_init_funcs[] = {
-    pattern("heapn", "new", HEAPnew, false, "return new heap sink, simple topn no order by cols", args(1,3,
+	pattern("heapn", "new", HEAPnew, false, "return new heap sink, simple topn no order by cols", args(1,3,
 				batarg("sink",oid),
 				arg("n",lng),
 				arg("grouped",bit)
 				)
 		   ),
-    pattern("heapn", "new", HEAPnew, false, "return new heap sink", args(1,4,
+	pattern("heapn", "new", HEAPnew, false, "return new heap sink", args(1,4,
 				batarg("sink",oid),
 				arg("n",lng),
 				arg("grouped",bit),

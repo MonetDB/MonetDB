@@ -268,7 +268,7 @@ rel_update_count(mvc *sql, sql_rel *rel)
 {
 	rel = rel_groupby(sql, rel, NULL);
 	sql_subfunc *a = sql_bind_func(sql, "sys", "count", sql_fetch_localtype(TYPE_void), NULL, F_AGGR, true, true);
-    sql_exp *e = exp_aggr(sql->sa, NULL, a, false, 0, CARD_ATOM, 0);
+	sql_exp *e = exp_aggr(sql->sa, NULL, a, false, 0, CARD_ATOM, 0);
 	set_intern(e);
 	(void) rel_groupby_add_aggr(sql, rel, e);
 	return rel;
