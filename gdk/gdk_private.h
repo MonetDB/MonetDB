@@ -229,6 +229,12 @@ int MT_msync(void *p, size_t len)
 	__attribute__((__visibility__("hidden")));
 int MT_munmap(void *p, size_t len)
 	__attribute__((__visibility__("hidden")));
+ssize_t numFromStr(allocator *ma, const char *src, size_t *len, void **dst,
+		   int tp, uint8_t scale, uint8_t precision, bool external)
+	__attribute__((__visibility__("hidden")));
+ssize_t numToStr(allocator *ma, char **dst, size_t *len, const void *src,
+		 int tp, uint8_t scale, bool external)
+	__attribute__((__visibility__("hidden")));
 void OIDXfree(BAT *b)
 	__attribute__((__visibility__("hidden")));
 void persistOIDX(BAT *b)

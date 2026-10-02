@@ -671,8 +671,9 @@ static const struct maxdiv maxdiv[] = {
 };
 static const int maxmod10 = 7;	/* (int) (maxdiv[0].maxval % 10) */
 
-static ssize_t
-numFromStr(allocator *ma, const char *src, size_t *len, void **dst, int tp, bool external)
+ssize_t
+numFromStr(allocator *ma, const char *src, size_t *len, void **dst, int tp,
+	   uint8_t scale, uint8_t precision, bool external)
 {
 	const char *p = src;
 	size_t sz = ATOMsize(tp);
@@ -682,6 +683,9 @@ numFromStr(allocator *ma, const char *src, size_t *len, void **dst, int tp, bool
 	lng base = 0;
 #endif
 	int sign = 1;
+	bool dotseen = false;
+	uint8_t fracdigs = 0;
+	uint8_t digits = 0;
 
 	/* a valid number has the following syntax:
 	 * [-+]?[0-9]+(_[0-9]+)*([eE][0-9]+(_[0-9]+)*)?(LL)? -- PCRE syntax, or in other words
@@ -721,22 +725,41 @@ numFromStr(allocator *ma, const char *src, size_t *len, void **dst, int tp, bool
 			p++;
 			break;
 		}
+		if (scale > 0 && *p == '.') {
+			p++;
+			dotseen = true;
+		}
 		if (!GDKisdigit(*p)) {
 			GDKerror("'%s' not a number\n", src);
 			goto bailout;
 		}
 	}
 	do {
-		int dig = base10(*p);
-		if (base > maxdiv[1].maxval ||
-		    (base == maxdiv[1].maxval && dig > maxmod10)) {
-			/* overflow */
-			goto overflow;
+		/* read but ignore superfluous digits after decimal point */
+		if (scale == 0 || fracdigs < scale) {
+			int dig = base10(*p);
+			if (base > maxdiv[1].maxval ||
+			    (base == maxdiv[1].maxval && dig > maxmod10)) {
+				/* overflow */
+				goto overflow;
+			}
+			base = 10 * base + dig;
+			if (precision > 0 && base != 0) {
+				if (++digits > precision) {
+					/* too many digits */
+					goto overflow;
+				}
+			}
 		}
-		base = 10 * base + dig;
 		p++;
 		if (*p == '_' && GDKisdigit(p[1]))
 			p++;
+		if (dotseen) {
+			fracdigs++;
+		} else if (*p == '.' && scale > 0) {
+			dotseen = true;
+			p++;
+		}
 	} while (GDKisdigit(*p));
 	if ((*p == 'e' || *p == 'E') && GDKisdigit(p[1])) {
 		p++;
@@ -764,6 +787,14 @@ numFromStr(allocator *ma, const char *src, size_t *len, void **dst, int tp, bool
 			}
 			base *= maxdiv[exp].scale;
 		}
+	}
+	while (fracdigs < scale) {
+		if (base > maxdiv[1].maxval) {
+			/* overflow */
+			goto overflow;
+		}
+		base *= 10;
+		fracdigs++;
 	}
 	base *= sign;
 	switch (sz) {
@@ -820,8 +851,12 @@ numFromStr(allocator *ma, const char *src, size_t *len, void **dst, int tp, bool
   overflow:
 	while (GDKisdigit(*p))
 		p++;
-	GDKerror("overflow: \"%.*s\" does not fit in %s\n",
-		 (int) (p - src), src, ATOMname(tp));
+	if (precision > 0)
+		GDKerror("overflow: \"%.*s\" does not fit in DECIMAL(%"PRIu8",%"PRIu8")\n",
+			 (int) (p - src), src, precision, scale);
+	else
+		GDKerror("overflow: \"%.*s\" does not fit in %s\n",
+			 (int) (p - src), src, ATOMname(tp));
   bailout:
 	memcpy(*dst, ATOMnilptr(tp), sz);
 	return -1;
@@ -830,32 +865,37 @@ numFromStr(allocator *ma, const char *src, size_t *len, void **dst, int tp, bool
 ssize_t
 bteFromStr(allocator *ma, const char *src, size_t *len, bte **dst, bool external)
 {
-	return numFromStr(ma, src, len, (void **) dst, TYPE_bte, external);
+	return numFromStr(ma, src, len, (void **) dst, TYPE_bte, 0, 0,
+			  external);
 }
 
 ssize_t
 shtFromStr(allocator *ma, const char *src, size_t *len, sht **dst, bool external)
 {
-	return numFromStr(ma, src, len, (void **) dst, TYPE_sht, external);
+	return numFromStr(ma, src, len, (void **) dst, TYPE_sht, 0, 0,
+			  external);
 }
 
 ssize_t
 intFromStr(allocator *ma, const char *src, size_t *len, int **dst, bool external)
 {
-	return numFromStr(ma, src, len, (void **) dst, TYPE_int, external);
+	return numFromStr(ma, src, len, (void **) dst, TYPE_int, 0, 0,
+			  external);
 }
 
 ssize_t
 lngFromStr(allocator *ma, const char *src, size_t *len, lng **dst, bool external)
 {
-	return numFromStr(ma, src, len, (void **) dst, TYPE_lng, external);
+	return numFromStr(ma, src, len, (void **) dst, TYPE_lng, 0, 0,
+			  external);
 }
 
 #ifdef HAVE_HGE
 ssize_t
 hgeFromStr(allocator *ma, const char *src, size_t *len, hge **dst, bool external)
 {
-	return numFromStr(ma, src, len, (void **) dst, TYPE_hge, external);
+	return numFromStr(ma, src, len, (void **) dst, TYPE_hge, 0, 0,
+			  external);
 }
 #endif
 
@@ -934,51 +974,110 @@ mskRead(allocator *ma, msk *A, size_t *dstlen, stream *s, size_t cnt)
 }
 
 atom_io(bit, Bte, bte)
-
-atomtostr(bte, "%hhd", )
 atom_io(bte, Bte, bte)
-
-atomtostr(sht, "%hd", )
 atom_io(sht, Sht, sht)
-
-atomtostr(int, "%d", )
 atom_io(int, Int, int)
-
-atomtostr(lng, LLFMT, )
 atom_io(lng, Lng, lng)
+#ifdef HAVE_HGE
+atom_io(hge, Hge, hge)
+#endif
+
+ssize_t
+numToStr(allocator *ma, char **dst, size_t *len, const void *src,
+	 int tp, uint8_t scale, bool external)
+{
+	char buf[128];
+	char *p = buf + sizeof(buf);
+#ifdef HAVE_HGE
+	hge val;
+#else
+	lng val;
+#endif
+	bool isnil;
+
+	switch (tp) {
+	case TYPE_bte:
+		isnil = is_bte_nil(*(bte *) src);
+		val = *(bte *) src;
+		break;
+	case TYPE_sht:
+		isnil = is_sht_nil(*(sht *) src);
+		val = *(sht *) src;
+		break;
+	case TYPE_int:
+		isnil = is_int_nil(*(int *) src);
+		val = *(int *) src;
+		break;
+	case TYPE_lng:
+		isnil = is_lng_nil(*(lng *) src);
+		val = *(lng *) src;
+		break;
+#ifdef HAVE_HGE
+	case TYPE_hge:
+		isnil = is_hge_nil(*(hge *) src);
+		val = *(hge *) src;
+		break;
+#endif
+	default:
+		MT_UNREACHABLE();
+	}
+	if (isnil) {
+		p = external ? "nil" : (char *) str_nil;
+	} else {
+		bool neg = val < 0;
+		if (neg)
+			val = -val;
+		*--p = '\0';
+		if (scale > 0) {
+			do {
+				*--p = '0' + val % 10;
+				val /= 10;
+			} while (--scale > 0);
+			*--p = '.';
+		}
+		do {
+			*--p = '0' + val % 10;
+			val /= 10;
+		} while (val > 0);
+		if (neg)
+			*--p = '-';
+	}
+	size_t sz = strlen(p);
+	atommem(sz);
+	strcpy(*dst, p);
+	return (ssize_t) sz;
+}
+
+ssize_t
+bteToStr(allocator *ma, char **dst, size_t *len, const bte *src, bool external)
+{
+	return numToStr(ma, dst, len, src, TYPE_bte, 0, external);
+}
+
+ssize_t
+shtToStr(allocator *ma, char **dst, size_t *len, const sht *src, bool external)
+{
+	return numToStr(ma, dst, len, src, TYPE_sht, 0, external);
+}
+
+ssize_t
+intToStr(allocator *ma, char **dst, size_t *len, const int *src, bool external)
+{
+	return numToStr(ma, dst, len, src, TYPE_int, 0, external);
+}
+
+ssize_t
+lngToStr(allocator *ma, char **dst, size_t *len, const lng *src, bool external)
+{
+	return numToStr(ma, dst, len, src, TYPE_lng, 0, external);
+}
 
 #ifdef HAVE_HGE
-#define HGE_LL018FMT "%018" PRId64
-#define HGE_LL18DIGITS LL_CONSTANT(1000000000000000000)
-#define HGE_ABS(a) (((a) < 0) ? -(a) : (a))
 ssize_t
 hgeToStr(allocator *ma, char **dst, size_t *len, const hge *src, bool external)
 {
-	atommem(hgeStrlen);
-	if (is_hge_nil(*src)) {
-		if (external) {
-			assert(*len >= strlen("nil") + 1);
-			strcpy(*dst, "nil");
-			return 3;
-		}
-		assert(*len >= strlen(str_nil) + 1);
-		strcpy(*dst, str_nil);
-		return 1;
-	}
-	if ((hge) GDK_lng_min <= *src && *src <= (hge) GDK_lng_max) {
-		lng s = (lng) *src;
-		return lngToStr(ma, dst, len, &s, external);
-	} else {
-		hge s = *src / HGE_LL18DIGITS;
-		ssize_t llen = hgeToStr(ma, dst, len, &s, external);
-		if (llen < 0)
-			return llen;
-		snprintf(*dst + llen, *len - llen, HGE_LL018FMT,
-			 (lng) HGE_ABS(*src % HGE_LL18DIGITS));
-		return strlen(*dst);
-	}
+	return numToStr(ma, dst, len, src, TYPE_hge, 0, external);
 }
-atom_io(hge, Hge, hge)
 #endif
 
 ssize_t

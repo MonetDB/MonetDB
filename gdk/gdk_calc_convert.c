@@ -656,7 +656,8 @@ convertimpl_msk(flt)
 convertimpl_msk(dbl)
 
 static BUN
-convert_any_str(BATiter *bi, BAT *bn, struct canditer *restrict ci)
+convert_any_str(BATiter *bi, BAT *bn, uint8_t scale,
+		struct canditer *restrict ci)
 {
 	int tp = bi->type;
 	oid candoff = bi->b->hseqbase;
@@ -712,19 +713,45 @@ convert_any_str(BATiter *bi, BAT *bn, struct canditer *restrict ci)
 				goto bailout;
 		}
 	} else {
-		TIMEOUT_LOOP_IDX(i, ci->ncand, qry_ctx) {
-			x = canditer_next(ci) - candoff;
-			src = BUNtloc(*bi, x);
-			if ((*atomeq)(src, nil)) {
-				nils++;
-				if (tfastins_nocheckVAR(bn, i, str_nil) != GDK_SUCCEED)
-					goto bailout;
-			} else {
-				if ((*atomtostr)(ta, &dst, &len, src, false) < 0)
-					goto bailout;
-				if (tfastins_nocheckVAR(bn, i, dst) != GDK_SUCCEED)
-					goto bailout;
+		switch (bi->type) {
+		case TYPE_bte:
+		case TYPE_sht:
+		case TYPE_int:
+		case TYPE_lng:
+#ifdef HAVE_HGE
+		case TYPE_hge:
+#endif
+			TIMEOUT_LOOP_IDX(i, ci->ncand, qry_ctx) {
+				x = canditer_next(ci) - candoff;
+				src = BUNtloc(*bi, x);
+				if ((*atomeq)(src, nil)) {
+					nils++;
+					if (tfastins_nocheckVAR(bn, i, str_nil) != GDK_SUCCEED)
+						goto bailout;
+				} else {
+					if (numToStr(ta, &dst, &len, src, bi->type, scale, false) < 0)
+						goto bailout;
+					if (tfastins_nocheckVAR(bn, i, dst) != GDK_SUCCEED)
+						goto bailout;
+				}
 			}
+			break;
+		default:
+			TIMEOUT_LOOP_IDX(i, ci->ncand, qry_ctx) {
+				x = canditer_next(ci) - candoff;
+				src = BUNtloc(*bi, x);
+				if ((*atomeq)(src, nil)) {
+					nils++;
+					if (tfastins_nocheckVAR(bn, i, str_nil) != GDK_SUCCEED)
+						goto bailout;
+				} else {
+					if ((*atomtostr)(ta, &dst, &len, src, false) < 0)
+						goto bailout;
+					if (tfastins_nocheckVAR(bn, i, dst) != GDK_SUCCEED)
+						goto bailout;
+				}
+			}
+			break;
 		}
 	}
 	ma_close(&ta_state);
@@ -781,8 +808,8 @@ convert_str_var(BATiter *bi, BAT *bn, struct canditer *restrict ci)
 }
 
 static BUN
-convert_str_fix(BATiter *bi, int tp, void *restrict dst,
-		struct canditer *restrict ci, oid candoff)
+convert_str_fix(BATiter *bi, int tp, uint8_t scale, uint8_t precision,
+		void *restrict dst, struct canditer *restrict ci, oid candoff)
 {
 	BUN nils = 0;
 	const void *nil = ATOMnilptr(tp);
@@ -824,23 +851,53 @@ convert_str_fix(BATiter *bi, int tp, void *restrict dst,
 	}
 
 	bool (*atomeq)(const void *, const void *) = ATOMequal(tp);
-	TIMEOUT_LOOP(ci->ncand, qry_ctx) {
-		oid x = canditer_next(ci) - candoff;
-		const char *s = BUNtvar(*bi, x);
-		if (strNil(s)) {
-			memcpy(dst, nil, len);
-			nils++;
-		} else {
-			void *d = dst;
-			if ((l = (*atomfromstr)(ta, s, &len, &d, false)) < 0 ||
-			    l < (ssize_t) strlen(s)) {
-				goto conversion_failed;
-			}
-			assert(len == ATOMsize(tp));
-			if (atomeq(dst, nil))
+	switch (tp) {
+	case TYPE_bte:
+	case TYPE_sht:
+	case TYPE_int:
+	case TYPE_lng:
+#ifdef HAVE_HGE
+	case TYPE_hge:
+#endif
+		TIMEOUT_LOOP(ci->ncand, qry_ctx) {
+			oid x = canditer_next(ci) - candoff;
+			const char *s = BUNtvar(*bi, x);
+			if (strNil(s)) {
+				memcpy(dst, nil, len);
 				nils++;
+			} else {
+				void *d = dst;
+				if ((l = numFromStr(ta, s, &len, &d, tp, scale,
+						    precision, false)) < 0 ||
+				    l < (ssize_t) strlen(s)) {
+					goto conversion_failed;
+				}
+				assert(len == ATOMsize(tp));
+				nils += atomeq(dst, nil);
+			}
+			dst = (void *) ((char *) dst + len);
 		}
-		dst = (void *) ((char *) dst + len);
+		break;
+	default:
+		TIMEOUT_LOOP(ci->ncand, qry_ctx) {
+			oid x = canditer_next(ci) - candoff;
+			const char *s = BUNtvar(*bi, x);
+			if (strNil(s)) {
+				memcpy(dst, nil, len);
+				nils++;
+			} else {
+				void *d = dst;
+				if ((l = (*atomfromstr)(ta, s, &len, &d,
+							false)) < 0 ||
+				    l < (ssize_t) strlen(s)) {
+					goto conversion_failed;
+				}
+				assert(len == ATOMsize(tp));
+				nils += atomeq(dst, nil);
+			}
+			dst = (void *) ((char *) dst + len);
+		}
+		break;
 	}
 	ma_close(&ta_state);
 	TIMEOUT_CHECK(qry_ctx, TIMEOUT_HANDLER(BUN_NONE, qry_ctx));
@@ -1847,14 +1904,14 @@ BATconvert(BAT *b, BAT *s, int tp,
 		nils = convert_void_any(b->tseqbase, bn,
 					&ci, b->hseqbase, &reduce);
 	else if (tp == TYPE_str)
-		nils = convert_any_str(&bi, bn, &ci);
+		nils = convert_any_str(&bi, bn, scale1, &ci);
 	else if (bi.type == TYPE_str) {
 		reduce = true;
 		if (ATOMvarsized(tp)) {
 			nils = convert_str_var(&bi, bn, &ci);
 		} else {
-			nils = convert_str_fix(&bi, tp, Tloc(bn, 0),
-					       &ci, b->hseqbase);
+			nils = convert_str_fix(&bi, tp, scale2, precision,
+					       Tloc(bn, 0), &ci, b->hseqbase);
 		}
 	} else if (ATOMstorage(bi.type) == TYPE_msk &&
 		   ATOMstorage(tp) == TYPE_msk) {
