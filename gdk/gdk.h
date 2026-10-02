@@ -3163,6 +3163,7 @@ BATnegateprops(BAT *b)
 	}
 	b->tseqbase = oid_nil;
 	b->tkey = false;
+	b->tvkey = false;
 	b->tnokey[0] = 0;
 	b->tnokey[1] = 0;
 	b->tmaxpos = b->tminpos = BUN_NONE;
