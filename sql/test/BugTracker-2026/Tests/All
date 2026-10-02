@@ -206,3 +206,4 @@ KNOWNFAIL?8026-having-expression-bug
 KNOWNFAIL?8028-coalesce-groupby-rollup-having-bug
 KNOWNFAIL?8030-inner-join-group-by-bug
 8035-alter-type
+8036-alter+insert-in-trans
