@@ -20,7 +20,7 @@ select
     and store.s_number_employees between 200 and 295
     group by ss_ticket_number,ss_customer_sk,ss_addr_sk,store.s_city) ms,customer
     where ss_customer_sk = c_customer_sk
- order by c_last_name,c_first_name,substr(s_city,1,30), profit
+ order by c_last_name,c_first_name,substr(s_city,1,30), profit, ss_ticket_number
 limit 100
 ----
 NULL	NULL	Fairview	158139	3721.39	-23039.01
@@ -40,8 +40,8 @@ NULL	NULL	Fairview	230904	0.00	-2575.26
 NULL	NULL	Fairview	66717	1521.09	-2431.95
 NULL	NULL	Fairview	198542	1082.91	-1789.20
 NULL	NULL	Fairview	7153	9.96	-984.62
-NULL	NULL	Midway	113867	NULL	NULL
 NULL	NULL	Midway	103268	0.00	NULL
+NULL	NULL	Midway	113867	NULL	NULL
 NULL	NULL	Midway	9441	1109.31	-26407.61
 NULL	NULL	Midway	24453	3762.75	-23692.00
 NULL	NULL	Midway	2018	29.76	-22410.59
