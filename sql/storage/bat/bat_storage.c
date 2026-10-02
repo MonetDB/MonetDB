@@ -147,7 +147,7 @@ trans_add_obj_(sql_trans *tr, sql_base *b, void *data, tc_cleanup_fptr cleanup, 
 	if (tr->changes) {
 		for(node *n = tr->changes->h; n && !found; n = n->next) {
 			sql_change *c = n->data;
-			if (c->obj->id == b->id)
+			if (c->obj->id == b->id && !(c->log == NULL && log != NULL))
 				found = true;
 		}
 	}

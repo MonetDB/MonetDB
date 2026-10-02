@@ -1,0 +1,29 @@
+statement ok
+CREATE TABLE t (d DATE)
+
+statement ok
+INSERT INTO t VALUES (DATE '2024-02-29')
+
+query T rowsort
+SELECT d FROM t
+----
+2024-02-29
+
+query T rowsort
+SELECT CAST(d AS TIMESTAMP) FROM t
+----
+2024-02-29 00:00:00
+
+statement ok
+ALTER TABLE t ALTER COLUMN d TIMESTAMP
+
+query T rowsort
+SELECT CAST(d AS VARCHAR(40)) FROM t
+----
+2024-02-29 00:00:00.000000
+
+query T rowsort
+SELECT d FROM t
+----
+2024-02-29 00:00:00
+

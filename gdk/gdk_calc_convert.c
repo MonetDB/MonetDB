@@ -10,6 +10,7 @@
 
 #include "monetdb_config.h"
 #include "gdk.h"
+#include "gdk_time.h"
 #include "gdk_private.h"
 #include "gdk_calc_private.h"
 
@@ -186,7 +187,6 @@ convert_##TYPE1##_oid(const TYPE1 *src, oid *restrict dst,		\
 				CONV_OVERFLOW(TYPE1, "oid", src[x]);	\
 			}						\
 		}							\
-		TIMEOUT_CHECK(qry_ctx, TIMEOUT_HANDLER(BUN_NONE, qry_ctx)); \
 	} else {							\
 		TIMEOUT_LOOP_IDX(i, ci->ncand, qry_ctx) {		\
 			x = canditer_next(ci) - candoff;		\
@@ -199,8 +199,8 @@ convert_##TYPE1##_oid(const TYPE1 *src, oid *restrict dst,		\
 				CONV_OVERFLOW(TYPE1, "oid", src[x]);	\
 			}						\
 		}							\
-		TIMEOUT_CHECK(qry_ctx, TIMEOUT_HANDLER(BUN_NONE, qry_ctx)); \
 	}								\
+	TIMEOUT_CHECK(qry_ctx, TIMEOUT_HANDLER(BUN_NONE, qry_ctx));	\
 	return nils;							\
 }
 
@@ -228,7 +228,6 @@ convert_##TYPE1##_oid(const TYPE1 *src, oid *restrict dst,		\
 				CONV_OVERFLOW(TYPE1, "oid", src[x]);	\
 			}						\
 		}							\
-		TIMEOUT_CHECK(qry_ctx, TIMEOUT_HANDLER(BUN_NONE, qry_ctx)); \
 	} else {							\
 		TIMEOUT_LOOP_IDX(i, ci->ncand, qry_ctx) {		\
 			x = canditer_next(ci) - candoff;		\
@@ -242,8 +241,8 @@ convert_##TYPE1##_oid(const TYPE1 *src, oid *restrict dst,		\
 				CONV_OVERFLOW(TYPE1, "oid", src[x]);	\
 			}						\
 		}							\
-		TIMEOUT_CHECK(qry_ctx, TIMEOUT_HANDLER(BUN_NONE, qry_ctx)); \
 	}								\
+	TIMEOUT_CHECK(qry_ctx, TIMEOUT_HANDLER(BUN_NONE, qry_ctx));	\
 	return nils;							\
 }
 
@@ -396,7 +395,6 @@ convert_##TYPE1##_##TYPE2(const TYPE1 *src, TYPE2 *restrict dst,	\
 					CONV_OVERFLOW_PREC(TYPE1, #TYPE2, v, scale2, precision); \
 			}						\
 		}							\
-		TIMEOUT_CHECK(qry_ctx, TIMEOUT_HANDLER(BUN_NONE, qry_ctx)); \
 	} else {							\
 		TIMEOUT_LOOP_IDX(i, ci->ncand, qry_ctx) {		\
 			x = canditer_next(ci) - candoff;		\
@@ -416,8 +414,8 @@ convert_##TYPE1##_##TYPE2(const TYPE1 *src, TYPE2 *restrict dst,	\
 					CONV_OVERFLOW_PREC(TYPE1, #TYPE2, v, scale2, precision); \
 			}						\
 		}							\
-		TIMEOUT_CHECK(qry_ctx, TIMEOUT_HANDLER(BUN_NONE, qry_ctx)); \
 	}								\
+	TIMEOUT_CHECK(qry_ctx, TIMEOUT_HANDLER(BUN_NONE, qry_ctx));	\
 	return nils;							\
 }
 
@@ -441,7 +439,6 @@ convert_##TYPE##_bit(const TYPE *src, bit *restrict dst,		\
 			} else						\
 				dst[i] = (bit) (src[x] != 0);		\
 		}							\
-		TIMEOUT_CHECK(qry_ctx, TIMEOUT_HANDLER(BUN_NONE, qry_ctx)); \
 	} else {							\
 		TIMEOUT_LOOP_IDX(i, ci->ncand, qry_ctx) {		\
 			x = canditer_next(ci) - candoff;		\
@@ -451,8 +448,8 @@ convert_##TYPE##_bit(const TYPE *src, bit *restrict dst,		\
 			} else						\
 				dst[i] = (bit) (src[x] != 0);		\
 		}							\
-		TIMEOUT_CHECK(qry_ctx, TIMEOUT_HANDLER(BUN_NONE, qry_ctx)); \
 	}								\
+	TIMEOUT_CHECK(qry_ctx, TIMEOUT_HANDLER(BUN_NONE, qry_ctx));	\
 	return nils;							\
 }
 
@@ -659,7 +656,8 @@ convertimpl_msk(flt)
 convertimpl_msk(dbl)
 
 static BUN
-convert_any_str(BATiter *bi, BAT *bn, struct canditer *restrict ci)
+convert_any_str(BATiter *bi, BAT *bn, uint8_t scale,
+		struct canditer *restrict ci)
 {
 	int tp = bi->type;
 	oid candoff = bi->b->hseqbase;
@@ -715,19 +713,45 @@ convert_any_str(BATiter *bi, BAT *bn, struct canditer *restrict ci)
 				goto bailout;
 		}
 	} else {
-		TIMEOUT_LOOP_IDX(i, ci->ncand, qry_ctx) {
-			x = canditer_next(ci) - candoff;
-			src = BUNtloc(bi, x);
-			if ((*atomeq)(src, nil)) {
-				nils++;
-				if (tfastins_nocheckVAR(bn, i, str_nil) != GDK_SUCCEED)
-					goto bailout;
-			} else {
-				if ((*atomtostr)(ta, &dst, &len, src, false) < 0)
-					goto bailout;
-				if (tfastins_nocheckVAR(bn, i, dst) != GDK_SUCCEED)
-					goto bailout;
+		switch (bi->type) {
+		case TYPE_bte:
+		case TYPE_sht:
+		case TYPE_int:
+		case TYPE_lng:
+#ifdef HAVE_HGE
+		case TYPE_hge:
+#endif
+			TIMEOUT_LOOP_IDX(i, ci->ncand, qry_ctx) {
+				x = canditer_next(ci) - candoff;
+				src = BUNtloc(bi, x);
+				if ((*atomeq)(src, nil)) {
+					nils++;
+					if (tfastins_nocheckVAR(bn, i, str_nil) != GDK_SUCCEED)
+						goto bailout;
+				} else {
+					if (numToStr(ta, &dst, &len, src, bi->type, scale, false) < 0)
+						goto bailout;
+					if (tfastins_nocheckVAR(bn, i, dst) != GDK_SUCCEED)
+						goto bailout;
+				}
 			}
+			break;
+		default:
+			TIMEOUT_LOOP_IDX(i, ci->ncand, qry_ctx) {
+				x = canditer_next(ci) - candoff;
+				src = BUNtloc(bi, x);
+				if ((*atomeq)(src, nil)) {
+					nils++;
+					if (tfastins_nocheckVAR(bn, i, str_nil) != GDK_SUCCEED)
+						goto bailout;
+				} else {
+					if ((*atomtostr)(ta, &dst, &len, src, false) < 0)
+						goto bailout;
+					if (tfastins_nocheckVAR(bn, i, dst) != GDK_SUCCEED)
+						goto bailout;
+				}
+			}
+			break;
 		}
 	}
 	ma_close(&ta_state);
@@ -784,8 +808,8 @@ convert_str_var(BATiter *bi, BAT *bn, struct canditer *restrict ci)
 }
 
 static BUN
-convert_str_fix(BATiter *bi, int tp, void *restrict dst,
-		struct canditer *restrict ci, oid candoff)
+convert_str_fix(BATiter *bi, int tp, uint8_t scale, uint8_t precision,
+		void *restrict dst, struct canditer *restrict ci, oid candoff)
 {
 	BUN nils = 0;
 	const void *nil = ATOMnilptr(tp);
@@ -827,23 +851,53 @@ convert_str_fix(BATiter *bi, int tp, void *restrict dst,
 	}
 
 	bool (*atomeq)(const void *, const void *) = ATOMequal(tp);
-	TIMEOUT_LOOP(ci->ncand, qry_ctx) {
-		oid x = canditer_next(ci) - candoff;
-		const char *s = BUNtvar(bi, x);
-		if (strNil(s)) {
-			memcpy(dst, nil, len);
-			nils++;
-		} else {
-			void *d = dst;
-			if ((l = (*atomfromstr)(ta, s, &len, &d, false)) < 0 ||
-			    l < (ssize_t) strlen(s)) {
-				goto conversion_failed;
-			}
-			assert(len == ATOMsize(tp));
-			if (atomeq(dst, nil))
+	switch (tp) {
+	case TYPE_bte:
+	case TYPE_sht:
+	case TYPE_int:
+	case TYPE_lng:
+#ifdef HAVE_HGE
+	case TYPE_hge:
+#endif
+		TIMEOUT_LOOP(ci->ncand, qry_ctx) {
+			oid x = canditer_next(ci) - candoff;
+			const char *s = BUNtvar(bi, x);
+			if (strNil(s)) {
+				memcpy(dst, nil, len);
 				nils++;
+			} else {
+				void *d = dst;
+				if ((l = numFromStr(ta, s, &len, &d, tp, scale,
+						    precision, false)) < 0 ||
+				    l < (ssize_t) strlen(s)) {
+					goto conversion_failed;
+				}
+				assert(len == ATOMsize(tp));
+				nils += atomeq(dst, nil);
+			}
+			dst = (void *) ((char *) dst + len);
 		}
-		dst = (void *) ((char *) dst + len);
+		break;
+	default:
+		TIMEOUT_LOOP(ci->ncand, qry_ctx) {
+			oid x = canditer_next(ci) - candoff;
+			const char *s = BUNtvar(bi, x);
+			if (strNil(s)) {
+				memcpy(dst, nil, len);
+				nils++;
+			} else {
+				void *d = dst;
+				if ((l = (*atomfromstr)(ta, s, &len, &d,
+							false)) < 0 ||
+				    l < (ssize_t) strlen(s)) {
+					goto conversion_failed;
+				}
+				assert(len == ATOMsize(tp));
+				nils += atomeq(dst, nil);
+			}
+			dst = (void *) ((char *) dst + len);
+		}
+		break;
 	}
 	ma_close(&ta_state);
 	TIMEOUT_CHECK(qry_ctx, TIMEOUT_HANDLER(BUN_NONE, qry_ctx));
@@ -1034,7 +1088,6 @@ convert_inet6_inet4(const inet6 *src, inet4 *restrict dst,
 				return BUN_NONE;
 			}
 		}
-		TIMEOUT_CHECK(qry_ctx, TIMEOUT_HANDLER(BUN_NONE, qry_ctx));
 	} else {
 		TIMEOUT_LOOP_IDX(i, ci->ncand, qry_ctx) {
 			x = canditer_next(ci) - candoff;
@@ -1075,8 +1128,8 @@ convert_inet6_inet4(const inet6 *src, inet4 *restrict dst,
 				return BUN_NONE;
 			}
 		}
-		TIMEOUT_CHECK(qry_ctx, TIMEOUT_HANDLER(BUN_NONE, qry_ctx));
 	}
+	TIMEOUT_CHECK(qry_ctx, TIMEOUT_HANDLER(BUN_NONE, qry_ctx));
 	return nils;
 }
 
@@ -1106,7 +1159,6 @@ convert_inet4_inet6(const inet4 *src, inet6 *restrict dst,
 				};
 			}
 		}
-		TIMEOUT_CHECK(qry_ctx, TIMEOUT_HANDLER(BUN_NONE, qry_ctx));
 	} else {
 		TIMEOUT_LOOP_IDX(i, ci->ncand, qry_ctx) {
 			x = canditer_next(ci) - candoff;
@@ -1124,8 +1176,207 @@ convert_inet4_inet6(const inet4 *src, inet6 *restrict dst,
 				};
 			}
 		}
-		TIMEOUT_CHECK(qry_ctx, TIMEOUT_HANDLER(BUN_NONE, qry_ctx));
 	}
+	TIMEOUT_CHECK(qry_ctx, TIMEOUT_HANDLER(BUN_NONE, qry_ctx));
+	return nils;
+}
+
+static BUN
+convert_date_date(const date *src, date *restrict dst,
+		  struct canditer *restrict ci, oid candoff)
+{
+	BUN i, nils = 0;
+	oid x;
+	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
+
+	if (ci->tpe == cand_dense) {
+		TIMEOUT_LOOP_IDX(i, ci->ncand, qry_ctx) {
+			x = canditer_next_dense(ci) - candoff;
+			if (is_date_nil(src[x])) {
+				dst[i] = date_nil;
+				nils++;
+			} else {
+				dst[i] = src[x];
+			}
+		}
+	} else {
+		TIMEOUT_LOOP_IDX(i, ci->ncand, qry_ctx) {
+			x = canditer_next(ci) - candoff;
+			if (is_date_nil(src[x])) {
+				dst[i] = date_nil;
+				nils++;
+			} else {
+				dst[i] = src[x];
+			}
+		}
+	}
+	TIMEOUT_CHECK(qry_ctx, TIMEOUT_HANDLER(BUN_NONE, qry_ctx));
+	return nils;
+}
+
+static BUN
+convert_date_timestamp(const date *src, timestamp *restrict dst,
+		       struct canditer *restrict ci, oid candoff)
+{
+	BUN i, nils = 0;
+	oid x;
+	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
+	daytime zero = daytime_create(0, 0, 0, 0);
+
+	if (ci->tpe == cand_dense) {
+		TIMEOUT_LOOP_IDX(i, ci->ncand, qry_ctx) {
+			x = canditer_next_dense(ci) - candoff;
+			if (is_date_nil(src[x])) {
+				dst[i] = timestamp_nil;
+				nils++;
+			} else {
+				dst[i] = timestamp_create(src[x], zero);
+			}
+		}
+	} else {
+		TIMEOUT_LOOP_IDX(i, ci->ncand, qry_ctx) {
+			x = canditer_next(ci) - candoff;
+			if (is_date_nil(src[x])) {
+				dst[i] = timestamp_nil;
+				nils++;
+			} else {
+				dst[i] = timestamp_create(src[x], zero);
+			}
+		}
+	}
+	TIMEOUT_CHECK(qry_ctx, TIMEOUT_HANDLER(BUN_NONE, qry_ctx));
+	return nils;
+}
+
+static BUN
+convert_daytime_daytime(const daytime *src, daytime *restrict dst,
+			struct canditer *restrict ci, oid candoff)
+{
+	BUN i, nils = 0;
+	oid x;
+	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
+
+	if (ci->tpe == cand_dense) {
+		TIMEOUT_LOOP_IDX(i, ci->ncand, qry_ctx) {
+			x = canditer_next_dense(ci) - candoff;
+			if (is_daytime_nil(src[x])) {
+				dst[i] = daytime_nil;
+				nils++;
+			} else {
+				dst[i] = src[x];
+			}
+		}
+	} else {
+		TIMEOUT_LOOP_IDX(i, ci->ncand, qry_ctx) {
+			x = canditer_next(ci) - candoff;
+			if (is_daytime_nil(src[x])) {
+				dst[i] = daytime_nil;
+				nils++;
+			} else {
+				dst[i] = src[x];
+			}
+		}
+	}
+	TIMEOUT_CHECK(qry_ctx, TIMEOUT_HANDLER(BUN_NONE, qry_ctx));
+	return nils;
+}
+
+static BUN
+convert_timestamp_timestamp(const timestamp *src, timestamp *restrict dst,
+			    struct canditer *restrict ci, oid candoff)
+{
+	BUN i, nils = 0;
+	oid x;
+	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
+
+	if (ci->tpe == cand_dense) {
+		TIMEOUT_LOOP_IDX(i, ci->ncand, qry_ctx) {
+			x = canditer_next_dense(ci) - candoff;
+			if (is_timestamp_nil(src[x])) {
+				dst[i] = timestamp_nil;
+				nils++;
+			} else {
+				dst[i] = src[x];
+			}
+		}
+	} else {
+		TIMEOUT_LOOP_IDX(i, ci->ncand, qry_ctx) {
+			x = canditer_next(ci) - candoff;
+			if (is_timestamp_nil(src[x])) {
+				dst[i] = timestamp_nil;
+				nils++;
+			} else {
+				dst[i] = src[x];
+			}
+		}
+	}
+	TIMEOUT_CHECK(qry_ctx, TIMEOUT_HANDLER(BUN_NONE, qry_ctx));
+	return nils;
+}
+
+static BUN
+convert_timestamp_daytime(const timestamp *src, daytime *restrict dst,
+			  struct canditer *restrict ci, oid candoff)
+{
+	BUN i, nils = 0;
+	oid x;
+	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
+
+	if (ci->tpe == cand_dense) {
+		TIMEOUT_LOOP_IDX(i, ci->ncand, qry_ctx) {
+			x = canditer_next_dense(ci) - candoff;
+			if (is_timestamp_nil(src[x])) {
+				dst[i] = daytime_nil;
+				nils++;
+			} else {
+				dst[i] = timestamp_daytime(src[x]);
+			}
+		}
+	} else {
+		TIMEOUT_LOOP_IDX(i, ci->ncand, qry_ctx) {
+			x = canditer_next(ci) - candoff;
+			if (is_timestamp_nil(src[x])) {
+				dst[i] = daytime_nil;
+				nils++;
+			} else {
+				dst[i] = timestamp_daytime(src[x]);
+			}
+		}
+	}
+	TIMEOUT_CHECK(qry_ctx, TIMEOUT_HANDLER(BUN_NONE, qry_ctx));
+	return nils;
+}
+
+static BUN
+convert_timestamp_date(const timestamp *src, date *restrict dst,
+		       struct canditer *restrict ci, oid candoff)
+{
+	BUN i, nils = 0;
+	oid x;
+	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
+
+	if (ci->tpe == cand_dense) {
+		TIMEOUT_LOOP_IDX(i, ci->ncand, qry_ctx) {
+			x = canditer_next_dense(ci) - candoff;
+			if (is_timestamp_nil(src[x])) {
+				dst[i] = date_nil;
+				nils++;
+			} else {
+				dst[i] = timestamp_date(src[x]);
+			}
+		}
+	} else {
+		TIMEOUT_LOOP_IDX(i, ci->ncand, qry_ctx) {
+			x = canditer_next(ci) - candoff;
+			if (is_timestamp_nil(src[x])) {
+				dst[i] = date_nil;
+				nils++;
+			} else {
+				dst[i] = timestamp_date(src[x]);
+			}
+		}
+	}
+	TIMEOUT_CHECK(qry_ctx, TIMEOUT_HANDLER(BUN_NONE, qry_ctx));
 	return nils;
 }
 
@@ -1137,20 +1388,27 @@ convert_typeswitchloop(const void *src, int stp, void *restrict dst, int dtp,
 {
 	assert(stp == TYPE_flt || stp == TYPE_dbl || scale1 < (uint8_t) (sizeof(scales) / sizeof(scales[0])));
 	assert(dtp == TYPE_flt || dtp == TYPE_dbl || scale2 < (uint8_t) (sizeof(scales) / sizeof(scales[0])));
-	switch (ATOMbasetype(stp)) {
+	switch (stp) {
 	case TYPE_msk:
-		switch (ATOMbasetype(dtp)) {
+		switch (dtp) {
 		/* case TYPE_msk not needed: it is done with the help
 		 * of BATappend */
 		case TYPE_bte:
+		case TYPE_bit:
 			return convert_bte_msk(src, dst, ci, candoff,
 					       reduce);
 		case TYPE_sht:
 			return convert_sht_msk(src, dst, ci, candoff,
 					       reduce);
+#if SIZEOF_OID == SIZEOF_INT
+		case TYPE_oid:
+#endif
 		case TYPE_int:
 			return convert_int_msk(src, dst, ci, candoff,
 					       reduce);
+#if SIZEOF_OID == SIZEOF_LNG
+		case TYPE_oid:
+#endif
 		case TYPE_lng:
 			return convert_lng_msk(src, dst, ci, candoff,
 					       reduce);
@@ -1169,11 +1427,13 @@ convert_typeswitchloop(const void *src, int stp, void *restrict dst, int dtp,
 			return BUN_NONE + 1;
 		}
 	case TYPE_bte:
-		switch (ATOMbasetype(dtp)) {
+	case TYPE_bit:
+		switch (dtp) {
 		case TYPE_msk:
 			return convert_msk_bte(src, dst, ci, candoff,
 					       reduce);
 		case TYPE_bte:
+		case TYPE_bit:
 			if (dtp == TYPE_bit)
 				return convert_bte_bit(src, dst, ci,
 						       candoff, reduce);
@@ -1187,23 +1447,13 @@ convert_typeswitchloop(const void *src, int stp, void *restrict dst, int dtp,
 					       scale2,
 					       precision, reduce);
 		case TYPE_int:
-#if SIZEOF_OID == SIZEOF_INT
-			if (dtp == TYPE_oid)
-				return convert_bte_oid(src, dst, ci,
-						       candoff,
-						       reduce);
-#endif
 			return convert_bte_int(src, dst, ci, candoff,
 					       scale1,
 					       scale2,
 					       precision, reduce);
+		case TYPE_oid:
+			return convert_bte_oid(src, dst, ci, candoff, reduce);
 		case TYPE_lng:
-#if SIZEOF_OID == SIZEOF_LNG
-			if (dtp == TYPE_oid)
-				return convert_bte_oid(src, dst, ci,
-						       candoff,
-						       reduce);
-#endif
 			return convert_bte_lng(src, dst, ci, candoff,
 					       scale1,
 					       scale2,
@@ -1227,11 +1477,12 @@ convert_typeswitchloop(const void *src, int stp, void *restrict dst, int dtp,
 			return BUN_NONE + 1;
 		}
 	case TYPE_sht:
-		switch (ATOMbasetype(dtp)) {
+		switch (dtp) {
 		case TYPE_msk:
 			return convert_msk_sht(src, dst, ci, candoff,
 					       reduce);
 		case TYPE_bte:
+		case TYPE_bit:
 			if (dtp == TYPE_bit)
 				return convert_sht_bit(src, dst, ci,
 						       candoff, reduce);
@@ -1245,23 +1496,13 @@ convert_typeswitchloop(const void *src, int stp, void *restrict dst, int dtp,
 					       scale2,
 					       precision, reduce);
 		case TYPE_int:
-#if SIZEOF_OID == SIZEOF_INT
-			if (dtp == TYPE_oid)
-				return convert_sht_oid(src, dst, ci,
-						       candoff,
-						       reduce);
-#endif
 			return convert_sht_int(src, dst, ci, candoff,
 					       scale1,
 					       scale2,
 					       precision, reduce);
+		case TYPE_oid:
+			return convert_sht_oid(src, dst, ci, candoff, reduce);
 		case TYPE_lng:
-#if SIZEOF_OID == SIZEOF_LNG
-			if (dtp == TYPE_oid)
-				return convert_sht_oid(src, dst, ci,
-						       candoff,
-						       reduce);
-#endif
 			return convert_sht_lng(src, dst, ci, candoff,
 					       scale1,
 					       scale2,
@@ -1284,12 +1525,16 @@ convert_typeswitchloop(const void *src, int stp, void *restrict dst, int dtp,
 		default:
 			return BUN_NONE + 1;
 		}
+#if SIZEOF_OID == SIZEOF_INT
+	case TYPE_oid:
+#endif
 	case TYPE_int:
-		switch (ATOMbasetype(dtp)) {
+		switch (dtp) {
 		case TYPE_msk:
 			return convert_msk_int(src, dst, ci, candoff,
 					       reduce);
 		case TYPE_bte:
+		case TYPE_bit:
 			if (dtp == TYPE_bit) {
 				return convert_int_bit(src, dst, ci,
 						       candoff, reduce);
@@ -1304,23 +1549,13 @@ convert_typeswitchloop(const void *src, int stp, void *restrict dst, int dtp,
 					       scale2,
 					       precision, reduce);
 		case TYPE_int:
-#if SIZEOF_OID == SIZEOF_INT
-			if (dtp == TYPE_oid)
-				return convert_int_oid(src, dst, ci,
-						       candoff,
-						       reduce);
-#endif
 			return convert_int_int(src, dst, ci, candoff,
 					       scale1,
 					       scale2,
 					       precision, reduce);
+		case TYPE_oid:
+			return convert_int_oid(src, dst, ci, candoff, reduce);
 		case TYPE_lng:
-#if SIZEOF_OID == SIZEOF_LNG
-			if (dtp == TYPE_oid)
-				return convert_int_oid(src, dst, ci,
-						       candoff,
-						       reduce);
-#endif
 			return convert_int_lng(src, dst, ci, candoff,
 					       scale1,
 					       scale2,
@@ -1343,12 +1578,16 @@ convert_typeswitchloop(const void *src, int stp, void *restrict dst, int dtp,
 		default:
 			return BUN_NONE + 1;
 		}
+#if SIZEOF_OID == SIZEOF_LNG
+	case TYPE_oid:
+#endif
 	case TYPE_lng:
-		switch (ATOMbasetype(dtp)) {
+		switch (dtp) {
 		case TYPE_msk:
 			return convert_msk_lng(src, dst, ci, candoff,
 					       reduce);
 		case TYPE_bte:
+		case TYPE_bit:
 			if (dtp == TYPE_bit) {
 				return convert_lng_bit(src, dst, ci,
 						       candoff, reduce);
@@ -1363,23 +1602,13 @@ convert_typeswitchloop(const void *src, int stp, void *restrict dst, int dtp,
 					       scale2,
 					       precision, reduce);
 		case TYPE_int:
-#if SIZEOF_OID == SIZEOF_INT
-			if (dtp == TYPE_oid)
-				return convert_lng_oid(src, dst, ci,
-						       candoff,
-						       reduce);
-#endif
 			return convert_lng_int(src, dst, ci, candoff,
 					       scale1,
 					       scale2,
 					       precision, reduce);
+		case TYPE_oid:
+			return convert_lng_oid(src, dst, ci, candoff, reduce);
 		case TYPE_lng:
-#if SIZEOF_OID == SIZEOF_LNG
-			if (dtp == TYPE_oid)
-				return convert_lng_oid(src, dst, ci,
-						       candoff,
-						       reduce);
-#endif
 			return convert_lng_lng(src, dst, ci, candoff,
 					       scale1,
 					       scale2,
@@ -1404,11 +1633,12 @@ convert_typeswitchloop(const void *src, int stp, void *restrict dst, int dtp,
 		}
 #ifdef HAVE_HGE
 	case TYPE_hge:
-		switch (ATOMbasetype(dtp)) {
+		switch (dtp) {
 		case TYPE_msk:
 			return convert_msk_hge(src, dst, ci, candoff,
 					       reduce);
 		case TYPE_bte:
+		case TYPE_bit:
 			if (dtp == TYPE_bit) {
 				return convert_hge_bit(src, dst, ci,
 						       candoff, reduce);
@@ -1452,11 +1682,12 @@ convert_typeswitchloop(const void *src, int stp, void *restrict dst, int dtp,
 		}
 #endif
 	case TYPE_flt:
-		switch (ATOMbasetype(dtp)) {
+		switch (dtp) {
 		case TYPE_msk:
 			return convert_msk_flt(src, dst, ci, candoff,
 					       reduce);
 		case TYPE_bte:
+		case TYPE_bit:
 			if (dtp == TYPE_bit) {
 				return convert_flt_bit(src, dst, ci,
 						       candoff, reduce);
@@ -1469,22 +1700,12 @@ convert_typeswitchloop(const void *src, int stp, void *restrict dst, int dtp,
 					       scale2,
 					       precision, reduce);
 		case TYPE_int:
-#if SIZEOF_OID == SIZEOF_INT
-			if (dtp == TYPE_oid)
-				return convert_flt_oid(src, dst, ci,
-						       candoff,
-						       reduce);
-#endif
 			return convert_flt_int(src, dst, ci, candoff,
 					       scale2,
 					       precision, reduce);
+		case TYPE_oid:
+			return convert_flt_oid(src, dst, ci, candoff, reduce);
 		case TYPE_lng:
-#if SIZEOF_OID == SIZEOF_LNG
-			if (dtp == TYPE_oid)
-				return convert_flt_oid(src, dst, ci,
-						       candoff,
-						       reduce);
-#endif
 			return convert_flt_lng(src, dst, ci, candoff,
 					       scale2,
 					       precision, reduce);
@@ -1506,11 +1727,12 @@ convert_typeswitchloop(const void *src, int stp, void *restrict dst, int dtp,
 			return BUN_NONE + 1;
 		}
 	case TYPE_dbl:
-		switch (ATOMbasetype(dtp)) {
+		switch (dtp) {
 		case TYPE_msk:
 			return convert_msk_dbl(src, dst, ci, candoff,
 					       reduce);
 		case TYPE_bte:
+		case TYPE_bit:
 			if (dtp == TYPE_bit) {
 				return convert_dbl_bit(src, dst, ci,
 						       candoff, reduce);
@@ -1523,22 +1745,12 @@ convert_typeswitchloop(const void *src, int stp, void *restrict dst, int dtp,
 					       scale2,
 					       precision, reduce);
 		case TYPE_int:
-#if SIZEOF_OID == SIZEOF_INT
-			if (dtp == TYPE_oid)
-				return convert_dbl_oid(src, dst, ci,
-						       candoff,
-						       reduce);
-#endif
 			return convert_dbl_int(src, dst, ci, candoff,
 					       scale2,
 					       precision, reduce);
+		case TYPE_oid:
+			return convert_dbl_oid(src, dst, ci, candoff, reduce);
 		case TYPE_lng:
-#if SIZEOF_OID == SIZEOF_LNG
-			if (dtp == TYPE_oid)
-				return convert_dbl_oid(src, dst, ci,
-						       candoff,
-						       reduce);
-#endif
 			return convert_dbl_lng(src, dst, ci, candoff,
 					       scale2,
 					       precision, reduce);
@@ -1558,8 +1770,44 @@ convert_typeswitchloop(const void *src, int stp, void *restrict dst, int dtp,
 		default:
 			return BUN_NONE + 1;
 		}
+	case TYPE_date:
+		*reduce = false;
+		switch (dtp) {
+		case TYPE_date:
+			return convert_date_date(src, dst, ci, candoff);
+		case TYPE_timestamp:
+			return convert_date_timestamp(src, dst, ci, candoff);
+		default:
+			return BUN_NONE + 1;
+		}
+		break;
+	case TYPE_daytime:
+		switch (dtp) {
+		case TYPE_daytime:
+			*reduce = false;
+			return convert_daytime_daytime(src, dst, ci, candoff);
+		default:
+			return BUN_NONE + 1;
+		}
+		break;
+	case TYPE_timestamp:
+		switch (dtp) {
+		case TYPE_date:
+			*reduce = true;
+			return convert_timestamp_date(src, dst, ci, candoff);
+		case TYPE_daytime:
+			*reduce = true;
+			return convert_timestamp_daytime(src, dst, ci, candoff);
+		case TYPE_timestamp:
+			*reduce = false;
+			return convert_timestamp_timestamp(src, dst, ci,
+							   candoff);
+		default:
+			return BUN_NONE + 1;
+		}
+		break;
 	case TYPE_inet4:
-		switch (ATOMbasetype(dtp)) {
+		switch (dtp) {
 		case TYPE_inet6:
 			*reduce = false;
 			return convert_inet4_inet6(src, dst, ci, candoff);
@@ -1567,7 +1815,7 @@ convert_typeswitchloop(const void *src, int stp, void *restrict dst, int dtp,
 			return BUN_NONE + 1;
 		}
 	case TYPE_inet6:
-		switch (ATOMbasetype(dtp)) {
+		switch (dtp) {
 		case TYPE_inet4:
 			*reduce = false;
 			return convert_inet6_inet4(src, dst, ci, candoff);
@@ -1656,14 +1904,14 @@ BATconvert(BAT *b, BAT *s, int tp,
 		nils = convert_void_any(b->tseqbase, bn,
 					&ci, b->hseqbase, &reduce);
 	else if (tp == TYPE_str)
-		nils = convert_any_str(&bi, bn, &ci);
+		nils = convert_any_str(&bi, bn, scale1, &ci);
 	else if (bi.type == TYPE_str) {
 		reduce = true;
 		if (ATOMvarsized(tp)) {
 			nils = convert_str_var(&bi, bn, &ci);
 		} else {
-			nils = convert_str_fix(&bi, tp, Tloc(bn, 0),
-					       &ci, b->hseqbase);
+			nils = convert_str_fix(&bi, tp, scale2, precision,
+					       Tloc(bn, 0), &ci, b->hseqbase);
 		}
 	} else if (ATOMstorage(bi.type) == TYPE_msk &&
 		   ATOMstorage(tp) == TYPE_msk) {

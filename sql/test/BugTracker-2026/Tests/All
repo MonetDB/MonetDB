@@ -207,3 +207,6 @@ KNOWNFAIL?8017-create-where-exists-select-acos-bug
 8027-having-expression-issue
 8028-coalesce-groupby-rollup-having-bug
 8030-inner-join-group-by-bug
+8035-alter-type
+8036-alter+insert-in-trans
+8037-alter-table-decimal
