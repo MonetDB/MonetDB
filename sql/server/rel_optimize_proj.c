@@ -2328,6 +2328,7 @@ rel_reduce_groupby_exps(visitor *v, sql_rel *rel)
 	list *gbe = rel->r;
 	global_props *gp = v->data;
 
+	/* ukey + no null could also work and a single unique (base) column also reduces the group by exps */
 	if (gp->has_pkey && is_groupby(rel->op) && rel->r && !rel_is_ref(rel) && list_length(gbe)) {
 		allocator *ta = MT_thread_getallocator();
 		allocator_state ta_state = ma_open(ta);
