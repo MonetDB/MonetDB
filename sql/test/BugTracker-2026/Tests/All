@@ -205,6 +205,7 @@ KNOWNFAIL?8026-having-expression-bug
 8027-having-expression-issue
 KNOWNFAIL?8028-coalesce-groupby-rollup-having-bug
 KNOWNFAIL?8030-inner-join-group-by-bug
+8034-orderby-concat
 8035-alter-type
 8036-alter+insert-in-trans
 8037-alter-table-decimal
