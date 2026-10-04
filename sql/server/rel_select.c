@@ -5807,8 +5807,11 @@ rel_having_limits_nodes(sql_query *query, sql_rel *rel, SelectNode *sn, exp_kind
 	}
 
 	if (sn->qualify) {
+		list *exps = rel_projections(query->sql, rel, NULL, 0, 0);
 		if (!(rel = rel_logical_exp(query, rel, sn->qualify, sql_qualify)))
 			return NULL;
+		if (!is_project(rel->op))
+			rel = rel_project(query->sql->sa, rel, exps);
 	}
 
 	if (rel && sn->distinct)
