@@ -2707,7 +2707,7 @@ exp_count(int *cnt, sql_exp *e)
 	if (!e)
 		return 0;
 	if (find_prop(e->p, PROP_JOINIDX))
-		*cnt += 100;
+		*cnt += 1000;
 	if (find_prop(e->p, PROP_HASHCOL))
 		*cnt += 100;
 	if (find_prop(e->p, PROP_HASHIDX))
