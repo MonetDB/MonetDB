@@ -1268,6 +1268,9 @@ rel_count_gt_zero(visitor *v, sql_rel *rel)
 
 		if (!gbe || list_empty(gbe) || is_rewrite_gt_zero_used(rel->used))
 			return rel;
+		bool safe = rel_groupby_partition_safe(rel);
+		if (safe && rel_groupby_partition(v->sql, rel))
+			return rel;
 		/* introduce select * from l where cnt > 0 */
 		/* find count */
 		if (list_empty(rel->exps)) /* no result expressions, just project the groupby expressions */
