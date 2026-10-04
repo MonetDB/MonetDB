@@ -13,6 +13,6 @@
 
 #include "mal_backend.h"
 
-#define PARTITION_NRPARTS 256
+#define PARTITION_NRPARTS 128
 
 #endif /*_BIN_PARTITION_H_*/
