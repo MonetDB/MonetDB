@@ -1830,11 +1830,11 @@ rewrite_rank(visitor *v, sql_rel *rel, sql_exp *e, int depth)
 {
 	sql_rel *rell = NULL;
 
-	if (!is_simple_project(rel->op) || e->type != e_func || list_length(e->r) < 2 /* e->r means window function */)
+	if ((!is_simple_project(rel->op) && !is_select(rel->op)) || e->type != e_func || list_length(e->r) < 2 /* e->r means window function */)
 		return e;
 
 	(void)depth;
-	/* ranks/window functions only exist in the projection */
+	/* ranks/window functions only exist in the projection (or with qualify in the select) */
 	list *l = e->l, *r = e->r, *gbe = r->h->data, *obe = r->h->next->data;
 
 	int needed = (gbe || obe);
