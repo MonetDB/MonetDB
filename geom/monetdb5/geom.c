@@ -2398,7 +2398,7 @@ geos2wkb(allocator *ma, wkb **geomWKB, size_t *len, const GEOSGeometry *geosGeom
 
 	(*geomWKB)->len = (int) wkbLen;
 	(*geomWKB)->srid = GEOSGetSRID_r(geoshandle, geosGeometry);
-	memcpy(&(*geomWKB)->data, w, wkbLen);
+	memcpy((*geomWKB)->data, w, wkbLen);
 	GEOSFree_r(geoshandle, w);
 
 	return *geomWKB;
