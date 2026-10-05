@@ -868,7 +868,7 @@ rel_groupby_partition(mvc *sql, sql_rel *rel)
 	}
 	if (card < estimate)
 		estimate = card;
-	if ((BUN)estimate >= 4*GDKL3_size)
+	if ((BUN)estimate >= 16*GDKL3_size)
 		return true;
 	return false;
 }
