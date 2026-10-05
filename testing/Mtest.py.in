@@ -3691,8 +3691,9 @@ class OrAction(argparse.Action):
         setattr(namespace, '__seen_option_' + self.dest, True)
 
 
-def main(argv):
+def main():
     global global_timeout
+    global ignore_conditions
 
     VARS = ['TSTSRCBASE', 'TSTTRGBASE', 'MALCLIENT', 'SQLCLIENT', 'SQLDUMP']    #, 'MONETDB_MOD_PATH' ]
 
@@ -3828,7 +3829,6 @@ def main(argv):
         threshold = opts.threshold
     global stop_crash
     stop_crash = opts.stop_crash
-    global ignore_conditions
     ignore_conditions = opts.ignore_conditions
     global skip_timeout
     skip_timeout = opts.skip_test_with_timeout
@@ -4199,6 +4199,7 @@ def main(argv):
                     ErrXit('%s: not a valid test name' % args[0])
                 args = [head]
                 if tail != 'All':
+                    ignore_conditions = True
                     for ext in [x[0] for x in tests] + ['']:
                         # extensions .in and .src are never combined
                         if tail.endswith(ext + '.in'):
@@ -4232,6 +4233,7 @@ def main(argv):
                     dirlist.append(os.path.realpath(args[i]))
                 i = i + 1
             if len(dirlist) == 1  and  i < len(args)  and  args[i] != 'All':
+                ignore_conditions = True
                 while i < len(args):
                     if os.sep not in args[i]:
                         testlist.append(args[i])
@@ -4583,6 +4585,6 @@ if __name__ == '__main__':
     if '--debug' in sys.argv:
         sys.argv.remove('--debug')
         import pdb
-        pdb.run('main(sys.argv)')
+        pdb.run('main()')
     else:
-        main(sys.argv)
+        main()
