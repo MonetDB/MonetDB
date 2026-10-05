@@ -109,6 +109,8 @@ rel_groupby_2_phases(mvc *sql, sql_rel *rel)
 			lng lcard = exp_getcard(sql, rel, e);
 			if (lcard == cnt) {
 				card = cnt;
+				if (card > 64*1024) /* TODO add tunable */
+					return false;
 				break;
 			}
 			card *= lcard; /* TODO check for overflow */
