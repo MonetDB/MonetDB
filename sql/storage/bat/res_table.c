@@ -63,7 +63,7 @@ res_col_create(sql_trans *tr, res_table *t, const char *tn, const char *name, co
 	c->type.dim = dim;
 	c->nrfields = 1;
 	c->virt = (multiset&MS_OUTPUT_ARG)?true:false;
-	c->type.multiset = multiset&3;
+	c->type.multiset = multiset&(MS_SETOF|MS_ARRAY);
 	c->multiset = c->type.multiset;
 	c->composite = c->type.type->composite;
 	t->complex_type = (t->complex_type || c->virt || c->composite || (c->multiset != MS_VALUE));
