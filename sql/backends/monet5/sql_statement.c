@@ -3611,7 +3611,6 @@ nested_dump_header(mvc *sql, MalBlkPtr mb, InstrPtr instrlist, InstrPtr tblPtr, 
 	for (node *n = l->h; n; n = n->next) {
 		stmt *c = n->data;
 		sql_subtype *t = tail_type(c);
-		bool virt = (!c->q && c->type == st_alias && !c->op1 && c->multiset);
 		if (!c->nested && c->virt)
 			continue;
 
@@ -3636,8 +3635,8 @@ nested_dump_header(mvc *sql, MalBlkPtr mb, InstrPtr instrlist, InstrPtr tblPtr, 
 			tpePtr = pushStr(mb, tpePtr, (t->type->localtype == TYPE_void ? "char" : t->type->base.name));
 			lenPtr = pushInt(mb, lenPtr, t->digits);
 			scalePtr = pushInt(mb, scalePtr, t->scale);
-			if (virt || c->nested) {
-				multisetPtr = pushInt(mb, multisetPtr, c->subtype.multiset + ((virt || c->nested)?4:0));
+			if (c->nested) {
+				multisetPtr = pushInt(mb, multisetPtr, c->subtype.multiset + (c->nested?4:0));
 				dimPtr = pushInt(mb, dimPtr, c->subtype.dim);
 				InstrPtr q = newStmt(mb, batRef, newRef);
 
