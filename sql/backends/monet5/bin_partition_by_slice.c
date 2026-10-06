@@ -109,6 +109,8 @@ rel_groupby_2_phases(mvc *sql, sql_rel *rel)
 			lng lcard = exp_getcard(sql, rel, e);
 			if (lcard == cnt) {
 				card = cnt;
+				if (card > 64*1024) /* TODO add tunable */
+					return false;
 				break;
 			}
 			card *= lcard; /* TODO check for overflow */
@@ -866,7 +868,7 @@ rel_groupby_partition(mvc *sql, sql_rel *rel)
 	}
 	if (card < estimate)
 		estimate = card;
-	if ((BUN)estimate >= 4*GDKL3_size)
+	if ((BUN)estimate >= 16*GDKL3_size)
 		return true;
 	return false;
 }
