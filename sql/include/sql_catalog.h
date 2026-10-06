@@ -101,6 +101,8 @@ typedef enum sql_dependency {
 #define MS_ARRAY 2
 #define MS_VECTOR 3
 
+#define MS_OUTPUT_ARG 4
+
 /* the following list of macros are used by rel_rankop function */
 #define UNBOUNDED_PRECEDING_BOUND 0
 #define UNBOUNDED_FOLLOWING_BOUND 1

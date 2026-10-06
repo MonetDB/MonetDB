@@ -14,6 +14,7 @@
 #include "sql_statement.h"
 #include "sql_pp_statement.h"
 #include "sql_gencode.h"
+#include "sql_catalog.h"
 #include "rel_rel.h"
 #include "rel_exp.h"
 #include "rel_prop.h"
@@ -3636,7 +3637,7 @@ nested_dump_header(mvc *sql, MalBlkPtr mb, InstrPtr instrlist, InstrPtr tblPtr, 
 			lenPtr = pushInt(mb, lenPtr, t->digits);
 			scalePtr = pushInt(mb, scalePtr, t->scale);
 			if (c->nested) {
-				multisetPtr = pushInt(mb, multisetPtr, c->subtype.multiset + (c->nested?4:0));
+				multisetPtr = pushInt(mb, multisetPtr, c->subtype.multiset + (c->nested?MS_OUTPUT_ARG:0));
 				dimPtr = pushInt(mb, dimPtr, c->subtype.dim);
 				InstrPtr q = newStmt(mb, batRef, newRef);
 
