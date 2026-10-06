@@ -65,6 +65,9 @@ ptszre = re.compile(r'-?\d+(?:\.\d+)? -?\d+(?:\.\d+)? -?\d+(?:\.\d+)?')
 # geos 3.13 introduced parentheses around EMPTY in MULTIPOLYGON (but not
 # in all cases)
 geosere = re.compile(r'MULTIPOLYGON \(EMPTY\)')
+# ordering of coordinates in POLYGONs may differ
+polyre = re.compile(r'POLYGON \(\((?P<coords>((\d+(\.\d+)?) (\d+(\.\d+)?))'
+                    r'(, ((\d+(\.\d+)?) (\d+(\.\d+)?)))+)\)\)')
 
 architecture = platform.machine()
 if architecture == 'AMD64':     # Windows :-(
@@ -591,6 +594,21 @@ class SQLLogic:
                     if res is not None:
                         col = col[:res.start(0)] + 'MULTIPOLYGON EMPTY' \
                             + col[res.end(0):]
+                    res = polyre.search(col)
+                    if res is not None:
+                        # normalize order of coordinates in POLYGON
+                        coords = res.group('coords')
+                        points = coords.split(', ')
+                        if points[0] == points[-1]:
+                            s = 0
+                            for i in range(len(points)):
+                                if points[i] < points[s]:
+                                    s = i
+                            if s != i:
+                                points = points[s:-1] + points[0:s+1]
+                                col = col[:res.start('coords')] \
+                                    + ', '.join(points) \
+                                    + col[res.end('coords'):]
                 nrow.append(col)
             ndata.append(nrow)
         data = ndata
