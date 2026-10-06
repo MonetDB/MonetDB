@@ -312,11 +312,11 @@ pqc_find_subtype(mvc *sql, const pqc_schema_element *pse)
 					return tpe;
 				}
 			}
-            break;
+			break;
 		case listtype:
 			if (sql_find_subtype(tpe, "oid", 0, 0))
 				return tpe;
-            break;
+			break;
 		case blobtype:
 			if (pse->physical_type == PT_BYTE_ARRAY) { /* byte array */
 				if (sql_find_subtype(tpe, "blob", pse->precision, pse->scale)) {
@@ -349,9 +349,11 @@ pqc_find_localtype(const pqc_schema_element *pse)
 					return TYPE_int;
 				if (pse->precision == 32)
 					return TYPE_lng;
-#ifdef HAVE_HGE
 				if (pse->precision == 64)
+#ifdef HAVE_HGE
 					return TYPE_hge;
+#else
+					return TYPE_lng;
 #endif
 			} else {
 				if (pse->precision == 8)
@@ -421,7 +423,7 @@ pqc_relation(mvc *sql, sql_subfunc *f, char *filename, list *res_exps, char *tna
 	if (filename && strchr(filename, '*')) {
 		glob_t pglob = {};
 		if (glob(filename, GLOB_ERR, NULL, &pglob) < 0)
-			throw(SQL, SQLSTATE(42000), "parquet" "Could not open parquet file %s", filename);
+			throw(SQL, "parquet", SQLSTATE(42000) "Could not open parquet file %s", filename);
 		if (pglob.gl_pathc)
 			filename = ma_strdup(sql->sa, pglob.gl_pathv[0]);
 		if (est)
@@ -430,7 +432,7 @@ pqc_relation(mvc *sql, sql_subfunc *f, char *filename, list *res_exps, char *tna
 	}
 #endif
 	if (pqc_open(&pq, filename) < 0)
-		throw(SQL, SQLSTATE(42000), "parquet" "Could not open parquet file %s", filename);
+		throw(SQL, "parquet", SQLSTATE(42000) "Could not open parquet file %s", filename);
 
 	allocator *ma = MT_thread_getallocator();
 	if (pqc_read_schema(pq) < 0) {
@@ -439,8 +441,8 @@ pqc_relation(mvc *sql, sql_subfunc *f, char *filename, list *res_exps, char *tna
 			err = ma_strdup(ma, err);
 		pqc_close(pq);
 		if (err)
-			throw(SQL, SQLSTATE(42000), "parquet" "Could not read parquet file %s schema data, %s", filename, err);
-		throw(SQL, SQLSTATE(42000), "parquet" "Could not read parquet file %s schema data", filename);
+			throw(SQL, "parquet", SQLSTATE(42000) "Could not read parquet file %s schema data, %s", filename, err);
+		throw(SQL, "parquet", SQLSTATE(42000) "Could not read parquet file %s schema data", filename);
 	}
 
 	pqc_filemetadata *fmd = pqc_get_filemetadata(pq);
@@ -452,7 +454,7 @@ pqc_relation(mvc *sql, sql_subfunc *f, char *filename, list *res_exps, char *tna
 		if (0)
 		if (pse->nchildren != (nr-1)) {
 			pqc_close(pq);
-			throw(SQL, SQLSTATE(42000), "parquet" "Data in file %s is not tabular", filename);
+			throw(SQL, "parquet", SQLSTATE(42000) "Data in file %s is not tabular", filename);
 		}
 		f->tname = tname;
 		if (0)
@@ -462,7 +464,7 @@ pqc_relation(mvc *sql, sql_subfunc *f, char *filename, list *res_exps, char *tna
 			if (e->nchildren || e->repetition == 2) {
 				char *nme = e->name?ma_strdup(ma, e->name):NULL;
 				pqc_close(pq);
-				throw(SQL, SQLSTATE(42000), "parquet" "Data in file %s is not tabular (column %s has repetition)", filename, nme);
+				throw(SQL, "parquet", SQLSTATE(42000) "Data in file %s is not tabular (column %s has repetition)", filename, nme);
 			}
 		}
 		list *types = sa_list(sql->sa), *names = sa_list(sql->sa);
@@ -932,7 +934,7 @@ PARQUETopen(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		glob_t pglob = {};
 		if (glob(f, GLOB_ERR, NULL, &pglob) < 0) {
 			BBPreclaim(b);
-			throw(SQL, SQLSTATE(42000), "parquet" "Could not open parquet file %s", f);
+			throw(SQL, "parquet", SQLSTATE(42000) "Could not open parquet file %s", f);
 		}
 		b->pl_io = (struct pipeline_io*)pqcmc_create(&pglob, nrows);
 	} else
@@ -1472,8 +1474,8 @@ bailout:
 static mel_func parquet_init_funcs[] = {
 	pattern("parquet", "prelude", PARQUETprelude, false, "", noargs),
 	command("parquet", "epilogue", PARQUETepilogue, false, "", noargs),
-    pattern("parquet", "open", PARQUETopen, true, "Create resource for shared reading from parquet file", args(1, 3, batarg("", oid), arg("f", str), arg("nrows", lng))),
-    pattern("parquet", "read", PARQUETread, false, "read part of parquet file", args(1, 3, batargany("", 1), batarg("p", oid), arg("colno", int))),
+	pattern("parquet", "open", PARQUETopen, true, "Create resource for shared reading from parquet file", args(1, 3, batarg("", oid), arg("f", str), arg("nrows", lng))),
+	pattern("parquet", "read", PARQUETread, false, "read part of parquet file", args(1, 3, batargany("", 1), batarg("p", oid), arg("colno", int))),
 	pattern("parquet", "schema", PARQUETschema, false, "Read parquet schema",
 		   	args(10,11,
 			   	batarg("name", str),

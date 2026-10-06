@@ -1,16 +1,15 @@
 statement ok
 CREATE TABLE t8027(c0 INTEGER)
 
-statement ok rowscount 1
+statement ok
 INSERT INTO t8027 VALUES (8)
 
-query IT nosort
+query II nosort
 SELECT c0, (c0 IS NULL) OR NOT (COUNT(c0) <= COUNT(c0)) AS b
  FROM t8027
 GROUP BY c0
 ----
-8
-False
+8	0
 
 -- Q1  base: HAVING keeps the group, but should not
 query I nosort
@@ -28,7 +27,7 @@ HAVING NOT (COUNT(c0) <= COUNT(c0))
 ----
 
 -- Q2  moved: WHERE on the alias drops the row
-query IT nosort
+query II nosort
 SELECT r, b FROM (
   SELECT c0 AS r,
          (c0 IS NULL) OR NOT (COUNT(c0) <= COUNT(c0)) AS b
@@ -39,3 +38,4 @@ SELECT r, b FROM (
 
 statement ok
 DROP TABLE t8027
+

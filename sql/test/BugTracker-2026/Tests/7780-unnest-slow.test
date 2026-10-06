@@ -1,4 +1,4 @@
-query TT rowsort
+query RR rowsort
 WITH "c1" AS (
   SELECT
     "s"."Country",
@@ -138,8 +138,7 @@ WITH "c1" AS (
 SELECT * FROM "c4" WHERE 1=0
 ----
 
-
-query RRRRRRRRR rowsort
+query DDDDDDDDD rowsort
 WITH b AS (
   SELECT *
   FROM (VALUES
@@ -169,3 +168,4 @@ SELECT
 FROM b t
 WHERE 1=0
 ----
+

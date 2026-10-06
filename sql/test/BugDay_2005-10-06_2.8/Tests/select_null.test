@@ -1,12 +1,12 @@
 statement ok
 START TRANSACTION
 
-query I rowsort
+query T rowsort
 select null
 ----
 NULL
 
-query I rowsort
+query T rowsort
 select null as v
 ----
 NULL

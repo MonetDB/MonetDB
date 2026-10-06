@@ -1323,7 +1323,7 @@ mvc_bind_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		if (nr_parts) {
 			psz = cnt ? (cnt / nr_parts) : 0;
 		} else {
-        		FORCEMITODEBUG
+			FORCEMITODEBUG
 			psz = MED_PARTSIZE;
 		}
 		l = part_nr * psz;
@@ -1635,7 +1635,7 @@ mvc_bind_idxbat_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		if (nr_parts) {
 			psz = cnt ? (cnt / nr_parts) : 0;
 		} else {
-        		FORCEMITODEBUG
+			FORCEMITODEBUG
 			psz = MED_PARTSIZE;
 		}
 		l = part_nr * psz;
@@ -1776,7 +1776,7 @@ mvc_append_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		p = pipeline_get_thread_private_pipeline();
 		sync_nr = *getArgReference_int(stk, pci, 8);
 		if (p->seqnr >= 0) /* seq number from file/generator inputs */
-                	sync_nr = p->seqnr;
+			sync_nr = p->seqnr;
 	}
 	bool isbat = false;
 	sql_schema *s;
@@ -2385,7 +2385,7 @@ SQLno_slices(Client cntxt, int *nrslices, str *sname, str *tname)
 	sql_column *c = ol_first_node(t->columns)->data;
 	BUN cnt = store->storage_api.count_col(be->mvc->session->tr, c, 0);
 	BUN psz = DEFAULT_PARTSIZE;
-        FORCEMITODEBUG
+	FORCEMITODEBUG
 	  	psz = MED_PARTSIZE;
 	*nrslices = (int)((cnt+psz-1)/psz);
 	if (*nrslices == 0)
@@ -5403,8 +5403,7 @@ str_vacuum_callback_args_free(int argc, void *argv[])
 	// free up sname, tname, cname. First pointer points to sqlstore so leave it.
 	GDKfree(argv[1]); // sname
 	GDKfree(argv[2]); // tname
-	if (argv[3])
-		GDKfree(argv[3]); // cname
+	GDKfree(argv[3]); // cname
 	return GDK_SUCCEED;
 }
 
@@ -5454,6 +5453,9 @@ SQLstr_auto_vacuum(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		throw(SQL, "sql.str_auto_vacuum", SQLSTATE(42000) "Cannot vacuum compressed column");
 
 	if (!(sname_copy = GDKstrdup(sname)) || !(tname_copy = GDKstrdup(tname)) || (cname && !(cname_copy = GDKstrdup(cname)))) {
+		GDKfree(sname_copy);
+		GDKfree(tname_copy);
+		GDKfree(cname_copy);
 		throw(SQL, "sql.str_auto_vacuum", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 	void *argv[4] = {m->store, sname_copy, tname_copy, cname_copy};

@@ -400,7 +400,7 @@ MATproject(Client ctx, bat *mat, const bat *pos, const bat *lid, const bat *gid,
 		if (ATOMvarsized(r->ttype) && !local_storage)
 			mat_activate(mt);
 		QryCtx *qry_ctx = MT_thread_get_qry_ctx();
-                qry_ctx = qry_ctx ? qry_ctx : &(QryCtx) {.endtime = 0};
+		qry_ctx = qry_ctx ? qry_ctx : &(QryCtx) {.endtime = 0};
 		if (!local_storage) {
 			switch(d->twidth) {
 			case 1:

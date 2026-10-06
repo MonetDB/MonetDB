@@ -13,50 +13,50 @@
 /* Geographic data types */
 //Bounding box of a geographic shape
 typedef struct BoundingBox {
-    double xmin;
-    double ymin;
-    double zmin;
-    double xmax;
-    double ymax;
-    double zmax;
+	double xmin;
+	double ymin;
+	double zmin;
+	double xmax;
+	double ymax;
+	double zmax;
 } BoundingBox;
 
 //Geographic point
 typedef struct GeoPoint
 {
-    double lat;
-    double lon;
+	double lat;
+	double lon;
 } GeoPoint;
 
 //Geographic line
 typedef struct GeoLines
 {
-    GeoPoint *points;
-    int pointCount;
-    BoundingBox* bbox;
+	GeoPoint *points;
+	int pointCount;
+	BoundingBox* bbox;
 } GeoLines;
 
 //Geographic polygon
 typedef struct GeoPolygon
 {
-    GeoLines exteriorRing;
-    GeoLines *interiorRings;
-    int interiorRingsCount;
-    BoundingBox* bbox;
+	GeoLines exteriorRing;
+	GeoLines *interiorRings;
+	int interiorRingsCount;
+	BoundingBox* bbox;
 } GeoPolygon;
 
 //Cartesian representation of a geographic point (converted from Latitude/Longitude)
 typedef struct CartPoint3D
 {
-    double x;
-    double y;
-    double z;
+	double x;
+	double y;
+	double z;
 } CartPoint3D;
 
 typedef struct CartPoint2D
 {
-    double x;
-    double y;
+	double x;
+	double y;
 } CartPoint2D;
 
 str wkbGetCompatibleGeometries(wkb * const *a, wkb * const *b, GEOSGeom *ga, GEOSGeom *gb);

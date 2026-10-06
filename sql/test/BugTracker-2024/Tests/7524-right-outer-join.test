@@ -24,7 +24,7 @@ query I nosort
 SELECT * FROM t1 NATURAL RIGHT JOIN t0
 ----
 
-query T nosort
+query I nosort
 SELECT * FROM t1 NATURAL FULL JOIN t0
 ----
 

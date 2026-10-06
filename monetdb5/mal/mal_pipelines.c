@@ -151,10 +151,10 @@ stack_copy(allocator *ma, MalStkPtr stk, int start)
 				if(VALcopy(ma, lhs, rhs) == NULL)
 					break;
 			} else if (rhs->bat) {
-                lhs->bat = rhs->bat;
-                lhs->vtype = rhs->vtype;
-                lhs->len = 0;
-                lhs->val.bval = bat_nil;
+				lhs->bat = rhs->bat;
+				lhs->vtype = rhs->vtype;
+				lhs->len = 0;
+				lhs->val.bval = bat_nil;
 			} else {
 				VALinit(ma, lhs, rhs->vtype, ATOMnilptr(rhs->vtype));
 			}
@@ -169,12 +169,12 @@ stack_copy(allocator *ma, MalStkPtr stk, int start)
 static void
 thread_runoncpu(int cpu)
 {
-        cpu_set_t cpuset;
+	cpu_set_t cpuset;
 
 //printf("run on %d\n", cpu);
-        CPU_ZERO(&cpuset);
-        CPU_SET(cpu , &cpuset);
-        sched_setaffinity(0, sizeof(cpuset), &cpuset);
+	CPU_ZERO(&cpuset);
+	CPU_SET(cpu , &cpuset);
+	sched_setaffinity(0, sizeof(cpuset), &cpuset);
 }
 #endif
 

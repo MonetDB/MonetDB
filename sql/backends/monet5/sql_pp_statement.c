@@ -820,7 +820,7 @@ stmt *
 stmt_slice(backend *be, stmt *col, stmt *limit)
 {
 	/* FIXME: this pp function doesn't seem to be used, also it seems to
-         * use a none-pp algebra.slice function
+	 * use a none-pp algebra.slice function
 	 */
 	sql_subtype *tp = tail_type(col);
 	int tt = tp->type->localtype;

@@ -81,6 +81,14 @@ hashge = False                  # may get updated at start of testing
 
 skipidx = re.compile(r'create index .* \b(asc|desc)\b', re.I)
 
+# SQL/GDK types that are represented with an I column type
+inttypes = ('boolean', 'tinyint', 'smallint', 'int', 'bigint', 'hugeint',
+            'bit', 'sht', 'lng', 'hge', 'oid', 'void')
+# SQL/GDK types that are represented with a R column type
+flttypes =('double', 'real', 'flt', 'dbl')
+
+hash_threshold = 100            # default value for hash-threshold
+
 
 class UnsafeDirectoryHandler(pymonetdb.SafeDirectoryHandler):
     def __init__(self, srcdir, data_dir:Optional[Path]=None, **kwargs):
@@ -153,7 +161,7 @@ class SQLLogic:
         self.hostname = None
         self.port = None
         self.approve = None
-        self.threshold = 100
+        self.threshold = hash_threshold
         self.seenerr = False    # there was an error before timeout
         self.timedout = False   # there was a timeout
         self.__last = ''
@@ -177,7 +185,7 @@ class SQLLogic:
     def connect(self, username='monetdb', password='monetdb',
                 hostname='localhost', port=None, database=None, usock=None,
                 language='sql', data_dir: Optional[Path]=None,
-                threshold: Optional[int]=100,
+                threshold: Optional[int]=hash_threshold,
                 timeout: Optional[int]=0, alltests=False,
                 server=None):
         self.starttime = time.time()
@@ -292,7 +300,7 @@ class SQLLogic:
     def drop(self):
         if self.language != 'sql':
             return
-        self.crs.execute('select s.name, t.name, case when t.type in (select table_type_id from sys.table_types where table_type_name like \'%VIEW%\') then \'VIEW\' else \'TABLE\' end from sys.tables t, sys.schemas s where not t.system and t.schema_id = s.id')
+        self.crs.execute("select s.name, t.name, case when t.type in (select table_type_id from sys.table_types where table_type_name like '%VIEW%') then 'VIEW' else 'TABLE' end from sys.tables t, sys.schemas s where not t.system and t.schema_id = s.id")
         for row in self.crs.fetchall():
             try:
                 self.crs.execute(f'drop {row[2]} "{dq(row[0])}"."{dq(row[1])}" cascade')
@@ -335,7 +343,7 @@ class SQLLogic:
         self.crs.execute("select sqlname from sys.types where systemname is null order by id")
         for row in self.crs.fetchall():
             try:
-                self.crs.execute('drop type "{}"'.format(row[0]))
+                self.crs.execute(f'drop type "{row[0]}"')
             except pymonetdb.Error:
                 pass
 
@@ -457,7 +465,7 @@ class SQLLogic:
                         elif row[i] in ('false', 'False'):
                             nrow.append('0')
                         else:
-                            nrow.append('%d' % row[i])
+                            nrow.append(f'{int(row[i]):d}')
                     elif columns[i] == 'T':
                         if row[i] == '' or row[i] == b'':
                             nrow.append('(empty)')
@@ -465,7 +473,7 @@ class SQLLogic:
                             nval = []
                             if isinstance(row[i], bytes):
                                 for c in row[i]:
-                                    c = '%02X' % c
+                                    c = f'{c:02X}'
                                     nval.append(c)
                             else:
                                 for c in str(row[i]):
@@ -484,7 +492,7 @@ class SQLLogic:
                     elif columns[i] == 'D':
                         nrow.append(str(row[i]))
                     elif columns[i] == 'R':
-                        nrow.append('%.3f' % row[i])
+                        nrow.append(f'{row[i]:.3f}')
                     else:
                         self.raise_error('incorrect column type indicator')
                 except TypeError:
@@ -510,7 +518,7 @@ class SQLLogic:
             print(message, file=self.out)
             if exception:
                 print(exception.rstrip('\n'), file=self.out)
-            print("query started on line %d of file %s" % (self.qline, self.name),
+            print(f"query started on line {self.qline} of file {self.name}",
                   file=self.out)
             print("query text:", file=self.out)
             print(query, file=self.out)
@@ -572,40 +580,51 @@ class SQLLogic:
                     res = geosre.search(col)
                     if res is not None:
                         points = ptsre.sub(r'(\g<0>)', res.group('points'))
-                        col = col[:res.start('points')] + points + col[res.end('points'):]
+                        col = col[:res.start('points')] + points \
+                            + col[res.end('points'):]
                     res = geoszre.search(col)
                     if res is not None:
                         points = ptszre.sub(r'(\g<0>)', res.group('points'))
-                        col = col[:res.start('points')] + points + col[res.end('points'):]
+                        col = col[:res.start('points')] + points \
+                            + col[res.end('points'):]
                     res = geosere.search(col)
                     if res is not None:
-                        col = col[:res.start(0)] + 'MULTIPOLYGON EMPTY' + col[res.end(0):]
+                        col = col[:res.start(0)] + 'MULTIPOLYGON EMPTY' \
+                            + col[res.end(0):]
                 nrow.append(col)
             ndata.append(nrow)
         data = ndata
         if crs.description:
             rescols = []
             for desc in crs.description:
-                if desc.type_code in ('boolean', 'tinyint', 'smallint', 'int', 'bigint', 'hugeint', 'bit', 'sht', 'lng', 'hge', 'oid', 'void'):
+                if desc.type_code in inttypes:
                     rescols.append('I')
                 elif desc.type_code == 'decimal':
                     rescols.append('D') # extension
-                elif desc.type_code in ('double', 'real', 'flt', 'dbl'):
+                elif desc.type_code in flttypes:
                     rescols.append('R')
                 else:
                     rescols.append('T')
             rescols = ''.join(rescols)
+            # if columns != rescols:
+            #     print(self.name, self.line, columns, rescols, file=sys.stderr)
             if len(crs.description) != len(columns):
-                self.query_error(query, f'received {len(crs.description)} columns, expected {len(columns)} columns', data=data)
+                self.query_error(query
+                                 , f'received {len(crs.description)} columns,'
+                                 f' expected {len(columns)} columns',
+                                 data=data)
                 columns = rescols
                 err = True
         else:
             # how can this be?
-            #self.query_error(query, 'no crs.description')
+            # self.query_error(query, 'no crs.description')
             rescols = 'T'
         if sorting != 'python' and crs.rowcount * len(columns) != nresult:
             if not err:
-                self.query_error(query, f'received {crs.rowcount} rows, expected {nresult // len(columns)} rows', data=data)
+                self.query_error(query,
+                                 f'received {crs.rowcount} rows,'
+                                 f' expected {nresult // len(columns)} rows',
+                                 data=data)
                 err = True
         if self.res is not None:
             for row in data:
@@ -623,34 +642,38 @@ class SQLLogic:
             resdata = None
         data = self.convertresult(query, columns, data)
         if data is None:
-            return ['statement', 'error'], []
+            err = True
         m = hashlib.md5()
         resm = hashlib.md5()
         i = 0
         result = []
         if sorting == 'valuesort':
-            ndata = []
-            for row in data:
-                for col in row:
-                    ndata.append(col)
-            ndata.sort()
-            for col in ndata:
-                if expected is not None:
-                    if i < len(expected) and col != expected[i]:
-                        self.query_error(query, 'unexpected value; received "%s", expected "%s"' % (col, expected[i]))
-                        err = True
-                    i += 1
-                m.update(bytes(col, encoding='utf-8'))
-                m.update(b'\n')
-                result.append(col)
-            if err and expected is not None and self.out:
-                print('Differences:', file=self.out)
-                print('\n'.join(difflib.unified_diff(expected,
-                                                     ndata,
-                                                     fromfile='expected',
-                                                     tofile='received',
-                                                     lineterm='')),
-                      file=self.out)
+            if data is not None:
+                ndata = []
+                for row in data:
+                    for col in row:
+                        ndata.append(col)
+                ndata.sort()
+                for col in ndata:
+                    if expected is not None:
+                        if i < len(expected) and col != expected[i]:
+                            self.query_error(query,
+                                             'unexpected value; received'
+                                             f' "{col}", expected'
+                                             f' "{expected[i]}"')
+                            err = True
+                        i += 1
+                    m.update(bytes(col, encoding='utf-8'))
+                    m.update(b'\n')
+                    result.append(col)
+                if err and expected is not None and self.out:
+                    print('Differences:', file=self.out)
+                    print('\n'.join(difflib.unified_diff(expected,
+                                                         ndata,
+                                                         fromfile='expected',
+                                                         tofile='received',
+                                                         lineterm='')),
+                          file=self.out)
             if resdata is not None:
                 result = []
                 ndata = []
@@ -671,7 +694,8 @@ class SQLLogic:
                     else:
                         pymod = importlib.import_module(mod)
                 except ModuleNotFoundError:
-                    self.query_error(query, 'cannot import filter function module')
+                    self.query_error(query,
+                                     'cannot import filter function module')
                     err = True
                 else:
                     try:
@@ -690,45 +714,53 @@ class SQLLogic:
                     err = True
             ndata = data
             if not err:
-                try:
-                    ndata = pyfnc(data)
-                except Exception:
-                    self.query_error(query, 'filter function failed')
-                    err = True
+                if data is not None:
+                    try:
+                        ndata = pyfnc(data)
+                    except Exception:
+                        self.query_error(query, 'filter function failed')
+                        err = True
                 if resdata is not None:
                     try:
                         resdata = pyfnc(resdata)
                     except Exception:
                         resdata = None
-            ncols = 1
-            if (len(ndata)):
-                ncols = len(ndata[0])
-            if len(ndata)*ncols != nresult:
-                self.query_error(query, f'received {len(ndata)*ncols} rows, expected {nresult} rows', data=data)
-                err = True
-            for row in ndata:
-                for col in row:
-                    if expected is not None:
-                        if i < len(expected) and col != expected[i]:
-                            self.query_error(query, 'unexpected value; received "%s", expected "%s"' % (col, expected[i]))
-                            err = True
-                        i += 1
-                    m.update(bytes(col, encoding='utf-8'))
-                    m.update(b'\n')
-                    result.append(col)
-            if err and expected is not None:
-                recv = []
+            if data is not None:
+                ncols = 1
+                if (len(ndata)):
+                    ncols = len(ndata[0])
+                if len(ndata)*ncols != nresult:
+                    self.query_error(query,
+                                     f'received {len(ndata)*ncols} rows,'
+                                     f' expected {nresult} rows', data=data)
+                    err = True
                 for row in ndata:
                     for col in row:
-                        recv.append(col)
-                if self.out:
-                    print('Differences:', file=self.out)
-                    print('\n'.join(difflib.unified_diff(expected,
-                                                         recv,
-                                                         fromfile='expected',
-                                                         tofile='received',
-                                                         lineterm='')),
-                          file=self.out)
+                        if expected is not None:
+                            if i < len(expected) and col != expected[i]:
+                                self.query_error(query,
+                                                 'unexpected value; received'
+                                                 f' "{col}", expected'
+                                                 f' "{expected[i]}"')
+                                err = True
+                            i += 1
+                        m.update(bytes(col, encoding='utf-8'))
+                        m.update(b'\n')
+                        result.append(col)
+                if err and expected is not None:
+                    recv = []
+                    for row in ndata:
+                        for col in row:
+                            recv.append(col)
+                    if self.out:
+                        print('Differences:', file=self.out)
+                        print(
+                            '\n'.join(difflib.unified_diff(expected,
+                                                           recv,
+                                                           fromfile='expected',
+                                                           tofile='received',
+                                                           lineterm='')),
+                            file=self.out)
             if resdata is not None:
                 result = []
                 for row in resdata:
@@ -737,30 +769,31 @@ class SQLLogic:
                         resm.update(b'\n')
                         result.append(col)
         else:
-            ndata = data
-            if sorting == 'rowsort':
-                ndata = sorted(data)
-            err_msg_buff = []
-            received = []
-            for row in ndata:
-                for col in row:
-                    received.append(col)
-                    m.update(bytes(col, encoding='utf-8'))
-                    m.update(b'\n')
-                    result.append(col)
-            if expected is not None:
-                diffs = list(difflib.unified_diff(expected,
-                                                  received,
-                                                  fromfile='expected',
-                                                  tofile='received',
-                                                  lineterm=''))
-                if diffs:
-                    if not err:
-                        self.query_error(query, 'unexpected output')
-                    err = True
-                    if self.out:
-                        print('Differences:', file=self.out)
-                        print('\n'.join(diffs), file=self.out)
+            if data is not None:
+                ndata = data
+                if sorting == 'rowsort':
+                    ndata = sorted(data)
+                err_msg_buff = []
+                received = []
+                for row in ndata:
+                    for col in row:
+                        received.append(col)
+                        m.update(bytes(col, encoding='utf-8'))
+                        m.update(b'\n')
+                        result.append(col)
+                if expected is not None:
+                    diffs = list(difflib.unified_diff(expected,
+                                                      received,
+                                                      fromfile='expected',
+                                                      tofile='received',
+                                                      lineterm=''))
+                    if diffs:
+                        if not err:
+                            self.query_error(query, 'unexpected output')
+                        err = True
+                        if self.out:
+                            print('Differences:', file=self.out)
+                            print('\n'.join(diffs), file=self.out)
             if resdata is not None:
                 if sorting == 'rowsort':
                     resdata.sort()
@@ -786,15 +819,23 @@ class SQLLogic:
                         sep = '|'
                     print(file=self.out)
             print(file=self.out)
-        h = m.hexdigest()
+        if data is not None:
+            h = m.hexdigest()
         if resdata is not None:
             resh = resm.hexdigest()
         if not err:
-            if hashlabel is not None and hashlabel in self.hashes and self.hashes[hashlabel][0] != h:
-                self.query_error(query, 'query hash differs from previous query at line %d' % self.hashes[hashlabel][1], data=data)
+            if hashlabel is not None \
+               and hashlabel in self.hashes \
+               and self.hashes[hashlabel][0] != h:
+                self.query_error(query,
+                                 'query hash differs from previous query'
+                                 f' at line {self.hashes[hashlabel][1]}',
+                                 data=data)
                 err = True
             elif hash is not None and h != hash:
-                self.query_error(query, 'hash mismatch; received: "%s", expected: "%s"' % (h, hash), data=data)
+                self.query_error(query,
+                                 f'hash mismatch; received: "{h}",'
+                                 f' expected: "{hash}"', data=data)
                 err = True
         if hashlabel is not None and hashlabel not in self.hashes:
             if hash is not None:
@@ -807,7 +848,8 @@ class SQLLogic:
         if hashlabel:
             result1.append(hashlabel)
         if len(result) > self.threshold:
-            result2 = [f'{len(result)} values hashing to {h if resdata is None else resh}']
+            result2 = [f'{len(result)} values hashing to'
+                       f' {h if resdata is None else resh}']
         else:
             result2 = result
         return result1, result2
@@ -919,6 +961,9 @@ class SQLLogic:
         else:
             self.crs.execute(f'clients.setsessiontimeout({timeout}:int)')
         skiprest = False
+        if self.threshold != hash_threshold:
+            self.writeline(f'hash-threshold {self.threshold}')
+            self.writeline()
         while True:
             skipping = skiprest
             line = self.readline()
@@ -999,9 +1044,11 @@ class SQLLogic:
                     words = line.split(maxsplit=2)
             hashlabel = None
             if words[0] == 'hash-threshold':
-                self.threshold = int(words[1])
-                self.writeline(line.rstrip())
-                self.writeline()
+                threshold = int(words[1])
+                if threshold != self.threshold:
+                    self.threshold = threshold
+                    self.writeline(line.rstrip())
+                    self.writeline()
             elif words[0] == 'statement':
                 expected_err_code = None
                 expected_err_msg = None
@@ -1164,7 +1211,7 @@ def main():
                         help='file in which to produce a new .test file '
                         'with updated results')
     parser.add_argument('--hash-threshold', action='store',
-                        type=int, default=100,
+                        type=int, default=hash_threshold,
                         help='default hash-threshold value')
     parser.add_argument('--define', action='append',
                         help='define substitution for $var as var=replacement'

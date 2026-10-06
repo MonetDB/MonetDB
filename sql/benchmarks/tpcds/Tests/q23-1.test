@@ -1,4 +1,6 @@
-query D rowsort
+hash-threshold 1000
+
+query D nosort
 -- query 23-1
  with frequent_ss_items as
  (select substr(i_item_desc,1,30) itemdesc,i_item_sk item_sk,d_date solddate,count(*) cnt

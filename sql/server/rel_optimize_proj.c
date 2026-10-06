@@ -85,7 +85,8 @@ rel_push_project_down_(visitor *v, sql_rel *rel)
 			return rel;
 		} else if (list_check_prop_all(rel->exps, (prop_check_func)&exp_is_useless_rename)) {
 			if ((is_project(l->op) && list_length(l->exps) == list_length(rel->exps)) ||
-				((v->parent && is_project(v->parent->op)) &&
+				(/* cannot do this iff v->parent is op_table (func), the it expects the proper set of columns */
+				 (!v->parent || v->parent->op != op_table) &&
 				 (is_mset(l->op) || is_set(l->op) || is_select(l->op) || is_join(l->op) || is_semi(l->op) || is_topn(l->op) || is_sample(l->op)))) {
 				rel->l = NULL;
 				rel_destroy(v->sql, rel);
@@ -859,7 +860,7 @@ rel_split_project_(visitor *v, sql_rel *rel, int top)
 		return NULL;
 
 	if (v->opt >= 0 && rel->opt >= v->opt) /* only once */
-        return rel;
+		return rel;
 
 	if (is_project(rel->op) && list_length(rel->exps) && (is_groupby(rel->op) || rel->l) && !need_distinct(rel) && !is_single(rel)) {
 		list *exps = rel->exps;
@@ -915,7 +916,7 @@ rel_split_project_(visitor *v, sql_rel *rel, int top)
 			return NULL;
 	}
 	if (rel && v->opt >= 0)
-        rel->opt = v->opt;
+		rel->opt = v->opt;
 	return rel;
 }
 
@@ -2328,6 +2329,7 @@ rel_reduce_groupby_exps(visitor *v, sql_rel *rel)
 	list *gbe = rel->r;
 	global_props *gp = v->data;
 
+	/* ukey + no null could also work and a single unique (base) column also reduces the group by exps */
 	if (gp->has_pkey && is_groupby(rel->op) && rel->r && !rel_is_ref(rel) && list_length(gbe)) {
 		allocator *ta = MT_thread_getallocator();
 		allocator_state ta_state = ma_open(ta);

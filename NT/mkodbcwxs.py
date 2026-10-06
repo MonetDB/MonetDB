@@ -7,27 +7,50 @@
 # For copyright information, see the file debian/copyright.
 
 # python mkodbcwxs.py VERSION BITS PREFIX > PREFIX/MonetDB-ODBC-Installer.wxs
-# "c:\Program Files (x86)\WiX Toolset v3.10\bin\candle.exe" -nologo -arch x64/x86 PREFIX/MonetDB-ODBC-Installer.wxs
-# "c:\Program Files (x86)\WiX Toolset v3.10\bin\light.exe" -nologo -sice:ICE03 -sice:ICE60 -sice:ICE82 -ext WixUIExtension PREFIX/MonetDB-ODBC-Installer.wixobj
+# "c:\Program Files (x86)\WiX Toolset v3.10\bin\candle.exe" -nologo \
+#     -arch x64/x86 PREFIX/MonetDB-ODBC-Installer.wxs
+# "c:\Program Files (x86)\WiX Toolset v3.10\bin\light.exe" -nologo \
+#     -sice:ICE03 -sice:ICE60 -sice:ICE82 -ext WixUIExtension \
+#     PREFIX/MonetDB-ODBC-Installer.wixobj
 
-import sys, os
+import sys
+import os
 
 # doesn't change
 upgradecode = {'x64': '{95ACBC8C-BC4B-4901-AF70-48B54A5C20F7}',
                'x86': '{C1F69378-3F5C-4120-8224-32F07D3458F3}'}
 
-def comp(features, id, depth, files, fid=None, name=None, args=None, sid=None, vital=None):
+
+def comp(features, id, depth, files,
+         fid=None, name=None, args=None, sid=None, vital=None):
     indent = ' ' * depth
     for f in files:
-        print('{}<Component Id="_{}" Guid="*">'.format(indent, id))
-        print('{}  <File DiskId="1"{} KeyPath="yes" Name="{}" Source="{}"{}{}'.format(indent, fid and (' Id="{}"'.format(fid)) or '', f.split('\\')[-1], f, vital and (' Vital="{}"'.format(vital)) or '', name and '>' or '/>'))
+        print(f'{indent}<Component Id="_{id}" Guid="*">')
+        print('{}  <File DiskId="1"{} KeyPath="yes" Name="{}" Source="{}"{}{}'
+              .format(indent, f' Id="{fid}"' if fid else '',
+                      f.split('\\')[-1], f,
+                      f' Vital="{vital}"' if vital else '',
+                      '>' if name else '/>'))
         if name:
-            print('{}    <Shortcut Id="{}" Advertise="yes"{} Directory="ProgramMenuDir" Icon="monetdb.ico" IconIndex="0" Name="{}" WorkingDirectory="INSTALLDIR"/>'.format(indent, sid, args and (' Arguments="{}"'.format(args)) or '', name))
-            print('{}  </File>'.format(indent))
-        print('{}</Component>'.format(indent))
-        features.append('_{}'.format(id))
+            print(('{}    <Shortcut Id="{}" Advertise="yes"{}'
+                   ' Directory="ProgramMenuDir" Icon="monetdb.ico"'
+                   ' IconIndex="0" Name="{}" WorkingDirectory="INSTALLDIR"/>')
+                  .format(indent, sid,
+                          f' Arguments="{args}"' if args else '',
+                          name))
+            print(f'{indent}  </File>')
+        print(f'{indent}</Component>')
+        features.append(f'_{id}')
         id += 1
     return id
+
+
+vcsearch = (
+    r'C:\Program Files\Microsoft Visual Studio\2022\Community\VC',
+    r'C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\VC',
+    r'C:\Program Files (x86)\Microsoft Visual Studio\2017\Community\VC',
+    )
+
 
 def main():
     if len(sys.argv) != 4:
@@ -50,12 +73,9 @@ def main():
         if vsdir is not None:
             vcdir = os.path.join(vsdir, 'VC')
     if vcdir is None:
-        if os.path.exists(r'C:\Program Files\Microsoft Visual Studio\2022\Community\VC'):
-            vcdir = r'C:\Program Files\Microsoft Visual Studio\2022\Community\VC'
-        elif os.path.exists(r'C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\VC'):
-            vcdir = r'C:\Program Files (x86)\Microsoft Visual Studio\2019\Community\VC'
-        elif os.path.exists(r'C:\Program Files (x86)\Microsoft Visual Studio\2017\Community\VC'):
-            vcdir = r'C:\Program Files (x86)\Microsoft Visual Studio\2017\Community\VC'
+        for vcdir in vcsearch:
+            if os.path.exists(vcdir):
+                break
         else:
             print(r"Don't know which visual studio directory to use")
             return 1
@@ -63,40 +83,56 @@ def main():
     features = []
     print(r'<?xml version="1.0"?>')
     print(r'<Wix xmlns="http://schemas.microsoft.com/wix/2006/wi">')
-    print(r'  <Product Id="*" Language="1033" Manufacturer="MonetDB" Name="MonetDB ODBC Driver" UpgradeCode="{}" Version="{}">'.format(upgradecode[arch], version))
-    print(r'    <Package Id="*" Comments="MonetDB ODBC Driver" Compressed="yes" InstallerVersion="301" Keywords="MonetDB SQL ODBC" Languages="1033" Manufacturer="MonetDB Foundation" Platform="{}"/>'.format(arch))
-    print(r'    <MajorUpgrade AllowDowngrades="no" DowngradeErrorMessage="A later version of [ProductName] is already installed." AllowSameVersionUpgrades="no"/>')
+    print(r'  <Product Id="*" Language="1033" Manufacturer="MonetDB"'
+          fr' Name="MonetDB ODBC Driver" UpgradeCode="{upgradecode[arch]}"'
+          fr' Version="{version}">')
+    print(r'    <Package Id="*" Comments="MonetDB ODBC Driver"'
+          r' Compressed="yes" InstallerVersion="301"'
+          r' Keywords="MonetDB SQL ODBC" Languages="1033"'
+          fr' Manufacturer="MonetDB Foundation" Platform="{arch}"/>')
+    print(r'    <MajorUpgrade AllowDowngrades="no"'
+          r' DowngradeErrorMessage="A later version of [ProductName]'
+          r' is already installed." AllowSameVersionUpgrades="no"/>')
     print(r'    <WixVariable Id="WixUILicenseRtf" Value="share\license.rtf"/>')
     print(r'    <WixVariable Id="WixUIBannerBmp" Value="share\banner.bmp"/>')
-    # print(r'    <WixVariable Id="WixUIDialogBmp" Value="backgroundRipple.bmp"/>')
+    # print(r'    <WixVariable Id="WixUIDialogBmp"'
+    #       r' Value="backgroundRipple.bmp"/>')
     print(r'    <Property Id="WIXUI_INSTALLDIR" Value="INSTALLDIR"/>')
     print(r'    <Property Id="ARPPRODUCTICON" Value="share\monetdb.ico"/>')
     print(r'    <Media Id="1" Cabinet="monetdb.cab" EmbedCab="yes"/>')
-    print(r'    <CustomAction Id="driverinstall" FileKey="odbcinstall" ExeCommand="/Install" Execute="deferred" Impersonate="no"/>')
-    print(r'    <CustomAction Id="driveruninstall" FileKey="odbcinstall" ExeCommand="/Uninstall" Execute="deferred" Impersonate="no"/>')
+    print(r'    <CustomAction Id="driverinstall" FileKey="odbcinstall"'
+          r' ExeCommand="/Install" Execute="deferred" Impersonate="no"/>')
+    print(r'    <CustomAction Id="driveruninstall" FileKey="odbcinstall"'
+          r' ExeCommand="/Uninstall" Execute="deferred" Impersonate="no"/>')
     print(r'    <Directory Id="TARGETDIR" Name="SourceDir">')
     d = sorted(os.listdir(msvc))[-1]
-    msm = '_CRT_{}.msm'.format(arch)
+    msm = f'_CRT_{arch}.msm'
     for f in sorted(os.listdir(os.path.join(msvc, d, 'MergeModules'))):
         if msm in f:
             fn = f
-    print(r'      <Merge Id="VCRedist" DiskId="1" Language="0" SourceFile="{}\{}\MergeModules\{}"/>'.format(msvc, d, fn))
+    print(r'      <Merge Id="VCRedist" DiskId="1" Language="0"'
+          fr' SourceFile="{msvc}\{d}\MergeModules\{fn}"/>')
     print(r'      <Directory Id="{}">'.format(folder))
     print(r'        <Directory Id="ProgramFilesMonetDB" Name="MonetDB">')
     print(r'          <Directory Id="INSTALLDIR" Name="MonetDB ODBC Driver">')
     id = 1
     print(r'            <Directory Id="lib" Name="lib">')
     id = comp(features, id, 14,
-              [rf'bin\mapi-{version}.dll', rf'lib\mapi-{version}.pdb',
-               r'lib\MonetODBC.dll', r'lib\MonetODBC.pdb',
-               r'lib\MonetODBCs.dll', r'lib\MonetODBCs.pdb',
-               rf'bin\stream-{version}.dll', rf'lib\stream-{version}.pdb',
-               rf'bin\mutils-{version}.dll', rf'lib\mutils-{version}.pdb',
+              [rf'bin\mapi-{version}.dll',
+               rf'lib\mapi-{version}.pdb',
+               r'lib\MonetODBC.dll',
+               r'lib\MonetODBC.pdb',
+               r'lib\MonetODBCs.dll',
+               r'lib\MonetODBCs.pdb',
+               rf'bin\stream-{version}.dll',
+               rf'lib\stream-{version}.pdb',
+               rf'bin\mutils-{version}.dll',
+               rf'lib\mutils-{version}.pdb',
                vcpkg.format(r'bin\iconv-2.dll'),
                vcpkg.format(r'bin\bz2.dll'),
-               vcpkg.format(r'bin\charset-1.dll'), # for iconv-2.dll
-               vcpkg.format(r'bin\libcrypto-3{}.dll'.format(libcrypto)),
-               vcpkg.format(r'bin\libssl-3{}.dll'.format(libcrypto)),
+               vcpkg.format(r'bin\charset-1.dll'),  # for iconv-2.dll
+               vcpkg.format(fr'bin\libcrypto-3{libcrypto}.dll'),
+               vcpkg.format(fr'bin\libssl-3{libcrypto}.dll'),
                vcpkg.format(r'bin\lz4.dll'),
                vcpkg.format(r'bin\liblzma.dll'),
                vcpkg.format(r'bin\z.dll')])
@@ -105,11 +141,11 @@ def main():
               [r'share\license.rtf'])
     id = comp(features, id, 12,
               [r'bin\odbcinstall.exe'],
-              fid = 'odbcinstall')
+              fid='odbcinstall')
     id = comp(features, id, 12,
               [r'share\website.html'],
-              name = 'MonetDB Web Site',
-              sid = 'website_html',
+              name='MonetDB Web Site',
+              sid='website_html',
               vital = 'no')
     print(r'          </Directory>')
     print(r'        </Directory>')
@@ -119,14 +155,17 @@ def main():
     print(r'          <Component Id="ProgramMenuDir" Guid="*">')
     features.append('ProgramMenuDir')
     print(r'            <RemoveFolder Id="ProgramMenuDir" On="uninstall"/>')
-    print(r'            <RegistryValue Key="Software\[Manufacturer]\[ProductName]" KeyPath="yes" Root="HKCU" Type="string" Value=""/>')
+    print(r'            <RegistryValue'
+          r' Key="Software\[Manufacturer]\[ProductName]" KeyPath="yes"'
+          r' Root="HKCU" Type="string" Value=""/>')
     print(r'          </Component>')
     print(r'        </Directory>')
     print(r'      </Directory>')
     print(r'    </Directory>')
-    print(r'    <Feature Id="Complete" ConfigurableDirectory="INSTALLDIR" Title="MonetDB ODBC Driver">')
+    print(r'    <Feature Id="Complete" ConfigurableDirectory="INSTALLDIR"'
+          r' Title="MonetDB ODBC Driver">')
     for f in features:
-        print(r'      <ComponentRef Id="{}"/>'.format(f))
+        print(fr'      <ComponentRef Id="{f}"/>')
     print(r'      <MergeRef Id="VCRedist"/>')
     print(r'    </Feature>')
     print(r'    <UIRef Id="WixUI_InstallDir"/>')
@@ -136,8 +175,10 @@ def main():
     print(r'      <Custom Action="driverinstall" Before="RegisterUser">')
     print(r'        NOT Installed OR REINSTALL')
     print(r'      </Custom>')
-    print(r'      <Custom Action="driveruninstall" Before="UnpublishComponents">')
-    print(r'        Installed AND (REINSTALL OR (REMOVE AND NOT UPGRADINGPRODUCTCODE))')
+    print(r'      <Custom Action="driveruninstall"'
+          r' Before="UnpublishComponents">')
+    print(r'        Installed AND (REINSTALL OR (REMOVE'
+          r' AND NOT UPGRADINGPRODUCTCODE))')
     print(r'      </Custom>')
     print(r'    </InstallExecuteSequence>')
     print(r'  </Product>')

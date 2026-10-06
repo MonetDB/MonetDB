@@ -10,16 +10,12 @@ insert into tab values (3,4)
 query II rowsort
 select * from tab
 ----
-1
-2
-3
-4
+1	2
+3	4
 
-query II rowsort
+query TI rowsort
 SELECT null AS test, "null" AS nullable FROM tab
 ----
-NULL
-2
-NULL
-4
+NULL	2
+NULL	4
 

@@ -55,7 +55,7 @@ static stmt *
 _start_pp(backend *be, sql_rel *rel, bit buildphase, list *refs, stmt *shared_ht)
 {
 	if (buildphase && get_pipeline(be)) {
-        sql_error(be->mvc, 10, SQLSTATE(42000) "Internal error: hash-join cannot start within a pipelines block");
+		sql_error(be->mvc, 10, SQLSTATE(42000) "Internal error: hash-join cannot start within a pipelines block");
 		return NULL;
 	}
 	if (!be->pp) {
@@ -435,9 +435,9 @@ groupjoin_mark( list *attr )
 {
 	bool mark = false;
 	if (!list_empty(attr) && list_length(attr) == 1) {
-        sql_exp *e = attr->h->data;
-        if (exp_is_atom(e))
-            mark = true;
+		sql_exp *e = attr->h->data;
+		if (exp_is_atom(e))
+			mark = true;
 	}
 	return mark;
 }
@@ -583,12 +583,12 @@ rel2bin_oahash_select(backend *be, stmt *sub, list *sexps, sql_rel *rel, bool ha
 				s = sql_Nop_(be, "ifthenelse", s, stmt_bool(be, 0), stmt_bool(be, 1), NULL);
 			}
 
-            if (s && s->nrcols == 0) {
-                stmt *l = bin_find_smallest_column(be, sub);
-                s = stmt_uselect(be, stmt_const(be, l, s), stmt_bool(be, 1), cmp_equal, sel, 0, 0);
-            } else if (s) {
-                s = stmt_uselect(be, s, stmt_bool(be, 1), cmp_equal, sel, 0, 0);
-            }
+			if (s && s->nrcols == 0) {
+				stmt *l = bin_find_smallest_column(be, sub);
+				s = stmt_uselect(be, stmt_const(be, l, s), stmt_bool(be, 1), cmp_equal, sel, 0, 0);
+			} else if (s) {
+				s = stmt_uselect(be, s, stmt_bool(be, 1), cmp_equal, sel, 0, 0);
+			}
 		} else {
 			s = exp_bin(be, en->data, sub, NULL, NULL, NULL, NULL, sel, 0, 1, 0);
 			if (s && s->nrcols == 0) {
@@ -867,13 +867,13 @@ rel2bin_oahash_groupjoin(backend *be, sql_rel *rel, list *refs)
 	bool mark = false, exist = true;
 
 	if (list_length(rel->attr) == 1) {
-        sql_exp *e = rel->attr->h->data;
-        if (exp_is_atom(e)) {
-            mark = true;
-        	if (exp_is_false(e))
-            	exist = false;
+		sql_exp *e = rel->attr->h->data;
+		if (exp_is_atom(e)) {
+			mark = true;
+			if (exp_is_false(e))
+				exist = false;
 		}
-    }
+	}
 
 	split_join_exps(rel, jexps, sexps, false /* anti */, true /* eqonly */, mark&&!exist /* marked-anti ==> firstonly */);
 
@@ -1501,11 +1501,11 @@ stmt *
 rel2bin_oahash(backend *be, sql_rel *rel, list *refs)
 {
 	/* TODO: delay single check until after sexps */
-    if (is_semi(rel->op)) {
-        return rel2bin_oahash_semi(be, rel, refs);
-    } else if (!list_empty(rel->attr)) {
-        return rel2bin_oahash_groupjoin(be, rel, refs);
-    } else if (is_outerjoin(rel->op)) {
+	if (is_semi(rel->op)) {
+		return rel2bin_oahash_semi(be, rel, refs);
+	} else if (!list_empty(rel->attr)) {
+		return rel2bin_oahash_groupjoin(be, rel, refs);
+	} else if (is_outerjoin(rel->op)) {
 		if (rel->op == op_full) {
 			return rel2bin_oahash_fullouterjoin(be, rel, refs);
 		} else if (rel->op == op_right /*&& rel->single */) {
@@ -1513,8 +1513,8 @@ rel2bin_oahash(backend *be, sql_rel *rel, list *refs)
 		} else {
 			return rel2bin_oahash_leftouterjoin(be, rel, refs);
 		}
-    } else {
-        assert(is_innerjoin(rel->op));
-        return rel2bin_oahash_innerjoin(be, rel, refs);
-    }
+	} else {
+		assert(is_innerjoin(rel->op));
+		return rel2bin_oahash_innerjoin(be, rel, refs);
+	}
 }

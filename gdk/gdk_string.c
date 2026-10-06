@@ -228,11 +228,11 @@ ustrPut(BAT *b, var_t *dst, const char *v)
 			if (strcmp(v,
 				   ui.vh->base + ((var_t *) ui.base)[p]) == 0)
 				break;
-       } else if (GDKupgradevarheap(ustrbat, (var_t) 1 << (4 * SIZEOF_VAR_T + 1),
+	} else if (GDKupgradevarheap(ustrbat, (var_t) 1 << (4 * SIZEOF_VAR_T + 1),
 				    ustrbat->batCapacity, 0) != GDK_SUCCEED) {
-               MT_lock_unset(&ustrbat->theaplock);
-               MT_rwlock_wrunlock(&ustrbat->thashlock);
-               return (var_t) -1;
+		MT_lock_unset(&ustrbat->theaplock);
+		MT_rwlock_wrunlock(&ustrbat->thashlock);
+		return (var_t) -1;
 	} else {
 		if (h->size < GDK_STRHASHSIZE + BATTINY * GDK_VARALIGN) {
 			if (HEAPgrow(&b->tvheap, GDK_STRHASHSIZE + BATTINY * GDK_VARALIGN, true) != GDK_SUCCEED) {
