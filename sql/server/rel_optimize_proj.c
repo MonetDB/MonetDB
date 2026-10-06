@@ -3070,14 +3070,18 @@ rel_simplify_count(visitor *v, sql_rel *rel)
 			if (exp_aggr_is_count(e) && !need_distinct(e)) {
 				if (list_length(e->l) == 0) {
 					ncountstar++;
-				} else if (list_length(e->l) == 1 && !has_nil((sql_exp*)((list*)e->l)->h->data)) {
-					sql_subfunc *cf = sql_bind_func(sql, "sys", "count", sql_fetch_localtype(TYPE_void), NULL, F_AGGR, true, true);
-					sql_exp *ne = exp_aggr(sql->sa, NULL, cf, 0, 0, e->card, 0);
-					if (exp_name(e))
-						exp_prop_alias(sql->sa, ne, e);
-					n->data = ne;
-					ncountstar++;
-					v->changes++;
+				} else if (list_length(e->l) == 1) {
+					list *l = e->l;
+					/* TODO: !has_label check should actually be !exp_is_fallible */
+					if (!has_nil((sql_exp*)l->h->data) && !has_label((sql_exp*)l->h->data)) {
+						sql_subfunc *cf = sql_bind_func(sql, "sys", "count", sql_fetch_localtype(TYPE_void), NULL, F_AGGR, true, true);
+						sql_exp *ne = exp_aggr(sql->sa, NULL, cf, 0, 0, e->card, 0);
+						if (exp_name(e))
+							exp_prop_alias(sql->sa, ne, e);
+						n->data = ne;
+						ncountstar++;
+						v->changes++;
+					}
 				}
 			}
 		}
