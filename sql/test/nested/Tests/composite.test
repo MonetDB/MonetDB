@@ -27,6 +27,13 @@ alice
 30
 bob
 
+query T nosort
+select * from ct_col
+----
+(10, "test")
+(20, "alice")
+(30, "bob")
+
 ## literal syntax
 
 statement ok
@@ -51,6 +58,16 @@ hello
 2
 world
 
+query T nosort
+select * from ct_col
+----
+(10, "test")
+(20, "alice")
+(30, "bob")
+(0, "head")
+(1, "hello")
+(2, "world")
+
 statement ok
 truncate ct_col
 
@@ -58,3 +75,12 @@ query I nosort
 select count(*) from ct_col
 ----
 0
+
+query T nosort
+select * from ct_col
+----
+
+query IT nosort
+select c.n, c.m from ct_col
+----
+
