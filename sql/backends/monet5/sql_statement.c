@@ -9,6 +9,7 @@
  */
 
 #include "monetdb_config.h"
+#include "mal_type.h"
 #include "sql_mem.h"
 #include "sql_stack.h"
 #include "sql_statement.h"
@@ -2288,6 +2289,38 @@ stmt_markselect(backend *be, stmt *g, stmt *m, stmt *p, bool any)
 	q = pushArgument(mb, q, m->nr); /* mark info mask */
 	q = pushArgument(mb, q, p->nr);	/* predicate */
 	q = pushBit(mb, q, (any)?TRUE:FALSE);
+	pushInstruction(mb, q);
+
+	if (!q)
+		return NULL;
+	stmt *s = stmt_create(be->mvc->sa, st_uselect2);
+	if (s == NULL) {
+		freeInstruction(be->mb, q);
+		return NULL;
+	}
+
+	s->op1 = g;
+	s->op2 = m;
+	s->flag = MARKJOIN;
+	s->key = 0;
+	s->nrcols = g->nrcols;
+	s->nr = getDestVar(q);
+	s->q = q;
+	return s;
+}
+
+stmt *
+stmt_selectNotFalse(backend *be, stmt *g, stmt *m, stmt *p, bool aggr)
+{
+	MalBlkPtr mb = be->mb;
+	InstrPtr q;
+
+	q = newStmtArgs(mb, algebraRef, putName("selectNotFalse"), 6);
+	q = pushReturn(mb, q, newTmpVariable(mb, newBatType(TYPE_bit)));
+	q = pushArgument(mb, q, g->nr); /* group ids */
+	q = pushArgument(mb, q, m->nr); /* mark flag */
+	q = pushArgument(mb, q, p->nr); /* predicate */
+	q = pushBit(mb, q, (aggr)?TRUE:FALSE);
 	pushInstruction(mb, q);
 
 	if (!q)

@@ -208,6 +208,7 @@ extern stmt *stmt_outerselect(backend *be, stmt *g, stmt *m, stmt *p, bool any, 
 extern stmt *stmt_thetaselect(backend *be, stmt *op1, stmt *op2, stmt *val, const char *cmp, sql_subtype *tpe);
 extern stmt *stmt_markselect(backend *be, stmt *g, stmt *m, stmt *p, bool any);
 extern stmt *stmt_markjoin(backend *be, stmt *l, stmt *r, bool nil_matches, bool final);
+extern stmt *stmt_selectNotFalse(backend *be, stmt *g, stmt *m, stmt *p, bool aggr);
 
 extern stmt *stmt_tunion(backend *be, stmt *op1, stmt *op2);
 extern stmt *stmt_tdiff(backend *be, stmt *op1, stmt *op2, stmt *lcand);
