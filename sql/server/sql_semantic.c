@@ -1203,7 +1203,7 @@ _symbol2string(allocator *ta, mvc *sql, symbol *se, int expression, char **err)
 	case SQL_ATOM:{
 		AtomNode *an = (AtomNode *) se;
 		if (an && an->a)
-			return atom2sql(ta, an->a, sql->timezone);
+			return atom2sql(ta, an->a, MT_get_timezone());
 		else
 			return "NULL";
 	}

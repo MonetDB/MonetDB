@@ -1066,7 +1066,7 @@ func1(MTIMEtimestamp_extract_daytime, "daytime", timestamp,
 	  DEC_VAR_R, INIT_VARIN, INIT_VAROUT, GET_NEXT_VAR)
 /* return current system time zone offset in seconds East of Greenwich */
 static int
-local_timezone(int *isdstp)
+system_timezone(int *isdstp)
 {
 	int tzone = 0;
 	int isdst = -1;
@@ -1132,10 +1132,10 @@ local_timezone(int *isdstp)
 }
 
 static str
-MTIMElocal_timezone_msec(Client ctx, lng *ret)
+MTIMEsystem_timezone_msec(Client ctx, lng *ret)
 {
 	(void) ctx;
-	int tzone = local_timezone(NULL);
+	int tzone = system_timezone(NULL);
 	*ret = (lng) tzone *1000;
 	return MAL_SUCCEED;
 }
@@ -1735,7 +1735,7 @@ static mel_func mtime_init_funcs[] = {
  pattern("batmtime", "date_sub_month_interval", MTIMEdate_submonths_bulk, false, "", args(1,5, batarg("",date),batarg("t",date),batarg("months",int),batarg("s1",oid),batarg("s2",oid))),
  pattern("batmtime", "date_sub_month_interval", MTIMEdate_submonths_bulk_p1, false, "", args(1,4, batarg("",date),arg("t",date),batarg("months",int),batarg("s",oid))),
  pattern("batmtime", "date_sub_month_interval", MTIMEdate_submonths_bulk_p2, false, "", args(1,4, batarg("",date),batarg("t",date),arg("months",int),batarg("s",oid))),
- command("mtime", "local_timezone", MTIMElocal_timezone_msec, false, "get the local timezone in seconds", args(1,1, arg("",lng))),
+ command("mtime", "system_timezone", MTIMEsystem_timezone_msec, false, "get the local timezone in seconds", args(1,1, arg("",lng))),
  command("mtime", "century", MTIMEdate_extract_century, false, "extracts century from date.", args(1,2, arg("",int),arg("d",date))),
  pattern("batmtime", "century", MTIMEdate_extract_century_bulk, false, "", args(1,2, batarg("",int),batarg("d",date))),
  pattern("batmtime", "century", MTIMEdate_extract_century_bulk, false, "", args(1,3, batarg("",int),batarg("d",date),batarg("s",oid))),

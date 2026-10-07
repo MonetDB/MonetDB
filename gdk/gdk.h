@@ -569,6 +569,7 @@ typedef struct QryCtx {
 	ATOMIC_TYPE datasize;
 	ATOMIC_BASE_TYPE maxmem;
 	allocator *errorallocator;
+	int timezone;		/* milliseconds West of UTC */
 	bool pipeline_mode;
 } QryCtx;
 
@@ -591,7 +592,13 @@ gdk_export void MT_exiting_thread(void);
 gdk_export MT_Id MT_getpid(void);
 gdk_export int MT_join_thread(MT_Id t);
 gdk_export QryCtx *MT_thread_get_qry_ctx(void);
-gdk_export void MT_thread_set_qry_ctx(QryCtx *ctx);
+gdk_export void MT_thread_set_qry_ctx(QryCtx *qc);
+static inline int
+MT_get_timezone(void)
+{
+	QryCtx *qc = MT_thread_get_qry_ctx();
+	return qc ? qc->timezone : 0;
+}
 gdk_export char *GDKgetbuf(void);
 
 #if SIZEOF_VOID_P == 4

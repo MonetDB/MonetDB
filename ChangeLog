@@ -1,6 +1,11 @@
 # ChangeLog file for devel
 # This file is updated with Maddlog
 
+* Tue Oct  6 2026 Sjoerd Mullender <sjoerd@acm.org>
+- The function sys.local_timezone() has been renamed to
+  sys.system_timezone() since it returns the time zone of the server.
+  To get the client's time zone, use sys.current_timezone.
+
 * Mon Sep 28 2026 Sjoerd Mullender <sjoerd@acm.org>
 - The example udf extension module has been removed.  For example
   extensions, see https://www.monetdb.org/hg/MonetDB-extend/.  Note that
