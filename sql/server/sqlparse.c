@@ -106,7 +106,6 @@ mvc_new( bstream *rs, stream *ws) {
 	m->sym = NULL;
 
 	m->role_id = m->user_id = -1;
-	m->timezone = 0;
 	m->sql_optimizer = INT_MAX;
 	m->clientid = 0;
 	m->div_min_scale = 3;
@@ -371,7 +370,7 @@ sp_symbol2string(allocator *ta, mvc *sql, symbol *se, int expression, char **err
 	case SQL_ATOM:{
 		AtomNode *an = (AtomNode *) se;
 		if (an && an->a)
-			return atom2sql(ta, an->a, sql->timezone);
+			return atom2sql(ta, an->a, 0);
 		else
 			return "NULL";
 	}
@@ -538,6 +537,9 @@ main(int argc, char *argv[])
 
 	mnstr_init();
 
+	allocator *ta = create_allocator("sqlparse", false);
+	MT_thread_setallocator(ta);
+
 	stream *f = open_rstream(argv[optind]);
 	if (!f) {
 		printf("ERROR: Failed to open file '%s'\n", argv[optind]);
@@ -555,7 +557,7 @@ main(int argc, char *argv[])
 	/* read some data */
 	if (bstream_next(rs) < 0)
 		return -4;
-	allocator *ta = MT_thread_getallocator();
+	ta = MT_thread_getallocator();
 	allocator_state ta_state = ma_open(ta);
 	while ((err = sqlparse(m)) == 0 && m->scanner.rs->pos < m->scanner.rs->len) {
 		ma_close(&ta_state);

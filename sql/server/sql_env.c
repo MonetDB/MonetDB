@@ -69,7 +69,8 @@ sql_update_var(mvc *m, sql_schema *s, const char *name, const ValRecord *ptr)
 			if (/* DISABLES CODE */ (0) && strcmp(name, "debug") == 0) {
 				m->debug = (int) sgn;
 			} else if (strcmp(name, "current_timezone") == 0) {
-				m->timezone = (int) sgn;
+				QryCtx *qc = MT_thread_get_qry_ctx();
+				qc->timezone = (int) sgn;
 			} else if (strcmp(name, "division_min_scale") == 0) {
 				if (sgn >= 0)
 					m->div_min_scale = (unsigned int) sgn;

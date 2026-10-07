@@ -1057,6 +1057,7 @@ convert2str(allocator *ma, mvc *m, sql_class eclass, int d, int sc, int has_tz, 
 {
 	ssize_t l = 0;
 
+	(void) m;
 	if (!p || ATOMeq(mtype, ATOMnilptr(mtype), p)) {
 		(*buf)[0] = '\200';
 		(*buf)[1] = 0;
@@ -1066,13 +1067,13 @@ convert2str(allocator *ma, mvc *m, sql_class eclass, int d, int sc, int has_tz, 
 		struct time_res ts_res;
 		ts_res.has_tz = has_tz;
 		ts_res.fraction = d ? d - 1 : 0;
-		ts_res.timezone = m->timezone;
+		ts_res.timezone = MT_get_timezone();
 		l = sql_time_tostr(ma, (void *) &ts_res, buf, len, mtype, p);
 	} else if (eclass == EC_TIMESTAMP || eclass == EC_TIMESTAMP_TZ) {
 		struct time_res ts_res;
 		ts_res.has_tz = has_tz;
 		ts_res.fraction = d ? d - 1 : 0;
-		ts_res.timezone = m->timezone;
+		ts_res.timezone = MT_get_timezone();
 		l = sql_timestamp_tostr(ma, (void *) &ts_res, buf, len, mtype, p);
 	} else if (eclass == EC_SEC) {
 		l = dec_tostr(ma, (void *) (ptrdiff_t) 3, buf, len, mtype, p);
@@ -1114,7 +1115,7 @@ export_value(mvc *m, stream *s, sql_class eclass, const char *sqlname, int d, in
 		struct time_res ts_res;
 		ts_res.has_tz = (strcmp(sqlname, "timetz") == 0);
 		ts_res.fraction = d ? d - 1 : 0;
-		ts_res.timezone = m->timezone;
+		ts_res.timezone = MT_get_timezone();
 		l = sql_time_tostr(m->sa, (void *) &ts_res, buf, len, mtype, p);
 		if (l >= 0 && mnstr_write(s, *buf, l, 1) < 1)
 			ok = -4;
@@ -1122,7 +1123,7 @@ export_value(mvc *m, stream *s, sql_class eclass, const char *sqlname, int d, in
 		struct time_res ts_res;
 		ts_res.has_tz = (strcmp(sqlname, "timestamptz") == 0);
 		ts_res.fraction = d ? d - 1 : 0;
-		ts_res.timezone = m->timezone;
+		ts_res.timezone = MT_get_timezone();
 		l = sql_timestamp_tostr(m->sa, (void *) &ts_res, buf, len, mtype, p);
 		if (l >= 0 && mnstr_write(s, *buf, l, 1) < 1)
 			ok = -4;
@@ -1330,7 +1331,7 @@ mvc_export_table_(allocator *sa, mvc *m, int output_format, stream *s, res_table
 			struct time_res *ts_res = tres + (i - 1);
 			ts_res->has_tz = EC_TEMP_TZ(c->type.type->eclass);
 			ts_res->fraction = c->type.digits ? c->type.digits - 1 : 0;
-			ts_res->timezone = m->timezone;
+			ts_res->timezone = MT_get_timezone();
 
 			fmt[i].tostr = &sql_timestamp_tostr;
 			fmt[i].frstr = NULL;
@@ -1339,7 +1340,7 @@ mvc_export_table_(allocator *sa, mvc *m, int output_format, stream *s, res_table
 			struct time_res *ts_res = tres + (i - 1);
 			ts_res->has_tz = (strcmp(c->type.type->base.name, "timetz") == 0);
 			ts_res->fraction = c->type.digits ? c->type.digits - 1 : 0;
-			ts_res->timezone = m->timezone;
+			ts_res->timezone = MT_get_timezone();
 
 			fmt[i].tostr = &sql_time_tostr;
 			fmt[i].frstr = NULL;

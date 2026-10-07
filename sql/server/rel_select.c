@@ -3231,7 +3231,7 @@ rel_unop_(mvc *sql, sql_rel *rel, sql_exp *e, char *sname, char *fname, int card
 	if (f && t && type_has_tz(t) && f->func->fix_scale == SCALE_FIX) {
 		/* set timezone (using msec (.3)) */
 		sql_subtype *intsec = sql_bind_subtype(sql->sa, "sec_interval", 10 /*hour to second */, 3);
-		atom *a = atom_int(sql->sa, intsec, sql->timezone);
+		atom *a = atom_int(sql->sa, intsec, MT_get_timezone());
 		sql_exp *tz = exp_atom(sql->sa, a);
 
 		e = rel_binop_(sql, rel, e, tz, "sys", "sql_add", card, true);
