@@ -9125,6 +9125,9 @@ dict	join	pattern dict.join(X_0:bat[:any], X_1:bat[:any_1], X_2:bat[:any], X_3:b
 dict	renumber	pattern dict.renumber(X_0:bat[:any_1], X_1:bat[:any_1]):bat[:any_1]	DICTrenumber	renumber offsets
 dict	select	pattern dict.select(X_0:bat[:any], X_1:bat[:oid], X_2:bat[:any_1], X_3:any_1, X_4:any_1, X_5:bit, X_6:bit, X_7:bit, X_8:bit):bat[:oid]	DICTselect	value - range select on a dictionary
 dict	thetaselect	pattern dict.thetaselect(X_0:bat[:any], X_1:bat[:oid], X_2:bat[:any_1], X_3:any_1, X_4:str):bat[:oid]	DICTthetaselect	thetaselect on a dictionary
+fhash	build	pattern fhash.build(X_0:bat[:any_1], X_1:bit) (X_2:bat[:oid], X_3:bat[:any_1])	FHASHbuild	Add `keys` to the `hashtable`. If `need_has_nil`, denote if `keys` contains NULL. Returns corresponding `gids` of the `keys` and the updated `hashtable`
+fhash	new	pattern fhash.new(X_0:any_1, X_1:lng, X_2:lng):bat[:any_1]	FHASHnew	(empty)
+fhash	probe	command fhash.probe(X_0:bat[:any_1], X_1:bat[:any_1], X_2:bit, X_3:bit) (X_4:bat[:oid], X_5:bat[:oid])	FHASHprobe	Probe the `key` in the hash table. For a matched key, return its OID in the 'key' column and the slot ID in the hash table
 fits	attach	unsafe pattern fits.attach(X_0:str):void	FITSattach	Open a FITS file and return catalog of the table HDUs
 fits	export	pattern fits.export(X_0:str):void	FITSexportTable	Export a table to a FITS file
 fits	fitstest	command fits.fitstest(X_0:str):int	FITStest	Returns the type of first extension in the FITS file filename
@@ -10112,10 +10115,6 @@ oahash	hash	pattern oahash.hash(X_0:any_1):lng	OAHASHhash	Compute hash.
 oahash	hashmark_init	command oahash.hashmark_init(X_0:bat[:any_1], X_1:bat[:any_2]):bat[:bit]	OAHASHhashmark_init	(empty)
 oahash	mprobe	command oahash.mprobe(X_0:bat[:any_1], X_1:bat[:any_1], X_2:bit, X_3:bit) (X_4:bat[:oid], X_5:bat[:oid], X_6:bat[:bit])	OAHASHmprobe	Probe the `key`-s in the hash table. For a matched key, return its OID in the 'key' column and the slot ID in the hash table
 oahash	mprobe	command oahash.mprobe(X_0:bat[:any_1], X_1:bat[:any_1], X_2:bat[:lng], X_3:bit, X_4:bit) (X_5:bat[:oid], X_6:bat[:oid], X_7:bat[:bit])	OAHASHmprobe_single	Probe the `key`-s in the hash table. For a matched key, return its OID in the 'key' column and the slot ID in the hash table
-oahash	new	pattern oahash.new(X_0:any_1, X_1:int):bat[:any_1]	OAHASHnew	(empty)
-oahash	new	pattern oahash.new(X_0:any_1, X_1:int, X_2:bat[:any_2]):bat[:any_1]	OAHASHnew	(empty)
-oahash	new	pattern oahash.new(X_0:any_1, X_1:int, X_2:bat[:any_2], X_3:int):bat[:any_1]	OAHASHnew	(empty)
-oahash	new	pattern oahash.new(X_0:any_1, X_1:int, X_2:int):bat[:any_1]	OAHASHnew	(empty)
 oahash	new	pattern oahash.new(X_0:any_1, X_1:lng):bat[:any_1]	OAHASHnew	(empty)
 oahash	new	pattern oahash.new(X_0:any_1, X_1:lng, X_2:bat[:any_2]):bat[:any_1]	OAHASHnew	(empty)
 oahash	new	pattern oahash.new(X_0:any_1, X_1:lng, X_2:bat[:any_2], X_3:int):bat[:any_1]	OAHASHnew	(empty)

@@ -74,6 +74,8 @@ rel_base_idx_nid(sql_rel *r, sql_idx *i)
 sql_column*
 rel_base_find_column(sql_rel *r, int nid)
 {
+	if (!r)
+		return NULL;
 	rel_base_t *ba = r->r;
 	sql_table *b = r->l;
 	nid = -nid;

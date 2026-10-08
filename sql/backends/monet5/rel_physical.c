@@ -424,34 +424,11 @@ rel_groupby_partition_safe(sql_rel *rel)
 }
 
 static int
-do_oahash_join(visitor *v, sql_rel *rel, int *side)
+do_oahash_join(sql_rel *rel)
 {
 	if (!MT_thread_get_qry_ctx()->pipeline_mode)
 		return 0;
 
-	/* fetch join */
-	if (is_innerjoin(rel->op) && list_length(rel->exps) == 1 /* single JOINIDX */) {
-		sql_rel *l = rel->l;
-		sql_rel *r = rel->r;
-		list *exps = rel->exps;
-		sql_exp *je = exps->h->data;
-		prop *p = find_prop(je->p, PROP_JOINIDX);
-		if (p && (is_basetable(l->op) || is_basetable(r->op))) { /* only use join idx on direct basetable access */
-			sql_idx *idx = p->value.pval;
-			sql_table *lt = l->l, *rt = r->l;
-			sql_trans *tr = v->sql->session->tr;
-			sql_key *rk = (sql_key*)os_find_id(tr->cat->objects, tr, ((sql_fkey*)idx->key)->rkey);
-			if (rk && is_basetable(l->op) && lt == rk->t) {
-				*side = 2; /* primary left, ie continue with right hand side */
-				return 0;
-			}
-
-			if (rk && is_basetable(r->op) && rt == rk->t) {
-				*side = 1; /* primary right, ie continue with left hand side */
-				return 0;
-			}
-		}
-	}
 	// TODO groupjoin other then mark/exist
 	if (list_length(rel->attr) == 1) {
 		sql_exp *e = rel->attr->h->data;
@@ -1006,8 +983,7 @@ rel_pipeline(visitor *v, sql_rel *rel, bool materialize, int pb)
 		if (is_delete(rel->op) && !rel->r && pb)
 			rel_dup(rel);
 	} else if (is_join(rel->op)) {
-		int side = 0;
-		if (do_oahash_join(v, rel, &side)) {
+		if (do_oahash_join(rel)) {
 			list *eq_exps = sa_list(v->sql->sa);
 			list *other = sa_list(v->sql->sa);
 			if (!list_empty(rel->attr))
@@ -1133,12 +1109,6 @@ rel_pipeline(visitor *v, sql_rel *rel, bool materialize, int pb)
 			if (pb)
 				rel->spb = 1;
 			res = SPB;
-		} else if (pb && side) { /* handle fetch join */
-			rel->partition = side;
-			if (side == 1)
-				res = rel_pipeline(v, rel->l, false, pb);
-			else
-				res = rel_pipeline(v, rel->r, false, pb);
 		}
 	} else if (is_ddl(rel->op)) {
 		if (rel->flag == ddl_output || rel->flag == ddl_create_seq || rel->flag == ddl_alter_seq || rel->flag == ddl_alter_table || rel->flag == ddl_create_table || rel->flag == ddl_create_view) {

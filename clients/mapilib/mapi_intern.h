@@ -275,7 +275,8 @@ void mapi_clrError(Mapi mid)
 MapiMsg mapi_setError(Mapi mid, const char *msg, const char *action, MapiMsg error)
 	__attribute__((__nonnull__(2, 3)));
 MapiMsg mapi_printError(Mapi mid, const char *action, MapiMsg error, _In_z_ _Printf_format_string_ const char *fmt, ...)
-	__attribute__((__nonnull__(2))) __attribute__((__format__(__printf__, 4, 5)));
+	__attribute__((__nonnull__(2)))
+	__attribute__((__format__(__printf__, 4, 5)));
 
 void mapi_impl_log_data(Mapi mid, const char *filename, long line, const char *mark, const char *data, size_t len);
 void mapi_impl_log_record(Mapi mid, const char *filename, long line, const char *mark, _In_z_ _Printf_format_string_ const char *fmt, ...)

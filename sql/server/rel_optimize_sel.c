@@ -1494,28 +1494,6 @@ find_join_rels(list **L, list **R, list *exps, list *rels)
 	return 0;
 }
 
-static sql_rel *
-find_basetable( sql_rel *r)
-{
-	if (!r)
-		return NULL;
-	switch(r->op) {
-	case op_basetable:
-		if (!r->l)
-			return NULL;
-		return r;
-	case op_semi:
-	case op_anti:
-	case op_project:
-	case op_select:
-	case op_topn:
-	case op_sample:
-		return find_basetable(r->l);
-	default:
-		return NULL;
-	}
-}
-
 static int
 sql_column_kc_cmp(sql_column *c, sql_kc *kc)
 {
@@ -3476,9 +3454,11 @@ order_joins_bushy2( visitor *v, list *rels, list *exps)
 		BUN min = get_rel_count(rels->h->data);
 		sql_rel *cur = rels->h->data;
 		for(node *n = rels->h; n; n = n->next, ci++) {
-			BUN cnt = get_rel_count(n->data);
+			sql_rel *r = n->data;
+			BUN cnt = get_rel_count(r);
+
 			if (cnt < min) {
-				cur = n->data;
+				cur = r;
 				min = cnt;
 				cur_nr = ci;
 			}
@@ -3505,7 +3485,10 @@ order_joins_bushy2( visitor *v, list *rels, list *exps)
 			if (cje) {
 				int oside = (r1[cje->tmp] == cur_nr) ? r2[cje->tmp] : r1[cje->tmp];
 				sql_rel *r = rels_a[oside], *l = cur;
-				cur = rel_crossproduct(v->sql->sa, l, r, op_join);
+				if (rel_rebind_exp(v->sql, l, cje->l))
+					cur = rel_crossproduct(v->sql->sa, l, r, op_join);
+				else
+					cur = rel_crossproduct(v->sql->sa, r, l, op_join);
 				rel_join_add_exp(v->sql->sa, cur, cje);
 				je_append(used_exps, cje);
 				for(int i = 0; i<nr_rels+1; i++) {

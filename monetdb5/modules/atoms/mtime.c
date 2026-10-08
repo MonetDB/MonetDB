@@ -68,7 +68,7 @@ MTIMEcurrent_timestamp(Client ctx, timestamp *ret)
 
 #define is_str_nil strNil
 
-#define MTIME_STR_BUFFER_LENGTH MAX(strlen(str_nil) + 1, 512)
+#define MTIME_STR_BUFFER_LENGTH 512
 
 
 #define DEC_VAR_R(TYPE, ARG) TYPE *restrict ptr##ARG
@@ -77,11 +77,12 @@ MTIMEcurrent_timestamp(Client ctx, timestamp *ret)
 
 #define DEC_ITER(TYPE, ARG)
 
-#define DEC_BUFFER(OUTTYPE, RES, MALFUNC) \
-	OUTTYPE RES = ma_alloc(ma, MTIME_STR_BUFFER_LENGTH); \
-	if (!res) {	\
-		msg = createException(MAL, "batmtime." MALFUNC, SQLSTATE(HY013) MAL_MALLOC_FAIL); \
-		goto bailout; \
+#define DEC_BUFFER(OUTTYPE, RES, MALFUNC)						\
+	OUTTYPE RES = ma_alloc(ma, MTIME_STR_BUFFER_LENGTH);		\
+	if (!res) {													\
+		msg = createException(MAL, "batmtime." MALFUNC,			\
+							  SQLSTATE(HY013) MAL_MALLOC_FAIL);	\
+		goto bailout;											\
 	}
 
 #define DEC_INT(OUTTYPE, RES, MALFUNC) OUTTYPE RES = (OUTTYPE){0}
@@ -94,10 +95,11 @@ MTIMEcurrent_timestamp(Client ctx, timestamp *ret)
 
 #define GET_NEXT_VAR(ARG, OFF) ptr##ARG[OFF]
 
-#define APPEND_STR(MALFUNC) \
-	if (tfastins_nocheckVAR(bn, i, res) != GDK_SUCCEED) { \
-		msg = createException(SQL, "batmtime." MALFUNC, SQLSTATE(HY013) MAL_MALLOC_FAIL); \
-		break; \
+#define APPEND_STR(MALFUNC)										\
+	if (tfastins_nocheckVAR(bn, i, res) != GDK_SUCCEED) {		\
+		msg = createException(SQL, "batmtime." MALFUNC,			\
+							  SQLSTATE(HY013) MAL_MALLOC_FAIL); \
+		break;													\
 	}
 
 #define GET_NEXT_ITER(ARG, OFF) BUNtvar(&b##ARG##i, OFF)
@@ -105,11 +107,12 @@ MTIMEcurrent_timestamp(Client ctx, timestamp *ret)
 #define DEC_NOTHING(TYPE, ARG)
 #define INIT_NOTHING(ARG)
 
-#define FINISH_BUFFER_SINGLE(MALFUNC) \
-bailout: \
-	*ret = NULL; \
-	if (!msg && res && !(*ret = ma_strdup(ma, res))) \
-		msg = createException(MAL, "batmtime." MALFUNC, SQLSTATE(HY013) MAL_MALLOC_FAIL);
+#define FINISH_BUFFER_SINGLE(MALFUNC)							\
+  bailout:														\
+	*ret = NULL;												\
+	if (!msg && res && !(*ret = ma_strdup(ma, res)))			\
+		msg = createException(MAL, "batmtime." MALFUNC,			\
+							  SQLSTATE(HY013) MAL_MALLOC_FAIL);
 
 #define FINISH_INT_SINGLE(MALFUNC)	do { *ret = res; } while (0)
 
@@ -118,8 +121,13 @@ bailout: \
 #define CLEAR_NOTHING(RES)
 
 
-#define COPYFLAGS(n)	do { bn->tsorted = b1i.sorted; bn->trevsorted = b1i.revsorted; } while (0)
-#define SETFLAGS(n)	do { bn->tsorted = bn->trevsorted = n < 2; } while (0)
+#define COPYFLAGS(n)							\
+	do {										\
+		bn->tsorted = b1i.sorted;				\
+		bn->trevsorted = b1i.revsorted;			\
+	} while (0)
+#define SETFLAGS(n)	do { bn->tsorted = bn->trevsorted = (n) < 2; } while (0)
+
 #define func1(NAME, MALFUNC, INTYPE, OUTTYPE,							\
 			  FUNC, SETFLAGS, FUNC_CALL,								\
 			  DEC_SRC, DEC_OUTPUT,										\
@@ -131,7 +139,7 @@ NAME(Client ctx, OUTTYPE *ret, const INTYPE *src)						\
 	(void) ma;															\
 	str msg = MAL_SUCCEED;												\
 	do {																\
-		FUNC_CALL(FUNC, (*ret), *src);									\
+		FUNC_CALL(FUNC, *ret, *src);									\
 	} while (0);														\
 	return msg;															\
 }																		\
@@ -209,7 +217,8 @@ bailout:																\
 }
 
 #define func1_noexcept(FUNC, RET, PARAM) RET = FUNC(PARAM)
-#define func1_except(FUNC, RET, PARAM) msg = FUNC(ma, &RET, PARAM); if (msg) break
+#define func1_except(FUNC, RET, PARAM)			\
+	msg = FUNC(ma, &RET, PARAM); if (msg) break
 
 #define func2(NAME, MALFUNC,											\
 			  INTYPE1, INTYPE2, OUTTYPE, FUNC, FUNC_CALL,				\
@@ -279,7 +288,8 @@ NAME##_bulk(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)	\
 			  "inputs not the same size");								\
 		goto bailout;													\
 	}																	\
-	if ((bn = COLnew(ci1.hseq, TYPE_##OUTTYPE, ci1.ncand, TRANSIENT)) == NULL) { \
+	if ((bn = COLnew(ci1.hseq, TYPE_##OUTTYPE,							\
+					 ci1.ncand, TRANSIENT)) == NULL) {					\
 		msg = createException(MAL, "batmtime." MALFUNC,					\
 			  SQLSTATE(HY013) MAL_MALLOC_FAIL);							\
 		goto bailout;													\
@@ -363,7 +373,8 @@ NAME##_bulk_p1(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)	\
 		goto bailout;													\
 	}																	\
 	canditer_init(&ci2, b2, s2);										\
-	if ((bn = COLnew(ci2.hseq, TYPE_##OUTTYPE, ci2.ncand, TRANSIENT)) == NULL) { \
+	if ((bn = COLnew(ci2.hseq, TYPE_##OUTTYPE,							\
+					 ci2.ncand, TRANSIENT)) == NULL) {					\
 		msg = createException(MAL, "batmtime." MALFUNC,					\
 			  SQLSTATE(HY013) MAL_MALLOC_FAIL);							\
 		goto bailout;													\
@@ -443,7 +454,8 @@ NAME##_bulk_p2(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)	\
 		goto bailout;													\
 	}																	\
 	canditer_init(&ci1, b1, s1);										\
-	if ((bn = COLnew(ci1.hseq, TYPE_##OUTTYPE, ci1.ncand, TRANSIENT)) == NULL) { \
+	if ((bn = COLnew(ci1.hseq, TYPE_##OUTTYPE,							\
+					 ci1.ncand, TRANSIENT)) == NULL) {					\
 		msg = createException(MAL, "batmtime." MALFUNC,					\
 			  SQLSTATE(HY013) MAL_MALLOC_FAIL);							\
 		goto bailout;													\
@@ -491,7 +503,8 @@ bailout:																\
 }
 
 #define func2_noexcept(FUNC, RET, PARAM1, PARAM2) RET = FUNC(PARAM1, PARAM2)
-#define func2_except(FUNC, RET, PARAM1, PARAM2) msg = FUNC(&RET, PARAM1, PARAM2); if (msg) break
+#define func2_except(FUNC, RET, PARAM1, PARAM2)			\
+	msg = FUNC(&RET, PARAM1, PARAM2); if (msg) break
 
 #define func3(NAME, MALFUNC,											\
 			  INTYPE1, INTYPE2, OUTTYPE, FUNC, FUNC_CALL,				\
@@ -500,9 +513,10 @@ bailout:																\
 			  GET_NEXT_SRC1, GET_NEXT_SRC2,								\
 			  APPEND_NEXT, CLEAR_EXTRA_SINGLE, CLEAR_EXTRA_MULTI)		\
 static str																\
-NAME(Client ctx, OUTTYPE *ret, const INTYPE1 *v1, const INTYPE2 *v2, const lng *extra) \
+NAME(Client ctx, OUTTYPE *ret, const INTYPE1 *v1, const INTYPE2 *v2,	\
+	 const lng *extra)													\
 {																		\
-	allocator *ma = ctx->curprg->def->ma;									\
+	allocator *ma = ctx->curprg->def->ma;								\
 	(void) ma;															\
 	str msg = MAL_SUCCEED;												\
 	DEC_EXTRA(OUTTYPE, res, MALFUNC);									\
@@ -529,7 +543,7 @@ NAME##_bulk(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)	\
 		*bid2 = getArgReference_bat(stk, pci, 2),						\
 		*sid1 = pci->argc == 6 ? getArgReference_bat(stk, pci, 3) : NULL, \
 		*sid2 = pci->argc == 6 ? getArgReference_bat(stk, pci, 4) : NULL; \
-	lng *extra = getArgReference_lng(stk, pci, pci->argc-1);						\
+	lng *extra = getArgReference_lng(stk, pci, pci->argc-1);			\
 	BATiter b1i, b2i = { .vh = NULL };									\
 	DEC_SRC1(INTYPE1, 1);												\
 	DEC_SRC2(INTYPE2, 2);												\
@@ -562,7 +576,8 @@ NAME##_bulk(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)	\
 			  "inputs not the same size");								\
 		goto bailout;													\
 	}																	\
-	if ((bn = COLnew(ci1.hseq, TYPE_##OUTTYPE, ci1.ncand, TRANSIENT)) == NULL) { \
+	if ((bn = COLnew(ci1.hseq, TYPE_##OUTTYPE,							\
+					 ci1.ncand, TRANSIENT)) == NULL) {					\
 		msg = createException(MAL, "batmtime." MALFUNC,					\
 			  SQLSTATE(HY013) MAL_MALLOC_FAIL);							\
 		goto bailout;													\
@@ -576,7 +591,8 @@ NAME##_bulk(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)	\
 		for (BUN i = 0; i < ci1.ncand; i++) {							\
 			oid p1 = (canditer_next_dense(&ci1) - off1);				\
 			oid p2 = (canditer_next_dense(&ci2) - off2);				\
-			FUNC_CALL(FUNC, res, GET_NEXT_SRC1(1, p1), GET_NEXT_SRC2(2, p2), *extra); \
+			FUNC_CALL(FUNC, res, GET_NEXT_SRC1(1, p1),					\
+					  GET_NEXT_SRC2(2, p2), *extra);					\
 			APPEND_NEXT(MALFUNC);										\
 			nils |= is_##OUTTYPE##_nil(res);							\
 		}																\
@@ -584,7 +600,8 @@ NAME##_bulk(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)	\
 		for (BUN i = 0; i < ci1.ncand; i++) {							\
 			oid p1 = (canditer_next(&ci1) - off1);						\
 			oid p2 = (canditer_next(&ci2) - off2);						\
-			FUNC_CALL(FUNC, res, GET_NEXT_SRC1(1, p1), GET_NEXT_SRC2(2, p2), *extra); \
+			FUNC_CALL(FUNC, res, GET_NEXT_SRC1(1, p1),					\
+					  GET_NEXT_SRC2(2, p2), *extra);					\
 			APPEND_NEXT(MALFUNC);										\
 			nils |= is_##OUTTYPE##_nil(res);							\
 		}																\
@@ -647,7 +664,8 @@ NAME##_bulk_p1(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)	\
 		goto bailout;													\
 	}																	\
 	canditer_init(&ci2, b2, s2);										\
-	if ((bn = COLnew(ci2.hseq, TYPE_##OUTTYPE, ci2.ncand, TRANSIENT)) == NULL) { \
+	if ((bn = COLnew(ci2.hseq, TYPE_##OUTTYPE,							\
+					 ci2.ncand, TRANSIENT)) == NULL) {					\
 		msg = createException(MAL, "batmtime." MALFUNC,					\
 			  SQLSTATE(HY013) MAL_MALLOC_FAIL);							\
 		goto bailout;													\
@@ -728,7 +746,8 @@ NAME##_bulk_p2(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)	\
 		goto bailout;													\
 	}																	\
 	canditer_init(&ci1, b1, s1);										\
-	if ((bn = COLnew(ci1.hseq, TYPE_##OUTTYPE, ci1.ncand, TRANSIENT)) == NULL) { \
+	if ((bn = COLnew(ci1.hseq, TYPE_##OUTTYPE,							\
+					 ci1.ncand, TRANSIENT)) == NULL) {					\
 		msg = createException(MAL, "batmtime." MALFUNC,					\
 			  SQLSTATE(HY013) MAL_MALLOC_FAIL);							\
 		goto bailout;													\
@@ -775,8 +794,10 @@ bailout:																\
 	return msg;															\
 }
 
-#define func3_noexcept(FUNC, RET, PARAM1, PARAM2, E) RET = FUNC(PARAM1, PARAM2, E)
-#define func3_except(FUNC, RET, PARAM1, PARAM2, E) msg = FUNC(&RET, PARAM1, PARAM2, E); if (msg) break
+#define func3_noexcept(FUNC, RET, PARAM1, PARAM2, E)	\
+	RET = FUNC(PARAM1, PARAM2, E)
+#define func3_except(FUNC, RET, PARAM1, PARAM2, E)		\
+	msg = FUNC(&RET, PARAM1, PARAM2, E); if (msg) break
 
 func2(MTIMEdate_diff, "diff",
 	  date, date, lng, date_diff_imp, func2_noexcept,
@@ -841,10 +862,10 @@ func2(MTIMEtime_add_msec_interval, "time_add_msec_interval", daytime, lng,
 	  daytime, time_add_msec_interval, func2_noexcept, DEC_VAR_R, DEC_VAR_R,
 	  DEC_VAR_R, DEC_INT, INIT_VARIN, INIT_VARIN, INIT_VAROUT, GET_NEXT_VAR,
 	  GET_NEXT_VAR, APPEND_VAR, FINISH_INT_SINGLE, CLEAR_NOTHING)
-func2(MTIMEdate_submonths, "date_sub_month_interval", date, int, date, date_submonths,
-	  func2_except, DEC_VAR_R, DEC_VAR_R, DEC_VAR_R, DEC_INT, INIT_VARIN,
-	  INIT_VARIN, INIT_VAROUT, GET_NEXT_VAR, GET_NEXT_VAR, APPEND_VAR,
-	  FINISH_INT_SINGLE, CLEAR_NOTHING)
+func2(MTIMEdate_submonths, "date_sub_month_interval", date, int,
+	  date, date_submonths, func2_except, DEC_VAR_R, DEC_VAR_R, DEC_VAR_R,
+	  DEC_INT, INIT_VARIN, INIT_VARIN, INIT_VAROUT, GET_NEXT_VAR, GET_NEXT_VAR,
+	  APPEND_VAR, FINISH_INT_SINGLE, CLEAR_NOTHING)
 func2(MTIMEdate_addmonths, "addmonths", date, int, date, date_addmonths,
 	  func2_except, DEC_VAR_R, DEC_VAR_R, DEC_VAR_R, DEC_INT, INIT_VARIN,
 	  INIT_VARIN, INIT_VAROUT, GET_NEXT_VAR, GET_NEXT_VAR, APPEND_VAR,
@@ -894,10 +915,10 @@ func1(MTIMEdaytime_extract_sql_seconds, "sql_seconds", daytime, int,
 func1(MTIMEdaytime_extract_epoch_ms, "epoch_ms", daytime, lng,
 	  daytime_to_msec_since_epoch, COPYFLAGS, func1_noexcept, DEC_VAR_R,
 	  DEC_VAR_R, INIT_VARIN, INIT_VAROUT, GET_NEXT_VAR)
-func2(MTIMEtimestamp_diff_msec, "diff", timestamp, timestamp, lng, TSDIFF,
-	  func2_noexcept, DEC_VAR, DEC_VAR, DEC_VAR_R, DEC_INT, INIT_VARIN,
-	  INIT_VARIN, INIT_VAROUT, GET_NEXT_VAR, GET_NEXT_VAR, APPEND_VAR,
-	  FINISH_INT_SINGLE, CLEAR_NOTHING)
+func2(MTIMEtimestamp_diff_msec, "diff", timestamp, timestamp, lng,
+	  timestamp_diff_msec, func2_noexcept, DEC_VAR, DEC_VAR, DEC_VAR_R,
+	  DEC_INT, INIT_VARIN, INIT_VARIN, INIT_VAROUT, GET_NEXT_VAR,
+	  GET_NEXT_VAR, APPEND_VAR, FINISH_INT_SINGLE, CLEAR_NOTHING)
 func1(MTIMEtimestamp_century, "century", timestamp, int,
 	  timestamp_century, COPYFLAGS, func1_noexcept, DEC_VAR_R, DEC_VAR_R,
 	  INIT_VARIN, INIT_VAROUT, GET_NEXT_VAR)
@@ -947,6 +968,7 @@ func1(MTIMEsql_seconds, "seconds", lng, int, sql_seconds, SETFLAGS,
 func1(MTIMEmsec_extract_epoch_ms, "epoch_ms", lng, lng, msec_since_epoch,
 	  COPYFLAGS, func1_noexcept, DEC_VAR_R, DEC_VAR_R, INIT_VARIN, INIT_VAROUT,
 	  GET_NEXT_VAR)
+
 static inline str
 date_fromstr_func(allocator *ma, date *ret, const char *s)
 {
@@ -963,7 +985,9 @@ date_fromstr_func(allocator *ma, date *ret, const char *s)
 func1(MTIMEdate_fromstr, "date", char * const, date,
 	  date_fromstr_func, SETFLAGS, func1_except,
 	  DEC_ITER, DEC_VAR_R, INIT_ITERIN, INIT_VAROUT, GET_NEXT_ITER)
-#define date_date(m) m
+
+#define date_date(m) (m)
+
 func1(MTIMEdate_date, "date", date, date,
 	  date_date, COPYFLAGS, func1_noexcept,
 	  DEC_VAR_R, DEC_VAR_R, INIT_VARIN, INIT_VAROUT, GET_NEXT_VAR)
@@ -971,11 +995,11 @@ func1(MTIMEtimestamp_extract_date, "date", timestamp, date,
 	  timestamp_date, COPYFLAGS, func1_noexcept,
 	  DEC_VAR_R, DEC_VAR_R, INIT_VARIN, INIT_VAROUT, GET_NEXT_VAR)
 
+__attribute__((__const__))
 static inline date
 timestamp_tz_date(timestamp ts, lng tz_msec)
 {
-	ts = timestamp_add_usec(ts, tz_msec * LL_CONSTANT(1000));
-	return timestamp_date(ts);
+	return timestamp_date(timestamp_add_usec(ts, tz_msec * 1000));
 }
 
 func2(MTIMEtimestamp_tz_extract_date, "date",
@@ -987,7 +1011,7 @@ func2(MTIMEtimestamp_tz_extract_date, "date",
 static inline str
 timestamp_fromstr_func(allocator *ma, timestamp *ret, const char *s)
 {
-	if (timestamp_fromstr(ma, s, &(size_t) { sizeof(timestamp) }, &ret, false) < 0)
+	if (timestamp_fromstr(ma, s, &(size_t){sizeof(timestamp)}, &ret, false) < 0)
 		throw(MAL, "mtime.timestamp_fromstr", GDK_EXCEPTION);
 	return MAL_SUCCEED;
 }
@@ -995,26 +1019,56 @@ timestamp_fromstr_func(allocator *ma, timestamp *ret, const char *s)
 func1(MTIMEtimestamp_fromstr, "timestamp", char * const, timestamp,
 	  timestamp_fromstr_func, SETFLAGS, func1_except,
 	  DEC_ITER, DEC_VAR_R, INIT_ITERIN, INIT_VAROUT, GET_NEXT_ITER)
-#define timestamp_timestamp(m) m
+
+#define timestamp_timestamp(m) (m)
+
 func1(MTIMEtimestamp_timestamp, "timestamp", timestamp, timestamp,
 	  timestamp_timestamp, COPYFLAGS, func1_noexcept,
 	  DEC_VAR_R, DEC_VAR_R, INIT_VARIN, INIT_VAROUT, GET_NEXT_VAR)
-#define mkts(dt)	timestamp_create(dt, daytime_create(0, 0, 0, 0))
+
+__attribute__((__const__))
+static inline timestamp
+mkts(date dt)
+{
+	return timestamp_create(dt, daytime_create(0, 0, 0, 0));
+}
+
+
 func1(MTIMEtimestamp_fromdate, "timestamp", date, timestamp,
 	  mkts, COPYFLAGS, func1_noexcept,
 	  DEC_VAR_R, DEC_VAR_R, INIT_VARIN, INIT_VAROUT, GET_NEXT_VAR)
-#define seconds_since_epoch(t) is_timestamp_nil(t) ? int_nil : (int) (timestamp_diff(t, unixepoch) / 1000000);
+
+__attribute__((__const__))
+static inline int
+seconds_since_epoch(timestamp t)
+{
+	return is_timestamp_nil(t)
+		? int_nil
+		: (int) (timestamp_diff(t, unixepoch) / 1000000);
+}
+
 func1(MTIMEseconds_since_epoch, "epoch", timestamp, int,
 	  seconds_since_epoch, COPYFLAGS, func1_noexcept,
 	  DEC_VAR_R, DEC_VAR_R, INIT_VARIN, INIT_VAROUT, GET_NEXT_VAR)
-#define mktsfromsec(sec)	(is_int_nil(sec) ?							\
-							 timestamp_nil :							\
-							 timestamp_add_usec(unixepoch,				\
-												(sec) * LL_CONSTANT(1000000)))
-#define mktsfrommsec(msec)	(is_lng_nil(msec) ?							\
-							 timestamp_nil :							\
-							 timestamp_add_usec(unixepoch,				\
-												(msec) * LL_CONSTANT(1000)))
+
+__attribute__((__const__))
+static inline timestamp
+mktsfromsec(int sec)
+{
+	return (is_int_nil(sec)
+			? timestamp_nil
+			: timestamp_add_usec(unixepoch, sec * LL_CONSTANT(1000000)));
+}
+
+__attribute__((__const__))
+static inline timestamp
+mktsfrommsec(lng msec)
+{
+	return (is_lng_nil(msec)
+			? timestamp_nil
+			: timestamp_add_usec(unixepoch, msec * LL_CONSTANT(1000)));
+}
+
 /* TODO later I have to remove this call */
 func1(MTIMEtimestamp_fromsecond_epoch, "epoch", int,
 	  timestamp, mktsfromsec, COPYFLAGS, func1_noexcept, DEC_VAR_R, DEC_VAR_R,
@@ -1029,6 +1083,7 @@ func1(MTIMEtimestamp_frommsec_epoch, "epoch", lng, timestamp,
 func1(MTIMEtimestamp_frommsec, "timestamp", lng, timestamp,
 	  mktsfrommsec, COPYFLAGS, func1_noexcept,
 	  DEC_VAR_R, DEC_VAR_R, INIT_VARIN, INIT_VAROUT, GET_NEXT_VAR)
+
 static inline str
 daytime_fromstr_func(allocator *ma, daytime *ret, const char *s)
 {
@@ -1040,10 +1095,13 @@ daytime_fromstr_func(allocator *ma, daytime *ret, const char *s)
 func1(MTIMEdaytime_fromstr, "daytime", char * const, daytime,
 	  daytime_fromstr_func, SETFLAGS, func1_except,
 	  DEC_ITER, DEC_VAR_R, INIT_ITERIN, INIT_VAROUT, GET_NEXT_ITER)
-#define daytime_daytime(m) m
+
+#define daytime_daytime(m) (m)
+
 func1(MTIMEdaytime_daytime, "daytime", daytime, daytime,
 	  daytime_daytime, COPYFLAGS, func1_noexcept,
 	  DEC_VAR_R, DEC_VAR_R, INIT_VARIN, INIT_VAROUT, GET_NEXT_VAR)
+
 static inline str
 daytime_fromseconds(allocator *ma, daytime *ret, lng secs)
 {
@@ -1064,6 +1122,7 @@ func1(MTIMEdaytime_fromseconds, "daytime", lng, daytime,
 func1(MTIMEtimestamp_extract_daytime, "daytime", timestamp,
 	  daytime, timestamp_daytime, SETFLAGS, func1_noexcept, DEC_VAR_R,
 	  DEC_VAR_R, INIT_VARIN, INIT_VAROUT, GET_NEXT_VAR)
+
 /* return current system time zone offset in seconds East of Greenwich */
 static int
 system_timezone(int *isdstp)
@@ -1141,8 +1200,9 @@ MTIMEsystem_timezone_msec(Client ctx, lng *ret)
 }
 
 static str
-timestamp_to_str_withtz(str *buf, const timestamp *d, const char *const *format, const char *type,
-				 const char *malfunc, long gmtoff)
+timestamp_to_str_withtz(str *buf, const timestamp *d,
+						const char *const *format, const char *type,
+						const char *malfunc, long gmtoff)
 {
 	date dt;
 	daytime t;
@@ -1172,15 +1232,15 @@ timestamp_to_str_withtz(str *buf, const timestamp *d, const char *const *format,
 }
 
 static str
-timestamp_to_str(str *buf, const timestamp *d, const char *const *format, const char *type,
-				 const char *malfunc)
+timestamp_to_str(str *buf, const timestamp *d, const char *const *format,
+				 const char *type, const char *malfunc)
 {
 	return timestamp_to_str_withtz( buf, d, format, type, malfunc, 0);
 }
 
 static str
-timestamptz_to_str(str *buf, const timestamp *d, const char *const *format, const char *type,
-				 const char *malfunc, long gmtoff)
+timestamptz_to_str(str *buf, const timestamp *d, const char *const *format,
+				   const char *type, const char *malfunc, long gmtoff)
 {
 	timestamp t = *d;
 	t = timestamp_add_usec(t, gmtoff * LL_CONSTANT(1000000));
@@ -1189,8 +1249,9 @@ timestamptz_to_str(str *buf, const timestamp *d, const char *const *format, cons
 
 
 static str
-str_to_timestamp(timestamp *ret, const char *const *s, const char *const *format, const long gmtoff, const char *type,
-				 const char *malfunc)
+str_to_timestamp(timestamp *ret, const char *const *s,
+				 const char *const *format, const long gmtoff,
+				 const char *type, const char *malfunc)
 {
 	struct tm tm = {
 		.tm_isdst = -1,
@@ -1268,18 +1329,18 @@ func3(MTIMEstr_to_time, "str_to_time",
 	  APPEND_VAR, FINISH_INT_SINGLE, CLEAR_NOTHING)
 
 static inline str
-str_to_timestamp_func(timestamp *ret, const char *s, const char *format, lng tz_msec)
+str_to_timestamp_func(timestamp *ret, const char *s, const char *format,
+					  lng tz_msec)
 {
 	return str_to_timestamp(ret, &s, &format, (long)(tz_msec/1000), "timestamp",
 							"mtime.str_to_timestamp");
 }
 
 func3(MTIMEstr_to_timestamp, "str_to_timestamp",
-	  char * const, char * const, timestamp, str_to_timestamp_func, func3_except,
-	  DEC_ITER, DEC_ITER, DEC_VAR_R, DEC_INT,
-	  INIT_ITERIN, INIT_ITERIN, INIT_VAROUT,
-	  GET_NEXT_ITER, GET_NEXT_ITER,
-	  APPEND_VAR, FINISH_INT_SINGLE, CLEAR_NOTHING)
+	  char * const, char * const, timestamp, str_to_timestamp_func,
+	  func3_except, DEC_ITER, DEC_ITER, DEC_VAR_R, DEC_INT, INIT_ITERIN,
+	  INIT_ITERIN, INIT_VAROUT, GET_NEXT_ITER, GET_NEXT_ITER, APPEND_VAR,
+	  FINISH_INT_SINGLE, CLEAR_NOTHING)
 
 static inline str
 date_to_str(str *ret, date d, const char *format)
@@ -1313,7 +1374,8 @@ static inline str
 timetz_to_str(str *ret, daytime d, const char *format, lng tz_msec)
 {
 	timestamp ts = timestamp_create(timestamp_date(timestamp_current()), d);
-	return timestamptz_to_str(ret, &ts, &format, "time", "mtime.timetz_to_str", (long)(tz_msec/1000));
+	return timestamptz_to_str(ret, &ts, &format, "time", "mtime.timetz_to_str",
+							  (long) (tz_msec / 1000));
 }
 func3(MTIMEtimetz_to_str, "timetz_to_str",
 	  daytime, char * const, str, timetz_to_str, func3_except,
@@ -1325,7 +1387,8 @@ func3(MTIMEtimetz_to_str, "timetz_to_str",
 static inline str
 timestamp_to_str_func(str *ret, timestamp d, const char *format)
 {
-	return timestamp_to_str(ret, &d, &format, "timestamp", "mtime.timestamp_to_str");
+	return timestamp_to_str(ret, &d, &format, "timestamp",
+							"mtime.timestamp_to_str");
 }
 
 func2(MTIMEtimestamp_to_str, "timestamp_to_str",
@@ -1338,7 +1401,9 @@ func2(MTIMEtimestamp_to_str, "timestamp_to_str",
 static inline str
 timestamptz_to_str_func(str *ret, timestamp d, const char *format, lng tz_msec)
 {
-	return timestamptz_to_str(ret, &d, &format, "timestamp", "mtime.timestamptz_to_str", (long)(tz_msec/1000));
+	return timestamptz_to_str(ret, &d, &format, "timestamp",
+							  "mtime.timestamptz_to_str",
+							  (long) (tz_msec / 1000));
 }
 
 func3(MTIMEtimestamptz_to_str, "timestamptz_to_str",
@@ -1348,66 +1413,80 @@ func3(MTIMEtimestamptz_to_str, "timestamptz_to_str",
 	  GET_NEXT_VAR, GET_NEXT_ITER,
 	  APPEND_STR, FINISH_BUFFER_SINGLE, FINISH_BUFFER_MULTI)
 
+__attribute__((__const__))
 static inline lng
 timestampdiff_sec(timestamp t1, timestamp t2)
 {
-	return TSDIFF(t1, t2) / 1000;
+	lng diff = timestamp_diff(t1, t2);
+	return DIVIDE(diff, LL_CONSTANT(1000000), lng);
 }
 
+__attribute__((__const__))
 static inline lng
 timestampdiff_sec_date_timestamp(date d, timestamp ts)
 {
 	return timestampdiff_sec(timestamp_fromdate(d), ts);
 }
 
+__attribute__((__const__))
 static inline lng
 timestampdiff_sec_timestamp_date(timestamp ts, date d)
 {
 	return timestampdiff_sec(ts, timestamp_fromdate(d));
 }
 
+__attribute__((__const__))
 static inline lng
 timestampdiff_min(timestamp t1, timestamp t2)
 {
-	return TSDIFF(t1, t2) / 1000 / 60;
+	lng diff = timestamp_diff(t1, t2);
+	return DIVIDE(diff, LL_CONSTANT(60000000), lng);
 }
 
+__attribute__((__const__))
 static inline lng
 timestampdiff_min_date_timestamp(date d, timestamp ts)
 {
 	return timestampdiff_min(timestamp_fromdate(d), ts);
 }
 
+__attribute__((__const__))
 static inline lng
 timestampdiff_min_timestamp_date(timestamp ts, date d)
 {
 	return timestampdiff_min(ts, timestamp_fromdate(d));
 }
 
+__attribute__((__const__))
 static inline lng
 timestampdiff_hour(timestamp t1, timestamp t2)
 {
-	return TSDIFF(t1, t2) / 1000 / 60 / 60;
+	lng diff = timestamp_diff(t1, t2);
+	return DIVIDE(diff, LL_CONSTANT(3600000000), lng);
 }
 
+__attribute__((__const__))
 static inline lng
 timestampdiff_hour_date_timestamp(date d, timestamp ts)
 {
 	return timestampdiff_hour(timestamp_fromdate(d), ts);
 }
 
+__attribute__((__const__))
 static inline lng
 timestampdiff_hour_timestamp_date(timestamp ts, date d)
 {
 	return timestampdiff_hour(ts, timestamp_fromdate(d));
 }
 
+__attribute__((__const__))
 static inline int
 timestampdiff_day(timestamp t1, timestamp t2)
 {
 	return date_diff(timestamp_date(t1), timestamp_date(t2));
 }
 
+__attribute__((__const__))
 static inline int
 timestampdiff_day_time_timestamp(daytime t, timestamp ts)
 {
@@ -1415,6 +1494,7 @@ timestampdiff_day_time_timestamp(daytime t, timestamp ts)
 	return timestampdiff_day(timestamp_create(today, t), ts);
 }
 
+__attribute__((__const__))
 static inline int
 timestampdiff_day_timestamp_time(timestamp ts, daytime t)
 {
@@ -1422,12 +1502,14 @@ timestampdiff_day_timestamp_time(timestamp ts, daytime t)
 	return timestampdiff_day(ts, timestamp_create(today, t));
 }
 
+__attribute__((__const__))
 static inline int
 timestampdiff_week(timestamp t1, timestamp t2)
 {
 	return date_diff(timestamp_date(t1), timestamp_date(t2)) / 7;
 }
 
+__attribute__((__const__))
 static inline int
 timestampdiff_week_time_timestamp(daytime t, timestamp ts)
 {
@@ -1435,6 +1517,7 @@ timestampdiff_week_time_timestamp(daytime t, timestamp ts)
 	return timestampdiff_week(timestamp_create(today, t), ts);
 }
 
+__attribute__((__const__))
 static inline int
 timestampdiff_week_timestamp_time(timestamp ts, daytime t)
 {
@@ -1442,15 +1525,17 @@ timestampdiff_week_timestamp_time(timestamp ts, daytime t)
 	return timestampdiff_week(ts, timestamp_create(today, t));
 }
 
+__attribute__((__const__))
 static inline int
 timestampdiff_month(timestamp t1, timestamp t2)
 {
 	date d1 = timestamp_date(t1);
 	date d2 = timestamp_date(t2);
-	return ((date_year(d1) - date_year(d2)) * 12) + (date_month(d1) -
-													 date_month(d2));
+	return ((date_year(d1) - date_year(d2)) * 12)
+		+ (date_month(d1) - date_month(d2));
 }
 
+__attribute__((__const__))
 static inline int
 timestampdiff_month_time_timestamp(daytime t, timestamp ts)
 {
@@ -1458,6 +1543,7 @@ timestampdiff_month_time_timestamp(daytime t, timestamp ts)
 	return timestampdiff_month(timestamp_create(today, t), ts);
 }
 
+__attribute__((__const__))
 static inline int
 timestampdiff_month_timestamp_time(timestamp ts, daytime t)
 {
@@ -1465,15 +1551,17 @@ timestampdiff_month_timestamp_time(timestamp ts, daytime t)
 	return timestampdiff_month(ts, timestamp_create(today, t));
 }
 
+__attribute__((__const__))
 static inline int
 timestampdiff_quarter(timestamp t1, timestamp t2)
 {
 	date d1 = timestamp_date(t1);
 	date d2 = timestamp_date(t2);
-	return ((date_year(d1) - date_year(d2)) * 4) + (date_quarter(d1) -
-													date_quarter(d2));
+	return ((date_year(d1) - date_year(d2)) * 4)
+		+ (date_quarter(d1) - date_quarter(d2));
 }
 
+__attribute__((__const__))
 static inline int
 timestampdiff_quarter_time_timestamp(daytime t, timestamp ts)
 {
@@ -1481,6 +1569,7 @@ timestampdiff_quarter_time_timestamp(daytime t, timestamp ts)
 	return timestampdiff_quarter(timestamp_create(today, t), ts);
 }
 
+__attribute__((__const__))
 static inline int
 timestampdiff_quarter_timestamp_time(timestamp ts, daytime t)
 {
@@ -1488,6 +1577,7 @@ timestampdiff_quarter_timestamp_time(timestamp ts, daytime t)
 	return timestampdiff_quarter(ts, timestamp_create(today, t));
 }
 
+__attribute__((__const__))
 static inline int
 timestampdiff_year(timestamp t1, timestamp t2)
 {
@@ -1496,6 +1586,7 @@ timestampdiff_year(timestamp t1, timestamp t2)
 	return date_year(d1) - date_year(d2);
 }
 
+__attribute__((__const__))
 static inline int
 timestampdiff_year_time_timestamp(daytime t, timestamp ts)
 {
@@ -1503,6 +1594,7 @@ timestampdiff_year_time_timestamp(daytime t, timestamp ts)
 	return timestampdiff_year(timestamp_create(today, t), ts);
 }
 
+__attribute__((__const__))
 static inline int
 timestampdiff_year_timestamp_time(timestamp ts, daytime t)
 {
