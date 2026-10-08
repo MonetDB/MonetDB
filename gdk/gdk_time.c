@@ -27,15 +27,15 @@
  * (i.e. 0mmmmmmmmmmmmmmmmmmmmmdddddttttttttttttttttttttttttttttttttttttt)
  */
 
-#define YEAR_MIN	(-4712)	/* 4713 BC */
+#define YEAR_OFFSET	4712
+#define YEAR_MIN	(-YEAR_OFFSET)	/* 4713 BC */
 
-#define YEAR_OFFSET	(-YEAR_MIN)
 #define DTDAY_WIDTH	5	/* 1..28/29/30/31, depending on month/year */
 #define DTDAY_SHIFT	0
 #define DTMONTH_WIDTH	21	/* enough for 174761 years (and 8 months) */
-#define DTMONTH_SHIFT	(DTDAY_WIDTH+DTDAY_SHIFT)
+#define DTMONTH_SHIFT	(DTDAY_WIDTH + DTDAY_SHIFT)
 
-#define YEAR_MAX	(YEAR_MIN+(1<<DTMONTH_WIDTH)/12-1)
+#define YEAR_MAX	(YEAR_MIN + (1 << DTMONTH_WIDTH) / 12 - 1)
 
 static const int leapdays[13] = { /* days per month in leap year */
 	0, 31, 29, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31
@@ -137,25 +137,30 @@ __attribute__((__const__))
 static inline daytime
 ts_time(timestamp ts)
 {
-	return (daytime) (((uint64_t) ts >> TSTIME_SHIFT) & ((LL_CONSTANT(1) << TSTIME_WIDTH) - 1));
+	return (daytime) (((uint64_t) ts >> TSTIME_SHIFT)
+			  & ((LL_CONSTANT(1) << TSTIME_WIDTH) - 1));
 }
 
 __attribute__((__const__))
 static inline date
 ts_date(timestamp ts)
 {
-	return (date) (((uint64_t) ts >> TSDATE_SHIFT) & ((1 << TSDATE_WIDTH) - 1));
+	return (date) (((uint64_t) ts >> TSDATE_SHIFT)
+		       & ((1 << TSDATE_WIDTH) - 1));
 }
 
 __attribute__((__const__))
 static inline timestamp
 mktimestamp(date d, daytime t)
 {
-	return (timestamp) (((uint64_t) d << TSDATE_SHIFT) |
-			    ((uint64_t) t << TSTIME_SHIFT));
+	return (timestamp) (((uint64_t) d << TSDATE_SHIFT)
+			    | ((uint64_t) t << TSTIME_SHIFT));
 }
 
-const timestamp unixepoch = (((((timestamp) 1970 + YEAR_OFFSET) * 12) << DTMONTH_SHIFT) | ((timestamp) 1 << DTDAY_SHIFT)) << TSDATE_SHIFT; /* mktimestamp(mkdate(1970, 1, 1), mkdaytime(0, 0, 0, 0)) */
+/* mktimestamp(mkdate(1970, 1, 1), mkdaytime(0, 0, 0, 0)) */
+const timestamp unixepoch =
+	(((((timestamp) 1970 + YEAR_OFFSET) * 12) << DTMONTH_SHIFT)
+	 | ((timestamp) 1 << DTDAY_SHIFT)) << TSDATE_SHIFT;
 
 date
 date_create(int year, int month, int day)
@@ -282,6 +287,7 @@ date_add_month(date dt, int months)
 
 /* count days (including leap days) since some time before YEAR_MIN */
 #define CNT_OFF		(((YEAR_OFFSET+399)/400)*400)
+__attribute__((__const__))
 static inline int
 date_countdays(date dt)
 {
@@ -292,8 +298,8 @@ date_countdays(date dt)
 	int m = date_extract_month(dt);
 	int y1 = y + CNT_OFF - 1;
 	return date_extract_day(dt)
-		+ (y+CNT_OFF)*365 + y1/4 - y1/100 + y1/400
-		+ cumdays[m-1] + (m > 2 && isleapyear(y));
+		+ (y + CNT_OFF) * 365 + y1 / 4 - y1 / 100 + y1 / 400
+		+ cumdays[m - 1] + (m > 2 && isleapyear(y));
 }
 
 /* return the difference in days between the two dates */
@@ -590,10 +596,12 @@ timestamp_diff(timestamp t1, timestamp t2)
 {
 	if (is_timestamp_nil(t1) || is_timestamp_nil(t2))
 		return lng_nil;
-	return ts_time(t1) - ts_time(t2) + DAY_USEC * date_diff(ts_date(t1), ts_date(t2));
+	return ts_time(t1) - ts_time(t2)
+		+ DAY_USEC * date_diff(ts_date(t1), ts_date(t2));
 }
 
 /* GDK level atom functions with some helpers */
+__attribute__((__pure__))
 static ssize_t
 fleximatch(const char *s, const char *pat, size_t min)
 {
@@ -612,7 +620,8 @@ fleximatch(const char *s, const char *pat, size_t min)
 }
 
 static ssize_t
-parse_substr(int *ret, const char *s, size_t min, const char *const list[], int size)
+parse_substr(int *ret, const char *s, size_t min,
+	     const char *const list[], int size)
 {
 	for (int i = 0; i < size; i++) {
 		ssize_t j = 0;
