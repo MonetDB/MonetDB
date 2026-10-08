@@ -2530,6 +2530,50 @@ stmt_tdiff2(backend *be, stmt *op1, stmt *op2, stmt *lcand, bool is_semantics, b
 }
 
 stmt *
+stmt_tdiff4(backend *be, stmt *op1, stmt *op2, stmt *lcand, stmt *rcand)
+{
+	InstrPtr q = NULL;
+	MalBlkPtr mb = be->mb;
+
+	if (op1 == NULL || op2 == NULL || op1->nr < 0 || op2->nr < 0 || lcand == NULL || rcand == NULL)
+		goto bailout;
+	q = newStmt(mb, algebraRef, differenceRef);
+	if (q == NULL)
+		goto bailout;
+	q = pushArgument(mb, q, op1->nr); /* left */
+	q = pushArgument(mb, q, op2->nr); /* right */
+	q = pushArgument(mb, q, lcand->nr); /* left candicate */
+	q = pushArgument(mb, q, rcand->nr); /* right candicate */
+	q = pushBit(mb, q, FALSE);    /* nil matches */
+	q = pushBit(mb, q, FALSE);    /* do not clear nils */
+	q = pushNil(mb, q, TYPE_lng); /* estimate */
+
+	bool enabled = ma_get_eb(be->mvc->sa)->enabled;
+	ma_get_eb(be->mvc->sa)->enabled = false;
+	stmt *s = stmt_create(be->mvc->sa, st_tdiff);
+	ma_get_eb(be->mvc->sa)->enabled = enabled;
+	if (s == NULL) {
+		freeInstruction(be->mb, q);
+		goto bailout;
+	}
+
+	s->op1 = op1;
+	s->op2 = op2;
+	s->nrcols = op1->nrcols;
+	s->key = op1->key;
+	s->aggr = op1->aggr;
+	s->nr = getDestVar(q);
+	s->q = q;
+	pushInstruction(mb, q);
+	return s;
+
+  bailout:
+	if (ma_get_eb(be->mvc->sa)->enabled)
+		eb_error(ma_get_eb(be->mvc->sa), be->mvc->errstr[0] ? be->mvc->errstr : mb->errors ? mb->errors : *GDKerrbuf ? GDKerrbuf : "out of memory", 1000);
+	return NULL;
+}
+
+stmt *
 stmt_tinter(backend *be, stmt *op1, stmt *op2, bool single)
 {
 	InstrPtr q = NULL;

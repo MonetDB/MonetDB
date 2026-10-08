@@ -213,6 +213,7 @@ extern stmt *stmt_selectNotFalse(backend *be, stmt *g, stmt *m, stmt *p, bool ag
 extern stmt *stmt_tunion(backend *be, stmt *op1, stmt *op2);
 extern stmt *stmt_tdiff(backend *be, stmt *op1, stmt *op2, stmt *lcand);
 extern stmt *stmt_tdiff2(backend *be, stmt *op1, stmt *op2, stmt *lcand, bool is_semantics, bool any);
+extern stmt *stmt_tdiff4(backend *be, stmt *op1, stmt *op2, stmt *lcand, stmt *rcand);
 extern stmt *stmt_tinter(backend *be, stmt *op1, stmt *op2, bool single);
 
 extern stmt *stmt_join(backend *be, stmt *op1, stmt *op2, int anti, comp_type cmptype, int need_left, int is_semantics, bool single);
