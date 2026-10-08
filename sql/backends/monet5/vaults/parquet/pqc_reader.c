@@ -2113,8 +2113,10 @@ pqc_read_page_chunk( pqc_reader_t *r, pqc_creader_t *cr, void *output /*fixed si
 	if (r->pse->precision == 64 && !r->pse->isSigned) {
 		int64_t *l = output;
 		for(uint64_t i=0; i< nrows; i++)
-			if (l[i] < 0)
+			if (l[i] < 0) {
+				pqc_set_error(r, "unsigned value overflow");
 				return -1;
+			}
 	} else
 #endif
 	if (r->pse->precision == 32 && !r->pse->isSigned) {
@@ -2158,7 +2160,7 @@ pqc_read_page_chunk( pqc_reader_t *r, pqc_creader_t *cr, void *output /*fixed si
 	ATOMIC_ADD(&r->rownr, orows);
 	cr->curnr += orows;
 	if (cr->cc->cur_page.num_read + orows > UINT32_MAX) {
-		pqc_set_error(r, "To many rows in one page (> UINT32_MAX)");
+		pqc_set_error(r, "Too many rows in one page (> UINT32_MAX)");
 		return -1;
 	}
 	cr->cc->cur_page.num_read += (uint32_t)orows; /* per page only uint32_t */

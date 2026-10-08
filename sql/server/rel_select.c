@@ -3231,7 +3231,7 @@ rel_unop_(mvc *sql, sql_rel *rel, sql_exp *e, char *sname, char *fname, int card
 	if (f && t && type_has_tz(t) && f->func->fix_scale == SCALE_FIX) {
 		/* set timezone (using msec (.3)) */
 		sql_subtype *intsec = sql_bind_subtype(sql->sa, "sec_interval", 10 /*hour to second */, 3);
-		atom *a = atom_int(sql->sa, intsec, sql->timezone);
+		atom *a = atom_int(sql->sa, intsec, MT_get_timezone());
 		sql_exp *tz = exp_atom(sql->sa, a);
 
 		e = rel_binop_(sql, rel, e, tz, "sys", "sql_add", card, true);
@@ -5818,8 +5818,11 @@ rel_having_limits_nodes(sql_query *query, sql_rel *rel, SelectNode *sn, exp_kind
 	}
 
 	if (sn->qualify) {
+		list *exps = rel_projections(query->sql, rel, NULL, 0, 0);
 		if (!(rel = rel_logical_exp(query, rel, sn->qualify, sql_qualify)))
 			return NULL;
+		if (!is_project(rel->op))
+			rel = rel_project(query->sql->sa, rel, exps);
 	}
 
 	if (rel && sn->distinct)

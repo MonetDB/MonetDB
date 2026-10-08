@@ -2707,7 +2707,7 @@ exp_count(int *cnt, sql_exp *e)
 	if (!e)
 		return 0;
 	if (find_prop(e->p, PROP_JOINIDX))
-		*cnt += 100;
+		*cnt += 1000;
 	if (find_prop(e->p, PROP_HASHCOL))
 		*cnt += 100;
 	if (find_prop(e->p, PROP_HASHIDX))
@@ -4855,7 +4855,7 @@ try_duplicate_select(visitor *v, sql_rel *r, sql_exp *e, bool leftside)
 	if (!e || !r || e->type != e_cmp || e->flag != cmp_equal || is_anti(e) || list_empty(r->exps) || rel_is_ref(r))
 		return;
 	sql_exp *el = e->l, *er = e->r;
-	if (!exp_is_atom(er))
+	if (!exp_is_atom(er) || !el->nid)
 		return;
 	for (node *n = r->exps->h; n; n = n->next) {
 		sql_exp *je = n->data;

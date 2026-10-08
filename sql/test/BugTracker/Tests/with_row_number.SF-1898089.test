@@ -32633,7 +32633,7 @@ WITH e as (SELECT date, row_number() over (order by date) as rn from tradeDate) 
 5
 
 query IIII nosort
-WITH e as (SELECT date, row_number() over (order by date) as rn from tradeDate) SELECT e1.date, e1.rn, e2.date, e2.rn from e as e1 inner join e as e2 ON e2.rn = e1.rn limit 5
+WITH e as (SELECT date, row_number() over (order by date) as rn from tradeDate) SELECT e1.date, e1.rn, e2.date, e2.rn from e as e1 inner join e as e2 ON e2.rn = e1.rn order by e1.rn, e2.rn limit 5
 ----
 19251231
 1
@@ -32657,7 +32657,7 @@ WITH e as (SELECT date, row_number() over (order by date) as rn from tradeDate) 
 5
 
 query IIII nosort
-WITH e as (SELECT date, row_number() over (order by date) as rn from tradeDate) SELECT e1.date, e1.rn, e2.date, e2.rn from e as e1 inner join e as e2 ON e2.rn + 1 = e1.rn limit 5
+WITH e as (SELECT date, row_number() over (order by date) as rn from tradeDate) SELECT e1.date, e1.rn, e2.date, e2.rn from e as e1 inner join e as e2 ON e2.rn + 1 = e1.rn order by e1.rn, e2.rn limit 5
 ----
 19260102
 2

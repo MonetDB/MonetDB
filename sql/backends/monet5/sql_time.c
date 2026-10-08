@@ -1600,7 +1600,7 @@ SQLcurrent_daytime(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		return msg;
 
 	*res = timestamp_daytime(timestamp_add_usec(timestamp_current(),
-							 m->timezone * LL_CONSTANT(1000)));
+							 cntxt->qryctx.timezone * LL_CONSTANT(1000)));
 	return msg;
 }
 
@@ -1614,6 +1614,6 @@ SQLcurrent_timestamp(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	if ((msg = getSQLContext(cntxt, mb, &m, NULL)) != NULL)
 		return msg;
 
-	*res = timestamp_add_usec(timestamp_current(), m->timezone * LL_CONSTANT(1000));
+	*res = timestamp_add_usec(timestamp_current(), cntxt->qryctx.timezone * LL_CONSTANT(1000));
 	return msg;
 }

@@ -385,11 +385,11 @@ exp_timezone(visitor *v, sql_rel *rel, sql_exp *e, int depth)
 				sql_exp *e = l->h->data;
 				sql_subtype *t = exp_subtype(e);
 				if (t->type->eclass == EC_TIMESTAMP_TZ || t->type->eclass == EC_TIME_TZ) {
-					sql_exp *offset = exp_atom_lng(v->sql->sa, v->sql->timezone);
+					sql_exp *offset = exp_atom_lng(v->sql->sa, MT_get_timezone());
 					list_append(l, offset);
 				}
 			} else if (strcmp(fname, "str_to_timestamp") == 0 || strcmp(fname, "str_to_time") == 0 || strcmp(fname, "str_to_date") == 0) {
-				sql_exp *offset = exp_atom_lng(v->sql->sa, v->sql->timezone);
+				sql_exp *offset = exp_atom_lng(v->sql->sa, MT_get_timezone());
 				list_append(l, offset);
 			}
 		}
@@ -1267,6 +1267,9 @@ rel_count_gt_zero(visitor *v, sql_rel *rel)
 		list *gbe = rel->r;
 
 		if (!gbe || list_empty(gbe) || is_rewrite_gt_zero_used(rel->used))
+			return rel;
+		bool safe = rel_groupby_partition_safe(rel);
+		if (safe && rel_groupby_partition(v->sql, rel))
 			return rel;
 		/* introduce select * from l where cnt > 0 */
 		/* find count */

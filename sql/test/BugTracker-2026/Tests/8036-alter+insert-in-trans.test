@@ -1,0 +1,26 @@
+statement ok
+CREATE TABLE t(x INTEGER)
+
+statement ok
+START TRANSACTION
+
+statement ok
+ALTER TABLE t ALTER COLUMN x BIGINT
+
+statement ok
+INSERT INTO t VALUES(2)
+
+query I
+SELECT count(*) FROM t
+----
+1
+
+statement ok
+COMMIT
+
+@connection(id=other, username=monetdb, password=monetdb)
+query I
+SELECT count(*) FROM t
+----
+1
+

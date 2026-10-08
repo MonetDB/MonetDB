@@ -2026,7 +2026,7 @@ exp_bin(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, 
 				oldstop = be->mb->stop;
 				s = NULL;
 				if (!swapped)
-					s = exp_bin(be, n->data, left, NULL, grp, ext, cnt, NULL, depth+1, 0, push);
+					s = exp_bin(be, n->data, left, !reduce?right:NULL, grp, ext, cnt, NULL, depth+1, 0, push);
 				if (!s && right && (first || swapped)) {
 					clean_mal_statements(be, oldstop, oldvtop);
 					s = exp_bin(be, n->data, right, NULL, grp, ext, cnt, NULL, depth+1, 0, push);
@@ -2049,7 +2049,7 @@ exp_bin(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, 
 				return NULL;
 			args = e->r;
 			for (n = args->h; n; n = n->next) {
-				s = exp_bin(be, n->data, (swapped || !right)?left:right, NULL, grp, ext, cnt, NULL, depth+1, 0, push);
+				s = exp_bin(be, n->data, (swapped || !right)?left:right, !reduce?left:NULL, grp, ext, cnt, NULL, depth+1, 0, push);
 				if (!s)
 					return s;
 				list_append(ops, s);
@@ -2230,7 +2230,7 @@ stmt_col(backend *be, sql_column *c, stmt *del, int part)
 			stmt *v = stmt_bat(be, c, RD_EXT, part);
 			sc = stmt_dict(be, sc, v);
 		} else if (c->storage_type && c->storage_type[0] == 'F') {
-			sc = stmt_for(be, sc, stmt_atom(be, atom_general(be->mvc->sa, &c->type, c->storage_type+4/*skip FOR-*/, be->mvc->timezone)));
+			sc = stmt_for(be, sc, stmt_atom(be, atom_general(be->mvc->sa, &c->type, c->storage_type+4/*skip FOR-*/, be->client->qryctx.timezone)));
 		}
 		if (del)
 			sc = stmt_project(be, del, sc);

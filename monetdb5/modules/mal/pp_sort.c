@@ -44,9 +44,10 @@ PPsubmerge_any( bat *Rzzl, bat *Rzzb, bat *Rzza, BAT *lcol, BAT *rcol, BAT *zzl,
 	/* sofar the ANY type case, later add optimized versions */
 	/* need new output bats */
 	BUN rp = 0, lp = 0, o = 0, p = lp, cur = rp, sz = BATcount(zzl), e = 0;
-	rzzl = COLnew(0, TYPE_int, 1024, TRANSIENT);
-	rzzb = COLnew(0, TYPE_int, 1024, TRANSIENT);
-	rzza = COLnew(0, TYPE_int, 1024, TRANSIENT);
+	BUN outcnt = MAX(BATcount(lcol), BATcount(rcol));
+	rzzl = COLnew(0, TYPE_int, outcnt, TRANSIENT);
+	rzzb = COLnew(0, TYPE_int, outcnt, TRANSIENT);
+	rzza = COLnew(0, TYPE_int, outcnt, TRANSIENT);
 
 	if (!rzzl || !rzzb || !rzza) {
 		err = createException(MAL, "sort.merge", SQLSTATE(HY013) MAL_MALLOC_FAIL);
@@ -76,6 +77,10 @@ PPsubmerge_any( bat *Rzzl, bat *Rzzb, bat *Rzza, BAT *lcol, BAT *rcol, BAT *zzl,
 	int pa = 0;
 	lng ilen = 0, rlen = 0, tsz = BATcount(lcol) + BATcount(rcol);
 	(void)tsz;
+	int *rzzlp = Tloc(rzzl, 0);
+	int *rzzbp = Tloc(rzzb, 0);
+	int *rzzap = Tloc(rzza, 0);
+	BUN cnt = 0;
 	for(BUN i = 0; i<sz; i++) {
 		int len = gp[i], ob = bp[i], oa = ap[i];
 		bool oside = side;
@@ -132,12 +137,21 @@ PPsubmerge_any( bat *Rzzl, bat *Rzzb, bat *Rzza, BAT *lcol, BAT *rcol, BAT *zzl,
 					int v1 = (int)l, v2 = (int)-b, v3 = (int)-a;
 					rlen += v1;
 					//printf("v1 -3  %d\n", v1);
-					if (BUNappend(rzzl, &v1, TRUE) != GDK_SUCCEED ||
-							BUNappend(rzzb, &v2, TRUE) != GDK_SUCCEED ||
-							BUNappend(rzza, &v3, TRUE) != GDK_SUCCEED) {
-						err = createException(MAL, "sort.merge", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-						goto error_iter;
+					if (cnt == BATcapacity(rzzl)) {
+						if (BATextend(rzzl, BATgrows(rzzl)) != GDK_SUCCEED ||
+							BATextend(rzzb, BATgrows(rzzb)) != GDK_SUCCEED ||
+							BATextend(rzza, BATgrows(rzza)) != GDK_SUCCEED) {
+							err = createException(MAL, "sort.merge", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+							goto error_iter;
+						}
+						rzzlp = Tloc(rzzl, 0);
+						rzzbp = Tloc(rzzb, 0);
+						rzzap = Tloc(rzza, 0);
 					}
+					rzzlp[cnt] = v1;
+					rzzbp[cnt] = v2;
+					rzzap[cnt] = v3;
+					cnt++;
 					b = 0;
 					a = 0;
 				}
@@ -162,26 +176,33 @@ PPsubmerge_any( bat *Rzzl, bat *Rzzb, bat *Rzza, BAT *lcol, BAT *rcol, BAT *zzl,
 						break;
 				}
 			}
+			if ((cnt+2) >= BATcapacity(rzzl)) {
+				if (BATextend(rzzl, BATgrows(rzzl)) != GDK_SUCCEED ||
+					BATextend(rzzb, BATgrows(rzzb)) != GDK_SUCCEED ||
+					BATextend(rzza, BATgrows(rzza)) != GDK_SUCCEED) {
+					err = createException(MAL, "sort.merge", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+					goto error_iter;
+				}
+				rzzlp = Tloc(rzzl, 0);
+				rzzbp = Tloc(rzzb, 0);
+				rzzap = Tloc(rzza, 0);
+			}
 			int v1 = (int)l, v2 = (int)-b, v3 = (int)-a;
 			rlen += v1;
 			//printf("v1 -2  %d\n", v1);
-			if (BUNappend(rzzl, &v1, TRUE) != GDK_SUCCEED ||
-					BUNappend(rzzb, &v2, TRUE) != GDK_SUCCEED ||
-					BUNappend(rzza, &v3, TRUE) != GDK_SUCCEED) {
-				err = createException(MAL, "sort.merge", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-				goto error_iter;
-			}
+			rzzlp[cnt] = v1;
+			rzzbp[cnt] = v2;
+			rzzap[cnt] = v3;
+			cnt++;
 			if (oside == side && p < e) {
 				BUN l = e - p;
 				int v1 = (int)l, v2 = (int)0, v3 = (int)0;
 				rlen += v1;
 				//printf("v1 -1  %d\n", v1);
-				if (BUNappend(rzzl, &v1, TRUE) != GDK_SUCCEED ||
-					BUNappend(rzzb, &v2, TRUE) != GDK_SUCCEED ||
-					BUNappend(rzza, &v3, TRUE) != GDK_SUCCEED) {
-					err = createException(MAL, "sort.merge", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-					goto error_iter;
-				}
+				rzzlp[cnt] = v1;
+				rzzbp[cnt] = v2;
+				rzzap[cnt] = v3;
+				cnt++;
 				p = e;
 				if (side) {
 					rp = p;
@@ -199,12 +220,21 @@ PPsubmerge_any( bat *Rzzl, bat *Rzzb, bat *Rzza, BAT *lcol, BAT *rcol, BAT *zzl,
 		} else {
 			rlen += len;
 			//printf("len %d\n", len);
-			if (BUNappend(rzzl, &len, TRUE) != GDK_SUCCEED ||
-			    BUNappend(rzzb, &ob, TRUE) != GDK_SUCCEED ||
-			    BUNappend(rzza, &oa, TRUE) != GDK_SUCCEED) {
-				err = createException(MAL, "sort.merge", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-				goto error_iter;
+			if (cnt == BATcapacity(rzzl)) {
+				if (BATextend(rzzl, BATgrows(rzzl)) != GDK_SUCCEED ||
+					BATextend(rzzb, BATgrows(rzzb)) != GDK_SUCCEED ||
+					BATextend(rzza, BATgrows(rzza)) != GDK_SUCCEED) {
+					err = createException(MAL, "sort.merge", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+					goto error_iter;
+				}
+				rzzlp = Tloc(rzzl, 0);
+				rzzbp = Tloc(rzzb, 0);
+				rzzap = Tloc(rzza, 0);
 			}
+			rzzlp[cnt] = len;
+			rzzbp[cnt] = ob;
+			rzzap[cnt] = oa;
+			cnt++;
 			if (side) {
 				rp = p;
 			} else {
@@ -229,6 +259,13 @@ PPsubmerge_any( bat *Rzzl, bat *Rzzb, bat *Rzza, BAT *lcol, BAT *rcol, BAT *zzl,
 	printf("sub done\n");
 	fflush(stdout);
 	*/
+
+	BATsetcount(rzzl, cnt);
+	BATsetcount(rzzb, cnt);
+	BATsetcount(rzza, cnt);
+	BATnegateprops(rzzl);
+	BATnegateprops(rzzb);
+	BATnegateprops(rzza);
 
 	bat_iterator_end(&li);
 	bat_iterator_end(&ri);
@@ -271,9 +308,10 @@ PPmerge_any( bat *Rzzl, bat *Rzzb, bat *Rzza, BAT *lcol, BAT *rcol, bit desc, bi
 	/* need new output bats */
 	BUN rp = 0, lp = 0, re = BATcount(rcol), le = BATcount(lcol), o = 0, p = lp, e = le, cur = rp;
 	lng b = 0, a = 0;
-	rzzl = COLnew(0, TYPE_int, 1024, TRANSIENT);
-	rzzb = COLnew(0, TYPE_int, 1024, TRANSIENT);
-	rzza = COLnew(0, TYPE_int, 1024, TRANSIENT);
+	BUN outcnt = MAX(le, re);
+	rzzl = COLnew(0, TYPE_int, outcnt, TRANSIENT);
+	rzzb = COLnew(0, TYPE_int, outcnt, TRANSIENT);
+	rzza = COLnew(0, TYPE_int, outcnt, TRANSIENT);
 
 	if (!rzzl || !rzzb || !rzza) {
 		err = createException(MAL, "sort.merge", SQLSTATE(HY013) MAL_MALLOC_FAIL);
@@ -300,6 +338,10 @@ PPmerge_any( bat *Rzzl, bat *Rzzb, bat *Rzza, BAT *lcol, BAT *rcol, bit desc, bi
 		nilsmallest = false;
 
 	int side = 0;
+	int *rzzlp = Tloc(rzzl, 0);
+	int *rzzbp = Tloc(rzzb, 0);
+	int *rzzap = Tloc(rzza, 0);
+	BUN cnt = 0;
 	for(; p<e; ) {
 		const void *vc = !side?BUNtail(&ri, cur):BUNtail(&li, cur);
 		const void *vp =  side?BUNtail(&ri, p):BUNtail(&li, p);
@@ -334,12 +376,21 @@ PPmerge_any( bat *Rzzl, bat *Rzzb, bat *Rzza, BAT *lcol, BAT *rcol, bit desc, bi
 			/* zzl stores len of run from one of the sides, side flips starting at left */
 			/* b store number of equal values at end of run */
 			/* a store number of equal values at start of next run */
-			if (BUNappend(rzzl, &v1, TRUE) != GDK_SUCCEED ||
-				BUNappend(rzzb, &v2, TRUE) != GDK_SUCCEED ||
-				BUNappend(rzza, &v3, TRUE) != GDK_SUCCEED) {
-				err = createException(MAL, "sort.merge", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-				goto error_iter;
+			if (cnt == BATcapacity(rzzl)) {
+				if (BATextend(rzzl, BATgrows(rzzl)) != GDK_SUCCEED ||
+					BATextend(rzzb, BATgrows(rzzb)) != GDK_SUCCEED ||
+					BATextend(rzza, BATgrows(rzza)) != GDK_SUCCEED) {
+					err = createException(MAL, "sort.merge", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+					goto error_iter;
+				}
+				rzzlp = Tloc(rzzl, 0);
+				rzzbp = Tloc(rzzb, 0);
+				rzzap = Tloc(rzza, 0);
 			}
+			rzzlp[cnt] = v1;
+			rzzbp[cnt] = v2;
+			rzzap[cnt] = v3;
+			cnt++;
 			b = 0;
 			a = 0;
 		}
@@ -364,26 +415,39 @@ PPmerge_any( bat *Rzzl, bat *Rzzb, bat *Rzza, BAT *lcol, BAT *rcol, bit desc, bi
 				break;
 		}
 	}
+	if ((cnt+2) >= BATcapacity(rzzl)) {
+		if (BATextend(rzzl, BATgrows(rzzl)) != GDK_SUCCEED ||
+			BATextend(rzzb, BATgrows(rzzb)) != GDK_SUCCEED ||
+			BATextend(rzza, BATgrows(rzza)) != GDK_SUCCEED) {
+			err = createException(MAL, "sort.merge", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+			goto error_iter;
+		}
+		rzzlp = Tloc(rzzl, 0);
+		rzzbp = Tloc(rzzb, 0);
+		rzzap = Tloc(rzza, 0);
+	}
 	int v1 = (int)l, v2 = (int)-b, v3 = (int)-a;
 	assert( (!v2 && !v3) || (v2 && v3));
-	if (BUNappend(rzzl, &v1, TRUE) != GDK_SUCCEED ||
-		BUNappend(rzzb, &v2, TRUE) != GDK_SUCCEED ||
-		BUNappend(rzza, &v3, TRUE) != GDK_SUCCEED) {
-		err = createException(MAL, "sort.merge", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-		goto error_iter;
-	}
+	rzzlp[cnt] = v1;
+	rzzbp[cnt] = v2;
+	rzzap[cnt] = v3;
+	cnt++;
 	b = 0;
 	a = 0;
 	if (p < e) {
 		BUN l = e - p;
 		int v1 = (int)l, v2 = (int)0, v3 = (int)0;
-		if (BUNappend(rzzl, &v1, TRUE) != GDK_SUCCEED ||
-			BUNappend(rzzb, &v2, TRUE) != GDK_SUCCEED ||
-			BUNappend(rzza, &v3, TRUE) != GDK_SUCCEED) {
-			err = createException(MAL, "sort.merge", SQLSTATE(HY013) MAL_MALLOC_FAIL);
-			goto error_iter;
-		}
+		rzzlp[cnt] = v1;
+		rzzbp[cnt] = v2;
+		rzzap[cnt] = v3;
+		cnt++;
 	}
+	BATsetcount(rzzl, cnt);
+	BATsetcount(rzzb, cnt);
+	BATsetcount(rzza, cnt);
+	BATnegateprops(rzzl);
+	BATnegateprops(rzzb);
+	BATnegateprops(rzza);
 	bat_iterator_end(&li);
 	bat_iterator_end(&ri);
 done:

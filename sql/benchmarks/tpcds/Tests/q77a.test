@@ -113,12 +113,12 @@ with ss as
  union
  select NULL AS channel, NULL AS id, sum(sales) as sales, sum("returns") as "returns", sum(profit) as profit from  results
 ) foo
-order by channel, id
+order by channel, id, sales desc
  limit 100
 ----
 NULL	NULL	239408999.27	6268037.63	-66317520.23
-catalog channel	NULL	107782.51	NULL	NULL
 catalog channel	NULL	80882163.55	1979001.64	-8728786.05
+catalog channel	NULL	107782.51	NULL	NULL
 catalog channel	1	26577012.33	748682.72	-2713442.40
 catalog channel	2	28100609.53	649998.86	-3157809.22
 catalog channel	5	26096759.18	580320.06	-2857534.43

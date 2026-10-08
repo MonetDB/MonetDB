@@ -790,7 +790,6 @@ mvc_create(sql_store *store, allocator *pa, int clientid, int debug, bstream *rs
 	m->sym = NULL;
 
 	m->role_id = m->user_id = -1;
-	m->timezone = 0;
 	m->sql_optimizer = INT_MAX;
 	m->clientid = clientid;
 	m->div_min_scale = 3;
