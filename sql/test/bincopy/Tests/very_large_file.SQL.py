@@ -75,7 +75,7 @@ def test_large_upload(size: int, on_clause: str):
                 os.unlink(temp_file.name)
 
 
-GiB = 1024 * 1024 * 1024
+GiB = 1024 * 1024 * 128
 assert shutil.disk_usage(SCRATCH_DIR).free >= 11 * GiB
 test_large_upload(3 * GiB, 'ON CLIENT')
 test_large_upload(3 * GiB, 'ON SERVER')

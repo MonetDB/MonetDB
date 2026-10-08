@@ -97,6 +97,7 @@ typedef struct hash_table {
 	fhsh hsh;
 	flen len;
 	bool empty;
+	bool perfect;		/* fetch/perfect hash */
 	ATOMIC_TYPE has_nil; /* whether the hashed column contain a NULL, defaul: 0, i.e. false */
 	int vkey;	/* vheap is unique, ie hashing on offsets */
 

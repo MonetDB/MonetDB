@@ -15,9 +15,11 @@
 #include "rel_exp.h"
 #include "rel_pphash.h"
 #include "rel_rewriter.h"
+#include "rel_basetable.h"
 #include "rel_physical.h"
 #include "rel_util.h"
 #include "sql_list.h"
+#include "sql_storage.h"
 #include "sql_pp_statement.h"
 #include "bin_partition_by_value.h"
 #include "mal_builder.h"
@@ -88,6 +90,57 @@ oahash_prepare_bld_ht(backend *be, const list *exps, lng sz)
 	return stmt_list(be, l);
 }
 
+static sql_rel *
+find_joinidx_basetable(mvc *sql, sql_rel *r, sql_exp *e)
+{
+	if (!r)
+		return NULL;
+	if (is_basetable(r->op))
+		return r;
+	if (r->op == op_project || r->op == op_select || r->op == op_probehash || r->op == op_buildhash)
+		return find_joinidx_basetable(sql, r->l, e);
+	if (r->op == op_join || r->op == op_semi) {
+		if (rel_rebind_exp(sql, r->l, e))
+			return find_joinidx_basetable(sql, r->l, e);
+		return find_joinidx_basetable(sql, r->r, e);
+	}
+	assert(0);
+	return r;
+}
+
+/* fetch join for tid's */
+static stmt *
+fhash_prepare_bld_ht(backend *be, const list *exps, lng sz, sql_rel *rel)
+{
+	assert(exps && exps->cnt == 1);
+
+	sql_exp *e = exps->h->data;
+	sql_rel *bt = find_joinidx_basetable(be->mvc, rel, e);
+
+	lng max = 0;
+	if (bt) {
+		sql_table *t = bt->l;
+		assert(t);
+		sql_column *c = ol_first_node(t->columns)->data;
+		sqlstore *store = be->mvc->store;
+
+		assert(c);
+		max = (lng)store->storage_api.count_col(be->mvc->session->tr, c, 0);
+	}
+
+	/* if direct base table nothing needed (optimization) else build map */
+
+	/* first always map */
+	stmt *s = stmt_fhash_new(be, exp_subtype(e), sz, max, 0);
+	if (s == NULL)
+		return NULL;
+
+	list *l = sa_list(be->mvc->sa);
+	append(l, s);
+	assert(l->cnt == exps->cnt);
+	return stmt_list(be, l);
+}
+
 static stmt *
 oahash_prepare_bld_hp(backend *be, const list *exps_prj_hsh, lng sz)
 {
@@ -132,10 +185,11 @@ oahash_slicer(backend *be, stmt *sub)
 /* Generates the parallel block to probe the hash table
  */
 static stmt *
-oahash_probe(backend *be, sql_rel *rel, list *jexps, list *exps_cmp_prb, const stmt *stmts_ht, stmt *sub, bool anti, bool groupjoin, bool has_outerselect, stmt **nulls, stmt **prb_mrk)
+hash_probe(backend *be, sql_rel *rel, list *jexps, list *exps_cmp_prb, const stmt *stmts_ht, stmt *sub, bool anti, bool groupjoin, bool has_outerselect, stmt **nulls, stmt **prb_mrk)
 {
 	stmt *prb_res = NULL, *outerm = NULL;
 	bool has_leftouter = (rel->op == op_left || rel->op == op_full /*|| (rel->op == op_right && rel->oahash == 1)*/);
+	bool perfect = stmts_ht->flag;
 
 	/* stmts_ht is in the same order as the join columns */
 	for (node *n = exps_cmp_prb->h, *m = stmts_ht->op4.lval->h, *o = jexps->h; n && m && o; n = n->next, m = m->next, o = o->next) {
@@ -148,7 +202,10 @@ oahash_probe(backend *be, sql_rel *rel, list *jexps, list *exps_cmp_prb, const s
 		bool eq = (e2->flag == cmp_equal) && !anti;
 		bool grpjoin = groupjoin && is_any(e2);
 
-		prb_res = stmt_oahash_probe(be, key, prb_res, m->data, stmts_ht->op3, outerm, single, e2->semantics, eq, has_leftouter, grpjoin);
+		assert(!perfect || (!groupjoin && !has_leftouter && !prb_res));
+		prb_res = perfect ?
+				stmt_fhash_probe(be, key, m->data, stmts_ht->op3, single, e2->semantics, eq) :
+				stmt_oahash_probe(be, key, prb_res, m->data, stmts_ht->op3, outerm, single, e2->semantics, eq, has_leftouter, grpjoin);
 		if (prb_res == NULL) return NULL;
 
 		if (has_leftouter || grpjoin) {
@@ -291,13 +348,17 @@ rel2bin_oahash_build(backend *be, sql_rel *rel, list *refs)
 	}
 
 	bool need_freq = (rel->flag != (int)op_semi || rel->ref.refcnt > 2 || !list_empty(exps_prj_hsh));
+	bool perfect = false;
 	if (need_freq && list_length(exps_cmp_hsh) == 1 && !is_single(rel)) {
 		sql_exp *e = exps_cmp_hsh->h->data;
-		if (e->unique)
+		if (e->unique) {
 			need_freq = false;
+			if (strcmp(exp_name(e), TID) == 0)
+				perfect = true;
+		}
 	}
 	lng bld_sz = _estimate(be->mvc, rel); /* TODO: change into dynamic where possible ?? */
-	stmt *shared_ht = oahash_prepare_bld_ht(be, exps_cmp_hsh, bld_sz);
+	stmt *shared_ht = perfect ? fhash_prepare_bld_ht(be, exps_cmp_hsh, bld_sz, rel->l) : oahash_prepare_bld_ht(be, exps_cmp_hsh, bld_sz);
 	stmt *freq = NULL, *hp_gid = NULL;
 	if (need_freq) {
 		freq = stmt_bat_new(be, sql_fetch_localtype(TYPE_lng), bld_sz);
@@ -328,9 +389,11 @@ rel2bin_oahash_build(backend *be, sql_rel *rel, list *refs)
 		assert(key); /* must find */
 		key = column(be, key);
 
-		prnt = stmt_oahash_build_ht(be, ht, key, prnt, is_any(e));
-		if (prnt == NULL) return NULL;
-
+		prnt = perfect ?
+			stmt_fhash_build_ht(be, ht, key, is_any(e)) :
+			stmt_oahash_build_ht(be, ht, key, prnt, is_any(e));
+		if (prnt == NULL)
+				return NULL;
 		if (e->alias.label)
 			ht = stmt_alias(be, ht, e->alias.label, exp_find_rel_name(e), exp_name(e));
 		append(l, ht);
@@ -370,6 +433,7 @@ rel2bin_oahash_build(backend *be, sql_rel *rel, list *refs)
 	stmts_ht->op1 = stmts_hp;
 	stmts_ht->op2 = hp_gid;
 	stmts_ht->op3 = freq;
+	stmts_ht->flag = perfect;
 	return stmts_ht;
 }
 
@@ -414,7 +478,7 @@ rel2bin_oahash_equi_join(backend *be, sql_rel *rel, list *refs, list *jexps, stm
 	if (probe_sub)
 		*probe_sub = sub;
 
-	stmt *prb_res = oahash_probe(be, rel, jexps, exps_cmp_prb, stmts_ht, sub, false /*anti*/, mark/*groupjoin*/, has_outerselect, nulls, prb_mrk);
+	stmt *prb_res = hash_probe(be, rel, jexps, exps_cmp_prb, stmts_ht, sub, false /*anti*/, mark/*groupjoin*/, has_outerselect, nulls, prb_mrk);
 	if (prb_res == NULL) return NULL;
 
 	/*** PROJECT RESULT PHASE ***/
@@ -1338,7 +1402,7 @@ rel2bin_oahash_semi(backend *be, sql_rel *rel, list *refs)
 		probe_sub = sub = _start_pp(be, rel_prb->l, false, refs, NULL);
 		if (!sub) return NULL;
 
-		stmt *prb_res = oahash_probe(be, rel, rel->exps, exps_cmp_prb, stmts_ht, sub, anti, false /* groupjoin */, false /* has_outerselect */, &nulls, NULL);
+		stmt *prb_res = hash_probe(be, rel, rel->exps, exps_cmp_prb, stmts_ht, sub, anti, false /* groupjoin */, false /* has_outerselect */, &nulls, NULL);
 		if (prb_res == NULL) return NULL;
 
 		/*** PROJECT RESULT PHASE ***/

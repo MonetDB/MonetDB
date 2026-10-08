@@ -494,19 +494,11 @@ OAHASHnew(Client cntxt, MalBlkPtr m, MalStkPtr s, InstrPtr p)
 
 	bat *res = getArgReference_bat(s, p, 0);
 	int tt = getArgType(m, p, 1);
-	int tt2 = getArgType(m, p, 2);
-	lng size = 0;
+	lng size = *getArgReference_lng(s, p, 2);
 	hash_table *parent = NULL;
 	BAT *pht = NULL;
 	int vkey = 0;
 
-	if (tt2 == TYPE_int) {
-		assert(0);
-		size = (lng) *getArgReference_int(s, p, 2);
-	} else {
-		assert(tt2 == TYPE_lng);
-		size = *getArgReference_lng(s, p, 2);
-	}
 	/* multiply with the magic estimation while avoiding overflow */
 	size = size > ((dbl)INT64_MAX / 1.2 / 2.1)? INT64_MAX : (lng)(size * 1.2 * 2.1);
 
@@ -533,6 +525,39 @@ OAHASHnew(Client cntxt, MalBlkPtr m, MalStkPtr s, InstrPtr p)
 	if (b->pl_io == NULL) {
 		BBPunfix(b->batCacheid);
 		return createException(MAL, "oahash.new", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+	}
+	*res = b->batCacheid;
+	BBPkeepref(b);
+	return MAL_SUCCEED;
+}
+
+static str
+FHASHnew(Client cntxt, MalBlkPtr m, MalStkPtr s, InstrPtr p)
+{
+	(void)cntxt;
+
+	bat *res = getArgReference_bat(s, p, 0);
+	int tt = getArgType(m, p, 1);
+	lng size = *getArgReference_lng(s, p, 2);
+	lng max = *getArgReference_lng(s, p, 3);
+	hash_table *parent = NULL;
+	BAT *pht = NULL;
+
+	/* multiply with the magic estimation while avoiding overflow */
+	size = size > ((dbl)INT64_MAX / 1.2 / 2.1)? INT64_MAX : (lng)(size * 1.2 * 2.1);
+
+	BAT *b = COLnew(0, tt, 0, TRANSIENT);
+	if (b == NULL) {
+		BBPreclaim(pht);
+		return createException(MAL, "fhash.new", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+	}
+	hash_table *ht = ht_create(tt, (size_t)max, parent, 0);
+	ht->perfect = true;
+	b->pl_io = (struct pipeline_io*)ht;
+	BBPreclaim(pht);
+	if (b->pl_io == NULL) {
+		BBPunfix(b->batCacheid);
+		return createException(MAL, "fhash.new", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 	*res = b->batCacheid;
 	BBPkeepref(b);
@@ -1471,6 +1496,124 @@ error:
 	return err;
 }
 
+#define vfetch() \
+	do { \
+		slot = ATOMIC_ADD_GID(&h->last, cnt); \
+		oid *hgids = (oid*)h->gids; \
+		struct canditer ci; \
+		canditer_init(&ci, NULL, b); \
+		cnt = ci.ncand; \
+		\
+		TIMEOUT_LOOP_IDX_DECL(i, cnt, qry_ctx) { \
+			oid bpi = canditer_next(&ci); \
+			assert(bpi != oid_nil); \
+			gid g = ++slot; \
+			hgids[bpi] = g; \
+			gp[i] = g-1; \
+		} \
+	} while (0)
+
+#define fetch() \
+	do { \
+		slot = ATOMIC_ADD_GID(&h->last, cnt); \
+		oid *bp = Tloc(b, 0); \
+		oid *hgids = (oid*)h->gids; \
+		\
+		TIMEOUT_LOOP_IDX_DECL(i, cnt, qry_ctx) { \
+			oid bpi = bp[i]; \
+			assert(bpi != oid_nil); \
+			gid g = ++slot; \
+			hgids[bpi] = g; \
+			gp[i] = g-1; \
+		} \
+	} while (0)
+
+static str
+FHASHbuild(Client ctx, MalBlkPtr m, MalStkPtr s, InstrPtr p)
+{
+	(void)ctx;
+	(void)m;
+
+	bat *gids      = getArgReference_bat(s, p, 0);
+	bat *hashtable = getArgReference_bat(s, p, 1);
+	bat *keys      = getArgReference_bat(s, p, 2);
+	bit need_has_nil = *getArgReference_bit(s, p, 3);
+	assert(need_has_nil == FALSE);
+	(void)need_has_nil;
+
+	Pipeline *pl = pipeline_get_thread_private_pipeline();
+	str err = NULL;
+	BAT *u = NULL, *b = NULL, *g = NULL;
+
+	/* we only work with shared hashtable in the build phase */
+	assert(*hashtable && !is_bat_nil(*hashtable));
+
+	b = BATdescriptor(*keys);
+	u = BATdescriptor(*hashtable);
+	if (!b || !u) {
+		err = createException(MAL, "fhash.build", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+		goto error;
+	}
+	hash_table *h = (hash_table*)u->pl_io;
+	assert(h && h->pl_io.type == PIPELINE_IO_HASH_TABLE);
+
+	BUN cnt = BATcount(b);
+	g = COLnew(b->hseqbase, TYPE_oid, cnt, TRANSIENT);
+	if (g == NULL) {
+		err = createException(MAL, "fhash.build", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		goto error;
+	}
+
+	if (cnt) {
+		int tt = b->ttype;
+		gid *gp = Tloc(g, 0);
+
+		h->empty = false;
+		gid slot = 0;
+		QryCtx *qry_ctx = MT_thread_get_qry_ctx();
+		qry_ctx = qry_ctx ? qry_ctx : &(QryCtx) {.endtime = 0};
+
+		assert(tt == TYPE_void || tt == TYPE_oid); /* for now only oids */
+
+		if (tt == TYPE_void) {
+			vfetch();
+		} else if (tt == TYPE_oid) {
+			if (BATtdense(b))
+				vfetch();
+			else
+				fetch();
+		}
+		if (!err)
+			TIMEOUT_CHECK(qry_ctx, err = createException(SQL, "fhash.build", RUNTIME_QRY_TIMEOUT));
+	}
+	if (err || pl->p->status) {
+		if (!err)
+			err = createException(MAL, "fhash.build", "pipeline execution error");
+		goto error;
+	}
+	BATsetcount(g, cnt);
+	pipeline_lock2(g);
+	BATnegateprops(g);
+	pipeline_unlock2(g);
+	gid last = ATOMIC_GET_GID(&h->last);
+	g->tmaxval = last;
+	g->tkey = FALSE;
+	*gids = g->batCacheid;
+	//skip propcheck
+	//BBPkeepref(u);
+	BBPretain(u->batCacheid);
+	BBPunfix(u->batCacheid);
+	BBPkeepref(g);
+
+	BBPunfix(b->batCacheid);
+	return MAL_SUCCEED;
+error:
+	BBPreclaim(u);
+	BBPreclaim(b);
+	BBPreclaim(g);
+	return err;
+}
+
 static str
 OAHASHadd_freq(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
@@ -1863,6 +2006,120 @@ error:
 	BBPreclaim(f);
 	return err;
 }
+
+#define BATvlookup() \
+	do { \
+		struct canditer ci; \
+		canditer_init(&ci, NULL, k); \
+		keycnt = ci.ncand; \
+		oid *gids = (oid*)ht->gids; \
+		\
+		TIMEOUT_LOOP_IDX_DECL(i, keycnt, qry_ctx) { \
+			oid ky = canditer_next(&ci); \
+			assert(ky != oid_nil); \
+			gid k = ky < ht->size ? gids[ky] : 0; \
+			if (k) { \
+				oid_mtd[mtdcnt] = off+i; \
+				slt[mtdcnt] = (oid)(k - 1); \
+				mtdcnt++; \
+			} \
+		} \
+	} while (0)
+
+#define BATlookup() \
+	do { \
+		oid *gids = (oid*)ht->gids; \
+		oid *kp = Tloc(k, 0); \
+		\
+		TIMEOUT_LOOP_IDX_DECL(i, keycnt, qry_ctx) { \
+			oid kpi = kp[i]; \
+			/*assert(kpi != oid_nil);*/ \
+			gid k = kpi < ht->size ? gids[kpi] : 0; \
+			if (k) { \
+				oid_mtd[mtdcnt] = off+i; \
+				slt[mtdcnt] = (oid)(k - 1); \
+				mtdcnt++; \
+			} \
+		} \
+	} while (0)
+
+static str
+FHASHprobe(Client ctx, bat *PRB_oid, bat *HSH_slotid, const bat *PRB_key, const bat *HSH_ht, const bit *single, const bit *semantics)
+{
+	(void)ctx;
+	BAT *o = NULL, *s = NULL, *k = NULL, *t = NULL;
+	BUN keycnt, mtdcnt = 0;
+	str err = NULL;
+
+	k = BATdescriptor(*PRB_key);
+	t = BATdescriptor(*HSH_ht);
+	if (!k || !t) {
+		err = createException(SQL, "oahash.probe", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+		goto error;
+	}
+	assert(!*single && !*semantics);
+	(void)single;
+	(void)semantics;
+
+	keycnt = BATcount(k);
+	o = COLnew(0, TYPE_oid, keycnt, TRANSIENT);
+	s = COLnew(0, TYPE_oid, keycnt, TRANSIENT);
+	if (!o || !s) {
+		err = createException(SQL, "oahash.probe", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		goto error;
+	}
+
+	if (keycnt) {
+		if (t->pl_io->error) {
+			err = t->pl_io->error;
+			goto error;
+		}
+
+		hash_table *ht = (hash_table*)t->pl_io;
+		int tt = k->ttype;
+		QryCtx *qry_ctx = MT_thread_get_qry_ctx();
+		qry_ctx = qry_ctx ? qry_ctx : &(QryCtx) {.endtime = 0};
+
+		oid *oid_mtd = Tloc(o, 0);
+		oid *slt = Tloc(s, 0);
+
+		BUN off = k->hseqbase;
+		if(tt == TYPE_void) {
+			BATvlookup();
+		} else if(tt == TYPE_oid) {
+			BATlookup();
+		} else {
+			err = createException(MAL, "oahash.probe", SQLSTATE(HY000) TYPE_NOT_SUPPORTED);
+			goto error;
+		}
+		TIMEOUT_CHECK(qry_ctx, err = createException(SQL, "oahash.probe", RUNTIME_QRY_TIMEOUT));
+		if (err)
+			goto error;
+	}
+
+	BBPreclaim(k);
+	BBPunfix(t->batCacheid);
+	BATsetcount(o, mtdcnt);
+	BATsetcount(s, mtdcnt);
+	BATnegateprops(o);
+	BATnegateprops(s);
+	o->tnonil = true;
+	s->tnonil = true;
+	o->tsorted = true;
+	BATkey(o, true);
+	*PRB_oid = o->batCacheid;
+	*HSH_slotid = s->batCacheid;
+	BBPkeepref(o);
+	BBPkeepref(s);
+	return MAL_SUCCEED;
+error:
+	BBPreclaim(o);
+	BBPreclaim(s);
+	BBPreclaim(k);
+	BBPreclaim(t);
+	return err;
+}
+
 
 static str
 OAHASHprobe_single(Client ctx, bat *PRB_oid, bat *HSH_slotid, const bat *PRB_key, const bat *HSH_ht, const bat *frequency, const bit *single, const bit *semantics)
@@ -3424,20 +3681,20 @@ OAHASHhash(Client cntxt, MalBlkPtr m, MalStkPtr stk, InstrPtr p)
 
 #include "mel.h"
 static mel_func oa_hash_init_funcs[] = {
- pattern("oahash", "new", OAHASHnew, false, "", args(1,3, batargany("ht_sink",1),argany("tt",1),arg("size",int))),
- pattern("oahash", "new", OAHASHnew, false, "", args(1,4, batargany("ht_sink",1),argany("tt",1),arg("size",int),batargany("p",2))),
- pattern("oahash", "new", OAHASHnew, false, "", args(1,4, batargany("ht_sink",1),argany("tt",1),arg("size",int), arg("vkey", int))),
- pattern("oahash", "new", OAHASHnew, false, "", args(1,5, batargany("ht_sink",1),argany("tt",1),arg("size",int),batargany("p",2), arg("vkey", int))),
  pattern("oahash", "new", OAHASHnew, false, "", args(1,3, batargany("ht_sink",1),argany("tt",1),arg("size",lng))),
  pattern("oahash", "new", OAHASHnew, false, "", args(1,4, batargany("ht_sink",1),argany("tt",1),arg("size",lng),batargany("p",2))),
  pattern("oahash", "new", OAHASHnew, false, "", args(1,4, batargany("ht_sink",1),argany("tt",1),arg("size",lng), arg("vkey", int))),
  pattern("oahash", "new", OAHASHnew, false, "", args(1,5, batargany("ht_sink",1),argany("tt",1),arg("size",lng),batargany("p",2), arg("vkey", int))),
+
+ pattern("fhash", "new", FHASHnew, false, "", args(1,4, batargany("ht_sink",1), argany("tt",1), arg("size", lng), arg("max",lng))),
 
  command("oahash", "hashmark_init", OAHASHhashmark_init, false, "", args(1,3, batarg("hashmark",bit),batargany("ht_sink",1),batargany("payload",2))),
  pattern("hash", "ext", UHASHext, false, "", args(1,2, batarg("ext",oid),batargany("in",1))),
 
  pattern("oahash", "build", OAHASHbuild, false, "Add `keys` to the `hashtable`. If `need_has_nil`, denote if `keys` contains NULL. Returns corresponding `gids` of the `keys` and the updated `hashtable`", args(2,4, batarg("gids",oid),batargany("hashtable",1),batargany("keys",1),arg("need_has_nil",bit))),
  pattern("oahash", "build", OAHASHbuild, false, "Add `keys` with `parents` to the `hashtable`. If `need_has_nil`, denote if `keys` contains NULL. Returns corresponding `gids` of the `keys` and the updated `hashtable`", args(2,5, batarg("gids",oid),batargany("hashtable",1),batargany("keys",1),batarg("parents",oid),arg("need_has_nil",bit))),
+
+ pattern("fhash", "build", FHASHbuild, false, "Add `keys` to the `hashtable`. If `need_has_nil`, denote if `keys` contains NULL. Returns corresponding `gids` of the `keys` and the updated `hashtable`", args(2,4, batarg("gids",oid),batargany("hashtable",1),batargany("keys",1),arg("need_has_nil",bit))),
 
  pattern("oahash", "frequency", OAHASHadd_freq, false, "Add `slot_id` to the shared `frequencies` BAT. Returns the updated `frequencies`", args(1,2, batarg("frequencies",lng),batarg("slot_id",oid))),
  pattern("oahash", "frequency", OAHASHadd_freq, false, "Add `slot_id` to the shared `frequencies` BAT. Returns the occurrence index for each `slot_id` (i.e. it is the n-th time the `slot_id` is seen so far) and the updated `frequencies`", args(2,3, batarg("occrrence_idx",oid),batarg("frequencies",lng),batarg("slot_id",oid))),
@@ -3462,6 +3719,8 @@ static mel_func oa_hash_init_funcs[] = {
 
  command("oahash", "combined_mprobe", OAHASHmprobe_cmbd_single, false, "Probe the selected `key`-s pairs in the hash table. For a matched item, return its OID in the 'key' column and the slot ID in the hash table", args(3,10, batarg("PRB_oid",oid),batarg("HSH_slotid",oid),batarg("PRB_matched",bit),batargany("PRB_key",1),batarg("PRB_selected",oid),batarg("HSH_pgids",oid),batargany("HSH_ht",1),batarg("frequency",lng),arg("single",bit),arg("semantics",bit))),
  command("oahash", "combined_mprobe", OAHASHmprobe_cmbd, false, "Probe the selected `key`-s in the hash table. For a matched item, return its OID in the 'key' column and the slot ID in the hash table", args(3,9, batarg("PRB_oid",oid),batarg("HSH_slotid",oid),batarg("PRB_matched",bit),batargany("PRB_key",1),batarg("PRB_selected",oid),batarg("HSH_pgids",oid),batargany("HSH_ht",1),arg("single",bit),arg("semantics",bit))),
+
+ command("fhash", "probe", FHASHprobe, false, "Probe the `key` in the hash table. For a matched key, return its OID in the 'key' column and the slot ID in the hash table", args(2,6, batarg("PRB_oid",oid),batarg("HSH_slotid",oid),batargany("PRB_key",1),batargany("HSH_ht",1),arg("single",bit),arg("semantics",bit))),
 
  pattern("oahash", "expand", OAHASHexpand, false, "Expand the probe-side OIDs according to their matching hash-side GIDs and frequencies. If 'leftouter' is true, include the not matched OIDs", args(1,5,batarg("expanded",oid),batarg("prb_oids",oid),batarg("hsh_gids",oid),batarg("frequency",lng),arg("leftouter",bit))),
 
