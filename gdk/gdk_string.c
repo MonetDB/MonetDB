@@ -7151,9 +7151,9 @@ static const int casefold[4672] = {
  * large enough, it is extended using the given allocator; on return
  * (with or without error), the current buffer is in *buf, and the
  * current size in *buflen. */
+__attribute__((__access__(read_write, 2)))
+__attribute__((__access__(read_write, 3)))
 static gdk_return
-	__attribute__((__access__(read_write, 2)))
-	__attribute__((__access__(read_write, 3)))
 convertcase(allocator *ma, char **restrict buf, size_t *restrict buflen,
 	    const uint8_t *restrict s, int direction)
 {

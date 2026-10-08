@@ -72,7 +72,8 @@ mal_export int mal_init(const char *const *modules, bool embedded,
 						const char *initpasswd, const char *caller_revision);
 mal_export _Noreturn void mal_exit(int status);
 mal_export void mal_reset(void);
-mal_export const char *mal_version(void);
+mal_export const char *mal_version(void)
+	__attribute__((__const__));
 
 /* This should be here, but cannot, as "Client" isn't known, yet ... |-(
  * For now, we move the prototype declaration to src/mal/mal_client.c,

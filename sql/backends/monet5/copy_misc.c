@@ -88,12 +88,11 @@ copy_destroy_error_handling(struct error_handling *admin)
 		BBPunfix(admin->rows->batCacheid);
 }
 
+__attribute__((__format__(__printf__, 7, 0)))
 static void
-format_error(struct error_handling *restrict admin, lng row_number, int column_1based, const char *colname,char *buf, char *buf_end, const char *format, va_list ap)
-	__attribute__((__format__(__printf__, 7, 0)));
-
-static void
-format_error(struct error_handling *restrict admin, lng row_1based, int column_1based, const char *colname,char *buf, char *buf_end, const char *format, va_list ap)
+format_error(struct error_handling *restrict admin, lng row_1based,
+			 int column_1based, const char *colname, char *buf, char *buf_end,
+			 _In_z_ _Printf_format_string_ const char *format, va_list ap)
 {
 	char col_msg[100];
 	if (is_int_nil(column_1based))

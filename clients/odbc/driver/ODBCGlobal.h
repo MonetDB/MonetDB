@@ -98,11 +98,9 @@ extern const char *ODBCdebug;
 
 extern void setODBCdebug(const char *filename, bool overrideEnvVar);
 
-static inline void ODBCLOG(_In_z_ _Printf_format_string_ const char *fmt, ...)
-	__attribute__((__format__(__printf__, 1, 2)));
-
+__attribute__((__format__(__printf__, 1, 2)))
 static inline void
-ODBCLOG(const char *fmt, ...)
+ODBCLOG(_In_z_ _Printf_format_string_ const char *fmt, ...)
 {
 	va_list ap;
 
