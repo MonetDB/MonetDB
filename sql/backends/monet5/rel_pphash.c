@@ -649,6 +649,15 @@ rel2bin_oahash_outerselect(backend *be, stmt *sub, list *sexps, sql_rel *rel, st
 		if (prb_mrk)
 			*prb_mrk = m;
 	}
+	if (manti) { /* do the reverse selection for the anti-joins */
+		stmt *u = stmt_unique(be, probed_ids);
+		if (!u) return NULL;
+		stmt *asel = stmt_tdiff4(be, probed_ids, probed_ids, u, sel);
+		if (!asel) return NULL;
+		sel = asel;
+		stmt *amrk = stmt_const(be, asel, stmt_bool(be, 1));
+		*prb_mrk = amrk;
+	}
 	return sel;
 }
 
@@ -866,18 +875,20 @@ rel2bin_oahash_groupjoin(backend *be, sql_rel *rel, list *refs)
 	list *jexps = sa_list(be->mvc->sa), *sexps = sa_list(be->mvc->sa), *probe_side = NULL, *hash_side = NULL;
 	stmt *probed_ids = NULL, *hash_ids = NULL;
 	stmt *prb_mrk = NULL;
-	bool mark = false, exist = true;
+	bool mark = false, exist = true, manti = false;
 
 	if (list_length(rel->attr) == 1) {
 		sql_exp *e = rel->attr->h->data;
 		if (exp_is_atom(e)) {
 			mark = true;
-			if (exp_is_false(e))
+			if (exp_is_false(e)) {
 				exist = false;
+				manti = true;
+			}
 		}
 	}
 
-	split_join_exps(rel, jexps, sexps, false /* anti */, true /* eqonly */, mark&&!exist /* marked-anti ==> firstonly */);
+	split_join_exps(rel, jexps, sexps, false /* anti */, true /* eqonly */, manti /* manti ==> firstonly */);
 
 	int neededpp = (rel->spb || rel->partition) && get_need_pipeline(be);
 	(void)neededpp;
@@ -896,7 +907,7 @@ rel2bin_oahash_groupjoin(backend *be, sql_rel *rel, list *refs)
 		append(sexps,e);
 	}
 	if (!list_empty(sexps)) {
-		stmt *sel = rel2bin_oahash_outerselect(be, sub, sexps, rel, probed_ids, hash_ids, &prb_mrk, list_empty(jexps), mark, mark&&!exist);
+		stmt *sel = rel2bin_oahash_outerselect(be, sub, sexps, rel, probed_ids, hash_ids, &prb_mrk, list_empty(jexps), mark, manti);
 		list *lp = sa_list(be->mvc->sa);
 		for (node *n = probe_side->h; n; n = n->next) {
 			stmt *c = stmt_project(be, sel, n->data);
@@ -931,11 +942,6 @@ rel2bin_oahash_groupjoin(backend *be, sql_rel *rel, list *refs)
 				assert(prb_mrk);
 				if (exp_is_atom(e) && need_no_nil(e)) /* exclude nulls */
 					prb_mrk = sql_Nop_(be, "ifthenelse", sql_unop_(be, "isnull", prb_mrk), stmt_bool(be, false), prb_mrk, NULL);
-				if (!exist) {
-					sql_subtype *bt = sql_fetch_localtype(TYPE_bit);
-					sql_subfunc *not = sql_bind_func(be->mvc, "sys", "not", bt, NULL, F_FUNC, true, true);
-					prb_mrk = stmt_unop(be, prb_mrk, NULL, not);
-				}
 			}
 			stmt *s = stmt_alias(be, prb_mrk, e->alias.label, rnme, nme);
 			append(sub->op4.lval, s);
