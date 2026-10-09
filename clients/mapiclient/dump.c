@@ -213,7 +213,7 @@ static const char *actions[] = {
 	"SET NULL",
 	"SET DEFAULT",
 };
-#define NR_ACTIONS	((int) (sizeof(actions) / sizeof(actions[0])))
+#define NR_ACTIONS	((int) countof(actions))
 
 static char *
 get_schema(Mapi mid)
@@ -858,7 +858,7 @@ dump_type(Mapi mid, stream *sqlf, const char *c_type, const char *c_type_digits,
 		int sub = atoi(c_type_digits);
 
 		if (sub > 0 && (sub & 3) == 0 &&
-		    (sub >> 2) < (int) (sizeof(geomsubtypes) / sizeof(geomsubtypes[0])))
+		    (sub >> 2) < (int) countof(geomsubtypes))
 			geom = geomsubtypes[sub >> 2];
 		if (geom) {
 			mnstr_printf(sqlf, "GEOMETRY(%s", geom);

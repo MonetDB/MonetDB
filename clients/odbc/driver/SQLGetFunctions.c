@@ -161,7 +161,7 @@ static UWORD FuncImplemented[] = {
 #endif /* not yet implemented */
 };
 
-#define NFUNCIMPLEMENTED (sizeof(FuncImplemented)/sizeof(FuncImplemented[0]))
+#define NFUNCIMPLEMENTED countof(FuncImplemented)
 
 /* this table is a bit map compatible with
    SQL_API_ODBC3_ALL_FUNCTIONS, to be initialized from the table

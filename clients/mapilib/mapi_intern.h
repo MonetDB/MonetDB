@@ -87,11 +87,6 @@ gmtime_r(const time_t *restrict timep, struct tm *restrict result)
 #endif
 
 
-/* number of elements in an array */
-#define NELEM(arr)	(sizeof(arr) / sizeof(arr[0]))
-
-
-
 /* three structures used for communicating date/time information */
 /* these structs are deliberately compatible with the ODBC versions
    SQL_DATE_STRUCT, SQL_TIME_STRUCT, and SQL_TIMESTAMP_STRUCT */

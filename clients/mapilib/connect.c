@@ -780,7 +780,7 @@ mapi_handshake(Mapi mid)
 					break;
 				case '^':
 					r = mid->redirects;
-					m = NELEM(mid->redirects) - 1;
+					m = countof(mid->redirects) - 1;
 					while (*r != NULL && m > 0) {
 						m--;
 						r++;

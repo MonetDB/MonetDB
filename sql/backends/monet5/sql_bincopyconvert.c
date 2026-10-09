@@ -335,7 +335,7 @@ void init_insert_state(struct insert_state *st, allocator *ma, BAT *bat, int wid
 		.schratch_len = 0,
 		.resume = 0,
 	};
-	for (size_t i = 0; i < sizeof(st->singlechar)/sizeof(st->singlechar[0]); i++) {
+	for (size_t i = 0; i < countof(st->singlechar); i++) {
 		st->singlechar[i] = BUN_NONE;
 	}
 };
