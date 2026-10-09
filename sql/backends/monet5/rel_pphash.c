@@ -438,12 +438,13 @@ rel2bin_oahash_equi_join(backend *be, sql_rel *rel, list *refs, list *jexps, stm
 		*prb_mrk = mrk;
 	} else {
 		bit hasleftouter = (rel->op == op_left || rel->op == op_full /*|| (rel->op == op_right && rel->oahash == 1)*/);
-		stmt *prb_oid = stmt_oahash_expand(be, prb_res, stmts_ht->op3, hasleftouter);
+		prb_oid = stmt_oahash_expand(be, prb_res, stmts_ht->op3, hasleftouter);
 		if (prb_oid == NULL) return NULL;
 
-		hsh_gid = freq?stmt_oahash_explode(be, prb_res, freq, hp_pos, hasleftouter)
-						:stmt_blackbox_result(be, prb_res->q, 1, sql_fetch_localtype(TYPE_oid));
-		if (hsh_gid == NULL) return NULL;
+		if (!list_empty(exps_prj_hsh)) {
+			hsh_gid = freq?stmt_oahash_explode(be, prb_res, freq, hp_pos, hasleftouter):stmt_blackbox_result(be, prb_res->q, 1, sql_fetch_localtype(TYPE_oid));
+			if (hsh_gid == NULL) return NULL;
+		}
 
 		if (prb_mrk && *prb_mrk) {
 			stmt *s = stmt_project(be, prb_oid, *prb_mrk);
