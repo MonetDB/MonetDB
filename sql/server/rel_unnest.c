@@ -2304,7 +2304,6 @@ rewrite_anyequal(visitor *v, sql_rel *rel, sql_exp *e, int depth)
 					exp_reset_props(rewrite, le, is_left(rewrite->op));
 				}
 
-				//ATOMIC_TYPE oahash_enabled = (1U<<19);
 				bool tomarkjoin = (!is_anyequal(sf)) && (list_length(le->f) > 1);
 				if (tomarkjoin && is_tuple) {
 					list *t = le->f;
