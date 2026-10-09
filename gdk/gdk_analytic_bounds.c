@@ -15,78 +15,30 @@
 #include "gdk_calc_private.h"
 #include "gdk_private.h"
 
-#define ANALYTICAL_DIFF_IMP(TPE)			\
-	do {						\
-		const TPE *restrict bp = (TPE*)bi.base;	\
-		TPE prev = bp[0];			\
-		if (np) {				\
-			for (; i < cnt; i++) {		\
-				TPE next = bp[i];	\
-				if (next != prev) {	\
-					rb[i] = TRUE;	\
-					prev = next;	\
-				} else {		\
-					rb[i] = np[i];	\
-				}			\
-			}				\
-		} else if (npbit) {			\
-			for (; i < cnt; i++) {		\
-				TPE next = bp[i];	\
-				if (next != prev) {	\
-					rb[i] = TRUE;	\
-					prev = next;	\
-				} else {		\
-					rb[i] = npb;	\
-				}			\
-			}				\
-		} else {				\
-			for (; i < cnt; i++) {		\
-				TPE next = bp[i];	\
-				if (next == prev) {	\
-					rb[i] = FALSE;	\
-				} else {		\
-					rb[i] = TRUE;	\
-					prev = next;	\
-				}			\
-			}				\
-		}					\
+#define ANALYTICAL_DIFF_IMP(TPE)					\
+	do {								\
+		const TPE *restrict bp = (TPE *) bi.base;		\
+		TPE prev = bp[0];					\
+		for (i = 0; i < bi.count; i++) {			\
+			TPE next = bp[i];				\
+			rb[i] = next != prev || (np ? np[i] : npb);	\
+			prev = next;					\
+		}							\
 	} while (0)
+
+#define fpEq(TPE, f1, f2)	(is_##TPE##_nil(f1)			\
+				 ? is_##TPE##_nil(f2)			\
+				 : !is_##TPE##_nil(f2) && f1 == f2)
 
 /* We use NaN for floating point null values, which always output false on equality tests */
 #define ANALYTICAL_DIFF_FLOAT_IMP(TPE)					\
 	do {								\
 		const TPE *restrict bp = (TPE*)bi.base;			\
 		TPE prev = bp[0];					\
-		if (np) {						\
-			for (; i < cnt; i++) {				\
-				TPE next = bp[i];			\
-				if (next != prev && (!is_##TPE##_nil(next) || !is_##TPE##_nil(prev))) { \
-					rb[i] = TRUE;			\
-					prev = next;			\
-				} else {				\
-					rb[i] = np[i];			\
-				}					\
-			}						\
-		} else if (npbit) {					\
-			for (; i < cnt; i++) {				\
-				TPE next = bp[i];			\
-				if (next != prev && (!is_##TPE##_nil(next) || !is_##TPE##_nil(prev))) { \
-					rb[i] = TRUE;			\
-					prev = next;			\
-				} else {				\
-					rb[i] = npb;			\
-				}					\
-			}						\
-		} else {						\
-			for (; i < cnt; i++) {				\
-				TPE next = bp[i];			\
-				if (next == prev || (is_##TPE##_nil(next) && is_##TPE##_nil(prev))) { \
-					rb[i] = FALSE;			\
-				} else {				\
-					rb[i] = TRUE;			\
-					prev = next;			\
-				}					\
-			}						\
+		for (i = 0; i < bi.count; i++) {			\
+			TPE next = bp[i];				\
+			rb[i] = !fpEq(TPE, next, prev) || (np ? np[i] : npb); \
+			prev = next;					\
 		}							\
 	} while (0)
 
@@ -95,13 +47,17 @@ GDKanalyticaldiff(BAT *b, BAT *p, const bit *restrict npbit, int tpe)
 {
 	lng t0 = 0;
 	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
-	BUN i = 0, cnt = BATcount(b);
+	BUN i;
 	BATiter pi = bat_iterator(p);
 	BATiter bi = bat_iterator(b);
-	BAT *r = COLnew(b->hseqbase, TYPE_bit, BATcount(b), TRANSIENT);
-	if (r == NULL)
+	BAT *r = COLnew(b->hseqbase, TYPE_bit, bi.count, TRANSIENT);
+	if (r == NULL) {
+		bat_iterator_end(&bi);
+		bat_iterator_end(&pi);
 		return NULL;
-	bit *restrict rb = (bit *) Tloc(r, 0), npb = npbit ? *npbit : 0;
+	}
+	bit *restrict rb = (bit *) Tloc(r, 0);
+	bit npb = npbit != NULL && *npbit;
 	const bit *restrict np = (bit *) pi.base;
 	switch (ATOMbasetype(tpe)) {
 	case TYPE_bte:
@@ -135,43 +91,20 @@ GDKanalyticaldiff(BAT *b, BAT *p, const bit *restrict npbit, int tpe)
 			ANALYTICAL_DIFF_FLOAT_IMP(dbl);
 		}
 		break;
-	default:{
-		const void *v = BUNtail(&bi, 0), *next;
-		bool (*atomeq) (const void *, const void *) = ATOMequal(tpe);
-		if (np) {
-			for (i = 0; i < cnt; i++) {
-				rb[i] = np[i];
-				next = BUNtail(&bi, i);
-				if (!atomeq(v, next)) {
-					rb[i] = TRUE;
-					v = next;
-				}
-			}
-		} else if (npbit) {
-			for (i = 0; i < cnt; i++) {
-				rb[i] = npb;
-				next = BUNtail(&bi, i);
-				if (!atomeq(v, next)) {
-					rb[i] = TRUE;
-					v = next;
-				}
-			}
-		} else {
-			for (i = 0; i < cnt; i++) {
-				next = BUNtail(&bi, i);
-				if (!atomeq(v, next)) {
-					rb[i] = TRUE;
-					v = next;
-				} else {
-					rb[i] = FALSE;
-				}
-			}
+	default: {
+		const void *v = BUNtail(&bi, 0);
+		const void *next;
+		bool (*atomeq)(const void *, const void *) = ATOMequal(tpe);
+		for (i = 0; i < bi.count; i++) {
+			next = BUNtail(&bi, i);
+			rb[i] = !atomeq(v, next) || (np ? np[i] : npb);
+			v = next;
 		}
 	}
 	}
+	BATsetcount(r, bi.count);
 	bat_iterator_end(&bi);
 	bat_iterator_end(&pi);
-	BATsetcount(r, cnt);
 	r->tnonil = true;
 	r->tnil = false;
 	TRC_DEBUG(ALGO, "b=" ALGOBATFMT ",p=" ALGOOPTBATFMT
@@ -206,24 +139,17 @@ GDKanalyticaldiff(BAT *b, BAT *p, const bit *restrict npbit, int tpe)
 
 #define ANALYTICAL_WINDOW_BOUNDS_BRANCHES_ROWS(IMP, CARD, TPE, LIMIT, UPCAST) \
 	do {								\
-		if (p) {						\
-			for (; i < cnt; i++) {				\
-				if (np[i]) {				\
-				  rows##TPE##IMP##CARD:			\
-					ANALYTICAL_WINDOW_BOUNDS_ROWS##IMP(TPE, LIMIT, UPCAST);	\
-				}					\
-			}						\
-		}							\
-		if (!last) {						\
-			last = true;					\
+		if (p == NULL)						\
 			i = cnt;					\
-			goto rows##TPE##IMP##CARD;			\
+		for (; i <= cnt; i++) {					\
+			if (i == cnt || np[i])				\
+				ANALYTICAL_WINDOW_BOUNDS_ROWS##IMP(TPE, LIMIT, UPCAST);	\
 		}							\
 	} while (0)
 
 #define ANALYTICAL_WINDOW_BOUNDS_GROUPS_PRECEDING(TPE, LIMIT, UPCAST)	\
 	do {								\
-		oid m = k;						\
+		BUN m = k;						\
 		for (; k < i; k++) {					\
 			TPE olimit = LIMIT;				\
 			if (is_##TPE##_nil(olimit) || olimit < 0)	\
@@ -262,26 +188,19 @@ GDKanalyticaldiff(BAT *b, BAT *p, const bit *restrict npbit, int tpe)
 
 #define ANALYTICAL_WINDOW_BOUNDS_BRANCHES_GROUPS(IMP, CARD, TPE, LIMIT, UPCAST)	\
 	do {								\
-		if (p) {						\
-			for (; i < cnt; i++) {				\
-				if (np[i]) {				\
-				  groups##TPE##IMP##CARD:		\
-					ANALYTICAL_WINDOW_BOUNDS_GROUPS##IMP(TPE, LIMIT, UPCAST); \
-				}					\
-			}						\
-		}							\
-		if (!last) {						\
-			last = true;					\
+		if (p == NULL)						\
 			i = cnt;					\
-			goto groups##TPE##IMP##CARD;			\
+		for (; i <= cnt; i++) {					\
+			if (i == cnt || np[i])				\
+				ANALYTICAL_WINDOW_BOUNDS_GROUPS##IMP(TPE, LIMIT, UPCAST); \
 		}							\
 	} while (0)
 
 #define ANALYTICAL_WINDOW_BOUNDS_RANGE_PRECEDING(TPE1, LIMIT, TPE2)	\
 	do {								\
-		oid m = k;						\
+		BUN m = k;						\
 		TPE1 v, calc;						\
-		if (bi.nonil) {					\
+		if (bi.nonil) {						\
 			for (; k < i; k++) {				\
 				TPE2 olimit = LIMIT;			\
 				if (is_##TPE2##_nil(olimit) || olimit < 0) \
@@ -337,7 +256,7 @@ GDKanalyticaldiff(BAT *b, BAT *p, const bit *restrict npbit, int tpe)
 #define ANALYTICAL_WINDOW_BOUNDS_RANGE_FOLLOWING(TPE1, LIMIT, TPE2)	\
 	do {								\
 		TPE1 v, calc;						\
-		if (bi.nonil) {					\
+		if (bi.nonil) {						\
 			for (; k < i; k++) {				\
 				TPE2 olimit = LIMIT;			\
 				if (is_##TPE2##_nil(olimit) || olimit < 0) \
@@ -378,18 +297,11 @@ GDKanalyticaldiff(BAT *b, BAT *p, const bit *restrict npbit, int tpe)
 #define ANALYTICAL_WINDOW_BOUNDS_CALC_NUM(TPE1, IMP, CARD, LIMIT, TPE2)	\
 	do {								\
 		const TPE1 *restrict bp = (TPE1*)bi.base;		\
-		if (np) {						\
-			for (; i < cnt; i++) {				\
-				if (np[i]) {				\
-				  range##TPE1##TPE2##IMP##CARD:		\
-					IMP(TPE1, LIMIT, TPE2);		\
-				}					\
-			}						\
-		}							\
-		if (!last) {						\
-			last = true;					\
+		if (np == NULL)						\
 			i = cnt;					\
-			goto range##TPE1##TPE2##IMP##CARD;		\
+		for (; i <= cnt; i++) {					\
+			if (i == cnt || np[i])				\
+				IMP(TPE1, LIMIT, TPE2);			\
 		}							\
 	} while (0)
 
@@ -460,21 +372,21 @@ GDKanalyticaldiff(BAT *b, BAT *p, const bit *restrict npbit, int tpe)
 	} while (0)
 #endif
 
-#define date_sub_month(D,M)			date_add_month(D,-(M))
-#define timestamp_sub_month(T,M)	timestamp_add_month(T,-(M))
+#define date_sub_month(D, M)		date_add_month(D, -(M))
+#define timestamp_sub_month(T, M)	timestamp_add_month(T, -(M))
 
-#define daytime_add_msec(D,M)		daytime_add_usec(D, 1000*(M))
-#define daytime_sub_msec(D,M)		daytime_add_usec(D, -1000*(M))
-#define date_add_msec(D,M)			date_add_day(D,(int) ((M)/(24*60*60*1000)))
-#define date_sub_msec(D,M)			date_add_day(D,(int) (-(M)/(24*60*60*1000)))
-#define timestamp_add_msec(T,M)		timestamp_add_usec(T, (M)*1000)
-#define timestamp_sub_msec(T,M)		timestamp_add_usec(T, -(M)*1000)
+#define daytime_add_msec(D, M)		daytime_add_usec(D, 1000*(M))
+#define daytime_sub_msec(D, M)		daytime_add_usec(D, -1000*(M))
+#define date_add_msec(D, M)		date_add_day(D, (int) ((M)/(24*60*60*1000)))
+#define date_sub_msec(D, M)		date_add_day(D, (int) -((M)/(24*60*60*1000)))
+#define timestamp_add_msec(T, M)	timestamp_add_usec(T, (M)*1000)
+#define timestamp_sub_msec(T, M)	timestamp_add_usec(T, -(M)*1000)
 
 #define ANALYTICAL_WINDOW_BOUNDS_RANGE_MTIME_PRECEDING(TPE1, LIMIT, TPE2, SUB, ADD) \
 	do {								\
-		oid m = k;						\
+		BUN m = k;						\
 		TPE1 v, vmin, vmax;					\
-		if (bi.nonil) {					\
+		if (bi.nonil) {						\
 			for (; k < i; k++) {				\
 				TPE2 rlimit = LIMIT;			\
 				if (is_##TPE1##_nil(rlimit) || rlimit < 0) \
@@ -532,7 +444,7 @@ GDKanalyticaldiff(BAT *b, BAT *p, const bit *restrict npbit, int tpe)
 #define ANALYTICAL_WINDOW_BOUNDS_RANGE_MTIME_FOLLOWING(TPE1, LIMIT, TPE2, SUB, ADD) \
 	do {								\
 		TPE1 v, vmin, vmax;					\
-		if (bi.nonil) {					\
+		if (bi.nonil) {						\
 			for (; k < i; k++) {				\
 				TPE2 rlimit = LIMIT;			\
 				if (is_##TPE1##_nil(rlimit) || rlimit < 0) \
@@ -571,18 +483,11 @@ GDKanalyticaldiff(BAT *b, BAT *p, const bit *restrict npbit, int tpe)
 #define ANALYTICAL_WINDOW_BOUNDS_CALC_MTIME(TPE1, IMP, CARD, LIMIT, TPE2, SUB, ADD) \
 	do {								\
 		const TPE1 *restrict bp = (TPE1*)bi.base;		\
-		if (p) {						\
-			for (; i < cnt; i++) {				\
-				if (np[i]) {				\
-				  rangemtime##TPE1##TPE2##IMP##CARD:	\
-					IMP(TPE1, LIMIT, TPE2, SUB, ADD); \
-				}					\
-			}						\
-		}							\
-		if (!last) {						\
-			last = true;					\
+		if (p == NULL)						\
 			i = cnt;					\
-			goto rangemtime##TPE1##TPE2##IMP##CARD;		\
+		for (; i <= cnt; i++) {					\
+			if (i == cnt || np[i])				\
+				IMP(TPE1, LIMIT, TPE2, SUB, ADD);	\
 		}							\
 	} while(0)
 
@@ -623,7 +528,8 @@ GDKanalyticalallbounds(BAT *b, BAT *p, bool preceding, lng t0)
 	BAT *r = COLnew(b->hseqbase, TYPE_oid, BATcount(b), TRANSIENT);
 	if (r == NULL)
 		return NULL;
-	oid *restrict rb = (oid *) Tloc(r, 0), i = 0, k = 0, j = 0, cnt = BATcount(b);
+	oid *restrict rb = (oid *) Tloc(r, 0);
+	BUN i = 0, k = 0, j = 0, cnt = BATcount(b);
 	BATiter pi = bat_iterator(p);
 	const bit *restrict np = pi.base;
 
@@ -703,18 +609,11 @@ GDKanalyticalallbounds(BAT *b, BAT *p, bool preceding, lng t0)
 #define ANALYTICAL_WINDOW_BOUNDS_BRANCHES_PEERS(IMP, TPE, NAN_CHECK)	\
 	do {								\
 		const TPE *restrict bp = (TPE*)bi.base;			\
-		if (p) {						\
-			for (; i < cnt; i++) {				\
-				if (np[i]) {				\
-				  peers##TPE##IMP:			\
-					ANALYTICAL_WINDOW_BOUNDS_PEERS_FIXED##IMP(TPE, NAN_CHECK); \
-				}					\
-			}						\
-		}							\
-		if (!last) {						\
-			last = true;					\
+		if (p == NULL)						\
 			i = cnt;					\
-			goto peers##TPE##IMP;				\
+		for (; i <= cnt; i++) {					\
+			if (i == cnt || np[i])				\
+				ANALYTICAL_WINDOW_BOUNDS_PEERS_FIXED##IMP(TPE, NAN_CHECK); \
 		}							\
 	} while (0)
 
@@ -726,11 +625,11 @@ GDKanalyticalpeers(BAT *b, BAT *p, bool preceding, lng t0) /* used in range when
 	BAT *r = COLnew(b->hseqbase, TYPE_oid, BATcount(b), TRANSIENT);
 	if (r == NULL)
 		return NULL;
-	oid *restrict rb = (oid *) Tloc(r, 0), i = 0, k = 0, j = 0, l = 0, cnt = BATcount(b);
+	oid *restrict rb = (oid *) Tloc(r, 0);
+	BUN i = 0, k = 0, j = 0, l = 0, cnt = BATcount(b);
 	BATiter pi = bat_iterator(p);
 	BATiter bi = bat_iterator(b);
 	const bit *restrict np = pi.base;
-	bool last = false;
 
 	switch (ATOMbasetype(bi.type)) {
 	case TYPE_bte:
@@ -875,12 +774,11 @@ GDKanalyticalpeers(BAT *b, BAT *p, bool preceding, lng t0) /* used in range when
 static BAT *
 GDKanalyticalrowbounds(BAT *b, BAT *p, BAT *l, const void *restrict bound, int tp2, bool preceding, oid second_half)
 {
-	oid cnt = BATcount(b), nils = 0, i = 0, k = 0, j = 0;
+	BUN cnt = BATcount(b), nils = 0, i = 0, k = 0, j = 0;
 	BATiter pi = bat_iterator(p);
 	BATiter bi = bat_iterator(b);
 	BATiter li = bat_iterator(l);
 	const bit *restrict np = pi.base;
-	bool last = false;
 	BAT *r = NULL;
 	lng t0 = 0;
 
@@ -1032,12 +930,11 @@ GDKanalyticalrowbounds(BAT *b, BAT *p, BAT *l, const void *restrict bound, int t
 static BAT *
 GDKanalyticalrangebounds(BAT *b, BAT *p, BAT *l, const void *restrict bound, int tp1, int tp2, bool preceding)
 {
-	oid cnt = BATcount(b), nils = 0, i = 0, k = 0, j = 0;
+	BUN cnt = BATcount(b), nils = 0, i = 0, k = 0, j = 0;
 	BATiter pi = bat_iterator(p);
 	BATiter bi = bat_iterator(b);
 	BATiter li = bat_iterator(l);
 	const bit *restrict np = pi.base;
-	bool last = false;
 	BAT *r = NULL;
 	lng t0 = 0;
 
@@ -1368,12 +1265,11 @@ GDKanalyticalrangebounds(BAT *b, BAT *p, BAT *l, const void *restrict bound, int
 static BAT *
 GDKanalyticalgroupsbounds(BAT *b, BAT *p, BAT *l, const void *restrict bound, int tp2, bool preceding)
 {
-	oid cnt = BATcount(b), i = 0, k = 0, j = 0;
+	BUN cnt = BATcount(b), i = 0, k = 0, j = 0;
 	BATiter pi = bat_iterator(p);
 	BATiter bi = bat_iterator(b);
 	BATiter li = bat_iterator(l);
 	const bit *restrict np = pi.base, *restrict bp = bi.base;
-	bool last = false;
 	BAT *r = NULL;
 	lng t0 = 0;
 
