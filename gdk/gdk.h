@@ -120,11 +120,16 @@
 #include "stream.h"
 
 /* library version */
-#define GDKLIBRARY_HASHASH	061044U /* first in Jul2021: hashash bit in string heaps */
-#define GDKLIBRARY_HSIZE	061045U /* first in Jan2022: heap "size" values */
-#define GDKLIBRARY_JSON 	061046U /* first in Sep2022: json storage changes*/
-#define GDKLIBRARY_STATUS	061047U /* first in Dec2023: no status/filename columns */
-#define GDKLIBRARY_USTR		061050U /* first in Aug2024: no ustr */
+#define GDKLIBRARY_HASHASH	061044U /* first in Jul2021:
+					 * hashash bit in string heaps */
+#define GDKLIBRARY_HSIZE	061045U /* first in Jan2022:
+					 * heap "size" values */
+#define GDKLIBRARY_JSON 	061046U /* first in Sep2022:
+					 * json storage changes*/
+#define GDKLIBRARY_STATUS	061047U /* first in Dec2023:
+					 * no status/filename columns */
+#define GDKLIBRARY_USTR		061050U /* first in Aug2024:
+					 * no ustr */
 #define GDKLIBRARY		061051U /* first after Dec2025 */
 
 #ifndef PATH_MAX
@@ -419,7 +424,8 @@ gdk_export ATOMIC_TYPE lvl_per_component[];
 // case the component is taken into account
 #define GDK_TRACER_TEST(LOG_LEVEL, COMP)				\
 	(TRC_NAME(LOG_LEVEL) <= TRC_NAME(M_WARNING)  ||			\
-	 (log_level_t) ATOMIC_GET(&lvl_per_component[TRC_NAME(COMP)]) >= TRC_NAME(LOG_LEVEL))
+	 ((log_level_t) ATOMIC_GET(&lvl_per_component[TRC_NAME(COMP)]) \
+	  >= TRC_NAME(LOG_LEVEL)))
 
 
 #define GDK_TRACER_LOG_BODY(LOG_LEVEL, COMP, ...)			\
@@ -893,7 +899,8 @@ typedef struct MT_Lock {
 #define MT_lock_try(l)		(pthread_mutex_trylock(&(l)->lock) == 0 && \
 				 (_DBG_LOCK_LOCKER(l), true))
 
-#if defined(__GNUC__) && defined(HAVE_PTHREAD_MUTEX_TIMEDLOCK) && defined(HAVE_CLOCK_GETTIME)
+#ifdef __GNUC__
+#if defined(HAVE_PTHREAD_MUTEX_TIMEDLOCK) && defined(HAVE_CLOCK_GETTIME)
 #define MT_lock_trytime(l, ms)						\
 	({								\
 		struct timespec ts;					\
@@ -909,6 +916,7 @@ typedef struct MT_Lock {
 			_DBG_LOCK_LOCKER(l);				\
 		ret == 0;						\
 	})
+#endif
 #endif
 
 #define MT_lock_set(l)						\
@@ -1379,7 +1387,8 @@ gdk_export _Noreturn void GDKfatal(
 #define DELTAMASK	(1U<<13)
 #define LOADMASK	(1U<<14)
 #define PUSHCANDMASK	(1U<<15)	/* used in opt_pushselect.c */
-#define TAILCHKMASK	(1U<<16)	/* check .tail file size during commit */
+#define TAILCHKMASK	(1U<<16)	/* check .tail file size
+					 * during commit */
 #define ACCELMASK	(1U<<20)
 #define ALGOMASK	(1U<<21)
 
@@ -1518,10 +1527,11 @@ gdk_export bool VALisnil(const ValRecord *v);
 
 typedef struct PROPrec PROPrec;
 
-typedef void  (*pipeline_io_destroy)  (void *pl_io);
-typedef int   (*pipeline_io_done)     (void *pl_io, int wid, int nr_workers, bool redo);
-typedef int   (*pipeline_io_next)     (void *pl_io, int wid);
-typedef void *(*pipeline_io_next_bat) (void *pl_io, int wid);
+typedef void (*pipeline_io_destroy)(void *pl_io);
+typedef int (*pipeline_io_done)(void *pl_io, int wid,
+				int nr_workers, bool redo);
+typedef int (*pipeline_io_next)(void *pl_io, int wid);
+typedef void *(*pipeline_io_next_bat)(void *pl_io, int wid);
 
 typedef struct pipeline_io {
 	pipeline_io_destroy destroy;
@@ -1532,7 +1542,13 @@ typedef struct pipeline_io {
 	char *error;
 } pipeline_source, pipeline_sink;
 
-#define TSKdestroy(b) if (b->pl_io && b->pl_io->destroy) { b->pl_io->destroy(b->pl_io); b->pl_io = NULL; }
+#define TSKdestroy(b)						\
+	do {							\
+		if ((b)->pl_io && (b)->pl_io->destroy) {	\
+			(b)->pl_io->destroy((b)->pl_io);	\
+			(b)->pl_io = NULL;			\
+		}						\
+	} while (0)
 #define TSKfree(b)    TSKdestroy(b)
 
 #define ORDERIDXOFF		3
@@ -1545,7 +1561,9 @@ typedef struct pipeline_io {
 #define HLLSEED     0xadc83b19ULL
 
 /* assert that atom width is power of 2, i.e., width == 1<<shift */
-#define assert_shift_width(shift,width) assert(((shift) == 0 && (width) == 0) || ((unsigned)1<<(shift)) == (unsigned)(width))
+#define assert_shift_width(shift,width)				\
+	assert(((shift) == 0 && (width) == 0)			\
+	       || (1U << (shift)) == (unsigned) (width))
 
 /* The batRestricted field indicates whether a BAT is readonly.
  * we have modes: BAT_WRITE  = all permitted
@@ -1623,14 +1641,17 @@ typedef struct BAT {
 #endif
 	Heap *torderidx;	/* order oid index */
 	Strimps *tstrimps;	/* string imprint index  */
-	PROPrec *tprops;	/* list of dynamic properties stored in the bat descriptor */
+	PROPrec *tprops;	/* list of dynamic properties stored in
+				 * the bat descriptor */
 
 	struct pipeline_io *pl_io;
 
 	MT_Lock theaplock;	/* lock protecting heap reference changes */
 	MT_RWLock thashlock;	/* lock specifically for hash management */
-	MT_Lock batIdxLock;	/* lock to manipulate other indexes/properties */
-	Heap *oldtail;		/* old tail heap, to be destroyed after commit */
+	MT_Lock batIdxLock;	/* lock to manipulate other
+				 * indexes/properties */
+	Heap *oldtail;		/* old tail heap, to be destroyed
+				 * after commit */
 	QryCtx *qc;		/* query context of owner if transient */
 } BAT;
 
@@ -1711,8 +1732,10 @@ typedef struct {
 	char physical[24];	/* dir + basename for storage */
 #endif
 	bat next;		/* next BBP slot in linked list */
-	int refs;		/* in-memory references on which the loaded status of a BAT relies */
-	int lrefs;		/* logical references on which the existence of a BAT relies */
+	int refs;		/* in-memory references on which the loaded
+				 * status of a BAT relies */
+	int lrefs;		/* logical references on which the existence
+				 * of a BAT relies */
 	ATOMIC_TYPE status;	/* status mask used for spin locking */
 	MT_Id pid;		/* creator of this bat while "private" */
 } BBPrec;
@@ -2048,15 +2071,16 @@ gdk_export const inet6 inet6_nil;
 /* use "do ... while(0)" so that lhs can safely be used in if statements */
 #define ATOMstorage(t)		BATatoms[t].storage
 #define ATOMsize(t)		BATatoms[t].size
-#define ATOMfromstr(ma,t,s,l,src,ext)	BATatoms[t].atomFromStr(ma,src,l,s,ext)
+#define ATOMfromstr(ma, t, s, l, src, ext)		\
+	BATatoms[t].atomFromStr(ma, src, l, s, ext)
 #define ATOMnilptr(t)		BATatoms[t].atomNull
 #define ATOMcompare(t)		BATatoms[t].atomCmp
-#define ATOMcmp(t,l,r)		((*ATOMcompare(t))(l, r))
+#define ATOMcmp(t, l, r)	((*ATOMcompare(t))(l, r))
 #define ATOMequal(t)		BATatoms[t].atomEqual
-#define ATOMeq(t,l,r)		(*ATOMequal(t))(l, r)
-#define ATOMhash(t,src)		BATatoms[t].atomHash(src)
-#define ATOMdel(t,hp,src)	\
-	do if (BATatoms[t].atomDel) BATatoms[t].atomDel(hp,src); while (0)
+#define ATOMeq(t, l, r)		(*ATOMequal(t))(l, r)
+#define ATOMhash(t, src)	BATatoms[t].atomHash(src)
+#define ATOMdel(t, hp, src)						\
+	do if (BATatoms[t].atomDel) BATatoms[t].atomDel(hp, src); while (0)
 #define ATOMvarsized(t)		(BATatoms[t].atomPut != NULL)
 #define ATOMlinear(t)		BATatoms[t].linear
 #define ATOMtype(t)		((t) == TYPE_void ? TYPE_oid : (t))
@@ -2577,9 +2601,12 @@ struct canditer {
 	BAT *s;			/* candidate BAT the iterator is based on */
 	union {
 		struct {	/* for all except cand_mask */
-			const oid *oids; /* candidate or exceptions for non-dense */
-			BUN offset;	/* how much of candidate list BAT we skipped */
-			oid add;	/* value to add because of exceptions seen */
+			const oid *oids; /* candidate or exceptions for
+					  * non-dense */
+			BUN offset;	/* how much of candidate list BAT
+					 * we skipped */
+			oid add;	/* value to add because of
+					 * exceptions seen */
 		};
 		struct {	/* only for cand_mask */
 			const uint32_t *mask; /* bitmask */
@@ -3218,7 +3245,8 @@ tfastins_nochecknolockVAR(BAT *b, BUN p, const void *v)
 	}
 	if (d != 0 &&
 	    b->twidth < SIZEOF_VAR_T &&
-	    (b->twidth <= 2 ? d - GDK_VAROFFSET : d) >= ((size_t) 1 << (8 << b->tshift))) {
+	    ((b->twidth <= 2 ? d - GDK_VAROFFSET : d)
+	     >= ((size_t) 1 << (8 << b->tshift)))) {
 		/* doesn't fit in current heap, upgrade it */
 		rc = GDKupgradevarheap(b, d, 0, MAX(p, b->batCount));
 		if (rc != GDK_SUCCEED) {
@@ -3774,18 +3802,21 @@ blobHash(const void *x)
 	for (hb = HASHget(hsh, hash_inet4(hsh, v));			\
 	     hb != BUN_NONE;						\
 	     hb = HASHgetlink(hsh,hb))					\
-		if (((const inet4 *) (v))->align == ((const inet4 *) BUNtloc(bi, hb))->align)
+		if (((const inet4 *) (v))->align			\
+		    == ((const inet4 *) BUNtloc(bi, hb))->align)
 #ifdef HAVE_HGE
 #define HASHloop_uuid(bi, hsh, hb, v)					\
 	for (hb = HASHget(hsh, hash_uuid(hsh, v));			\
 	     hb != BUN_NONE;						\
 	     hb = HASHgetlink(hsh,hb))					\
-		if (((const uuid *) (v))->h == ((const uuid *) BUNtloc(bi, hb))->h)
+		if (((const uuid *) (v))->h				\
+		    == ((const uuid *) BUNtloc(bi, hb))->h)
 #define HASHloop_inet6(bi, hsh, hb, v)					\
 	for (hb = HASHget(hsh, hash_inet6(hsh, v));			\
 	     hb != BUN_NONE;						\
 	     hb = HASHgetlink(hsh,hb))					\
-		if (((const inet6 *) (v))->align == ((const inet6 *) BUNtloc(bi, hb))->align)
+		if (((const inet6 *) (v))->align			\
+		    == ((const inet6 *) BUNtloc(bi, hb))->align)
 #else
 #define HASHloop_uuid(bi, h, hb, v)					\
 	for (hb = HASHget(h, hash_uuid(h, v));				\
@@ -3793,14 +3824,13 @@ blobHash(const void *x)
 	     hb = HASHgetlink(h,hb))					\
 		if (memcmp((const uuid *) (v),				\
 			   (const uuid *) BUNtloc(bi, hb), 16) == 0)
-//		if (((const uuid *) (v))->l[0] == ((const uuid *) BUNtloc(bi, hb))->l[0] && ((const uuid *) (v))->l[1] == ((const uuid *) BUNtloc(bi, hb))->l[1])
+
 #define HASHloop_inet6(bi, h, hb, v)					\
 	for (hb = HASHget(h, hash_inet6(h, v));				\
 	     hb != BUN_NONE;						\
 	     hb = HASHgetlink(h,hb))					\
 		if (memcmp((const inet6 *) (v),				\
 			   (const inet6 *) BUNtloc(bi, hb), 16) == 0)
-//		if (((const inet6 *) (v))->align[0] == ((const inet6 *) BUNtloc(bi, hb))->align[0] && ((const inet6 *) (v))->align[1] == ((const inet6 *) BUNtloc(bi, hb))->align[1])
 #endif
 
 #define BBPLOADED	1	/* set if bat in memory */
@@ -3830,23 +3860,30 @@ blobHash(const void *x)
  * BBPNEW -- bat was transient at last commit and should be persistent;
  * none of the above -- bat was and should remain transient.
  */
-#define BBPDELETED	16	/* set if bat persistent at last commit is now transient */
-#define BBPEXISTING	32	/* set if bat was already persistent at end of last commit */
-#define BBPNEW		64	/* set if bat has become persistent since last commit */
-#define BBPPERSISTENT	(BBPEXISTING|BBPNEW)	/* mask for currently persistent bats */
+#define BBPDELETED	16	/* set if bat persistent at last commit
+				 * is now transient */
+#define BBPEXISTING	32	/* set if bat was already persistent at
+				 * end of last commit */
+#define BBPNEW		64	/* set if bat has become persistent since
+				 * last commit */
+#define BBPPERSISTENT	(BBPEXISTING | BBPNEW)	/* mask for currently
+						 * persistent bats */
 
 #define BBPSTATUS	127
 
 #define BBPUNLOADING	128	/* set while we are unloading */
 #define BBPLOADING	256	/* set while we are loading */
 #define BBPSAVING       512	/* set while we are saving */
-#define BBPRENAMED	1024	/* set when bat is renamed in this transaction */
-#define BBPDELETING	2048	/* set while we are deleting (special case in module unload) */
+#define BBPRENAMED	1024	/* set when bat is renamed in this
+				 * transaction */
+#define BBPDELETING	2048	/* set while we are deleting (special case
+				 * in module unload) */
 #define BBPHOT		4096	/* bat is "hot", i.e. is still in active use */
 #define BBPSYNCING	8192	/* bat between creating backup and saving */
 
-#define BBPUNSTABLE	(BBPUNLOADING|BBPDELETING)	/* set while we are unloading */
-#define BBPWAITING      (BBPUNLOADING|BBPLOADING|BBPSAVING|BBPDELETING|BBPSYNCING)
+#define BBPUNSTABLE	(BBPUNLOADING | BBPDELETING)	/* set while we are
+							 * unloading */
+#define BBPWAITING	(BBPUNSTABLE | BBPLOADING | BBPSAVING | BBPSYNCING)
 
 gdk_export bat getBBPsize(void); /* current occupied size of BBP array */
 gdk_export unsigned BBPheader(FILE *fp, int *lineno, bat *bbpsize, lng *logno,
@@ -3928,46 +3965,10 @@ gdk_export int GDKgetenv_int(const char *name, int def);
 gdk_export gdk_return GDKsetenv(const char *name, const char *value);
 gdk_export gdk_return GDKcopyenv(BAT **key, BAT **val, bool writable);
 
-/*
- * @+ Memory management
- * Memory management in GDK mostly relies on the facilities offered by
- * the underlying OS.  The below routines monitor the available memory
- * resources which consist of physical swap space and logical vm
- * space.  There are three kinds of memory, that affect these two
- * resources in different ways:
- *
- * - memory mapping
- *   which ask for a logical region of virtual memory space.  In
- *   principle, no physical memory is needed to keep the system afloat
- *   here, as the memory mapped file is swapped onto a disk object
- *   that already exists.
- *
- *   Actually, there are two kings of memory mapping used in GDK,
- *   namely read-only direct mapped and writable copy-on write. For
- *   the dirty pages, the latter actually also consumes physical
- *   memory resources, but that is ignored here for simplicity.
- *
- * - anonymous virtual memory
- *   This is virtual memory that is mapped on the swap file. Hence,
- *   this consumes both logical VM space resources and physical memory
- *   space.
- *
- * - malloced memory
- *   comes from the heap and directly consumes physical memory
- *   resources.
- *
- * The malloc routine checks the memory consumption every 1000 calls,
- * or for calls larger that 50000 bytes. Consequently, at least every
- * 50MB increase, alloc memory is checked. The VM calls always check
- * the memory consumption.
- */
-/* default setting to administer everything */
-#define GDK_MEM_NULLALLOWED
-
 #if SIZEOF_VOID_P==8
-#define GDK_VM_MAXSIZE	LL_CONSTANT(4398046511104)	/* :-) a 64-bit OS: 4TB */
+#define GDK_VM_MAXSIZE	LL_CONSTANT(4398046511104)	/* a 64-bit OS: 4TB */
 #else
-#define GDK_VM_MAXSIZE	LL_CONSTANT(1610612736)	/* :-| a 32-bit OS: 1.5GB */
+#define GDK_VM_MAXSIZE	LL_CONSTANT(1610612736)		/* a 32-bit OS: 1.5GB */
 #endif
 /* virtual memory defines */
 gdk_export size_t _MT_npages;
@@ -3976,15 +3977,18 @@ gdk_export size_t _MT_pagesize;
 #define MT_pagesize()	_MT_pagesize
 #define MT_npages()	_MT_npages
 
-gdk_export size_t GDK_mem_maxsize;	/* max allowed size of committed memory */
+gdk_export size_t GDK_mem_maxsize;	/* max allowed size of committed
+					 * memory */
 gdk_export size_t GDK_vm_maxsize;	/* max allowed size of reserved vm */
 
 gdk_export void *GDKmmap(const char *path, int mode, size_t len)
 	__attribute__((__warn_unused_result__));
 gdk_export gdk_return GDKmunmap(void *addr, int mode, size_t len);
 
-gdk_export size_t GDKmem_cursize(void);	/* RAM/swapmem that MonetDB has claimed from OS */
-gdk_export size_t GDKvm_cursize(void);	/* current MonetDB VM address space usage */
+gdk_export size_t GDKmem_cursize(void);	/* RAM/swapmem that MonetDB has
+					 * claimed from OS */
+gdk_export size_t GDKvm_cursize(void);	/* current MonetDB VM address
+					 * space usage */
 
 gdk_export void GDKfree(void *blk);
 gdk_export void *GDKmalloc(size_t size)
@@ -4044,225 +4048,6 @@ gdk_export bool GDKfataljumpenable;
  */
 gdk_export lng GDKusec(void);
 gdk_export int GDKms(void);
-
-
-#if !defined(NDEBUG) && !defined(__COVERITY__) && !defined(_CLANGD)
-/* In debugging mode, replace GDKmalloc and other functions with a
- * version that optionally prints calling information.
- *
- * We have two versions of this code: one using a GNU C extension, and
- * one using traditional C.  The GNU C version also prints the name of
- * the calling function.
- */
-#ifdef __GNUC__
-#define GDKmalloc(s)						\
-	({							\
-		size_t _size = (s);				\
-		void *_res = GDKmalloc(_size);			\
-		TRC_DEBUG(ALLOC, "GDKmalloc(%zu) -> %p\n",	\
-			  _size, _res);				\
-		_res;						\
-	})
-#define GDKzalloc(s)						\
-	({							\
-		size_t _size = (s);				\
-		void *_res = GDKzalloc(_size);			\
-		TRC_DEBUG(ALLOC, "GDKzalloc(%zu) -> %p\n",	\
-			  _size, _res);				\
-		_res;						\
-	})
-#define GDKrealloc(p, s)					\
-	({							\
-		void *_ptr = (p);				\
-		size_t _size = (s);				\
-		char _buf[2*sizeof(void*)+3];			\
-		snprintf(_buf, sizeof(_buf), "%p", _ptr);	\
-		void *_res = GDKrealloc(_ptr, _size);		\
-		TRC_DEBUG(ALLOC, "GDKrealloc(%s,%zu) -> %p\n",	\
-			  _buf, _size, _res);			\
-		_res;						\
-	 })
-#define GDKfree(p)							\
-	({								\
-		void *_ptr = (p);					\
-		if (_ptr)						\
-			TRC_DEBUG(ALLOC, "GDKfree(%p)\n", _ptr);	\
-		GDKfree(_ptr);						\
-	})
-#define GDKstrdup(s)						\
-	({							\
-		const char *_str = (s);				\
-		void *_res = GDKstrdup(_str);			\
-		TRC_DEBUG(ALLOC, "GDKstrdup(len=%zu) -> %p\n",	\
-			  _str ? strlen(_str) : 0, _res);	\
-		_res;						\
-	})
-#define GDKstrndup(s, n)					\
-	({							\
-		const char *_str = (s);				\
-		size_t _n = (n);				\
-		void *_res = GDKstrndup(_str, _n);		\
-		TRC_DEBUG(ALLOC, "GDKstrndup(len=%zu) -> %p\n", \
-			  _n,	_res);				\
-		_res;						\
-	})
-#define GDKmmap(p, m, l)						\
-	({								\
-		const char *_path = (p);				\
-		int _mode = (m);					\
-		size_t _len = (l);					\
-		void *_res = GDKmmap(_path, _mode, _len);		\
-		TRC_DEBUG(ALLOC, "GDKmmap(%s,0x%x,%zu) -> %p\n",	\
-			  _path ? _path : "NULL",			\
-			  (unsigned) _mode, _len,			\
-			  _res);					\
-		_res;							\
-	 })
-#define GDKmunmap(p, m, l)					\
-	({							\
-		void *_ptr = (p);				\
-		int _mode = (m);				\
-		size_t _len = (l);				\
-		gdk_return _res = GDKmunmap(_ptr, _mode, _len);	\
-		TRC_DEBUG(ALLOC,				\
-			  "GDKmunmap(%p,0x%x,%zu) -> %u\n",	\
-			  _ptr, (unsigned) _mode, _len, _res);	\
-		_res;						\
-	})
-#define malloc(s)					\
-	({						\
-		size_t _size = (s);			\
-		void *_res = malloc(_size);		\
-		TRC_DEBUG(ALLOC, "malloc(%zu) -> %p\n", \
-			  _size, _res);			\
-		_res;					\
-	})
-#define calloc(n, s)						\
-	({							\
-		size_t _nmemb = (n);				\
-		size_t _size = (s);				\
-		void *_res = calloc(_nmemb,_size);		\
-		TRC_DEBUG(ALLOC, "calloc(%zu,%zu) -> %p\n",	\
-			  _nmemb, _size, _res);			\
-		_res;						\
-	})
-#define realloc(p, s)						\
-	({							\
-		void *_ptr = (p);				\
-		size_t _size = (s);				\
-		char _buf[12];					\
-		snprintf(_buf, sizeof(_buf), "%p", _ptr);	\
-		void *_res = realloc(_ptr, _size);		\
-		TRC_DEBUG(ALLOC, "realloc(%s,%zu) -> %p\n",	\
-			  _buf, _size, _res);			\
-		_res;						\
-	 })
-#define free(p)						\
-	({						\
-		void *_ptr = (p);			\
-		TRC_DEBUG(ALLOC, "free(%p)\n", _ptr);	\
-		free(_ptr);				\
-	})
-#else
-static inline void *
-GDKmalloc_debug(size_t size)
-{
-	void *res = GDKmalloc(size);
-	TRC_DEBUG(ALLOC, "GDKmalloc(%zu) -> %p\n", size, res);
-	return res;
-}
-#define GDKmalloc(s)	GDKmalloc_debug((s))
-static inline void *
-GDKzalloc_debug(size_t size)
-{
-	void *res = GDKzalloc(size);
-	TRC_DEBUG(ALLOC, "GDKzalloc(%zu) -> %p\n", size, res);
-	return res;
-}
-#define GDKzalloc(s)	GDKzalloc_debug((s))
-static inline void *
-GDKrealloc_debug(void *ptr, size_t size)
-{
-	void *res = GDKrealloc(ptr, size);
-	TRC_DEBUG(ALLOC, "GDKrealloc(%p,%zu) -> %p\n", ptr, size, res);
-	return res;
-}
-#define GDKrealloc(p, s)	GDKrealloc_debug((p), (s))
-static inline void
-GDKfree_debug(void *ptr)
-{
-	TRC_DEBUG(ALLOC, "GDKfree(%p)\n", ptr);
-	GDKfree(ptr);
-}
-#define GDKfree(p)	GDKfree_debug((p))
-static inline char *
-GDKstrdup_debug(const char *str)
-{
-	void *res = GDKstrdup(str);
-	TRC_DEBUG(ALLOC, "GDKstrdup(len=%zu) -> %p\n",
-		  str ? strlen(str) : 0, res);
-	return res;
-}
-#define GDKstrdup(s)	GDKstrdup_debug((s))
-static inline char *
-GDKstrndup_debug(const char *str, size_t n)
-{
-	void *res = GDKstrndup(str, n);
-	TRC_DEBUG(ALLOC, "GDKstrndup(len=%zu) -> %p\n", n, res);
-	return res;
-}
-#define GDKstrndup(s, n)	GDKstrndup_debug((s), (n))
-static inline void *
-GDKmmap_debug(const char *path, int mode, size_t len)
-{
-	void *res = GDKmmap(path, mode, len);
-	TRC_DEBUG(ALLOC, "GDKmmap(%s,0x%x,%zu) -> %p\n",
-		  path ? path : "NULL", (unsigned) mode, len, res);
-	return res;
-}
-#define GDKmmap(p, m, l)	GDKmmap_debug((p), (m), (l))
-static inline gdk_return
-GDKmunmap_debug(void *ptr, int mode, size_t len)
-{
-	gdk_return res = GDKmunmap(ptr, mode, len);
-	TRC_DEBUG(ALLOC, "GDKmunmap(%p,0x%x%zu) -> %d\n",
-		  ptr, mode, len, (int) res);
-	return res;
-}
-#define GDKmunmap(p, m, l)	GDKmunmap_debug((p), (m), (l))
-static inline void *
-malloc_debug(size_t size)
-{
-	void *res = malloc(size);
-	TRC_DEBUG(ALLOC, "malloc(%zu) -> %p\n", size, res);
-	return res;
-}
-#define malloc(s)	malloc_debug((s))
-static inline void *
-calloc_debug(size_t nmemb, size_t size)
-{
-	void *res = calloc(nmemb, size);
-	TRC_DEBUG(ALLOC, "calloc(%zu,%zu) -> %p\n", nmemb, size, res);
-	return res;
-}
-#define calloc(n, s)	calloc_debug((n), (s))
-static inline void *
-realloc_debug(void *ptr, size_t size)
-{
-	void *res = realloc(ptr, size);
-	TRC_DEBUG(ALLOC, "realloc(%p,%zu) -> %p \n", ptr, size, res);
-	return res;
-}
-#define realloc(p, s)	realloc_debug((p), (s))
-static inline void
-free_debug(void *ptr)
-{
-	TRC_DEBUG(ALLOC, "free(%p)\n", ptr);
-	free(ptr);
-}
-#define free(p)	free_debug((p))
-#endif
-#endif
 
 /* functions defined in gdk_bat.c */
 gdk_export gdk_return void_inplace(BAT *b, oid id, const void *val, bool force)
@@ -4629,30 +4414,57 @@ TIMEOUT_TEST(QryCtx *qc)
 /* use IDX as a loop variable (already declared), initializing it to 0
  * and incrementing it on each iteration */
 #define TIMEOUT_LOOP_IDX(IDX, REPEATS, QC)				\
-	for (BUN REPS = (IDX = 0, (REPEATS)); REPS > 0; REPS = 0) /* "loops" at most once */ \
-		for (BUN CTR1 = 0, END1 = (REPS + CHECK_QRY_TIMEOUT_STEP) >> CHECK_QRY_TIMEOUT_SHIFT; CTR1 < END1 && !GDKexiting() && ((QC) == NULL || (QC)->endtime >= 0); CTR1++) \
-			if (CTR1 > 0 && TIMEOUT_TEST(QC)) {		\
-				break;					\
-			} else						\
-				for (BUN CTR2 = 0, END2 = CTR1 == END1 - 1 ? REPS & CHECK_QRY_TIMEOUT_MASK : CHECK_QRY_TIMEOUT_STEP; CTR2 < END2; CTR2++, IDX++)
+	for (BUN REPS = (IDX = 0, (REPEATS));				\
+	     REPS > 0;							\
+	     REPS = 0)		/* "loops" at most once */		\
+		for (BUN CTR1 = 0,					\
+			     END1 = ((REPS + CHECK_QRY_TIMEOUT_STEP)	\
+				     >> CHECK_QRY_TIMEOUT_SHIFT);	\
+		     CTR1 < END1 && !GDKexiting()			\
+			     && ((QC) == NULL || (QC)->endtime >= 0)	\
+			     && (CTR1 == 0 || !TIMEOUT_TEST(QC)); CTR1++) \
+			for (BUN CTR2 = 0,				\
+				     END2 = (CTR1 == END1 - 1		\
+					     ? REPS & CHECK_QRY_TIMEOUT_MASK \
+					     : CHECK_QRY_TIMEOUT_STEP);	\
+			     CTR2 < END2;				\
+			     CTR2++, IDX++)
 
 /* declare and use IDX as a loop variable, initializing it to 0 and
  * incrementing it on each iteration */
 #define TIMEOUT_LOOP_IDX_DECL(IDX, REPEATS, QC)				\
-	for (BUN IDX = 0, REPS = (REPEATS); REPS > 0; REPS = 0) /* "loops" at most once */ \
-		for (BUN CTR1 = 0, END1 = (REPS + CHECK_QRY_TIMEOUT_STEP) >> CHECK_QRY_TIMEOUT_SHIFT; CTR1 < END1 && !GDKexiting() && ((QC) == NULL || (QC)->endtime >= 0); CTR1++) \
-			if (CTR1 > 0 && TIMEOUT_TEST(QC)) {		\
-				break;					\
-			} else						\
-				for (BUN CTR2 = 0, END2 = CTR1 == END1 - 1 ? REPS & CHECK_QRY_TIMEOUT_MASK : CHECK_QRY_TIMEOUT_STEP; CTR2 < END2; CTR2++, IDX++)
+	for (BUN IDX = 0, REPS = (REPEATS);				\
+	     REPS > 0;							\
+	     REPS = 0)		/* "loops" at most once */		\
+		for (BUN CTR1 = 0,					\
+			     END1 = ((REPS + CHECK_QRY_TIMEOUT_STEP)	\
+				     >> CHECK_QRY_TIMEOUT_SHIFT);	\
+		     CTR1 < END1 && !GDKexiting()			\
+			     && ((QC) == NULL || (QC)->endtime >= 0)	\
+			     && (CTR1 == 0 || !TIMEOUT_TEST(QC));	\
+		     CTR1++)						\
+			for (BUN CTR2 = 0,				\
+				     END2 = (CTR1 == END1 - 1		\
+					     ? REPS & CHECK_QRY_TIMEOUT_MASK \
+					     : CHECK_QRY_TIMEOUT_STEP);	\
+			     CTR2 < END2;				\
+			     CTR2++, IDX++)
 
 /* there is no user-visible loop variable */
 #define TIMEOUT_LOOP(REPEATS, QC)					\
-	for (BUN CTR1 = 0, REPS = (REPEATS), END1 = (REPS + CHECK_QRY_TIMEOUT_STEP) >> CHECK_QRY_TIMEOUT_SHIFT; CTR1 < END1 && !GDKexiting() && ((QC) == NULL || (QC)->endtime >= 0); CTR1++) \
-		if (CTR1 > 0 && TIMEOUT_TEST(QC)) {			\
-			break;						\
-		} else							\
-			for (BUN CTR2 = 0, END2 = CTR1 == END1 - 1 ? REPS & CHECK_QRY_TIMEOUT_MASK : CHECK_QRY_TIMEOUT_STEP; CTR2 < END2; CTR2++)
+	for (BUN CTR1 = 0,						\
+		     REPS = (REPEATS),					\
+		     END1 = ((REPS + CHECK_QRY_TIMEOUT_STEP)		\
+			     >> CHECK_QRY_TIMEOUT_SHIFT);		\
+	     CTR1 < END1 && !GDKexiting()				\
+		     && ((QC) == NULL || (QC)->endtime >= 0)		\
+		     && (CTR1 == 0 || !TIMEOUT_TEST(QC)); CTR1++)	\
+		for (BUN CTR2 = 0,					\
+			     END2 = (CTR1 == END1 - 1			\
+				     ? REPS & CHECK_QRY_TIMEOUT_MASK	\
+				     : CHECK_QRY_TIMEOUT_STEP);		\
+		     CTR2 < END2;					\
+		     CTR2++)
 
 /* break out of the loop (cannot use do/while trick here) */
 #define TIMEOUT_LOOP_BREAK			\
@@ -4984,14 +4796,135 @@ gdk_export int ma_info(allocator *sa, char *buf, size_t buflen,
 		       const char *pref)
 	__attribute__((__access__(write_only, 2, 3)));
 
-#define MA_NEW(sa, type)			((type*)ma_alloc(sa, sizeof(type)))
-#define MA_ZNEW(sa, type)			((type*)ma_zalloc(sa, sizeof(type)))
-#define MA_NEW_ARRAY(sa, type, size)		(type*)ma_alloc(sa, ((size)*sizeof(type)))
-#define MA_ZNEW_ARRAY(sa, type, size)		(type*)ma_zalloc(sa, ((size)*sizeof(type)))
-#define MA_RENEW_ARRAY(sa, type, ptr, sz, osz)	(type*)ma_realloc(sa, ptr, ((sz)*sizeof(type)), ((osz)*sizeof(type)))
+#define MA_NEW(sa, type)		((type *) ma_alloc(sa, sizeof(type)))
+#define MA_ZNEW(sa, type)		((type *) ma_zalloc(sa, sizeof(type)))
+#define MA_NEW_ARRAY(sa, type, size)	((type *) ma_alloc(		\
+						 sa, (size) * sizeof(type)))
+#define MA_ZNEW_ARRAY(sa, type, size)	\
+	((type *) ma_zalloc(sa, (size) * sizeof(type)))
+#define MA_RENEW_ARRAY(sa, type, ptr, sz, osz)			\
+	((type *) ma_realloc(sa, ptr, (sz) * sizeof(type),	\
+			     (osz) * sizeof(type)))
 
 
-#if !defined(NDEBUG) && !defined(__COVERITY__) && defined(__GNUC__) && !defined(_CLANGD)
+
+#if !defined(NDEBUG) && !defined(__COVERITY__) && !defined(_CLANGD)
+/* In debugging mode, replace GDKmalloc and other functions with a
+ * version that optionally prints calling information.
+ *
+ * We have two versions of this code: one using a GNU C extension, and
+ * one using traditional C.  The GNU C version also prints the name of
+ * the calling function.
+ */
+#ifdef __GNUC__
+#define GDKmalloc(s)						\
+	({							\
+		size_t _size = (s);				\
+		void *_res = GDKmalloc(_size);			\
+		TRC_DEBUG(ALLOC, "GDKmalloc(%zu) -> %p\n",	\
+			  _size, _res);				\
+		_res;						\
+	})
+#define GDKzalloc(s)						\
+	({							\
+		size_t _size = (s);				\
+		void *_res = GDKzalloc(_size);			\
+		TRC_DEBUG(ALLOC, "GDKzalloc(%zu) -> %p\n",	\
+			  _size, _res);				\
+		_res;						\
+	})
+#define GDKrealloc(p, s)					\
+	({							\
+		void *_ptr = (p);				\
+		size_t _size = (s);				\
+		char _buf[2*sizeof(void*)+3];			\
+		snprintf(_buf, sizeof(_buf), "%p", _ptr);	\
+		void *_res = GDKrealloc(_ptr, _size);		\
+		TRC_DEBUG(ALLOC, "GDKrealloc(%s,%zu) -> %p\n",	\
+			  _buf, _size, _res);			\
+		_res;						\
+	 })
+#define GDKfree(p)							\
+	({								\
+		void *_ptr = (p);					\
+		if (_ptr)						\
+			TRC_DEBUG(ALLOC, "GDKfree(%p)\n", _ptr);	\
+		GDKfree(_ptr);						\
+	})
+#define GDKstrdup(s)						\
+	({							\
+		const char *_str = (s);				\
+		void *_res = GDKstrdup(_str);			\
+		TRC_DEBUG(ALLOC, "GDKstrdup(len=%zu) -> %p\n",	\
+			  _str ? strlen(_str) : 0, _res);	\
+		_res;						\
+	})
+#define GDKstrndup(s, n)					\
+	({							\
+		const char *_str = (s);				\
+		size_t _n = (n);				\
+		void *_res = GDKstrndup(_str, _n);		\
+		TRC_DEBUG(ALLOC, "GDKstrndup(len=%zu) -> %p\n", \
+			  _n,	_res);				\
+		_res;						\
+	})
+#define GDKmmap(p, m, l)						\
+	({								\
+		const char *_path = (p);				\
+		int _mode = (m);					\
+		size_t _len = (l);					\
+		void *_res = GDKmmap(_path, _mode, _len);		\
+		TRC_DEBUG(ALLOC, "GDKmmap(%s,0x%x,%zu) -> %p\n",	\
+			  _path ? _path : "NULL",			\
+			  (unsigned) _mode, _len,			\
+			  _res);					\
+		_res;							\
+	 })
+#define GDKmunmap(p, m, l)					\
+	({							\
+		void *_ptr = (p);				\
+		int _mode = (m);				\
+		size_t _len = (l);				\
+		gdk_return _res = GDKmunmap(_ptr, _mode, _len);	\
+		TRC_DEBUG(ALLOC,				\
+			  "GDKmunmap(%p,0x%x,%zu) -> %u\n",	\
+			  _ptr, (unsigned) _mode, _len, _res);	\
+		_res;						\
+	})
+#define malloc(s)					\
+	({						\
+		size_t _size = (s);			\
+		void *_res = malloc(_size);		\
+		TRC_DEBUG(ALLOC, "malloc(%zu) -> %p\n", \
+			  _size, _res);			\
+		_res;					\
+	})
+#define calloc(n, s)						\
+	({							\
+		size_t _nmemb = (n);				\
+		size_t _size = (s);				\
+		void *_res = calloc(_nmemb,_size);		\
+		TRC_DEBUG(ALLOC, "calloc(%zu,%zu) -> %p\n",	\
+			  _nmemb, _size, _res);			\
+		_res;						\
+	})
+#define realloc(p, s)						\
+	({							\
+		void *_ptr = (p);				\
+		size_t _size = (s);				\
+		char _buf[12];					\
+		snprintf(_buf, sizeof(_buf), "%p", _ptr);	\
+		void *_res = realloc(_ptr, _size);		\
+		TRC_DEBUG(ALLOC, "realloc(%s,%zu) -> %p\n",	\
+			  _buf, _size, _res);			\
+		_res;						\
+	 })
+#define free(p)						\
+	({						\
+		void *_ptr = (p);			\
+		TRC_DEBUG(ALLOC, "free(%p)\n", _ptr);	\
+		free(_ptr);				\
+	})
 #define ma_alloc(sa, sz)					\
 	({							\
 		allocator *_sa = (sa);				\
@@ -5106,6 +5039,105 @@ gdk_export int ma_info(allocator *sa, char *buf, size_t buflen,
 			  "ma_destroy(%p(%s))\n", _sa, ma_name(_sa));	\
 		ma_destroy(_sa);					\
 	})
+#else
+static inline void *
+GDKmalloc_debug(size_t size)
+{
+	void *res = GDKmalloc(size);
+	TRC_DEBUG(ALLOC, "GDKmalloc(%zu) -> %p\n", size, res);
+	return res;
+}
+#define GDKmalloc(s)	GDKmalloc_debug((s))
+static inline void *
+GDKzalloc_debug(size_t size)
+{
+	void *res = GDKzalloc(size);
+	TRC_DEBUG(ALLOC, "GDKzalloc(%zu) -> %p\n", size, res);
+	return res;
+}
+#define GDKzalloc(s)	GDKzalloc_debug((s))
+static inline void *
+GDKrealloc_debug(void *ptr, size_t size)
+{
+	void *res = GDKrealloc(ptr, size);
+	TRC_DEBUG(ALLOC, "GDKrealloc(%p,%zu) -> %p\n", ptr, size, res);
+	return res;
+}
+#define GDKrealloc(p, s)	GDKrealloc_debug((p), (s))
+static inline void
+GDKfree_debug(void *ptr)
+{
+	TRC_DEBUG(ALLOC, "GDKfree(%p)\n", ptr);
+	GDKfree(ptr);
+}
+#define GDKfree(p)	GDKfree_debug((p))
+static inline char *
+GDKstrdup_debug(const char *str)
+{
+	void *res = GDKstrdup(str);
+	TRC_DEBUG(ALLOC, "GDKstrdup(len=%zu) -> %p\n",
+		  str ? strlen(str) : 0, res);
+	return res;
+}
+#define GDKstrdup(s)	GDKstrdup_debug((s))
+static inline char *
+GDKstrndup_debug(const char *str, size_t n)
+{
+	void *res = GDKstrndup(str, n);
+	TRC_DEBUG(ALLOC, "GDKstrndup(len=%zu) -> %p\n", n, res);
+	return res;
+}
+#define GDKstrndup(s, n)	GDKstrndup_debug((s), (n))
+static inline void *
+GDKmmap_debug(const char *path, int mode, size_t len)
+{
+	void *res = GDKmmap(path, mode, len);
+	TRC_DEBUG(ALLOC, "GDKmmap(%s,0x%x,%zu) -> %p\n",
+		  path ? path : "NULL", (unsigned) mode, len, res);
+	return res;
+}
+#define GDKmmap(p, m, l)	GDKmmap_debug((p), (m), (l))
+static inline gdk_return
+GDKmunmap_debug(void *ptr, int mode, size_t len)
+{
+	gdk_return res = GDKmunmap(ptr, mode, len);
+	TRC_DEBUG(ALLOC, "GDKmunmap(%p,0x%x%zu) -> %d\n",
+		  ptr, mode, len, (int) res);
+	return res;
+}
+#define GDKmunmap(p, m, l)	GDKmunmap_debug((p), (m), (l))
+static inline void *
+malloc_debug(size_t size)
+{
+	void *res = malloc(size);
+	TRC_DEBUG(ALLOC, "malloc(%zu) -> %p\n", size, res);
+	return res;
+}
+#define malloc(s)	malloc_debug((s))
+static inline void *
+calloc_debug(size_t nmemb, size_t size)
+{
+	void *res = calloc(nmemb, size);
+	TRC_DEBUG(ALLOC, "calloc(%zu,%zu) -> %p\n", nmemb, size, res);
+	return res;
+}
+#define calloc(n, s)	calloc_debug((n), (s))
+static inline void *
+realloc_debug(void *ptr, size_t size)
+{
+	void *res = realloc(ptr, size);
+	TRC_DEBUG(ALLOC, "realloc(%p,%zu) -> %p \n", ptr, size, res);
+	return res;
+}
+#define realloc(p, s)	realloc_debug((p), (s))
+static inline void
+free_debug(void *ptr)
+{
+	TRC_DEBUG(ALLOC, "free(%p)\n", ptr);
+	free(ptr);
+}
+#define free(p)	free_debug((p))
+#endif
 #endif
 
 #endif /* _GDK_H_ */
