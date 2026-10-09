@@ -817,7 +817,6 @@ rel2bin_oahash_groupjoin(backend *be, sql_rel *rel, list *refs)
 		sub = rel2bin_oahash_equi_join(be, rel, refs, jexps, &probed_ids, &probe_sub, NULL /* nulls */, &prb_mrk, NULL /* hsh_mrk */, &probe_side, &hash_side, !list_empty(sexps) /* has_outerselect */);
 	}
 	if (list_empty(jexps) && list_empty(sexps) && mark) {
-		assert(exist); // TODO should we create a exp_atom_bool(...false)?
 		sql_exp *e = exp_atom_bool(be->mvc->sa, true);
 		set_any(e);
 		append(sexps,e);
