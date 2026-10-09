@@ -1010,7 +1010,8 @@ rel_pipeline(visitor *v, sql_rel *rel, bool materialize, int pb)
 		if (do_oahash_join(v, rel, &side)) {
 			list *eq_exps = sa_list(v->sql->sa);
 			list *other = sa_list(v->sql->sa);
-			bool is_manti_with_null = list_length(rel->attr) == 1 && exp_is_atom(rel->attr->h->data) && !exp_is_true(rel->attr->h->data);
+			/* manti: multi-column not-exist */
+			bool manti = list_length(rel->attr) == 1 && list_length(rel->exps) > 1 && exp_is_atom(rel->attr->h->data) && !exp_is_true(rel->attr->h->data);
 			if (!list_empty(rel->attr))
 				rel->exps = get_simple_equi_joins_first(v->sql, rel, rel->exps);
 			split_join_exps(rel, eq_exps, other, true /* anti */, true /* eqonly */, false /* firstonly */);
@@ -1038,7 +1039,7 @@ rel_pipeline(visitor *v, sql_rel *rel, bool materialize, int pb)
 					rel->op == op_left ||
 					rel->op == op_right ||
 				    rel_getcount(v->sql, r) < rel_getcount(v->sql, l) ||
-					is_manti_with_null)
+					manti)
 					rel->oahash = 2;
 				else
 					rel->oahash = 1;
@@ -1084,7 +1085,7 @@ rel_pipeline(visitor *v, sql_rel *rel, bool materialize, int pb)
 					rel_hsh->attr = cross?NULL:exps_cmp_hsh;
 				}
 				rel_prb->attr = cross?NULL:exps_cmp_prb;
-				if (is_manti_with_null) {
+				if (manti) {
 					/* only hash the first join column, put the subsequent column(s) in the payload */
 					// TODO (move no_nil join columns to the front?) hash the leading no_nil join columns
 					assert(exps_cmp_hsh->cnt == exps_cmp_prb->cnt);
