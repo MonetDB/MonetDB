@@ -79,7 +79,7 @@ static void copy_file_to_stream(FILE *in, stream *out, size_t bufsize, bool do_f
  * If status is 1, include USAGE in the message.
  */
 __attribute__((__format__(__printf__, 2, 3)))
-static void
+_Noreturn static void
 croak(int status, _In_z_ _Printf_format_string_ const char *msg, ...)
 {
 	va_list ap;

@@ -991,7 +991,7 @@ wsaerror(int err)
 {
 	int i;
 
-	for (i = 0; i < NELEM(wsaerrlist); i++)
+	for (i = 0; i < countof(wsaerrlist); i++)
 		if (wsaerrlist[i].e == err)
 			return wsaerrlist[i].m;
 	return "Unknown error";

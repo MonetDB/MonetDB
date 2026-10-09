@@ -82,6 +82,7 @@
 #cmakedefine HAVE_PWD_H 1
 #cmakedefine HAVE_SEMAPHORE_H 1
 #cmakedefine HAVE_STDATOMIC_H 1
+#cmakedefine HAVE_STDCOUNTOF_H 1
 #cmakedefine HAVE_STRINGS_H 1
 #cmakedefine HAVE_STROPTS_H 1
 #cmakedefine HAVE_SYS_FILE_H 1
@@ -103,6 +104,13 @@
 
 #ifdef HAVE_SYS_TYPES_H
 # include <sys/types.h>
+#endif
+
+#ifdef HAVE_STDCOUNTOF_H
+#include <stdcountof.h>
+#else
+/* note, we need parentheses around the operand, unlike the other branch */
+#define countof(X)	(sizeof(X) / sizeof((X)[0]))
 #endif
 
 #ifdef _MSC_VER

@@ -203,7 +203,7 @@ charwidth(uint32_t c)
 		return -1;				/* control character or DELETE */
 
 	size_t min = 0;
-	size_t max = (sizeof(intervals) / sizeof(intervals[0])) - 1;
+	size_t max = countof(intervals) - 1;
 
 	if (c >= intervals[min].first && c <= intervals[max].last) {
 		while (max >= min) {

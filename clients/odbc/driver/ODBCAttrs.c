@@ -51,7 +51,7 @@ const struct attr_setting attr_settings[] = {
 	{ "MAPTOLONGVARCHAR", NULL, MP_MAPTOLONGVARCHAR },
 };
 
-const int attr_setting_count = sizeof(attr_settings) / sizeof(attr_settings[0]);
+const int attr_setting_count = countof(attr_settings);
 
 int
 attr_setting_lookup(const char *attr_name, bool allow_alt_name)
@@ -65,4 +65,3 @@ attr_setting_lookup(const char *attr_name, bool allow_alt_name)
 	}
 	return -1;
 }
-

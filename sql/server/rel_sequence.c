@@ -180,7 +180,7 @@ list_create_seq(
 			case SQL_TYPE: {
 				bool found = false;
 				static const char *valid_types[4] = {"tinyint", "smallint", "int", "bigint"};
-				size_t number_valid_types = sizeof(valid_types) / sizeof(valid_types[0]);
+				size_t number_valid_types = countof(valid_types);
 
 				if ((used&(1<<SEQ_TYPE)))
 					return sql_error(sql, 02, SQLSTATE(3F000) "CREATE SEQUENCE: AS type should be specified at most once");
