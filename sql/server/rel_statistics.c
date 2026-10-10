@@ -251,10 +251,8 @@ sql_column_get_statistics(mvc *sql, sql_column *c, sql_exp *e)
 
 	if (has_nil(e) && nonil)
 		set_has_no_nil(e);
-	if (!is_unique(e) && unique) {
+	if (!is_unique(e) && unique)
 		set_unique(e);
-		c->unique=true;
-	}
 	if (unique_est != 0.0) {
 		prop *p = e->p = prop_create(sql->sa, PROP_NUNIQUES, e->p);
 		p->value.dval = unique_est;

@@ -2330,13 +2330,16 @@ rel_reduce_groupby_exps(visitor *v, sql_rel *rel)
 	global_props *gp = v->data;
 
 	/* ukey + no null could also work and a single unique (base) column also reduces the group by exps */
-	if (gp->has_pkey && is_groupby(rel->op) && rel->r && !rel_is_ref(rel) && list_length(gbe)) {
+	if (/*gp->has_pkey &&*/
+		gp->cnt[op_munion] == 0 && is_groupby(rel->op) && rel->r && !rel_is_ref(rel) && list_length(gbe) > 1) {
 		allocator *ta = MT_thread_getallocator();
 		allocator_state ta_state = ma_open(ta);
 		node *n, *m;
 		int k, j, i, ngbe = list_length(gbe);
 		sql_column *c;
 		sql_table **tbls = SA_ZNEW_ARRAY(ta, sql_table*, ngbe);
+		int *table_id = SA_ZNEW_ARRAY(ta, int, ngbe);
+		sql_exp **unique = SA_ZNEW_ARRAY(ta, sql_exp*, ngbe);
 		sql_rel **bts = SA_ZNEW_ARRAY(ta, sql_rel*, ngbe), *bt = NULL;
 
 		gbe = rel->r;
@@ -2344,13 +2347,18 @@ rel_reduce_groupby_exps(visitor *v, sql_rel *rel)
 			sql_exp *e = n->data;
 
 			c = exp_find_column_(rel, e, -2, &bt);
-			if (c) {
+			if (c && bt) {
 				for(j = 0; j < i; j++)
 					if (c->t == tbls[j] && bts[j] == bt)
 						break;
+				if (c->unique == 2 || mvc_is_unique(v->sql, c))
+					unique[j] = e;
+				table_id[k] = j;
 				tbls[j] = c->t;
 				bts[j] = bt;
 				i += (j == i);
+			} else {
+				table_id[k] = -1;
 			}
 		}
 		if (i) { /* forall tables find pkey and remove useless other columns */
@@ -2364,6 +2372,46 @@ rel_reduce_groupby_exps(visitor *v, sql_rel *rel)
 
 				k = list_length(gbe);
 				memset(scores, 0, list_length(gbe));
+				if (unique[j]) { /* we found one unique column, clean up those from the same table */
+					list *ngbe = new_exp_list(v->sql->sa);
+
+					for (l = 0, n = gbe->h; l < k && n; l++, n = n->next) {
+						sql_exp *e = n->data;
+
+						/* keep the group by columns which form a primary key
+						 * of this table. And those unrelated to this table. */
+						if (e == unique[j] || table_id[l] != j)
+							append(ngbe, e);
+					}
+					if (list_length(ngbe) < list_length(gbe)) {
+						rel->r = ngbe;
+						/* rewrite gbe and aggr, in the aggr list, as they may refer to the removed expressions */
+						for (m = rel->exps->h; m; m = m->next ){
+							sql_exp *e = m->data;
+							int fnd = 0;
+
+							for (l = 0, n = gbe->h; l < k && n && !fnd; l++, n = n->next) {
+								sql_exp *gb = n->data;
+
+								if (gb != unique[j] && table_id[l] == j && exp_refers(gb, e) && gb->alias.label != gb->nid) {
+									sql_exp *rs = exp_column(v->sql->sa, gb->l?gb->l:exp_relname(gb), gb->r?gb->r:exp_name(gb), exp_subtype(gb), rel->card, has_nil(gb), is_unique(gb), is_intern(gb));
+									exp_setalias(rs, e->alias.label, exp_find_rel_name(e), exp_name(e));
+									rs->nid = gb->nid;
+									e = rs;
+									fnd = 1;
+								}
+							}
+							m->data = e;
+						}
+						/* new reduced aggr expression list */
+						assert(list_length(rel->exps)>0);
+						/* only one reduction at a time */
+						list_hash_clear(rel->exps);
+						v->changes++;
+					}
+					ma_close(&ta_state);
+					return rel;
+				}
 				if (tbls[j]->pkey) {
 					for (l = 0, n = gbe->h; l < k && n; l++, n = n->next) {
 						sql_fkey *fk = NULL;
