@@ -2318,6 +2318,20 @@ rel_push_groupby_down(visitor *v, sql_rel *rel)
 	return rel;
 }
 
+static bool
+rel_has_union(sql_rel *r)
+{
+	if (!r || r->op == op_basetable)
+		return false;
+	if (r->op == op_munion)
+		return true;
+	if (r->op == op_project || r->op == op_groupby || r->op == op_select)
+		return rel_has_union(r->l);
+	if (is_joinop(r->op))
+		return rel_has_union(r->l) || rel_has_union(r->r);
+	return true;
+}
+
 /* reduce group by expressions based on pkey info
  *
  * The reduced group by and (derived) aggr expressions are restored via
@@ -2327,11 +2341,9 @@ static inline sql_rel *
 rel_reduce_groupby_exps(visitor *v, sql_rel *rel)
 {
 	list *gbe = rel->r;
-	global_props *gp = v->data;
 
 	/* ukey + no null could also work and a single unique (base) column also reduces the group by exps */
-	if (/*gp->has_pkey &&*/
-		gp->cnt[op_munion] == 0 && is_groupby(rel->op) && rel->r && !rel_is_ref(rel) && list_length(gbe) > 1) {
+	if (!rel_has_union(rel) && is_groupby(rel->op) && rel->r && !rel_is_ref(rel) && list_length(gbe) > 1) {
 		allocator *ta = MT_thread_getallocator();
 		allocator_state ta_state = ma_open(ta);
 		node *n, *m;
