@@ -5035,6 +5035,8 @@ rel2bin_select(backend *be, sql_rel *rel, list *refs)
 			return predicate;
 		assert(0);
 	}
+	if (rel->parallel && !be->pp)
+		sub = rel2bin_slicer_pp(be, sub);
 	en = rel->exps->h;
 	if (!sub && predicate) {
 		list *l = sa_list(sql->sa);
@@ -7974,8 +7976,14 @@ rel2bin_materialize(backend *be, sql_rel *rel, list *refs, bool top)
 	bool is_materialized = false;
 
 	if (is_topn(r->op)) {
+		sql_rel *o = r;
 		r = r->l;
 		is_materialized = true;
+		if (o->parallel) {
+			s = subrel_bin(be, rel, refs);
+			s = subrel_project(be, s, refs, rel);
+			return s;
+		}
 	}
 
 	list *shared = NULL;
