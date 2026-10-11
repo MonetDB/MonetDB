@@ -800,12 +800,9 @@ rel_pipeline(visitor *v, sql_rel *rel, bool materialize, int pb)
 		res = rel_pipeline(v, rel->l, pp_useful, pp_useful?SPB:0);
 		if (pp_useful && res) { /* topn is blocking */
 			rel->parallel = 1;
-			if (pb) { /* nested */
-				rel_dup(rel);
-				res = 0;
-				rel->partition = 1;
-			}
-			res = EPB;
+			rel_dup(rel);
+			res = 0;
+			rel->partition = 1;
 		} else if (pb) {
 			rel->spb = 1;
 		}
@@ -835,8 +832,7 @@ rel_pipeline(visitor *v, sql_rel *rel, bool materialize, int pb)
 				if (res && p && p->op == op_project && exps_have_unsafe(p->exps, 1, false)) {
 					rel_dup(rel);
 					res = 0;
-				} else
-				if (pb) {
+				} else if (pb) {
 					sql_rel *l = rel->l;
 					if (!res && l && is_groupby(l->op) && l->l) {
 						sql_rel *p = l->l;
@@ -845,6 +841,10 @@ rel_pipeline(visitor *v, sql_rel *rel, bool materialize, int pb)
 							//l->partition = 1;
 							res = SPB;
 						}
+					}
+					if (!res && is_select(rel->op)) {
+						rel->parallel = 1;
+						res = SPB;
 					}
 					if (rel->spb)
 						res = SPB;
@@ -939,8 +939,6 @@ rel_pipeline(visitor *v, sql_rel *rel, bool materialize, int pb)
 			int started_pb = 0;
 			if (rel_is_ref(rel))
 				pb = 0;
-			else
-				pb |= materialize;
 			for(node *n = rels->h; n; n = n->next) {
 				int lres = rel_pipeline(v, n->data, false, pb?SPB:0);
 				if (lres == EPB) {
