@@ -908,7 +908,7 @@ const uint32_t whitespace[] = {
 	0x2029,						/* paragraph separator */
 };
 
-#define NSPACES		(sizeof(whitespace) / sizeof(whitespace[0]))
+#define NSPACES		countof(whitespace)
 
 str
 str_strip(str *buf, size_t *buflen, const char *s)

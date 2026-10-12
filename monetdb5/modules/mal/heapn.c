@@ -1952,8 +1952,6 @@ static str
 HEAPorder2(Client ctx, bat *rid, bat *hb, lng *O)
 {
 	size_t offset = (size_t)*O;
-	if (offset == 0)
-		offset++;
 	return HEAPorder(ctx, rid, hb, offset);
 }
 

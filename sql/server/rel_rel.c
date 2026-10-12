@@ -2872,3 +2872,26 @@ exp_freevar_offset(mvc *sql, sql_exp *e)
 	/* freevar offset is passed via changes */
 	return (v.changes);
 }
+
+sql_rel *
+find_basetable( sql_rel *r)
+{
+	if (!r)
+		return NULL;
+	switch(r->op) {
+	case op_basetable:
+		if (!r->l)
+			return NULL;
+		return r;
+	case op_semi:
+	case op_anti:
+	case op_project:
+	case op_select:
+	case op_topn:
+	case op_sample:
+		return find_basetable(r->l);
+	default:
+		return NULL;
+	}
+}
+

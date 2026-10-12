@@ -213,3 +213,4 @@ KNOWNFAIL?8030-inner-join-group-by-bug
 8035-alter-type
 8036-alter+insert-in-trans
 8037-alter-table-decimal
+8031-simplify-count-too-simple

@@ -77,11 +77,9 @@ ob_append_escaped(struct outbuf *ob, const char *text, bool escape_colon)
 	}
 }
 
-static void ob_printf(struct outbuf *ob, _In_z_ _Printf_format_string_ const char *fmt, ...)
-	__attribute__((__format__(__printf__, 2, 3)));
-
+__attribute__((__format__(__printf__, 2, 3)))
 static void
-ob_printf(struct outbuf *ob, const char *fmt, ...)
+ob_printf(struct outbuf *ob, _In_z_ _Printf_format_string_ const char *fmt, ...)
 {
 	va_list ap;
 	size_t avail = ob->end - ob->pos;

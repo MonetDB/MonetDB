@@ -1609,7 +1609,7 @@ sqltypeinit( allocator *sa)
 
 	// end odbc
 
-	sql_create_func(sa, "local_timezone", "mtime", "local_timezone", FALSE, FALSE, SCALE_FIX, 0, SECINT, 0);
+	sql_create_func(sa, "system_timezone", "mtime", "system_timezone", FALSE, FALSE, SCALE_FIX, 0, SECINT, 0);
 
 	sql_create_func(sa, "century", "mtime", "century", FALSE, FALSE, SCALE_FIX, 0, INT, 1, DTE);
 	sql_create_func(sa, "decade", "mtime", "decade", FALSE, FALSE, SCALE_FIX, 0, INT, 1, DTE);

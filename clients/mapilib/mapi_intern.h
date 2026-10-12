@@ -87,11 +87,6 @@ gmtime_r(const time_t *restrict timep, struct tm *restrict result)
 #endif
 
 
-/* number of elements in an array */
-#define NELEM(arr)	(sizeof(arr) / sizeof(arr[0]))
-
-
-
 /* three structures used for communicating date/time information */
 /* these structs are deliberately compatible with the ODBC versions
    SQL_DATE_STRUCT, SQL_TIME_STRUCT, and SQL_TIMESTAMP_STRUCT */
@@ -275,7 +270,8 @@ void mapi_clrError(Mapi mid)
 MapiMsg mapi_setError(Mapi mid, const char *msg, const char *action, MapiMsg error)
 	__attribute__((__nonnull__(2, 3)));
 MapiMsg mapi_printError(Mapi mid, const char *action, MapiMsg error, _In_z_ _Printf_format_string_ const char *fmt, ...)
-	__attribute__((__nonnull__(2))) __attribute__((__format__(__printf__, 4, 5)));
+	__attribute__((__nonnull__(2)))
+	__attribute__((__format__(__printf__, 4, 5)));
 
 void mapi_impl_log_data(Mapi mid, const char *filename, long line, const char *mark, const char *data, size_t len);
 void mapi_impl_log_record(Mapi mid, const char *filename, long line, const char *mark, _In_z_ _Printf_format_string_ const char *fmt, ...)

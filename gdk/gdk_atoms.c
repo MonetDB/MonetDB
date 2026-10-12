@@ -706,7 +706,7 @@ numFromStr(allocator *ma, const char *src, size_t *len, void **dst, int tp,
 			do {
 				/* this calculation cannot overflow */
 				exp = exp * 10 + base10(*p);
-				if (exp >= (int) (sizeof(maxdiv) / sizeof(maxdiv[0]))) {
+				if (exp >= (int) countof(maxdiv)) {
 					/* overflow */
 					goto overflow;
 				}

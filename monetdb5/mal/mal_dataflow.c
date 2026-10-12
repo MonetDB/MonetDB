@@ -303,8 +303,9 @@ DFLOWworker(void *T)
 			assert(fe);
 			flow = fe->flow;
 			assert(flow);
-			MT_thread_set_qry_ctx(flow->set_qry_ctx ? &flow->cntxt->
-								  qryctx : NULL);
+			MT_thread_set_qry_ctx(flow->set_qry_ctx
+								  ? &flow->cntxt->qryctx
+								  : NULL);
 
 			/* whenever we have a (concurrent) error, skip it */
 			if (ATOMIC_PTR_GET(&flow->error)) {

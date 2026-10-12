@@ -251,10 +251,8 @@ sql_column_get_statistics(mvc *sql, sql_column *c, sql_exp *e)
 
 	if (has_nil(e) && nonil)
 		set_has_no_nil(e);
-	if (!is_unique(e) && unique) {
+	if (!is_unique(e) && unique)
 		set_unique(e);
-		c->unique=true;
-	}
 	if (unique_est != 0.0) {
 		prop *p = e->p = prop_create(sql->sa, PROP_NUNIQUES, e->p);
 		p->value.dval = unique_est;
@@ -1514,9 +1512,11 @@ rel_groupby_order(visitor *v, sql_rel *rel)
 		}
 		if (!found) {
 			/* no need to groupby on unique values */
+			list *exps = rel_projections(v->sql, rel, NULL, 0, 1);
 			rel->exps= list_merge(rel->r, rel->exps, (fdup)NULL);
 			rel->op = op_project;
 			rel->r = NULL;
+			rel = rel_project(v->sql->sa, rel, exps);
 			return rel;
 		}
 	}
