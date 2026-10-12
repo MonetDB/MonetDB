@@ -1512,9 +1512,11 @@ rel_groupby_order(visitor *v, sql_rel *rel)
 		}
 		if (!found) {
 			/* no need to groupby on unique values */
+			list *exps = rel_projections(v->sql, rel, NULL, 0, 1);
 			rel->exps= list_merge(rel->r, rel->exps, (fdup)NULL);
 			rel->op = op_project;
 			rel->r = NULL;
+			rel = rel_project(v->sql->sa, rel, exps);
 			return rel;
 		}
 	}
