@@ -2363,8 +2363,10 @@ rel_reduce_groupby_exps(visitor *v, sql_rel *rel)
 				for(j = 0; j < i; j++)
 					if (c->t == tbls[j] && bts[j] == bt)
 						break;
-				if (c->unique == 2 || mvc_is_unique(v->sql, c))
-					unique[j] = e;
+				if (c->unique == 2 || mvc_is_unique(v->sql, c)) {
+					if (!unique[j] || exp_subtype(e)->type->localtype < exp_subtype(unique[j])->type->localtype)
+						unique[j] = e;
+				}
 				table_id[k] = j;
 				tbls[j] = c->t;
 				bts[j] = bt;
