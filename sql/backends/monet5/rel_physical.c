@@ -1089,9 +1089,11 @@ rel_pipeline(visitor *v, sql_rel *rel, bool materialize, int pb)
 					/* only hash the first join column, put the subsequent column(s) in the payload */
 					// TODO (move no_nil join columns to the front?) hash the leading no_nil join columns
 					assert(exps_cmp_hsh->cnt == exps_cmp_prb->cnt);
-					for (node *m = exps_cmp_hsh->h->next; m ; m = m->next) {
+					for (node *m = exps_cmp_hsh->h->next, *n = exps_cmp_prb->h->next; m && n; m = m->next, n = n->next) {
 						append(exps_hsh, m->data);
+						append(exps_prb, n->data);
 					}
+					// TODO do we also need to do this for exps_cmp_prb?
 					exps_cmp_hsh->h->next = NULL;
 					exps_cmp_hsh->cnt = 1;
 				}
