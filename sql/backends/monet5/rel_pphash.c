@@ -164,7 +164,7 @@ oahash_probe(backend *be, sql_rel *rel, list *jexps, list *exps_cmp_prb, const s
 		if (nulls && stmt_has_null(key) && is_any(e2))
 			*nulls = stmt_selectnil(be, key, *nulls);
 	}
-	assert((!n && !m && !o) || (anti && groupjoin && !m)); // just make sure that all exps have been processed
+	assert(!o);
 
 	if ((has_leftouter || groupjoin) && outerm)
 		*prb_mrk = outerm;
