@@ -1060,9 +1060,10 @@ rel_pipeline(visitor *v, sql_rel *rel, bool materialize, int pb)
 				}
 				rel_prb->attr = cross?NULL:exps_cmp_prb;
 				if (manti) {
+					assert(exps_cmp_hsh->cnt == exps_cmp_prb->cnt);
+					set_any((sql_exp*)exps_cmp_hsh->h->data);
 					/* only hash the first join column, put the subsequent column(s) in the payload */
 					// TODO (move no_nil join columns to the front?) hash the leading no_nil join columns
-					assert(exps_cmp_hsh->cnt == exps_cmp_prb->cnt);
 					for (node *m = exps_cmp_hsh->h->next, *n = exps_cmp_prb->h->next; m && n; m = m->next, n = n->next) {
 						append(exps_hsh, m->data);
 						append(exps_prb, n->data);

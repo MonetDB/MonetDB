@@ -670,19 +670,19 @@ stmt_oahash_expand(backend *be, const stmt *prb_res, const stmt *freq, bit outer
 
 /* for marked-anti-join: expand (prb_oid, hsh_gid, mrk) */
 stmt *
-stmt_oahash_expand3(backend *be, const stmt *prb_oid, const stmt *hsh_gid, const stmt *mrk, const stmt *freq, const stmt *hp_pos)
+stmt_oahash_expand3(backend *be, const stmt *prb_oid, const stmt *hsh_gid, const stmt *mrk, const stmt *hp_pos, const stmt *freq)
 {
 	InstrPtr q = newStmt(be->mb, putName("oahash"), putName("expand"));
 	if (q == NULL)
 		return NULL;
-	setVarType(be->mb, getArg(q, 0), newBatType(TYPE_oid));      /* expanded prb_oid*/
+	setVarType(be->mb, getArg(q, 0), newBatType(TYPE_oid));      			 /* expanded prb_oid*/
 	q = pushReturn(be->mb, q, newTmpVariable(be->mb, newBatType(TYPE_oid))); /* expanded hsh_gid */
 	q = pushReturn(be->mb, q, newTmpVariable(be->mb, newBatType(TYPE_bit))); /* expanded mrk */
 	q = pushArgument(be->mb, q, prb_oid->nr);
 	q = pushArgument(be->mb, q, hsh_gid->nr);
 	q = pushArgument(be->mb, q, mrk->nr);
-	q = pushArgument(be->mb, q, freq->nr);
 	q = pushArgument(be->mb, q, hp_pos->nr);
+	q = freq?pushArgument(be->mb, q, freq->nr):pushNilBat(be->mb, q);
 	pushInstruction(be->mb, q);
 
 	stmt *s = stmt_none(be);

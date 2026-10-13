@@ -365,6 +365,7 @@ rel2bin_oahash_build(backend *be, sql_rel *rel, list *refs)
 		prnt = perfect ?
 			stmt_fhash_build_ht(be, ht, key, is_any(e)) :
 			stmt_oahash_build_ht(be, ht, key, prnt, need_has_nil);
+		need_has_nil = false; // manti only hashes the first join column
 		if (prnt == NULL)
 				return NULL;
 		if (e->alias.label)
@@ -473,7 +474,7 @@ rel2bin_oahash_equi_join(backend *be, sql_rel *rel, list *refs, list *jexps, stm
 	if (prb_res == NULL) return NULL;
 
 	/*** PROJECT RESULT PHASE ***/
-	stmt *hp_pos = stmts_ht->op2, *freq = stmts_ht->op3;
+	stmt *freq = stmts_ht->op3, *hp_pos = freq?stmts_ht->op2:stmts_ht->op4.lval->t->data;
 	stmt *prb_oid = NULL, *hsh_gid = NULL;
 	if (manti) {
 		sql_subtype *tpe_oid = sql_fetch_localtype(TYPE_bit);
@@ -491,7 +492,7 @@ rel2bin_oahash_equi_join(backend *be, sql_rel *rel, list *refs, list *jexps, stm
 		mrk     = stmt_project(be, sel, mrk);
 
 		/* compute the prb_oid and hsh_gid (from hp_pos) to process the "payload" columns */
-		stmt *expd = stmt_oahash_expand3(be, prb_oid, hsh_gid, mrk, freq, hp_pos);
+		stmt *expd = stmt_oahash_expand3(be, prb_oid, hsh_gid, mrk, hp_pos, freq);
 		prb_oid = stmt_blackbox_result(be, expd->q, 0, tpe_oid);
 		hsh_gid = stmt_blackbox_result(be, expd->q, 1, tpe_oid);
 		mrk     = stmt_blackbox_result(be, expd->q, 2, tpe_bit);
@@ -611,8 +612,10 @@ rel2bin_oahash_outerselect(backend *be, stmt *sub, list *sexps, sql_rel *rel, st
 		if (sel)
 			lgids = stmt_project(be, sel, lgids);
 		stmt *outer = NULL;
-		if (manti)
+		if (manti) {
+			assert(m); assert(p);
 			outer = stmt_selectNotFalse(be, lgids, m, p, !en->next);
+		}
 		else if (en->next || !mark)
 			outer = stmt_outerselect(be, lgids, m, p, is_any(e), !en->next && is_single(rel));
 		else

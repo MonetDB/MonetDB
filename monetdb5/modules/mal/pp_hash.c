@@ -110,7 +110,6 @@ _ht_create( int type, size_t size, hash_table *p, int vkey)
 	h->empty = true;
 	h->has_nil = 0;
 	h->gid_NULL = oid_nil;
-	h->max_gid = 0;
 	h->p = p;
 	h->pinned = NULL;
 	h->pinned_nr = 0; /* no more than 1024 */
@@ -769,8 +768,6 @@ UHASHext(Client cntxt, MalBlkPtr m, MalStkPtr s, InstrPtr p)
 			} \
 			gp[i] = g-1; \
 			if (need_has_nil) { \
-				if (g > h->max_gid) \
-					ATOMIC_SET(&h->max_gid, g); \
 				bit is_nil = is_##Type##_nil(bp[i]); \
 				if (!h->has_nil && is_nil) {\
 					bit old_has_nil = (bit) ATOMIC_OR(&h->has_nil, is_nil); \
@@ -868,8 +865,6 @@ UHASHext(Client cntxt, MalBlkPtr m, MalStkPtr s, InstrPtr p)
 			} \
 			gp[i] = g-1; \
 			if (need_has_nil) {\
-				if (g > h->max_gid) \
-					ATOMIC_SET(&h->max_gid, g); \
 				bit is_nil = is_##Type##_nil(bp[i]); \
 				if (!h->has_nil && is_nil) {\
 					bit old_has_nil = (bit) ATOMIC_OR(&h->has_nil, is_nil); \
@@ -923,8 +918,6 @@ UHASHext(Client cntxt, MalBlkPtr m, MalStkPtr s, InstrPtr p)
 			} \
 			gp[i] = g-1; \
 			if (need_has_nil) { \
-				if (g > h->max_gid) \
-					ATOMIC_SET(&h->max_gid, g); \
 				bit is_nil = (voff == 0); \
 				if (!h->has_nil && is_nil) {\
 					bit old_has_nil = (bit) ATOMIC_OR(&h->has_nil, is_nil); \
@@ -981,8 +974,6 @@ UHASHext(Client cntxt, MalBlkPtr m, MalStkPtr s, InstrPtr p)
 				} \
 				gp[i] = g-1; \
 				if (need_has_nil) {\
-					if (g > h->max_gid) \
-						ATOMIC_SET(&h->max_gid, g); \
 					bit is_nil = (voff == 0); \
 					if (!h->has_nil && is_nil) {\
 						bit old_has_nil = (bit) ATOMIC_OR(&h->has_nil, is_nil); \
@@ -1031,8 +1022,6 @@ UHASHext(Client cntxt, MalBlkPtr m, MalStkPtr s, InstrPtr p)
 				} \
 				gp[i] = g-1; \
 				if (need_has_nil) { \
-					if (g > h->max_gid) \
-						ATOMIC_SET(&h->max_gid, g); \
 					bit is_nil = (voff == 0); \
 					if (!h->has_nil && is_nil) {\
 						bit old_has_nil = (bit) ATOMIC_OR(&h->has_nil, is_nil); \
@@ -1088,13 +1077,6 @@ UHASHext(Client cntxt, MalBlkPtr m, MalStkPtr s, InstrPtr p)
 				fnd = 1; \
 			} \
 			gp[i] = g-1; \
-			if (need_has_nil) {\
-				if (g > h->max_gid) \
-					ATOMIC_SET(&h->max_gid, g); \
-				bit is_nil = is_##Type##_nil(bp[i]); \
-				if (!h->has_nil && is_nil) \
-					(void)ATOMIC_OR(&h->has_nil, is_nil); \
-			} \
 		} \
 	} while (0)
 
@@ -1187,13 +1169,6 @@ UHASHext(Client cntxt, MalBlkPtr m, MalStkPtr s, InstrPtr p)
 				fnd = 1; \
 			} \
 			gp[i] = g-1; \
-			if (need_has_nil) { \
-				if (g > h->max_gid) \
-					ATOMIC_SET(&h->max_gid, g); \
-				bit is_nil = is_##Type##_nil(bp[i]); \
-				if (!h->has_nil && is_nil) \
-					(void)ATOMIC_OR(&h->has_nil, is_nil); \
-			} \
 		} \
 	} while (0)
 
@@ -1240,13 +1215,6 @@ UHASHext(Client cntxt, MalBlkPtr m, MalStkPtr s, InstrPtr p)
 				fnd = 1; \
 			} \
 			gp[i] = g-1; \
-			if (need_has_nil) { \
-				if (g > h->max_gid) \
-					ATOMIC_SET(&h->max_gid, g); \
-				bit is_nil = (voff == 0); \
-				if (!h->has_nil && is_nil) \
-					(void)ATOMIC_OR(&h->has_nil, is_nil); \
-			} \
 		} \
 		bat_iterator_end(&bi); \
 	} while (0)
@@ -1296,13 +1264,6 @@ UHASHext(Client cntxt, MalBlkPtr m, MalStkPtr s, InstrPtr p)
 					fnd = 1; \
 				} \
 				gp[i] = g-1; \
-				if (need_has_nil) { \
-					if (g > h->max_gid) \
-						ATOMIC_SET(&h->max_gid, g); \
-					bit is_nil = (voff == 0); \
-					if (!h->has_nil && is_nil) \
-						(void)ATOMIC_OR(&h->has_nil, is_nil); \
-				} \
 			} \
 			bat_iterator_end(&bi); \
 		} else { /* other ATOMvarsized, e.g. BLOB */ \
@@ -1344,13 +1305,6 @@ UHASHext(Client cntxt, MalBlkPtr m, MalStkPtr s, InstrPtr p)
 					fnd = 1; \
 				} \
 				gp[i] = g-1; \
-				if (need_has_nil) { \
-					if (g > h->max_gid) \
-						ATOMIC_SET(&h->max_gid, g); \
-					bit is_nil = (voff == 0); \
-					if (!h->has_nil && is_nil) \
-						(void)ATOMIC_OR(&h->has_nil, is_nil); \
-				} \
 			} \
 			bat_iterator_end(&bi); \
 		} \
@@ -1377,6 +1331,9 @@ OAHASHbuild(Client ctx, MalBlkPtr m, MalStkPtr s, InstrPtr p)
 
 	/* we only work with shared hashtable in the build phase */
 	assert(*hashtable && !is_bat_nil(*hashtable));
+
+	/* need_has_nil is only for the first hash column */
+	assert(!need_has_nil || (need_has_nil && !parents));
 
 	b = BATdescriptor(*keys);
 	u = BATdescriptor(*hashtable);
@@ -3359,8 +3316,8 @@ OAHASHexpand3(Client ctx, MalBlkPtr mbp, MalStkPtr s, InstrPtr p)
 	bat *prb_oid   = getArgReference_bat(s, p, 3);
 	bat *hsh_gid   = getArgReference_bat(s, p, 4);
 	bat *mrk       = getArgReference_bat(s, p, 5);
-	bat *frequency = getArgReference_bat(s, p, 6);
-	bat *hp_pos    = getArgReference_bat(s, p, 7);
+	bat *hp_pos    = getArgReference_bat(s, p, 6);
+	bat *frequency = getArgReference_bat(s, p, 7);
 
 	BAT *ep = NULL, *eh = NULL, *em = NULL;
 	BAT *o = NULL, *g = NULL, *m = NULL, *f = NULL, *h = NULL;
@@ -3369,29 +3326,47 @@ OAHASHexpand3(Client ctx, MalBlkPtr mbp, MalStkPtr s, InstrPtr p)
 	o = BATdescriptor(*prb_oid);
 	g = BATdescriptor(*hsh_gid);
 	m = BATdescriptor(*mrk);
-	f = BATdescriptor(*frequency);
 	h = BATdescriptor(*hp_pos);
-	if (!o || !g || !m || !f || !h) {
+	if (!o || !g || !m || !h) {
 		err = createException(SQL, "oahash.expand", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		goto error;
 	}
-	hash_table *ht = (hash_table*)h->pl_io;
-
 	oid *oids = Tloc(o, 0);
 	gid *gids = Tloc(g, 0);
 	bit *mrks = Tloc(m, 0);
-	lng *freq = Tloc(f, 0);
-	BUN selcnt = BATcount(o), hpcnt = (BUN)ht->max_gid, xpdcnt = 0;
-	assert(BATcount(o) == BATcount(g));
+	hash_table *ht = (hash_table*)h->pl_io;
+	BUN selcnt = BATcount(o), hpcnt = 0, xpdcnt = 0;
+	assert(selcnt == BATcount(g) && selcnt == BATcount(m));
+
+	lng *freq = NULL;
+	if (frequency && !is_bat_nil(*frequency)) {
+		f = BATdescriptor(*frequency);
+		if (!f) {
+			err = createException(SQL, "oahash.expand", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+			goto error;
+		}
+		freq = Tloc(f, 0);
+	}
 
 	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
 	qry_ctx = qry_ctx ? qry_ctx : &(QryCtx) {.endtime = 0};
+	gid *allgids = NULL;
 	if (selcnt) {
+		allgids = GDKzalloc(ht->last * sizeof(gid));
+		TIMEOUT_LOOP_IDX_DECL(i, ht->last, qry_ctx) {
+			if(ht->gids[i]) {
+				allgids[i] = ht->gids[i];
+				hpcnt++;
+			}
+		}
+
 		TIMEOUT_LOOP_IDX_DECL(i, selcnt, qry_ctx) {
 			if (is_oid_nil(gids[i]))
 				xpdcnt += hpcnt;
-			else
+			else if (freq)
 				xpdcnt += (oid)freq[gids[i]];
+			else
+				xpdcnt++;
 		}
 		TIMEOUT_CHECK(qry_ctx, err = createException(SQL, "oahash.expand", RUNTIME_QRY_TIMEOUT));
 		if (err)
@@ -3415,11 +3390,11 @@ OAHASHexpand3(Client ctx, MalBlkPtr mbp, MalStkPtr s, InstrPtr p)
 			/* expand a NULL to all of ht->gids */
 			TIMEOUT_LOOP_IDX_DECL(j, hpcnt, qry_ctx) {
 				resp[idx] = oids[i];
-				resh[idx] = j;
+				resh[idx] = allgids[j];
 				resm[idx] = mrks[i];
 				idx++;
 			}
-		} else {
+		} else if (freq) {
 			gid frq = (gid)freq[gids[i]];
 			assert(frq);
 			int prime = hash_prime_nr[ht->bits-5];
@@ -3438,6 +3413,11 @@ OAHASHexpand3(Client ctx, MalBlkPtr mbp, MalStkPtr s, InstrPtr p)
 				resm[idx] = mrks[i];
 				idx++;
 			}
+		} else {
+			resp[idx] = oids[i];
+			resh[idx] = gids[i];
+			resm[idx] = mrks[i];
+			idx++;
 		}
 	}
 	TIMEOUT_CHECK(qry_ctx, err = createException(SQL, "oahash.expand", RUNTIME_QRY_TIMEOUT));
@@ -3463,8 +3443,8 @@ OAHASHexpand3(Client ctx, MalBlkPtr mbp, MalStkPtr s, InstrPtr p)
 	BBPunfix(o->batCacheid);
 	BBPunfix(g->batCacheid);
 	BBPunfix(m->batCacheid);
-	BBPunfix(f->batCacheid);
 	BBPunfix(h->batCacheid);
+	BBPreclaim(f);
 	return MAL_SUCCEED;
 error:
 	BBPreclaim(ep);
@@ -3473,8 +3453,8 @@ error:
 	BBPreclaim(o);
 	BBPreclaim(g);
 	BBPreclaim(m);
-	BBPreclaim(f);
 	BBPreclaim(h);
+	BBPreclaim(f);
 	return err;
 }
 
@@ -3968,7 +3948,7 @@ static mel_func oa_hash_init_funcs[] = {
  command("fhash", "probe", FHASHprobe, false, "Probe the `key` in the hash table. For a matched key, return its OID in the 'key' column and the slot ID in the hash table", args(2,6, batarg("PRB_oid",oid),batarg("HSH_slotid",oid),batargany("PRB_key",1),batargany("HSH_ht",1),arg("single",bit),arg("semantics",bit))),
 
  pattern("oahash", "expand", OAHASHexpand, false, "Expand the probe-side OIDs according to their matching hash-side GIDs and frequencies. If 'leftouter' is true, include the not matched OIDs", args(1,5,batarg("expanded",oid),batarg("prb_oids",oid),batarg("hsh_gids",oid),batarg("frequency",lng),arg("leftouter",bit))),
- pattern("oahash", "expand", OAHASHexpand3, false, "Expand the probe-side OIDs, hash-side GIDs and the marks where NULL matches all", args(3,8,batarg("expdprb",oid),batarg("expdhsh",oid),batarg("expdmrk",bit),batarg("prb_oid",oid),batarg("hsh_gid",oid),batarg("mrk",bit),batarg("frequency",lng),batarg("hp_pos",oid))),
+ pattern("oahash", "expand", OAHASHexpand3, false, "Expand the probe-side OIDs, hash-side GIDs and the marks where NULL matches all", args(3,8,batarg("expdprb",oid),batarg("expdhsh",oid),batarg("expdmrk",bit),batarg("prb_oid",oid),batarg("hsh_gid",oid),batarg("mrk",bit),batarg("hp_pos",any),batarg("frequency",lng))),
 
  command("oahash", "expand_cartesian", OAHASHexpand_cart, false, "Duplicate each value in 'col' the number of times as the count of 'rowrepeat'. For a left/right-outer join, if 'rowrepeat' is empty, output the values in 'col' once.", args(1,4, batarg("expanded",oid),batargany("col",1),batargany("rowrepeat",2),arg("left_outer",bit))),
 
