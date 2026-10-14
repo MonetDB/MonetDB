@@ -141,6 +141,7 @@ e_atom 	(card ATOM)
 e_convert
 	-> l	sub expression
 	-> r	list of from and to subtypes
+	-> f 	optional list of expressions, ie to represent nested structures
 
 e_cmp
 	-> l	left sub expression
@@ -194,7 +195,7 @@ e_column
 		l,r names of referred expression
 	-> l 	optional relation name
 	-> r	expression name
-	-> f 	list of expressions, ie to represent nested structures
+	-> f 	optional list of expressions, ie to represent nested structures
 	-> f 	pointer to relation, if expression is part of base table
 	-> nid == label of referenced expression (down the tree)
 	-> type
