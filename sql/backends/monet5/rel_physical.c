@@ -872,7 +872,7 @@ rel_pipeline(visitor *v, sql_rel *rel, bool materialize, int pb)
 		bool cross = list_empty(eq_exps);
 
 		sql_rel *l = rel->l, *r = rel->r;
-		if (!cross && rel_getcount(v->sql, l) < rel_getcount(v->sql, r) && rel->op == op_semi)
+		if (!cross && rel_getcount(v->sql, l) < rel_getcount(v->sql, r))
 			rel->oahash = 1;
 		else
 			rel->oahash = 2;

@@ -1254,8 +1254,8 @@ rel2bin_oahash_fullouterjoin(backend *be, sql_rel *rel, list *refs)
 				sel = matched;
 			else
 				sel = stmt_project(be, matched, sel);
-			//if (anti_join)
-				//sel = /* empty */
+			if (anti_join)
+				sel = stmt_selectnil(be, sel, NULL); /* empty */
 		}
 		list *lp = sa_list(sql->sa);
 		for (node *n = probe_side->h; n; n = n->next) {
