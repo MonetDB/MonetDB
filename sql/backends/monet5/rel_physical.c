@@ -871,9 +871,18 @@ rel_pipeline(visitor *v, sql_rel *rel, bool materialize, int pb)
 		bool need_all = false;
 		bool cross = list_empty(eq_exps);
 
-		rel->oahash = 2;
+		sql_rel *l = rel->l, *r = rel->r;
+		if (!cross && rel_getcount(v->sql, l) < rel_getcount(v->sql, r) && rel->op == op_semi)
+			rel->oahash = 1;
+		else
+			rel->oahash = 2;
 
 		sql_rel *rel_hsh = rel->r, *rel_prb = rel->l;
+		if (rel->oahash == 1) {
+			rel_hsh = rel->l;
+			rel_prb = rel->r;
+		}
+
 		list *found_exps_cmp_hsh = NULL;
 
 		/* get full projection list from parent */
@@ -888,20 +897,25 @@ rel_pipeline(visitor *v, sql_rel *rel, bool materialize, int pb)
 		} else {
 			if (rel_is_ref(rel_hsh))
 				need_all = true;
-			rel->r = rel_hsh = rel_buildhash(v, rel_hsh, NULL, list_empty(eq_exps));
+			rel_hsh = rel_buildhash(v, rel_hsh, NULL, list_empty(eq_exps));
 			rel_hsh->flag = (int)(needs_payload?op_join:op_semi);
 		}
-		rel->l = rel_prb = rel_probehash(v, rel_prb, NULL);
+		rel_prb = rel_probehash(v, rel_prb, NULL);
+		rel->r = (rel->oahash==1) ? rel_prb : rel_hsh;
+		rel->l = (rel->oahash==1) ? rel_hsh : rel_prb;
 		rel_hsh->attr = cross?NULL:exps_cmp_hsh;
 		rel_prb->attr = exps_cmp_prb;
 
 		list *exps_hsh = NULL, *exps_prb = rel_prb->exps = sa_list(v->sql->sa);
-		if (needs_payload)
+		if (needs_payload || rel->oahash == 1)
 			exps_hsh = sa_list(v->sql->sa);
 		find_payload_exps(v->sql, &exps_hsh, &exps_prb, p, rel_hsh, rel_prb);
 
+		if (rel->oahash == 1)
+			rel_hsh->exps = exps_hsh;
 		if (need_all && !is_base(rel_hsh->op))
 			rel_hsh->exps = !rel_hsh->exps?rel_hsh->attr:list_distinct(list_merge(rel_hsh->exps, rel_hsh->attr, NULL), (fcmp) exp_equal, NULL);
+
 		if (needs_payload) { /* TODO improve ie only keep attributes needed for 'other' exps */
 			if (!is_base(rel_hsh->op)) {
 				sql_rel *l = rel_hsh->l;

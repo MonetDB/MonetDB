@@ -1189,7 +1189,7 @@ GDKinit(opt *set, int setlen, bool embedded, const char *caller_revision)
 	if (GDKnr_threads > THREADS)
 		GDKnr_threads = THREADS;
 #if defined(HAVE_SYSCONF) && defined(_SC_LEVEL3_CACHE_SIZE)
-	GDKL3_size = (size_t)sysconf(_SC_LEVEL3_CACHE_SIZE);
+	GDKL3_size = (size_t)sysconf(_SC_LEVEL3_CACHE_SIZE); /* error (-1), will lead too huge L3_size */
 #else
 	GDKL3_size = 16*1024*1024;
 #endif

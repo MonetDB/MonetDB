@@ -1160,7 +1160,7 @@ rel2bin_oahash_fullouterjoin(backend *be, sql_rel *rel, list *refs)
 {
 	mvc *sql = be->mvc;
 	sql_subtype *tpe_oid = sql_fetch_localtype(TYPE_oid);
-	bool hf = false;
+	bool hf = false, outer = is_outerjoin(rel->op), anti_join = (rel->op == op_anti);
 	sql_rel *rel_hsh = rel->oahash == 1? rel->l: rel->r;
 
 	/* start new parallel block after join. NB get_need_pipeline has side effect! */
@@ -1197,7 +1197,8 @@ rel2bin_oahash_fullouterjoin(backend *be, sql_rel *rel, list *refs)
 	 *   immediately add this concat block to the p_source at the beginning of
 	 *   code generation for this block.
 	 */
-	(void)stmt_concat(be, be->source, 2);
+	if (outer || anti_join)
+		(void)stmt_concat(be, be->source, 2);
 
 	/* create all results variables, from rel->l to rel->r */
 	list *vars = sa_list(sql->sa);
@@ -1208,7 +1209,7 @@ rel2bin_oahash_fullouterjoin(backend *be, sql_rel *rel, list *refs)
 			append(vars, s);
 		}
 	}
-	if (!list_empty(((sql_rel*)rel->r)->exps)) {
+	if (outer && !list_empty(((sql_rel*)rel->r)->exps)) {
 		for (node *n = ((sql_rel*)rel->r)->exps->h; n; n = n->next) {
 			sql_subtype *st = exp_subtype(n->data);
 			stmt *s = stmt_bat_declare(be, st);
@@ -1217,7 +1218,9 @@ rel2bin_oahash_fullouterjoin(backend *be, sql_rel *rel, list *refs)
 	}
 
 	/*** first concat_block: the join ***/
-	int b = stmt_concat_barrier(be, be->source, 0, 0);
+	int b = 0;
+	if (outer || anti_join)
+		b = stmt_concat_barrier(be, be->source, 0, 0);
 
 	// existing leftjoin code, extended to mark the matched payloads
 	stmt *sub = NULL, *probe_sub = NULL;
@@ -1234,16 +1237,34 @@ rel2bin_oahash_fullouterjoin(backend *be, sql_rel *rel, list *refs)
 	} else {
 		sub = rel2bin_oahash_equi_join(be, rel, refs, jexps, &probed_ids, &probe_sub, NULL /* nulls */, &m /* prb_mrk */, &hsh_mrk, &probe_side, &hash_side, !list_empty(sexps) /* has_outerselect */);
 	}
-	if (!list_empty(sexps)) {
-		stmt *sel = rel2bin_oahash_outerselect(be, sub, sexps, rel, probed_ids, hash_ids, &m, list_empty(jexps), false);
-		if (sel == NULL) return NULL;
+	if (!outer || !list_empty(sexps)) {
+		stmt *sel = NULL;
+		if (outer)
+			sel = rel2bin_oahash_outerselect(be, sub, sexps, rel, probed_ids, hash_ids, &m, list_empty(jexps), false);
+		else if (!list_empty(sexps))
+			sel = rel2bin_oahash_select(be, sub, sexps, rel, hf);
+		if (sel == NULL && (outer || !list_empty(sexps)))
+			return NULL;
+
+		if (!outer) {
+			if (sel)
+				hsh_mrk = stmt_project(be, sel, hsh_mrk);
+			stmt *matched = stmt_mark_matched(be, hp_mrk, hsh_mrk);
+			if (!sel)
+				sel = matched;
+			else
+				sel = stmt_project(be, matched, sel);
+			//if (anti_join)
+				//sel = /* empty */
+		}
 		list *lp = sa_list(sql->sa);
 		for (node *n = probe_side->h; n; n = n->next) {
 			stmt *c = stmt_project(be, sel, n->data);
 			const char *cname = column_name(sql->sa, c);
 			const char *tname = table_name(sql->sa, c);
 			int label = c->label;
-			c = stmt_alias(be, c, label, tname, cname);
+			if (label)
+				c = stmt_alias(be, c, label, tname, cname);
 			append(lp, c);
 		}
 		list *lh = sa_list(sql->sa);
@@ -1252,31 +1273,40 @@ rel2bin_oahash_fullouterjoin(backend *be, sql_rel *rel, list *refs)
 			const char *cname = column_name(sql->sa, c);
 			const char *tname = table_name(sql->sa, c);
 			int label = c->label;
-			c = sql_Nop_(be, "ifthenelse", m, c, stmt_atom(be, atom_general(sql->sa, tail_type(c), NULL, 0)), NULL);
-			c = stmt_alias(be, c, label, tname, cname);
+			if (outer)
+				c = sql_Nop_(be, "ifthenelse", m, c, stmt_atom(be, atom_general(sql->sa, tail_type(c), NULL, 0)), NULL);
+			if (label)
+				c = stmt_alias(be, c, label, tname, cname);
 			append(lh, c);
 		}
 		sub = rel->oahash == 1?
 				stmt_list(be, list_merge(lh, lp, NULL)):
 				stmt_list(be, list_merge(lp, lh, NULL));
 
-		/* mark the matched payload */
-		assert(sel && m);
-		/*  X_nn:bat[:oid] := algebra.thetaselect(<m>, nil:bat[:any], true:bit, "=":str);*/
-		stmt *ss = stmt_thetaselect(be, m, NULL, stmt_bool(be, 1), "==", tpe_oid);
-		if (!ss) return NULL;
-		stmt *s_oids = stmt_project(be, ss, sel);
-		if (!s_oids) return NULL;
-		hsh_mrk = stmt_project(be, s_oids, hsh_mrk);
-	} else {
+		if (outer) {
+			/* mark the matched payload */
+			assert(sel && m);
+			/*  X_nn:bat[:oid] := algebra.thetaselect(<m>, nil:bat[:any], true:bit, "=":str);*/
+			stmt *ss = stmt_thetaselect(be, m, NULL, stmt_bool(be, 1), "==", tpe_oid);
+			if (!ss)
+				return NULL;
+			stmt *s_oids = stmt_project(be, ss, sel);
+			if (!s_oids)
+				return NULL;
+			hsh_mrk = stmt_project(be, s_oids, hsh_mrk);
+		}
+	} else if (outer) {
 		atom *a_null = atom_general(sql->sa, tpe_oid, NULL, 0);
-		stmt *stmt_null = stmt_atom(be, a_null); /* we just need the count of unmatched */
+		stmt *stmt_null = stmt_atom(be, a_null);
 		/*  X_nn:bat[:oid] := algebra.thetaselect(<m>, nil:bat[:any], true:bit, "=":str);*/
 		stmt *sel = stmt_thetaselect(be, hsh_mrk, NULL, stmt_null, "ne", tpe_oid);
 		hsh_mrk = stmt_project(be, sel, hsh_mrk);
 	}
-	if (!hsh_mrk) return NULL;
-	hp_mrk = stmt_algebra_project(be, hp_mrk, hsh_mrk, stmt_bool(be,1), projectRef);
+	if (outer) {
+		if (!hsh_mrk)
+			return NULL;
+		hp_mrk = stmt_algebra_project(be, hp_mrk, hsh_mrk, stmt_bool(be,1), projectRef);
+	}
 	// END existing code
 
 	/* skip useless hash side cols on empty payload */
@@ -1303,6 +1333,9 @@ rel2bin_oahash_fullouterjoin(backend *be, sql_rel *rel, list *refs)
 	}
 	sub = subres_assign_resultvars(be, sub, vars);
 	if (!sub) return NULL;
+
+	if (!outer && !anti_join)
+		return sub;
 
 	if (be->concatcnt == 0) {/* add dummy source */
 		int source = pp_counter(be, 1, -1, false);
@@ -1369,6 +1402,8 @@ rel2bin_oahash_fullouterjoin(backend *be, sql_rel *rel, list *refs)
 static stmt *
 rel2bin_oahash_semi(backend *be, sql_rel *rel, list *refs)
 {
+	if (rel->oahash == 1)
+		return rel2bin_oahash_fullouterjoin(be, rel, refs);
 	assert(rel->oahash == 2 && "we now always hash RHS for semi-joins");
 	sql_rel *rel_hsh = rel->r, *rel_prb = rel->l;
 	stmt *probe_sub = NULL, *sub = NULL, *nulls = NULL;
