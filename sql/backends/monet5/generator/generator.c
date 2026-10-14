@@ -1233,11 +1233,11 @@ VLTgenerator_thetasubselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 		}																\
 		v = (TPE*) Tloc(bn,0);											\
 		for(; cnt-- > 0; o++){											\
-			oid oi = ol == NULL ? o : ol[o];							\
+			oid oi = BUNtoid(b, o);										\
 			if (is_oid_nil(oi)) {										\
 				val = TPE##_nil;										\
 			} else {													\
-				val = f + ((TPE) (ol == NULL  ? o : ol[o])) * s;		\
+				val = f + ((TPE) oi) * s;								\
 				if ( (s > 0 &&  (val < f || val >= l)) || (s < 0 && (val <= l || val > f))) \
 					continue;											\
 			}															\
@@ -1253,7 +1253,7 @@ VLTgenerator_projection(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	bat *ret;
 	BAT *b, *bn = NULL;
 	BUN cnt, c = 0;
-	oid *ol = NULL, o= 0;
+	oid o= 0;
 	InstrPtr p;
 
 	(void) cntxt;
@@ -1283,19 +1283,14 @@ VLTgenerator_projection(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	}
 
 	cnt = BATcount(b);
-	if ( b->ttype == TYPE_void) {
-		o = b->tseqbase;
-		if (is_oid_nil(o)) {
-			tpe = getArgType(mb,p,1);
-			BAT *bn = BATconstant(b->hseqbase, tpe, ATOMnilptr(tpe), cnt, TRANSIENT);
-			BBPunfix(b->batCacheid);
-			*getArgReference_bat(stk,pci,0) = bn->batCacheid;
-			BBPkeepref(bn);
-			return MAL_SUCCEED;
-		}
+	if ( b->ttype == TYPE_void && is_oid_nil(b->tseqbase)) {
+		tpe = getArgType(mb,p,1);
+		BAT *bn = BATconstant(b->hseqbase, tpe, ATOMnilptr(tpe), cnt, TRANSIENT);
+		BBPunfix(b->batCacheid);
+		*getArgReference_bat(stk,pci,0) = bn->batCacheid;
+		BBPkeepref(bn);
+		return MAL_SUCCEED;
 	}
-	else
-		ol = (oid*) Tloc(b,0);
 
 	/* the actual code to perform a projection over generators */
 	switch( tpe = getArgType(mb,p,1)){
@@ -1336,7 +1331,7 @@ VLTgenerator_projection(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			v = (date*) Tloc(bn,0);
 
 			for(; cnt-- > 0; o++){
-				t = ((int) (ol == NULL ? o : ol[o])) * s;
+				t = ((int) BUNtoid(b, o)) * s;
 				val = date_add_month(f, t);
 				if (is_date_nil(val)) {
 					BBPunfix(b->batCacheid);
@@ -1377,7 +1372,7 @@ VLTgenerator_projection(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			v = (date*) Tloc(bn,0);
 
 			for(; cnt-- > 0; o++){
-				t = ((int) (ol == NULL ? o : ol[o])) * s;
+				t = ((int) BUNtoid(b, o)) * s;
 				val = date_add_day(f, (int) t);
 				if (is_date_nil(val)) {
 					BBPunfix(b->batCacheid);
@@ -1422,7 +1417,7 @@ VLTgenerator_projection(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			v = (timestamp*) Tloc(bn,0);
 
 			for(; cnt-- > 0; o++){
-				t = ((lng) (ol == NULL ? o : ol[o])) * s;
+				t = ((lng) BUNtoid(b, o)) * s;
 				val = timestamp_add_usec(f, t);
 				if (is_timestamp_nil(val)) {
 					BBPunfix(b->batCacheid);

@@ -645,6 +645,66 @@ error:
 }
 
 static str
+OAHASHmatched(Client ctx, bat *matched_first, const bat *matched, const bat *rows)
+{
+	(void)ctx;
+	BAT *m = BATdescriptor(*matched);
+	if (!m)
+		return createException(MAL, "oahash.matched", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+	BAT *r = BATdescriptor(*rows);
+	if (!r) {
+		BBPreclaim(m);
+		return createException(MAL, "oahash.matched", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+	}
+	BUN cnt = BATcount(r), k = 0;
+	BAT *mo = COLnew(0, TYPE_oid, cnt, TRANSIENT);
+	if (mo == NULL) {
+		BBPreclaim(m);
+		BBPreclaim(r);
+		return createException(MAL, "oahash.matched", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+	}
+	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
+	qry_ctx = qry_ctx ? qry_ctx : &(QryCtx) {.endtime = 0};
+	bit *mrk = Tloc(m, 0);
+	oid *row = Tloc(r, 0);
+	oid *matched_only = Tloc(mo, 0);
+
+
+	MT_lock_set(&m->theaplock);
+	if (r->ttype == TYPE_oid) {
+		TIMEOUT_LOOP_IDX_DECL(i, cnt, qry_ctx) {
+			oid j = row[i];
+			if (mrk[j] == FALSE) {
+				mrk[j] = TRUE;
+				matched_only[k++] = i;
+			}
+		}
+	} else { /* handle voids */
+		BUN off = r->tseqbase;
+		TIMEOUT_LOOP_IDX_DECL(i, cnt, qry_ctx) {
+			oid j = off + i;
+			if (mrk[j] == FALSE) {
+				mrk[j] = TRUE;
+				matched_only[k++] = i;
+			}
+		}
+	}
+	MT_lock_unset(&m->theaplock);
+	BATsetcount(mo, k);
+	mo->tnonil = TRUE;
+	mo->tkey = TRUE;
+	mo->tsorted = TRUE;
+	mo->trevsorted = FALSE;
+	str err = MAL_SUCCEED;
+	if (!err)
+		TIMEOUT_CHECK(qry_ctx, err = createException(SQL, "oahash.build", RUNTIME_QRY_TIMEOUT));
+	BBPreclaim(m);
+	BBPreclaim(r);
+	BBPretain(*matched_first = mo->batCacheid);
+	return err;
+}
+
+static str
 UHASHext(Client cntxt, MalBlkPtr m, MalStkPtr s, InstrPtr p)
 {
 	(void)cntxt;
@@ -3737,6 +3797,8 @@ static mel_func oa_hash_init_funcs[] = {
 
  pattern("oahash", "hash", OAHASHhash, false, "Compute hash.", args(1,2, arg("hash", lng), argany("in",1))),
  pattern("batoahash", "hash", OAHASHhash, false, "Compute hash.", args(1,2, batarg("hash", lng), batargany("in",1))),
+
+ command("ialgebra", "matched", OAHASHmatched, false, "Mark matched rows, only return rows matched rows on first match.", args(1,3, batarg("matched_once", oid), batarg("matched", bit), batarg("rows", oid))),
 
  { .imp=NULL }
 };
