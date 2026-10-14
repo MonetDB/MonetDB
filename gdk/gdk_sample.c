@@ -98,7 +98,7 @@ OIDTreeToBATAntiset(struct oidtreenode *node, BAT *bn, oid start, oid stop)
 }
 
 static BAT *
-do_batsample(oid hseq, BUN cnt, BUN n, random_state_engine rse, MT_Lock *lock)
+do_batsample(oid hseq, BUN cnt, BUN n, random_state_engine rse)
 {
 	BAT *bn;
 	BUN slen;
@@ -204,34 +204,15 @@ do_batsample(oid hseq, BUN cnt, BUN n, random_state_engine rse, MT_Lock *lock)
 			return NULL;
 		}
 
-		if (lock)
-			MT_lock_set(lock);
-		/* generate a list of random numbers; note we use the
-		 * "tree" array, but we use the value from each location
-		 * before it is overwritten by the use as part of the
-		 * binary tree */
-		for (rescnt = 0; rescnt < n; rescnt++)
-			tree[rescnt].r = next(rse);
-
 		/* while we do not have enough sample OIDs yet */
-		BUN rnd = 0;
 		for (rescnt = 0; rescnt < n; rescnt++) {
 			oid candoid;
 			do {
-				if (rnd == n) {
-					/* we ran out of random numbers,
-					 * so generate more */
-					for (rnd = rescnt; rnd < n; rnd++)
-						tree[rnd].r = next(rse);
-					rnd = rescnt;
-				}
-				candoid = minoid + tree[rnd++].r % cnt;
+				candoid = minoid + next(rse) % cnt;
 				/* if that candidate OID was already
 				 * generated, try again */
 			} while (!OIDTreeMaybeInsert(tree, candoid, rescnt));
 		}
-		if (lock)
-			MT_lock_unset(lock);
 		if (!antiset) {
 			OIDTreeToBAT(tree, bn);
 		} else {
@@ -258,31 +239,15 @@ BATsample_with_seed(BAT *b, BUN n, uint64_t seed)
 	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
 	init_random_state_engine(rse, seed);
 
-	BAT *bn = do_batsample(b->hseqbase, BATcount(b), n, rse, NULL);
+	BAT *bn = do_batsample(b->hseqbase, BATcount(b), n, rse);
 	TRC_DEBUG(ALGO, ALGOBATFMT "," BUNFMT " -> " ALGOOPTBATFMT
 		  " (" LLFMT " usec)\n",
 		  ALGOBATPAR(b), n, ALGOOPTBATPAR(bn), GDKusec() - t0);
 	return bn;
 }
 
-static MT_Lock rse_lock = MT_LOCK_INITIALIZER(rse_lock);
 BAT *
 BATsample(BAT *b, BUN n)
 {
-	static random_state_engine rse;
-	lng t0 = 0;
-
-	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
-	MT_lock_set(&b->theaplock);
-	BUN batcount = BATcount(b);
-	MT_lock_unset(&b->theaplock);
-	MT_lock_set(&rse_lock);
-	if (rse[0] == 0 && rse[1] == 0 && rse[2] == 0 && rse[3] == 0)
-		init_random_state_engine(rse, (uint64_t) GDKusec());
-	MT_lock_unset(&rse_lock);
-	BAT *bn = do_batsample(b->hseqbase, batcount, n, rse, &rse_lock);
-	TRC_DEBUG(ALGO, ALGOBATFMT "," BUNFMT " -> " ALGOOPTBATFMT
-		  " (" LLFMT " usec)\n",
-		  ALGOBATPAR(b), n, ALGOOPTBATPAR(bn), GDKusec() - t0);
-	return bn;
+	return BATsample_with_seed(b, n, (uint64_t) GDKusec());
 }
