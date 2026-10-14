@@ -32,14 +32,9 @@
 
 /* this is a straightforward implementation of a binary tree */
 struct oidtreenode {
-	union {
-		struct {	/* use as a binary tree */
-			oid o;
-			struct oidtreenode *left;
-			struct oidtreenode *right;
-		};
-		uint64_t r;	/* temporary storage for random numbers */
-	};
+	oid o;
+	struct oidtreenode *left;
+	struct oidtreenode *right;
 };
 
 static bool
@@ -69,51 +64,41 @@ OIDTreeMaybeInsert(struct oidtreenode *tree, oid o, BUN allocated)
 
 /* inorder traversal, gives us a sorted BAT */
 static void
-OIDTreeToBAT(struct oidtreenode *node, BAT *bn)
+OIDTreeToBAT(struct oidtreenode *node, oid *oids, BUN *n)
 {
 	if (node->left != NULL)
-		OIDTreeToBAT(node->left, bn);
-	((oid *) bn->theap->base)[bn->batCount++] = node->o;
+		OIDTreeToBAT(node->left, oids, n);
+	oids[*n] = node->o;
+	(*n)++;
 	if (node->right != NULL )
-		OIDTreeToBAT(node->right, bn);
-}
-
-/* Antiset traversal, give us all values but the ones in the tree */
-static void
-OIDTreeToBATAntiset(struct oidtreenode *node, BAT *bn, oid start, oid stop)
-{
-	oid noid;
-
-	if (node->left != NULL)
-		OIDTreeToBATAntiset(node->left, bn, start, node->o);
-	else
-		for (noid = start; noid < node->o; noid++)
-			((oid *) bn->theap->base)[bn->batCount++] = noid;
-
-	if (node->right != NULL)
-		OIDTreeToBATAntiset(node->right, bn, node->o + 1, stop);
-	else
-		for (noid = node->o+1; noid < stop; noid++)
-			((oid *) bn->theap->base)[bn->batCount++] = noid;
+		OIDTreeToBAT(node->right, oids, n);
 }
 
 static BAT *
 do_batsample(oid hseq, BUN cnt, BUN n, random_state_engine rse)
 {
 	BAT *bn;
-	BUN slen;
-	BUN rescnt;
-	struct oidtreenode *tree = NULL;
+	BUN rescnt;		/* counter used for several purposes */
 
 	ERRORcheck(n > BUN_MAX, "sample size larger than BUN_MAX\n", NULL);
-	/* empty sample size */
 	if (n == 0) {
-		bn = BATdense(0, 0, 0);
-	} else if (cnt <= n) {
+		/* empty sample size */
+		return BATdense(0, 0, 0);
+	}
+	if (cnt <= n) {
 		/* sample size is larger than the input BAT, return
 		 * all oids */
-		bn = BATdense(0, hseq, cnt);
-	} else if (cnt > n / 8) {
+		return BATdense(0, hseq, cnt);
+	}
+	bool antiset = n > cnt / 2;
+	if (antiset)
+		n = cnt - n;
+	/* temp use: approximate size of mask if we were to create one */
+	rescnt = cnt / 8;
+	/* n * sizeof(oid) is size of BAT if we were to not use a mask */
+	if (n * sizeof(oid) > rescnt) {
+		/* create a mask candidate list since it is smaller than
+		 * a list of oids */
 		bn = COLnew(0, TYPE_void, 0, TRANSIENT);
 		Heap *msks = GDKmalloc(sizeof(Heap));
 		if (bn == NULL || msks == NULL) {
@@ -145,9 +130,9 @@ do_batsample(oid hseq, BUN cnt, BUN n, random_state_engine rse)
 		};
 		msks->free = sizeof(ccand_t) + nmask * sizeof(uint32_t);
 		uint32_t *r = (uint32_t *) (msks->base + sizeof(ccand_t));
-		BATsetcount(bn, n);
-		bn->tunique_est = (double) n;
-		if (n <= cnt / 2) {
+		BATsetcount(bn, antiset ? cnt - n : n);
+		bn->tunique_est = (double) bn->batCount;
+		if (!antiset) {
 			memset(r, 0, nmask * sizeof(uint32_t));
 			for (rescnt = 0; rescnt < n; rescnt++) {
 				BUN i;
@@ -163,7 +148,6 @@ do_batsample(oid hseq, BUN cnt, BUN n, random_state_engine rse)
 			/* clear last few bits */
 			if (cnt % 32 != 0)
 				r[nmask - 1] &= (1U << (cnt % 32)) - 1;
-			n = cnt - n;
 			for (rescnt = 0; rescnt < n; rescnt++) {
 				BUN i;
 				do {
@@ -180,52 +164,77 @@ do_batsample(oid hseq, BUN cnt, BUN n, random_state_engine rse)
 		}
 		bn->tvheap = msks;
 		BATtseqbase(bn, hseq + c->firstbit);
+		return bn;
+	}
+	oid *oids;
+	if (antiset) {
+		/* create negative candidate list */
+		bn = COLnew(0, TYPE_void, 0, TRANSIENT);
+		Heap *dels = GDKmalloc(sizeof(Heap));
+		if (bn == NULL || dels == NULL) {
+			GDKfree(dels);
+			BBPreclaim(bn);
+			return NULL;
+		}
+		*dels = (Heap) {
+			.farmid = BBPselectfarm(TRANSIENT, TYPE_void, varheap),
+			.parentid = bn->batCacheid,
+			.dirty = true,
+			.refs = ATOMIC_VAR_INIT(1),
+		};
+		strtconcat(dels->filename, sizeof(dels->filename),
+			   BBP_physical(bn->batCacheid), ".theap", NULL);
+		if (dels->farmid < 0 ||
+		    HEAPalloc(dels, n + sizeof(ccand_t) / sizeof(oid),
+			      sizeof(oid)) != GDK_SUCCEED) {
+			GDKfree(dels);
+			BBPreclaim(bn);
+			return NULL;
+		}
+		ccand_t *c = (ccand_t *) dels->base;
+		*c = (ccand_t) {
+			.type = CAND_NEGOID,
+		};
+		dels->free = sizeof(ccand_t) + n * sizeof(oid);
+		bn->tvheap = dels;
+		oids = (oid *) ccand_first(bn);
+		BATsetcount(bn, cnt - n); /* ??? */
+		BATtseqbase(bn, hseq);
 	} else {
-		oid minoid = hseq;
-		oid maxoid = hseq + cnt;
-		allocator *ta = MT_thread_getallocator();
-		allocator_state ta_state = ma_open(ta);
-
-		/* if someone samples more than half of our tree, we
-		 * do the antiset */
-		bool antiset = n > cnt / 2;
-		slen = n;
-		if (antiset)
-			n = cnt - n;
-
-		tree = ma_alloc(ta, n * sizeof(struct oidtreenode));
-		if (tree == NULL) {
-			ma_close(&ta_state);
+		/* create a positive candidate list */
+		bn = COLnew(0, TYPE_oid, n, TRANSIENT);
+		if (bn == NULL)
 			return NULL;
-		}
-		bn = COLnew(0, TYPE_oid, slen, TRANSIENT);
-		if (bn == NULL) {
-			ma_close(&ta_state);
-			return NULL;
-		}
-
-		/* while we do not have enough sample OIDs yet */
-		for (rescnt = 0; rescnt < n; rescnt++) {
-			oid candoid;
-			do {
-				candoid = minoid + next(rse) % cnt;
-				/* if that candidate OID was already
-				 * generated, try again */
-			} while (!OIDTreeMaybeInsert(tree, candoid, rescnt));
-		}
-		if (!antiset) {
-			OIDTreeToBAT(tree, bn);
-		} else {
-			OIDTreeToBATAntiset(tree, bn, minoid, maxoid);
-		}
-		ma_close(&ta_state);
-
-		BATsetcount(bn, slen);
+		BATsetcount(bn, n);
+		oids = (oid *) Tloc(bn, 0);
 		bn->trevsorted = bn->batCount <= 1;
 		bn->tsorted = true;
 		bn->tkey = true;
 		bn->tseqbase = bn->batCount == 0 ? 0 : bn->batCount == 1 ? *(oid *) Tloc(bn, 0) : oid_nil;
 	}
+
+	allocator *ta = MT_thread_getallocator();
+	allocator_state ta_state = ma_open(ta);
+
+	struct oidtreenode *tree = ma_alloc(ta, n * sizeof(struct oidtreenode));
+	if (tree == NULL) {
+		ma_close(&ta_state);
+		return NULL;
+	}
+
+	/* while we do not have enough sample OIDs yet */
+	for (rescnt = 0; rescnt < n; rescnt++) {
+		oid candoid;
+		do {
+			candoid = hseq + next(rse) % cnt;
+			/* if that candidate OID was already generated,
+			 * try again */
+		} while (!OIDTreeMaybeInsert(tree, candoid, rescnt));
+	}
+	rescnt = 0;
+	OIDTreeToBAT(tree, oids, &rescnt);
+	ma_close(&ta_state);
+
 	return bn;
 }
 
