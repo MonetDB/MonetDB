@@ -2531,7 +2531,7 @@ log_load(const char *fn, logger *lg, char filename[FILENAME_MAX])
 			goto error;
 		}
 		if (!earlyexit) {
-			/* in case or process-wal-and-exit, do NOT run
+			/* in case of process-wal-and-exit, do NOT run
 			 * upgrade code, and therefore do NOT update WAL
 			 * version number */
 			if (lg->postfuncp && (*lg->postfuncp) (lg->funcdata, lg) != GDK_SUCCEED)
