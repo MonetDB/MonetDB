@@ -470,6 +470,25 @@ MKEYbulk_rotate_xor_hash(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 			}
 			break;
 		}
+		case TYPE_void: {
+			const ulng *restrict h = (const ulng *) hbi.base;
+			if (ci1.tpe == cand_dense && ci2.tpe == cand_dense) {
+				for (BUN i = 0; i < ci1.ncand; i++) {
+					oid p1 = (canditer_next_dense(&ci1) - off1),
+						p2 = (canditer_next_dense(&ci2) - off2);
+					r[i] = GDK_ROTATE(h[p1], lbit,
+									  rbit) ^ (ulng) MKEYHASH_oid(BUNtoid(b, p2));
+				}
+			} else {
+				for (BUN i = 0; i < ci1.ncand; i++) {
+					oid p1 = (canditer_next(&ci1) - off1),
+						p2 = (canditer_next(&ci2) - off2);
+					r[i] = GDK_ROTATE(h[p1], lbit,
+									  rbit) ^ (ulng) MKEYHASH_oid(BUNtoid(b, p2));
+				}
+			}
+			break;
+		}
 		case TYPE_dbl:
 			MKEYbulk_rotate_xor_hashloop(lng);
 			break;

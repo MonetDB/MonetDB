@@ -1,3 +1,5 @@
+hash-threshold 1000
+
 query TTTT nosort
 -- query 4
 with year_total as (
@@ -114,36 +116,12 @@ union all
          ,t_s_secyear.customer_preferred_cust_flag
 limit 100
 ----
-AAAAAAAABIJBAAAA
-James
-White
-N
-AAAAAAAADIIOAAAA
-David
-Carroll
-Y
-AAAAAAAAIJCIBAAA
-Thomas
-Oneal
-Y
-AAAAAAAAKJBLAAAA
-Kerry
-Davis
-Y
-AAAAAAAAMFPFBAAA
-Jamie
-Woods
-Y
-AAAAAAAANJAMAAAA
-Thaddeus
-Griffin
-N
-AAAAAAAANJOLAAAA
-Debra
-Underwood
-Y
-AAAAAAAAPEHEBAAA
-Edith
-Molina
-Y
+AAAAAAAABIJBAAAA	James	White	N
+AAAAAAAADIIOAAAA	David	Carroll	Y
+AAAAAAAAIJCIBAAA	Thomas	Oneal	Y
+AAAAAAAAKJBLAAAA	Kerry	Davis	Y
+AAAAAAAAMFPFBAAA	Jamie	Woods	Y
+AAAAAAAANJAMAAAA	Thaddeus	Griffin	N
+AAAAAAAANJOLAAAA	Debra	Underwood	Y
+AAAAAAAAPEHEBAAA	Edith	Molina	Y
 

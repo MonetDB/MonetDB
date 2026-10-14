@@ -180,3 +180,5 @@ extern int exp_freevar_offset(mvc *sql, sql_exp *e);
 	} while (0)
 
 #endif /* _REL_REL_H_ */
+
+extern sql_rel * find_basetable( sql_rel *r);

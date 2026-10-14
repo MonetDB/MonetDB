@@ -37,7 +37,6 @@ WHERE a.id = b.id
   AND a.k BETWEEN 4000 AND 4999
 ----
 push_project_down 1
-push_project_up 1
 optimize_select_and_joins_bottomup 4
 
 query I

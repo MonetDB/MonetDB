@@ -1,0 +1,71 @@
+statement ok
+CREATE TABLE t_integer_text (k VARCHAR(16))
+
+statement ok
+INSERT INTO t_integer_text VALUES ('7')
+
+query D nosort
+SELECT CAST(k AS DECIMAL(10,4)) FROM t_integer_text
+----
+7.0000
+
+statement ok
+ALTER TABLE t_integer_text ALTER COLUMN k DECIMAL(10,4)
+
+query DTDI nosort
+SELECT k, CAST(k AS VARCHAR(20)), k * 10000,
+       k = CAST('7' AS DECIMAL(10,4))
+FROM t_integer_text
+----
+7.0000	7.0000	70000.0000	1
+
+query D nosort
+SELECT SUM(k) FROM t_integer_text
+----
+7.0000
+
+query TII nosort
+SELECT data_type, numeric_precision, numeric_scale
+FROM information_schema.columns
+WHERE table_name = 't_integer_text' AND column_name = 'k'
+----
+DECIMAL	10	4
+
+statement ok
+CREATE TABLE t_fractional_text (k VARCHAR(16))
+
+statement ok
+INSERT INTO t_fractional_text VALUES ('7.5000')
+
+query D nosort
+SELECT CAST(k AS DECIMAL(10,4)) FROM t_fractional_text
+----
+7.5000
+
+statement ok
+ALTER TABLE t_fractional_text ALTER COLUMN k DECIMAL(10,4)
+
+query D nosort
+SELECT k FROM t_fractional_text
+----
+7.5000
+
+statement ok
+CREATE TABLE t_decimal (k DECIMAL(10,4))
+
+statement ok
+INSERT INTO t_decimal VALUES (7)
+
+query D
+SELECT k FROM t_decimal
+----
+7.0000
+
+statement ok
+ALTER TABLE t_decimal ALTER COLUMN k VARCHAR(16)
+
+query T
+SELECT k FROM t_decimal
+----
+7.0000
+

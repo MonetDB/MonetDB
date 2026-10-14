@@ -81,6 +81,14 @@ if len(sys.argv) == 2 and sys.argv[1] == 'upgrade':
     if len(cltout) != 3 or cltout[0] != 'START TRANSACTION;' or cltout[1] != 'SET SCHEMA "sys";' or cltout[2] != 'COMMIT;':
         sys.stderr.write('\n'.join(cltout))
         xit = 1
+    approve = os.getenv('MTEST_APPROVE')
+    if approve:
+        if approve == 'REPLACE':
+            fn = os.path.join(os.getenv('TSTSRCDIR'), f)
+        else:
+            fn = os.path.join(os.getenv('TSTTRGDIR'), f'{f}.new')
+        with open(fn, 'w') as fil:
+            fil.writelines(srvout)
 else:
     sys.stdout.writelines(srvout)
 

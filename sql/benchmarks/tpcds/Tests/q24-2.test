@@ -1,3 +1,5 @@
+hash-threshold 1000
+
 query TTTD nosort
 -- query 24-2
 with ssales as
@@ -52,20 +54,8 @@ order by c_last_name
         ,c_first_name
         ,s_store_name
 ----
-Hamlin
-Heather
-able
-149.65
-Martin
-Harold
-bar
-5834.88
-Nall
-Mike
-able
-999.70
-Southern
-Jeannie
-bar
-446.31
+Hamlin	Heather	able	149.65
+Martin	Harold	bar	5834.88
+Nall	Mike	able	999.70
+Southern	Jeannie	bar	446.31
 

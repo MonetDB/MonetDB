@@ -128,12 +128,10 @@ struct pqc_reader_t {
 	pqc_creader_t *creader; /* per worker readers */
 };
 
+__attribute__((__format__(__printf__, 2, 3)))
 static void
-pqc_set_error( pqc_reader_t *r, const char *format, ... )
-	__attribute__((__format__(__printf__, 2, 3)));
-
-static void
-pqc_set_error( pqc_reader_t *r, const char *format, ... )
+pqc_set_error(pqc_reader_t *r,
+			  _In_z_ _Printf_format_string_ const char *format, ... )
 {
 	va_list	ap;
 
@@ -2109,6 +2107,15 @@ pqc_read_page_chunk( pqc_reader_t *r, pqc_creader_t *cr, void *output /*fixed si
 		for(uint64_t i=0; i< nrows; i++)
 			*(r-i) = *(l-i);
 	} else
+#else
+	if (r->pse->precision == 64 && !r->pse->isSigned) {
+		int64_t *l = output;
+		for(uint64_t i=0; i< nrows; i++)
+			if (l[i] < 0) {
+				pqc_set_error(r, "unsigned value overflow");
+				return -1;
+			}
+	} else
 #endif
 	if (r->pse->precision == 32 && !r->pse->isSigned) {
 		uint32_t *l = output;
@@ -2151,7 +2158,7 @@ pqc_read_page_chunk( pqc_reader_t *r, pqc_creader_t *cr, void *output /*fixed si
 	ATOMIC_ADD(&r->rownr, orows);
 	cr->curnr += orows;
 	if (cr->cc->cur_page.num_read + orows > UINT32_MAX) {
-		pqc_set_error(r, "To many rows in one page (> UINT32_MAX)");
+		pqc_set_error(r, "Too many rows in one page (> UINT32_MAX)");
 		return -1;
 	}
 	cr->cc->cur_page.num_read += (uint32_t)orows; /* per page only uint32_t */

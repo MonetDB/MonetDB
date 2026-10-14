@@ -2189,7 +2189,7 @@ exp_bin(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, 
 				oldstop = be->mb->stop;
 				s = NULL;
 				if (!swapped)
-					s = exp_bin(be, n->data, left, NULL, grp, ext, cnt, NULL, depth+1, 0, push);
+					s = exp_bin(be, n->data, left, !reduce?right:NULL, grp, ext, cnt, NULL, depth+1, 0, push);
 				if (!s && right && (first || swapped)) {
 					clean_mal_statements(be, oldstop, oldvtop);
 					s = exp_bin(be, n->data, right, NULL, grp, ext, cnt, NULL, depth+1, 0, push);
@@ -2212,7 +2212,7 @@ exp_bin(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, 
 				return NULL;
 			args = e->r;
 			for (n = args->h; n; n = n->next) {
-				s = exp_bin(be, n->data, (swapped || !right)?left:right, NULL, grp, ext, cnt, NULL, depth+1, 0, push);
+				s = exp_bin(be, n->data, (swapped || !right)?left:right, !reduce?left:NULL, grp, ext, cnt, NULL, depth+1, 0, push);
 				if (!s)
 					return s;
 				list_append(ops, s);
@@ -2393,7 +2393,7 @@ stmt_col(backend *be, sql_column *c, stmt *del, int part)
 			stmt *v = stmt_bat(be, c, del?del->tname:NULL, RD_EXT, part);
 			sc = stmt_dict(be, sc, v);
 		} else if (c->storage_type && c->storage_type[0] == 'F') {
-			sc = stmt_for(be, sc, stmt_atom(be, atom_general(be->mvc->sa, &c->type, c->storage_type+4/*skip FOR-*/, be->mvc->timezone)));
+			sc = stmt_for(be, sc, stmt_atom(be, atom_general(be->mvc->sa, &c->type, c->storage_type+4/*skip FOR-*/, be->client->qryctx.timezone)));
 		}
 		if (del)
 			sc = stmt_project(be, del, sc);
@@ -5432,6 +5432,8 @@ rel2bin_select(backend *be, sql_rel *rel, list *refs)
 			return predicate;
 		assert(0);
 	}
+	if (rel->parallel && !be->pp)
+		sub = rel2bin_slicer_pp(be, sub);
 	en = rel->exps->h;
 	if (!sub && predicate) {
 		list *l = sa_list(sql->sa);
@@ -8723,8 +8725,14 @@ rel2bin_materialize(backend *be, sql_rel *rel, list *refs, bool top)
 	bool is_materialized = false;
 
 	if (is_topn(r->op)) {
+		sql_rel *o = r;
 		r = r->l;
 		is_materialized = true;
+		if (o->parallel) {
+			s = subrel_bin(be, rel, refs);
+			s = subrel_project(be, s, refs, rel);
+			return s;
+		}
 	}
 
 	list *shared = NULL;
@@ -9175,6 +9183,7 @@ output_rel_bin(backend *be, sql_rel *rel, int top)
 						 * op3 == freq  */
 						if (rel->attr || rel->exps) {
 							list *nl = sa_list(be->mvc->sa);
+							bool perfect = s->flag;
 							for(node *n = s->op4.lval->h, *m = rel->attr?rel->attr->h:rel->exps->h; n && m; n = n->next, m = m->next ){
 								stmt *ps = n->data;
 								sql_exp *pe = m->data;
@@ -9196,6 +9205,7 @@ output_rel_bin(backend *be, sql_rel *rel, int top)
 							ns->op2 = s->op2;
 							ns->op3 = s->op3;
 							s = ns;
+							s->flag = perfect;
 						}
 						append(nrefs, rel);
 						append(nrefs, s);

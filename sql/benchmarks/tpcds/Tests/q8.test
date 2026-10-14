@@ -1,3 +1,5 @@
+hash-threshold 1000
+
 query TD nosort
 -- query 8
 select  s_store_name
@@ -106,14 +108,9 @@ select  s_store_name
  order by s_store_name
  limit 100
 ----
-able
--9767751.88
-ation
--10546549.93
-bar
--10133672.06
-ese
--10335181.30
-ought
--10737659.56
+able	-9767751.88
+ation	-10546549.93
+bar	-10133672.06
+ese	-10335181.30
+ought	-10737659.56
 

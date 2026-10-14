@@ -98,7 +98,7 @@ OIDTreeToBATAntiset(struct oidtreenode *node, BAT *bn, oid start, oid stop)
 }
 
 static BAT *
-do_batsample(oid hseq, BUN cnt, BUN n, random_state_engine rse, MT_Lock *lock)
+do_batsample(oid hseq, BUN cnt, BUN n, random_state_engine rse)
 {
 	BAT *bn;
 	BUN slen;
@@ -113,6 +113,73 @@ do_batsample(oid hseq, BUN cnt, BUN n, random_state_engine rse, MT_Lock *lock)
 		/* sample size is larger than the input BAT, return
 		 * all oids */
 		bn = BATdense(0, hseq, cnt);
+	} else if (cnt > n / 8) {
+		bn = COLnew(0, TYPE_void, 0, TRANSIENT);
+		Heap *msks = GDKmalloc(sizeof(Heap));
+		if (bn == NULL || msks == NULL) {
+			GDKfree(msks);
+			BBPreclaim(bn);
+			return NULL;
+		}
+		*msks = (Heap) {
+			.farmid = BBPselectfarm(TRANSIENT, TYPE_void, varheap),
+			.parentid = bn->batCacheid,
+			.dirty = true,
+			.refs = ATOMIC_VAR_INIT(1),
+		};
+		strtconcat(msks->filename, sizeof(msks->filename),
+			   BBP_physical(bn->batCacheid), ".theap", NULL);
+		BUN nmask = (cnt + 31) / 32;
+		if (msks->farmid < 0 ||
+		    HEAPalloc(msks,
+			      nmask + sizeof(ccand_t) / sizeof(uint32_t),
+			      sizeof(uint32_t)) != GDK_SUCCEED) {
+			GDKfree(msks);
+			BBPreclaim(bn);
+			return NULL;
+		}
+		ccand_t *c = (ccand_t *) msks->base;
+		*c = (ccand_t) {
+			.type = CAND_MSK,
+			.firstbit = cnt, /* too large, will be reduced */
+		};
+		msks->free = sizeof(ccand_t) + nmask * sizeof(uint32_t);
+		uint32_t *r = (uint32_t *) (msks->base + sizeof(ccand_t));
+		BATsetcount(bn, n);
+		bn->tunique_est = (double) n;
+		if (n <= cnt / 2) {
+			memset(r, 0, nmask * sizeof(uint32_t));
+			for (rescnt = 0; rescnt < n; rescnt++) {
+				BUN i;
+				do {
+					i = next(rse) % cnt;
+				} while ((r[i / 32] & (1U << (i % 32))) != 0);
+				r[i / 32] |= 1U << (i % 32);
+				if (i < c->firstbit)
+					c->firstbit = i;
+			}
+		} else {
+			memset(r, 0xFF, nmask * sizeof(uint32_t));
+			/* clear last few bits */
+			if (cnt % 32 != 0)
+				r[nmask - 1] &= (1U << (cnt % 32)) - 1;
+			n = cnt - n;
+			for (rescnt = 0; rescnt < n; rescnt++) {
+				BUN i;
+				do {
+					i = next(rse) % cnt;
+				} while ((r[i / 32] & (1U << (i % 32))) == 0);
+				r[i / 32] &= ~(1U << (i % 32));
+			}
+			for (rescnt = 0; rescnt < nmask; rescnt++) {
+				if (r[rescnt] != 0) {
+					c->firstbit = candmask_lobit(r[rescnt]) + rescnt * 32;
+					break;
+				}
+			}
+		}
+		bn->tvheap = msks;
+		BATtseqbase(bn, hseq + c->firstbit);
 	} else {
 		oid minoid = hseq;
 		oid maxoid = hseq + cnt;
@@ -137,34 +204,15 @@ do_batsample(oid hseq, BUN cnt, BUN n, random_state_engine rse, MT_Lock *lock)
 			return NULL;
 		}
 
-		if (lock)
-			MT_lock_set(lock);
-		/* generate a list of random numbers; note we use the
-		 * "tree" array, but we use the value from each location
-		 * before it is overwritten by the use as part of the
-		 * binary tree */
-		for (rescnt = 0; rescnt < n; rescnt++)
-			tree[rescnt].r = next(rse);
-
 		/* while we do not have enough sample OIDs yet */
-		BUN rnd = 0;
 		for (rescnt = 0; rescnt < n; rescnt++) {
 			oid candoid;
 			do {
-				if (rnd == n) {
-					/* we ran out of random numbers,
-					 * so generate more */
-					for (rnd = rescnt; rnd < n; rnd++)
-						tree[rnd].r = next(rse);
-					rnd = rescnt;
-				}
-				candoid = minoid + tree[rnd++].r % cnt;
+				candoid = minoid + next(rse) % cnt;
 				/* if that candidate OID was already
 				 * generated, try again */
 			} while (!OIDTreeMaybeInsert(tree, candoid, rescnt));
 		}
-		if (lock)
-			MT_lock_unset(lock);
 		if (!antiset) {
 			OIDTreeToBAT(tree, bn);
 		} else {
@@ -186,30 +234,20 @@ BAT *
 BATsample_with_seed(BAT *b, BUN n, uint64_t seed)
 {
 	random_state_engine rse;
+	lng t0 = 0;
 
+	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
 	init_random_state_engine(rse, seed);
 
-	BAT *bn = do_batsample(b->hseqbase, BATcount(b), n, rse, NULL);
-	TRC_DEBUG(ALGO, ALGOBATFMT "," BUNFMT " -> " ALGOOPTBATFMT "\n",
-		  ALGOBATPAR(b), n, ALGOOPTBATPAR(bn));
+	BAT *bn = do_batsample(b->hseqbase, BATcount(b), n, rse);
+	TRC_DEBUG(ALGO, ALGOBATFMT "," BUNFMT " -> " ALGOOPTBATFMT
+		  " (" LLFMT " usec)\n",
+		  ALGOBATPAR(b), n, ALGOOPTBATPAR(bn), GDKusec() - t0);
 	return bn;
 }
 
-static MT_Lock rse_lock = MT_LOCK_INITIALIZER(rse_lock);
 BAT *
 BATsample(BAT *b, BUN n)
 {
-	static random_state_engine rse;
-
-	MT_lock_set(&b->theaplock);
-	BUN batcount = BATcount(b);
-	MT_lock_unset(&b->theaplock);
-	MT_lock_set(&rse_lock);
-	if (rse[0] == 0 && rse[1] == 0 && rse[2] == 0 && rse[3] == 0)
-		init_random_state_engine(rse, (uint64_t) GDKusec());
-	MT_lock_unset(&rse_lock);
-	BAT *bn = do_batsample(b->hseqbase, batcount, n, rse, &rse_lock);
-	TRC_DEBUG(ALGO, ALGOBATFMT "," BUNFMT " -> " ALGOOPTBATFMT "\n",
-		  ALGOBATPAR(b), n, ALGOOPTBATPAR(bn));
-	return bn;
+	return BATsample_with_seed(b, n, (uint64_t) GDKusec());
 }

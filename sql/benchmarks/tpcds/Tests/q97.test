@@ -1,4 +1,6 @@
-query III rowsort
+hash-threshold 1000
+
+query III nosort
 -- query 97
 with ssci as (
 select ss_customer_sk customer_sk
@@ -23,7 +25,5 @@ from ssci full outer join csci on (ssci.customer_sk=csci.customer_sk
                                and ssci.item_sk = csci.item_sk)
 limit 100
 ----
-540401
-286628
-174
+540401	286628	174
 

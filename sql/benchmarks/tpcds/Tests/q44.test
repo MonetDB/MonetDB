@@ -1,4 +1,6 @@
-query ITT rowsort
+hash-threshold 1000
+
+query ITT nosort
 -- query 44
 select  asceding.rnk, i1.i_product_name best_performing, i2.i_product_name worst_performing
 from(select *
@@ -33,34 +35,14 @@ where asceding.rnk = descending.rnk
 order by asceding.rnk
 limit 100
 ----
-1
-oughtantiprin st
-callyeingbarcallyought
-10
-eingoughtn station
-barcallyableought
-2
-barcallyprioughtought
-bareseationcallyought
-3
-ableeingantiable
-barn stcallycally
-4
-n stesebarn st
-eingoughtn stn st
-5
-antioughtationbarought
-callycallybarantiought
-6
-callyeseationantiought
-NULL
-7
-priableeseableought
-eseableablepriought
-8
-ableoughtableeseought
-ationoughtantianti
-9
-esebarableeseought
-callyn stantieseought
+1	oughtantiprin st	callyeingbarcallyought
+2	barcallyprioughtought	bareseationcallyought
+3	ableeingantiable	barn stcallycally
+4	n stesebarn st	eingoughtn stn st
+5	antioughtationbarought	callycallybarantiought
+6	callyeseationantiought	NULL
+7	priableeseableought	eseableablepriought
+8	ableoughtableeseought	ationoughtantianti
+9	esebarableeseought	callyn stantieseought
+10	eingoughtn station	barcallyableought
 

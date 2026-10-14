@@ -1,3 +1,5 @@
+hash-threshold 1000
+
 query IDD nosort
 -- query 95
 with ws_wh as
@@ -30,7 +32,5 @@ and ws1.ws_order_number in (select wr_order_number
 order by count(distinct ws_order_number)
 limit 100
 ----
-73
-120440.34
-42133.12
+73	120440.34	42133.12
 

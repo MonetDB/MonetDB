@@ -386,6 +386,32 @@ stmt_oahash_new(backend *be, sql_subtype *tpe, lng estimate, int parent, int nrp
 }
 
 stmt *
+stmt_fhash_new(backend *be, sql_subtype *tpe, lng estimate, lng max, int nrparts)
+{
+	InstrPtr q = newStmt(be->mb, nrparts?putName("mat"):putName("fhash"), newRef);
+	if (q == NULL)
+		return NULL;
+
+	assert (estimate >= 0);
+
+	int tt = tpe->type->localtype;
+	setVarType(be->mb, getArg(q, 0), newBatType(tt)); /* ht_sink */
+	q = pushType(be->mb, q, tt);
+	if (nrparts)
+		q = pushArgument(be->mb, q, nrparts);
+	q = pushLng(be->mb, q, estimate);
+	q = pushLng(be->mb, q, max);
+	pushInstruction(be->mb, q);
+
+	stmt *s = stmt_none(be);
+	s->subtype = *tpe;
+	s->q = q;
+	s->nr = getArg(q, 0);
+	s->nrcols = 1;
+	return s;
+}
+
+stmt *
 stmt_oahash_hshmrk_init(backend *be, stmt *stmts_ht, bool moveup)
 {
 	InstrPtr q = newStmt(be->mb, putName("oahash"), "hashmark_init");
@@ -425,8 +451,8 @@ stmt *
 stmt_oahash_build_ht(backend *be, stmt *ht, stmt *key, stmt *prnt, bit any)
 {
 	InstrPtr q = newStmt(be->mb, putName("oahash"), putName("build"));
-	if (q == NULL) return NULL;
-
+	if (q == NULL)
+		return NULL;
 	setVarType(be->mb, getArg(q, 0), newBatType(TYPE_oid)); /* slot_id */
 	q = pushReturn(be->mb, q, ht->nr);
 	q = pushArgument(be->mb, q, key->nr);
@@ -443,6 +469,29 @@ stmt_oahash_build_ht(backend *be, stmt *ht, stmt *key, stmt *prnt, bit any)
 	s->nrcols = key->nrcols;
 	s->q = q;
 
+	return s;
+}
+
+stmt *
+stmt_fhash_build_ht(backend *be, stmt *ht, stmt *key, bit any)
+{
+	InstrPtr q = newStmt(be->mb, putName("fhash"), putName("build"));
+	if (q == NULL)
+		return NULL;
+	setVarType(be->mb, getArg(q, 0), newBatType(TYPE_oid)); /* slot_id */
+	q = pushReturn(be->mb, q, ht->nr);
+	q = pushArgument(be->mb, q, key->nr);
+	q = pushBit(be->mb, q, any);
+	q->inout = 1;
+	pushInstruction(be->mb, q);
+
+	stmt *s = stmt_none(be);
+	if (s == NULL)
+		return NULL;
+	s->subtype = *tail_type(ht);
+	s->nr = getArg(q, 0);
+	s->nrcols = key->nrcols;
+	s->q = q;
 	return s;
 }
 
@@ -535,6 +584,35 @@ stmt_oahash_probe(backend *be, stmt *key, stmt *prev, stmt *rhs_ht, stmt *freq, 
 }
 
 stmt *
+stmt_fhash_probe(backend *be, stmt *key, stmt *rhs_ht, stmt *freq, bool single, bool semantics, bool eq)
+{
+	assert(eq);
+	InstrPtr q = newStmt(be->mb, putName("fhash"), eq?putName("probe"):putName("nprobe"));
+	if (q == NULL)
+		return NULL;
+	setVarType(be->mb, getArg(q, 0), newBatType(TYPE_oid));
+	q = pushReturn(be->mb, q, newTmpVariable(be->mb, newBatType(TYPE_oid)));
+	q = pushArgument(be->mb, q, key->nr);
+	q = pushArgument(be->mb, q, rhs_ht->nr);
+	if (single) {
+		assert(freq);
+		q = pushArgument(be->mb, q, freq->nr);
+	}
+	q = pushBit(be->mb, q, single);
+	q = pushBit(be->mb, q, semantics);
+	pushInstruction(be->mb, q);
+
+	stmt *s = stmt_none(be);
+	if (s == NULL)
+		return NULL;
+	s->subtype = *sql_fetch_localtype(TYPE_oid);
+	s->nr = getArg(q, 0);
+	s->nrcols = 1;
+	s->q = q;
+	return s;
+}
+
+stmt *
 stmt_algebra_project(backend *be, stmt *inout, stmt *pos, stmt *val, const char *fname)
 {
 	InstrPtr q = newStmt(be->mb, ialgebraRef, fname);
@@ -559,6 +637,30 @@ stmt_algebra_project(backend *be, stmt *inout, stmt *pos, stmt *val, const char 
 	s->tname = val->tname;
 	s->cname = val->cname;
 	s->label = val->label;
+	return s;
+}
+
+stmt *
+stmt_mark_matched(backend *be, stmt *inout, stmt *pos)
+{
+	InstrPtr q = newStmt(be->mb, ialgebraRef, "matched");
+	if (q == NULL) return NULL;
+	setVarType(be->mb, getArg(q, 0), newBatType(TYPE_oid)); /* expanded */
+	q = pushArgument(be->mb, q, inout->nr);
+	q->inout = 1;
+	q = pushArgument(be->mb, q, pos->nr);
+	pushInstruction(be->mb, q);
+
+	stmt *s = stmt_none(be);
+	if (s == NULL) return NULL;
+	s->subtype = *tail_type(pos);
+	s->nr = getArg(q, 0);
+	s->nrcols = 1;
+	s->q = q;
+	s->op1 = inout;
+	s->op2 = pos;
+	s->flag = cmp_project;
+	s->key = 0;
 	return s;
 }
 

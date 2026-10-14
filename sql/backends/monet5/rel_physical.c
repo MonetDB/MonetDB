@@ -386,11 +386,11 @@ exp_timezone(visitor *v, sql_rel *rel, sql_exp *e, int depth)
 				sql_exp *e = l->h->data;
 				sql_subtype *t = exp_subtype(e);
 				if (t->type->eclass == EC_TIMESTAMP_TZ || t->type->eclass == EC_TIME_TZ) {
-					sql_exp *offset = exp_atom_lng(v->sql->sa, v->sql->timezone);
+					sql_exp *offset = exp_atom_lng(v->sql->sa, MT_get_timezone());
 					list_append(l, offset);
 				}
 			} else if (strcmp(fname, "str_to_timestamp") == 0 || strcmp(fname, "str_to_time") == 0 || strcmp(fname, "str_to_date") == 0) {
-				sql_exp *offset = exp_atom_lng(v->sql->sa, v->sql->timezone);
+				sql_exp *offset = exp_atom_lng(v->sql->sa, MT_get_timezone());
 				list_append(l, offset);
 			}
 		}
@@ -425,34 +425,11 @@ rel_groupby_partition_safe(sql_rel *rel)
 }
 
 static int
-do_oahash_join(visitor *v, sql_rel *rel, int *side)
+do_oahash_join(sql_rel *rel)
 {
 	if (!MT_thread_get_qry_ctx()->pipeline_mode)
 		return 0;
 
-	/* fetch join */
-	if (is_innerjoin(rel->op) && list_length(rel->exps) == 1 /* single JOINIDX */) {
-		sql_rel *l = rel->l;
-		sql_rel *r = rel->r;
-		list *exps = rel->exps;
-		sql_exp *je = exps->h->data;
-		prop *p = find_prop(je->p, PROP_JOINIDX);
-		if (p && (is_basetable(l->op) || is_basetable(r->op))) { /* only use join idx on direct basetable access */
-			sql_idx *idx = p->value.pval;
-			sql_table *lt = l->l, *rt = r->l;
-			sql_trans *tr = v->sql->session->tr;
-			sql_key *rk = (sql_key*)os_find_id(tr->cat->objects, tr, ((sql_fkey*)idx->key)->rkey);
-			if (rk && is_basetable(l->op) && lt == rk->t) {
-				*side = 2; /* primary left, ie continue with right hand side */
-				return 0;
-			}
-
-			if (rk && is_basetable(r->op) && rt == rk->t) {
-				*side = 1; /* primary right, ie continue with left hand side */
-				return 0;
-			}
-		}
-	}
 	// TODO groupjoin other then mark/exist
 	if (list_length(rel->attr) == 1) {
 		sql_exp *e = rel->attr->h->data;
@@ -824,12 +801,9 @@ rel_pipeline(visitor *v, sql_rel *rel, bool materialize, int pb)
 		res = rel_pipeline(v, rel->l, pp_useful, pp_useful?SPB:0);
 		if (pp_useful && res) { /* topn is blocking */
 			rel->parallel = 1;
-			if (pb) { /* nested */
-				rel_dup(rel);
-				res = 0;
-				rel->partition = 1;
-			}
-			res = EPB;
+			rel_dup(rel);
+			res = 0;
+			rel->partition = 1;
 		} else if (pb) {
 			rel->spb = 1;
 		}
@@ -859,8 +833,7 @@ rel_pipeline(visitor *v, sql_rel *rel, bool materialize, int pb)
 				if (res && p && p->op == op_project && exps_have_unsafe(p->exps, 1, false)) {
 					rel_dup(rel);
 					res = 0;
-				} else
-				if (pb) {
+				} else if (pb) {
 					sql_rel *l = rel->l;
 					if (!res && l && is_groupby(l->op) && l->l) {
 						sql_rel *p = l->l;
@@ -869,6 +842,10 @@ rel_pipeline(visitor *v, sql_rel *rel, bool materialize, int pb)
 							//l->partition = 1;
 							res = SPB;
 						}
+					}
+					if (!res && is_select(rel->op)) {
+						rel->parallel = 1;
+						res = SPB;
 					}
 					if (rel->spb)
 						res = SPB;
@@ -895,9 +872,18 @@ rel_pipeline(visitor *v, sql_rel *rel, bool materialize, int pb)
 		bool need_all = false;
 		bool cross = list_empty(eq_exps);
 
-		rel->oahash = 2;
+		sql_rel *l = rel->l, *r = rel->r;
+		if (!cross && rel_getcount(v->sql, l) < rel_getcount(v->sql, r))
+			rel->oahash = 1;
+		else
+			rel->oahash = 2;
 
 		sql_rel *rel_hsh = rel->r, *rel_prb = rel->l;
+		if (rel->oahash == 1) {
+			rel_hsh = rel->l;
+			rel_prb = rel->r;
+		}
+
 		list *found_exps_cmp_hsh = NULL;
 
 		/* get full projection list from parent */
@@ -912,20 +898,25 @@ rel_pipeline(visitor *v, sql_rel *rel, bool materialize, int pb)
 		} else {
 			if (rel_is_ref(rel_hsh))
 				need_all = true;
-			rel->r = rel_hsh = rel_buildhash(v, rel_hsh, NULL, list_empty(eq_exps));
+			rel_hsh = rel_buildhash(v, rel_hsh, NULL, list_empty(eq_exps));
 			rel_hsh->flag = (int)(needs_payload?op_join:op_semi);
 		}
-		rel->l = rel_prb = rel_probehash(v, rel_prb, NULL);
+		rel_prb = rel_probehash(v, rel_prb, NULL);
+		rel->r = (rel->oahash==1) ? rel_prb : rel_hsh;
+		rel->l = (rel->oahash==1) ? rel_hsh : rel_prb;
 		rel_hsh->attr = cross?NULL:exps_cmp_hsh;
 		rel_prb->attr = exps_cmp_prb;
 
 		list *exps_hsh = NULL, *exps_prb = rel_prb->exps = sa_list(v->sql->sa);
-		if (needs_payload)
+		if (needs_payload || rel->oahash == 1)
 			exps_hsh = sa_list(v->sql->sa);
 		find_payload_exps(v->sql, &exps_hsh, &exps_prb, p, rel_hsh, rel_prb);
 
+		if (rel->oahash == 1)
+			rel_hsh->exps = exps_hsh;
 		if (need_all && !is_base(rel_hsh->op))
 			rel_hsh->exps = !rel_hsh->exps?rel_hsh->attr:list_distinct(list_merge(rel_hsh->exps, rel_hsh->attr, NULL), (fcmp) exp_equal, NULL);
+
 		if (needs_payload) { /* TODO improve ie only keep attributes needed for 'other' exps */
 			if (!is_base(rel_hsh->op)) {
 				sql_rel *l = rel_hsh->l;
@@ -963,8 +954,6 @@ rel_pipeline(visitor *v, sql_rel *rel, bool materialize, int pb)
 			int started_pb = 0;
 			if (rel_is_ref(rel))
 				pb = 0;
-			else
-				pb |= materialize;
 			for(node *n = rels->h; n; n = n->next) {
 				int lres = rel_pipeline(v, n->data, false, pb?SPB:0);
 				if (lres == EPB) {
@@ -1007,8 +996,7 @@ rel_pipeline(visitor *v, sql_rel *rel, bool materialize, int pb)
 		if (is_delete(rel->op) && !rel->r && pb)
 			rel_dup(rel);
 	} else if (is_join(rel->op)) {
-		int side = 0;
-		if (do_oahash_join(v, rel, &side)) {
+		if (do_oahash_join(rel)) {
 			list *eq_exps = sa_list(v->sql->sa);
 			list *other = sa_list(v->sql->sa);
 			if (!list_empty(rel->attr))
@@ -1134,12 +1122,6 @@ rel_pipeline(visitor *v, sql_rel *rel, bool materialize, int pb)
 			if (pb)
 				rel->spb = 1;
 			res = SPB;
-		} else if (pb && side) { /* handle fetch join */
-			rel->partition = side;
-			if (side == 1)
-				res = rel_pipeline(v, rel->l, false, pb);
-			else
-				res = rel_pipeline(v, rel->r, false, pb);
 		}
 	} else if (is_ddl(rel->op)) {
 		if (rel->flag == ddl_output || rel->flag == ddl_create_seq || rel->flag == ddl_alter_seq || rel->flag == ddl_alter_table || rel->flag == ddl_create_table || rel->flag == ddl_create_view) {
@@ -1267,6 +1249,9 @@ rel_count_gt_zero(visitor *v, sql_rel *rel)
 		list *gbe = rel->r;
 
 		if (!gbe || list_empty(gbe) || is_rewrite_gt_zero_used(rel->used))
+			return rel;
+		bool safe = rel_groupby_partition_safe(rel);
+		if (safe && rel_groupby_partition(v->sql, rel))
 			return rel;
 		/* introduce select * from l where cnt > 0 */
 		/* find count */

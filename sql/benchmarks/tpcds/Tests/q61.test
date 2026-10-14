@@ -1,3 +1,5 @@
+hash-threshold 1000
+
 query DDD nosort
 -- query 61
 select  promotions,total,cast(promotions as decimal(15,4))/cast(total as decimal(15,4))*100
@@ -42,7 +44,5 @@ from
 order by promotions, total
 limit 100
 ----
-2894229.70
-5493575.41
-52.6800
+2894229.70	5493575.41	52.6800
 

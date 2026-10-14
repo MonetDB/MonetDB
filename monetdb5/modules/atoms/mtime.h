@@ -18,6 +18,7 @@
 #include "mal_exception.h"
 
 /* TODO change dayint again into an int instead of lng */
+__attribute__((__const__))
 static inline lng
 date_diff_imp(const date d1, const date d2)
 {
@@ -25,6 +26,7 @@ date_diff_imp(const date d1, const date d2)
 	return is_int_nil(diff) ? lng_nil : (lng) diff *(lng) (24 * 60 * 60 * 1000);
 }
 
+__attribute__((__const__))
 static inline daytime
 time_sub_msec_interval(const daytime t, const lng ms)
 {
@@ -33,6 +35,7 @@ time_sub_msec_interval(const daytime t, const lng ms)
 	return daytime_add_usec_modulo(t, -ms * 1000);
 }
 
+__attribute__((__const__))
 static inline daytime
 time_add_msec_interval(const daytime t, const lng ms)
 {
@@ -181,26 +184,47 @@ date_addmonths(date *ret, date d, int m)
 	return MAL_SUCCEED;
 }
 
-#define date_to_msec_since_epoch(t) is_date_nil(t) ? lng_nil : (timestamp_diff(timestamp_create(t, daytime_create(0, 0, 0, 0)), unixepoch) / 1000)
-#define daytime_to_msec_since_epoch(t) daytime_diff(t, daytime_create(0, 0, 0, 0))
-
+__attribute__((__const__))
 static inline lng
-TSDIFF(timestamp t1, timestamp t2)
+date_to_msec_since_epoch(date t)
 {
-	lng diff = timestamp_diff(t1, t2);
-	if (!is_lng_nil(diff)) {
-#ifndef TRUNCATE_NUMBERS
-		if (diff < 0)
-			diff = -((-diff + 500) / 1000);
-		else
-			diff = (diff + 500) / 1000;
-#else
-		diff /= 1000;
-#endif
-	}
-	return diff;
+	return is_date_nil(t)
+		? lng_nil
+		: (timestamp_diff(timestamp_create(t, daytime_create(0, 0, 0, 0)),
+						  unixepoch)
+		   / 1000);
 }
 
+__attribute__((__const__))
+static inline lng
+daytime_to_msec_since_epoch(daytime t)
+{
+	return daytime_diff(t, daytime_create(0, 0, 0, 0));
+}
+
+#ifdef TRUNCATE_NUMBERS
+#define DIVIDE(v, div, TYPE)	(is_##TYPE##_nil(v) ? (v) : (v) / (div))
+#else
+#define DIVIDE(v, div, TYPE)	(is_##TYPE##_nil(v)						\
+								 ? (v)									\
+								 : ((v) < 0								\
+									? (-(TYPE) (((u##TYPE) -(v)			\
+												 + ((u##TYPE) (div) >> 1)) \
+												/ (div)))				\
+									: ((TYPE) (((u##TYPE) (v)			\
+												+ ((u##TYPE) (div) >> 1)) \
+											   / (div)))))
+#endif
+
+__attribute__((__const__))
+static inline lng
+timestamp_diff_msec(timestamp t1, timestamp t2)
+{
+	lng diff = timestamp_diff(t1, t2);
+	return DIVIDE(diff, 1000, lng);
+}
+
+__attribute__((__const__))
 static inline int
 timestamp_century(const timestamp t)
 {
@@ -213,22 +237,116 @@ timestamp_century(const timestamp t)
 		return -((-y - 1) / 100 + 1);
 }
 
-#define timestamp_decade(t) is_timestamp_nil(t) ? int_nil : date_year(timestamp_date(t)) / 10
-#define timestamp_year(t) date_year(timestamp_date(t))
-#define timestamp_quarter(t) is_timestamp_nil(t) ? bte_nil : (date_month(timestamp_date(t)) - 1) / 3 + 1
-#define timestamp_month(t) date_month(timestamp_date(t))
-#define timestamp_day(t) date_day(timestamp_date(t))
-#define timestamp_hours(t) daytime_hour(timestamp_daytime(t))
-#define timestamp_minutes(t) daytime_min(timestamp_daytime(t))
-#define timestamp_extract_usecond(ts)	daytime_sec_usec(timestamp_daytime(ts))
-#define timestamp_to_msec_since_epoch(t) is_timestamp_nil(t) ? lng_nil : (timestamp_diff(t, unixepoch) / 1000)
+__attribute__((__const__))
+static inline int
+timestamp_decade(timestamp t)
+{
+	return is_timestamp_nil(t) ? int_nil : date_year(timestamp_date(t)) / 10;
+}
 
-#define sql_year(m) is_int_nil(m) ? int_nil : m / 12
-#define sql_month(m) is_int_nil(m) ? int_nil : m % 12
-#define sql_day(m) is_lng_nil(m) ? lng_nil : m / (24*60*60*1000)
-#define sql_hours(m) is_lng_nil(m) ? int_nil : (int) ((m % (24*60*60*1000)) / (60*60*1000))
-#define sql_minutes(m) is_lng_nil(m) ? int_nil : (int) ((m % (60*60*1000)) / (60*1000))
-#define sql_seconds(m) is_lng_nil(m) ? int_nil : (int) ((m % (60*1000)) / 1000)
-#define msec_since_epoch(ts)	ts
+__attribute__((__const__))
+static inline int
+timestamp_year(timestamp t)
+{
+	return date_year(timestamp_date(t));
+}
+
+__attribute__((__const__))
+static inline int
+timestamp_quarter(timestamp t)
+{
+	return is_timestamp_nil(t) ? bte_nil : (date_month(timestamp_date(t)) - 1) / 3 + 1;
+}
+
+__attribute__((__const__))
+static inline int
+timestamp_month(timestamp t)
+{
+	return date_month(timestamp_date(t));
+}
+
+__attribute__((__const__))
+static inline int
+timestamp_day(timestamp t)
+{
+	return date_day(timestamp_date(t));
+}
+
+__attribute__((__const__))
+static inline int
+timestamp_hours(timestamp t)
+{
+	return daytime_hour(timestamp_daytime(t));
+}
+
+__attribute__((__const__))
+static inline int
+timestamp_minutes(timestamp t)
+{
+	return daytime_min(timestamp_daytime(t));
+}
+
+__attribute__((__const__))
+static inline int
+timestamp_extract_usecond(timestamp ts)
+{
+	return daytime_sec_usec(timestamp_daytime(ts));
+}
+
+__attribute__((__const__))
+static inline lng
+timestamp_to_msec_since_epoch(timestamp t)
+{
+	return is_timestamp_nil(t) ? lng_nil : (timestamp_diff(t, unixepoch) / 1000);
+}
+
+__attribute__((__const__))
+static inline int
+sql_year(int m)
+{
+	return is_int_nil(m) ? int_nil : m / 12;
+}
+
+__attribute__((__const__))
+static inline int
+sql_month(int m)
+{
+	return is_int_nil(m) ? int_nil : m % 12;
+}
+
+__attribute__((__const__))
+static inline lng
+sql_day(lng m)
+{
+	return is_lng_nil(m) ? lng_nil : m / (24*60*60*1000);
+}
+
+__attribute__((__const__))
+static inline int
+sql_hours(lng m)
+{
+	return is_lng_nil(m) ? int_nil : (int) ((m % (24*60*60*1000)) / (60*60*1000));
+}
+
+__attribute__((__const__))
+static inline int
+sql_minutes(lng m)
+{
+	return is_lng_nil(m) ? int_nil : (int) ((m % (60*60*1000)) / (60*1000));
+}
+
+__attribute__((__const__))
+static inline int
+sql_seconds(lng m)
+{
+	return is_lng_nil(m) ? int_nil : (int) ((m % (60*1000)) / 1000);
+}
+
+__attribute__((__const__))
+static inline lng
+msec_since_epoch(lng ts)
+{
+	return ts;
+}
 
 #endif /* __MTIME_H__ */

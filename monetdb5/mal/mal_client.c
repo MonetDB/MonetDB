@@ -256,6 +256,7 @@ MCinitClientRecord(Client c, oid user, bstream *fin, stream *fout)
 	c->qryctx.endtime = 0;
 	ATOMIC_SET(&c->qryctx.datasize, 0);
 	c->qryctx.maxmem = 0;
+	c->qryctx.timezone = 0;
 	c->maxmem = 0;
 	c->qryctx.pipeline_mode = default_pipeline_mode;
 

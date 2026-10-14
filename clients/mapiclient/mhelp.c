@@ -406,7 +406,7 @@ SQLhelp sqlhelp1[] = {
 	 NULL,
 	 "Plain EXPLAIN sql-statement returns the logical plan.\n"
 	 "Use LOGICAL UNNEST or LOGICAL REWRITE or LOGICAL PHYSICAL or PHYSICAL to specify the compilation step to show.\n"
-	 "Optionally add BEFORE or AFTER to specify moment of compilation step to output. The default is AFTER.\n"
+	 "Use BEFORE or AFTER to specify moment of compilation step to output. The default is AFTER.\n"
 	 "Two positive numbers can be passed to LOGICAL REWRITE to stop at specific\n"
 	 "rewriter index or rewrite loop cycle, respectively.\n"
 	 "If only one positive number is passed to LOGICAL REWRITE, rewrite stop cycle defaults to 0.\n"
@@ -1235,7 +1235,7 @@ sql_help(const char *pattern, stream *toConsole, int pagewidth)
 	for (i = 0; i < step; i++) {
 		for (int j = 0; j < ncolumns; j++) {
 			size_t nextNum = i + j * step;
-			if(nextNum < sizeof(sqlhelp1)/sizeof(sqlhelp1[0]) - 1) {
+			if(nextNum < countof(sqlhelp1) - 1) {
 				sql_word(sqlhelp1[nextNum].command, j < ncolumns - 1 ? maxlen : 0, toConsole);
 			}
 		}

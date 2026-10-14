@@ -50,12 +50,13 @@
 static void
 leavedb(char *name)
 {
-	char buf[sizeof(_mero_hostname) + 128];
-	snprintf(buf, sizeof(buf),
-			"LEAV %s mapi:monetdb://%s:%u/",
-			name, _mero_hostname,
-			(unsigned int)getConfNum(_mero_props, "port"));
-	broadcast(buf);
+	/* receiver uses 512 byte buffers, so if it doesn't fit, forget about it */
+	char buf[512];
+	if (snprintf(buf, sizeof(buf),
+				 "LEAV %s mapi:monetdb://%s:%u/",
+				 name, _mero_hostname,
+				 (unsigned int)getConfNum(_mero_props, "port")) < (int) sizeof(buf))
+		broadcast(buf);
 }
 
 static void

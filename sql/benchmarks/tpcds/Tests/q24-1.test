@@ -1,3 +1,5 @@
+hash-threshold 1000
+
 query TTTD nosort
 -- query 24-1
 with ssales as
@@ -52,16 +54,7 @@ order by c_last_name
         ,c_first_name
         ,s_store_name
 ----
-Martins
-Cara
-bar
-241.96
-Smallwood
-Rhonda
-bar
-3089.28
-Terry
-Sandra
-bar
-509.42
+Martins	Cara	bar	241.96
+Smallwood	Rhonda	bar	3089.28
+Terry	Sandra	bar	509.42
 

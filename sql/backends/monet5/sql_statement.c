@@ -4420,7 +4420,7 @@ temporal_convert(backend *be, stmt *v, stmt *sel, sql_subtype *f, sql_subtype *t
 		q = pushInt(mb, q, t->digits);
 
 	if (add_tz)
-			q = pushLng(mb, q, be->mvc->timezone);
+			q = pushLng(mb, q, be->client->qryctx.timezone);
 
 	if (!cand) {
 		if (sel && !pushed && !v->cand) {
@@ -4811,7 +4811,7 @@ stmt_convert(backend *be, stmt *v, stmt *sel, sql_subtype *f, sql_subtype *t)
 	/* convert a string to a time(stamp) with time zone */
 	if (EC_VARCHAR(f->type->eclass) && EC_TEMP_TZ(t->type->eclass))
 		//q = pushInt(mb, q, type_has_tz(t));
-		q = pushLng(mb, q, be->mvc->timezone);
+		q = pushLng(mb, q, be->client->qryctx.timezone);
 	if (t->type->eclass == EC_GEOM) {
 		/* push the type and coordinates of the column */
 		q = pushInt(mb, q, t->digits);
@@ -5976,4 +5976,3 @@ stmt_instruction(backend *be, InstrPtr p, stmt *op1 )
 	s->q = p;
 	return s;
 }
-

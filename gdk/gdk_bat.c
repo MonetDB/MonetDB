@@ -60,7 +60,7 @@ BUNtpos(BATiter *bi, BUN p)
 	if (bi->vh) {
 		oid o;
 		assert(!is_oid_nil(bi->tseq));
-		if (((ccand_t *) bi->vh)->type == CAND_NEGOID) {
+		if (((ccand_t *) bi->vh->base)->type == CAND_NEGOID) {
 			BUN nexc = (bi->vhfree - sizeof(ccand_t)) / SIZEOF_OID;
 			o = bi->tseq + p;
 			if (nexc > 0) {
@@ -90,9 +90,14 @@ BUNtpos(BATiter *bi, BUN p)
 				uint32_t m = candmask_pop(msk[i]);
 				if (o + m > p) {
 					m = msk[i];
-					for (i = 0; i < 32; i++) {
-						if (m & (1U << i) && ++o == p)
-							break;
+					for (int j = 0; j < 32; j++) {
+						if (m & (1U << j)) {
+							if (o == p) {
+								o = i * 32 + j;
+								break;
+							}
+							o++;
+						}
 					}
 					break;
 				}

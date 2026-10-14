@@ -1,0 +1,20 @@
+statement ok
+CREATE TABLE t(s VARCHAR(10))
+
+statement ok
+INSERT INTO t VALUES ('x')
+
+query T nosort
+SELECT CAST(s LIKE s AS VARCHAR(5)) <> (s || s || s) FROM t;
+----
+True
+
+query T nosort
+SELECT CAST(s LIKE s AS VARCHAR(5)) <> (s || s) FROM t ORDER BY s;
+----
+True
+
+query T nosort
+SELECT CAST(s LIKE s AS VARCHAR(5)) <> (s || s || s) FROM t ORDER BY s;
+----
+True

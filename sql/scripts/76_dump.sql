@@ -54,7 +54,7 @@ CREATE VIEW sys.dump_grant_user_privileges AS
 CREATE VIEW sys.dump_table_constraint_type AS
   SELECT
     'ALTER TABLE ' || sys.FQN(sch, tbl) || ' ADD CONSTRAINT ' || sys.DQ(con) || ' '||
-      tpe || ' (' || GROUP_CONCAT(sys.DQ(col), ', ') || ');' stmt,
+      tpe || ' (' || GROUP_CONCAT(sys.DQ(col), ', ' ORDER BY nr) || ');' stmt,
     sch schema_name,
     tbl table_name,
     con constraint_name
@@ -137,7 +137,7 @@ CREATE VIEW sys.dump_function_grants AS
 
 CREATE VIEW sys.dump_indices AS
   SELECT
-    'CREATE ' || tpe || ' ' || sys.DQ(ind) || ' ON ' || sys.FQN(sch, tbl) || '(' || GROUP_CONCAT(col) || ');' stmt,
+    'CREATE ' || tpe || ' ' || sys.DQ(ind) || ' ON ' || sys.FQN(sch, tbl) || '(' || GROUP_CONCAT(col, ',' ORDER BY nr) || ');' stmt,
     sch schema_name,
     tbl table_name,
     ind index_name
@@ -153,8 +153,8 @@ CREATE VIEW sys.dump_column_defaults AS
 CREATE VIEW sys.dump_foreign_keys AS
   SELECT
     'ALTER TABLE ' || sys.FQN(fk_s, fk_t) || ' ADD CONSTRAINT ' || sys.DQ(fk) || ' ' ||
-      'FOREIGN KEY(' || GROUP_CONCAT(sys.DQ(fk_c), ',') ||') ' ||
-      'REFERENCES ' || sys.FQN(pk_s, pk_t) || '(' || GROUP_CONCAT(sys.DQ(pk_c), ',') || ') ' ||
+      'FOREIGN KEY(' || GROUP_CONCAT(sys.DQ(fk_c), ',' ORDER BY o) ||') ' ||
+      'REFERENCES ' || sys.FQN(pk_s, pk_t) || '(' || GROUP_CONCAT(sys.DQ(pk_c), ',' ORDER BY o) || ') ' ||
       'ON DELETE ' || on_delete || ' ON UPDATE ' || on_update ||
       ';' stmt,
     fk_s foreign_schema_name,

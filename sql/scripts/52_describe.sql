@@ -90,7 +90,8 @@ CREATE VIEW sys.describe_constraints AS
 		t.name tbl,
 		kc.name col,
 		k.name con,
-		CASE k.type WHEN 0 THEN 'PRIMARY KEY' WHEN 1 THEN 'UNIQUE' END tpe
+		CASE k.type WHEN 0 THEN 'PRIMARY KEY' WHEN 1 THEN 'UNIQUE' END tpe,
+		kc.nr nr
 	FROM sys.schemas s, sys._tables t, sys.objects kc, sys.keys k
 	WHERE kc.id = k.id
 		AND k.table_id = t.id
@@ -105,7 +106,8 @@ CREATE VIEW sys.describe_indices AS
 		s.name sch,
 		t.name tbl,
 		c.name col,
-		it.idx tpe
+		it.idx tpe,
+		kc.nr nr
 	FROM
 		sys.idxs AS i LEFT JOIN sys.keys AS k ON i.name = k.name,
 		sys.objects AS kc,
@@ -210,7 +212,8 @@ CREATE VIEW sys.describe_tables AS
 			GROUP_CONCAT(
 				sys.DQ(c.name) || ' ' ||
 				sys.describe_type(c.type, c.type_digits, c.type_scale) ||
-				ifthenelse(c."null" = false, ' NOT NULL', '')
+				ifthenelse(c."null" = false, ' NOT NULL', ''
+				ORDER BY c.number)
 			, ', ') || ')'
 		FROM sys._columns c
 		WHERE c.table_id = t.id) col,
@@ -366,7 +369,7 @@ CREATE VIEW sys.describe_partition_tables AS
 			AND p_m.schema_id = p_s.id
 		ORDER BY m_t.id, p_m.id),
 		vals(id,vals) as
-		(SELECT vp.table_id, GROUP_CONCAT(vp.value, ',') FROM sys.value_partitions vp GROUP BY vp.table_id)
+		(SELECT vp.table_id, GROUP_CONCAT(vp.value, ',' ORDER BY vp.value) FROM sys.value_partitions vp GROUP BY vp.table_id)
 	SELECT
 		subq.m_sch,
 		subq.m_tbl,

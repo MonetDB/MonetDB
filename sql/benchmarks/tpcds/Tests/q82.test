@@ -1,3 +1,5 @@
+hash-threshold 1000
+
 query TTD nosort
 -- query 82
 select  i_item_id
@@ -15,10 +17,6 @@ select  i_item_id
  order by i_item_id
  limit 100
 ----
-AAAAAAAAECMCAAAA
-Rather vast companies pose quiet, actual carers. Close times take only simple possibilities. Current events might say only on a foundation
-67.28
-AAAAAAAALIHCAAAA
-Things select increased views. Tools imagine for example; ever likely developments live so scottish benefits. Soft, short-term services should give indeed good illu
-86.90
+AAAAAAAAECMCAAAA	Rather vast companies pose quiet, actual carers. Close times take only simple possibilities. Current events might say only on a foundation	67.28
+AAAAAAAALIHCAAAA	Things select increased views. Tools imagine for example; ever likely developments live so scottish benefits. Soft, short-term services should give indeed good illu	86.90
 

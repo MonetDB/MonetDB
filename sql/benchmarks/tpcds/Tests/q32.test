@@ -1,4 +1,6 @@
-query D rowsort
+hash-threshold 1000
+
+query D nosort
 -- query 32
 select  sum(cs_ext_discount_amt)  as "excess discount amount"
 from

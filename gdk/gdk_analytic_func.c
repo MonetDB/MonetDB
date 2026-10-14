@@ -76,7 +76,7 @@ GDKrebuild_segment_tree(oid ncount, oid data_size, Heap *st, void **segment_tree
 				rb[k] = TPE##_nil;			\
 			} else {					\
 				UPCAST nval = (UPCAST) (LNG_HGE);	\
-				VALIDATION /* validation must come after null check */ \
+				VALIDATION; /* validation must come after null check */ \
 				if (nval >= ncnt) {			\
 					rb[k] = (TPE)(j + 1);		\
 				} else {				\
@@ -116,13 +116,13 @@ ntile##IMP##TPE:							\
 	do {								\
 		TPE ntl = *(TPE*) ntile;				\
 		if (!is_##TPE##_nil(ntl) && ntl <= 0) goto invalidntile; \
-		ANALYTICAL_NTILE(SINGLE, TPE, ntl, LNG_HGE, UPCAST, ;); \
+		ANALYTICAL_NTILE(SINGLE, TPE, ntl, LNG_HGE, UPCAST, (void) 0); \
 	} while (0)
 
 #define ANALYTICAL_NTILE_MULTI_IMP(TPE, LNG_HGE, UPCAST)		\
 	do {								\
 		const TPE *restrict nn = (TPE*)ni.base;			\
-		ANALYTICAL_NTILE(MULTI, TPE, nn[k], LNG_HGE, UPCAST, if (val <= 0) goto invalidntile;); \
+		ANALYTICAL_NTILE(MULTI, TPE, nn[k], LNG_HGE, UPCAST, if (val <= 0) goto invalidntile); \
 	} while (0)
 
 BAT *

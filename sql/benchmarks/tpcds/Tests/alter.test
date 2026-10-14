@@ -308,5 +308,20 @@ statement ok
 alter table web_site add constraint web_d2 foreign key  (web_open_date_sk) references date_dim (d_date_sk)
 
 statement ok
+alter table customer add constraint c_d foreign key (c_last_review_date) references date_dim (d_date_sk)
+
+statement ok
+alter table store_returns add constraint sr_i_tn foreign key (sr_item_sk,sr_ticket_number) references store_sales (ss_item_sk,ss_ticket_number)
+
+statement ok
+alter table catalog_returns add constraint cr_i_on foreign key (cr_item_sk,cr_order_number) references catalog_sales (cs_item_sk,cs_order_number)
+
+statement ok
+alter table web_returns add constraint wr_i_on foreign key (wr_item_sk,wr_order_number) references web_sales (ws_item_sk,ws_order_number)
+
+statement ok
+alter table web_page add constraint wp_c foreign key (wp_customer_sk) references customer (c_customer_sk)
+
+statement ok
 commit
 

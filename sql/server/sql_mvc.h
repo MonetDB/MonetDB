@@ -159,7 +159,6 @@ typedef struct mvc {
 	/* session variables */
 	sqlid user_id;
 	sqlid role_id;
-	int timezone;		        /* milliseconds west of UTC */
 	unsigned int div_min_scale; /* minimum scale for division op*/
 	int reply_size;             /* reply size */
 	int debug;

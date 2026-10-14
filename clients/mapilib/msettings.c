@@ -46,7 +46,7 @@ int msetting_parse_bool(const char *text)
 		{ "on", true },
 		{ "off", false },
 	};
-	for (size_t i = 0; i < sizeof(variants) / sizeof(variants[0]); i++)
+	for (size_t i = 0; i < countof(variants); i++)
 		if (strcasecmp(text, variants[i].word) == 0)
 			return variants[i].value;
 	return -1;
@@ -92,7 +92,7 @@ by_name[] = {
 mparm
 mparm_parse(const char *name)
 {
-	int n = sizeof(by_name) / sizeof(by_name[0]);
+	int n = countof(by_name);
 	// could use a binary search but this is not going to be a bottleneck
 	for (int i = 0; i < n; i++)
 		if (strcmp(by_name[i].name, name) == 0)
@@ -104,7 +104,7 @@ mparm_parse(const char *name)
 mparm
 mparm_enumerate(int i)
 {
-	int n = sizeof(by_name) / sizeof(by_name[0]);
+	int n = countof(by_name);
 	if (i < 0 || i >= n)
 		return MP_UNKNOWN;
 	return by_name[i].parm;

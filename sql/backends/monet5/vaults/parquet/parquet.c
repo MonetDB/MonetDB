@@ -349,9 +349,11 @@ pqc_find_localtype(const pqc_schema_element *pse)
 					return TYPE_int;
 				if (pse->precision == 32)
 					return TYPE_lng;
-#ifdef HAVE_HGE
 				if (pse->precision == 64)
+#ifdef HAVE_HGE
 					return TYPE_hge;
+#else
+					return TYPE_lng;
 #endif
 			} else {
 				if (pse->precision == 8)

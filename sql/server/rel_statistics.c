@@ -1033,8 +1033,8 @@ rel_get_statistics_(visitor *v, sql_rel *rel)
 								e->p = sp;
 							} else {
 								dbl u = (dbl)MAX(lu, ru);
-								//dbl s = u/(lv*rv);
-								dbl s = 1/u;
+								dbl s = u/(lv*rv);
+								//dbl s = 1/u;
 								prop *sp = prop_create(v->sql->sa, PROP_SELECTIVITY, (prop *) e->p);
 								sp->value.dval = s;
 								e->p = sp;
@@ -1512,9 +1512,11 @@ rel_groupby_order(visitor *v, sql_rel *rel)
 		}
 		if (!found) {
 			/* no need to groupby on unique values */
+			list *exps = rel_projections(v->sql, rel, NULL, 0, 1);
 			rel->exps= list_merge(rel->r, rel->exps, (fdup)NULL);
 			rel->op = op_project;
 			rel->r = NULL;
+			rel = rel_project(v->sql->sa, rel, exps);
 			return rel;
 		}
 	}

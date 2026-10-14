@@ -1,3 +1,5 @@
+hash-threshold 1000
+
 query TTTTTTTTTTTTTDTD nosort
 -- query 81
 with customer_total_return as
