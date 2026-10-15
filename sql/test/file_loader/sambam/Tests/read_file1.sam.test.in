@@ -3,6 +3,9 @@
 statement error 42000!SELECT: file_loader function failed 'Could not open sam/bam file'
 SELECT count(*) FROM file_loader('file1.sam')
 
+statement error 42000!SELECT: file_loader function failed 'Filename extension missing'
+SELECT count(*) FROM file_loader(r'$TSTSRCDIR/')
+
 query I nosort
 SELECT count(*) FROM file_loader(r'$TSTSRCDIR/file1.sam')
 ----
@@ -408,4 +411,8 @@ CGF?BB;DAEFEEEGEFGE@5EABGD/>DGDDB@5EA@B=EDEDGC?CE5B3GBAED5D?GEB>D?-EC@##?:DBDA3#
 AS:i:95 YM:i:95 YP:f:3.16224e-10
 
 -- AS:i:95	YM:i:95	YP:f:3.16224e-10
+
+query TITIITTIITTT nosort
+SELECT * FROM r'$QTSTSRCDIR/file1.sam' LIMIT 0
+----
 
