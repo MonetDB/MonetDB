@@ -9,7 +9,7 @@
  */
 
 /*
- * This file contains a reader of aligmnent data from *.sam, *.bam and *.cram files
+ * This file contains a reader of aligmnent data from *.sam and *.bam files
  * and load the alignment data into a transient MonetDB table consisting of 12 columns.
  * SAM stands for Sequence Alignment Map. Ref: https://en.wikipedia.org/wiki/SAM_(file_format)
  * BAM stands for Binary Alignment Map.   Ref: https://en.wikipedia.org/wiki/BAM_(file_format)
@@ -24,16 +24,15 @@
  * or aligner specific information.
  * Ref: https://samtools.github.io/hts-specs/SAMv1.pdf
  *
- * We use the htslib library for reading data from *.sam, *.bam and *.cram files.
+ * We use the htslib library for reading data from these files.
  * Ref: https://github.com/samtools/htslib  and  https://www.htslib.org/
  * To install this library and its include files on Fedora, do: sudo dnf install htslib-devel
  *
  * Limitations:
- * - Only the alignment data is converted into bats, not the header information as it has a different table format.
- * - We read the first 12 columns including SAM_AUX.
- * - *.cram files are not yet supported.
- * - The estimated nr of BUNs (used during bat_create()) is currently hardcoded to 1024 or nrows when nrows >= 0.
- *   It could be optimised based on the file size and file extension type.
+ * - Only the alignment data is read and converted into bats, not the
+ *   header information as it has a different table format.
+ * - For alignment data we read the first 12 columns including SAM_AUX.
+ * - Reading *.cram files is not yet supported as they require an additional reference sequence FASTA FILE.
  *
  * Author: Martin van Dinther
  */
@@ -60,7 +59,7 @@
 #define SAM_LOADER   2
 
 
-/* copied from monetdb5/modules/mal/tablet.c */
+/* copied from monetdb5/modules/mal/tablet.c  but with calling BATnegateprops(b); */
 static BAT *
 bat_create(int adt, BUN nr)
 {
@@ -74,16 +73,7 @@ bat_create(int adt, BUN nr)
 	}
 
 	/* disable all properties here */
-	b->tsorted = false;
-	b->trevsorted = false;
-	b->tnosorted = 0;
-	b->tnorevsorted = 0;
-	b->tseqbase = oid_nil;
-	b->tkey = false;
-	b->tnokey[0] = 0;
-	b->tnokey[1] = 0;
-	b->tnil = false;
-	b->tnonil = false;
+	BATnegateprops(b);
 	return b;
 }
 
@@ -117,45 +107,46 @@ size_t printauxdata(char *buf, size_t bufsize, char type, int32_t idx, const uin
 	char auxBType = 'Z';
 	size_t pos = 0;
 
-	//the tag is already queried and ensured to exist and the type is retrieved from the tag data, also iterated within index for arrays, so no error is expected here.
-	//when these apis are used explicitly, these error conditions needs to be handled based on return value and errno
+	// the tag is already queried and ensured to exist and the type is retrieved from the tag data,
+	// also iterated within index for arrays, so no error is expected here.
+	// when these apis are used explicitly, these error conditions needs to be handled based on return value and errno
 	switch(type) {
-	case 'A':	//byte data
+	case 'A':	// byte data
 		pos += snprintf(buf, bufsize - pos, "%c", bam_aux2A(data));
 		break;
-	case 'c':	//signed 1 byte data
+	case 'c':	// signed 1 byte data
 		pos += snprintf(buf, bufsize - pos, "%d", (int8_t)(idx > -1 ? bam_auxB2i(data, idx) : bam_aux2i(data)));
 		break;
-	case 'C':   //unsigned 1 byte data
+	case 'C':   // unsigned 1 byte data
 		pos += snprintf(buf, bufsize - pos, "%u", (uint32_t)(uint8_t)(idx > -1 ? bam_auxB2i(data, idx) : bam_aux2i(data)));
 		break;
-	case 's':   //signed 2 byte data
+	case 's':   // signed 2 byte data
 		pos += snprintf(buf, bufsize - pos, "%d", (int16_t)(idx > -1 ? bam_auxB2i(data, idx) : bam_aux2i(data)));
 		break;
-	case 'S':  //unsigned 2 byte data
+	case 'S':  // unsigned 2 byte data
 		pos += snprintf(buf, bufsize - pos, "%u", (uint32_t)(uint16_t)(idx > -1 ? bam_auxB2i(data, idx) : bam_aux2i(data)));
 		break;
-	case 'i':	//signed 4 byte data
+	case 'i':	// signed 4 byte data
 		pos += snprintf(buf, bufsize - pos, "%d", (int32_t)(idx > -1 ? bam_auxB2i(data, idx) : bam_aux2i(data)));
 		break;
-	case 'I':	//unsigned 4 byte data
+	case 'I':	// unsigned 4 byte data
 		pos += snprintf(buf, bufsize - pos, "%u", (uint32_t)(idx > -1 ? bam_auxB2i(data, idx) : bam_aux2i(data)));
 		break;
-	case 'f':	 //floating point data, 4 bytes
+	case 'f':	// floating point data, 4 bytes
 	case 'd':
 		pos += snprintf(buf, bufsize - pos, "%g", (float)(idx > -1 ? bam_auxB2f(data, idx) : bam_aux2f(data)));
 		break;
-	case 'H':	//array of hex data
-	case 'Z':	//array of char data
+	case 'H':	// array of hex data
+	case 'Z':	// array of char data
 		pos += snprintf(buf, bufsize - pos, "%s", bam_aux2Z(data));
 		break;
-	case 'B':	//array of char/int/float
-		auxBcnt = bam_auxB_len(data);	//length of array
-		auxBType = bam_aux_type(data + 1);	//type of element in array
+	case 'B':	// array of char/int/float
+		auxBcnt = bam_auxB_len(data);	// length of array
+		auxBType = bam_aux_type(data + 1);	// type of element in array
 		pos += snprintf(buf, bufsize - pos, "%c", auxBType);
-		for (i = 0; i < auxBcnt; ++i) {	//iterate the array
+		for (i = 0; i < auxBcnt; ++i) {	// iterate the array
 			pos += snprintf(buf + pos, bufsize - pos, ",");
-			//calling recursively  with index to reuse a few lines
+			// calling recursively  with index to reuse a few lines
 			pos += printauxdata(buf + pos, bufsize - pos, auxBType, i, data);
 		}
 		break;
@@ -238,6 +229,7 @@ sam_query(int caller, mvc *sql, sql_subfunc *f, char *filename, list *res_exps, 
 		list * typelist = sa_list(sql->sa);
 		list * nameslist = sa_list(sql->sa);
 
+		/* 11 mandatory columns */
 		sam_list_append(nameslist, "qname", typelist, varchar255, res_exps, sql, 0);
 		sam_list_append(nameslist, "flag",  typelist, int31, res_exps, sql, 0);
 		sam_list_append(nameslist, "rname", typelist, varchar1020, res_exps, sql, 0);
@@ -249,10 +241,8 @@ sam_query(int caller, mvc *sql, sql_subfunc *f, char *filename, list *res_exps, 
 		sam_list_append(nameslist, "tlen",  typelist, int31, res_exps, sql, 0);
 		sam_list_append(nameslist, "seq",   typelist, varchar4096, res_exps, sql, 0);
 		sam_list_append(nameslist, "qual",  typelist, varchar4096, res_exps, sql, 0);
+		/* 1 optional column */
 		sam_list_append(nameslist, "sam_aux", typelist, varchar4096, res_exps, sql, 1);
-		/* TODO extend with more optional fields
-		sam_list_append(nameslist, "sam_rgaux", typelist, varchar4096, res_exps, sql, 1);
-		*/
 
 		f->tname = ma_strdup(sql->sa, "");	/* TODO maybe use the filename without path and extension */
 		f->colnames = nameslist;
@@ -271,18 +261,18 @@ sam_query(int caller, mvc *sql, sql_subfunc *f, char *filename, list *res_exps, 
 		} rescol_t;
 
 		rescol_t colmetadata[SAM_NR_COLS];
-		BUN estimate = (nrows >= 0 ? (BUN)nrows : 1024);
+		BUN estimate = (nrows >= 0 ? (BUN)nrows : 4096);	/* TODO improve 4096 value based on filesize and file extension type */
 		int col;
 		/* make bats with right atom type and initial size */
 		for (col = 0; col < SAM_NR_COLS; col++) {
 			int battype = getBatType(getArgType(mb, pci, col));
-			TRC_DEBUG(LOADER, "Before create BAT %d type %d\n", col+1, battype);
 			BAT * b = bat_create(battype, estimate);
 			if (b) {
 				colmetadata[col].bat = b;
-				TRC_DEBUG(LOADER, "Created BAT %d\n", col+1);
+				TRC_DEBUG(LOADER, "Created bat %d type %d size %lu\n", col+1, battype, estimate);
 			} else {
 				errmsg = "Failed to create bat.";
+				TRC_ERROR(LOADER, "Failed to create bat %d type %d size %lu\n", col+1, battype, estimate);
 				/* cleanup already created bats */
 				while (col > 0) {
 					col--;
@@ -388,7 +378,7 @@ sam_query(int caller, mvc *sql, sql_subfunc *f, char *filename, list *res_exps, 
 				pos = 0;
 				// convert aux triplets into a string
 				uint8_t * aux = bam_aux_first(bamdata);
-				while (aux) {
+				while (aux && (pos < sizeof(buf))) {
 					char aux_type = bam_aux_type(aux);
 					if (pos > 0)
 						buf[pos++] = ' ';	// add a separator between multiple TAG:TYPE:VALUE
@@ -405,12 +395,14 @@ sam_query(int caller, mvc *sql, sql_subfunc *f, char *filename, list *res_exps, 
 				break;
 			}
 		}
+		TRC_INFO(LOADER, "Fetched %ld rows\n", row);
 
 		/* after doing bunfastapp() update the properties for each BAT */
 		for (col = 0; col < SAM_NR_COLS; col++) {
 			BAT * b = colmetadata[col].bat;
 			BATsettrivprop(b);
 			/* TODO check that nil and nonil are set correctly for first 11 mandatory cols */
+			assert(BATcount(b) == (BUN)row);
 		}
 
 		/* pass bats to caller */
@@ -527,7 +519,7 @@ SAMprelude(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	(void)pci;
 	fl_register("sam", &sam_relation, &sam_load);
 	fl_register("bam", &sam_relation, &sam_load);
-	fl_register("cram", &sam_relation, &sam_load);
+	/* fl_register("cram", &sam_relation, &sam_load);  not yet supported, requires extra reference sequence file */
 	/* disable logging on htslib level, see htslib/hts_log.h */
 	hts_set_log_level(HTS_LOG_OFF);
 	return MAL_SUCCEED;
@@ -540,7 +532,7 @@ SAMepilogue(Client cntxt, void *ret)
 	(void)ret;
 	fl_unregister("sam");
 	fl_unregister("bam");
-	fl_unregister("cram");
+	/* fl_unregister("cram");  not yet supported */
 	return MAL_SUCCEED;
 }
 
@@ -550,7 +542,7 @@ SAMepilogue(Client cntxt, void *ret)
 static mel_func sam_init_funcs[] = {
 	pattern("sam", "prelude", SAMprelude, false, "", noargs),
 	command("sam", "epilogue", SAMepilogue, false, "", noargs),
-	pattern("sam", "loader", SAMloader, true, "Import alignment data from a .sam/bam/cram file", args(1, 4, batvarargany("",0), arg("filename",str), arg("func",ptr), arg("nrows", lng))),
+	pattern("sam", "loader", SAMloader, true, "Import alignment data from a .sam or .bam file", args(1, 4, batvarargany("",0), arg("filename",str), arg("func",ptr), arg("nrows", lng))),
 { .imp=NULL }
 };
 
