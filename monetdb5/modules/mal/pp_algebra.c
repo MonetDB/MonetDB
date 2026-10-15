@@ -1580,7 +1580,7 @@ LALGgroup(Client ctx, bat *rid, bat *uid, bat *bid)
 			err = createException(MAL, "igroup.group", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			goto error;
 		}
-		u->pl_io = (struct pipeline_io*)ht_create(b->ttype?b->ttype:TYPE_oid, 1, NULL, 0);
+		u->pl_io = (struct pipeline_io*)ht_create(b->ttype?b->ttype:TYPE_oid, 1, NULL, 0, false);
 		if (u->pl_io == NULL) {
 			err = createException(MAL, "igroup.group", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			goto error;
@@ -1853,7 +1853,7 @@ LALGderive(Client ctx, bat *rid, bat *uid, bat *Gid, bat *Ph, bat *bid)
 			goto error;
 		}
 		/* Lookup parent hash */
-		u->pl_io = (struct pipeline_io*)ht_create(b->ttype?b->ttype:TYPE_oid, 1, (hash_table*)H->pl_io, 0);
+		u->pl_io = (struct pipeline_io*)ht_create(b->ttype?b->ttype:TYPE_oid, 1, (hash_table*)H->pl_io, 0, false);
 		if (u->pl_io == NULL) {
 			BBPunfix(H->batCacheid);
 			err = createException(MAL, "igroup.group", SQLSTATE(HY013) MAL_MALLOC_FAIL);

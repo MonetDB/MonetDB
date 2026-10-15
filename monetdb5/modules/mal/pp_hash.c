@@ -42,12 +42,13 @@ static hash_table *
 _ht_init(hash_table *h)
 {
 	if (h->gids == NULL) {
-		h->vals = (char*)GDKmalloc(h->size * (size_t)h->width);
+		if (!h->perfect)
+			h->vals = (char*)GDKmalloc(h->size * (size_t)h->width);
 		h->gids = (hash_key_t*)GDKzalloc(sizeof(hash_key_t)* h->size);
 		if (ATOMvarsized(h->type)) {
 			h->pinned = GDKzalloc(sizeof(*h->pinned)*1024);
 		}
-		if (h->vals == NULL || h->gids == NULL)
+		if ((!h->perfect && h->vals == NULL) || h->gids == NULL)
 			goto error;
 		if (h->p) {
 			assert(h->pl_io.type == PIPELINE_IO_HASH_TABLE);
@@ -88,7 +89,7 @@ ht_destroy(hash_table *ht)
 }
 
 static hash_table *
-_ht_create( int type, size_t size, hash_table *p, int vkey)
+_ht_create( int type, size_t size, hash_table *p, int vkey, bool perfect)
 {
 	hash_table *h = (hash_table*)GDKzalloc(sizeof(hash_table));
 	if (!h)
@@ -113,6 +114,7 @@ _ht_create( int type, size_t size, hash_table *p, int vkey)
 	h->pinned = NULL;
 	h->pinned_nr = 0; /* no more than 1024 */
 	h->vkey = vkey;
+	h->perfect = perfect;
 	if (type == TYPE_str && !h->vkey) {
 		h->cmp = (fcmp)str_cmp;
 		h->hsh = (fhsh)str_hsh;
@@ -136,13 +138,13 @@ _ht_create( int type, size_t size, hash_table *p, int vkey)
 }
 
 hash_table *
-ht_create(int type, size_t size, hash_table *p, int vkey)
+ht_create(int type, size_t size, hash_table *p, int vkey, bool perfect)
 {
 	if (size < HT_MIN_SIZE)
 		size = HT_MIN_SIZE;
 	if (size > HT_MAX_SIZE)
 		size = HT_MAX_SIZE;
-	return _ht_create(type, size, p, vkey);
+	return _ht_create(type, size, p, vkey, perfect);
 }
 
 #define prnt(Type) \
@@ -520,7 +522,7 @@ OAHASHnew(Client cntxt, MalBlkPtr m, MalStkPtr s, InstrPtr p)
 		BBPreclaim(pht);
 		return createException(MAL, "oahash.new", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
-	b->pl_io = (struct pipeline_io*)ht_create(tt, (size_t)size, parent, vkey);
+	b->pl_io = (struct pipeline_io*)ht_create(tt, (size_t)size, parent, vkey, false);
 	BBPreclaim(pht);
 	if (b->pl_io == NULL) {
 		BBPunfix(b->batCacheid);
@@ -551,8 +553,7 @@ FHASHnew(Client cntxt, MalBlkPtr m, MalStkPtr s, InstrPtr p)
 		BBPreclaim(pht);
 		return createException(MAL, "fhash.new", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
-	hash_table *ht = ht_create(tt, (size_t)max, parent, 0);
-	ht->perfect = true;
+	hash_table *ht = ht_create(tt, (size_t)max, parent, 0, true);
 	b->pl_io = (struct pipeline_io*)ht;
 	BBPreclaim(pht);
 	if (b->pl_io == NULL) {
