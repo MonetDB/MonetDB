@@ -707,7 +707,7 @@ rel_hash(sql_rel *r)
 			/* hash projection list exps */
 			if (r->l)
 				h *= rel_hash(r->l);
-			return h * exps_hash(r->exps) * (r->r ? exps_hash(r->r) : 1);
+			return h * exps_hash(r->exps) * (r->op == op_project && r->r ? exps_hash(r->r) : 1);
 		case op_groupby:
 			/* hash gbe, aggr exps */
 			h *= rel_hash(r->l);
@@ -1596,6 +1596,38 @@ rel_push_down_topn(visitor *v, sql_rel *rel)
 }
 
 static sql_rel *
+rel_rewrite_vss(visitor *v, sql_rel *rel)
+{
+	(void)v;
+	if (!rel)
+		return rel;
+	if (rel->op == op_topn) { /* check offset/limit (only on limited ranges else full compute) ? */
+		sql_rel *l = rel->l;
+		if (l && is_simple_project(l->op) && list_length(l->r) == 1 /* only limit on the distances */ && !need_distinct(rel)) {
+			list *obes = l->r;
+			sql_exp *dist_exp = NULL;
+			for (node *n = obes->h; n; n = n->next) {
+				sql_exp *e = n->data;
+				if (e->type == e_column)
+					e = rel_find_exp(rel, e);
+				if (e && e->type == e_func) {
+					sql_subfunc *f = e->f;
+					if (strcmp(sql_func_mod(f->func), "vss") == 0) {
+						dist_exp = e;
+						break;
+					}
+				}
+			}
+			if (dist_exp) { /* Todo check for vss.topn_%s with right function args and result type */
+				assert(!rel->r);
+				rel->r = dist_exp;
+			}
+		}
+	}
+	return rel;
+}
+
+static sql_rel *
 rel_add_project(visitor *v, sql_rel *rel)
 {
 	sql_rel *p = v->parent;
@@ -1629,6 +1661,8 @@ rel_rewrite_physical(visitor *v, sql_rel *rel)
 		rel = rel_simplify_project(v, rel);
 	if (rel)
 		rel = rel_push_down_topn(v, rel);
+	if (rel)
+		rel = rel_rewrite_vss(v, rel);
 	if (rel) { /* split equi-join/select */
 		if (SQLrunning && MT_thread_get_qry_ctx()->pipeline_mode) {
 			rel = rel_count_gt_zero(v, rel);

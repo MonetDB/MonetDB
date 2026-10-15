@@ -5142,23 +5142,12 @@ sub_topn(backend *be, stmt *sub, stmt **Psub, sql_rel *topn, list *oexps, stmt *
 	return sub;
 }
 
-/* BOND k-NN: detect ORDER BY l2sq_distance(vector_col, vector_literal) LIMIT k */
+/* vss k-NN */
 static stmt*
-insert_bond(backend *be, sql_rel *rel, stmt *sub, stmt *l)
+vss_topn(backend *be, /*sql_rel *rel,*/ stmt *sub, stmt *l, sql_exp *dist_exp)
 {
 	mvc *sql = be->mvc;
 	int oldvtop = be->mb->vtop, oldstop = be->mb->stop;
-	list *el = rel_find_exps_by_type(sa_list(sql->sa), rel, e_func);
-	/* Find the vss distance function */
-	sql_exp *dist_exp = NULL;
-	for (node *n = el->h; n; n = n->next) {
-		sql_exp *e = n->data;
-		sql_subfunc *f = e->f;
-		if (strcmp(sql_func_mod(f->func), "vss") == 0) {
-			dist_exp = e;
-			break;
-		}
-	}
 	if (dist_exp) {
 		list *fexps = dist_exp->l;
 		sql_exp *le = fexps->h->data;
@@ -5172,12 +5161,11 @@ insert_bond(backend *be, sql_rel *rel, stmt *sub, stmt *l)
 			/* Compile both vector expressions */
 			stmt *ls = exp_bin(be, le, sub, NULL/*psub*/, NULL, NULL, NULL, NULL, 0, 0, 0);
 			stmt *rs = exp_bin(be, re, sub, NULL/*psub*/, NULL, NULL, NULL, NULL, 0, 0, 0);
-			//stmt *ls = bin_find_column_nid_deep(be, sub, le->nid);
-			//stmt *rs = bin_find_column_nid_deep(be, sub, re->nid);
+
 			while (ls && ls->type == st_alias) ls = ls->op1;
 			while (rs && rs->type == st_alias) rs = rs->op1;
-			if (ls && rs && ls->type == st_list && ls->nested &&
-				rs->type == st_list && rs->nested) {
+
+			if (ls && rs && ls->type == st_list && ls->nested && rs->type == st_list && rs->nested) {
 				list *col_dims = (le->type == e_column) ? ls->op4.lval : rs->op4.lval;
 				list *lit_dims = (le->type == e_column) ? rs->op4.lval : ls->op4.lval;
 				//sql_exp *lit_exp = (le->type == e_column) ? re : le;
@@ -5290,9 +5278,9 @@ rel2bin_project(backend *be, sql_rel *rel, list *refs, sql_rel *topn)
 			return NULL;
 	}
 
-//	/* BOND k-NN: detect ORDER BY l2sq_distance(vector_col, vector_literal) LIMIT k */
-	if (topn && rel->r && list_length(rel->r) == 1 && !need_distinct(rel))
-		sub = insert_bond(be, rel, sub, l);
+	/* vss k-NN */
+	if (topn && topn->r)
+		sub = vss_topn(be, sub, l, topn->r);
 
 	if (rel->spb && rel->card <= CARD_ATOM && !rel->l && be->pp) { /* adding constants to a stream (union) */
 		int source = pp_counter(be, 1, -1, false);
