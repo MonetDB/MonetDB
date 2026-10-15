@@ -938,7 +938,7 @@ static struct function_properties functions_list[38] = {
 void
 initialize_sql_functions_lookup(allocator *sa)
 {
-	int nentries = sizeof(functions_list) / sizeof(functions_list[0]);
+	const int nentries = countof(functions_list);
 
 	sql_functions_lookup = hash_new(sa, nentries, (fkeyvalue)&hash_key);
 	for (int i = 0; i < nentries ; i++) {

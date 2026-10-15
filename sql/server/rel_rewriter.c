@@ -293,14 +293,6 @@ find_member_pos(list *l, sql_table *t)
 	return -1;
 }
 
-/* The important task of the relational optimizer is to optimize the
-   join order.
-
-   The current implementation chooses the join order based on
-   select counts, ie if one of the join sides has been reduced using
-   a select this join is chosen over one without such selections.
- */
-
 /* currently we only find simple column expressions */
 sql_column *
 name_find_column( sql_rel *rel, const char *rname, const char *name, int pnr, sql_rel **bt )

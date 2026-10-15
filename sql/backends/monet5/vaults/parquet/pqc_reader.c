@@ -128,12 +128,10 @@ struct pqc_reader_t {
 	pqc_creader_t *creader; /* per worker readers */
 };
 
+__attribute__((__format__(__printf__, 2, 3)))
 static void
-pqc_set_error( pqc_reader_t *r, const char *format, ... )
-	__attribute__((__format__(__printf__, 2, 3)));
-
-static void
-pqc_set_error( pqc_reader_t *r, const char *format, ... )
+pqc_set_error(pqc_reader_t *r,
+			  _In_z_ _Printf_format_string_ const char *format, ... )
 {
 	va_list	ap;
 

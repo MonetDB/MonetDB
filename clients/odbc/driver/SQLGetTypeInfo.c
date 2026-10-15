@@ -1015,7 +1015,7 @@ ODBCGetTypeInfo(int concise_type,
 {
 	const struct types *t;
 
-	for (t = types; t < &types[sizeof(types) / sizeof(types[0])]; t++) {
+	for (t = types; t < &types[countof(types)]; t++) {
 		if (t->data_type == concise_type) {
 			if (data_type)
 				*data_type = t->data_type;
@@ -1146,7 +1146,7 @@ MNDBGetTypeInfo(ODBCStmt *stmt,
 	i = snprintf(query, sizeof(query), "select * from (values ");
 
 	bool first = true;
-	for (t = types; t < &types[sizeof(types) / sizeof(types[0])]; t++) {
+	for (t = types; t < &types[countof(types)]; t++) {
 		assert(t == types || t->data_type >= (t-1)->data_type);
 		if (DataType != SQL_ALL_TYPES && DataType != t->data_type)
 			continue;

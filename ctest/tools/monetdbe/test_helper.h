@@ -102,5 +102,5 @@ extern bool check_column_timestamp (monetdbe_result* result, size_t column_index
 check_column_##TPE ( \
     result, \
     column_index, \
-    sizeof((TEST_TPE_ID(TPE)[]) COLUMN(__VA_ARGS__)) /sizeof(((TEST_TPE_ID(TPE)[]) COLUMN(__VA_ARGS__))[0]), \
+    countof((TEST_TPE_ID(TPE)[]) COLUMN(__VA_ARGS__)), \
     (TEST_TPE_ID(TPE)[]) COLUMN(__VA_ARGS__))

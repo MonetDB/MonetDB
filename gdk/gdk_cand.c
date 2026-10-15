@@ -701,7 +701,9 @@ canditer_init(struct canditer *ci, BAT *b, BAT *s)
 				cnt -= 32;
 			}
 		}
-		ci->ncand = count_mask_bits(ci, 0, cnt);
+		ci->ncand = s->ttype == TYPE_msk
+			? s->batCount
+			: count_mask_bits(ci, 0, cnt);
 		return;
 	default:
 		MT_UNREACHABLE();

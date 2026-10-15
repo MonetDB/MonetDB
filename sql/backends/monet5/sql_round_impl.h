@@ -616,7 +616,7 @@ str_2dec_body(Client ctx, TYPE *res, const char *val, const int d, const int sc)
 	int scale;
 	BIG value;
 
-	if (d < 0 || d >= (int) (sizeof(scales) / sizeof(scales[0])))
+	if (d < 0 || d >= (int) countof(scales))
 		throw(SQL, STRING(TYPE), SQLSTATE(42000) "Decimal (%s) doesn't have format (%d.%d)", s, d, sc);
 
 	int has_errors;
@@ -774,7 +774,7 @@ dec2second_interval(Client ctx, lng *res, const int *sc, const TYPE *dec, const 
 
 	if (is_int_nil(scale))
 		throw(SQL, "calc.dec2second_interval", SQLSTATE(42000) "Scale cannot be NULL");
-	if (scale < 0 || (size_t) scale >= sizeof(scales) / sizeof(scales[0]))
+	if (scale < 0 || (size_t) scale >= countof(scales))
 		throw(SQL, "calc.dec2second_interval", SQLSTATE(42000) "Scale out of bounds");
 
 	(void) ek;
@@ -815,7 +815,7 @@ batdec2second_interval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		msg = createException(SQL, "batcalc.batdec2second_interval", SQLSTATE(42000) "Scale cannot be NULL");
 		goto bailout;
 	}
-	if (sc < 0 || (size_t) sc >= sizeof(scales) / sizeof(scales[0])) {
+	if (sc < 0 || (size_t) sc >= countof(scales)) {
 		msg = createException(SQL, "batcalc.batdec2second_interval", SQLSTATE(42000) "Scale out of bounds");
 		goto bailout;
 	}

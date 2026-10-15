@@ -46,7 +46,7 @@ daytime_2time_daytime(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		msg = createException(SQL, "batcalc.daytime_2time_daytime", SQLSTATE(42000) "Number of digits cannot be NULL");
 		goto bailout;
 	}
-	if (d < 0 || (size_t) d >= sizeof(scales) / sizeof(scales[0])) {
+	if (d < 0 || (size_t) d >= countof(scales)) {
 		msg = createException(SQL, "batcalc.daytime_2time_daytime", SQLSTATE(42000) "Digits out of bounds");
 		goto bailout;
 	}
@@ -173,7 +173,7 @@ second_interval_2_daytime(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 		msg = createException(SQL, "batcalc.second_interval_2_daytime", SQLSTATE(42000) "Number of digits cannot be NULL");
 		goto bailout;
 	}
-	if (digits < 0 || (size_t) digits >= sizeof(scales) / sizeof(scales[0])) {
+	if (digits < 0 || (size_t) digits >= countof(scales)) {
 		msg = createException(SQL, "batcalc.second_interval_2_daytime", SQLSTATE(42000) "Digits out of bounds");
 		goto bailout;
 	}
@@ -323,7 +323,7 @@ str_2time_daytimetz_internal(allocator *sa, ptr out, ptr in, const bat *sid, int
 		msg = createException(SQL, "batcalc.str_2time_daytimetz", SQLSTATE(42000) "Number of digits cannot be NULL");
 		goto bailout;
 	}
-	if (d < 0 || (size_t) d >= sizeof(scales) / sizeof(scales[0])) {
+	if (d < 0 || (size_t) d >= countof(scales)) {
 		msg = createException(SQL, "batcalc.str_2time_daytimetz", SQLSTATE(42000) "Digits out of bounds");
 		goto bailout;
 	}
@@ -472,7 +472,7 @@ timestamp_2_daytime(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		msg = createException(SQL, "batcalc.timestamp_2_daytime", SQLSTATE(42000) "Number of digits cannot be NULL");
 		goto bailout;
 	}
-	if (d < 0 || (size_t) d >= sizeof(scales) / sizeof(scales[0])) {
+	if (d < 0 || (size_t) d >= countof(scales)) {
 		msg = createException(SQL, "batcalc.timestamp_2_daytime", SQLSTATE(42000) "Digits out of bounds");
 		goto bailout;
 	}
@@ -671,7 +671,7 @@ timestamp_2time_timestamp(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pc
 		msg = createException(SQL, "batcalc.timestamp_2time_timestamp", SQLSTATE(42000) "Number of digits cannot be NULL");
 		goto bailout;
 	}
-	if (d < 0 || (size_t) d >= sizeof(scales) / sizeof(scales[0])) {
+	if (d < 0 || (size_t) d >= countof(scales)) {
 		msg = createException(SQL, "batcalc.timestamp_2time_timestamp", SQLSTATE(42000) "Digits out of bounds");
 		goto bailout;
 	}
@@ -826,7 +826,7 @@ str_2time_timestamptz_internal(allocator *sa, ptr out, ptr in, const bat *sid, i
 		msg = createException(SQL, "batcalc.str_2time_timestamptz_internal", SQLSTATE(42000) "Number of digits cannot be NULL");
 		goto bailout;
 	}
-	if (d < 0 || (size_t) d >= sizeof(scales) / sizeof(scales[0])) {
+	if (d < 0 || (size_t) d >= countof(scales)) {
 		msg = createException(SQL, "batcalc.str_2time_timestamptz_internal", SQLSTATE(42000) "Digits out of bounds");
 		goto bailout;
 	}
@@ -1356,7 +1356,7 @@ second_interval(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		msg = createException(SQL, "batcalc.sec_interval", SQLSTATE(42000) "Scale cannot be NULL");
 		goto bailout;
 	}
-	if (scale < 0 || (size_t) scale >= sizeof(scales) / sizeof(scales[0])) {
+	if (scale < 0 || (size_t) scale >= countof(scales)) {
 		msg = createException(SQL, "batcalc.sec_interval", SQLSTATE(42000) "Scale out of bounds");
 		goto bailout;
 	}

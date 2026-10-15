@@ -1235,7 +1235,7 @@ sql_help(const char *pattern, stream *toConsole, int pagewidth)
 	for (i = 0; i < step; i++) {
 		for (int j = 0; j < ncolumns; j++) {
 			size_t nextNum = i + j * step;
-			if(nextNum < sizeof(sqlhelp1)/sizeof(sqlhelp1[0]) - 1) {
+			if(nextNum < countof(sqlhelp1) - 1) {
 				sql_word(sqlhelp1[nextNum].command, j < ncolumns - 1 ? maxlen : 0, toConsole);
 			}
 		}

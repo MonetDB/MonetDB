@@ -1564,7 +1564,7 @@ log_read_transaction(logger *lg, BAT *ids_to_omit, uint32_t *updated, BUN maxupd
 
 		TRC_DEBUG_IF(WAL) {
 			if (l.flag > 0 && l.flag != LOG_CLEAR &&
-			    l.flag < (bte) (sizeof(log_commands) / sizeof(log_commands[0])))
+			    l.flag < (bte) countof(log_commands))
 				TRC_DEBUG_ENDIF(WAL, "%s %d", log_commands[(int) l.flag], l.id);
 			else
 				TRC_DEBUG_ENDIF(WAL, "%d %d", l.flag, l.id);
@@ -2667,7 +2667,7 @@ log_load(const char *fn, logger *lg, char filename[FILENAME_MAX])
 			goto error;
 		}
 		if (!earlyexit) {
-			/* in case or process-wal-and-exit, do NOT run
+			/* in case of process-wal-and-exit, do NOT run
 			 * upgrade code, and therefore do NOT update WAL
 			 * version number */
 			if (lg->postfuncp && (*lg->postfuncp) (lg->funcdata, lg) != GDK_SUCCEED)

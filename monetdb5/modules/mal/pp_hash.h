@@ -97,6 +97,7 @@ typedef struct hash_table {
 	fhsh hsh;
 	flen len;
 	bool empty;
+	bool perfect;		/* fetch/perfect hash */
 	ATOMIC_TYPE has_nil; /* whether the hashed column contain a NULL, defaul: 0, i.e. false */
 	int vkey;	/* vheap is unique, ie hashing on offsets */
 
@@ -131,8 +132,7 @@ str_hsh( str v )
 	}
 	return (lng)h;
 }
-
-extern hash_table *ht_create(int type, size_t size, hash_table *p, int vkey);
+extern hash_table *ht_create(int type, size_t size, hash_table *p, int vkey, bool perfect /* no need to store the values, these are offsets */);
 extern int ht_rehash(hash_table *ht);
 extern void ht_print(stream *fdout, BAT *b);
 
