@@ -834,46 +834,86 @@ UHASHext(Client cntxt, MalBlkPtr m, MalStkPtr s, InstrPtr p)
 
 #define vgroup() \
 	do { \
-		oid *vals = h->vals; \
-		struct canditer ci; \
-		canditer_init(&ci, NULL, b); \
-		cnt = ci.ncand; \
-		\
-		TIMEOUT_LOOP_IDX_DECL(i, cnt, qry_ctx) { \
-			bool fnd = 0; \
-			oid bpi = canditer_next(&ci); \
-			assert(bpi != oid_nil); \
-			gid g = 0; \
-			while (!fnd) { \
-				gid k = (gid)oidHash(&bpi)&h->mask; \
-				g = ATOMIC_GET_GID(h->gids+k); \
-				while (g && vals[g] != bpi) { \
-					k++; \
-					k &= h->mask; \
+		if (BATtdense(b)) { \
+			oid *vals = h->vals; \
+			struct canditer ci; \
+			canditer_init(&ci, NULL, b); \
+			cnt = ci.ncand; \
+			\
+			TIMEOUT_LOOP_IDX_DECL(i, cnt, qry_ctx) { \
+				bool fnd = 0; \
+				oid bpi = canditer_next(&ci); \
+				gid g = 0; \
+				while (!fnd) { \
+					gid k = (gid)oidHash(&bpi)&h->mask; \
 					g = ATOMIC_GET_GID(h->gids+k); \
-				} \
-				if (!g) { \
-					if (slots == 0) { \
-						slots = ht_preclaim(private); \
-						slot = ATOMIC_ADD_GID(&h->last, slots); \
-						if (((slot*100)/70) >= (gid)h->size) { \
-							hash_rehash(h, pl, err); \
-							vals = h->vals; \
-							continue; \
-						} \
+					while (g && vals[g] != bpi) { \
+						k++; \
+						k &= h->mask; \
+						g = ATOMIC_GET_GID(h->gids+k); \
 					} \
-					slots--; \
-					g = ++slot; \
-					vals[g] = bpi; \
-					if (!ATOMIC_CAS(h->gids+k, &expected, g)) { \
-						slots++; \
-						slot--; \
-						continue; \
-					}\
+					if (!g) { \
+						if (slots == 0) { \
+							slots = ht_preclaim(private); \
+							slot = ATOMIC_ADD_GID(&h->last, slots); \
+							if (((slot*100)/70) >= (gid)h->size) { \
+								hash_rehash(h, pl, err); \
+								vals = h->vals; \
+								continue; \
+							} \
+						} \
+						slots--; \
+						g = ++slot; \
+						vals[g] = bpi; \
+						if (!ATOMIC_CAS(h->gids+k, &expected, g)) { \
+							slots++; \
+							slot--; \
+							continue; \
+						}\
+					} \
+					fnd = 1; \
 				} \
-				fnd = 1; \
+				gp[i] = g-1; \
 			} \
-			gp[i] = g-1; \
+		} else { \
+			oid *vals = h->vals; \
+			cnt = BATcount(b); \
+			oid bpi = oid_nil; \
+			\
+			TIMEOUT_LOOP_IDX_DECL(i, cnt, qry_ctx) { \
+				bool fnd = 0; \
+				gid g = 0; \
+				while (!fnd) { \
+					gid k = (gid)oidHash(&bpi)&h->mask; \
+					g = ATOMIC_GET_GID(h->gids+k); \
+					while (g && vals[g] != bpi) { \
+						k++; \
+						k &= h->mask; \
+						g = ATOMIC_GET_GID(h->gids+k); \
+					} \
+					if (!g) { \
+						if (slots == 0) { \
+							slots = ht_preclaim(private); \
+							slot = ATOMIC_ADD_GID(&h->last, slots); \
+							if (((slot*100)/70) >= (gid)h->size) { \
+								hash_rehash(h, pl, err); \
+								vals = h->vals; \
+								continue; \
+							} \
+						} \
+						slots--; \
+						g = ++slot; \
+						vals[g] = bpi; \
+						if (!ATOMIC_CAS(h->gids+k, &expected, g)) { \
+							slots++; \
+							slot--; \
+							continue; \
+						}\
+					} \
+					fnd = 1; \
+				} \
+				gp[i] = g-1; \
+			} \
 		} \
 	} while (0)
 
@@ -1104,49 +1144,92 @@ UHASHext(Client cntxt, MalBlkPtr m, MalStkPtr s, InstrPtr p)
 
 #define vderive() \
 	do { \
-		oid *vals = h->vals; \
-		struct canditer ci; \
-		canditer_init(&ci, NULL, b); \
-		cnt = ci.ncand; \
-		\
-		TIMEOUT_LOOP_IDX_DECL(i, cnt, qry_ctx) { \
-			bool fnd = 0; \
-			oid bpi = canditer_next(&ci); \
-			assert(bpi != oid_nil); \
-			gid g = 0; \
-			while (!fnd) { \
-				gid k = (gid)combine(gi[i], oidHash(&bpi), prime)&h->mask; \
-				g = ATOMIC_GET_GID(h->gids+k); \
-				while (g && (pgids[g] != gi[i] || vals[g] != bpi)) { \
-					k++; \
-					k &= h->mask; \
+		if (BATtdense(b)) { \
+			oid *vals = h->vals; \
+			struct canditer ci; \
+			canditer_init(&ci, NULL, b); \
+			cnt = ci.ncand; \
+			\
+			TIMEOUT_LOOP_IDX_DECL(i, cnt, qry_ctx) { \
+				bool fnd = 0; \
+				oid bpi = canditer_next(&ci); \
+				gid g = 0; \
+				while (!fnd) { \
+					gid k = (gid)combine(gi[i], oidHash(&bpi), prime)&h->mask; \
 					g = ATOMIC_GET_GID(h->gids+k); \
-				} \
-				if (!g) { \
-					if (slots == 0) { \
-						slots = ht_preclaim(private); \
-						slot = ATOMIC_ADD_GID(&h->last, slots); \
-						if (((slot*100)/70) >= (gid)h->size) { \
-							hash_rehash(h, pl, err); \
-							vals = h->vals; \
-							pgids = h->pgids; \
-							prime = hash_prime_nr[h->bits-5]; \
+					while (g && (pgids[g] != gi[i] || vals[g] != bpi)) { \
+						k++; \
+						k &= h->mask; \
+						g = ATOMIC_GET_GID(h->gids+k); \
+					} \
+					if (!g) { \
+						if (slots == 0) { \
+							slots = ht_preclaim(private); \
+							slot = ATOMIC_ADD_GID(&h->last, slots); \
+							if (((slot*100)/70) >= (gid)h->size) { \
+								hash_rehash(h, pl, err); \
+								vals = h->vals; \
+								pgids = h->pgids; \
+								prime = hash_prime_nr[h->bits-5]; \
+								continue; \
+							} \
+						} \
+						slots--; \
+						g = ++slot; \
+						vals[g] = bpi; \
+						pgids[g] = gi[i]; \
+						if (!ATOMIC_CAS(h->gids+k, &expected, g)) { \
+							slots++; \
+							slot--; \
 							continue; \
 						} \
 					} \
-					slots--; \
-					g = ++slot; \
-					vals[g] = bpi; \
-					pgids[g] = gi[i]; \
-					if (!ATOMIC_CAS(h->gids+k, &expected, g)) { \
-						slots++; \
-						slot--; \
-						continue; \
-					} \
+					fnd = 1; \
 				} \
-				fnd = 1; \
+				gp[i] = g-1; \
 			} \
-			gp[i] = g-1; \
+		} else { \
+			oid *vals = h->vals; \
+			cnt = BATcount(b); \
+			oid bpi = oid_nil; \
+			\
+			TIMEOUT_LOOP_IDX_DECL(i, cnt, qry_ctx) { \
+				bool fnd = 0; \
+				gid g = 0; \
+				while (!fnd) { \
+					gid k = (gid)combine(gi[i], oidHash(&bpi), prime)&h->mask; \
+					g = ATOMIC_GET_GID(h->gids+k); \
+					while (g && (pgids[g] != gi[i] || vals[g] != bpi)) { \
+						k++; \
+						k &= h->mask; \
+						g = ATOMIC_GET_GID(h->gids+k); \
+					} \
+					if (!g) { \
+						if (slots == 0) { \
+							slots = ht_preclaim(private); \
+							slot = ATOMIC_ADD_GID(&h->last, slots); \
+							if (((slot*100)/70) >= (gid)h->size) { \
+								hash_rehash(h, pl, err); \
+								vals = h->vals; \
+								pgids = h->pgids; \
+								prime = hash_prime_nr[h->bits-5]; \
+								continue; \
+							} \
+						} \
+						slots--; \
+						g = ++slot; \
+						vals[g] = bpi; \
+						pgids[g] = gi[i]; \
+						if (!ATOMIC_CAS(h->gids+k, &expected, g)) { \
+							slots++; \
+							slot--; \
+							continue; \
+						} \
+					} \
+					fnd = 1; \
+				} \
+				gp[i] = g-1; \
+			} \
 		} \
 	} while (0)
 
@@ -1784,28 +1867,53 @@ error:
 
 #define BATvprobe() \
 	do { \
-		struct canditer ci; \
-		canditer_init(&ci, NULL, k); \
-		keycnt = ci.ncand; \
-		oid *vals = ht->vals; \
-		\
-		TIMEOUT_LOOP_IDX_DECL(i, keycnt, qry_ctx) { \
-			oid ky = canditer_next(&ci); \
-			assert(ky != oid_nil); \
-			gid k = (gid)oidHash(&ky)&ht->mask; \
-			hash_key_t slot = ht->gids[k]; \
-			while (slot && vals[slot] != ky) { \
-				k++; \
-				k &= ht->mask; \
-				slot = ht->gids[k]; \
+		if (BATtdense(k)) { \
+			struct canditer ci; \
+			canditer_init(&ci, NULL, k); \
+			keycnt = ci.ncand; \
+			oid *vals = ht->vals; \
+			\
+			TIMEOUT_LOOP_IDX_DECL(i, keycnt, qry_ctx) { \
+				oid ky = canditer_next(&ci); \
+				assert(ky != oid_nil); \
+				gid k = (gid)oidHash(&ky)&ht->mask; \
+				hash_key_t slot = ht->gids[k]; \
+				while (slot && vals[slot] != ky) { \
+					k++; \
+					k &= ht->mask; \
+					slot = ht->gids[k]; \
+				} \
+				if ((slot?1:0) == match) { \
+					oid_mtd[mtdcnt] = off+i; \
+					slt[mtdcnt] = (oid)(slot - 1); \
+					mtdcnt++; \
+					if (match && *single && freq[slot - 1] > 1) { \
+						err = createException(SQL, "oahash.probe", "more than one match"); \
+						goto error; \
+					} \
+				} \
 			} \
-			if ((slot?1:0) == match) { \
-				oid_mtd[mtdcnt] = off+i; \
-				slt[mtdcnt] = (oid)(slot - 1); \
-				mtdcnt++; \
-				if (match && *single && freq[slot - 1] > 1) { \
-					err = createException(SQL, "oahash.probe", "more than one match"); \
-					goto error; \
+		} else { \
+			keycnt = BATcount(k); \
+			oid *vals = ht->vals; \
+			oid ky = oid_nil; \
+			\
+			TIMEOUT_LOOP_IDX_DECL(i, keycnt, qry_ctx) { \
+				gid k = (gid)oidHash(&ky)&ht->mask; \
+				hash_key_t slot = ht->gids[k]; \
+				while (slot && vals[slot] != ky) { \
+					k++; \
+					k &= ht->mask; \
+					slot = ht->gids[k]; \
+				} \
+				if ((slot?1:0) == match) { \
+					oid_mtd[mtdcnt] = off+i; \
+					slt[mtdcnt] = (oid)(slot - 1); \
+					mtdcnt++; \
+					if (match && *single && freq[slot - 1] > 1) { \
+						err = createException(SQL, "oahash.probe", "more than one match"); \
+						goto error; \
+					} \
 				} \
 			} \
 		} \
@@ -2528,27 +2636,50 @@ OAHASHmprobe(Client ctx, bat *PRB_oid, bat *HSH_slotid, bat *PRB_mark, const bat
 
 #define BATvprobe_cmbd() \
 	do { \
-		struct canditer ci; \
-		canditer_init(&ci, NULL, k); \
-		oid *vals = ht->vals; \
-		\
-		TIMEOUT_LOOP_IDX_DECL(i, mtdcnt, qry_ctx) { \
-			oid ky = canditer_idx(&ci, sltd[i]-off); \
-			assert(ky != oid_nil); \
-			gid hsh = (gid)combine(gi[i], oidHash(&ky), prime)&ht->mask; \
-			gid slot = ATOMIC_GET_GID(ht->gids+hsh); \
-			while (slot && (pgids[slot] != gi[i] || vals[slot] != ky)) { \
-				hsh++; \
-				hsh &= ht->mask; \
-				slot = ATOMIC_GET_GID(ht->gids+hsh); \
+		if (BATtdense(k)) { \
+			struct canditer ci; \
+			canditer_init(&ci, NULL, k); \
+			oid *vals = ht->vals; \
+			\
+			TIMEOUT_LOOP_IDX_DECL(i, mtdcnt, qry_ctx) { \
+				oid ky = canditer_idx(&ci, sltd[i]-off); \
+				gid hsh = (gid)combine(gi[i], oidHash(&ky), prime)&ht->mask; \
+				gid slot = ATOMIC_GET_GID(ht->gids+hsh); \
+				while (slot && (pgids[slot] != gi[i] || vals[slot] != ky)) { \
+					hsh++; \
+					hsh &= ht->mask; \
+					slot = ATOMIC_GET_GID(ht->gids+hsh); \
+				} \
+				if (slot) { \
+					oid_mtd[mtdcnt2] = sltd[i]; \
+					slt[mtdcnt2] = slot - 1; \
+					mtdcnt2++; \
+					if (*single && freq[slot - 1] > 1) { \
+						err = createException(SQL, "oahash.combined_probe", "more than one match"); \
+						goto error; \
+					} \
+				} \
 			} \
-			if (slot) { \
-				oid_mtd[mtdcnt2] = sltd[i]; \
-				slt[mtdcnt2] = slot - 1; \
-				mtdcnt2++; \
-				if (*single && freq[slot - 1] > 1) { \
-					err = createException(SQL, "oahash.combined_probe", "more than one match"); \
-					goto error; \
+		} else { \
+			oid *vals = ht->vals; \
+			oid ky = oid_nil; \
+			\
+			TIMEOUT_LOOP_IDX_DECL(i, mtdcnt, qry_ctx) { \
+				gid hsh = (gid)combine(gi[i], oidHash(&ky), prime)&ht->mask; \
+				gid slot = ATOMIC_GET_GID(ht->gids+hsh); \
+				while (slot && (pgids[slot] != gi[i] || vals[slot] != ky)) { \
+					hsh++; \
+					hsh &= ht->mask; \
+					slot = ATOMIC_GET_GID(ht->gids+hsh); \
+				} \
+				if (slot) { \
+					oid_mtd[mtdcnt2] = sltd[i]; \
+					slt[mtdcnt2] = slot - 1; \
+					mtdcnt2++; \
+					if (*single && freq[slot - 1] > 1) { \
+						err = createException(SQL, "oahash.combined_probe", "more than one match"); \
+						goto error; \
+					} \
 				} \
 			} \
 		} \
@@ -2809,6 +2940,7 @@ OAHASHprobe_cmbd(Client ctx, bat *PRB_oid, bat *HSH_slotid, const bat *PRB_key, 
 
 #define BATvoprobe_cmbd() \
 	do { \
+		assert (BATtdense(k)); \
 		struct canditer ci; \
 		canditer_init(&ci, NULL, k); \
 		oid *vals = ht->vals; \
