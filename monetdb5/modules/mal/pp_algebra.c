@@ -2366,7 +2366,8 @@ LALGprojection(Client ctx, bat *rid, bat *gid, bat *bid)
 			BATswap_heaps(r, b, p);
 		} else {
 			MT_lock_unset(&b->theaplock);
-			local_storage = true;
+			if (ATOMvarsized(tt))
+				local_storage = true;
 			r = COLnew2(0, tt, max, TRANSIENT, b->twidth);
 			if (r == NULL) {
 				err = createException(MAL, "ialgebra.projection", SQLSTATE(HY013) MAL_MALLOC_FAIL);
@@ -2414,6 +2415,7 @@ LALGprojection(Client ctx, bat *rid, bat *gid, bat *bid)
 		project(inet6)
 		project(flt)
 		project(dbl)
+		project(uuid)
 		if (local_storage) {
 			if (!private)
 				pipeline_lock2(r);
