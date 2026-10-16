@@ -1448,49 +1448,7 @@ LALGgroup_unique_keepnil(Client ctx, bat *rid, bat *uid, bat *bid, bat *sid, bat
 
 #define vgroup()												\
 	if (tt == TYPE_void) {										\
-		if (!BATtdense(b)) {									\
-			assert(cnt);										\
-			int slots = 0;										\
-			gid slot = 0;										\
-			oid bpi = b->tseqbase;								\
-			oid *vals = h->vals;								\
-																\
-			bool fnd = 0;										\
-			gid g = 0;											\
-			for(; !fnd; ) {										\
-				gid k = (gid)oidHash(&oid_nil)&h->mask;			\
-				g = ATOMIC_GET_GID(h->gids+k);					\
-				for(;g && vals[g] != bpi;) {					\
-					k++;										\
-					k &= h->mask;								\
-					g = ATOMIC_GET_GID(h->gids+k);				\
-				}												\
-				if (!g) {										\
-					if (slots == 0) {							\
-						slots = ht_preclaim(private);			\
-						slot = ATOMIC_ADD_GID(&h->last, slots); \
-						if (((slot*100)/70) >= (gid)h->size) {	\
-							hash_rehash(h, p, err);				\
-							vals = h->vals;						\
-							continue;							\
-						}										\
-					}											\
-					slots--;									\
-					g = ++slot;									\
-					vals[g] = bpi;								\
-					if (!ATOMIC_CAS(h->gids+k, &expected, g)) { \
-						slot--;									\
-						slots++;								\
-						continue;								\
-					}											\
-				}												\
-				fnd = 1;										\
-			}													\
-			for(BUN i = 0; i<cnt; i++) {						\
-				gp[i] = g-1;									\
-			}													\
-		} else {												\
-			assert(BATtdense(b));								\
+		if (BATtdense(b)) {										\
 			group_(oid,											\
 				   ,											\
 				   oid bp = b->tseqbase,						\
@@ -1501,7 +1459,18 @@ LALGgroup_unique_keepnil(Client ctx, bat *rid, bat *uid, bat *bid, bat *sid, bat
 				   ,											\
 				   nextk										\
 				)												\
-				}												\
+		} else {												\
+			group_(oid,											\
+				   ,											\
+				   ,											\
+				   oid bpi = oid_nil,							\
+				   (gid)oidHash(&bpi),							\
+				   vals[g] != bpi,								\
+				   vals[g] = bpi,								\
+				   ,											\
+				   nextk										\
+				)												\
+		}														\
 	}
 
 #define agroup_(Type,P)													\
@@ -1769,8 +1738,8 @@ error:
 
 #define vderive()								\
 	if (tt == TYPE_void) {						\
-		assert(BATtdense(b));					\
-		derive_(oid,							\
+		if (BATtdense(b)) {						\
+		    derive_(oid,						\
 				,								\
 				oid bp = b->tseqbase,			\
 				oid bpi = bp+i,					\
@@ -1780,7 +1749,19 @@ error:
 				,								\
 				nextk							\
 			)									\
-			}
+		} else {								\
+		    derive_(oid,						\
+				,								\
+				,								\
+				oid bpi = oid_nil,				\
+				(gid)oidHash(&bpi),				\
+				vals[g] != bpi,					\
+				vals[g] = bpi,					\
+				,								\
+				nextk							\
+			)									\
+		}										\
+	}
 
 #define aderive_(Type, P)												\
 	if (ATOMstorage(tt) == TYPE_str) {									\
@@ -2385,7 +2366,8 @@ LALGprojection(Client ctx, bat *rid, bat *gid, bat *bid)
 			BATswap_heaps(r, b, p);
 		} else {
 			MT_lock_unset(&b->theaplock);
-			local_storage = true;
+			if (ATOMvarsized(tt))
+				local_storage = true;
 			r = COLnew2(0, tt, max, TRANSIENT, b->twidth);
 			if (r == NULL) {
 				err = createException(MAL, "ialgebra.projection", SQLSTATE(HY013) MAL_MALLOC_FAIL);
@@ -2433,6 +2415,7 @@ LALGprojection(Client ctx, bat *rid, bat *gid, bat *bid)
 		project(inet6)
 		project(flt)
 		project(dbl)
+		project(uuid)
 		if (local_storage) {
 			if (!private)
 				pipeline_lock2(r);

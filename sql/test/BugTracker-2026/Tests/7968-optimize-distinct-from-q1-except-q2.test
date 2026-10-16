@@ -51,30 +51,28 @@ SELECT COUNT(*) as c FROM rhs
 query T nosort
 EXPLAIN SELECT DISTINCT s.v FROM ((SELECT v FROM lhs) EXCEPT (SELECT v FROM rhs)) s
 ----
-project (
-| distinct except (
-| | project (
-| | | table("sys"."lhs") [ "lhs"."v" ]
-| | ) [ "lhs"."v" ],
-| | project (
+group by (
+| project (
+| | antijoin (
+| | | group by (
+| | | | table("sys"."lhs") [ "lhs"."v" ]
+| | | ) [ "lhs"."v" ] [ "lhs"."v" ],
 | | | table("sys"."rhs") [ "rhs"."v" ]
-| | ) [ "rhs"."v" ]
+| | ) [ ("lhs"."v") * = ("rhs"."v") ]
 | ) [ "lhs"."v" as "s"."v" ]
-) [ "s"."v" ]
+) [ "s"."v" ] [ "s"."v" ]
 
 query T nosort
 EXPLAIN SELECT          s.v FROM ((SELECT v FROM lhs) EXCEPT (SELECT v FROM rhs)) s
 ----
 project (
-| distinct except (
-| | project (
+| antijoin (
+| | group by (
 | | | table("sys"."lhs") [ "lhs"."v" ]
-| | ) [ "lhs"."v" ],
-| | project (
-| | | table("sys"."rhs") [ "rhs"."v" ]
-| | ) [ "rhs"."v" ]
-| ) [ "lhs"."v" as "s"."v" ]
-) [ "s"."v" ]
+| | ) [ "lhs"."v" ] [ "lhs"."v" ],
+| | table("sys"."rhs") [ "rhs"."v" ]
+| ) [ ("lhs"."v") * = ("rhs"."v") ]
+) [ "lhs"."v" as "s"."v" ]
 
 query I rowsort
 SELECT DISTINCT s.v FROM ((SELECT v FROM lhs) EXCEPT (SELECT v FROM rhs)) s

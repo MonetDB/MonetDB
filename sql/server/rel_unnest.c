@@ -1590,6 +1590,51 @@ rel_set_type(visitor *v, sql_rel *rel)
 	return rel;
 }
 
+static sql_rel *
+rel_rewrite_setops(visitor *v, sql_rel *rel)
+{
+	if (!rel)
+		return rel;
+	if (rel->op == op_inter || rel->op == op_except) {
+		if (need_distinct(rel)) { /* => project(groupby(l) semi/anti project(r)) */
+			bool anti = (rel->op == op_except);
+			sql_rel *l = rel_dup(rel->l), *r = rel_dup(rel->r);
+			/* possitional naming ! */
+			if (!is_project(r->op)) {
+				list *rexps = rel_projections(v->sql, r, NULL, 0, 1);
+				r = rel_project(v->sql->sa, r, rexps);
+			}
+			list *gbes = rel_projections(v->sql, l, NULL, 0, 1);
+			l = rel_groupby(v->sql, rel->l, NULL/*gbes*/);
+			l->r = gbes;
+			l->exps = sa_list(v->sql->sa);
+			/* simply refer to the group by exps */
+			for(node *n = gbes->h; n; n = n->next)
+				append(l->exps, exp_ref(v->sql, n->data));
+			sql_rel *nrel = rel_crossproduct(v->sql->sa, l, r, anti ? op_anti : op_semi);
+			/* add compare exps */
+			nrel->exps = sa_list(v->sql->sa);
+			for(node *n = l->exps->h, *m = r->exps->h; n && m; n = n->next, m = m->next) {
+				sql_exp *le = exp_ref(v->sql, n->data), *re = exp_ref(v->sql, m->data);
+				sql_exp *c = exp_compare(v->sql->sa, le, re, cmp_equal);
+				set_semantics(c); /* null == null in those setops */
+				append(nrel->exps, c);
+			}
+			/* needs rel_project to get proper attributes out */
+			list *exps = sa_list(v->sql->sa);
+			for(node *n = l->exps->h, *m = rel->exps->h; n && m; n = n->next, m = m->next) {
+				sql_exp *ne = exp_ref(v->sql, n->data), *re = m->data;
+				exp_setalias(ne, re->alias.label, exp_relname(re), exp_name(re));
+				append(exps, ne);
+			}
+			nrel = rel_project(v->sql->sa, nrel, exps);
+			rel_destroy(v->sql, rel);
+			return nrel;
+		}
+	}
+	return rel;
+}
+
 static list*
 aggrs_split_args(mvc *sql, list *aggrs, list *exps, int is_groupby_list)
 {
@@ -4200,5 +4245,6 @@ rel_unnest(mvc *sql, sql_rel *rel)
 	rel = run_exp_rewriter(&v, rel, &exp_reset_card_and_freevar_set_physical_type, false, "exp_reset_card_and_freevar_set_physical_type", false);
 	rel = run_exp_rewriter(&v, rel, &exp_set_type, false, "exp_set_type", true);
 	rel = rel_visitor_topdown(&v, rel, &rel_set_type);
+	rel = rel_visitor_topdown(&v, rel, &rel_rewrite_setops);
 	return rel;
 }
