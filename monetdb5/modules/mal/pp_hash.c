@@ -3352,11 +3352,13 @@ OAHASHexpand3(Client ctx, MalBlkPtr mbp, MalStkPtr s, InstrPtr p)
 	qry_ctx = qry_ctx ? qry_ctx : &(QryCtx) {.endtime = 0};
 	gid *allgids = NULL;
 	if (selcnt) {
+		/* ht->last marks the maximal possible value in ht->gids, but we need
+		 * to go over all of ht->size to find the gids. */
 		allgids = GDKzalloc(ht->last * sizeof(gid));
-		TIMEOUT_LOOP_IDX_DECL(i, ht->last, qry_ctx) {
+		TIMEOUT_LOOP_IDX_DECL(i, ht->size, qry_ctx) {
 			if(ht->gids[i]) {
-				allgids[i] = ht->gids[i];
-				hpcnt++;
+				assert(ht->gids[i] < ht->last);
+				allgids[hpcnt++] = ht->gids[i];
 			}
 		}
 
