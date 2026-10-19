@@ -1726,13 +1726,13 @@ GDKvm_cursize(void)
 }
 
 static inline void
-heapinc(size_t memdelta)
+malloc_inc(size_t memdelta)
 {
 	ATOMIC_ADD(&GDK_mallocedbytes_estimate, memdelta);
 }
 
 static inline void
-heapdec(size_t memdelta)
+malloc_dec(size_t memdelta)
 {
 	size_t old = (size_t) ATOMIC_SUB(&GDK_mallocedbytes_estimate, memdelta);
 	(void) old;
@@ -1740,13 +1740,13 @@ heapdec(size_t memdelta)
 }
 
 static inline void
-meminc(size_t vmdelta)
+vm_inc(size_t vmdelta)
 {
 	ATOMIC_ADD(&GDK_vm_cursize, SEG_SIZE(vmdelta));
 }
 
 static inline void
-memdec(size_t vmdelta)
+vm_dec(size_t vmdelta)
 {
 	size_t diff = SEG_SIZE(vmdelta);
 	size_t old = (size_t) ATOMIC_SUB(&GDK_vm_cursize, diff);
@@ -1794,7 +1794,7 @@ GDKmalloc_internal(size_t size, bool clear)
 	}
 	s = (void *) ((char *) s + MALLOC_EXTRA_SPACE);
 
-	heapinc(nsize + MALLOC_EXTRA_SPACE + DEBUG_SPACE);
+	malloc_inc(nsize + MALLOC_EXTRA_SPACE + DEBUG_SPACE);
 
 	/* just before the pointer that we return, write how much we
 	 * asked of malloc */
@@ -1893,7 +1893,7 @@ GDKfree(void *s)
 #endif
 
 	free((char *) s - MALLOC_EXTRA_SPACE);
-	heapdec(asize);
+	malloc_dec(asize);
 }
 
 #undef GDKrealloc
@@ -1951,8 +1951,8 @@ GDKrealloc(void *s, size_t size)
 	memset((char *) s + size, '\xBD', nsize + DEBUG_SPACE - size);
 #endif
 
-	heapinc(nsize + MALLOC_EXTRA_SPACE + DEBUG_SPACE);
-	heapdec(asize);
+	malloc_inc(nsize + MALLOC_EXTRA_SPACE + DEBUG_SPACE);
+	malloc_dec(asize);
 
 	return s;
 }
@@ -1978,10 +1978,7 @@ GDKmmap(const char *path, int mode, size_t len)
 
 	ret = MT_mmap(path, mode, len);
 	if (ret != NULL) {
-		if (mode & MMAP_COPY)
-			heapinc(len);
-		else
-			meminc(len);
+		vm_inc(len);
 	} else
 		GDKerror("requesting virtual memory failed; memory requested: %zu, memory in use: %zu, virtual memory in use: %zu\n", len, GDKmem_cursize(), GDKvm_cursize());
 	return ret;
@@ -1989,16 +1986,13 @@ GDKmmap(const char *path, int mode, size_t len)
 
 #undef GDKmunmap
 gdk_return
-GDKmunmap(void *addr, int mode, size_t size)
+GDKmunmap(void *addr, size_t size)
 {
 	int ret;
 
 	ret = MT_munmap(addr, size);
 	if (ret == 0) {
-		if (mode & MMAP_COPY)
-			heapdec(size);
-		else
-			memdec(size);
+		vm_dec(size);
 	}
 	return ret == 0 ? GDK_SUCCEED : GDK_FAIL;
 }
@@ -2011,13 +2005,8 @@ GDKmremap(const char *path, int mode, void *old_address, size_t old_size, size_t
 
 	ret = MT_mremap(path, mode, old_address, old_size, new_size);
 	if (ret != NULL) {
-		if (mode & MMAP_COPY) {
-			heapdec(old_size);
-			heapinc(*new_size);
-		} else {
-			memdec(old_size);
-			meminc(*new_size);
-		}
+		vm_dec(old_size);
+		vm_inc(*new_size);
 	} else {
 		GDKerror("requesting virtual memory failed; memory requested: %zu, memory in use: %zu, virtual memory in use: %zu\n", *new_size, GDKmem_cursize(), GDKvm_cursize());
 	}

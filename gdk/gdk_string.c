@@ -87,7 +87,7 @@ strCleanHash(Heap *h, bool rebuild)
 	if (!h->cleanhash)
 		return;
 	if (h->size < GDK_STRHASHSIZE &&
-	    HEAPextend(h, GDK_STRHASHSIZE + BATTINY * GDK_VARALIGN, true) != GDK_SUCCEED) {
+	    HEAPextend(h, GDK_STRHASHSIZE + BATTINY * GDK_VARALIGN) != GDK_SUCCEED) {
 		GDKclrerr();
 		if (h->size > 0)
 			memset(h->base, 0, h->size);
@@ -235,7 +235,7 @@ ustrPut(BAT *b, var_t *dst, const char *v)
 		return (var_t) -1;
 	} else {
 		if (h->size < GDK_STRHASHSIZE + BATTINY * GDK_VARALIGN) {
-			if (HEAPgrow(&b->tvheap, GDK_STRHASHSIZE + BATTINY * GDK_VARALIGN, true) != GDK_SUCCEED) {
+			if (HEAPgrow(&b->tvheap, GDK_STRHASHSIZE + BATTINY * GDK_VARALIGN) != GDK_SUCCEED) {
 				return (var_t) -1;
 			}
 			h = b->tvheap;
@@ -254,7 +254,7 @@ ustrPut(BAT *b, var_t *dst, const char *v)
 		/* string does not yet occur in ustrbat */
 		p = ustrbat->batCount;
 		if (p >= BATcapacity(ustrbat)) {
-			if (HEAPgrow(&ustrbat->theap, (size_t) BATgrows(ustrbat) << ustrbat->tshift, true) != GDK_SUCCEED) {
+			if (HEAPgrow(&ustrbat->theap, (size_t) BATgrows(ustrbat) << ustrbat->tshift) != GDK_SUCCEED) {
 				MT_lock_unset(&ustrbat->theaplock);
 				MT_rwlock_wrunlock(&ustrbat->thashlock);
 				return (var_t) -1;
@@ -309,7 +309,7 @@ ustrPut(BAT *b, var_t *dst, const char *v)
 			}
 			TRC_DEBUG(HEAP, "HEAPextend in strPut %s %zu %zu\n",
 				  h->filename, h->size, newsize);
-			if (HEAPgrow(&ustrbat->tvheap, newsize, true) != GDK_SUCCEED)
+			if (HEAPgrow(&ustrbat->tvheap, newsize) != GDK_SUCCEED)
 				return (var_t) -1;
 			h = ustrbat->tvheap;
 		}
@@ -509,7 +509,7 @@ strPut(BAT *b, var_t *dst, const void *V)
 
 	if (h->free == 0) {
 		if (h->size < GDK_STRHASHSIZE + BATTINY * GDK_VARALIGN) {
-			if (HEAPgrow(&b->tvheap, GDK_STRHASHSIZE + BATTINY * GDK_VARALIGN, true) != GDK_SUCCEED) {
+			if (HEAPgrow(&b->tvheap, GDK_STRHASHSIZE + BATTINY * GDK_VARALIGN) != GDK_SUCCEED) {
 				return (var_t) -1;
 			}
 			h = b->tvheap;
@@ -604,7 +604,7 @@ strPut(BAT *b, var_t *dst, const void *V)
 			return (var_t) -1;
 		}
 		TRC_DEBUG(HEAP, "HEAPextend in strPut %s %zu %zu\n", h->filename, h->size, newsize);
-		if (HEAPgrow(&b->tvheap, newsize, true) != GDK_SUCCEED) {
+		if (HEAPgrow(&b->tvheap, newsize) != GDK_SUCCEED) {
 			return (var_t) -1;
 		}
 		h = b->tvheap;

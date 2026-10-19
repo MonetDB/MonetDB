@@ -586,8 +586,6 @@ GDKload(int farmid, const char *nme, const char *ext, size_t size, size_t *maxsi
 		if (nme != NULL && GDKextend(nme, size) == GDK_SUCCEED) {
 			int mod = MMAP_READ | MMAP_WRITE;
 
-			if (mode == STORE_PRIV)
-				mod |= MMAP_COPY;
 			ret = GDKmmap(nme, mod, size);
 			if (ret != NULL) {
 				/* success: update allocated size */
@@ -806,7 +804,7 @@ BATload_intern(bat bid, bool lock)
 
 	/* LOAD bun heap */
 	if (b->ttype != TYPE_void) {
-		b->theap->storage = b->theap->newstorage = STORE_INVALID;
+		b->theap->storage = STORE_INVALID;
 		if ((b->batCount == 0 ?
 		     ATOMstorage(b->ttype) == TYPE_msk ?
 		     HEAPalloc(b->theap, (b->batCapacity + 31) / 32, 4) :
@@ -827,7 +825,7 @@ BATload_intern(bat bid, bool lock)
 
 	/* LOAD tail heap */
 	if (ATOMvarsized(b->ttype) && !b->ustr) {
-		b->tvheap->storage = b->tvheap->newstorage = STORE_INVALID;
+		b->tvheap->storage = STORE_INVALID;
 		if ((b->tvheap->free == 0 ?
 		     ATOMheap(b->ttype, b->tvheap, b->batCapacity) :
 		     HEAPload(b->tvheap, nme, "theap", b->batRestricted == BAT_READ)) != GDK_SUCCEED) {

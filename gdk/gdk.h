@@ -1258,7 +1258,6 @@ gdk_export void MT_cond_broadcast(MT_Cond *cond);
 
 #define MMAP_READ	1024	/* region is readable (default if omitted) */
 #define MMAP_WRITE	2048	/* region may be written into */
-#define MMAP_COPY	4096	/* writable, but changes never reach file */
 
 /* in order to be sure of madvise and msync modes, pass them to mmap()
  * call as well */
@@ -1451,7 +1450,6 @@ typedef enum {
 	STORE_INVALID = 0,	/* invalid value, used to indicate error */
 	STORE_MEM,		/* load into GDKmalloced memory */
 	STORE_MMAP,		/* mmap() into virtual memory */
-	STORE_PRIV,		/* BAT copy of copy-on-write mmap */
 	STORE_NOWN,		/* memory not owned by the BAT */
 } storage_t;
 
@@ -1473,7 +1471,6 @@ typedef struct {
 	bool wasempty;		/* heap was empty when last saved/created */
 	bool hasfile;		/* .filename exists on disk */
 	storage_t storage;	/* storage mode (mmap/malloc). */
-	storage_t newstorage;	/* new desired storage mode at re-allocation. */
 	bat parentid;		/* cache id of VIEW parent bat */
 } Heap;
 
@@ -1681,7 +1678,7 @@ mskGetVal(const BAT *b, BUN p)
 	return ((uint32_t *) b->theap->base)[p / 32] & (1U << (p % 32));
 }
 
-gdk_export gdk_return HEAPextend(Heap *h, size_t size, bool mayshare)
+gdk_export gdk_return HEAPextend(Heap *h, size_t size)
 	__attribute__((__warn_unused_result__));
 gdk_export size_t HEAPvmsize(const Heap *h)
 	__attribute__((__pure__));
@@ -3980,7 +3977,7 @@ gdk_export size_t GDK_vm_maxsize;	/* max allowed size of reserved vm */
 
 gdk_export void *GDKmmap(const char *path, int mode, size_t len)
 	__attribute__((__warn_unused_result__));
-gdk_export gdk_return GDKmunmap(void *addr, int mode, size_t len);
+gdk_export gdk_return GDKmunmap(void *addr, size_t len);
 
 gdk_export size_t GDKmem_cursize(void);	/* RAM/swapmem that MonetDB has
 					 * claimed from OS */
@@ -4877,15 +4874,14 @@ gdk_export int ma_info(allocator *sa, char *buf, size_t buflen,
 			  _res);					\
 		_res;							\
 	 })
-#define GDKmunmap(p, m, l)					\
+#define GDKmunmap(p, l)						\
 	({							\
 		void *_ptr = (p);				\
-		int _mode = (m);				\
 		size_t _len = (l);				\
-		gdk_return _res = GDKmunmap(_ptr, _mode, _len);	\
+		gdk_return _res = GDKmunmap(_ptr, _len);	\
 		TRC_DEBUG(ALLOC,				\
-			  "GDKmunmap(%p,0x%x,%zu) -> %u\n",	\
-			  _ptr, (unsigned) _mode, _len, _res);	\
+			  "GDKmunmap(%p,%zu) -> %u\n",		\
+			  _ptr, _len, _res);			\
 		_res;						\
 	})
 #define malloc(s)					\
@@ -5095,14 +5091,14 @@ GDKmmap_debug(const char *path, int mode, size_t len)
 }
 #define GDKmmap(p, m, l)	GDKmmap_debug((p), (m), (l))
 static inline gdk_return
-GDKmunmap_debug(void *ptr, int mode, size_t len)
+GDKmunmap_debug(void *ptr, size_t len)
 {
-	gdk_return res = GDKmunmap(ptr, mode, len);
-	TRC_DEBUG(ALLOC, "GDKmunmap(%p,0x%x%zu) -> %d\n",
-		  ptr, mode, len, (int) res);
+	gdk_return res = GDKmunmap(ptr, len);
+	TRC_DEBUG(ALLOC, "GDKmunmap(%p,%zu) -> %d\n",
+		  ptr, len, (int) res);
 	return res;
 }
-#define GDKmunmap(p, m, l)	GDKmunmap_debug((p), (m), (l))
+#define GDKmunmap(p, l)		GDKmunmap_debug((p), (l))
 static inline void *
 malloc_debug(size_t size)
 {
