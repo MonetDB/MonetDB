@@ -159,7 +159,7 @@ RTREEexistsonfile(BAT *b)
 	if (!b->theap) return false;
 
 	int farmid = b->theap->farmid;
-	int fd = GDKfdlocate(farmid, filename, "r", "bsrt");
+	int fd = GDKfdlocate(farmid, filename, "rb", "bsrt");
 
 	//Do we have the rtree on file?
 	if (fd == -1) {
