@@ -825,6 +825,7 @@ push_up_project_exp(visitor *v, sql_rel *rel, sql_exp *e)
 					e->r = ne->r;
 					e->nid = ne->nid;
 					e->freevar = ne->freevar;
+					e->alias.label = 0;
 				} else {
 					ne = exp_copy(v->sql, ne);
 					return push_up_project_exp(v, rel, ne);
