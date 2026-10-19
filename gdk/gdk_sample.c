@@ -163,7 +163,7 @@ do_batsample(oid hseq, BUN cnt, BUN n, random_state_engine rse)
 			}
 		}
 		bn->tvheap = msks;
-		BATtseqbase(bn, hseq + c->firstbit);
+		BATtseqbase(bn, (oid) (hseq + c->firstbit));
 		return bn;
 	}
 	oid *oids;
