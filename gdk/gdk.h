@@ -1452,10 +1452,7 @@ typedef enum {
 	STORE_MEM,		/* load into GDKmalloced memory */
 	STORE_MMAP,		/* mmap() into virtual memory */
 	STORE_PRIV,		/* BAT copy of copy-on-write mmap */
-	STORE_CMEM,		/* load into malloc (not GDKmalloc) memory*/
 	STORE_NOWN,		/* memory not owned by the BAT */
-	STORE_MMAPABS,		/* mmap() into virtual memory from an
-				 * absolute path (not part of dbfarm) */
 } storage_t;
 
 typedef struct {
