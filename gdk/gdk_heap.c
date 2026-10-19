@@ -637,9 +637,6 @@ HEAPfree(Heap *h, bool rmheap)
 		if (h->storage == STORE_MEM) {	/* plain memory */
 			TRC_DEBUG(HEAP, "HEAPfree %s %zu %p\n", h->filename, h->size, h->base);
 			GDKfree(h->base);
-		} else if (h->storage == STORE_CMEM) {
-			//heap is stored in regular C memory rather than GDK memory,so we call free()
-			free(h->base);
 		} else if (h->storage != STORE_NOWN) {	/* mapped file, or STORE_PRIV */
 			gdk_return ret = GDKmunmap(h->base,
 						   h->storage == STORE_PRIV ?
