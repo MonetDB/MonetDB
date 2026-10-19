@@ -49,6 +49,7 @@
 #include "gdk_private.h"
 #include "mutils.h"
 
+__attribute__((__access__(read_write, 2)))
 static void *
 HEAPcreatefile(int farmid, size_t *maxsz, const char *fn)
 {
@@ -64,10 +65,19 @@ HEAPcreatefile(int farmid, size_t *maxsz, const char *fn)
 		fn = path;
 	}
 	/* round up to multiple of GDK_mmap_pagesize */
-	fd = GDKfdlocate(NOFARM, fn, "wb", NULL);
+	fd = GDKfdlocate(NOFARM, fn, "w+b", NULL);
 	if (fd >= 0) {
+		size_t size = (*maxsz + GDK_mmap_pagesize - 1) & ~(GDK_mmap_pagesize - 1);
+		if (size == 0)
+			size = GDK_mmap_pagesize;
+		if (GDKextendf(fd, size, fn) != GDK_SUCCEED) {
+			close(fd);
+			return NULL;
+		}
 		close(fd);
-		base = GDKload(NOFARM, fn, NULL, *maxsz, maxsz, STORE_MMAP);
+		base = GDKmmap(fn, MMAP_READ | MMAP_WRITE, size);
+		if (base != NULL)
+			*maxsz = size;
 	}
 	return base;
 }
