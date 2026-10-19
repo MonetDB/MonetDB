@@ -1373,7 +1373,8 @@ HEAPproject(Client ctx, bat *rid, bat *pos, bat *sel, bat *in)
 			BATswap_heaps(r, b, p);
 		} else {
 			MT_lock_unset(&b->theaplock);
-			local_storage = true;
+			if (ATOMvarsized(tt))
+				local_storage = true;
 			r = COLnew2(0, tt, size, TRANSIENT, b->twidth);
 			if (r == NULL) {
 				err = 1;
@@ -1405,12 +1406,15 @@ HEAPproject(Client ctx, bat *rid, bat *pos, bat *sel, bat *in)
 		project(bte)
 		project(sht)
 		project(int)
+		project(inet4)
 		project(lng)
 #ifdef HAVE_HGE
 		project(hge)
 #endif
+		project(inet6)
 		project(flt)
 		project(dbl)
+		project(uuid)
 		if (local_storage) {
 	//		aproject_(str)
 	if (ATOMstorage(tt) == TYPE_str) { \

@@ -58,7 +58,7 @@
 #endif
 
 #define MMAP_ADVISE		7
-#define MMAP_WRITABLE		(MMAP_WRITE|MMAP_COPY)
+#define MMAP_WRITABLE		(MMAP_WRITE)
 
 #ifndef O_CLOEXEC
 #ifdef _O_NOINHERIT
@@ -331,7 +331,7 @@ MT_mmap(const char *path, int mode, size_t len)
 	ret = mmap(NULL,
 		   len,
 		   ((mode & MMAP_WRITABLE) ? PROT_WRITE : 0) | PROT_READ,
-		   (mode & MMAP_COPY) ? (MAP_PRIVATE | MAP_NORESERVE) : MAP_SHARED,
+		   MAP_SHARED,
 		   fd,
 		   0);
 	if (ret == MAP_FAILED) {
@@ -364,9 +364,10 @@ MT_mremap(const char *path, int mode, void *old_address, size_t old_size, size_t
 {
 	void *p;
 	int fd = -1;
-	int flags = mode & MMAP_COPY ? MAP_PRIVATE : MAP_SHARED;
+	int flags = MAP_SHARED;
 	int prot = PROT_WRITE | PROT_READ;
 
+	(void) mode;   /* Windows version of this function needs this */
 #ifdef MAP_FIXED_NOREPLACE
 	flags |= MAP_FIXED_NOREPLACE;
 #endif
@@ -400,7 +401,7 @@ MT_mremap(const char *path, int mode, void *old_address, size_t old_size, size_t
 		return old_address;
 	}
 
-	if (!(mode & MMAP_COPY) && path != NULL) {
+	if (path != NULL) {
 		/* "normal" memory map */
 
 		if ((fd = open(path, O_RDWR | O_CLOEXEC)) < 0) {
@@ -467,7 +468,7 @@ MT_mremap(const char *path, int mode, void *old_address, size_t old_size, size_t
 		}
 #endif	/* HAVE_MREMAP */
 	} else {
-		/* "copy-on-write" or "anonymous" memory map */
+		/* "anonymous" memory map */
 #ifdef MAP_ANONYMOUS
 		flags |= MAP_ANONYMOUS;
 #else
@@ -724,10 +725,7 @@ MT_mmap(const char *path, int mode, size_t len)
 	if (mode & MMAP_WRITE) {
 		mode0 |= FILE_APPEND_DATA | FILE_WRITE_ATTRIBUTES | FILE_WRITE_DATA;
 	}
-	if (mode & MMAP_COPY) {
-		mode3 = PAGE_WRITECOPY;
-		mode4 = FILE_MAP_COPY;
-	} else if (mode & MMAP_WRITE) {
+	if (mode & MMAP_WRITE) {
 		mode3 = PAGE_READWRITE;
 		mode4 = FILE_MAP_WRITE;
 	}
@@ -803,10 +801,10 @@ MT_mremap(const char *path, int mode, void *old_address, size_t old_size, size_t
 		TRC_ERROR(GDK, "MT_mremap(%s,%p,%zu,%zu): GDKextend() failed\n", path?path:"NULL", old_address, old_size, *new_size);
 		return NULL;
 	}
-	if (path && !(mode & MMAP_COPY))
+	if (path)
 		MT_munmap(old_address, old_size);
 	p = MT_mmap(path, mode, *new_size);
-	if (p != NULL && (path == NULL || (mode & MMAP_COPY))) {
+	if (p != NULL && path == NULL) {
 		memcpy(p, old_address, old_size);
 		MT_munmap(old_address, old_size);
 	}

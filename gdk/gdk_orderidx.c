@@ -90,7 +90,7 @@ BATcheckorderidx(BAT *b)
 			strtconcat(hp->filename,
 				   sizeof(hp->filename),
 				   nme, ".torderidx", NULL);
-			hp->storage = hp->newstorage = STORE_INVALID;
+			hp->storage = STORE_INVALID;
 
 			/* check whether a persisted orderidx can be found */
 			if ((fd = GDKfdlocate(hp->farmid, nme, "rb+", "torderidx")) >= 0) {

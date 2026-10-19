@@ -136,7 +136,7 @@ unshare_varsized_heap(BAT *b)
  * of inserting individual strings.  See the comments in the code for
  * more information. */
 static gdk_return
-insert_string_bat(BAT *b, BATiter *ni, struct canditer *ci, bool force, bool mayshare, QryCtx *qry_ctx)
+insert_string_bat(BAT *b, BATiter *ni, struct canditer *ci, bool mayshare, QryCtx *qry_ctx)
 {
 	size_t toff = ~(size_t) 0;	/* tail offset */
 	BUN p, r;		/* loop variables */
@@ -235,7 +235,7 @@ insert_string_bat(BAT *b, BATiter *ni, struct canditer *ci, bool force, bool may
 				}
 
 				MT_lock_set(&b->theaplock);
-				if (HEAPgrow(&b->tvheap, toff + ni->vhfree, force) != GDK_SUCCEED) {
+				if (HEAPgrow(&b->tvheap, toff + ni->vhfree) != GDK_SUCCEED) {
 					MT_lock_unset(&b->theaplock);
 					return GDK_FAIL;
 				}
@@ -572,7 +572,7 @@ append_varsized_bat(BAT *b, BATiter *ni, struct canditer *ci, bool mayshare)
 		/* just copy the heaps */
 		MT_thread_setalgorithm("memcpy tail and vheap", __func__);
 		MT_lock_set(&b->theaplock);
-		if (HEAPgrow(&b->tvheap, ni->vhfree, false) != GDK_SUCCEED) {
+		if (HEAPgrow(&b->tvheap, ni->vhfree) != GDK_SUCCEED) {
 			MT_lock_unset(&b->theaplock);
 			return GDK_FAIL;
 		}
@@ -1061,7 +1061,7 @@ BATappend2(BAT *b, BAT *n, BAT *s, bool force, bool mayshare)
 	}
 	MT_lock_unset(&b->theaplock);
 	if (b->ttype == TYPE_str) {
-		if (insert_string_bat(b, &ni, &ci, force, mayshare, qry_ctx) != GDK_SUCCEED) {
+		if (insert_string_bat(b, &ni, &ci, mayshare, qry_ctx) != GDK_SUCCEED) {
 			goto bailout;
 		}
 	} else if (ATOMvarsized(b->ttype)) {
