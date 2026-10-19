@@ -31,6 +31,7 @@ extern stmt *stmt_fhash_probe(backend *be, stmt *key, stmt *rhs_ht, stmt *freq, 
 
 extern stmt *stmt_algebra_project(backend *be, stmt *inout, stmt *pos, stmt *val, const char *fname);
 extern stmt *stmt_oahash_project_cart(backend *be, stmt *col, stmt *repeat, bool outer, bool expand);
+extern stmt *stmt_mark_matched(backend *be, stmt *inout, stmt *pos); /* mark matched and return those rows not yet mark earlier */
 
 extern stmt *stmt_oahash_expand(backend *be, const stmt *prb_res, const stmt *freq, bit outer);
 extern stmt *stmt_oahash_expand3(backend *be, const stmt *prb_oid, const stmt *hsh_gid, const stmt *mrk, const stmt *hp_pos, const stmt *freq);

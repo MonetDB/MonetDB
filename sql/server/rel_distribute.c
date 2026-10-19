@@ -309,6 +309,8 @@ bind_rewrite_replica(visitor *v, global_props *gp)
 static list*
 rel_merge_remote_prop(visitor *v, prop *pl, prop *pr)
 {
+	if (!pr)
+		return pl->value.pval;
 	list* uris = sa_list(v->sql->sa);
 	// TODO this double loop must go (maybe use the hashmap of the list?)
 	for (node* n = ((list*)pl->value.pval)->h; n; n = n->next) {
@@ -403,6 +405,36 @@ rel_rewrite_remote_(visitor *v, sql_rel *rel)
 
 	case op_semi:
 	case op_anti:
+
+		if (!l || !r)
+			break;
+
+		/* if both subtrees have REMOTE property with the common uri then pull it up */
+		if (l && (pl = find_prop(l->p, PROP_REMOTE)) != NULL &&
+			((r && (pr = find_prop(r->p, PROP_REMOTE)) != NULL ) || r->card <= CARD_ATOM )) {
+
+			list *uris = rel_merge_remote_prop(v, pl, pr);
+
+			/* if there are common uris pull the REMOTE prop with the common uris up */
+			if (!list_empty(uris)) {
+				l->p = prop_remove(v->sql->sa, l->p, pl);
+				if (pr)
+					r->p = prop_remove(v->sql->sa, r->p, pr);
+				if (!find_prop(rel->p, PROP_REMOTE)) {
+					/* remove local tid ONLY if no subtree has local parts */
+					if (pl->id == 0 || pr->id == 0)
+						pl->id = 0;
+					/* set the new (matching) uris */
+					pl->value.pval = uris;
+					/* push the pl REMOTE property to the list of properties */
+					pl->p = rel->p;
+					rel->p = pl;
+				} else {
+					// TODO what if we are here? can that even happen?
+				}
+			}
+		}
+		break;
 
 	case op_inter:
 	case op_except:

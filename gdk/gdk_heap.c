@@ -49,6 +49,7 @@
 #include "gdk_private.h"
 #include "mutils.h"
 
+__attribute__((__access__(read_write, 2)))
 static void *
 HEAPcreatefile(int farmid, size_t *maxsz, const char *fn)
 {
@@ -64,10 +65,19 @@ HEAPcreatefile(int farmid, size_t *maxsz, const char *fn)
 		fn = path;
 	}
 	/* round up to multiple of GDK_mmap_pagesize */
-	fd = GDKfdlocate(NOFARM, fn, "wb", NULL);
+	fd = GDKfdlocate(NOFARM, fn, "w+b", NULL);
 	if (fd >= 0) {
+		size_t size = (*maxsz + GDK_mmap_pagesize - 1) & ~(GDK_mmap_pagesize - 1);
+		if (size == 0)
+			size = GDK_mmap_pagesize;
+		if (GDKextendf(fd, size, fn) != GDK_SUCCEED) {
+			close(fd);
+			return NULL;
+		}
 		close(fd);
-		base = GDKload(NOFARM, fn, NULL, *maxsz, maxsz, STORE_MMAP);
+		base = GDKmmap(fn, MMAP_READ | MMAP_WRITE, size);
+		if (base != NULL)
+			*maxsz = size;
 	}
 	return base;
 }
@@ -355,40 +365,34 @@ HEAPextend(Heap *h, size_t size, bool mayshare)
 			 * to STORE_PRIV (copy-on-write memory mapped files),
 			 * but if the heap file doesn't exist yet, the BAT is
 			 * new and we can use STORE_MMAP */
-			int fd = GDKfdlocate(h->farmid, nme, "rb", ext);
+			int fd = GDKfdlocate(h->farmid, nme, "r+b", ext);
 			if (fd >= 0) {
 				assert(h->hasfile);
+				gdk_return rc = GDKextendf(fd, size, nme);
 				close(fd);
-				fd = GDKfdlocate(h->farmid, nme, "wb", ext);
-				if (fd >= 0) {
-					gdk_return rc = GDKextendf(fd, size, nme);
-					close(fd);
-					if (rc != GDK_SUCCEED) {
-						failure = "h->storage == STORE_MEM && can_map && fd >= 0 && GDKextendf() != GDK_SUCCEED";
-						goto failed;
-					}
-					h->storage = h->newstorage == STORE_MMAP && !mayshare ? STORE_PRIV : h->newstorage;
-					/* make sure we really MMAP */
-					if (must_mmap && h->newstorage == STORE_MEM)
-						h->storage = STORE_MMAP;
-					h->newstorage = h->storage;
-
-					h->base = NULL;
-					TRC_DEBUG(HEAP, "Converting malloced to %s mmapped heap %s\n", h->newstorage == STORE_MMAP ? "shared" : "privately", h->filename);
-					/* try to allocate a memory-mapped based
-					 * heap */
-					if (HEAPload(h, nme, ext, false) == GDK_SUCCEED) {
-						/* copy data to heap and free old
-						 * memory */
-						memcpy(h->base, bak.base, bak.free);
-						HEAPfree(&bak, false);
-						return GDK_SUCCEED;
-					}
-					failure = "h->storage == STORE_MEM && can_map && fd >= 0 && HEAPload() != GDK_SUCCEED";
-					/* we failed */
-				} else {
-					failure = "h->storage == STORE_MEM && can_map && fd < 0";
+				if (rc != GDK_SUCCEED) {
+					failure = "h->storage == STORE_MEM && can_map && fd >= 0 && GDKextendf() != GDK_SUCCEED";
+					goto failed;
 				}
+				h->storage = h->newstorage == STORE_MMAP && !mayshare ? STORE_PRIV : h->newstorage;
+				/* make sure we really MMAP */
+				if (must_mmap && h->newstorage == STORE_MEM)
+					h->storage = STORE_MMAP;
+				h->newstorage = h->storage;
+
+				h->base = NULL;
+				TRC_DEBUG(HEAP, "Converting malloced to %s mmapped heap %s\n", h->newstorage == STORE_MMAP ? "shared" : "privately", h->filename);
+				/* try to allocate a memory-mapped based
+				 * heap */
+				if (HEAPload(h, nme, ext, false) == GDK_SUCCEED) {
+					/* copy data to heap and free old
+					 * memory */
+					memcpy(h->base, bak.base, bak.free);
+					HEAPfree(&bak, false);
+					return GDK_SUCCEED;
+				}
+				failure = "h->storage == STORE_MEM && can_map && fd >= 0 && HEAPload() != GDK_SUCCEED";
+				/* we failed */
 			} else {
 				/* no pre-existing heap file, so create a new
 				 * one */
@@ -633,9 +637,6 @@ HEAPfree(Heap *h, bool rmheap)
 		if (h->storage == STORE_MEM) {	/* plain memory */
 			TRC_DEBUG(HEAP, "HEAPfree %s %zu %p\n", h->filename, h->size, h->base);
 			GDKfree(h->base);
-		} else if (h->storage == STORE_CMEM) {
-			//heap is stored in regular C memory rather than GDK memory,so we call free()
-			free(h->base);
 		} else if (h->storage != STORE_NOWN) {	/* mapped file, or STORE_PRIV */
 			gdk_return ret = GDKmunmap(h->base,
 						   h->storage == STORE_PRIV ?

@@ -645,6 +645,30 @@ stmt_algebra_project(backend *be, stmt *inout, stmt *pos, stmt *val, const char 
 }
 
 stmt *
+stmt_mark_matched(backend *be, stmt *inout, stmt *pos)
+{
+	InstrPtr q = newStmt(be->mb, ialgebraRef, "matched");
+	if (q == NULL) return NULL;
+	setVarType(be->mb, getArg(q, 0), newBatType(TYPE_oid)); /* expanded */
+	q = pushArgument(be->mb, q, inout->nr);
+	q->inout = 1;
+	q = pushArgument(be->mb, q, pos->nr);
+	pushInstruction(be->mb, q);
+
+	stmt *s = stmt_none(be);
+	if (s == NULL) return NULL;
+	s->op4.typeval = *tail_type(pos);
+	s->nr = getArg(q, 0);
+	s->nrcols = 1;
+	s->q = q;
+	s->op1 = inout;
+	s->op2 = pos;
+	s->flag = cmp_project;
+	s->key = 0;
+	return s;
+}
+
+stmt *
 stmt_oahash_expand(backend *be, const stmt *prb_res, const stmt *freq, bit outer)
 {
 	if (!freq)
