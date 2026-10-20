@@ -32,7 +32,7 @@ select_split_exp(mvc *sql, sql_exp *e, sql_rel *rel)
 		if (!is_analytic(e) && !exp_has_sideeffect(e)) {
 			sql_subfunc *f = e->f;
 			if (e->type == e_func && !f->func->s && is_caselike_func(f) /*is_ifthenelse_func(f)*/)
-				return add_exp_too_project(sql, e, rel);
+				return add_exp_to_project(sql, e, rel);
 		}
 		return e;
 	case e_cmp:

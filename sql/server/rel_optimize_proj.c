@@ -750,7 +750,7 @@ exp_refers_cmp( sql_exp *e1, sql_exp *e2)
 }
 
 sql_exp *
-add_exp_too_project(mvc *sql, sql_exp *e, sql_rel *rel)
+add_exp_to_project(mvc *sql, sql_exp *e, sql_rel *rel)
 {
 	node *n = list_find(rel->exps, e, (fcmp)&exp_match_exp_cmp);
 
@@ -777,7 +777,7 @@ add_exp_too_project(mvc *sql, sql_exp *e, sql_rel *rel)
 }
 
 static void
-add_exps_too_project(mvc *sql, list *exps, sql_rel *rel)
+add_exps_to_project(mvc *sql, list *exps, sql_rel *rel)
 {
 	node *n;
 
@@ -787,7 +787,7 @@ add_exps_too_project(mvc *sql, list *exps, sql_rel *rel)
 		sql_exp *e = n->data;
 
 		if (e->type != e_column && !exp_is_atom(e))
-			n->data = add_exp_too_project(sql, e, rel);
+			n->data = add_exp_to_project(sql, e, rel);
 	}
 }
 
@@ -810,7 +810,7 @@ split_exp(mvc *sql, sql_exp *e, sql_rel *rel)
 				return e;
 			} else {
 				split_exps(sql, e->l, rel);
-				add_exps_too_project(sql, e->l, rel);
+				add_exps_to_project(sql, e->l, rel);
 			}
 		}
 		return e;
