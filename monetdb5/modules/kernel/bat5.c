@@ -608,11 +608,7 @@ infoHeap(BAT *bk, BAT *bv, Heap *hp, const char *nme)
 		return GDK_FAIL;
 	strtconcat(kbuf, sizeof(kbuf), nme, "storage", NULL);
 	if (BUNappend(bk, kbuf, false) != GDK_SUCCEED ||
-		BUNappend(bv, (hp->base == NULL || hp->base == (char *) 1) ? "absent" : (hp->storage == STORE_MMAP) ? (hp-> filename [0] ? "memory mapped" : "anonymous vm") : (hp->storage == STORE_PRIV) ? "private map" : "malloced", false) != GDK_SUCCEED)
-		return GDK_FAIL;
-	strtconcat(kbuf, sizeof(kbuf), nme, "newstorage", NULL);
-	if (BUNappend(bk, kbuf, false) != GDK_SUCCEED ||
-		BUNappend(bv, (hp->newstorage == STORE_MEM) ? "malloced" : (hp->newstorage == STORE_PRIV) ? "private map" : "memory mapped", false) != GDK_SUCCEED)
+		BUNappend(bv, (hp->base == NULL || hp->base == (char *) 1) ? "absent" : (hp->storage == STORE_MMAP) ? (hp-> filename [0] ? "memory mapped" : "anonymous vm") : "malloced", false) != GDK_SUCCEED)
 		return GDK_FAIL;
 	strtconcat(kbuf, sizeof(kbuf), nme, "filename", NULL);
 	if (BUNappend(bk, kbuf, false) != GDK_SUCCEED ||

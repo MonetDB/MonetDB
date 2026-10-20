@@ -182,7 +182,7 @@ MATpackIncrement(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
 		if (b->tvheap && b->tvheap->parentid == b->batCacheid && bn->tvheap
 			&& ATOMstorage(b->ttype) != TYPE_str) {
 			newsize = b->tvheap->size * pieces;
-			if (HEAPextend(bn->tvheap, newsize, true) != GDK_SUCCEED) {
+			if (HEAPextend(bn->tvheap, newsize) != GDK_SUCCEED) {
 				BBPunfix(b->batCacheid);
 				BBPreclaim(bn);
 				throw(MAL, "mat.pack", GDK_EXCEPTION);

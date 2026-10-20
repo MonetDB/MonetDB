@@ -51,9 +51,6 @@ bool BATcheckhash(BAT *b)
 	__attribute__((__visibility__("hidden")));
 bool BATcheckhash_locked(BAT *b)
 	__attribute__((__visibility__("hidden")));
-gdk_return BATcheckmodes(BAT *b, bool persistent)
-	__attribute__((__warn_unused_result__))
-	__attribute__((__visibility__("hidden")));
 BAT *BATcreatedesc(oid hseq, int tt, bool heapnames, role_t role, uint16_t width)
 	__attribute__((__visibility__("hidden")));
 void BATdelete(BAT *b)
@@ -208,7 +205,7 @@ gdk_return HEAPcopy(Heap *dst, Heap *src, size_t offset)
 	__attribute__((__visibility__("hidden")));
 void HEAPfree(Heap *h, bool remove)
 	__attribute__((__visibility__("hidden")));
-gdk_return HEAPgrow(Heap **old, size_t size, bool mayshare)
+gdk_return HEAPgrow(Heap **old, size_t size)
 	__attribute__((__visibility__("hidden")));
 gdk_return HEAPload(Heap *h, const char *nme, const char *ext, bool trunc)
 	__attribute__((__warn_unused_result__))

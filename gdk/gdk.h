@@ -173,52 +173,38 @@
 typedef enum gdk_return { GDK_FAIL, GDK_SUCCEED } gdk_return;
 
 /* basic GDK types */
-typedef bool msk;
-typedef int8_t bit;
-typedef int8_t bte;
-typedef int16_t sht;
-typedef int64_t lng;
-typedef uint64_t ulng;
+typedef bool msk;		/* one bit Boolean */
+typedef int8_t bit;		/* three-value Boolean (8 bits) */
+typedef int8_t bte;		/* 8 bit signed integer */
+typedef int16_t sht;		/* 16 bit signed integer */
+/* standard type int is used for 32 bit signed integer */
+typedef int64_t lng;		/* 64 bit signed integer */
+typedef uint64_t ulng;		/* 64 bit unsigned integer */
 #ifdef HAVE_HGE
-typedef int128_t hge;
-typedef uint128_t uhge;
+typedef int128_t hge;		/* 128 bit signed integer */
+typedef uint128_t uhge;		/* 128 bit unsigned integer */
 #endif
-
-#define SIZEOF_LNG		8
-#define LL_CONSTANT(val)	INT64_C(val)
-#define PRIdLNG			PRId64
-#define PRIuLNG			PRIu64
-#define PRIxLNG			PRIx64
-#define PRIoLNG			PRIo64
-#define LLFMT			"%" PRIdLNG
-#define ULLFMT			"%" PRIuLNG
-#define LLSCN			"%" SCNd64
-#define ULLSCN			"%" SCNu64
-
-#ifdef HAVE_HGE
-#define SIZEOF_HGE		16
-/* constants, printf format, scanf format: not supported for 128 bit
- * integers */
-#endif
-
-#define SIZEOF_OID	SIZEOF_SIZE_T
-typedef size_t oid;
-/* macro in the style of <inttypes.h> for formatting oid */
-#define PRIuOID		"zu"
-#define OIDFMT		"%" PRIuOID
-
 typedef int bat;		/* Index into BBP */
-typedef void *ptr;		/* Internal coding of types */
+typedef void *ptr;		/* generic pointer */
+typedef float flt;		/* 32 bit floating point */
+typedef double dbl;		/* 64 bit floating point */
+typedef char *str;		/* null terminated UTF-8 string */
+typedef size_t oid;		/* object identifier */
+typedef oid var_t;		/* type used for heap index of var-sized BAT */
+typedef oid BUN;		/* BUN position */
 
-#define SIZEOF_PTR	SIZEOF_VOID_P
-typedef float flt;
-typedef double dbl;
-typedef char *str;
+/* The types `oid`, `BUN` and `var_t` are all defined as `size_t`, but
+ * they serve different purposes.  `oid` is the *logical* row number of
+ * a BAT; `BUN` is the *physical* row number of a BAT and is therefore
+ * also used for the total number of rows and the potential capacity of
+ * a BAT; `var_t` is an *offset* into the var-size heap (vheap).  The
+ * difference between the *logical* and *physical* row number is the
+ * value of the head sequence base (`hseqbase`) of the BAT. */
 
 typedef union {
 	uint32_t align;		/* force alignment, only used for equality */
 	uint8_t quad[4] __attribute__((__nonstring__));
-} inet4;
+} inet4;			/* IPv4 internet address */
 
 typedef union {
 #ifdef HAVE_HGE
@@ -227,7 +213,7 @@ typedef union {
 	uint64_t align[2];	/* force alignment, not otherwise used */
 #endif
 	uint8_t hex[16] __attribute__((__nonstring__));
-} inet6;
+} inet6;			/* IPv6 internet address */
 
 #define UUID_SIZE	16	/* size of a UUID */
 #define UUID_STRLEN	36	/* length of string representation */
@@ -248,15 +234,30 @@ typedef struct {
 } blob;
 gdk_export size_t blobsize(size_t nitems) __attribute__((__const__));
 
-/* The types `oid`, `BUN` and `var_t` are all defined as `size_t`, but
- * they serve different purposes.  `oid` is the *logical* row number of
- * a BAT; `BUN` is the *physical* row number of a BAT and is therefore
- * also used for the total number of rows and the potential capacity of
- * a BAT; `var_t` is an *offset* into the var-size heap (vheap).  The
- * difference between the *logical* and *physical* row number is the
- * value of the head sequence base (`hseqbase`) of the BAT. */
+#define SIZEOF_LNG		8
+#define LL_CONSTANT(val)	INT64_C(val)
+#define PRIdLNG			PRId64
+#define PRIuLNG			PRIu64
+#define PRIxLNG			PRIx64
+#define PRIoLNG			PRIo64
+#define LLFMT			"%" PRIdLNG
+#define ULLFMT			"%" PRIuLNG
+#define LLSCN			"%" SCNd64
+#define ULLSCN			"%" SCNu64
 
-typedef oid var_t;		/* type used for heap index of var-sized BAT */
+#ifdef HAVE_HGE
+#define SIZEOF_HGE		16
+/* constants, printf format, scanf format: not supported for 128 bit
+ * integers */
+#endif
+
+#define SIZEOF_OID	SIZEOF_SIZE_T
+/* macro in the style of <inttypes.h> for formatting oid */
+#define PRIuOID		"zu"
+#define OIDFMT		"%" PRIuOID
+
+#define SIZEOF_PTR	SIZEOF_VOID_P
+
 #define SIZEOF_VAR_T	SIZEOF_OID
 #define VARFMT		OIDFMT
 
@@ -266,7 +267,6 @@ typedef oid var_t;		/* type used for heap index of var-sized BAT */
 #define VAR_MAX		((var_t) INT64_MAX)
 #endif
 
-typedef oid BUN;		/* BUN position */
 #define SIZEOF_BUN	SIZEOF_OID
 #define PRIuBUN		PRIuOID
 #define BUNFMT		OIDFMT
@@ -1258,7 +1258,6 @@ gdk_export void MT_cond_broadcast(MT_Cond *cond);
 
 #define MMAP_READ	1024	/* region is readable (default if omitted) */
 #define MMAP_WRITE	2048	/* region may be written into */
-#define MMAP_COPY	4096	/* writable, but changes never reach file */
 
 /* in order to be sure of madvise and msync modes, pass them to mmap()
  * call as well */
@@ -1451,7 +1450,6 @@ typedef enum {
 	STORE_INVALID = 0,	/* invalid value, used to indicate error */
 	STORE_MEM,		/* load into GDKmalloced memory */
 	STORE_MMAP,		/* mmap() into virtual memory */
-	STORE_PRIV,		/* BAT copy of copy-on-write mmap */
 	STORE_NOWN,		/* memory not owned by the BAT */
 } storage_t;
 
@@ -1473,7 +1471,6 @@ typedef struct {
 	bool wasempty;		/* heap was empty when last saved/created */
 	bool hasfile;		/* .filename exists on disk */
 	storage_t storage;	/* storage mode (mmap/malloc). */
-	storage_t newstorage;	/* new desired storage mode at re-allocation. */
 	bat parentid;		/* cache id of VIEW parent bat */
 } Heap;
 
@@ -1681,7 +1678,7 @@ mskGetVal(const BAT *b, BUN p)
 	return ((uint32_t *) b->theap->base)[p / 32] & (1U << (p % 32));
 }
 
-gdk_export gdk_return HEAPextend(Heap *h, size_t size, bool mayshare)
+gdk_export gdk_return HEAPextend(Heap *h, size_t size)
 	__attribute__((__warn_unused_result__));
 gdk_export size_t HEAPvmsize(const Heap *h)
 	__attribute__((__pure__));
@@ -3980,7 +3977,7 @@ gdk_export size_t GDK_vm_maxsize;	/* max allowed size of reserved vm */
 
 gdk_export void *GDKmmap(const char *path, int mode, size_t len)
 	__attribute__((__warn_unused_result__));
-gdk_export gdk_return GDKmunmap(void *addr, int mode, size_t len);
+gdk_export gdk_return GDKmunmap(void *addr, size_t len);
 
 gdk_export size_t GDKmem_cursize(void);	/* RAM/swapmem that MonetDB has
 					 * claimed from OS */
@@ -4877,15 +4874,14 @@ gdk_export int ma_info(allocator *sa, char *buf, size_t buflen,
 			  _res);					\
 		_res;							\
 	 })
-#define GDKmunmap(p, m, l)					\
+#define GDKmunmap(p, l)						\
 	({							\
 		void *_ptr = (p);				\
-		int _mode = (m);				\
 		size_t _len = (l);				\
-		gdk_return _res = GDKmunmap(_ptr, _mode, _len);	\
+		gdk_return _res = GDKmunmap(_ptr, _len);	\
 		TRC_DEBUG(ALLOC,				\
-			  "GDKmunmap(%p,0x%x,%zu) -> %u\n",	\
-			  _ptr, (unsigned) _mode, _len, _res);	\
+			  "GDKmunmap(%p,%zu) -> %u\n",		\
+			  _ptr, _len, _res);			\
 		_res;						\
 	})
 #define malloc(s)					\
@@ -5095,14 +5091,14 @@ GDKmmap_debug(const char *path, int mode, size_t len)
 }
 #define GDKmmap(p, m, l)	GDKmmap_debug((p), (m), (l))
 static inline gdk_return
-GDKmunmap_debug(void *ptr, int mode, size_t len)
+GDKmunmap_debug(void *ptr, size_t len)
 {
-	gdk_return res = GDKmunmap(ptr, mode, len);
-	TRC_DEBUG(ALLOC, "GDKmunmap(%p,0x%x%zu) -> %d\n",
-		  ptr, mode, len, (int) res);
+	gdk_return res = GDKmunmap(ptr, len);
+	TRC_DEBUG(ALLOC, "GDKmunmap(%p,%zu) -> %d\n",
+		  ptr, len, (int) res);
 	return res;
 }
-#define GDKmunmap(p, m, l)	GDKmunmap_debug((p), (m), (l))
+#define GDKmunmap(p, l)		GDKmunmap_debug((p), (l))
 static inline void *
 malloc_debug(size_t size)
 {

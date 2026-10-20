@@ -76,7 +76,7 @@ virtualize(BAT *bn)
 		} else {
 			HEAPfree(bn->theap, true);
 		}
-		bn->theap->storage = bn->theap->newstorage = STORE_MEM;
+		bn->theap->storage = STORE_MEM;
 		bn->theap->size = 0;
 		bn->ttype = TYPE_void;
 		bn->twidth = 0;

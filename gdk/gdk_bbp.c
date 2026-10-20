@@ -445,7 +445,6 @@ vheapinit(BAT *b, const char *buf, unsigned bbpversion, const char *filename, in
 		.base = NULL,
 		.storage = STORE_INVALID,
 		.cleanhash = true,
-		.newstorage = STORE_INVALID,
 		.dirty = false,
 		.parentid = b->batCacheid,
 		.farmid = BBPselectfarm(PERSISTENT, b->ttype, varheap),
@@ -587,7 +586,6 @@ heapinit(BAT *b, const char *buf,
 	b->theap->base = NULL;
 	settailname(b->theap, filename, t, width);
 	b->theap->storage = STORE_INVALID;
-	b->theap->newstorage = STORE_INVALID;
 	b->theap->farmid = BBPselectfarm(PERSISTENT, b->ttype, offheap);
 	b->theap->dirty = false;
 	b->theap->parentid = b->batCacheid;
@@ -3784,10 +3782,7 @@ dirty_bat(bat *i, bool subcommit, bool lock)
 		if (BBP_status(bid) & BBPLOADED) {
 			b = BBP_desc(bid);
 			MT_lock_set(&b->theaplock);
-			if ((BBP_status(bid) & BBPNEW) &&
-			    BATcheckmodes(b, false) != GDK_SUCCEED) /* check mmap modes */
-				*i = -bid;	/* error */
-			else if ((BBP_status(bid) & BBPPERSISTENT) &&
+			if ((BBP_status(bid) & BBPPERSISTENT) &&
 				 (subcommit || BATdirty(b))) {
 				MT_lock_unset(&b->theaplock);
 				return b;	/* the bat is loaded, persistent and dirty */
@@ -3853,35 +3848,6 @@ heap_move(Heap *hp, const char *srcdir, const char *dstdir, const char *nme, con
 		/* dont overwrite heap with the committed state
 		 * already in dstdir */
 		return GDK_SUCCEED;
-	} else if (hp->newstorage == STORE_PRIV &&
-		   !file_exists(hp->farmid, srcdir, nme, ext)) {
-
-		/* In order to prevent half-saved X.new files
-		 * surviving a recover we create a dummy file in the
-		 * BACKUP(dstdir) whose presence will trigger
-		 * BBPrecover to remove them.  Thus, X will prevail
-		 * where it otherwise wouldn't have.  If X already has
-		 * a saved X.new, that one is backed up as normal.
-		 */
-
-		FILE *fp;
-		long_str kill_ext;
-		char path[MAXPATH];
-
-		strtconcat(kill_ext, sizeof(kill_ext), ext, ".kill", NULL);
-		if (GDKfilepath(path, sizeof(path), hp->farmid, dstdir, nme, kill_ext) != GDK_SUCCEED)
-			return GDK_FAIL;
-		fp = MT_fopen(path, "w");
-		if (fp == NULL)
-			GDKsyserror("heap_move: cannot open file %s\n", path);
-		TRC_DEBUG(IO, "open %s = %d\n", path, fp ? 0 : -1);
-
-		if (fp != NULL) {
-			fclose(fp);
-			return GDK_SUCCEED;
-		} else {
-			return GDK_FAIL;
-		}
 	}
 	return file_move(hp->farmid, srcdir, dstdir, nme, ext);
 }
@@ -3964,7 +3930,6 @@ static gdk_return
 do_backup(Heap *h, bool dirty, bool subcommit)
 {
 	gdk_return ret = GDK_SUCCEED;
-	char extnew[16];
 
 	if (h->wasempty) {
 		return GDK_SUCCEED;
@@ -3994,20 +3959,11 @@ do_backup(Heap *h, bool dirty, bool subcommit)
 		assert(ext != NULL);
 		*ext++ = '\0';
 
-		strtconcat(extnew, sizeof(extnew), ext, ".new", NULL);
-		if (dirty &&
-		    !file_exists(h->farmid, BAKDIR, nme, extnew) &&
-		    !file_exists(h->farmid, BAKDIR, nme, ext)) {
+		if (dirty && !file_exists(h->farmid, BAKDIR, nme, ext)) {
 			/* if the heap is dirty and there is no heap
-			 * file (with or without .new extension) in
-			 * the BAKDIR, move the heap (preferably with
-			 * .new extension) to the correct backup
-			 * directory */
-			if (file_exists(h->farmid, srcdir, nme, extnew)) {
-				mvret = heap_move(h, srcdir,
-						  subcommit ? SUBDIR : BAKDIR,
-						  nme, extnew);
-			} else if (file_exists(h->farmid, srcdir, nme, ext)) {
+			 * file in the BAKDIR, move the heap to the
+			 * correct backup directory */
+			if (file_exists(h->farmid, srcdir, nme, ext)) {
 				mvret = heap_move(h, srcdir,
 						  subcommit ? SUBDIR : BAKDIR,
 						  nme, ext);
@@ -4021,9 +3977,7 @@ do_backup(Heap *h, bool dirty, bool subcommit)
 			/* if subcommit, we may need to move an
 			 * already made backup from BAKDIR to
 			 * SUBDIR */
-			if (file_exists(h->farmid, BAKDIR, nme, extnew))
-				mvret = file_move(h->farmid, BAKDIR, SUBDIR, nme, extnew);
-			else if (file_exists(h->farmid, BAKDIR, nme, ext))
+			if (file_exists(h->farmid, BAKDIR, nme, ext))
 				mvret = file_move(h->farmid, BAKDIR, SUBDIR, nme, ext);
 		}
 		/* there is a situation where the move may fail,
@@ -4034,17 +3988,6 @@ do_backup(Heap *h, bool dirty, bool subcommit)
 		 */
 		if (mvret != GDK_SUCCEED && file_exists(h->farmid, srcdir, nme, ext)) {
 			ret = GDK_FAIL;
-		}
-		if (subcommit &&
-		    (h->storage == STORE_PRIV || h->newstorage == STORE_PRIV)) {
-			long_str kill_ext;
-
-			strtconcat(kill_ext, sizeof(kill_ext),
-				   ext, ".new.kill", NULL);
-			if (file_exists(h->farmid, BAKDIR, nme, kill_ext) &&
-			    file_move(h->farmid, BAKDIR, SUBDIR, nme, kill_ext) != GDK_SUCCEED) {
-				ret = GDK_FAIL;
-			}
 		}
 	}
 	return ret;
