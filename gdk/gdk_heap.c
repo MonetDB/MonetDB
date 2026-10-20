@@ -52,7 +52,7 @@ HEAPcreatefile(int farmid, size_t *maxsz, const char *fn)
 		fn = path;
 	}
 	/* round up to multiple of GDK_mmap_pagesize */
-	fd = GDKfdlocate(NOFARM, fn, "w+b", NULL);
+	fd = GDKfdlocate(NOFARM, fn, "ab+", NULL); /* create, no truncate */
 	if (fd >= 0) {
 		size_t size = (*maxsz + GDK_mmap_pagesize - 1) & ~(GDK_mmap_pagesize - 1);
 		if (size == 0)
@@ -346,7 +346,7 @@ HEAPextend(Heap *h, size_t size)
 			 * to STORE_PRIV (copy-on-write memory mapped files),
 			 * but if the heap file doesn't exist yet, the BAT is
 			 * new and we can use STORE_MMAP */
-			int fd = GDKfdlocate(h->farmid, nme, "r+b", ext);
+			int fd = GDKfdlocate(h->farmid, nme, "rb+", ext);
 			if (fd >= 0) {
 				assert(h->hasfile);
 				gdk_return rc = GDKextendf(fd, size, nme);
