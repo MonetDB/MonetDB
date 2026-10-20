@@ -2714,37 +2714,32 @@ BATassertProps(BAT *b)
 			/* we need to check for uniqueness the hard
 			 * way (i.e. using a hash table) */
 			const char *nme = BBP_physical(b->batCacheid);
-			Hash *hs = NULL;
+			Hash hsh;
 			BUN mask;
 
-			if ((hs = GDKzalloc(sizeof(Hash))) == NULL) {
-				TRC_WARNING(BAT, "Cannot allocate hash table\n");
-				goto abort_check;
-			}
-			if (snprintf(hs->heaplink.filename, sizeof(hs->heaplink.filename), "%s.thshprpl%x", nme, (unsigned) MT_getpid()) >= (int) sizeof(hs->heaplink.filename) ||
-			    snprintf(hs->heapbckt.filename, sizeof(hs->heapbckt.filename), "%s.thshprpb%x", nme, (unsigned) MT_getpid()) >= (int) sizeof(hs->heapbckt.filename)) {
-				/* cannot happen, see comment in gdk.h
-				 * about sizes near definition of
-				 * BBPINIT */
-				GDKfree(hs);
-				TRC_CRITICAL(BAT, "Heap filename is too large\n");
-				goto abort_check;
-			}
+			hsh = (Hash) {
+				.heapbckt.parentid = b->batCacheid,
+				.heaplink.parentid = b->batCacheid,
+				.heaplink.farmid = BBPselectfarm(
+					TRANSIENT, b->ttype, hashheap),
+				.heapbckt.farmid = BBPselectfarm(
+					TRANSIENT, b->ttype, hashheap),
+			};
 			if (ATOMsize(b->ttype) == 1)
 				mask = (BUN) 1 << 8;
 			else if (ATOMsize(b->ttype) == 2)
 				mask = (BUN) 1 << 16;
 			else
 				mask = HASHmask(b->batCount);
-			hs->heapbckt.parentid = b->batCacheid;
-			hs->heaplink.parentid = b->batCacheid;
-			if ((hs->heaplink.farmid = BBPselectfarm(
-				     TRANSIENT, b->ttype, hashheap)) < 0 ||
-			    (hs->heapbckt.farmid = BBPselectfarm(
-				    TRANSIENT, b->ttype, hashheap)) < 0 ||
-			    HASHnew(hs, b->ttype, BATcount(b),
+			if (hsh.heaplink.farmid < 0 ||
+			    hsh.heapbckt.farmid < 0 ||
+			    snprintf(hsh.heaplink.filename, sizeof(hsh.heaplink.filename), "%s.thshprpl%x", nme, (unsigned) MT_getpid()) >= (int) sizeof(hsh.heaplink.filename) ||
+			    snprintf(hsh.heapbckt.filename, sizeof(hsh.heapbckt.filename), "%s.thshprpb%x", nme, (unsigned) MT_getpid()) >= (int) sizeof(hsh.heapbckt.filename) ||
+			    HASHnew(&hsh, b->ttype, BATcount(b),
 				    mask, BUN_NONE, false) != GDK_SUCCEED) {
-				GDKfree(hs);
+				/* snprintf failing cannot happen, see
+				 * comment in gdk.h about sizes near
+				 * definition of BBPINIT */
 				TRC_WARNING(BAT, "Cannot allocate hash table\n");
 				goto abort_check;
 			}
@@ -2776,20 +2771,19 @@ BATassertProps(BAT *b)
 					assert(cmp <= 0);
 					seenmin |= cmp == 0;
 				}
-				prb = HASHprobe(hs, valp);
-				for (hb = HASHget(hs, prb);
+				prb = HASHprobe(&hsh, valp);
+				for (hb = HASHget(&hsh, prb);
 				     hb != BUN_NONE;
-				     hb = HASHgetlink(hs, hb))
+				     hb = HASHgetlink(&hsh, hb))
 					if (eqf(valp, BUNtail(&bi, hb)))
 						assert(!b->tkey);
-				HASHputlink(hs, p, HASHget(hs, prb));
-				HASHput(hs, prb, p);
+				HASHputlink(&hsh, p, HASHget(&hsh, prb));
+				HASHput(&hsh, prb, p);
 				assert(!b->tnonil || !isnil);
 				seennil |= isnil;
 			}
-			HEAPfree(&hs->heaplink, true);
-			HEAPfree(&hs->heapbckt, true);
-			GDKfree(hs);
+			HEAPfree(&hsh.heaplink, true);
+			HEAPfree(&hsh.heapbckt, true);
 		}
 	  abort_check:
 		GDKclrerr();
