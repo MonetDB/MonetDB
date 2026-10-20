@@ -312,7 +312,7 @@ size_t GDKmem_cursize(void);
 gdk_return GDKmergeidx(BAT *b, BAT **a, int n_ar);
 void *GDKmmap(const char *path, int mode, size_t len);
 int GDKms(void);
-gdk_return GDKmunmap(void *addr, int mode, size_t len);
+gdk_return GDKmunmap(void *addr, size_t len);
 int GDKnr_threads;
 void GDKprepareExit(void);
 void GDKprintinfo(void);
@@ -363,7 +363,7 @@ gdk_return HEAP_initialize(Heap *heap, size_t nbytes, size_t nprivate, int align
 var_t HEAP_malloc(BAT *b, size_t nbytes);
 gdk_return HEAPalloc(Heap *h, size_t nitems, size_t itemsize);
 void HEAPdecref(Heap *h, bool remove);
-gdk_return HEAPextend(Heap *h, size_t size, bool mayshare);
+gdk_return HEAPextend(Heap *h, size_t size);
 void HEAPincref(Heap *h);
 size_t HEAPmemsize(const Heap *h);
 size_t HEAPvmsize(const Heap *h);

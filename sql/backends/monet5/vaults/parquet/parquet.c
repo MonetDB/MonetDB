@@ -746,7 +746,7 @@ PARQUETread_large(BAT **R, pqc_creader *r, int colno, Pipeline *p, int wnr)
 					}
 					h = rb->tvheap;
 				}
-				if (h->size < _d && HEAPextend(h, _d, 1) != GDK_SUCCEED) {
+				if (h->size < _d && HEAPextend(h, _d) != GDK_SUCCEED) {
 					BBPreclaim(rb);
 					throw(SQL, "parquet.read",  SQLSTATE(HY013) MAL_MALLOC_FAIL);
 				}

@@ -726,7 +726,7 @@ RMTinternalcopyfrom(BAT **ret, char *hdr, stream *in, bool must_flush, int *type
 		throw(MAL, "remote.get", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 
 	if (bb.tailsize > 0) {
-		if (HEAPextend(b->theap, bb.tailsize, true) != GDK_SUCCEED ||
+		if (HEAPextend(b->theap, bb.tailsize) != GDK_SUCCEED ||
 			mnstr_read(in, b->theap->base, bb.tailsize, 1) < 0)
 			goto bailout;
 		b->theap->dirty = true;
@@ -735,7 +735,7 @@ RMTinternalcopyfrom(BAT **ret, char *hdr, stream *in, bool must_flush, int *type
 		if ((b->tvheap->base == NULL &&
 			 (*BATatoms[b->ttype].atomHeap) (b->tvheap,
 											 b->batCapacity) != GDK_SUCCEED)
-			|| HEAPextend(b->tvheap, bb.theapsize, true) != GDK_SUCCEED
+			|| HEAPextend(b->tvheap, bb.theapsize) != GDK_SUCCEED
 			|| mnstr_read(in, b->tvheap->base, bb.theapsize, 1) < 0)
 			goto bailout;
 		b->tvheap->free = bb.theapsize;

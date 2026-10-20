@@ -159,6 +159,7 @@ QLOGcreate(const char *hnme, const char *tnme, int tt)
 	if (b) {
 		/* make append-only in case this wasn't done when created */
 		b = BATsetaccess(b, BAT_APPEND);
+		/* we're going to permanently delete the bat */
 		if (b)
 			commitlist[committop++] = b->batCacheid;
 		return b;

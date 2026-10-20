@@ -329,6 +329,7 @@ main(int argc, char **av)
 	char *dbtrace = NULL;
 	bool inmemory = false;
 	bool readpwdxit = false;
+	static const char in_memory[] = "in-memory";
 	static const struct option long_options[] = {
 		{"config", required_argument, NULL, 'c'},
 		{"dbextra", required_argument, NULL, 0},
@@ -443,7 +444,7 @@ main(int argc, char **av)
 				break;
 			}
 #endif
-			if (strcmp(long_options[option_index].name, "in-memory") == 0) {
+			if (strcmp(long_options[option_index].name, in_memory) == 0) {
 				inmemory = true;
 				break;
 			}
@@ -474,21 +475,25 @@ main(int argc, char **av)
 							"#warning: ignoring multiple --dbextra arguments\n");
 					break;
 				}
-				size_t optarglen = strlen(optarg);
-				/* remove trailing directory separator */
-				while (optarglen > 0
-					   && (optarg[optarglen - 1] == '/'
-						   || optarg[optarglen - 1] == '\\'))
-					optarg[--optarglen] = '\0';
-				dbextra = absolute_path(optarg);
-				if (dbextra == NULL) {
-					fprintf(stderr,
-							"#error: can not allocate memory for dbextra\n");
-					exit(1);
-				}
-				if (strlen(dbextra) >= FILENAME_MAX - 45) {
-					fprintf(stderr, "#error: dbextra name too long\n");
-					exit(1);
+				if (strcmp(optarg, in_memory) == 0) {
+					dbextra = (char *) in_memory;
+				} else {
+					size_t optarglen = strlen(optarg);
+					/* remove trailing directory separator */
+					while (optarglen > 0
+						   && (optarg[optarglen - 1] == '/'
+							   || optarg[optarglen - 1] == '\\'))
+						optarg[--optarglen] = '\0';
+					dbextra = absolute_path(optarg);
+					if (dbextra == NULL) {
+						fprintf(stderr,
+								"#error: can not allocate memory for dbextra\n");
+						exit(1);
+					}
+					if (strlen(dbextra) >= FILENAME_MAX - 45) {
+						fprintf(stderr, "#error: dbextra name too long\n");
+						exit(1);
+					}
 				}
 				break;
 			}
