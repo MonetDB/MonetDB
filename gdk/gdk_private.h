@@ -20,15 +20,6 @@
 #include "gdk.h"
 #include "gdk_system_private.h"
 
-enum heaptype {
-	offheap,
-	varheap,
-	hashheap,
-	orderidxheap,
-	strimpheap,
-	dataheap
-};
-
 enum range_comp_t {
 	range_before,		/* search range fully before bat range */
 	range_after,		/* search range fully after bat range */
@@ -95,8 +86,6 @@ bat BBPallocbat(int tt)
 	__attribute__((__visibility__("hidden")));
 void BBPprintinfo(FILE *outf)
 	__attribute__((__nonnull__(1)))
-	__attribute__((__visibility__("hidden")));
-int BBPselectfarm(role_t role, int type, enum heaptype hptype)
 	__attribute__((__visibility__("hidden")));
 gdk_return BBPsync(int cnt, const bat *restrict subcommit, const BUN *restrict sizes, lng logno)
 	__attribute__((__visibility__("hidden")))

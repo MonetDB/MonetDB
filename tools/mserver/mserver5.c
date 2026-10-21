@@ -76,6 +76,7 @@ usage(char *prog, int xit)
 	fprintf(stderr, "Usage: %s [options]\n", prog);
 	fprintf(stderr, "    --dbpath <directory>      Specify database location\n");
 	fprintf(stderr, "    --dbextra <directory>     Directory for transient BATs\n");
+	fprintf(stderr, "    --dbtemp <directory>      Directory for temporary heaps\n");
 	fprintf(stderr, "    --dbtrace <file>          File for produced traces\n");
 	fprintf(stderr, "    --in-memory               Run database in-memory only\n");
 	fprintf(stderr, "    --config <config_file>    Use config_file to read options from\n");
@@ -326,6 +327,7 @@ main(int argc, char **av)
 	char *binpath = NULL;
 	char *dbpath = NULL;
 	char *dbextra = NULL;
+	char *dbtemp = NULL;
 	char *dbtrace = NULL;
 	bool inmemory = false;
 	bool readpwdxit = false;
@@ -333,6 +335,7 @@ main(int argc, char **av)
 	static const struct option long_options[] = {
 		{"config", required_argument, NULL, 'c'},
 		{"dbextra", required_argument, NULL, 0},
+		{"dbtemp", required_argument, NULL, 0},
 		{"dbpath", required_argument, NULL, 0},
 		{"dbtrace", required_argument, NULL, 0},
 		{"debug", optional_argument, NULL, 'd'},
@@ -492,6 +495,34 @@ main(int argc, char **av)
 					}
 					if (strlen(dbextra) >= FILENAME_MAX - 45) {
 						fprintf(stderr, "#error: dbextra name too long\n");
+						exit(1);
+					}
+				}
+				break;
+			}
+			if (strcmp(long_options[option_index].name, "dbtemp") == 0) {
+				if (dbtemp) {
+					fprintf(stderr,
+							"#warning: ignoring multiple --dbtemp arguments\n");
+					break;
+				}
+				if (strcmp(optarg, in_memory) == 0) {
+					dbtemp = (char *) in_memory;
+				} else {
+					size_t optarglen = strlen(optarg);
+					/* remove trailing directory separator */
+					while (optarglen > 0
+						   && (optarg[optarglen - 1] == '/'
+							   || optarg[optarglen - 1] == '\\'))
+						optarg[--optarglen] = '\0';
+					dbtemp = absolute_path(optarg);
+					if (dbtemp == NULL) {
+						fprintf(stderr,
+								"#error: can not allocate memory for dbtemp\n");
+						exit(1);
+					}
+					if (strlen(dbtemp) >= FILENAME_MAX - 45) {
+						fprintf(stderr, "#error: dbtemp name too long\n");
 						exit(1);
 					}
 				}
@@ -708,7 +739,7 @@ main(int argc, char **av)
 	}
 
 	if (inmemory) {
-		if (BBPaddfarm(NULL, (1U << PERSISTENT) | (1U << TRANSIENT) | (1U << SYSTRANS), true) !=
+		if (BBPaddfarm(NULL, (1U << PERSISTENT) | (1U << TRANSIENT) | (1U << SYSTRANS) | (1U << TEMPFARM), true) !=
 			GDK_SUCCEED) {
 			fprintf(stderr, "!ERROR: cannot add in-memory farm\n");
 			exit(1);
@@ -724,7 +755,9 @@ main(int argc, char **av)
 		}
 		if (BBPaddfarm(dbpath, 1U << PERSISTENT, true) != GDK_SUCCEED
 			|| BBPaddfarm(dbextra ? dbextra : dbpath, 1U << TRANSIENT,
-						  true) != GDK_SUCCEED) {
+						  true) != GDK_SUCCEED
+			|| BBPaddfarm(dbtemp ? dbtemp : dbextra ? dbextra : dbpath,
+						  1U << TEMPFARM, true) != GDK_SUCCEED) {
 			fprintf(stderr, "!ERROR: cannot add farm\n");
 			exit(1);
 		}

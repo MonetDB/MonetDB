@@ -448,6 +448,7 @@ vheapinit(BAT *b, const char *buf, unsigned bbpversion, const char *filename, in
 		.dirty = false,
 		.parentid = b->batCacheid,
 		.farmid = BBPselectfarm(PERSISTENT, b->ttype, varheap),
+		.role = PERSISTENT,
 		.hasfile = free > 0,
 	};
 	strtconcat(b->tvheap->filename, sizeof(b->tvheap->filename),
@@ -587,6 +588,7 @@ heapinit(BAT *b, const char *buf,
 	settailname(b->theap, filename, t, width);
 	b->theap->storage = STORE_INVALID;
 	b->theap->farmid = BBPselectfarm(PERSISTENT, b->ttype, offheap);
+	b->theap->role = PERSISTENT,
 	b->theap->dirty = false;
 	b->theap->parentid = b->batCacheid;
 	if (minpos < b->batCount)
@@ -1102,6 +1104,9 @@ BBPaddfarm(const char *dirname, uint32_t rolemask, bool logerror)
 			GDKerror("bad rolemask\n");
 		return GDK_FAIL;
 	}
+	/* transient and systrans must be same farm */
+	if (rolemask & (1 << TRANSIENT))
+		rolemask |= 1 << SYSTRANS;
 	if (strcmp(dirname, "in-memory") == 0 ||
 	    /* backward compatibility: */ strcmp(dirname, ":memory:") == 0) {
 		dirname = NULL;
@@ -1158,6 +1163,10 @@ BBPaddfarm(const char *dirname, uint32_t rolemask, bool logerror)
 			}
 			return GDK_SUCCEED;
 		}
+		if (BBPfarms[i].roles & rolemask) {
+			GDKerror("role added multiple times");
+			return GDK_FAIL;
+		}
 	}
 	if (logerror)
 		GDKerror("too many farms\n");
@@ -1168,6 +1177,7 @@ gdk_return
 BBPchkfarms(void)
 {
 	const char *dir = NULL;
+	const char *tdir = NULL;
 	uint32_t rolemask = 0;
 	if ((BBPfarms[0].roles & 1) == 0) {
 		GDKerror("Must call BBPaddfarms at least once for persistent data\n");
@@ -1177,17 +1187,30 @@ BBPchkfarms(void)
 		if (BBPfarms[i].roles != 0) {
 			dir = BBPfarms[i].dirname;
 			rolemask |= BBPfarms[i].roles;
+			if (BBPfarms[i].roles & (1U << TRANSIENT))
+				tdir = BBPfarms[i].dirname;
 		}
 	}
 	if (dir == NULL)
 		dir = "in-memory";
+	if (tdir == NULL)
+		tdir = "in-memory";
 	if ((rolemask & (1U << TRANSIENT)) == 0) {
 		gdk_return rc = BBPaddfarm(dir, 1U << TRANSIENT, true);
 		if (rc != GDK_SUCCEED)
 			return rc;
+		tdir = dir;
 	}
 	if ((rolemask & (1U << SYSTRANS)) == 0) {
-		gdk_return rc = BBPaddfarm(dir, 1U << SYSTRANS, true);
+		int farmid = BBPselectfarm(TRANSIENT, TYPE_int, offheap);
+		if (farmid < 0) {
+			GDKerror("transient farm not found");
+			return GDK_FAIL;
+		}
+		BBPfarms[farmid].roles |= 1 << SYSTRANS;
+	}
+	if ((rolemask & (1U << TEMPFARM)) == 0) {
+		gdk_return rc = BBPaddfarm(tdir, 1U << TEMPFARM, true);
 		if (rc != GDK_SUCCEED)
 			return rc;
 	}
@@ -2476,9 +2499,11 @@ new_bbpentry(FILE *fp, bat i, BUN size, BATiter *bi)
 	assert(bi->b->batRole == PERSISTENT);
 	assert(0 <= bi->h->farmid && bi->h->farmid < MAXFARMS);
 	assert(BBPfarms[bi->h->farmid].roles & (1U << PERSISTENT));
+	assert(bi->h->role == PERSISTENT);
 	if (bi->vh) {
 		assert(0 <= bi->vh->farmid && bi->vh->farmid < MAXFARMS);
 		assert(BBPfarms[bi->vh->farmid].roles & (1U << PERSISTENT));
+		assert(bi->vh->role == PERSISTENT);
 	}
 	assert(size <= bi->count || size == BUN_NONE);
 	assert(BBP_options(i) == NULL || strpbrk(BBP_options(i), "\r\n") == NULL);

@@ -1154,8 +1154,10 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 		 * tells us which power of two */
 		bits = 8 * SIZEOF_OID - ctz(nbucket);
 		hsh = (Hash) {
-			.heaplink.farmid = BBPselectfarm(TRANSIENT, bi.type, hashheap),
-			.heapbckt.farmid = BBPselectfarm(TRANSIENT, bi.type, hashheap),
+			.heaplink.farmid = BBPselectfarm(TEMPFARM, bi.type, hashheap),
+			.heaplink.role = TEMPFARM,
+			.heapbckt.farmid = BBPselectfarm(TEMPFARM, bi.type, hashheap),
+			.heapbckt.role = TEMPFARM,
 		};
 		hs = &hsh;
 		if (hs->heaplink.farmid < 0 || hs->heapbckt.farmid < 0) {

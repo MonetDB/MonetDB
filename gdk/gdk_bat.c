@@ -131,6 +131,7 @@ BATcreatedesc(oid hseq, int tt, bool heapnames, role_t role, uint16_t width)
 		}
 		*h = (Heap) {
 			.farmid = BBPselectfarm(role, tt, offheap),
+			.role = role,
 			.dirty = true,
 			.refs = ATOMIC_VAR_INIT(1),
 		};
@@ -142,6 +143,7 @@ BATcreatedesc(oid hseq, int tt, bool heapnames, role_t role, uint16_t width)
 			}
 			*vh = (Heap) {
 				.farmid = BBPselectfarm(role, tt, varheap),
+				.role = role,
 				.dirty = true,
 				.refs = ATOMIC_VAR_INIT(1),
 			};
@@ -506,6 +508,7 @@ BATclear(BAT *b, bool force)
 				}
 				*th = (Heap) {
 					.farmid = b->tvheap->farmid,
+					.role = b->tvheap->role,
 					.parentid = b->tvheap->parentid,
 					.dirty = true,
 					.hasfile = b->tvheap->hasfile,
@@ -2465,9 +2468,13 @@ BATassertProps(BAT *b)
 	assert(isview1 ||
 	       b->ttype == TYPE_void ||
 	       BBPfarms[b->theap->farmid].roles & (1 << b->batRole));
+	assert(b->ttype == TYPE_void ||
+	       BBPfarms[b->theap->farmid].roles & (1 << b->theap->role));
 	assert(isview2 ||
 	       b->tvheap == NULL ||
 	       (BBPfarms[b->tvheap->farmid].roles & (1 << b->batRole)));
+	assert(b->tvheap == NULL ||
+	       (BBPfarms[b->tvheap->farmid].roles & (1 << b->tvheap->role)));
 
 	cmpf = ATOMcompare(b->ttype);
 	eqf = ATOMequal(b->ttype);
@@ -2721,9 +2728,11 @@ BATassertProps(BAT *b)
 				.heapbckt.parentid = b->batCacheid,
 				.heaplink.parentid = b->batCacheid,
 				.heaplink.farmid = BBPselectfarm(
-					TRANSIENT, b->ttype, hashheap),
+					TEMPFARM, b->ttype, hashheap),
+				.heaplink.role = TEMPFARM,
 				.heapbckt.farmid = BBPselectfarm(
-					TRANSIENT, b->ttype, hashheap),
+					TEMPFARM, b->ttype, hashheap),
+				.heapbckt.role = TEMPFARM,
 			};
 			if (ATOMsize(b->ttype) == 1)
 				mask = (BUN) 1 << 8;

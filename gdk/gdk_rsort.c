@@ -38,8 +38,13 @@ GDKrsort(void *restrict h, void *restrict t, size_t n, size_t hs, size_t ts,
 	}
 
 	tmph = tmpt = (Heap) {
-		.farmid = 1,
+		.farmid = BBPselectfarm(TEMPFARM, TYPE_int, dataheap),
+		.role = TEMPFARM,
 	};
+	if (tmph.farmid < 0 || tmpt.farmid < 0) {
+		ma_close(&ta_state);
+		return GDK_FAIL;
+	}
 
 	snprintf(tmph.filename, sizeof(tmph.filename), "%s%crsort%zuh",
 		 TEMPDIR_NAME, DIR_SEP, (size_t) MT_getpid());

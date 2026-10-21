@@ -108,6 +108,7 @@ do_batsample(oid hseq, BUN cnt, BUN n, random_state_engine rse)
 		}
 		*msks = (Heap) {
 			.farmid = BBPselectfarm(TRANSIENT, TYPE_void, varheap),
+			.role = TRANSIENT,
 			.parentid = bn->batCacheid,
 			.dirty = true,
 			.refs = ATOMIC_VAR_INIT(1),
@@ -178,6 +179,7 @@ do_batsample(oid hseq, BUN cnt, BUN n, random_state_engine rse)
 		}
 		*dels = (Heap) {
 			.farmid = BBPselectfarm(TRANSIENT, TYPE_void, varheap),
+			.role = TRANSIENT,
 			.parentid = bn->batCacheid,
 			.dirty = true,
 			.refs = ATOMIC_VAR_INIT(1),
