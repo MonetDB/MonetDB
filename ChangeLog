@@ -1,6 +1,16 @@
 # ChangeLog file for devel
 # This file is updated with Maddlog
 
+* Wed Oct 21 2026 Sjoerd Mullender <sjoerd@acm.org>
+- There is a new type of database farm, like the --dbextra farm, for
+  temporary heaps.  Temporary heaps are heaps which are created and
+  destroyed in the same function, so they never need to be saved to disk.
+  By using the new --dbtemp option in mserver5, it is possible to choose
+  a separate directory in case the heap needs to be memory mapped, or by
+  specifying `in-memory` it is possible to direct the server to never
+  use a file-backed memory map (in this case, there should be enough
+  memory for these heaps).
+
 * Tue Oct  6 2026 Sjoerd Mullender <sjoerd@acm.org>
 - The function sys.local_timezone() has been renamed to
   sys.system_timezone() since it returns the time zone of the server.

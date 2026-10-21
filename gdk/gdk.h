@@ -173,52 +173,38 @@
 typedef enum gdk_return { GDK_FAIL, GDK_SUCCEED } gdk_return;
 
 /* basic GDK types */
-typedef bool msk;
-typedef int8_t bit;
-typedef int8_t bte;
-typedef int16_t sht;
-typedef int64_t lng;
-typedef uint64_t ulng;
+typedef bool msk;		/* one bit Boolean */
+typedef int8_t bit;		/* three-value Boolean (8 bits) */
+typedef int8_t bte;		/* 8 bit signed integer */
+typedef int16_t sht;		/* 16 bit signed integer */
+/* standard type int is used for 32 bit signed integer */
+typedef int64_t lng;		/* 64 bit signed integer */
+typedef uint64_t ulng;		/* 64 bit unsigned integer */
 #ifdef HAVE_HGE
-typedef int128_t hge;
-typedef uint128_t uhge;
+typedef int128_t hge;		/* 128 bit signed integer */
+typedef uint128_t uhge;		/* 128 bit unsigned integer */
 #endif
-
-#define SIZEOF_LNG		8
-#define LL_CONSTANT(val)	INT64_C(val)
-#define PRIdLNG			PRId64
-#define PRIuLNG			PRIu64
-#define PRIxLNG			PRIx64
-#define PRIoLNG			PRIo64
-#define LLFMT			"%" PRIdLNG
-#define ULLFMT			"%" PRIuLNG
-#define LLSCN			"%" SCNd64
-#define ULLSCN			"%" SCNu64
-
-#ifdef HAVE_HGE
-#define SIZEOF_HGE		16
-/* constants, printf format, scanf format: not supported for 128 bit
- * integers */
-#endif
-
-#define SIZEOF_OID	SIZEOF_SIZE_T
-typedef size_t oid;
-/* macro in the style of <inttypes.h> for formatting oid */
-#define PRIuOID		"zu"
-#define OIDFMT		"%" PRIuOID
-
 typedef int bat;		/* Index into BBP */
-typedef void *ptr;		/* Internal coding of types */
+typedef void *ptr;		/* generic pointer */
+typedef float flt;		/* 32 bit floating point */
+typedef double dbl;		/* 64 bit floating point */
+typedef char *str;		/* null terminated UTF-8 string */
+typedef size_t oid;		/* object identifier */
+typedef oid var_t;		/* type used for heap index of var-sized BAT */
+typedef oid BUN;		/* BUN position */
 
-#define SIZEOF_PTR	SIZEOF_VOID_P
-typedef float flt;
-typedef double dbl;
-typedef char *str;
+/* The types `oid`, `BUN` and `var_t` are all defined as `size_t`, but
+ * they serve different purposes.  `oid` is the *logical* row number of
+ * a BAT; `BUN` is the *physical* row number of a BAT and is therefore
+ * also used for the total number of rows and the potential capacity of
+ * a BAT; `var_t` is an *offset* into the var-size heap (vheap).  The
+ * difference between the *logical* and *physical* row number is the
+ * value of the head sequence base (`hseqbase`) of the BAT. */
 
 typedef union {
 	uint32_t align;		/* force alignment, only used for equality */
 	uint8_t quad[4] __attribute__((__nonstring__));
-} inet4;
+} inet4;			/* IPv4 internet address */
 
 typedef union {
 #ifdef HAVE_HGE
@@ -227,7 +213,7 @@ typedef union {
 	uint64_t align[2];	/* force alignment, not otherwise used */
 #endif
 	uint8_t hex[16] __attribute__((__nonstring__));
-} inet6;
+} inet6;			/* IPv6 internet address */
 
 #define UUID_SIZE	16	/* size of a UUID */
 #define UUID_STRLEN	36	/* length of string representation */
@@ -248,15 +234,30 @@ typedef struct {
 } blob;
 gdk_export size_t blobsize(size_t nitems) __attribute__((__const__));
 
-/* The types `oid`, `BUN` and `var_t` are all defined as `size_t`, but
- * they serve different purposes.  `oid` is the *logical* row number of
- * a BAT; `BUN` is the *physical* row number of a BAT and is therefore
- * also used for the total number of rows and the potential capacity of
- * a BAT; `var_t` is an *offset* into the var-size heap (vheap).  The
- * difference between the *logical* and *physical* row number is the
- * value of the head sequence base (`hseqbase`) of the BAT. */
+#define SIZEOF_LNG		8
+#define LL_CONSTANT(val)	INT64_C(val)
+#define PRIdLNG			PRId64
+#define PRIuLNG			PRIu64
+#define PRIxLNG			PRIx64
+#define PRIoLNG			PRIo64
+#define LLFMT			"%" PRIdLNG
+#define ULLFMT			"%" PRIuLNG
+#define LLSCN			"%" SCNd64
+#define ULLSCN			"%" SCNu64
 
-typedef oid var_t;		/* type used for heap index of var-sized BAT */
+#ifdef HAVE_HGE
+#define SIZEOF_HGE		16
+/* constants, printf format, scanf format: not supported for 128 bit
+ * integers */
+#endif
+
+#define SIZEOF_OID	SIZEOF_SIZE_T
+/* macro in the style of <inttypes.h> for formatting oid */
+#define PRIuOID		"zu"
+#define OIDFMT		"%" PRIuOID
+
+#define SIZEOF_PTR	SIZEOF_VOID_P
+
 #define SIZEOF_VAR_T	SIZEOF_OID
 #define VARFMT		OIDFMT
 
@@ -266,7 +267,6 @@ typedef oid var_t;		/* type used for heap index of var-sized BAT */
 #define VAR_MAX		((var_t) INT64_MAX)
 #endif
 
-typedef oid BUN;		/* BUN position */
 #define SIZEOF_BUN	SIZEOF_OID
 #define PRIuBUN		PRIuOID
 #define BUNFMT		OIDFMT
@@ -1443,6 +1443,7 @@ typedef enum {
 	PERSISTENT = 0,
 	TRANSIENT,
 	SYSTRANS,
+	TEMPFARM,
 } role_t;
 
 /* Heap storage modes */
@@ -1464,7 +1465,8 @@ typedef struct {
 #endif
 
 	ATOMIC_TYPE refs;	/* reference count for this heap */
-	bte farmid;		/* id of farm where heap is located */
+	int8_t farmid;		/* id of farm where heap is located */
+	role_t role;		/* role of this heap */
 	bool cleanhash;		/* string heaps must clean hash */
 	bool dirty;		/* specific heap dirty marker */
 	bool remove;		/* remove storage file when freeing */
@@ -3892,6 +3894,15 @@ gdk_export int BBPreadBBPline(FILE *fp, unsigned bbpversion, int *lineno,
 /* global calls */
 gdk_export gdk_return BBPaddfarm(const char *dirname, uint32_t rolemask,
 				 bool logerror);
+enum heaptype {
+	offheap,
+	varheap,
+	hashheap,
+	orderidxheap,
+	strimpheap,
+	dataheap
+};
+gdk_export int BBPselectfarm(role_t role, int type, enum heaptype hptype);
 
 /* update interface */
 gdk_export gdk_return BBPsave(BAT *b);

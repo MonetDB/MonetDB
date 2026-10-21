@@ -219,23 +219,37 @@ GDKfdlocate(int farmid, const char *nme, const char *mode, const char *extension
 		nme = path;
 	}
 
-	if (strchr(mode, 'w')) {
-		flags |= O_CREAT | O_TRUNC;
+	switch (*mode) {
+	case 'r':
 		if (strchr(mode, '+')) {
 			flags |= O_RDWR;
 		} else {
-			flags |= O_WRONLY;
+			flags |= O_RDONLY;
 		}
-	} else if (strchr(mode, '+')) {
-		flags |= O_RDWR;
-	} else {
-		flags |= O_RDONLY;
+		break;
+	case 'a':
+		if (strchr(mode, '+')) {
+			flags |= O_RDWR | O_CREAT;
+		} else {
+			flags |= O_WRONLY | O_CREAT;
+		}
+		break;
+	case 'w':
+		if (strchr(mode, '+')) {
+			flags |= O_RDWR | O_CREAT | O_TRUNC;
+		} else {
+			flags |= O_WRONLY | O_CREAT | O_TRUNC;
+		}
+		break;
+	default:
+		errno = EINVAL;
+		return -1;
 	}
 #ifdef O_BINARY
 	flags |= strchr(mode, 'b') ? O_BINARY : O_TEXT;
 #endif
 	fd = MT_open(nme, flags);
-	if (fd < 0 && *mode == 'w') {
+	if (fd < 0 && *mode != 'r') {
 		/* try to create the directory, in case that was the problem */
 		if (GDKcreatedir(nme) == GDK_SUCCEED) {
 			fd = MT_open(nme, flags);

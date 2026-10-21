@@ -84,6 +84,20 @@ is
 transient data is not stored on disk at all but kept in memory at all
 times.
 .TP
+\fB\-\-dbtemp=\fP\fIpath\fP
+Path where
+.I mserver5
+should store data for very temporary heaps.  Default value is the
+value of the
+.B \-\-dbextra
+option.
+If the value of
+.I path
+is
+.BR in\-memory ,
+temporary data is not stored on disk at all but kept in memory at all
+times.
+.TP
 \fB\-\-dbtrace=\fP\fIpath\fP
 File name for the trace log file for
 .IR mserver5 .

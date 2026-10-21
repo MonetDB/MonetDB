@@ -91,6 +91,7 @@ BATcheckorderidx(BAT *b)
 				   sizeof(hp->filename),
 				   nme, ".torderidx", NULL);
 			hp->storage = STORE_INVALID;
+			hp->role = b->batRole;
 
 			/* check whether a persisted orderidx can be found */
 			if ((fd = GDKfdlocate(hp->farmid, nme, "rb+", "torderidx")) >= 0) {
@@ -140,6 +141,7 @@ createOIDXheap(BAT *b, bool stable)
 		return NULL;
 	*m = (Heap) {
 		.farmid = BBPselectfarm(b->batRole, b->ttype, orderidxheap),
+		.role = b->batRole,
 		.parentid = b->batCacheid,
 		.dirty = true,
 		.refs = ATOMIC_VAR_INIT(1),
@@ -378,6 +380,7 @@ GDKmergeidx(BAT *b, BAT**a, int n_ar)
 	}
 	*m = (Heap) {
 		.farmid = BBPselectfarm(b->batRole, bi.type, orderidxheap),
+		.role = b->batRole,
 		.parentid = b->batCacheid,
 		.dirty = true,
 		.refs = ATOMIC_VAR_INIT(1),
