@@ -96,6 +96,7 @@ HEAPgrow(Heap **hp, size_t size)
 		Heap *old = *hp;
 		*new = (Heap) {
 			.farmid = old->farmid,
+			.role = old->role,
 			.dirty = true,
 			.parentid = old->parentid,
 			.wasempty = old->wasempty,
@@ -136,7 +137,7 @@ gdk_return
 HEAPalloc(Heap *h, size_t nitems, size_t itemsize)
 {
 	size_t size = 0;
-	QryCtx *qc = h->farmid == 1 ? MT_thread_get_qry_ctx() : NULL;
+	QryCtx *qc = h->role == TRANSIENT ? MT_thread_get_qry_ctx() : NULL;
 
 	h->base = NULL;
 	h->size = 1;
@@ -163,7 +164,7 @@ HEAPalloc(Heap *h, size_t nitems, size_t itemsize)
 	size_t allocated;
 	if (GDKinmemory(h->farmid) ||
 	    ((allocated = GDKmem_cursize()) + h->size < GDK_mem_maxsize &&
-	     h->size < (h->farmid == 0 ? GDK_mmap_minsize_persistent : GDK_mmap_minsize_transient) &&
+	     h->size < (h->role == PERSISTENT ? GDK_mmap_minsize_persistent : GDK_mmap_minsize_transient) &&
 	     h->size < ((GDK_mem_maxsize - allocated) >> 6))) {
 		h->storage = STORE_MEM;
 		size = h->size;
@@ -238,7 +239,7 @@ HEAPextend(Heap *h, size_t size)
 {
 	size_t osize = h->size;
 	size_t xsize;
-	QryCtx *qc = h->farmid == 1 ? MT_thread_get_qry_ctx() : NULL;
+	QryCtx *qc = h->role == TRANSIENT ? MT_thread_get_qry_ctx() : NULL;
 
 	if (size <= h->size)
 		return GDK_SUCCEED;	/* nothing to do */
@@ -306,7 +307,7 @@ HEAPextend(Heap *h, size_t size)
 		size_t allocated;
 		bool must_mmap = (!GDKinmemory(h->farmid) &&
 				   ((allocated = GDKmem_cursize()) + size >= GDK_mem_maxsize ||
-				    size >= (h->farmid == 0 ? GDK_mmap_minsize_persistent : GDK_mmap_minsize_transient) ||
+				    size >= (h->role == PERSISTENT ? GDK_mmap_minsize_persistent : GDK_mmap_minsize_transient) ||
 				    size >= ((GDK_mem_maxsize - allocated) >> 6)));
 
 		h->size = size;
@@ -477,6 +478,7 @@ GDKupgradevarheap(BAT *b, var_t v, BUN cap, BUN ncopy)
 		return GDK_FAIL;
 	*new = (Heap) {
 		.farmid = old->farmid,
+		.role = old->role,
 		.dirty = true,
 		.parentid = old->parentid,
 		.wasempty = old->wasempty,
@@ -605,7 +607,7 @@ void
 HEAPfree(Heap *h, bool rmheap)
 {
 	if (h->base) {
-		if (h->farmid == 1 && (h->storage == STORE_MEM || h->storage == STORE_MMAP)) {
+		if (h->role == TRANSIENT && (h->storage == STORE_MEM || h->storage == STORE_MMAP)) {
 			QryCtx *qc = MT_thread_get_qry_ctx();
 			if (qc)
 				ATOMIC_SUB(&qc->datasize, h->size);
@@ -702,7 +704,7 @@ HEAPload(Heap *h, const char *nme, const char *ext, bool trunc)
 
 	if (h->storage == STORE_INVALID) {
 		size_t allocated;
-		h->storage = h->size < (h->farmid == 0
+		h->storage = h->size < (h->role == PERSISTENT
 					? GDK_mmap_minsize_persistent
 					: GDK_mmap_minsize_transient) &&
 			(allocated = GDKmem_cursize()) < GDK_mem_maxsize &&
@@ -769,7 +771,7 @@ HEAPload(Heap *h, const char *nme, const char *ext, bool trunc)
 	QryCtx *qc = NULL;
 	if (h->storage != STORE_MEM)
 		size = (size + GDK_mmap_pagesize - 1) & ~(GDK_mmap_pagesize - 1);
-	if (h->farmid == 1 && (qc = MT_thread_get_qry_ctx()) != NULL) {
+	if (h->role == TRANSIENT && (qc = MT_thread_get_qry_ctx()) != NULL) {
 		ATOMIC_BASE_TYPE sz = 0;
 		sz = ATOMIC_ADD(&qc->datasize, size);
 		sz += h->size;
@@ -840,6 +842,7 @@ HEAPsave(Heap *h, const char *nme, const char *ext, bool dosync, BUN free, MT_Lo
 		  "(%s.%s,storage=%d,free=%zu,size=%zu,dosync=%s)\n",
 		  nme ? nme : "", ext, (int) h->storage, free, h->size,
 		  dosync?"true":"false");
+	assert(h->role != TEMPFARM);
 	if (lock)
 		MT_lock_set(lock);
 	if (free == h->free)

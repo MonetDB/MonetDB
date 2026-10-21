@@ -247,6 +247,7 @@ BATmaterialize(BAT *b, BUN cap)
 
 	*tail = (Heap) {
 		.farmid = BBPselectfarm(b->batRole, TYPE_oid, offheap),
+		.role = b->batRole,
 		.parentid = b->batCacheid,
 		.dirty = true,
 		.refs = ATOMIC_VAR_INIT(1),

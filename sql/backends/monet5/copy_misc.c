@@ -224,7 +224,8 @@ copy_report_error(struct error_handling *restrict admin, lng rel_row, int column
 			}
 			char *nme = BBP_physical(b->batCacheid);
 			*mask = (Heap) {
-				.farmid = 0,//BBPselectfarm(b->batRole, b->ttype, varheap),
+				.farmid = BBPselectfarm(b->batRole, b->ttype, varheap),
+				.role = b->batRole,
 				.parentid = b->batCacheid,
 				.dirty = true,
 				.refs = ATOMIC_VAR_INIT(1),

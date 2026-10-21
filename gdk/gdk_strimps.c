@@ -430,6 +430,7 @@ BATcheckstrimps(BAT *b)
 				   sizeof(hp->strimps.filename),
 				   nme, ".tstrimps", NULL);
 			hp->strimps.parentid = b->batCacheid;
+			hp->strimps.role = b->batRole;
 
 			/* check whether a persisted strimp can be found */
 			if ((fd = GDKfdlocate(hp->strimps.farmid, nme, "rb+", "tstrimps")) >= 0) {
@@ -746,6 +747,7 @@ STRMPcreateStrimpHeap(BAT *b, BAT *s)
 			ma_close(&ta_state);
 			return NULL;
 		}
+		r->strimps.role = b->batRole;
 
 		if ((r->masks = (strimp_masks_t *)GDKzalloc(STRIMP_HISTSIZE*sizeof(strimp_masks_t))) == NULL) {
 			HEAPfree(&r->strimps, true);

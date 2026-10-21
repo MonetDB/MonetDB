@@ -22,6 +22,7 @@ GDKinitialize_segment_tree(void)
 		return NULL;
 	*h = (Heap) {
 		.farmid = BBPselectfarm(TRANSIENT, TYPE_bte, dataheap),
+		.role = TRANSIENT,
 		.dirty = true,
 		.refs = ATOMIC_VAR_INIT(1),
 	};

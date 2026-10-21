@@ -279,7 +279,8 @@ string_sharing_bat(BUN cnt, const char *base)
 	}
 	char *nme = BBP_physical(b->batCacheid);
 	*hp = (Heap) {
-		.farmid = 1,//BBPselectfarm(b->batRole, b->ttype, varheap), // find the inmemory farm
+		.farmid = BBPselectfarm(TRANSIENT, TYPE_str, varheap), // find the inmemory farm
+		.role = TRANSIENT,
 		.parentid = b->batCacheid,
 		.dirty = true,
 		.refs = ATOMIC_VAR_INIT(1),

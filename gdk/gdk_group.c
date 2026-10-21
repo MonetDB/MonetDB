@@ -1103,6 +1103,7 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 		int bits;
 		BUN nbucket;
 		oid grp;
+		Hash hsh;
 
 	  lost_hash:
 		gc = g != NULL && (BATordered(g) || BATordered_rev(g));
@@ -1152,10 +1153,14 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 		/* nbucket is a power of two, so ctz(nbucket)
 		 * tells us which power of two */
 		bits = 8 * SIZEOF_OID - ctz(nbucket);
-		if ((hs = GDKzalloc(sizeof(Hash))) == NULL ||
-		    (hs->heaplink.farmid = BBPselectfarm(TRANSIENT, bi.type, hashheap)) < 0 ||
-		    (hs->heapbckt.farmid = BBPselectfarm(TRANSIENT, bi.type, hashheap)) < 0) {
-			GDKfree(hs);
+		hsh = (Hash) {
+			.heaplink.farmid = BBPselectfarm(TEMPFARM, bi.type, hashheap),
+			.heaplink.role = TEMPFARM,
+			.heapbckt.farmid = BBPselectfarm(TEMPFARM, bi.type, hashheap),
+			.heapbckt.role = TEMPFARM,
+		};
+		hs = &hsh;
+		if (hs->heaplink.farmid < 0 || hs->heapbckt.farmid < 0) {
 			hs = NULL;
 			GDKerror("cannot allocate hash table\n");
 			goto error;
@@ -1165,7 +1170,6 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 		if (snprintf(hs->heaplink.filename, sizeof(hs->heaplink.filename), "%s.thshgrpl%x", nme, (unsigned) MT_getpid()) >= (int) sizeof(hs->heaplink.filename) ||
 		    snprintf(hs->heapbckt.filename, sizeof(hs->heapbckt.filename), "%s.thshgrpb%x", nme, (unsigned) MT_getpid()) >= (int) sizeof(hs->heapbckt.filename) ||
 		    HASHnew(hs, t, BATcount(b), nbucket, BUN_NONE, false) != GDK_SUCCEED) {
-			GDKfree(hs);
 			hs = NULL;
 			GDKerror("cannot allocate hash table\n");
 			goto error;
@@ -1259,7 +1263,6 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 
 		HEAPfree(&hs->heapbckt, true);
 		HEAPfree(&hs->heaplink, true);
-		GDKfree(hs);
 	}
 	ma_close(&ta_state);
 	bat_iterator_end(&bi);
@@ -1321,7 +1324,6 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 	if (hs != NULL && hs != b->thash) {
 		HEAPfree(&hs->heaplink, true);
 		HEAPfree(&hs->heapbckt, true);
-		GDKfree(hs);
 	}
 	if (locked)
 		MT_rwlock_rdunlock(&b->thashlock);
