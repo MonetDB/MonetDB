@@ -84,12 +84,12 @@ transfer_to_systrans(BAT *b)
 		if (qc) {
 			if (b->theap->farmid == TRANSIENT && b->theap->parentid == b->batCacheid) {
 				ATOMIC_SUB(&qc->datasize, b->theap->size);
-				b->theap->farmid = SYSTRANS;
+				b->theap->role = SYSTRANS;
 				b->batRole = SYSTRANS;
 			}
 			if (b->tvheap && b->tvheap->farmid == TRANSIENT && b->tvheap->parentid == b->batCacheid) {
 				ATOMIC_SUB(&qc->datasize, b->tvheap->size);
-				b->tvheap->farmid = SYSTRANS;
+				b->tvheap->role = SYSTRANS;
 			}
 		}
 	}
@@ -1193,9 +1193,6 @@ dict_append_bat(sql_trans *tr, sql_delta **batp, BAT *i)
 				}
 				if (cs->bid && !new)
 					temp_destroy(cs->bid);
-				n = transfer_to_systrans(n);
-				if (n == NULL)
-					return NULL;
 				bat_set_access(n, BAT_READ);
 				cs->bid = temp_create(n);
 				bat_destroy(n);
@@ -1238,9 +1235,6 @@ dict_append_bat(sql_trans *tr, sql_delta **batp, BAT *i)
 				}
 				if (cs->bid && !new)
 					temp_destroy(cs->bid);
-				n = transfer_to_systrans(n);
-				if (n == NULL)
-					return NULL;
 				bat_set_access(n, BAT_READ);
 				cs->bid = temp_create(n);
 				bat_destroy(n);
@@ -1294,9 +1288,6 @@ for_append_bat(column_storage *cs, BAT *i, char *storage_type)
 				return NULL;
 			if (cs->bid)
 				temp_destroy(cs->bid);
-			n = transfer_to_systrans(n);
-			if (n == NULL)
-				return NULL;
 			bat_set_access(n, BAT_READ);
 			cs->bid = temp_create(n);
 			cs->ucnt = 0;
@@ -1714,15 +1705,9 @@ cs_update_bat( sql_trans *tr, sql_delta **batp, sql_table *t, BAT *tids, BAT *up
 						if (res == LOG_OK) {
 							temp_destroy(cs->uibid);
 							temp_destroy(cs->uvbid);
-							nui = transfer_to_systrans(nui);
-							nuv = transfer_to_systrans(nuv);
-							if (nui == NULL || nuv == NULL) {
-								res = LOG_ERR;
-							} else {
-								cs->uibid = temp_create(nui);
-								cs->uvbid = temp_create(nuv);
-								cs->ucnt = BATcount(nui);
-							}
+							cs->uibid = temp_create(nui);
+							cs->uvbid = temp_create(nuv);
+							cs->ucnt = BATcount(nui);
 						}
 					}
 					bat_destroy(nui);
@@ -1813,11 +1798,6 @@ dict_append_val(sql_trans *tr, sql_delta **batp, void *i, BUN cnt)
 				}
 				if (cs->bid && !new)
 					temp_destroy(cs->bid);
-				n = transfer_to_systrans(n);
-				if (n == NULL) {
-					bat_destroy(u);
-					return NULL;
-				}
 				bat_set_access(n, BAT_READ);
 				cs->bid = temp_create(n);
 				bat_destroy(n);
@@ -1856,11 +1836,6 @@ dict_append_val(sql_trans *tr, sql_delta **batp, void *i, BUN cnt)
 				}
 				if (cs->bid)
 					temp_destroy(cs->bid);
-				n = transfer_to_systrans(n);
-				if (n == NULL) {
-					bat_destroy(u);
-					return NULL;
-				}
 				bat_set_access(n, BAT_READ);
 				cs->bid = temp_create(n);
 				bat_destroy(n);
@@ -1898,9 +1873,6 @@ for_append_val(column_storage *cs, void *i, BUN cnt, char *storage_type, int tt)
 			/* TODO decompress updates if any */
 			if (cs->bid)
 				temp_destroy(cs->bid);
-			n = transfer_to_systrans(n);
-			if (n == NULL)
-				return NULL;
 			bat_set_access(n, BAT_READ);
 			cs->bid = temp_create(n);
 			cs->st = ST_DEFAULT;

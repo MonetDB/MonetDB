@@ -32,6 +32,7 @@ unshare_varsized_heap(BAT *b)
 		*h = (Heap) {
 			.parentid = b->batCacheid,
 			.farmid = BBPselectfarm(b->batRole, b->ttype, varheap),
+			.role = b->batRole,
 			.refs = ATOMIC_VAR_INIT(1),
 		};
 		strtconcat(h->filename, sizeof(h->filename),
@@ -550,6 +551,7 @@ append_varsized_bat(BAT *b, BATiter *ni, struct canditer *ci, bool mayshare)
 		*h = (Heap) {
 			.parentid = b->batCacheid,
 			.farmid = BBPselectfarm(b->batRole, b->ttype, varheap),
+			.role = b->batRole,
 			.refs = ATOMIC_VAR_INIT(1),
 		};
 		strtconcat(h->filename, sizeof(h->filename),

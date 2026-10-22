@@ -1443,6 +1443,7 @@ typedef enum {
 	PERSISTENT = 0,
 	TRANSIENT,
 	SYSTRANS,
+	TEMPFARM,
 } role_t;
 
 /* Heap storage modes */
@@ -1464,7 +1465,8 @@ typedef struct {
 #endif
 
 	ATOMIC_TYPE refs;	/* reference count for this heap */
-	bte farmid;		/* id of farm where heap is located */
+	int8_t farmid;		/* id of farm where heap is located */
+	role_t role;		/* role of this heap */
 	bool cleanhash;		/* string heaps must clean hash */
 	bool dirty;		/* specific heap dirty marker */
 	bool remove;		/* remove storage file when freeing */
@@ -3892,6 +3894,15 @@ gdk_export int BBPreadBBPline(FILE *fp, unsigned bbpversion, int *lineno,
 /* global calls */
 gdk_export gdk_return BBPaddfarm(const char *dirname, uint32_t rolemask,
 				 bool logerror);
+enum heaptype {
+	offheap,
+	varheap,
+	hashheap,
+	orderidxheap,
+	strimpheap,
+	dataheap
+};
+gdk_export int BBPselectfarm(role_t role, int type, enum heaptype hptype);
 
 /* update interface */
 gdk_export gdk_return BBPsave(BAT *b);

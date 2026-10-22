@@ -1342,6 +1342,7 @@ BATnegcands(oid tseq, BUN nr, BAT *odels)
 	}
 	*dels = (Heap) {
 		.farmid = BBPselectfarm(bn->batRole, bn->ttype, varheap),
+		.role = bn->batRole,
 		.parentid = bn->batCacheid,
 		.dirty = true,
 		.refs = ATOMIC_VAR_INIT(1),
@@ -1406,6 +1407,7 @@ BATmaskedcands(oid hseq, BUN nr, BAT *masked, bool selected)
 	}
 	*msks = (Heap) {
 		.farmid = BBPselectfarm(bn->batRole, bn->ttype, varheap),
+		.role = bn->batRole,
 		.parentid = bn->batCacheid,
 		.dirty = true,
 		.refs = ATOMIC_VAR_INIT(1),
@@ -1522,6 +1524,7 @@ BATunmask(BAT *b)
 		}
 		*dels = (Heap) {
 			.farmid = BBPselectfarm(TRANSIENT, TYPE_void, varheap),
+			.role = TRANSIENT,
 			.parentid = bn->batCacheid,
 			.dirty = true,
 			.refs = ATOMIC_VAR_INIT(1),

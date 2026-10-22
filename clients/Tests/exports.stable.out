@@ -235,6 +235,7 @@ void BBPrelinquishbats(void);
 int BBPrename(BAT *b, const char *nme);
 int BBPretain(bat b);
 gdk_return BBPsave(BAT *b);
+int BBPselectfarm(role_t role, int type, enum heaptype hptype);
 void BBPtmlock(void);
 void BBPtmunlock(void);
 int BBPunfix(bat b);

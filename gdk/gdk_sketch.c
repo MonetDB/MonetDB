@@ -79,8 +79,8 @@ sketch_estimate(uint8_t cnt_sketch[BUCKETS][CLZ_BUCKETS])
 	return alpha * (double) BUCKETS * BUCKETS / z;
 }
 
-#define my_is_int_nil(v) ((*(int *) v) == GDK_int_min - 1)
-#define my_is_lng_nil(v) ((*(lng *) v) == GDK_lng_min - 1)
+#define my_is_int_nil(v) is_int_nil(*(int *) (v))
+#define my_is_lng_nil(v) is_lng_nil(*(lng *) (v))
 #define my_is_str_nil(v) strNil(v)
 
 #define my_sizeof_int(v) sizeof(int)

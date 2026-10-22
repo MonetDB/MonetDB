@@ -470,6 +470,8 @@ BATcheckhash_locked(BAT *b)
 					   nme, ".thashb", NULL);
 				h->heaplink.storage = STORE_INVALID;
 				h->heapbckt.storage = STORE_INVALID;
+				h->heapbckt.role = b->batRole;
+				h->heaplink.role = b->batRole;
 
 				/* check whether a persisted hash can be found */
 				if ((fd = GDKfdlocate(h->heapbckt.farmid, nme, "rb+", "thashb")) >= 0) {
@@ -765,6 +767,13 @@ BAThash_impl(BATiter *restrict bi, struct canditer *restrict ci,
 	h->offsets = offsets;
 	h->heaplink.dirty = true;
 	h->heapbckt.dirty = true;
+	if (hascand) {
+		h->heaplink.role = TEMPFARM;
+		h->heapbckt.role = TEMPFARM;
+	} else {
+		h->heaplink.role = b->batRole;
+		h->heapbckt.role = b->batRole;
+	}
 	strtconcat(h->heaplink.filename, sizeof(h->heaplink.filename),
 		   nme, ".", ext, "l", NULL);
 	strtconcat(h->heapbckt.filename, sizeof(h->heapbckt.filename),

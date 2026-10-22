@@ -3840,6 +3840,8 @@ count_unique(BAT *b, BAT *s, BUN *cnt1, BUN *cnt2)
 		Hash hs = {
 			.heapbckt.parentid = b->batCacheid,
 			.heaplink.parentid = b->batCacheid,
+			.heapbckt.role = TEMPFARM,
+			.heaplink.role = TEMPFARM,
 		};
 
 		GDKclrerr();	/* not interested in BAThash errors */
