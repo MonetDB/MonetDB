@@ -1,6 +1,20 @@
 # ChangeLog file for devel
 # This file is updated with Maddlog
 
+* Thu Oct 22 2026 Martin van Dinther <martin.van.dinther@monetdbsolutions.com>
+- Added support for reading DNA sequence alignment data from *.sam and *.bam files.
+  Usage examples:
+    SELECT * FROM '/path/to/file1.bam';
+  or
+    SELECT * FROM file_loader('/path/to/file1.bam');
+  Prerequisites:
+  We use the HTSlib for reading these files and the library needs to be
+  pre-installed on your OS (e.g. on Fedora via: sudo dnf install htslib).
+  See also: https://www.htslib.org/download/
+  Also the MonetDB server has to be started with startup argument:
+   --loadmodule htslib
+  to enable it. By default it is not enabled.
+
 * Wed Oct 21 2026 Sjoerd Mullender <sjoerd@acm.org>
 - There is a new type of database farm, like the --dbextra farm, for
   temporary heaps.  Temporary heaps are heaps which are created and
