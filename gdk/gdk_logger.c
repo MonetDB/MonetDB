@@ -3286,7 +3286,7 @@ log_constant(logger *lg, int type, const void *val, log_id id, lng offset, lng c
 
 	if (LOG_DISABLED(lg) || !nr) {
 		/* logging is switched off */
-		if (lg_updated_set_bit(lg, id, 0) != GDK_SUCCEED)
+		if (!lg->inmemory && lg_updated_set_bit(lg, id, 0) != GDK_SUCCEED)
 			return GDK_FAIL;
 		if (nr) {
 			log_lock(lg);
@@ -3394,7 +3394,7 @@ internal_log_bat(logger *lg, BAT *b, log_id id, lng offset, lng cnt, int sliced,
 
 	if (LOG_DISABLED(lg) || !nr) {
 		/* logging is switched off */
-		if (lg_updated_set_bit(lg, id, 0) != GDK_SUCCEED)
+		if (!lg->inmemory && lg_updated_set_bit(lg, id, 0) != GDK_SUCCEED)
 			return GDK_FAIL;
 		if (nr)
 			return la_bat_update_count(lg, id, offset + cnt, lg->tid);
@@ -3629,7 +3629,7 @@ log_delta(logger *lg, BAT *uid, BAT *uval, log_id id)
 
 	if (LOG_DISABLED(lg)) {
 		/* logging is switched off */
-		if (lg_updated_set_bit(lg, id, 0) != GDK_SUCCEED)
+		if (!lg->inmemory && lg_updated_set_bit(lg, id, 0) != GDK_SUCCEED)
 			return GDK_FAIL;
 		log_unlock(lg);
 		return GDK_SUCCEED;
@@ -3967,7 +3967,7 @@ log_del_bat(logger *lg, log_bid bid)
 	}
 
 	assert(lg->catalog_lid->hseqbase == 0);
-	if (lg_updated_set_bit(lg, 0, p) != GDK_SUCCEED)
+	if (!lg->inmemory && lg_updated_set_bit(lg, 0, p) != GDK_SUCCEED)
 		return GDK_FAIL;
 	return BUNreplace(lg->catalog_lid, p, &lid, false);
 }
