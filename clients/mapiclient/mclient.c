@@ -69,6 +69,7 @@ static bool echoquery = false;
 static bool errseen = false;
 static bool allow_remote = false;
 static const char *curfile = NULL;
+static const char *reldir = NULL;
 
 #define setPrompt() snprintf(promptbuf, sizeof(promptbuf), "%.*s>", (int) sizeof(promptbuf) - 2, language)
 #define debugMode() (strncmp(promptbuf, "mdb", 3) == 0)
@@ -3316,7 +3317,13 @@ getfile(void *data, const char *filename, bool binary,
 #endif
 		}
 		if (f == NULL) {
-			if (curfile != NULL) {
+			if (reldir != NULL) {
+				size_t x = strlen(reldir) + strlen(fname) + 2;
+				char *b = malloc(x);
+				snprintf(b, x, "%s/%s", reldir, fname);
+				f = binary ? open_rstream(b) : open_rastream(b);
+				free(b);
+			} else if (curfile != NULL) {
 				const char *p = strrchr(curfile, '/');
 #ifdef _MSC_VER
 				const char *q = strrchr(curfile, '\\');
@@ -3445,9 +3452,7 @@ putfile(void *data, const char *filename, bool binary, const void *buf, size_t b
 	return NULL;		/* success */
 }
 
-static _Noreturn void usage(const char *prog, int xit);
-
-static void
+static _Noreturn void
 usage(const char *prog, int xit)
 {
 	mnstr_printf(stderr_stream, "Usage: %s [ options ] [ file or database [ file ... ] ]\n", prog);
@@ -3477,6 +3482,7 @@ usage(const char *prog, int xit)
 #ifdef HAVE_POPEN
 	mnstr_printf(stderr_stream, " -| cmd      | --pager=cmd        for pagination\n");
 #endif
+	mnstr_printf(stderr_stream, " -/ dir      | --relative-dir=dir directory for relative paths in ON CLIENT\n");
 	mnstr_printf(stderr_stream, " -v          | --version          show version information and exit\n");
 	mnstr_printf(stderr_stream, " -q          | --quiet            don't print welcome message\n");
 	mnstr_printf(stderr_stream, " -?          | --help             show this usage message\n");
@@ -3596,6 +3602,7 @@ main(int argc, char **argv)
 		{"Xdebug", 0, 0, 'X'},
 		{"timezone", 0, 0, 'z'},
 		{"allow-remote", 0, 0, 'R'},
+		{"relative-dir", 1, 0, '/'},
 		{0, 0, 0, 0}
 	};
 
@@ -3674,7 +3681,7 @@ main(int argc, char **argv)
 #ifdef HAVE_POPEN
 				"|:"
 #endif
-				"?",
+				"/:?",
 				long_options, &option_index)) != -1) {
 		switch (c) {
 		case 0:
@@ -3835,6 +3842,10 @@ main(int argc, char **argv)
 			pager = optarg;
 			break;
 #endif
+		case '/':
+			assert(optarg);
+			reldir = optarg;
+			break;
 		case '?':
 			/* a bit of a hack: look at the option that the
 			 * current `c' is based on and see if we recognize
