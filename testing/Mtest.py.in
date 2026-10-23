@@ -1110,6 +1110,27 @@ def PerformDir(env, testdir, testlist, total_tests):
             options = []            # not used
         else:
             oneserver = not restart
+            mod = None
+            for arg in options:
+                if arg == '--loadmodule':
+                    mod = ''
+                elif mod is not None:
+                    mod = arg
+                elif arg.startswith('--loadmodule='):
+                    mod = arg[13:]
+                if mod:
+                    so_prefix = '@SO_PREFIX@' if os.name != 'nt' else ''
+                    for lib in ['lib', 'lib64', 'lib/64', 'lib32']:
+                        if os.path.exists(
+                                os.path.join('@QXprefix@', lib,
+                                             f'monetdb5-@MONETDB_VERSION@',
+                                             f'{so_prefix}_{mod}@SO_EXT@')):
+                            break
+                    else:
+                        # Warn(f"Required module {mod} not available;"
+                        #      " skipping directory")
+                        return TSTDIR, elem, max(FdOut, FdErr), interrupted
+                    mod = None
 
         if testlist:
             tl = []
