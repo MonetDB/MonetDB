@@ -297,8 +297,8 @@ sam_query(int caller, mvc *sql, sql_subfunc *f, char *filename, list *res_exps, 
 
 			//QNAME FLAG RNAME POS MAPQ CIGAR RNEXT PNEXT TLEN SEQ QUAL [TAG:TYPE:VALUE]…
 			row++;
-			TRC_DEBUG(LOADER, "Fetched row %ld\n", row);
-// if (nrows >= 0) fprintf(stdout, "Fetched row %ld. nrows = %ld\n", row, nrows);
+			TRC_DEBUG(LOADER, "Fetched row "LLFMT"\n", row);
+// if (nrows >= 0) fprintf(stdout, "Fetched row "LLFMT". nrows = "LLFMT"\n", row, nrows);
 
 			if (gdkret == GDK_SUCCEED) {
 				/* 1 QNAME String [!-?A-~]{1,254} Query template NAME */
@@ -395,7 +395,7 @@ sam_query(int caller, mvc *sql, sql_subfunc *f, char *filename, list *res_exps, 
 				break;
 			}
 		}
-		TRC_INFO(LOADER, "Fetched %ld rows\n", row);
+		TRC_INFO(LOADER, "Fetched "LLFMT" rows\n", row);
 
 		/* after doing bunfastapp() update the properties for each BAT */
 		for (col = 0; col < SAM_NR_COLS; col++) {
@@ -553,4 +553,3 @@ static mel_func sam_init_funcs[] = {
 #endif
 LIB_STARTUP_FUNC(init_sam_mal)
 { mal_module("sam", NULL, sam_init_funcs); }
-
