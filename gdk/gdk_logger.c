@@ -3150,8 +3150,6 @@ log_constant(logger *lg, int type, const void *val, log_id id, lng offset, lng c
 
 	if (LOG_DISABLED(lg) || !nr) {
 		/* logging is switched off */
-		if (lg_updated_set_bit(lg, id, 0) != GDK_SUCCEED)
-			return GDK_FAIL;
 		if (nr) {
 			log_lock(lg);
 			ok = la_bat_update_count(lg, id, offset + cnt, lg->tid);
@@ -3258,8 +3256,6 @@ internal_log_bat(logger *lg, BAT *b, log_id id, lng offset, lng cnt, int sliced,
 
 	if (LOG_DISABLED(lg) || !nr) {
 		/* logging is switched off */
-		if (lg_updated_set_bit(lg, id, 0) != GDK_SUCCEED)
-			return GDK_FAIL;
 		if (nr)
 			return la_bat_update_count(lg, id, offset + cnt, lg->tid);
 		return GDK_SUCCEED;
@@ -3484,8 +3480,6 @@ log_delta(logger *lg, BAT *uid, BAT *uval, log_id id)
 
 	if (LOG_DISABLED(lg)) {
 		/* logging is switched off */
-		if (lg_updated_set_bit(lg, id, 0) != GDK_SUCCEED)
-			return GDK_FAIL;
 		log_unlock(lg);
 		return GDK_SUCCEED;
 	}
