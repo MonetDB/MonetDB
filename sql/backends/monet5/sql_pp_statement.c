@@ -678,7 +678,7 @@ stmt_mark_nulls(backend *be, stmt *inout, stmt *nils, stmt *pos)
 
 	stmt *s = stmt_none(be);
 	if (s == NULL) return NULL;
-	s->op4.typeval = *tail_type(pos);
+	s->subtype = *tail_type(pos);
 	s->nr = getArg(q, 0);
 	s->nrcols = 1;
 	s->q = q;
@@ -700,7 +700,7 @@ stmt_hash_empty(backend *be, stmt *ht)
 
 	stmt *s = stmt_none(be);
 	if (s == NULL) return NULL;
-	s->op4.typeval = *sql_fetch_localtype(TYPE_bit);
+	s->subtype = *sql_fetch_localtype(TYPE_bit);
 	s->nr = getArg(q, 0);
 	s->nrcols = 1;
 	s->q = q;
@@ -791,7 +791,7 @@ stmt_oahash_select_unmatched(backend *be, const stmt *slice, const stmt *cnt)
 
 	stmt *s = stmt_none(be);
 	if (s == NULL) return NULL;
-	s->op4.typeval = *sql_fetch_localtype(TYPE_oid);
+	s->subtype = *sql_fetch_localtype(TYPE_oid);
 	s->nr = getArg(q, 0);
 	s->nrcols = 1;
 	s->q = q;
