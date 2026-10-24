@@ -32,11 +32,14 @@ extern stmt *stmt_fhash_probe(backend *be, stmt *key, stmt *rhs_ht, stmt *freq, 
 extern stmt *stmt_algebra_project(backend *be, stmt *inout, stmt *pos, stmt *val, const char *fname);
 extern stmt *stmt_oahash_project_cart(backend *be, stmt *col, stmt *repeat, bool outer, bool expand);
 extern stmt *stmt_mark_matched(backend *be, stmt *inout, stmt *pos); /* mark matched and return those rows not yet mark earlier */
+extern stmt *stmt_mark_nulls(backend *be, stmt *inout, stmt *nils, stmt *pos); /* mark nulls and return (dummy) rows */
+extern stmt *stmt_hash_empty(backend *be, stmt *ht); /* check empty hash table */
 
 extern stmt *stmt_oahash_expand(backend *be, const stmt *prb_res, const stmt *freq, bit outer);
 extern stmt *stmt_oahash_explode(backend *be, const stmt *prb_res, const stmt *freq, const stmt *ht_sink, bit outer);
 
 extern stmt *stmt_oahash_explode_unmatched(backend *be, const stmt *ht, const stmt *mrk, const stmt *freq);
+extern stmt *stmt_oahash_select_unmatched(backend *be, const stmt *match_slice, const stmt *cnt);
 
 extern InstrPtr stmt_part_new(backend *be, int nr_parts);
 extern stmt *stmt_mat_new(backend *be, sql_subtype *t, int nr_parts);
