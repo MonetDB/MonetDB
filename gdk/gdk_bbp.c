@@ -445,10 +445,10 @@ vheapinit(BAT *b, const char *buf, unsigned bbpversion, const char *filename, in
 		.base = NULL,
 		.storage = STORE_INVALID,
 		.cleanhash = true,
-		.newstorage = STORE_INVALID,
 		.dirty = false,
 		.parentid = b->batCacheid,
 		.farmid = BBPselectfarm(PERSISTENT, b->ttype, varheap),
+		.role = PERSISTENT,
 		.hasfile = free > 0,
 	};
 	strtconcat(b->tvheap->filename, sizeof(b->tvheap->filename),
@@ -587,8 +587,8 @@ heapinit(BAT *b, const char *buf,
 	b->theap->base = NULL;
 	settailname(b->theap, filename, t, width);
 	b->theap->storage = STORE_INVALID;
-	b->theap->newstorage = STORE_INVALID;
 	b->theap->farmid = BBPselectfarm(PERSISTENT, b->ttype, offheap);
+	b->theap->role = PERSISTENT,
 	b->theap->dirty = false;
 	b->theap->parentid = b->batCacheid;
 	if (minpos < b->batCount)
@@ -1104,6 +1104,9 @@ BBPaddfarm(const char *dirname, uint32_t rolemask, bool logerror)
 			GDKerror("bad rolemask\n");
 		return GDK_FAIL;
 	}
+	/* transient and systrans must be same farm */
+	if (rolemask & (1 << TRANSIENT))
+		rolemask |= 1 << SYSTRANS;
 	if (strcmp(dirname, "in-memory") == 0 ||
 	    /* backward compatibility: */ strcmp(dirname, ":memory:") == 0) {
 		dirname = NULL;
@@ -1160,6 +1163,10 @@ BBPaddfarm(const char *dirname, uint32_t rolemask, bool logerror)
 			}
 			return GDK_SUCCEED;
 		}
+		if (BBPfarms[i].roles & rolemask) {
+			GDKerror("role added multiple times");
+			return GDK_FAIL;
+		}
 	}
 	if (logerror)
 		GDKerror("too many farms\n");
@@ -1170,6 +1177,7 @@ gdk_return
 BBPchkfarms(void)
 {
 	const char *dir = NULL;
+	const char *tdir = NULL;
 	uint32_t rolemask = 0;
 	if ((BBPfarms[0].roles & 1) == 0) {
 		GDKerror("Must call BBPaddfarms at least once for persistent data\n");
@@ -1179,17 +1187,30 @@ BBPchkfarms(void)
 		if (BBPfarms[i].roles != 0) {
 			dir = BBPfarms[i].dirname;
 			rolemask |= BBPfarms[i].roles;
+			if (BBPfarms[i].roles & (1U << TRANSIENT))
+				tdir = BBPfarms[i].dirname;
 		}
 	}
 	if (dir == NULL)
 		dir = "in-memory";
+	if (tdir == NULL)
+		tdir = "in-memory";
 	if ((rolemask & (1U << TRANSIENT)) == 0) {
 		gdk_return rc = BBPaddfarm(dir, 1U << TRANSIENT, true);
 		if (rc != GDK_SUCCEED)
 			return rc;
+		tdir = dir;
 	}
 	if ((rolemask & (1U << SYSTRANS)) == 0) {
-		gdk_return rc = BBPaddfarm(dir, 1U << SYSTRANS, true);
+		int farmid = BBPselectfarm(TRANSIENT, TYPE_int, offheap);
+		if (farmid < 0) {
+			GDKerror("transient farm not found");
+			return GDK_FAIL;
+		}
+		BBPfarms[farmid].roles |= 1 << SYSTRANS;
+	}
+	if ((rolemask & (1U << TEMPFARM)) == 0) {
+		gdk_return rc = BBPaddfarm(tdir, 1U << TEMPFARM, true);
 		if (rc != GDK_SUCCEED)
 			return rc;
 	}
@@ -2478,9 +2499,11 @@ new_bbpentry(FILE *fp, bat i, BUN size, BATiter *bi)
 	assert(bi->b->batRole == PERSISTENT);
 	assert(0 <= bi->h->farmid && bi->h->farmid < MAXFARMS);
 	assert(BBPfarms[bi->h->farmid].roles & (1U << PERSISTENT));
+	assert(bi->h->role == PERSISTENT);
 	if (bi->vh) {
 		assert(0 <= bi->vh->farmid && bi->vh->farmid < MAXFARMS);
 		assert(BBPfarms[bi->vh->farmid].roles & (1U << PERSISTENT));
+		assert(bi->vh->role == PERSISTENT);
 	}
 	assert(size <= bi->count || size == BUN_NONE);
 	assert(BBP_options(i) == NULL || strpbrk(BBP_options(i), "\r\n") == NULL);
@@ -3784,10 +3807,7 @@ dirty_bat(bat *i, bool subcommit, bool lock)
 		if (BBP_status(bid) & BBPLOADED) {
 			b = BBP_desc(bid);
 			MT_lock_set(&b->theaplock);
-			if ((BBP_status(bid) & BBPNEW) &&
-			    BATcheckmodes(b, false) != GDK_SUCCEED) /* check mmap modes */
-				*i = -bid;	/* error */
-			else if ((BBP_status(bid) & BBPPERSISTENT) &&
+			if ((BBP_status(bid) & BBPPERSISTENT) &&
 				 (subcommit || BATdirty(b))) {
 				MT_lock_unset(&b->theaplock);
 				return b;	/* the bat is loaded, persistent and dirty */
@@ -3853,35 +3873,6 @@ heap_move(Heap *hp, const char *srcdir, const char *dstdir, const char *nme, con
 		/* dont overwrite heap with the committed state
 		 * already in dstdir */
 		return GDK_SUCCEED;
-	} else if (hp->newstorage == STORE_PRIV &&
-		   !file_exists(hp->farmid, srcdir, nme, ext)) {
-
-		/* In order to prevent half-saved X.new files
-		 * surviving a recover we create a dummy file in the
-		 * BACKUP(dstdir) whose presence will trigger
-		 * BBPrecover to remove them.  Thus, X will prevail
-		 * where it otherwise wouldn't have.  If X already has
-		 * a saved X.new, that one is backed up as normal.
-		 */
-
-		FILE *fp;
-		long_str kill_ext;
-		char path[MAXPATH];
-
-		strtconcat(kill_ext, sizeof(kill_ext), ext, ".kill", NULL);
-		if (GDKfilepath(path, sizeof(path), hp->farmid, dstdir, nme, kill_ext) != GDK_SUCCEED)
-			return GDK_FAIL;
-		fp = MT_fopen(path, "w");
-		if (fp == NULL)
-			GDKsyserror("heap_move: cannot open file %s\n", path);
-		TRC_DEBUG(IO, "open %s = %d\n", path, fp ? 0 : -1);
-
-		if (fp != NULL) {
-			fclose(fp);
-			return GDK_SUCCEED;
-		} else {
-			return GDK_FAIL;
-		}
 	}
 	return file_move(hp->farmid, srcdir, dstdir, nme, ext);
 }
@@ -3964,7 +3955,6 @@ static gdk_return
 do_backup(Heap *h, bool dirty, bool subcommit)
 {
 	gdk_return ret = GDK_SUCCEED;
-	char extnew[16];
 
 	if (h->wasempty) {
 		return GDK_SUCCEED;
@@ -3994,20 +3984,11 @@ do_backup(Heap *h, bool dirty, bool subcommit)
 		assert(ext != NULL);
 		*ext++ = '\0';
 
-		strtconcat(extnew, sizeof(extnew), ext, ".new", NULL);
-		if (dirty &&
-		    !file_exists(h->farmid, BAKDIR, nme, extnew) &&
-		    !file_exists(h->farmid, BAKDIR, nme, ext)) {
+		if (dirty && !file_exists(h->farmid, BAKDIR, nme, ext)) {
 			/* if the heap is dirty and there is no heap
-			 * file (with or without .new extension) in
-			 * the BAKDIR, move the heap (preferably with
-			 * .new extension) to the correct backup
-			 * directory */
-			if (file_exists(h->farmid, srcdir, nme, extnew)) {
-				mvret = heap_move(h, srcdir,
-						  subcommit ? SUBDIR : BAKDIR,
-						  nme, extnew);
-			} else if (file_exists(h->farmid, srcdir, nme, ext)) {
+			 * file in the BAKDIR, move the heap to the
+			 * correct backup directory */
+			if (file_exists(h->farmid, srcdir, nme, ext)) {
 				mvret = heap_move(h, srcdir,
 						  subcommit ? SUBDIR : BAKDIR,
 						  nme, ext);
@@ -4021,9 +4002,7 @@ do_backup(Heap *h, bool dirty, bool subcommit)
 			/* if subcommit, we may need to move an
 			 * already made backup from BAKDIR to
 			 * SUBDIR */
-			if (file_exists(h->farmid, BAKDIR, nme, extnew))
-				mvret = file_move(h->farmid, BAKDIR, SUBDIR, nme, extnew);
-			else if (file_exists(h->farmid, BAKDIR, nme, ext))
+			if (file_exists(h->farmid, BAKDIR, nme, ext))
 				mvret = file_move(h->farmid, BAKDIR, SUBDIR, nme, ext);
 		}
 		/* there is a situation where the move may fail,
@@ -4034,17 +4013,6 @@ do_backup(Heap *h, bool dirty, bool subcommit)
 		 */
 		if (mvret != GDK_SUCCEED && file_exists(h->farmid, srcdir, nme, ext)) {
 			ret = GDK_FAIL;
-		}
-		if (subcommit &&
-		    (h->storage == STORE_PRIV || h->newstorage == STORE_PRIV)) {
-			long_str kill_ext;
-
-			strtconcat(kill_ext, sizeof(kill_ext),
-				   ext, ".new.kill", NULL);
-			if (file_exists(h->farmid, BAKDIR, nme, kill_ext) &&
-			    file_move(h->farmid, BAKDIR, SUBDIR, nme, kill_ext) != GDK_SUCCEED) {
-				ret = GDK_FAIL;
-			}
 		}
 	}
 	return ret;

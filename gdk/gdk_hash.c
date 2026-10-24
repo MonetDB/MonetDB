@@ -193,8 +193,8 @@ HASHupgradehashheap(BAT *b)
 	assert(nwidth <= SIZEOF_BUN);
 	assert((nwidth & (nwidth - 1)) == 0);
 
-	if (HEAPextend(&h->heaplink, h->heaplink.size * nwidth / h->width, true) != GDK_SUCCEED ||
-	    HEAPextend(&h->heapbckt, (h->heapbckt.size - HASH_HEADER_SIZE * SIZEOF_SIZE_T) * nwidth / h->width + HASH_HEADER_SIZE * SIZEOF_SIZE_T, true) != GDK_SUCCEED) {
+	if (HEAPextend(&h->heaplink, h->heaplink.size * nwidth / h->width) != GDK_SUCCEED ||
+	    HEAPextend(&h->heapbckt, (h->heapbckt.size - HASH_HEADER_SIZE * SIZEOF_SIZE_T) * nwidth / h->width + HASH_HEADER_SIZE * SIZEOF_SIZE_T) != GDK_SUCCEED) {
 		b->thash = NULL;
 		doHASHdestroy(b, h);
 		return GDK_FAIL;
@@ -357,8 +357,7 @@ HASHgrowbucket(BAT *b)
 		assert(h->heapbckt.free == nbucket * h->width + HASH_HEADER_SIZE * SIZEOF_SIZE_T);
 		if (h->heapbckt.free + h->width > h->heapbckt.size) {
 			if (HEAPextend(&h->heapbckt,
-				       h->heapbckt.size + GDK_mmap_pagesize,
-				       true) != GDK_SUCCEED) {
+				       h->heapbckt.size + GDK_mmap_pagesize) != GDK_SUCCEED) {
 				return GDK_FAIL;
 			}
 			h->Bckt = h->heapbckt.base + HASH_HEADER_SIZE * SIZEOF_SIZE_T;
@@ -470,9 +469,9 @@ BATcheckhash_locked(BAT *b)
 					   sizeof(h->heapbckt.filename),
 					   nme, ".thashb", NULL);
 				h->heaplink.storage = STORE_INVALID;
-				h->heaplink.newstorage = STORE_INVALID;
 				h->heapbckt.storage = STORE_INVALID;
-				h->heapbckt.newstorage = STORE_INVALID;
+				h->heapbckt.role = b->batRole;
+				h->heaplink.role = b->batRole;
 
 				/* check whether a persisted hash can be found */
 				if ((fd = GDKfdlocate(h->heapbckt.farmid, nme, "rb+", "thashb")) >= 0) {
@@ -768,6 +767,13 @@ BAThash_impl(BATiter *restrict bi, struct canditer *restrict ci,
 	h->offsets = offsets;
 	h->heaplink.dirty = true;
 	h->heapbckt.dirty = true;
+	if (hascand) {
+		h->heaplink.role = TEMPFARM;
+		h->heapbckt.role = TEMPFARM;
+	} else {
+		h->heaplink.role = b->batRole;
+		h->heapbckt.role = b->batRole;
+	}
 	strtconcat(h->heaplink.filename, sizeof(h->heaplink.filename),
 		   nme, ".", ext, "l", NULL);
 	strtconcat(h->heapbckt.filename, sizeof(h->heapbckt.filename),
@@ -1200,8 +1206,7 @@ HASHappend_locked_hashval(BATiter *bi, BUN i, const void *v, BUN hsh)
 	     HASHgrowbucket(b) != GDK_SUCCEED) ||
 	    ((i + 1) * h->width > h->heaplink.size &&
 	     HEAPextend(&h->heaplink,
-			i * h->width + GDK_mmap_pagesize,
-			true) != GDK_SUCCEED)) {
+			i * h->width + GDK_mmap_pagesize) != GDK_SUCCEED)) {
 		b->thash = NULL;
 		HEAPfree(&h->heapbckt, true);
 		HEAPfree(&h->heaplink, true);

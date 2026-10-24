@@ -430,6 +430,7 @@ BATcheckstrimps(BAT *b)
 				   sizeof(hp->strimps.filename),
 				   nme, ".tstrimps", NULL);
 			hp->strimps.parentid = b->batCacheid;
+			hp->strimps.role = b->batRole;
 
 			/* check whether a persisted strimp can be found */
 			if ((fd = GDKfdlocate(hp->strimps.farmid, nme, "rb+", "tstrimps")) >= 0) {
@@ -746,6 +747,7 @@ STRMPcreateStrimpHeap(BAT *b, BAT *s)
 			ma_close(&ta_state);
 			return NULL;
 		}
+		r->strimps.role = b->batRole;
 
 		if ((r->masks = (strimp_masks_t *)GDKzalloc(STRIMP_HISTSIZE*sizeof(strimp_masks_t))) == NULL) {
 			HEAPfree(&r->strimps, true);
@@ -1099,7 +1101,7 @@ STRMPappendBitstring(BAT *b, const char *s)
 		size_t sizes_offset = (char *)strmp->sizes_base - strmp->strimps.base;
 		size_t pairs_offset = (char *)strmp->pairs_base - strmp->strimps.base;
 		size_t bitstrings_offset = (char *)strmp->bitstrings_base - strmp->strimps.base;
-		if (HEAPextend(&(strmp->strimps), (size_t)(extend_factor*BATcount(pb)*sizeof(uint64_t)), false) != GDK_SUCCEED) {
+		if (HEAPextend(&strmp->strimps, (size_t) (extend_factor*BATcount(pb)*sizeof(uint64_t))) != GDK_SUCCEED) {
 			MT_lock_unset(&pb->batIdxLock);
 			GDKerror("Cannot extend heap\n");
 			if (pb != b)

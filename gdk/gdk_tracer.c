@@ -190,8 +190,9 @@ GDKtracer_init_trace_file(const char *dbpath, const char *dbtrace)
 static gdk_return
 _GDKtracer_init_basic_adptr(void)
 {
-	return GDKtracer_init_trace_file(GDKgetenv("gdk_dbpath"),
-					 GDKgetenv("gdk_dbtrace"));
+	return GDKtracer_init_trace_file(
+		GDKinmemory(0) ? NULL : GDKgetenv("gdk_dbpath"),
+		GDKgetenv("gdk_dbtrace"));
 }
 
 static void

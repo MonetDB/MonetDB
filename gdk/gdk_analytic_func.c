@@ -22,6 +22,7 @@ GDKinitialize_segment_tree(void)
 		return NULL;
 	*h = (Heap) {
 		.farmid = BBPselectfarm(TRANSIENT, TYPE_bte, dataheap),
+		.role = TRANSIENT,
 		.dirty = true,
 		.refs = ATOMIC_VAR_INIT(1),
 	};
@@ -55,7 +56,7 @@ GDKrebuild_segment_tree(oid ncount, oid data_size, Heap *st, void **segment_tree
 	if (total_size > st->size) {
 		total_size = (((total_size) + 1023) & ~1023); /* align to a multiple of 1024 bytes */
 		st->free = st->size;
-		if (HEAPextend(st, total_size, true) != GDK_SUCCEED)
+		if (HEAPextend(st, total_size) != GDK_SUCCEED)
 			return GDK_FAIL;
 		*segment_tree = st->base;
 		*levels_offset = (oid*)(st->base + next_tree_size); /* levels offset will be next to the segment tree */

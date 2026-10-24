@@ -1364,8 +1364,12 @@ _rel_projections(mvc *sql, sql_rel *rel, sql_alias *tname, int settname, int int
 		exps_reset_props(rexps, is_left(rel->op) || is_full(rel->op), (!fkjoin || fkjoin == 1) ? false : true);
 		if (rexps)
 			lexps = list_join(lexps, rexps);
-		if (rel->attr)
-			append(lexps, exp_ref(sql, rel->attr->h->data));
+		if (rel->attr) {
+			sql_exp *e = exp_ref(sql, rel->attr->h->data);
+			append(lexps, e);
+			if (is_left(rel->op) || rel->op == op_full)
+				set_has_nil(e);
+		}
 		return lexps;
 	case op_groupby:
 		if (list_empty(rel->exps) && rel->r) {

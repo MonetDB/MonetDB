@@ -119,7 +119,7 @@ extern run_optimizer bind_joins(visitor *v, global_props *gp) __attribute__((__v
 /* these rewriters are shared by multiple optimizers */
 extern sql_rel *rel_split_project_(visitor *v, sql_rel *rel, int top) __attribute__((__visibility__("hidden")));
 extern sql_exp *exp_push_down_prj(mvc *sql, sql_exp *e, sql_rel *f, sql_rel *t) __attribute__((__visibility__("hidden")));
-extern sql_exp *add_exp_too_project(mvc *sql, sql_exp *e, sql_rel *rel) __attribute__((__visibility__("hidden")));
+extern sql_exp *add_exp_to_project(mvc *sql, sql_exp *e, sql_rel *rel) __attribute__((__visibility__("hidden")));
 
 /* these functions are used across different optimizers */
 extern sql_rel *rel_find_ref(sql_rel *r) __attribute__((__visibility__("hidden")));

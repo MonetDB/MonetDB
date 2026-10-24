@@ -28,19 +28,6 @@
  * this is a file on disk that is mapped into virtual memory.  This is
  * normally done MAP_SHARED, so we can use msync() to commit dirty
  * data using the OS virtual memory management.
- *
- * @item STORE_PRIV: read-write mapped region
- * in order to preserve ACID properties, we use a different memory
- * mapping on virtual memory that is writable. This is because in case
- * of a crash on a dirty STORE_MMAP heap, the OS may have written some
- * of the dirty pages to disk and other not (but it is impossible to
- * determine which).  The OS MAP_PRIVATE mode does not modify the file
- * on which is being mapped, rather creates substitute pages
- * dynamically taken from the swap file when modifications occur. This
- * is the only way to make writing to mmap()-ed regions safe.  To save
- * changes, we created a new file X.new; as some OS-es do not allow to
- * write into a file that has a mmap open on it (e.g. Windows).  Such
- * X.new files take preference over X files when opening them.
  * @end table
  * Read also the discussion in BATsetaccess (gdk_bat.c).
  */
@@ -49,6 +36,7 @@
 #include "gdk_private.h"
 #include "mutils.h"
 
+__attribute__((__access__(read_write, 2)))
 static void *
 HEAPcreatefile(int farmid, size_t *maxsz, const char *fn)
 {
@@ -64,10 +52,19 @@ HEAPcreatefile(int farmid, size_t *maxsz, const char *fn)
 		fn = path;
 	}
 	/* round up to multiple of GDK_mmap_pagesize */
-	fd = GDKfdlocate(NOFARM, fn, "wb", NULL);
+	fd = GDKfdlocate(NOFARM, fn, "ab+", NULL); /* create, no truncate */
 	if (fd >= 0) {
+		size_t size = (*maxsz + GDK_mmap_pagesize - 1) & ~(GDK_mmap_pagesize - 1);
+		if (size == 0)
+			size = GDK_mmap_pagesize;
+		if (GDKextendf(fd, size, fn) != GDK_SUCCEED) {
+			close(fd);
+			return NULL;
+		}
 		close(fd);
-		base = GDKload(NOFARM, fn, NULL, *maxsz, maxsz, STORE_MMAP);
+		base = GDKmmap(fn, MMAP_READ | MMAP_WRITE, size);
+		if (base != NULL)
+			*maxsz = size;
 	}
 	return base;
 }
@@ -86,19 +83,20 @@ decompose_filename(str nme)
 
 /* this function is called with the theaplock held */
 gdk_return
-HEAPgrow(Heap **hp, size_t size, bool mayshare)
+HEAPgrow(Heap **hp, size_t size)
 {
 	Heap *new;
 
 	ATOMIC_BASE_TYPE refs = ATOMIC_GET(&(*hp)->refs);
 	if ((refs & HEAPREFS) == 1) {
-		return HEAPextend(*hp, size, mayshare);
+		return HEAPextend(*hp, size);
 	}
 	new = GDKmalloc(sizeof(Heap));
 	if (new != NULL) {
 		Heap *old = *hp;
 		*new = (Heap) {
 			.farmid = old->farmid,
+			.role = old->role,
 			.dirty = true,
 			.parentid = old->parentid,
 			.wasempty = old->wasempty,
@@ -139,7 +137,7 @@ gdk_return
 HEAPalloc(Heap *h, size_t nitems, size_t itemsize)
 {
 	size_t size = 0;
-	QryCtx *qc = h->farmid == 1 ? MT_thread_get_qry_ctx() : NULL;
+	QryCtx *qc = h->role == TRANSIENT ? MT_thread_get_qry_ctx() : NULL;
 
 	h->base = NULL;
 	h->size = 1;
@@ -166,7 +164,7 @@ HEAPalloc(Heap *h, size_t nitems, size_t itemsize)
 	size_t allocated;
 	if (GDKinmemory(h->farmid) ||
 	    ((allocated = GDKmem_cursize()) + h->size < GDK_mem_maxsize &&
-	     h->size < (h->farmid == 0 ? GDK_mmap_minsize_persistent : GDK_mmap_minsize_transient) &&
+	     h->size < (h->role == PERSISTENT ? GDK_mmap_minsize_persistent : GDK_mmap_minsize_transient) &&
 	     h->size < ((GDK_mem_maxsize - allocated) >> 6))) {
 		h->storage = STORE_MEM;
 		size = h->size;
@@ -216,15 +214,13 @@ HEAPalloc(Heap *h, size_t nitems, size_t itemsize)
 		}
 		TRC_DEBUG(HEAP, "%s %zu %p (mmap)\n", h->filename, size, h->base);
 	}
-	h->newstorage = h->storage;
 	return GDK_SUCCEED;
 }
 
 /* Extend the allocated space of the heap H to be at least SIZE bytes.
  * If the heap grows beyond a threshold and a filename is known, the
  * heap is converted from allocated memory to a memory-mapped file.
- * When switching from allocated to memory mapped, if MAYSHARE is set,
- * the heap does not have to be copy-on-write.
+ * When switching from allocated to memory mapped.
  *
  * The function returns 0 on success, -1 on failure.
  *
@@ -239,11 +235,11 @@ HEAPalloc(Heap *h, size_t nitems, size_t itemsize)
  * first write the data to disk, free the memory, and then try to
  * memory map the saved data. */
 gdk_return
-HEAPextend(Heap *h, size_t size, bool mayshare)
+HEAPextend(Heap *h, size_t size)
 {
 	size_t osize = h->size;
 	size_t xsize;
-	QryCtx *qc = h->farmid == 1 ? MT_thread_get_qry_ctx() : NULL;
+	QryCtx *qc = h->role == TRANSIENT ? MT_thread_get_qry_ctx() : NULL;
 
 	if (size <= h->size)
 		return GDK_SUCCEED;	/* nothing to do */
@@ -274,7 +270,7 @@ HEAPextend(Heap *h, size_t size, bool mayshare)
 		char path[MAXPATH];
 
 		assert(h->hasfile);
-		TRC_DEBUG(HEAP, "Extending %s mmapped heap (%s)\n", h->storage == STORE_MMAP ? "shared" : "privately", h->filename);
+		TRC_DEBUG(HEAP, "Extending mmapped heap (%s)\n", h->filename);
 		/* extend memory mapped file */
 		if (GDKfilepath(path, sizeof(path), h->farmid, BATDIR, nme, ext) != GDK_SUCCEED) {
 			return GDK_FAIL;
@@ -294,10 +290,7 @@ HEAPextend(Heap *h, size_t size, bool mayshare)
 				return GDK_FAIL;
 			}
 		}
-		p = GDKmremap(path,
-			      h->storage == STORE_PRIV ?
-				MMAP_COPY | MMAP_READ | MMAP_WRITE :
-				MMAP_READ | MMAP_WRITE,
+		p = GDKmremap(path, MMAP_READ | MMAP_WRITE,
 			      h->base, h->size, &size);
 		if (p) {
 			h->size = size;
@@ -313,9 +306,8 @@ HEAPextend(Heap *h, size_t size, bool mayshare)
 		Heap bak = *h;
 		size_t allocated;
 		bool must_mmap = (!GDKinmemory(h->farmid) &&
-				   (h->newstorage != STORE_MEM ||
-				    (allocated = GDKmem_cursize()) + size >= GDK_mem_maxsize ||
-				    size >= (h->farmid == 0 ? GDK_mmap_minsize_persistent : GDK_mmap_minsize_transient) ||
+				   ((allocated = GDKmem_cursize()) + size >= GDK_mem_maxsize ||
+				    size >= (h->role == PERSISTENT ? GDK_mmap_minsize_persistent : GDK_mmap_minsize_transient) ||
 				    size >= ((GDK_mem_maxsize - allocated) >> 6)));
 
 		h->size = size;
@@ -334,7 +326,7 @@ HEAPextend(Heap *h, size_t size, bool mayshare)
 					return GDK_FAIL;
 				}
 			}
-			h->newstorage = h->storage = STORE_MEM;
+			h->storage = STORE_MEM;
 			h->base = GDKrealloc(h->base, size);
 			TRC_DEBUG(HEAP, "Extending malloced heap %s %zu->%zu %p->%p\n", h->filename, bak.size, size, bak.base, h->base);
 			if (h->base) {
@@ -355,40 +347,30 @@ HEAPextend(Heap *h, size_t size, bool mayshare)
 			 * to STORE_PRIV (copy-on-write memory mapped files),
 			 * but if the heap file doesn't exist yet, the BAT is
 			 * new and we can use STORE_MMAP */
-			int fd = GDKfdlocate(h->farmid, nme, "rb", ext);
+			int fd = GDKfdlocate(h->farmid, nme, "rb+", ext);
 			if (fd >= 0) {
 				assert(h->hasfile);
+				gdk_return rc = GDKextendf(fd, size, nme);
 				close(fd);
-				fd = GDKfdlocate(h->farmid, nme, "wb", ext);
-				if (fd >= 0) {
-					gdk_return rc = GDKextendf(fd, size, nme);
-					close(fd);
-					if (rc != GDK_SUCCEED) {
-						failure = "h->storage == STORE_MEM && can_map && fd >= 0 && GDKextendf() != GDK_SUCCEED";
-						goto failed;
-					}
-					h->storage = h->newstorage == STORE_MMAP && !mayshare ? STORE_PRIV : h->newstorage;
-					/* make sure we really MMAP */
-					if (must_mmap && h->newstorage == STORE_MEM)
-						h->storage = STORE_MMAP;
-					h->newstorage = h->storage;
-
-					h->base = NULL;
-					TRC_DEBUG(HEAP, "Converting malloced to %s mmapped heap %s\n", h->newstorage == STORE_MMAP ? "shared" : "privately", h->filename);
-					/* try to allocate a memory-mapped based
-					 * heap */
-					if (HEAPload(h, nme, ext, false) == GDK_SUCCEED) {
-						/* copy data to heap and free old
-						 * memory */
-						memcpy(h->base, bak.base, bak.free);
-						HEAPfree(&bak, false);
-						return GDK_SUCCEED;
-					}
-					failure = "h->storage == STORE_MEM && can_map && fd >= 0 && HEAPload() != GDK_SUCCEED";
-					/* we failed */
-				} else {
-					failure = "h->storage == STORE_MEM && can_map && fd < 0";
+				if (rc != GDK_SUCCEED) {
+					failure = "h->storage == STORE_MEM && can_map && fd >= 0 && GDKextendf() != GDK_SUCCEED";
+					goto failed;
 				}
+				h->storage = STORE_MMAP;
+
+				h->base = NULL;
+				TRC_DEBUG(HEAP, "Converting malloced to mmapped heap %s\n", h->filename);
+				/* try to allocate a memory-mapped based
+				 * heap */
+				if (HEAPload(h, nme, ext, false) == GDK_SUCCEED) {
+					/* copy data to heap and free old
+					 * memory */
+					memcpy(h->base, bak.base, bak.free);
+					HEAPfree(&bak, false);
+					return GDK_SUCCEED;
+				}
+				failure = "h->storage == STORE_MEM && can_map && fd >= 0 && HEAPload() != GDK_SUCCEED";
+				/* we failed */
 			} else {
 				/* no pre-existing heap file, so create a new
 				 * one */
@@ -407,7 +389,7 @@ HEAPextend(Heap *h, size_t size, bool mayshare)
 				h->base = HEAPcreatefile(h->farmid, &h->size, h->filename);
 				h->hasfile = true;
 				if (h->base) {
-					h->newstorage = h->storage = STORE_MMAP;
+					h->storage = STORE_MMAP;
 					if (bak.free > 0)
 						memcpy(h->base, bak.base, bak.free);
 					HEAPfree(&bak, false);
@@ -481,8 +463,7 @@ GDKupgradevarheap(BAT *b, var_t v, BUN cap, BUN ncopy)
 				BATsetcapacity(b, cap);
 			return GDK_SUCCEED;
 		}
-		if (HEAPgrow(&b->theap, newsize,
-			     b->batRestricted == BAT_READ) != GDK_SUCCEED)
+		if (HEAPgrow(&b->theap, newsize) != GDK_SUCCEED)
 			return GDK_FAIL;
 		b->batCapacity = newsize >> shift;
 		return GDK_SUCCEED;
@@ -497,6 +478,7 @@ GDKupgradevarheap(BAT *b, var_t v, BUN cap, BUN ncopy)
 		return GDK_FAIL;
 	*new = (Heap) {
 		.farmid = old->farmid,
+		.role = old->role,
 		.dirty = true,
 		.parentid = old->parentid,
 		.wasempty = old->wasempty,
@@ -625,7 +607,7 @@ void
 HEAPfree(Heap *h, bool rmheap)
 {
 	if (h->base) {
-		if (h->farmid == 1 && (h->storage == STORE_MEM || h->storage == STORE_MMAP || h->storage == STORE_PRIV)) {
+		if (h->role == TRANSIENT && (h->storage == STORE_MEM || h->storage == STORE_MMAP)) {
 			QryCtx *qc = MT_thread_get_qry_ctx();
 			if (qc)
 				ATOMIC_SUB(&qc->datasize, h->size);
@@ -633,15 +615,8 @@ HEAPfree(Heap *h, bool rmheap)
 		if (h->storage == STORE_MEM) {	/* plain memory */
 			TRC_DEBUG(HEAP, "HEAPfree %s %zu %p\n", h->filename, h->size, h->base);
 			GDKfree(h->base);
-		} else if (h->storage == STORE_CMEM) {
-			//heap is stored in regular C memory rather than GDK memory,so we call free()
-			free(h->base);
-		} else if (h->storage != STORE_NOWN) {	/* mapped file, or STORE_PRIV */
-			gdk_return ret = GDKmunmap(h->base,
-						   h->storage == STORE_PRIV ?
-						   MMAP_COPY | MMAP_READ | MMAP_WRITE :
-						   MMAP_READ | MMAP_WRITE,
-						   h->size);
+		} else if (h->storage != STORE_NOWN) {	/* mapped file */
+			gdk_return ret = GDKmunmap(h->base, h->size);
 
 			if (ret != GDK_SUCCEED) {
 				GDKsyserror("HEAPfree: %s was not mapped\n",
@@ -727,9 +702,11 @@ HEAPload(Heap *h, const char *nme, const char *ext, bool trunc)
 	lng t0;
 	static const char suffix[] = ".new";
 
-	if (h->storage == STORE_INVALID || h->newstorage == STORE_INVALID) {
+	if (h->storage == STORE_INVALID) {
 		size_t allocated;
-		h->storage = h->newstorage = h->size < (h->farmid == 0 ? GDK_mmap_minsize_persistent : GDK_mmap_minsize_transient) &&
+		h->storage = h->size < (h->role == PERSISTENT
+					? GDK_mmap_minsize_persistent
+					: GDK_mmap_minsize_transient) &&
 			(allocated = GDKmem_cursize()) < GDK_mem_maxsize &&
 			h->size < ((GDK_mem_maxsize - allocated) >> 6) ? STORE_MEM : STORE_MMAP;
 	}
@@ -794,7 +771,7 @@ HEAPload(Heap *h, const char *nme, const char *ext, bool trunc)
 	QryCtx *qc = NULL;
 	if (h->storage != STORE_MEM)
 		size = (size + GDK_mmap_pagesize - 1) & ~(GDK_mmap_pagesize - 1);
-	if (h->farmid == 1 && (qc = MT_thread_get_qry_ctx()) != NULL) {
+	if (h->role == TRANSIENT && (qc = MT_thread_get_qry_ctx()) != NULL) {
 		ATOMIC_BASE_TYPE sz = 0;
 		sz = ATOMIC_ADD(&qc->datasize, size);
 		sz += h->size;
@@ -832,9 +809,6 @@ HEAPload(Heap *h, const char *nme, const char *ext, bool trunc)
  * Saving STORE_MEM will do a write(fd, buf, size) in GDKsave
  * (explicit IO).
  *
- * Saving a STORE_PRIV heap X means that we must actually write to
- * X.new, thus we convert the mode passed to GDKsave to STORE_MEM.
- *
  * Saving STORE_MMAP will do a msync(buf, MSSYNC) in GDKsave (implicit
  * IO).
  *
@@ -844,10 +818,7 @@ HEAPload(Heap *h, const char *nme, const char *ext, bool trunc)
 gdk_return
 HEAPsave(Heap *h, const char *nme, const char *ext, bool dosync, BUN free, MT_Lock *lock)
 {
-	storage_t store = h->newstorage;
-	long_str extension;
 	gdk_return rc;
-	static const char suffix[] = ".new";
 
 	if (h->base == NULL) {
 		GDKerror("no heap to save\n");
@@ -863,30 +834,22 @@ HEAPsave(Heap *h, const char *nme, const char *ext, bool dosync, BUN free, MT_Lo
 		TRC_DEBUG(HEAP,
 			  "not saving: "
 			  "(%s.%s,storage=%d,free=%zu,size=%zu,dosync=%s)\n",
-			  nme?nme:"", ext, (int) h->newstorage, free, h->size,
+			  nme ? nme : "", ext, (int) h->storage, free, h->size,
 			  dosync?"true":"false");
 		return GDK_SUCCEED;
 	}
-	if (h->storage != STORE_MEM && store == STORE_PRIV) {
-		/* anonymous or private VM is saved as if it were malloced */
-		store = STORE_MEM;
-		assert(strlen(ext) + strlen(suffix) < sizeof(extension));
-		strtconcat(extension, sizeof(extension), ext, suffix, NULL);
-		ext = extension;
-	} else if (store != STORE_MEM) {
-		store = h->storage;
-	}
 	TRC_DEBUG(HEAP,
 		  "(%s.%s,storage=%d,free=%zu,size=%zu,dosync=%s)\n",
-		  nme?nme:"", ext, (int) h->newstorage, free, h->size,
+		  nme ? nme : "", ext, (int) h->storage, free, h->size,
 		  dosync?"true":"false");
+	assert(h->role != TEMPFARM);
 	if (lock)
 		MT_lock_set(lock);
 	if (free == h->free)
 		h->dirty = false;
 	if (lock)
 		MT_lock_unset(lock);
-	rc = GDKsave(h->farmid, nme, ext, h->base, free, store, dosync);
+	rc = GDKsave(h->farmid, nme, ext, h->base, free, h->storage, dosync);
 	if (lock)
 		MT_lock_set(lock);
 	if (rc == GDK_SUCCEED) {
@@ -894,7 +857,7 @@ HEAPsave(Heap *h, const char *nme, const char *ext, bool dosync, BUN free, MT_Lo
 		h->wasempty = false;
 	} else {
 		h->dirty = true;
-		if (store != STORE_MMAP)
+		if (h->storage != STORE_MMAP)
 			h->hasfile = false;
 	}
 	if (lock)
@@ -1099,7 +1062,7 @@ HEAP_malloc(BAT *b, size_t nbytes)
 
 		/* Increase the size of the heap. */
 		TRC_DEBUG(HEAP, "HEAPextend in HEAP_malloc %s %zu %zu\n", heap->filename, heap->size, newsize);
-		if (HEAPgrow(&b->tvheap, newsize, false) != GDK_SUCCEED) {
+		if (HEAPgrow(&b->tvheap, newsize) != GDK_SUCCEED) {
 			return (var_t) -1;
 		}
 		heap = b->tvheap;

@@ -332,7 +332,12 @@ typedef enum operator_type {
 #define is_dynamic(rel) 	((rel)->dynamic)
 
 #define is_freevar(e) 		((e)->freevar)
-#define set_freevar(e,level) 	(e)->freevar = level+1
+//#define set_freevar(e,level) 	(e)->freevar = level+1, (e)->unique=0
+static inline  void set_freevar(sql_exp *e, int level)
+{
+	e->freevar = level+1;
+	e->unique = 0;
+}
 #define reset_freevar(e) 	(e)->freevar = 0
 
 #define rel_is_ref(rel)		(((sql_rel*)(rel))->ref.refcnt > 1)
@@ -369,7 +374,8 @@ typedef struct relation {
 					 * 0 (no), 1 (left relation), 2 (right relation) */
 	 oahash:2,		/* op_join: generate parallel OAHash join plan?
 					 * 0 (no), 1 (hash left), 2 (hash right)
-					 * op_basetable: generate parallel hash table plan */
+					 * op_basetable: generate parallel hash table plan
+					 * op_buildhash, 1 means (anti) ie create bit matched, with nils already marked */
 	 spb:1;			/* should this `rel` start a pipeline block? */
 	/*
 	 * Used by rewriters at rel_unnest, rel_optimizer and rel_distribute so a relation is not modified twice

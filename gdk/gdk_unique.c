@@ -275,9 +275,11 @@ BATunique(BAT *b, BAT *s)
 		}
 		Hash hsh = {
 			.heaplink.parentid = b->batCacheid,
-			.heaplink.farmid = BBPselectfarm(TRANSIENT, bi.type, hashheap),
+			.heaplink.farmid = BBPselectfarm(TEMPFARM, bi.type, hashheap),
+			.heaplink.role = TEMPFARM,
 			.heapbckt.parentid = b->batCacheid,
-			.heapbckt.farmid = BBPselectfarm(TRANSIENT, bi.type, hashheap),
+			.heapbckt.farmid = BBPselectfarm(TEMPFARM, bi.type, hashheap),
+			.heapbckt.role = TEMPFARM,
 		};
 
 		if (hsh.heaplink.farmid < 0 ||

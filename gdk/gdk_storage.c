@@ -41,13 +41,12 @@
 #endif
 #endif
 
-/* GDKfilepath writes the path name of a database file into path and
- * returns a pointer to it.  The arguments are the buffer into which the
- * path is written, the size of that buffer, the farmID or -1, the name
- * of a subdirectory within the farm (i.e., something like BATDIR or
- * BAKDIR -- see gdk.h) or NULL, the name of a BAT (i.e. the name that
- * is stored in BBP.dir -- something like 07/714), and finally the file
- * extension.
+/* GDKfilepath writes the path name of a database file into path.  The
+ * arguments are the buffer into which the path is written, the size of
+ * that buffer, the farmID or -1, the name of a subdirectory within the
+ * farm (i.e., something like BATDIR or BAKDIR -- see gdk.h) or NULL,
+ * the name of a BAT (i.e. the name that is stored in BBP.dir --
+ * something like 07/714), and finally the file extension.
  *
  * If farmid is >= 0, GDKfilepath returns the complete path to the
  * specified farm concatenated with the other arguments with appropriate
@@ -220,33 +219,37 @@ GDKfdlocate(int farmid, const char *nme, const char *mode, const char *extension
 		nme = path;
 	}
 
-	if (*mode == 'm') {	/* file open for mmap? */
-		mode++;
-#ifdef _CYGNUS_H_
-	} else {
-		flags |= _FRDSEQ;	/* WIN32 CreateFile(FILE_FLAG_SEQUENTIAL_SCAN) */
-#endif
+	switch (*mode) {
+	case 'r':
+		if (strchr(mode, '+')) {
+			flags |= O_RDWR;
+		} else {
+			flags |= O_RDONLY;
+		}
+		break;
+	case 'a':
+		if (strchr(mode, '+')) {
+			flags |= O_RDWR | O_CREAT;
+		} else {
+			flags |= O_WRONLY | O_CREAT;
+		}
+		break;
+	case 'w':
+		if (strchr(mode, '+')) {
+			flags |= O_RDWR | O_CREAT | O_TRUNC;
+		} else {
+			flags |= O_WRONLY | O_CREAT | O_TRUNC;
+		}
+		break;
+	default:
+		errno = EINVAL;
+		return -1;
 	}
-
-	if (strchr(mode, 'w')) {
-		flags |= O_WRONLY | O_CREAT;
-		/* HACK ALERT: text files also get truncated but binary
-		 * files not!  This is because mmap extend depends on
-		 * files not getting truncated, and a second hot
-		 * snapshot needs to completely overwrite a pre-existing
-		 * (from an earlier snapshot) BBP.dir file. */
-		if (strchr(mode, 'b') == NULL)
-			flags |= O_TRUNC;
-	} else if (!strchr(mode, '+')) {
-		flags |= O_RDONLY;
-	} else {
-		flags |= O_RDWR;
-	}
-#ifdef WIN32
+#ifdef O_BINARY
 	flags |= strchr(mode, 'b') ? O_BINARY : O_TEXT;
 #endif
 	fd = MT_open(nme, flags);
-	if (fd < 0 && *mode == 'w') {
+	if (fd < 0 && *mode != 'r') {
 		/* try to create the directory, in case that was the problem */
 		if (GDKcreatedir(nme) == GDK_SUCCEED) {
 			fd = MT_open(nme, flags);
@@ -597,8 +600,6 @@ GDKload(int farmid, const char *nme, const char *ext, size_t size, size_t *maxsi
 		if (nme != NULL && GDKextend(nme, size) == GDK_SUCCEED) {
 			int mod = MMAP_READ | MMAP_WRITE;
 
-			if (mode == STORE_PRIV)
-				mod |= MMAP_COPY;
 			ret = GDKmmap(nme, mod, size);
 			if (ret != NULL) {
 				/* success: update allocated size */
@@ -817,7 +818,7 @@ BATload_intern(bat bid, bool lock)
 
 	/* LOAD bun heap */
 	if (b->ttype != TYPE_void) {
-		b->theap->storage = b->theap->newstorage = STORE_INVALID;
+		b->theap->storage = STORE_INVALID;
 		if ((b->batCount == 0 ?
 		     ATOMstorage(b->ttype) == TYPE_msk ?
 		     HEAPalloc(b->theap, (b->batCapacity + 31) / 32, 4) :
@@ -838,7 +839,7 @@ BATload_intern(bat bid, bool lock)
 
 	/* LOAD tail heap */
 	if (ATOMvarsized(b->ttype) && !b->ustr) {
-		b->tvheap->storage = b->tvheap->newstorage = STORE_INVALID;
+		b->tvheap->storage = STORE_INVALID;
 		if ((b->tvheap->free == 0 ?
 		     ATOMheap(b->ttype, b->tvheap, b->batCapacity) :
 		     HEAPload(b->tvheap, nme, "theap", b->batRestricted == BAT_READ)) != GDK_SUCCEED) {
