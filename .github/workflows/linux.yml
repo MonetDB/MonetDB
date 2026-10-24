@@ -48,7 +48,7 @@ jobs:
       - name: install packages
         run: | 
           sudo apt-get update
-          sudo apt-get install -y bison libbz2-dev libpcre2-dev liblzma-dev liblz4-dev libxml2-dev pkg-config libxxhash-dev unixodbc-dev zlib1g-dev libssl-dev htslib-dev
+          sudo apt-get install -y bison libbz2-dev libpcre2-dev liblzma-dev liblz4-dev libxml2-dev pkg-config libxxhash-dev unixodbc-dev zlib1g-dev libssl-dev libhts-dev
         if: runner.os == 'Linux'
 
       - name: Patch /etc/hosts on Unix
