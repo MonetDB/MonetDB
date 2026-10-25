@@ -457,8 +457,8 @@ rel2bin_oahash_build(backend *be, sql_rel *rel, list *refs)
 	}
 	if (!need_nulls && anti_join) {
 		/* mark used gid's */
-		stmt *one = stmt_const(be, prnt, stmt_bool(be, 0));
-		matched = stmt_algebra_project(be, matched, prnt, one, projectionRef);
+		stmt *zero = stmt_const(be, prnt, stmt_bool(be, 0));
+		(void)stmt_mark_nulls(be, matched, zero, prnt); /* needed to initialize with nils */
 		rel->oahash = 0; /* no nulls, pass down */
 	}
 	if (matched && nulls) {

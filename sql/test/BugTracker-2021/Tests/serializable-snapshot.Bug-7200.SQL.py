@@ -9,6 +9,7 @@ cursor2 = client2.cursor()
 MAX_ITERATIONS = 1000
 EXPECTED_SUM = sum(range(0, MAX_ITERATIONS))
 
+cursor1.execute("DROP TABLE if exists T;")
 cursor1.execute("CREATE TABLE T (k INT PRIMARY KEY, v INT);")
 
 class TestClient(threading.Thread):
@@ -37,8 +38,6 @@ res = cursor1.fetchall()
 if res != [(MAX_ITERATIONS, MAX_ITERATIONS, EXPECTED_SUM)]:
     sys.stderr.write("[(%d,%d,%d)] expected, [(%d,%d,%d)] received" % (MAX_ITERATIONS, MAX_ITERATIONS, EXPECTED_SUM, res[0][0], res[0][1], res[0][2]))
 
-
-cursor1.execute("DROP TABLE T;")
 
 cursor1.close()
 cursor2.close()
