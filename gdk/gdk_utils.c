@@ -433,6 +433,8 @@ size_t GDK_mmap_minsize_transient = MMAP_MINSIZE_TRANSIENT;
 size_t GDK_mmap_pagesize = MMAP_PAGESIZE; /* mmap granularity */
 size_t GDK_mem_maxsize = GDK_VM_MAXSIZE;
 size_t GDK_vm_maxsize = GDK_VM_MAXSIZE;
+BUN GDKL3_size = 0;
+
 
 #define SEG_SIZE(x)	(((x) + _MT_pagesize - 1) & ~(_MT_pagesize - 1))
 
@@ -1193,8 +1195,15 @@ GDKinit(opt *set, int setlen, bool embedded, const char *caller_revision)
 #else
 	GDKL3_size = 16*1024*1024;
 #endif
-	if ((p = GDKgetenv("gdk_l3_size")) != NULL)
+	if ((p = GDKgetenv("gdk_l3_size")) != NULL) {
 		GDKL3_size = (BUN) strtoll(p, NULL, 10);
+	} else {
+		snprintf(buf, sizeof(buf), "%zu", GDKL3_size);
+		if (GDKsetenv("gdk_l3_size", buf) != GDK_SUCCEED) {
+			TRC_CRITICAL(GDK, "GDKsetenv gdk_l3_size failed");
+			return GDK_FAIL;
+		}
+	}
 
 	if (!GDKinmemory(0)) {
 		if ((p = GDKgetenv("gdk_dbpath")) != NULL &&
@@ -1287,8 +1296,6 @@ GDKinit(opt *set, int setlen, bool embedded, const char *caller_revision)
 
 	return GDK_SUCCEED;
 }
-
-BUN GDKL3_size = 0;
 
 bool
 GDKexiting(void)

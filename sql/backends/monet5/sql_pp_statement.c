@@ -683,7 +683,8 @@ stmt_mark_nulls(backend *be, stmt *inout, stmt *nils, stmt *pos)
 	s->nrcols = 1;
 	s->q = q;
 	s->op1 = inout;
-	s->op2 = pos;
+	s->op2 = nils;
+	s->op3 = pos;
 	s->flag = cmp_project;
 	s->key = 0;
 	return s;
