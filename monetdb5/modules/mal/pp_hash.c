@@ -726,11 +726,12 @@ OAHASHmark_nils(Client ctx, bat *res, const bat *matched, const bat *nils, const
 	BUN cnt = BATcount(r);
 	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
 	qry_ctx = qry_ctx ? qry_ctx : &(QryCtx) {.endtime = 0};
+
+	MT_lock_set(&m->theaplock);
 	bit *mrk = Tloc(m, 0);
 	bit *nil = Tloc(n, 0);
 	oid *row = Tloc(r, 0);
 
-	MT_lock_set(&m->theaplock);
 	oid max = BATcount(m);
 	oid maxval = r->tmaxval;
 	str err = MAL_SUCCEED;
@@ -748,7 +749,7 @@ OAHASHmark_nils(Client ctx, bat *res, const bat *matched, const bat *nils, const
 	}
 	if (maxval > max && cnt) {
 		MT_lock_unset(&m->theaplock);
-		if (maxval >= BATcapacity(m) && BATextend(m, maxval + 1024) != GDK_SUCCEED) {
+		if (maxval > BATcapacity(m) && BATextend(m, maxval + 1024) != GDK_SUCCEED) {
 			MT_lock_set(&m->theaplock);
 			err = MAL_MALLOC_FAIL;
 		}
@@ -759,7 +760,8 @@ OAHASHmark_nils(Client ctx, bat *res, const bat *matched, const bat *nils, const
 			max = BATcount(m);
 			if (max < maxval)
 				memset(mrk+max, bit_nil, maxval-max);
-			BATsetcount(m, maxval);
+			if (maxval > max)
+				BATsetcount(m, maxval);
 		}
 	}
 	if (!err && cnt) {
