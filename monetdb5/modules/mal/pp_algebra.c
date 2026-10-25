@@ -919,8 +919,9 @@ LOCKEDAGGRnull(Client ctx, bat *result, const bit *hadnull)
 	return err;
 }
 
-#define unique_(Type, INIT_ALLOCATOR, INIT_ITER, IS_NIL, NEW_VAL, HASH_VAL, VAL_NOT_EQUAL, VAL_ASSIGN, ITER_DONE, NEXTK) \
-	if (tt == TYPE_##Type) {											\
+#define unique_(Cond, Type, INIT_ALLOCATOR, INIT_ITER, IS_NIL, NEW_VAL, HASH_VAL, VAL_NOT_EQUAL, VAL_ASSIGN, ITER_DONE, NEXTK) \
+	if (Cond) {															\
+		assert(!handled);												\
 		int slots = 0;													\
 		gid slot = 0;													\
 		INIT_ITER;														\
@@ -966,10 +967,11 @@ LOCKEDAGGRnull(Client ctx, bat *result, const bit *hadnull)
 				gp[r++] = b->hseqbase + i;								\
 		}																\
 		ITER_DONE;														\
+		handled = true;													\
 	}
 
 #define unique(Type)							\
-	unique_(Type,								\
+	unique_(tt == TYPE_##Type, Type,			\
 			(void) 0,							\
 			Type *bp = Tloc(b, 0),				\
 			is_##Type##_nil(bp[i]),				\
@@ -981,8 +983,21 @@ LOCKEDAGGRnull(Client ctx, bat *result, const bit *hadnull)
 			nextk								\
 		)
 
+#define funique()								\
+	unique_(!handled, void,						\
+			,									\
+			,									\
+			eq(Tloc(b, i), nil),				\
+			(void) 0,							\
+			(gid)hash(Tloc(b, i)),				\
+			!eq(((char*)vals)+ (g << b->tshift), Tloc(b,i)),	\
+			memcpy(((char*)vals)+ (g << b->tshift), Tloc(b,i), b->twidth),	\
+			(void) 0,							\
+			nextk								\
+		)
+
 #define aunique_(Type,CType)						\
-	unique_(Type,									\
+	unique_(tt == TYPE_##Type, Type,				\
 			allocator *ma = h->allocators[p->wid],	\
 			BATiter bi = bat_iterator(b),			\
 			VarHeapVal(bi.base,i,bi.width) == 0,	\
@@ -995,7 +1010,7 @@ LOCKEDAGGRnull(Client ctx, bat *result, const bit *hadnull)
 		)
 
 #define aunique(Type,CType)						\
-	unique_(Type,								\
+	unique_(tt == TYPE_##Type, Type,			\
 			,									\
 			BATiter bi = bat_iterator(b),		\
 			VarHeapVal(bi.base,i,bi.width) == 0,\
@@ -1094,7 +1109,9 @@ LALGunique(Client ctx, bat *rid, bat *uid, bat *bid, bat *sid, bit *Skip_nil)
 			int tt = b->ttype;
 			if (h->vkey)
 				tt = h->type;
+			tt = ATOMbasetype(tt);
 			oid *gp = Tloc(g, 0);
+			bool handled = false;
 
 			QryCtx *qry_ctx = MT_thread_get_qry_ctx();
 			qry_ctx = qry_ctx ? qry_ctx : &(QryCtx) {.endtime = 0};
@@ -1110,10 +1127,16 @@ LALGunique(Client ctx, bat *rid, bat *uid, bat *bid, bat *sid, bit *Skip_nil)
 #ifdef HAVE_HGE
 			unique(hge);
 #endif
+			unique(inet6);
 			unique(flt);
 			unique(dbl);
 			unique(uuid);
-			if (local_storage) {
+			if (!handled && !ATOMvarsized(tt)) {
+				const void *nil = ATOMnilptr(tt);
+				bool (*eq)(const void *, const void*) = ATOMequal(tt);
+				BUN (*hash)(const void *) = BATatoms[tt].atomHash;
+				funique();
+			} else if (local_storage) {
 				aunique_(str,const char *);
 			} else {
 				aunique(str,const char *);
@@ -1121,6 +1144,7 @@ LALGunique(Client ctx, bat *rid, bat *uid, bat *bid, bat *sid, bit *Skip_nil)
 			h->processed += cnt;
 			ht_deactivate(h);
 			TIMEOUT_CHECK(qry_ctx, err = createException(SQL, "ialgebra.unique", RUNTIME_QRY_TIMEOUT));
+			assert(handled);
 		}
 		if (err) {
 			BBPunfix(g->batCacheid);
@@ -1151,8 +1175,9 @@ LALGunique_keepnil(Client ctx, bat *rid, bat *uid, bat *bid, bat *sid)
 	return LALGunique(ctx, rid, uid, bid, sid, &f);
 }
 
-#define gunique_(Type, INIT_ALLOCATOR, INIT_ITER, IS_NIL, NEW_VAL, HASH_VAL, VAL_NOT_EQUAL, VAL_ASSIGN, ITER_DONE, NEXTK) \
-	if (tt == TYPE_##Type) {											\
+#define gunique_(Cond, Type, INIT_ALLOCATOR, INIT_ITER, IS_NIL, NEW_VAL, HASH_VAL, VAL_NOT_EQUAL, VAL_ASSIGN, ITER_DONE, NEXTK) \
+	if (Cond) {															\
+		assert(!handled);												\
 		int slots = 0;													\
 		gid slot = 0;													\
 		INIT_ITER;														\
@@ -1201,10 +1226,11 @@ LALGunique_keepnil(Client ctx, bat *rid, bat *uid, bat *bid, bat *sid)
 				gp[r++] = b->hseqbase + i;								\
 		}																\
 		ITER_DONE;														\
+		handled = true;													\
 	}
 
 #define gunique(Type)							\
-	gunique_(Type,								\
+	gunique_(tt == TYPE_##Type, Type,			\
 			 ,									\
 			 Type *bp = Tloc(b, 0),				\
 			is_##Type##_nil(bp[i]),				\
@@ -1216,8 +1242,22 @@ LALGunique_keepnil(Client ctx, bat *rid, bat *uid, bat *bid, bat *sid)
 			 nextk								\
 		)
 
+#define gfunique()								\
+	gunique_(!handled, void,					\
+			 ,									\
+			 ,									\
+			 eq(Tloc(b,i), nil),				\
+			 ,									\
+			 (gid)hash(Tloc(b, i)),				\
+			 !eq(((char*)vals)+ (g << b->tshift), Tloc(b,i)),	\
+			 memcpy(((char*)vals)+ (g << b->tshift), Tloc(b,i), b->twidth),	\
+			 ,									\
+			 nextk								\
+		)
+
+
 #define gaunique_(Type,CType)						\
-	gunique_(Type,									\
+	gunique_(tt == TYPE_##Type, Type,				\
 			 allocator *ma = h->allocators[p->wid], \
 			 BATiter bi = bat_iterator(b),			\
 			 VarHeapVal(bi.base,i,bi.width) == 0,	\
@@ -1230,7 +1270,7 @@ LALGunique_keepnil(Client ctx, bat *rid, bat *uid, bat *bid, bat *sid)
 		)
 
 #define gaunique(Type,CType)						\
-	gunique_(Type,									\
+	gunique_(tt == TYPE_##Type, Type,				\
 			 ,										\
 			 BATiter bi = bat_iterator(b),			\
 			 VarHeapVal(bi.base,i,bi.width) == 0,	\
@@ -1328,10 +1368,12 @@ LALGgroup_unique(Client ctx, bat *rid, bat *uid, bat *bid, bat *sid, bat *Gid, b
 			ATOMIC_BASE_TYPE expected = 0;
 			/* probably need bat resize and create hash */
 			int tt = b->ttype;
+			tt = ATOMbasetype(tt);
 			oid *gp = Tloc(ng, 0);
 			gid *gi = Tloc(G, 0);
 			gid *pgids = h->pgids;
 			int prime = hash_prime_nr[h->bits-5];
+			bool handled = false;
 
 			QryCtx *qry_ctx = MT_thread_get_qry_ctx();
 			qry_ctx = qry_ctx ? qry_ctx : &(QryCtx) {.endtime = 0};
@@ -1347,16 +1389,23 @@ LALGgroup_unique(Client ctx, bat *rid, bat *uid, bat *bid, bat *sid, bat *Gid, b
 #ifdef HAVE_HGE
 			gunique(hge);
 #endif
+			gunique(inet6);
 			gunique(flt);
 			gunique(dbl);
 			gunique(uuid);
-			if (local_storage) {
+			if (!handled && !ATOMvarsized(tt)) {
+				const void *nil = ATOMnilptr(tt);
+				bool (*eq)(const void *, const void*) = ATOMequal(tt);
+				BUN (*hash)(const void *) = BATatoms[tt].atomHash;
+				gfunique();
+			} else if (local_storage) {
 				gaunique_(str,const char *);
 			} else {
 				gaunique(str,const char *);
 			}
 			ht_deactivate(h);
 			TIMEOUT_CHECK(qry_ctx, err = createException(SQL, "ialgebra.unique", RUNTIME_QRY_TIMEOUT));
+			assert(handled);
 		}
 		if (err) {
 			BBPunfix(ng->batCacheid);
