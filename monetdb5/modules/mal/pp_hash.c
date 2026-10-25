@@ -732,31 +732,59 @@ OAHASHmark_nils(Client ctx, bat *res, const bat *matched, const bat *nils, const
 
 	MT_lock_set(&m->theaplock);
 	oid max = BATcount(m);
+	oid maxval = r->tmaxval;
 	str err = MAL_SUCCEED;
-	if (cnt && r->ttype == TYPE_oid) {
-		TIMEOUT_LOOP_IDX_DECL(i, cnt, qry_ctx) {
-			oid j = row[i];
-			if (j >= max) {
-				MT_lock_unset(&m->theaplock);
-				if (j >= BATcapacity(m) && BATextend(m, BATgrows(m)) != GDK_SUCCEED) {
-					MT_lock_set(&m->theaplock);
-					err = MAL_MALLOC_FAIL;
-					break;
-				}
-				mrk = Tloc(m, 0);
-				MT_lock_set(&m->theaplock);
-				memset(mrk+max, bit_nil, j+1 - max);
-				max = j+1;
-				BATsetcount(m, j+1);
+
+	if (!maxval) {
+		if (r->ttype == TYPE_oid) {
+			for(BUN i=0; i<cnt; i++) {
+				oid j = row[i];
+				if ((j+1) > maxval)
+					maxval = j+1;
 			}
-			if (nil[i]) {
-				mrk[j] = TRUE;
-			} else {
-				mrk[j] = FALSE;
+		} else {
+			maxval = r->tseqbase + BATcount(r) + 1;
+		}
+	}
+	if (maxval > max && cnt) {
+		MT_lock_unset(&m->theaplock);
+		if (maxval >= BATcapacity(m) && BATextend(m, maxval + 1024) != GDK_SUCCEED) {
+			MT_lock_set(&m->theaplock);
+			err = MAL_MALLOC_FAIL;
+		}
+		if (!err) {
+			MT_lock_set(&m->theaplock);
+			assert(BATcapacity(m) >= maxval);
+			mrk = Tloc(m, 0);
+			max = BATcount(m);
+			if (max < maxval)
+				memset(mrk+max, bit_nil, maxval-max);
+			BATsetcount(m, maxval);
+		}
+	}
+	if (!err && cnt) {
+		if (r->ttype == TYPE_oid) {
+			TIMEOUT_LOOP_IDX_DECL(i, cnt, qry_ctx) {
+				oid j = row[i];
+				assert(j<maxval);
+				if (nil[i]) {
+					mrk[j] = TRUE;
+				} else {
+					mrk[j] = FALSE;
+				}
+			}
+		} else { /* handle voids */
+			oid seq = r->tseqbase;
+			TIMEOUT_LOOP_IDX_DECL(i, cnt, qry_ctx) {
+				oid j = i + seq;
+				assert(j<maxval);
+				if (nil[i]) {
+					mrk[j] = TRUE;
+				} else {
+					mrk[j] = FALSE;
+				}
 			}
 		}
-	} else if (cnt) { /* handle voids */
-		assert(0);
 	}
 	BATnegateprops(m);
 	MT_lock_unset(&m->theaplock);
@@ -3806,12 +3834,12 @@ OAHASHselect_unmatched(Client ctx, bat *res, const bat *slice, const lng *cnt)
 		goto error;
 	}
 
-	BUN scnt = BATcount(s);
 	if (*cnt) {
 		bit f = FALSE;
 		r = BATthetaselect(s, NULL, (ptr)&f, "==");
-	} else {
-		r = BATdense (s->hseqbase, s->hseqbase, scnt);
+	} else { /* select non nil */
+		bit n = bit_nil;
+		r = BATthetaselect(s, NULL, (ptr)&n, "ne");
 	}
 	if (!r) {
 		err = createException(SQL, "oahash.select_unmatched", SQLSTATE(HY013) MAL_MALLOC_FAIL);
