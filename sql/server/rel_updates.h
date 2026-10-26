@@ -18,29 +18,29 @@
 #include "sql_query.h"
 
 extern sql_table *get_table(sql_rel *t) /* needed for rel_read at rel_dump */
-	__attribute__((__visibility__("hidden")));
+	ATTR_VISIBILITY_HIDDEN;
 extern sql_rel *rel_update(mvc *sql, sql_rel *t, sql_rel *uprel, sql_exp **updates, list *exps)
-	__attribute__((__visibility__("hidden")));
+	ATTR_VISIBILITY_HIDDEN;
 
 extern sql_rel *rel_insert(mvc *sql, sql_rel *t, sql_rel *inserts)
-	__attribute__((__visibility__("hidden")));
+	ATTR_VISIBILITY_HIDDEN;
 extern sql_rel *rel_delete(allocator *sa, sql_rel *t, sql_rel *deletes)
-	__attribute__((__visibility__("hidden")));
+	ATTR_VISIBILITY_HIDDEN;
 extern sql_rel *rel_truncate(allocator *sa, sql_rel *t, int restart_sequences, int drop_action)
-	__attribute__((__visibility__("hidden")));
+	ATTR_VISIBILITY_HIDDEN;
 extern sql_rel *rel_update_count(mvc *sql, sql_rel *rel)
-	__attribute__((__visibility__("hidden")));
+	ATTR_VISIBILITY_HIDDEN;
 
 extern sql_exp *rel_parse_val(mvc *m, sql_schema *s, char *query, sql_subtype *tpe, char emode, sql_rel *from)
-	__attribute__((__visibility__("hidden")));
+	ATTR_VISIBILITY_HIDDEN;
 
 extern sql_rel *rel_updates(sql_query *query, symbol *sym)
-	__attribute__((__visibility__("hidden")));
+	ATTR_VISIBILITY_HIDDEN;
 
 extern sql_exp *update_check_column(mvc *sql, sql_table *t, sql_column *c, sql_exp *v, sql_rel *r, char *cname, const char *action)
-	__attribute__((__visibility__("hidden")));
+	ATTR_VISIBILITY_HIDDEN;
 sql_export sql_table *insert_allowed(mvc *sql, sql_table *t, char *tname, char *op, char *opname);
 extern sql_table *update_allowed(mvc *sql, sql_table *t, char *tname, char *op, char *opname, int is_delete)
-	__attribute__((__visibility__("hidden")));
+	ATTR_VISIBILITY_HIDDEN;
 
 #endif /*_REL_UPDATES_H_*/

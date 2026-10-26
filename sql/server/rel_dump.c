@@ -75,7 +75,7 @@ cmp_print(mvc *sql, stream *fout, int cmp)
 	mnstr_printf(fout, " %s ", r);
 }
 
-__attribute__((__nonnull__(2)))
+ATTR_NONNULL(2)
 static const char *
 dump_escape_ident(allocator *sa, const char *s)
 {

@@ -430,7 +430,7 @@ rev(oid x)
 }
 
 /* count trailing zeros, also see candmask_lobit in gdk_cand.h */
-__attribute__((__const__))
+ATTR_CONST
 static inline int
 ctz(oid x)
 {

@@ -24,8 +24,8 @@ extern char *strip_extra_zeros(char *v);
 extern char *sql_strdup(char *s);
 extern const char *sql_escape_ident(allocator *sa, const char *s);
 extern char *sql_message(_In_z_ _Printf_format_string_ const char *format, ...)
-	__attribute__((__format__(__printf__, 1, 2)));
+	ATTR_FORMAT(__printf__, 1, 2);
 sql_export char *sa_message(allocator *sa, _In_z_ _Printf_format_string_ const char *format, ...)
-	__attribute__((__format__(__printf__, 2, 3)));
+	ATTR_FORMAT(__printf__, 2, 3);
 
 #endif /*_SQL_STRING_H_*/

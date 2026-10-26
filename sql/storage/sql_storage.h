@@ -577,7 +577,7 @@ extern int FORprepare4append(BAT **noffsets, BAT *vals, lng minval, int tt);
 extern int FORprepare4append_vals(void **noffsets, void *vals, BUN cnt, lng minval, int vtype, int ft);
 
 extern void store_printinfo(FILE *outf, sqlstore *store)
-	__attribute__((__nonnull__(1)))
-	__attribute__((__nonnull__(2)));
+	ATTR_NONNULL(1)
+	ATTR_NONNULL(2);
 
 #endif /*SQL_STORAGE_H */

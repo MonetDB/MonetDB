@@ -37,7 +37,7 @@
 #include "gdk.h"
 #include "gdk_private.h"
 
-__attribute__((__const__))
+ATTR_CONST
 static inline uint8_t
 HASHwidth(BUN hashsize)
 {
@@ -53,7 +53,7 @@ HASHwidth(BUN hashsize)
 	return BUN4;
 }
 
-__attribute__((__const__))
+ATTR_CONST
 static inline BUN
 hashmask(BUN m)
 {
