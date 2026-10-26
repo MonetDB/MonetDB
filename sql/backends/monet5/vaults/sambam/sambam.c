@@ -44,7 +44,6 @@
 #include "rel_file_loader.h"	// fl_register(), fl_unregister()
 #include "sql_monet_backend.h"	// backend, getBackendContext()
 
-#undef __nonstring__
 #include <htslib/sam.h>	// it includes hts.h
 /* note: there is no <htslib/bam.h> */
 
