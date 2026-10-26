@@ -142,8 +142,10 @@ stack_copy(allocator *ma, MalStkPtr stk, int start)
 				rhs = &getVarConstant(stk->blk, i);
 				if(VALcopy(ma, lhs, rhs) == NULL)
 					break;
-				if (rhs->bat && rhs->val.bval)
+				if (rhs->bat && rhs->val.bval) {
+					assert(rhs->val.bval == bat_nil);
 					BBPretain(rhs->val.bval);
+				}
 			}
 		} else {
 			rhs = &stk->stk[i];
