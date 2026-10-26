@@ -77,7 +77,7 @@ ob_append_escaped(struct outbuf *ob, const char *text, bool escape_colon)
 	}
 }
 
-__attribute__((__format__(__printf__, 2, 3)))
+ATTR_FORMAT(__printf__, 2, 3)
 static void
 ob_printf(struct outbuf *ob, _In_z_ _Printf_format_string_ const char *fmt, ...)
 {

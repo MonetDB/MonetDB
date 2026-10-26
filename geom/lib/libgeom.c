@@ -18,7 +18,7 @@
 #include "monetdb_config.h"
 #include "libgeom.h"
 
-__attribute__((__format__(__printf__, 1, 2)))
+ATTR_FORMAT(__printf__, 1, 2)
 static void
 geomerror(_In_z_ _Printf_format_string_ const char *fmt, ...)
 {

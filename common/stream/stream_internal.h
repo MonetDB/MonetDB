@@ -173,82 +173,82 @@ struct stream {
 };
 
 void mnstr_va_set_error(stream *s, mnstr_error_kind kind, const char *fmt, va_list ap)
-	__attribute__((__visibility__("hidden")));
+	ATTR_VISIBILITY_HIDDEN;
 
 void mnstr_set_error_errno(stream *s, mnstr_error_kind kind, _In_z_ _Printf_format_string_ const char *fmt, ...)
-	__attribute__((__format__(__printf__, 3, 4)))
-	__attribute__((__visibility__("hidden")));
+	ATTR_FORMAT(__printf__, 3, 4)
+	ATTR_VISIBILITY_HIDDEN;
 
 void mnstr_copy_error(stream *dst, stream *src)
-	__attribute__((__visibility__("hidden")));
+	ATTR_VISIBILITY_HIDDEN;
 
 void mnstr_set_open_error(const char *name, int errnr, _In_z_ _Printf_format_string_ const char *fmt, ...)
-	__attribute__((__format__(__printf__, 3, 4)))
-	__attribute__((__visibility__("hidden")));
+	ATTR_FORMAT(__printf__, 3, 4)
+	ATTR_VISIBILITY_HIDDEN;
 
 
 /* used to be static: */
 
 stream *create_stream(const char *name)
-	__attribute__((__visibility__("hidden")));
+	ATTR_VISIBILITY_HIDDEN;
 
 stream *create_wrapper_stream(const char *name, stream *inner)
-	__attribute__((__visibility__("hidden")));
+	ATTR_VISIBILITY_HIDDEN;
 void destroy_stream(stream *s)
-	__attribute__((__visibility__("hidden")));
+	ATTR_VISIBILITY_HIDDEN;
 stream *open_stream(const char *restrict filename, const char *restrict flags)
-	__attribute__((__visibility__("hidden")));
+	ATTR_VISIBILITY_HIDDEN;
 
 stream *file_stream(const char *name)
-	__attribute__((__visibility__("hidden")));
+	ATTR_VISIBILITY_HIDDEN;
 
 int file_remove(const char *filename)
-	__attribute__((__visibility__("hidden")));
+	ATTR_VISIBILITY_HIDDEN;
 
 /* implementation detail of stdio_stream.c which must be public because
  * for example bstream() special cases on it to provide a fast path for file
  * i/o.
  */
 ssize_t file_read(stream *restrict s, void *restrict buf, size_t elmsize, size_t cnt)
-	__attribute__((__visibility__("hidden")));
+	ATTR_VISIBILITY_HIDDEN;
 
 
 stream *open_gzrstream(const char *filename)
-	__attribute__((__visibility__("hidden")));
+	ATTR_VISIBILITY_HIDDEN;
 stream *open_gzwstream(const char *restrict filename, const char *restrict mode)
-	__attribute__((__visibility__("hidden")));
+	ATTR_VISIBILITY_HIDDEN;
 stream *open_gzrastream(const char *filename)
-	__attribute__((__visibility__("hidden")));
+	ATTR_VISIBILITY_HIDDEN;
 stream *open_gzwastream(const char *restrict filename, const char *restrict mode)
-	__attribute__((__visibility__("hidden")));
+	ATTR_VISIBILITY_HIDDEN;
 
 
 stream *open_bzrstream(const char *filename)
-	__attribute__((__visibility__("hidden")));
+	ATTR_VISIBILITY_HIDDEN;
 stream *open_bzwstream(const char *restrict filename, const char *restrict mode)
-	__attribute__((__visibility__("hidden")));
+	ATTR_VISIBILITY_HIDDEN;
 stream *open_bzrastream(const char *filename)
-	__attribute__((__visibility__("hidden")));
+	ATTR_VISIBILITY_HIDDEN;
 stream *open_bzwastream(const char *restrict filename, const char *restrict mode)
-	__attribute__((__visibility__("hidden")));
+	ATTR_VISIBILITY_HIDDEN;
 
 stream *open_xzrstream(const char *filename)
-	__attribute__((__visibility__("hidden")));
+	ATTR_VISIBILITY_HIDDEN;
 stream *open_xzwstream(const char *restrict filename, const char *restrict mode)
-	__attribute__((__visibility__("hidden")));
+	ATTR_VISIBILITY_HIDDEN;
 stream *open_xzrastream(const char *filename)
-	__attribute__((__visibility__("hidden")));
+	ATTR_VISIBILITY_HIDDEN;
 stream *open_xzwastream(const char *restrict filename, const char *restrict mode)
-	__attribute__((__visibility__("hidden")));
+	ATTR_VISIBILITY_HIDDEN;
 
 stream *open_lz4rstream(const char *filename)
-	__attribute__((__visibility__("hidden")));
+	ATTR_VISIBILITY_HIDDEN;
 stream *open_lz4wstream(const char *restrict filename, const char *restrict mode)
-	__attribute__((__visibility__("hidden")));
+	ATTR_VISIBILITY_HIDDEN;
 stream *open_lz4rastream(const char *filename)
-	__attribute__((__visibility__("hidden")));
+	ATTR_VISIBILITY_HIDDEN;
 stream *open_lz4wastream(const char *restrict filename, const char *restrict mode)
-	__attribute__((__visibility__("hidden")));
+	ATTR_VISIBILITY_HIDDEN;
 
 
 /* Shared between bs2.c, bs.c and stream.c.
@@ -272,18 +272,18 @@ struct bs {
 						 * size-short */
 };
 ssize_t bs_read(stream *restrict ss, void *restrict buf, size_t elmsize, size_t cnt)
-	__attribute__((__visibility__("hidden")));
+	ATTR_VISIBILITY_HIDDEN;
 ssize_t bs_write(stream *restrict ss, const void *restrict buf, size_t elmsize, size_t cnt)
-	__attribute__((__visibility__("hidden")));
+	ATTR_VISIBILITY_HIDDEN;
 void bs_clrerr(stream *s)
-	__attribute__((__visibility__("hidden")));
+	ATTR_VISIBILITY_HIDDEN;
 void bs_destroy(stream *ss)
-	__attribute__((__visibility__("hidden")));
+	ATTR_VISIBILITY_HIDDEN;
 
 ssize_t bs2_read(stream *restrict ss, void *restrict buf, size_t elmsize, size_t cnt)
-	__attribute__((__visibility__("hidden")));
+	ATTR_VISIBILITY_HIDDEN;
 ssize_t bs2_write(stream *restrict ss, const void *restrict buf, size_t elmsize, size_t cnt)
-	__attribute__((__visibility__("hidden")));
+	ATTR_VISIBILITY_HIDDEN;
 
 
 #ifdef _MSC_VER

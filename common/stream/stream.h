@@ -79,7 +79,7 @@ typedef enum mnstr_flush_level {
 } mnstr_flush_level;
 
 stream_export const char *mnstr_version(void)
-	__attribute__((__const__));
+	ATTR_CONST;
 
 stream_export char *mnstr_error(const stream *s);
 stream_export const char* mnstr_peek_error(const stream *s);
@@ -87,7 +87,7 @@ stream_export mnstr_error_kind mnstr_errnr(const stream *s);
 stream_export const char *mnstr_error_kind_name(mnstr_error_kind k);
 stream_export void mnstr_clearerr(stream *s);
 stream_export void mnstr_set_error(stream *s, mnstr_error_kind kind, _In_z_ _Printf_format_string_ const char *fmt, ...)
-	__attribute__((__format__(__printf__, 3, 4)));
+	ATTR_FORMAT(__printf__, 3, 4);
 
 
 /* all mnstr_readX/mnstr_writeX return
@@ -131,7 +131,7 @@ stream_export int mnstr_readHgeArray(stream *restrict s, int128_t *restrict val,
 stream_export int mnstr_writeHgeArray(stream *restrict s, const int128_t *restrict val, size_t cnt); // unused
 #endif
 stream_export int mnstr_printf(stream *restrict s, _In_z_ _Printf_format_string_ const char *restrict format, ...) // USED all over
-	__attribute__((__format__(__printf__, 2, 3)));
+	ATTR_FORMAT(__printf__, 2, 3);
 stream_export ssize_t mnstr_read(stream *restrict s, void *restrict buf, size_t elmsize, size_t cnt); // USED all over
 stream_export ssize_t mnstr_readline(stream *restrict s, void *restrict buf, size_t maxcnt); // used in mclient, sql.c/mvc_export_table_wrap, bat_logger.c
 stream_export ssize_t mnstr_write(stream *restrict s, const void *restrict buf, size_t elmsize, size_t cnt); // USED all over

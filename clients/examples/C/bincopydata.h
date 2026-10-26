@@ -13,7 +13,7 @@
 #include "copybinary_support.h"
 
 _Noreturn void croak(int status, _In_z_ _Printf_format_string_ const char *msg, ...)
-	__attribute__((__format__(__printf__, 2, 3)));
+	ATTR_FORMAT(__printf__, 2, 3);
 
 void gen_decimal_tinyints(FILE *f, bool byteswap, long nrecs, char *arg);
 void gen_decimal_smallints(FILE *f, bool byteswap, long nrecs, char *arg);

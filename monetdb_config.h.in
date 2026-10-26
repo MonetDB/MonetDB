@@ -377,80 +377,131 @@ typedef __uint128_t uint128_t;
 // End Section: monetdb configure sizes
 
 /* Does your compiler support `__attribute__' extension? */
-#if !defined(__has_attribute)
-/* if __has_attribute is not known to the preprocessor, we ignore
- * attributes completely */
-#ifndef __attribute__
-#define __attribute__(...)
+#if defined(__has_attribute)
+/* if __has_attribute is known, use it to find out whether specific
+ * attributes that we use are known */
+#if __has_attribute(__access__)
+#define ATTR_ACCESS(...)		__attribute__((__access__(__VA_ARGS__)))
 #endif
-#else
-/* if it is known, use it to find out whether specific attributes that
- * we use are known */
-#if !__has_attribute(__access__)
-#define __access__(...)
+#if __has_attribute(__aligned__)
+#define ATTR_ALIGNED(...)		__attribute__((__aligned__(__VA_ARGS__)))
 #endif
-#if !__has_attribute(__aligned__)
-#define __aligned__(...)
+#if __has_attribute(__alloc_size__)
+#define ATTR_ALLOC_SIZE(...)	__attribute__((__alloc_size__(__VA_ARGS__)))
 #endif
-#if !__has_attribute(__alloc_size__)
-#define __alloc_size__(...)
+#if __has_attribute(__cold__)
+#define ATTR_COLD				__attribute__((__cold__))
 #endif
-#if !__has_attribute(__cold__)
-#define __cold__
+#if __has_attribute(__const__)
+#define ATTR_CONST				__attribute__((__const__))
 #endif
-#if !__has_attribute(__const__)
-#define __const__
+#if __has_attribute(__constructor__)
+#define ATTR_CONSTRUCTOR		__attribute__((__constructor__))
 #endif
-#if !__has_attribute(__constructor__)
-#define __constructor__
+#if __has_attribute(__counted_by__)
+#define ATTR_COUNTED_BY(...)	__attribute__((__counted_by__(__VA_ARGS__)))
 #endif
-#if !__has_attribute(__counted_by__)
-#define __counted_by__(...)
+#if __has_attribute(__designated_init__)
+#define ATTR_DESIGNATED_INIT	__attribute__((__designated_init__))
 #endif
-#if !__has_attribute(__designated_init__)
-#define __designated_init__
+#if __has_attribute(__format__)
+#define ATTR_FORMAT(...)		__attribute__((__format__(__VA_ARGS__)))
 #endif
-#if !__has_attribute(__format__)
-#define __format__(...)
-#endif
-#if !__has_attribute(__malloc__)
-#define __malloc__
-#define __malloc__(...)
-#elif !defined(__GNUC__) || __GNUC__ < 13
+#if __has_attribute(__malloc__)
+#define ATTR_MALLOC				__attribute__((__malloc__))
+#if defined(__GNUC__) && __GNUC__ >= 13
 /* attribute malloc with argument seems to have been introduced in gcc 13 */
-#define __malloc__(...)
+#define ATTR_MALLOC_ARGS(...)	__attribute__(( __malloc__(__VA_ARGS__)))
 #endif
-#if !__has_attribute(__noinline__)
-#define __noinline__
 #endif
-#if !__has_attribute(__nonnull__)
-#define __nonnull__(...)
+#if __has_attribute(__noinline__)
+#define ATTR_NOINLINE			__attribute__((__noinline__))
 #endif
-#if !__has_attribute(__nonnull_if_nonzero__)
-#define __nonnull_if_nonzero__(...)
+#if __has_attribute(__nonnull__)
+#define ATTR_NONNULL(...)		__attribute__((__nonnull__(__VA_ARGS__)))
 #endif
-#if !__has_attribute(__nonstring__)
-#define __nonstring__
+#if __has_attribute(__nonnull_if_nonzero__)
+#define ATTR_NONNULL_IF_NONZERO(...) __attribute__((__nonnull_if_nonzero__(__VA_ARGS__)))
 #endif
-#if !__has_attribute(__pure__)
-#define __pure__
+#if __has_attribute(__nonstring__)
+#define ATTR_NONSTRING			__attribute__((__nonstring__))
 #endif
-#if !__has_attribute(__returns_nonnull__)
-#define __returns_nonnull__
+#if __has_attribute(__pure__)
+#define ATTR_PURE				__attribute__((__pure__))
 #endif
-#if !__has_attribute(__sentinel__)
-#define __sentinel__
+#if __has_attribute(__returns_nonnull__)
+#define ATTR_RETURNS_NONNULL	__attribute__((__returns_nonnull__))
 #endif
-#if !__has_attribute(__visibility__)
-#define __visibility__(...)
-#elif defined(__CYGWIN__)
-#define __visibility__(...)
+#if __has_attribute(__sentinel__)
+#define ATTR_SENTINEL			__attribute__((__sentinel__))
 #endif
-#if !__has_attribute(__warn_unused_result__)
-#define __warn_unused_result__
+#if __has_attribute(__visibility__)
+#if !defined(__CYGWIN__)
+#define ATTR_VISIBILITY_HIDDEN	__attribute__((__visibility__("hidden")))
+#endif
+#endif
+#if __has_attribute(__warn_unused_result__)
+#define ATTR_WARN_UNUSED_RESULT	__attribute__((__warn_unused_result__))
 #endif
 #endif
 
+#ifndef ATTR_ACCESS
+#define ATTR_ACCESS(...)
+#endif
+#ifndef ATTR_ALIGNED
+#define ATTR_ALIGNED(...)
+#endif
+#ifndef ATTR_ALLOC_SIZE
+#define ATTR_ALLOC_SIZE(...)
+#endif
+#ifndef ATTR_COLD
+#define ATTR_COLD
+#endif
+#ifndef ATTR_CONST
+#define ATTR_CONST
+#endif
+#ifndef ATTR_COUNTED_BY
+#define ATTR_COUNTED_BY(...)
+#endif
+#ifndef ATTR_DESIGNATED_INIT
+#define ATTR_DESIGNATED_INIT
+#endif
+#ifndef ATTR_FORMAT
+#define ATTR_FORMAT(...)
+#endif
+#ifndef ATTR_MALLOC
+#define ATTR_MALLOC
+#endif
+#ifndef ATTR_MALLOC_ARGS
+#define ATTR_MALLOC_ARGS(...)
+#endif
+#ifndef ATTR_NOINLINE
+#define ATTR_NOINLINE
+#endif
+#ifndef ATTR_NONNULL
+#define ATTR_NONNULL(...)
+#endif
+#ifndef ATTR_NONNULL_IF_NONZERO
+#define ATTR_NONNULL_IF_NONZERO(...)
+#endif
+#ifndef ATTR_NONSTRING
+#define ATTR_NONSTRING
+#endif
+#ifndef ATTR_PURE
+#define ATTR_PURE
+#endif
+#ifndef ATTR_RETURNS_NONNULL
+#define ATTR_RETURNS_NONNULL
+#endif
+#ifndef ATTR_SENTINEL
+#define ATTR_SENTINEL
+#endif
+#ifndef ATTR_VISIBILITY_HIDDEN
+#define ATTR_VISIBILITY_HIDDEN
+#endif
+#ifndef ATTR_WARN_UNUSED_RESULT
+#define ATTR_WARN_UNUSED_RESULT
+#endif
 
 #if !defined(__cplusplus) || __cplusplus < 201103L
 #ifndef static_assert
@@ -461,7 +512,6 @@ typedef __uint128_t uint128_t;
 #define static_assert(expr, mesg)	((void) 0)
 #endif
 #endif
-
 #ifdef HAVE_STRINGS_H
 #include <strings.h>		/* strcasecmp */
 #endif
@@ -479,9 +529,9 @@ typedef __uint128_t uint128_t;
 #endif
 
 #ifndef HAVE_STRNLEN
-__attribute__((__pure__))
-__attribute__((__nonnull__(1)))
-__attribute__((__access__(read_only, 1, 2)))
+ATTR_PURE
+ATTR_NONNULL(1)
+ATTR_ACCESS(read_only, 1, 2)
 static inline size_t
 strnlen(const char *s, size_t n)
 {
@@ -493,7 +543,7 @@ strnlen(const char *s, size_t n)
 #endif
 
 #ifndef HAVE_STRNDUP
-__attribute__((__nonnull__(1)))
+ATTR_NONNULL(1)
 static inline char *
 strndup(const char *s, size_t n)
 {
@@ -625,7 +675,7 @@ gmtime_r(const time_t *restrict timep, struct tm *restrict result)
 #endif
 #else
 #define LIB_STARTUP_FUNC(f) \
-		__attribute__((__constructor__)) static void f(void)
+		ATTR_CONSTRUCTOR static void f(void)
 #endif
 
 #ifdef WITH_MALLOC

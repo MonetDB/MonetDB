@@ -995,7 +995,7 @@ func1(MTIMEtimestamp_extract_date, "date", timestamp, date,
 	  timestamp_date, COPYFLAGS, func1_noexcept,
 	  DEC_VAR_R, DEC_VAR_R, INIT_VARIN, INIT_VAROUT, GET_NEXT_VAR)
 
-__attribute__((__const__))
+ATTR_CONST
 static inline date
 timestamp_tz_date(timestamp ts, lng tz_msec)
 {
@@ -1026,7 +1026,7 @@ func1(MTIMEtimestamp_timestamp, "timestamp", timestamp, timestamp,
 	  timestamp_timestamp, COPYFLAGS, func1_noexcept,
 	  DEC_VAR_R, DEC_VAR_R, INIT_VARIN, INIT_VAROUT, GET_NEXT_VAR)
 
-__attribute__((__const__))
+ATTR_CONST
 static inline timestamp
 mkts(date dt)
 {
@@ -1038,7 +1038,7 @@ func1(MTIMEtimestamp_fromdate, "timestamp", date, timestamp,
 	  mkts, COPYFLAGS, func1_noexcept,
 	  DEC_VAR_R, DEC_VAR_R, INIT_VARIN, INIT_VAROUT, GET_NEXT_VAR)
 
-__attribute__((__const__))
+ATTR_CONST
 static inline int
 seconds_since_epoch(timestamp t)
 {
@@ -1051,7 +1051,7 @@ func1(MTIMEseconds_since_epoch, "epoch", timestamp, int,
 	  seconds_since_epoch, COPYFLAGS, func1_noexcept,
 	  DEC_VAR_R, DEC_VAR_R, INIT_VARIN, INIT_VAROUT, GET_NEXT_VAR)
 
-__attribute__((__const__))
+ATTR_CONST
 static inline timestamp
 mktsfromsec(int sec)
 {
@@ -1060,7 +1060,7 @@ mktsfromsec(int sec)
 			: timestamp_add_usec(unixepoch, sec * LL_CONSTANT(1000000)));
 }
 
-__attribute__((__const__))
+ATTR_CONST
 static inline timestamp
 mktsfrommsec(lng msec)
 {
@@ -1413,7 +1413,7 @@ func3(MTIMEtimestamptz_to_str, "timestamptz_to_str",
 	  GET_NEXT_VAR, GET_NEXT_ITER,
 	  APPEND_STR, FINISH_BUFFER_SINGLE, FINISH_BUFFER_MULTI)
 
-__attribute__((__const__))
+ATTR_CONST
 static inline lng
 timestampdiff_sec(timestamp t1, timestamp t2)
 {
@@ -1421,21 +1421,21 @@ timestampdiff_sec(timestamp t1, timestamp t2)
 	return DIVIDE(diff, LL_CONSTANT(1000000), lng);
 }
 
-__attribute__((__const__))
+ATTR_CONST
 static inline lng
 timestampdiff_sec_date_timestamp(date d, timestamp ts)
 {
 	return timestampdiff_sec(timestamp_fromdate(d), ts);
 }
 
-__attribute__((__const__))
+ATTR_CONST
 static inline lng
 timestampdiff_sec_timestamp_date(timestamp ts, date d)
 {
 	return timestampdiff_sec(ts, timestamp_fromdate(d));
 }
 
-__attribute__((__const__))
+ATTR_CONST
 static inline lng
 timestampdiff_min(timestamp t1, timestamp t2)
 {
@@ -1443,21 +1443,21 @@ timestampdiff_min(timestamp t1, timestamp t2)
 	return DIVIDE(diff, LL_CONSTANT(60000000), lng);
 }
 
-__attribute__((__const__))
+ATTR_CONST
 static inline lng
 timestampdiff_min_date_timestamp(date d, timestamp ts)
 {
 	return timestampdiff_min(timestamp_fromdate(d), ts);
 }
 
-__attribute__((__const__))
+ATTR_CONST
 static inline lng
 timestampdiff_min_timestamp_date(timestamp ts, date d)
 {
 	return timestampdiff_min(ts, timestamp_fromdate(d));
 }
 
-__attribute__((__const__))
+ATTR_CONST
 static inline lng
 timestampdiff_hour(timestamp t1, timestamp t2)
 {
@@ -1465,28 +1465,28 @@ timestampdiff_hour(timestamp t1, timestamp t2)
 	return DIVIDE(diff, LL_CONSTANT(3600000000), lng);
 }
 
-__attribute__((__const__))
+ATTR_CONST
 static inline lng
 timestampdiff_hour_date_timestamp(date d, timestamp ts)
 {
 	return timestampdiff_hour(timestamp_fromdate(d), ts);
 }
 
-__attribute__((__const__))
+ATTR_CONST
 static inline lng
 timestampdiff_hour_timestamp_date(timestamp ts, date d)
 {
 	return timestampdiff_hour(ts, timestamp_fromdate(d));
 }
 
-__attribute__((__const__))
+ATTR_CONST
 static inline int
 timestampdiff_day(timestamp t1, timestamp t2)
 {
 	return date_diff(timestamp_date(t1), timestamp_date(t2));
 }
 
-__attribute__((__const__))
+ATTR_CONST
 static inline int
 timestampdiff_day_time_timestamp(daytime t, timestamp ts)
 {
@@ -1494,7 +1494,7 @@ timestampdiff_day_time_timestamp(daytime t, timestamp ts)
 	return timestampdiff_day(timestamp_create(today, t), ts);
 }
 
-__attribute__((__const__))
+ATTR_CONST
 static inline int
 timestampdiff_day_timestamp_time(timestamp ts, daytime t)
 {
@@ -1502,14 +1502,14 @@ timestampdiff_day_timestamp_time(timestamp ts, daytime t)
 	return timestampdiff_day(ts, timestamp_create(today, t));
 }
 
-__attribute__((__const__))
+ATTR_CONST
 static inline int
 timestampdiff_week(timestamp t1, timestamp t2)
 {
 	return date_diff(timestamp_date(t1), timestamp_date(t2)) / 7;
 }
 
-__attribute__((__const__))
+ATTR_CONST
 static inline int
 timestampdiff_week_time_timestamp(daytime t, timestamp ts)
 {
@@ -1517,7 +1517,7 @@ timestampdiff_week_time_timestamp(daytime t, timestamp ts)
 	return timestampdiff_week(timestamp_create(today, t), ts);
 }
 
-__attribute__((__const__))
+ATTR_CONST
 static inline int
 timestampdiff_week_timestamp_time(timestamp ts, daytime t)
 {
@@ -1525,7 +1525,7 @@ timestampdiff_week_timestamp_time(timestamp ts, daytime t)
 	return timestampdiff_week(ts, timestamp_create(today, t));
 }
 
-__attribute__((__const__))
+ATTR_CONST
 static inline int
 timestampdiff_month(timestamp t1, timestamp t2)
 {
@@ -1535,7 +1535,7 @@ timestampdiff_month(timestamp t1, timestamp t2)
 		+ (date_month(d1) - date_month(d2));
 }
 
-__attribute__((__const__))
+ATTR_CONST
 static inline int
 timestampdiff_month_time_timestamp(daytime t, timestamp ts)
 {
@@ -1543,7 +1543,7 @@ timestampdiff_month_time_timestamp(daytime t, timestamp ts)
 	return timestampdiff_month(timestamp_create(today, t), ts);
 }
 
-__attribute__((__const__))
+ATTR_CONST
 static inline int
 timestampdiff_month_timestamp_time(timestamp ts, daytime t)
 {
@@ -1551,7 +1551,7 @@ timestampdiff_month_timestamp_time(timestamp ts, daytime t)
 	return timestampdiff_month(ts, timestamp_create(today, t));
 }
 
-__attribute__((__const__))
+ATTR_CONST
 static inline int
 timestampdiff_quarter(timestamp t1, timestamp t2)
 {
@@ -1561,7 +1561,7 @@ timestampdiff_quarter(timestamp t1, timestamp t2)
 		+ (date_quarter(d1) - date_quarter(d2));
 }
 
-__attribute__((__const__))
+ATTR_CONST
 static inline int
 timestampdiff_quarter_time_timestamp(daytime t, timestamp ts)
 {
@@ -1569,7 +1569,7 @@ timestampdiff_quarter_time_timestamp(daytime t, timestamp ts)
 	return timestampdiff_quarter(timestamp_create(today, t), ts);
 }
 
-__attribute__((__const__))
+ATTR_CONST
 static inline int
 timestampdiff_quarter_timestamp_time(timestamp ts, daytime t)
 {
@@ -1577,7 +1577,7 @@ timestampdiff_quarter_timestamp_time(timestamp ts, daytime t)
 	return timestampdiff_quarter(ts, timestamp_create(today, t));
 }
 
-__attribute__((__const__))
+ATTR_CONST
 static inline int
 timestampdiff_year(timestamp t1, timestamp t2)
 {
@@ -1586,7 +1586,7 @@ timestampdiff_year(timestamp t1, timestamp t2)
 	return date_year(d1) - date_year(d2);
 }
 
-__attribute__((__const__))
+ATTR_CONST
 static inline int
 timestampdiff_year_time_timestamp(daytime t, timestamp ts)
 {
@@ -1594,7 +1594,7 @@ timestampdiff_year_time_timestamp(daytime t, timestamp ts)
 	return timestampdiff_year(timestamp_create(today, t), ts);
 }
 
-__attribute__((__const__))
+ATTR_CONST
 static inline int
 timestampdiff_year_timestamp_time(timestamp ts, daytime t)
 {

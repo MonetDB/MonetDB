@@ -49,8 +49,8 @@
  * tried to create.
  * Note, strtcpy is more efficient if the length of the input string is
  * not needed and the string was truncated. */
-__attribute__((__access__(write_only, 1, 3)))
-__attribute__((__nonnull__(1, 2)))
+ATTR_ACCESS(write_only, 1, 3)
+ATTR_NONNULL(1, 2)
 static inline size_t
 strlcpy(char *restrict dst, const char *restrict src, size_t n)
 {
@@ -69,7 +69,7 @@ strlcpy(char *restrict dst, const char *restrict src, size_t n)
 /* Copy the input string into a destination string.  The programmer is
  * responsible for allocating a buffer large enough.  It returns a
  * pointer suitable for chaining. */
-__attribute__((__nonnull__(1, 2)))
+ATTR_NONNULL(1, 2)
 static inline char *
 stpcpy(char *restrict dst, const char *restrict src)
 {
@@ -85,9 +85,9 @@ stpcpy(char *restrict dst, const char *restrict src)
  * buffer isn't large enough to hold the copy, the resulting string is
  * truncated (but it is guaranteed to be null-terminated). It returns
  * the length of the string, or -1 if it truncated. */
-__attribute__((__access__(write_only, 1, 3)))
-__attribute__((__nonnull_if_nonzero__(1, 3)))
-__attribute__((__nonnull__(2)))
+ATTR_ACCESS(write_only, 1, 3)
+ATTR_NONNULL_IF_NONZERO(1, 3)
+ATTR_NONNULL(2)
 static inline ssize_t
 strtcpy(char *restrict dst, const char *restrict src, size_t dsize)
 {
@@ -110,7 +110,7 @@ strtcpy(char *restrict dst, const char *restrict src, size_t dsize)
  * guaranteed to be null-terminated).  It returns a pointer suitable for
  * chaining.  Truncation needs to be detected only once after the last
  * chained call. */
-__attribute__((__nonnull__(2, 3)))
+ATTR_NONNULL(2, 3)
 static inline char *
 stpecpy(char *restrict dst, char *end, const char *restrict src)
 {
@@ -126,9 +126,9 @@ stpecpy(char *restrict dst, char *end, const char *restrict src)
  * guaranteed to be NULL-terminated (if n > 0) */
 mutils_export size_t strlconcat(char *restrict dst, size_t n,
 				const char *restrict src, ...)
-	__attribute__((__access__(write_only, 1, 2)))
-	__attribute__((__nonnull__(1)))
-	__attribute__((__sentinel__));
+	ATTR_ACCESS(write_only, 1, 2)
+	ATTR_NONNULL(1)
+	ATTR_SENTINEL;
 
 /* copy the NULL terminated list of src strings with a maximum of n
  * bytes to dst; return -1 if the buffer was too small, else the
@@ -136,9 +136,9 @@ mutils_export size_t strlconcat(char *restrict dst, size_t n,
  * NULL-terminated (if n > 0) */
 mutils_export ssize_t strtconcat(char *restrict dst, size_t n,
 				 const char *restrict src, ...)
-	__attribute__((__access__(write_only, 1, 2)))
-	__attribute__((__nonnull__(1)))
-	__attribute__((__sentinel__));
+	ATTR_ACCESS(write_only, 1, 2)
+	ATTR_NONNULL(1)
+	ATTR_SENTINEL;
 
 #ifdef __has_builtin
 #if __has_builtin(__builtin_expect)
@@ -227,7 +227,7 @@ checkUTF8(const char *v, size_t *ncp)
 	return true;
 }
 
-__attribute__((__format__(__printf__, 4, 0)))
+ATTR_FORMAT(__printf__, 4, 0)
 static inline int
 vreallocprintf(char **buf, size_t *pos, size_t *capacity, _In_z_ _Printf_format_string_ const char *fmt, va_list args)
 {
@@ -278,7 +278,7 @@ vreallocprintf(char **buf, size_t *pos, size_t *capacity, _In_z_ _Printf_format_
 	}
 }
 
-__attribute__((__format__(__printf__, 4, 5)))
+ATTR_FORMAT(__printf__, 4, 5)
 static inline int
 reallocprintf(char **buf, size_t *pos, size_t *capacity, _In_z_ _Printf_format_string_ const char *fmt, ...)
 {

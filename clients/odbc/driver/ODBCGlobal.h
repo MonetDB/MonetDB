@@ -98,7 +98,7 @@ extern const char *ODBCdebug;
 
 extern void setODBCdebug(const char *filename, bool overrideEnvVar);
 
-__attribute__((__format__(__printf__, 1, 2)))
+ATTR_FORMAT(__printf__, 1, 2)
 static inline void
 ODBCLOG(_In_z_ _Printf_format_string_ const char *fmt, ...)
 {

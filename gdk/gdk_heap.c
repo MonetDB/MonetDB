@@ -36,7 +36,7 @@
 #include "gdk_private.h"
 #include "mutils.h"
 
-__attribute__((__access__(read_write, 2)))
+ATTR_ACCESS(read_write, 2)
 static void *
 HEAPcreatefile(int farmid, size_t *maxsz, const char *fn)
 {

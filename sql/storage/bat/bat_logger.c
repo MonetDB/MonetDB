@@ -1175,7 +1175,7 @@ bl_sequence(sqlstore *store, int seq, lng id)
 /* Write a plan entry to copy part of the given file.
  * That part of the file must remain unchanged until the plan is executed.
  */
-__attribute__((__warn_unused_result__))
+ATTR_WARN_UNUSED_RESULT
 static gdk_return
 snapshot_lazy_copy_file(stream *plan, const char *name, uint64_t extent)
 {
@@ -1190,7 +1190,7 @@ snapshot_lazy_copy_file(stream *plan, const char *name, uint64_t extent)
  * The contents are included in the plan so the source file is allowed to
  * change in the mean time.
  */
-__attribute__((__warn_unused_result__))
+ATTR_WARN_UNUSED_RESULT
 static gdk_return
 snapshot_immediate_copy_file(stream *plan, const char *path, const char *name)
 {
@@ -1257,7 +1257,7 @@ end:
 }
 
 /* Add plan entries for all relevant files in the Write Ahead Log */
-__attribute__((__warn_unused_result__))
+ATTR_WARN_UNUSED_RESULT
 static gdk_return
 snapshot_wal(logger *bat_logger, stream *plan, const char *db_dir)
 {
@@ -1291,7 +1291,7 @@ snapshot_wal(logger *bat_logger, stream *plan, const char *db_dir)
 	return GDK_SUCCEED;
 }
 
-__attribute__((__warn_unused_result__))
+ATTR_WARN_UNUSED_RESULT
 static gdk_return
 snapshot_heap(stream *plan, const char *db_dir, bat batid, const char *filename, const char *suffix, uint64_t extent)
 {
@@ -1397,7 +1397,7 @@ end:
 /* Add plan entries for all persistent BATs by looping over the BBP.dir.
  * Also include the BBP.dir itself.
  */
-__attribute__((__warn_unused_result__))
+ATTR_WARN_UNUSED_RESULT
 static gdk_return
 snapshot_bats(stream *plan, BAT *bats_to_omit, const char *db_dir)
 {
@@ -1498,7 +1498,7 @@ end:
 	return ret;
 }
 
-__attribute__((__warn_unused_result__))
+ATTR_WARN_UNUSED_RESULT
 static gdk_return
 snapshot_vaultkey(stream *plan, const char *db_dir)
 {

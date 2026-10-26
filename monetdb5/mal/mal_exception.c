@@ -78,7 +78,8 @@ concatErrors(char *err1, const char *err2)
  * showException such that they share the same code, because reuse
  * is good.
  */
-__attribute__((__format__(__printf__, 3, 0), __returns_nonnull__))
+ATTR_FORMAT(__printf__, 3, 0)
+ATTR_RETURNS_NONNULL
 static str
 createExceptionInternal(enum malexception type, const char *fcn,
 						_In_z_ _Printf_format_string_ const char *format, va_list ap)
@@ -188,7 +189,8 @@ createException(enum malexception type, const char *fcn, const char *format,
  * showScriptException such that they share the same code, because reuse
  * is good.
  */
-__attribute__((__format__(__printf__, 5, 0), __returns_nonnull__))
+ATTR_FORMAT(__printf__, 5, 0)
+ATTR_RETURNS_NONNULL
 static str
 createMalExceptionInternal(MalBlkPtr mb, int pc, enum malexception type,
 						   const char *prev, _In_z_ _Printf_format_string_ const char *format, va_list ap)

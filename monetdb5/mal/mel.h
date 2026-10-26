@@ -22,7 +22,7 @@ struct MALBLK;
 struct MALSTK;
 struct INSTR;
 
-typedef struct __attribute__((__designated_init__)) mel_atom {
+typedef struct ATTR_DESIGNATED_INIT mel_atom {
 	char name[14];
 	char basetype[14];
 	int size;
@@ -65,7 +65,7 @@ typedef struct __attribute__((__designated_init__)) mel_atom {
 #define sharedbatargany(n,a){ /*.name=n,*/ .isbat=true, .nr=a, .shared=true, .inout=true }
 #define sharedbatarg(n,t)   { /*.name=n,*/ .type=# t, .isbat=true, .shared=true, .inout=true }
 
-typedef struct __attribute__((__designated_init__)) mel_arg {
+typedef struct ATTR_DESIGNATED_INIT mel_arg {
 	//char *name;
 	char type[14];
 	uint16_t typeid:8, nr:2, isbat:1, vargs:1, opt:1,
@@ -75,7 +75,7 @@ typedef struct __attribute__((__designated_init__)) mel_arg {
 
 /* nr for any types 0, 1,2 */
 
-typedef struct __attribute__((__designated_init__)) mel_func {
+typedef struct ATTR_DESIGNATED_INIT mel_func {
 	const char *mod;
 	const char *fcn;
 	const char *cname;
@@ -91,7 +91,7 @@ typedef struct __attribute__((__designated_init__)) mel_func {
 
 typedef str (*mel_init)(void);
 
-typedef struct __attribute__((__designated_init__)) mel_func_arg {
+typedef struct ATTR_DESIGNATED_INIT mel_func_arg {
 	uint16_t type:8, nr:2, isbat:1, vargs:1, opt:1;
 } mel_func_arg;
 
@@ -101,7 +101,7 @@ int melFunction(bool command, const char *mod, const char *fcn, MALfcn imp,
 				int argc, ...);
 
 #ifdef SPECS
-typedef struct __attribute__((__designated_init__)) mal_spec {
+typedef struct ATTR_DESIGNATED_INIT mal_spec {
 	union {
 		MALfcn imp;
 		char *(*pimp)(struct CLIENT *, struct MALBLK *, struct MALSTK *, struct INSTR *);

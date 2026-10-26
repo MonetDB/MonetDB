@@ -68,29 +68,35 @@ extern "C" {
 #endif
 
 /* Does your compiler support `__attribute__' extension? */
-#if !defined(__has_attribute)
-#ifndef __attribute__
-#define __attribute__(...)
+#if defined(__has_attribute)
+#if __has_attribute(__const__)
+#define ATTR_CONST			__attribute__((__const__))
 #endif
-#else
-#if !__has_attribute(__nonnull__)
-#define __nonnull__(...)
+#if __has_attribute(__nonnull__)
+#define ATTR_NONNULL(...)		__attribute__((__nonnull__(__VA_ARGS__)))
 #endif
+#endif
+
+#ifndef ATTR_CONST
+#define ATTR_CONST
+#endif
+#ifndef ATTR_NONNULL
+#define ATTR_NONNULL(...)
 #endif
 
 /* connection-oriented functions */
 mapi_export Mapi mapi_mapi(const char *host, int port, const char *username, const char *password, const char *lang, const char *dbname);
 mapi_export Mapi mapi_mapiuri(const char *url, const char *user, const char *pass, const char *lang);
 mapi_export MapiMsg mapi_destroy(Mapi mid)
-	__attribute__((__nonnull__(1)));
+	ATTR_NONNULL(1);
 mapi_export Mapi mapi_connect(const char *host, int port, const char *username, const char *password, const char *lang, const char *dbname);
 mapi_export char **mapi_resolve(const char *host, int port, const char *pattern);
 mapi_export MapiMsg mapi_disconnect(Mapi mid)
-	__attribute__((__nonnull__(1)));
+	ATTR_NONNULL(1);
 mapi_export MapiMsg mapi_reconnect(Mapi mid)
-	__attribute__((__nonnull__(1)));
+	ATTR_NONNULL(1);
 mapi_export MapiMsg mapi_ping(Mapi mid)
-	__attribute__((__nonnull__(1)));
+	ATTR_NONNULL(1);
 mapi_export void mapi_setfilecallback2(
 	Mapi mid,
 	char *(*getfunc)(void *priv, const char *filename,
@@ -98,7 +104,7 @@ mapi_export void mapi_setfilecallback2(
 	char *(*putfunc)(void *priv, const char *filename, bool binary,
 			 const void *data, size_t size),
 	void *priv)
-	__attribute__((__nonnull__(1)));
+	ATTR_NONNULL(1);
 mapi_export void mapi_setfilecallback(
 	Mapi mid,
 	char *(*getfunc)(void *priv, const char *filename,
@@ -106,187 +112,187 @@ mapi_export void mapi_setfilecallback(
 	char *(*putfunc)(void *priv, const char *filename,
 			 const void *data, size_t size),
 	void *priv)
-	__attribute__((__nonnull__(1)));
+	ATTR_NONNULL(1);
 mapi_export void mapi_setclientprefix(Mapi mid, const char *prefix);
 
 mapi_export MapiMsg mapi_error(Mapi mid)
-	__attribute__((__nonnull__(1)));
+	ATTR_NONNULL(1);
 mapi_export const char *mapi_error_str(Mapi mid)
-	__attribute__((__nonnull__(1)));
+	ATTR_NONNULL(1);
 mapi_export void mapi_noexplain(Mapi mid, const char *errorprefix)
-	__attribute__((__nonnull__(1)));
+	ATTR_NONNULL(1);
 mapi_export void mapi_explain(Mapi mid, FILE *fd)
-	__attribute__((__nonnull__(1)));
+	ATTR_NONNULL(1);
 mapi_export void mapi_explain_query(MapiHdl hdl, FILE *fd)
-	__attribute__((__nonnull__(1)));
+	ATTR_NONNULL(1);
 mapi_export void mapi_explain_result(MapiHdl hdl, FILE *fd);
 mapi_export void mapi_trace(Mapi mid, bool flag)
-	__attribute__((__nonnull__(1)));
+	ATTR_NONNULL(1);
 #ifdef _STREAM_H_		/* if stream.h was included */
 mapi_export stream *mapi_get_from(Mapi mid)
-	__attribute__((__nonnull__(1)));
+	ATTR_NONNULL(1);
 mapi_export stream *mapi_get_to(Mapi mid)
-	__attribute__((__nonnull__(1)));
+	ATTR_NONNULL(1);
 #endif
 mapi_export bool mapi_get_trace(Mapi mid)
-	__attribute__((__nonnull__(1)));
+	ATTR_NONNULL(1);
 mapi_export int mapi_get_time_zone(Mapi mid)
-	__attribute__((__nonnull__(1)));
+	ATTR_NONNULL(1);
 mapi_export bool mapi_get_autocommit(Mapi mid)
-	__attribute__((__nonnull__(1)));
+	ATTR_NONNULL(1);
 mapi_export bool mapi_get_columnar_protocol(Mapi mid)
-	__attribute__((__nonnull__(1)));
+	ATTR_NONNULL(1);
 mapi_export MapiMsg mapi_log(Mapi mid, const char *nme)
-	__attribute__((__nonnull__(1)));
+	ATTR_NONNULL(1);
 mapi_export MapiMsg mapi_set_time_zone(Mapi mid, int seconds_east_of_utc)
-	__attribute__((__nonnull__(1)));
+	ATTR_NONNULL(1);
 mapi_export MapiMsg mapi_setAutocommit(Mapi mid, bool autocommit)
-	__attribute__((__nonnull__(1)));
+	ATTR_NONNULL(1);
 mapi_export MapiMsg mapi_set_columnar_protocol(Mapi mid, bool columnar_protocol)
-	__attribute__((__nonnull__(1)));
+	ATTR_NONNULL(1);
 mapi_export MapiMsg mapi_set_size_header(Mapi mid, bool value)
-	__attribute__((__nonnull__(1)));
+	ATTR_NONNULL(1);
 mapi_export MapiMsg mapi_release_id(Mapi mid, int id)
-	__attribute__((__nonnull__(1)));
+	ATTR_NONNULL(1);
 mapi_export const char *mapi_result_error(MapiHdl hdl);
 mapi_export const char *mapi_result_errorcode(MapiHdl hdl);
 mapi_export MapiMsg mapi_next_result(MapiHdl hdl)
-	__attribute__((__nonnull__(1)));
+	ATTR_NONNULL(1);
 mapi_export MapiMsg mapi_needmore(MapiHdl hdl)
-	__attribute__((__nonnull__(1)));
+	ATTR_NONNULL(1);
 mapi_export bool mapi_more_results(MapiHdl hdl)
-	__attribute__((__nonnull__(1)));
+	ATTR_NONNULL(1);
 mapi_export MapiHdl mapi_new_handle(Mapi mid)
-	__attribute__((__nonnull__(1)));
+	ATTR_NONNULL(1);
 mapi_export MapiMsg mapi_close_handle(MapiHdl hdl);
 mapi_export MapiMsg mapi_bind(MapiHdl hdl, int fnr, char **ptr)
-	__attribute__((__nonnull__(1)));
+	ATTR_NONNULL(1);
 mapi_export MapiMsg mapi_bind_var(MapiHdl hdl, int fnr, int type, void *ptr)
-	__attribute__((__nonnull__(1)));
+	ATTR_NONNULL(1);
 mapi_export MapiMsg mapi_bind_numeric(MapiHdl hdl, int fnr, int scale, int precision, void *ptr)
-	__attribute__((__nonnull__(1)));
+	ATTR_NONNULL(1);
 mapi_export MapiMsg mapi_clear_bindings(MapiHdl hdl)
-	__attribute__((__nonnull__(1)));
+	ATTR_NONNULL(1);
 mapi_export MapiMsg mapi_param_type(MapiHdl hdl, int fnr, int ctype, int sqltype, void *ptr)
-	__attribute__((__nonnull__(1)));
+	ATTR_NONNULL(1);
 mapi_export MapiMsg mapi_param_string(MapiHdl hdl, int fnr, int sqltype, char *ptr, int *sizeptr)
-	__attribute__((__nonnull__(1)));
+	ATTR_NONNULL(1);
 mapi_export MapiMsg mapi_param(MapiHdl hdl, int fnr, char **ptr)
-	__attribute__((__nonnull__(1)));
+	ATTR_NONNULL(1);
 mapi_export MapiMsg mapi_param_numeric(MapiHdl hdl, int fnr, int scale, int precision, void *ptr)
-	__attribute__((__nonnull__(1)));
+	ATTR_NONNULL(1);
 mapi_export MapiMsg mapi_clear_params(MapiHdl hdl)
-	__attribute__((__nonnull__(1)));
+	ATTR_NONNULL(1);
 mapi_export MapiHdl mapi_prepare(Mapi mid, const char *cmd)
-	__attribute__((__nonnull__(1)));
+	ATTR_NONNULL(1);
 mapi_export MapiMsg mapi_prepare_handle(MapiHdl hdl, const char *cmd)
-	__attribute__((__nonnull__(1)));
+	ATTR_NONNULL(1);
 mapi_export MapiMsg mapi_execute(MapiHdl hdl)
-	__attribute__((__nonnull__(1)));
+	ATTR_NONNULL(1);
 mapi_export MapiMsg mapi_fetch_reset(MapiHdl hdl)
-	__attribute__((__nonnull__(1)));
+	ATTR_NONNULL(1);
 mapi_export MapiMsg mapi_finish(MapiHdl hdl)
-	__attribute__((__nonnull__(1)));
+	ATTR_NONNULL(1);
 mapi_export MapiHdl mapi_query(Mapi mid, const char *cmd)
-	__attribute__((__nonnull__(1)));
+	ATTR_NONNULL(1);
 mapi_export MapiMsg mapi_query_handle(MapiHdl hdl, const char *cmd)
-	__attribute__((__nonnull__(1)));
+	ATTR_NONNULL(1);
 mapi_export MapiHdl mapi_query_prep(Mapi mid)
-	__attribute__((__nonnull__(1)));
+	ATTR_NONNULL(1);
 mapi_export MapiMsg mapi_query_part(MapiHdl hdl, const char *cmd, size_t size)
-	__attribute__((__nonnull__(1)));
+	ATTR_NONNULL(1);
 mapi_export MapiMsg mapi_query_done(MapiHdl hdl)
-	__attribute__((__nonnull__(1)));
+	ATTR_NONNULL(1);
 mapi_export MapiMsg mapi_query_abort(MapiHdl hdl, int reason)
-	__attribute__((__nonnull__(1)));
+	ATTR_NONNULL(1);
 mapi_export MapiHdl mapi_send(Mapi mid, const char *cmd)
-	__attribute__((__nonnull__(1)));
+	ATTR_NONNULL(1);
 mapi_export MapiMsg mapi_read_response(MapiHdl hdl)
-	__attribute__((__nonnull__(1)));
+	ATTR_NONNULL(1);
 mapi_export MapiMsg mapi_cache_limit(Mapi mid, int limit)
-	__attribute__((__nonnull__(1)));
+	ATTR_NONNULL(1);
 mapi_export MapiMsg mapi_cache_freeup(MapiHdl hdl, int percentage)
-	__attribute__((__nonnull__(1)));
+	ATTR_NONNULL(1);
 mapi_export MapiMsg mapi_seek_row(MapiHdl hdl, int64_t rowne, int whence)
-	__attribute__((__nonnull__(1)));
+	ATTR_NONNULL(1);
 
 mapi_export MapiMsg mapi_set_rtimeout(Mapi mid, unsigned int timeout, bool (*callback)(void *), void *callback_data)
-	__attribute__((__nonnull__(1)));
+	ATTR_NONNULL(1);
 mapi_export MapiMsg mapi_set_timeout(Mapi mid, unsigned int timeout, bool (*callback)(void *), void *callback_data)
-	__attribute__((__nonnull__(1)));
+	ATTR_NONNULL(1);
 mapi_export MapiMsg mapi_timeout(Mapi mid, unsigned int time)
-	__attribute__((__nonnull__(1)));
+	ATTR_NONNULL(1);
 mapi_export int mapi_fetch_row(MapiHdl hdl)
-	__attribute__((__nonnull__(1)));
+	ATTR_NONNULL(1);
 mapi_export int64_t mapi_fetch_all_rows(MapiHdl hdl)
-	__attribute__((__nonnull__(1)));
+	ATTR_NONNULL(1);
 mapi_export int mapi_get_field_count(MapiHdl hdl)
-	__attribute__((__nonnull__(1)));
+	ATTR_NONNULL(1);
 mapi_export int64_t mapi_get_row_count(MapiHdl hdl)
-	__attribute__((__nonnull__(1)));
+	ATTR_NONNULL(1);
 mapi_export int64_t mapi_get_last_id(MapiHdl hdl)
-	__attribute__((__nonnull__(1)));
+	ATTR_NONNULL(1);
 mapi_export int64_t mapi_rows_affected(MapiHdl hdl)
-	__attribute__((__nonnull__(1)));
+	ATTR_NONNULL(1);
 mapi_export int64_t mapi_get_querytime(MapiHdl hdl)
-	__attribute__((__nonnull__(1)));
+	ATTR_NONNULL(1);
 mapi_export int64_t mapi_get_maloptimizertime(MapiHdl hdl)
-	__attribute__((__nonnull__(1)));
+	ATTR_NONNULL(1);
 mapi_export int64_t mapi_get_sqloptimizertime(MapiHdl hdl)
-	__attribute__((__nonnull__(1)));
+	ATTR_NONNULL(1);
 
 mapi_export char *mapi_fetch_field(MapiHdl hdl, int fnr)
-	__attribute__((__nonnull__(1)));
+	ATTR_NONNULL(1);
 mapi_export size_t mapi_fetch_field_len(MapiHdl hdl, int fnr)
-	__attribute__((__nonnull__(1)));
+	ATTR_NONNULL(1);
 mapi_export MapiMsg mapi_store_field(MapiHdl hdl, int fnr, int outtype, void *outparam)
-	__attribute__((__nonnull__(1)));
+	ATTR_NONNULL(1);
 mapi_export char *mapi_fetch_line(MapiHdl hdl)
-	__attribute__((__nonnull__(1)));
+	ATTR_NONNULL(1);
 mapi_export int mapi_split_line(MapiHdl hdl)
-	__attribute__((__nonnull__(1)));
+	ATTR_NONNULL(1);
 mapi_export const char *mapi_get_lang(Mapi mid)
-	__attribute__((__nonnull__(1)));
+	ATTR_NONNULL(1);
 mapi_export const char *mapi_get_uri(Mapi mid)
-	__attribute__((__nonnull__(1)));
+	ATTR_NONNULL(1);
 mapi_export const char *mapi_get_dbname(Mapi mid)
-	__attribute__((__nonnull__(1)));
+	ATTR_NONNULL(1);
 mapi_export const char *mapi_get_host(Mapi mid)
-	__attribute__((__nonnull__(1)));
+	ATTR_NONNULL(1);
 mapi_export const char *mapi_get_user(Mapi mid)
-	__attribute__((__nonnull__(1)));
+	ATTR_NONNULL(1);
 mapi_export const char *mapi_get_mapi_version(void)
-	__attribute__((__const__));
+	ATTR_CONST;
 mapi_export const char *mapi_get_monet_version(Mapi mid)
-	__attribute__((__nonnull__(1)));
+	ATTR_NONNULL(1);
 mapi_export const char *mapi_get_motd(Mapi mid)
-	__attribute__((__nonnull__(1)));
+	ATTR_NONNULL(1);
 mapi_export bool mapi_is_connected(Mapi mid)
-	__attribute__((__nonnull__(1)));
+	ATTR_NONNULL(1);
 mapi_export char *mapi_get_table(MapiHdl hdl, int fnr)
-	__attribute__((__nonnull__(1)));
+	ATTR_NONNULL(1);
 mapi_export char *mapi_get_name(MapiHdl hdl, int fnr)
-	__attribute__((__nonnull__(1)));
+	ATTR_NONNULL(1);
 mapi_export char *mapi_get_type(MapiHdl hdl, int fnr)
-	__attribute__((__nonnull__(1)));
+	ATTR_NONNULL(1);
 mapi_export int mapi_get_len(MapiHdl hdl, int fnr)
-	__attribute__((__nonnull__(1)));
+	ATTR_NONNULL(1);
 mapi_export int mapi_get_digits(MapiHdl hdl, int fnr)
-	__attribute__((__nonnull__(1)));
+	ATTR_NONNULL(1);
 mapi_export int mapi_get_scale(MapiHdl hdl, int fnr)
-	__attribute__((__nonnull__(1)));
+	ATTR_NONNULL(1);
 mapi_export char *mapi_get_query(MapiHdl hdl)
-	__attribute__((__nonnull__(1)));
+	ATTR_NONNULL(1);
 mapi_export int mapi_get_querytype(MapiHdl hdl)
-	__attribute__((__nonnull__(1)));
+	ATTR_NONNULL(1);
 mapi_export int mapi_get_tableid(MapiHdl hdl)
-	__attribute__((__nonnull__(1)));
+	ATTR_NONNULL(1);
 mapi_export char *mapi_quote(const char *msg, int size)
-	__attribute__((__nonnull__(1)));
+	ATTR_NONNULL(1);
 mapi_export char *mapi_unquote(char *msg)
-	__attribute__((__nonnull__(1)));
+	ATTR_NONNULL(1);
 mapi_export MapiHdl mapi_get_active(Mapi mid)
-	__attribute__((__nonnull__(1)));
+	ATTR_NONNULL(1);
 #ifdef _MSC_VER
 mapi_export const char *wsaerror(int);
 #endif
