@@ -394,6 +394,7 @@ rel2bin_oahash_build(backend *be, sql_rel *rel, list *refs)
 
 	sql_subtype *bt = sql_fetch_localtype(TYPE_bit);
 	sql_subfunc *and = sql_bind_func(be->mvc, "sys", "and", bt, bt, F_FUNC, true, true);
+	bool first = true;
 	for (node *n = exps_cmp_hsh->h, *inout = shared_ht->op4.lval->h; n && inout; n = n->next, inout = inout->next) {
 		sql_exp *e = n->data;
 		stmt *ht = inout->data;
@@ -409,9 +410,10 @@ rel2bin_oahash_build(backend *be, sql_rel *rel, list *refs)
 		}
 		prnt = perfect ?
 			stmt_fhash_build_ht(be, ht, key, is_any(e)) :
-			stmt_oahash_build_ht(be, ht, key, prnt, is_any(e));
+			stmt_oahash_build_ht(be, ht, key, prnt, is_any(e) && first);
 		if (prnt == NULL)
 				return NULL;
+		first = false;
 		if (e->alias.label)
 			ht = stmt_alias(be, ht, e->alias.label, exp_find_rel_name(e), exp_name(e));
 		append(l, ht);
