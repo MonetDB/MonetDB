@@ -1,3 +1,7 @@
 # ChangeLog file for devel
 # This file is updated with Maddlog
 
+* Fri Oct 23 2026 Sjoerd Mullender <sjoerd@acm.org>
+- Added an option --relative-dir to mclient to specify the directory
+  for relative path names when using the ON CLIENT option in SQL queries.
+

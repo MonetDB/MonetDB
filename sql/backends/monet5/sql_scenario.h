@@ -15,9 +15,9 @@
 extern int SQLrunning; // dev. debug var, 2 remove once the code is ~stable
 extern int SQLdebug;
 extern str SQLprelude(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
-	__attribute__((__visibility__("hidden")));
+	ATTR_VISIBILITY_HIDDEN;
 extern str SQLepilogue(Client cntxt, void *ret)
-	__attribute__((__visibility__("hidden")));
+	ATTR_VISIBILITY_HIDDEN;
 
 sql5_export str SQLautocommit(mvc *m);
 sql5_export str SQLtrans(mvc *m);
@@ -29,17 +29,17 @@ sql5_export str SQLinitClientFromMAL(Client c, const char *passwd, const char *c
 sql5_export str SQLengine_(Client c);
 sql5_export void SQLengine(Client c);
 extern str handle_error(mvc *m, int pstatus, str msg)
-	__attribute__((__visibility__("hidden")));
+	ATTR_VISIBILITY_HIDDEN;
 
 extern str SQLstatement(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
-	__attribute__((__visibility__("hidden")));
+	ATTR_VISIBILITY_HIDDEN;
 extern str SQLinclude(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
-	__attribute__((__visibility__("hidden")));
+	ATTR_VISIBILITY_HIDDEN;
 sql5_export str SQLescapeString(str s);
 
 extern str SYSupdate_tables(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
-	__attribute__((__visibility__("hidden")));
+	ATTR_VISIBILITY_HIDDEN;
 extern str SYSupdate_schemas(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
-	__attribute__((__visibility__("hidden")));
+	ATTR_VISIBILITY_HIDDEN;
 
 #endif /* _SQL_SCENARIO_H_ */

@@ -1157,10 +1157,11 @@ rel_dce_(visitor *v, sql_rel *rel, bool partial, bool has_sets)
 	if (v->opt >= 0 && rel)
 		v->opt = rel->opt+1;
 	rel_dce_refs(v->sql, rel, refs);
-	if(has_sets)
+	if(has_sets) {
 		rel = rel_add_projects(v, rel);
-	if (v->opt >= 0 && rel)
-		v->opt = rel->opt+1;
+		if (v->opt >= 0 && rel)
+			v->opt = rel->opt+1;
+	}
 	rel_used(rel);
 	rel_dce_sub(v, rel);
 	if (refs && !partial) {

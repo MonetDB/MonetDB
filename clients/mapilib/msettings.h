@@ -146,7 +146,7 @@ mapi_export void msettings_set_localizer(msettings *mp, const char* (*localizer)
 
 mapi_export const char* msetting_string(const msettings *mp, mparm parm);
 mapi_export msettings_error msetting_set_string(msettings *mp, mparm parm, const char* value)
-	__attribute__((__nonnull__(3)));
+	ATTR_NONNULL(3);
 
 mapi_export long msetting_long(const msettings *mp, mparm parm);
 mapi_export msettings_error msetting_set_long(msettings *mp, mparm parm, long value);
@@ -212,14 +212,14 @@ bool msettings_lang_is_profiler(const msettings *mp);
 // Mutable access settings of existing Mapi.
 // Do not make changes while connected.
 mapi_export msettings *mapi_get_settings(Mapi mid)
-	__attribute__((__nonnull__(1)));
+	ATTR_NONNULL(1);
 
 // Create Mapi from settings.
 // Takes ownership of the settings except if malloc fails etc.
 // In that case NULL is returned and ownership of the settings remains with
 // the caller.
 mapi_export Mapi mapi_settings(msettings *settings)
-	__attribute__((__nonnull__(1)));
+	ATTR_NONNULL(1);
 
 
 #ifdef __cplusplus
