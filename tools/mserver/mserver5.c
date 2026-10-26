@@ -68,9 +68,7 @@ mserver_invalid_parameter_handler(const wchar_t *expression,
 }
 #endif
 
-static _Noreturn void usage(char *prog, int xit);
-
-static void
+static _Noreturn void
 usage(char *prog, int xit)
 {
 	fprintf(stderr, "Usage: %s [options]\n", prog);
