@@ -2562,7 +2562,7 @@ OAHASHnprobe(Client ctx, bat *PRB_oid, bat *HSH_slotid, const bat *PRB_key, cons
 	} while (0)
 
 static str
-_OAHASHomprobe(Client ctx, bat *PRB_oid, bat *HSH_slotid, bat *PRB_mark, const bat *PRB_key, const bat *HSH_ht, const bat *frequency, bit single, bit semantics, bool any)
+_OAHASHomprobe(Client ctx, bat *PRB_oid, bat *HSH_slotid, bat *PRB_mark, const bat *PRB_key, const bat *HSH_ht, const bat *frequency, bit single, bit semantics, bit any)
 {
 	(void)ctx;
 	BAT *o = NULL, *s = NULL, *m = NULL, *k = NULL, *t = NULL, *f = NULL;
