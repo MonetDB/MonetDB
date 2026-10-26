@@ -58,7 +58,7 @@ struct pipeline_concat {
 	int max;
 	bool started;
 	int *cur;
-	BAT *srcs[] __attribute__((__counted_by__(max)));
+	BAT *srcs[] ATTR_COUNTED_BY(max);
 };
 
 struct pipeline_resultset {

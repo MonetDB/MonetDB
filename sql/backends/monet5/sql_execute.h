@@ -18,6 +18,6 @@ sql5_export str RAstatement2(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr
 sql5_export str RAstatementEnd(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci);
 sql5_export void SQLdestroyResult(res_table *destroy);
 extern char *SQLrun(Client c, backend *be)
-	__attribute__((__visibility__("hidden")));
+	ATTR_VISIBILITY_HIDDEN;
 
 #endif /* _SQL_EXECUTE_H_ */

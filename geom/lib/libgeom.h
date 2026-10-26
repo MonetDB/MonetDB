@@ -107,7 +107,7 @@ extern const char *geom_type2str(int t, int flag);
 typedef struct wkb {
 	int len;
 	int srid;
-	char data[] __attribute__((__counted_by__(len)));
+	char data[] ATTR_COUNTED_BY(len);
 } wkb;
 
 typedef struct {

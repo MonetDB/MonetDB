@@ -15,7 +15,7 @@
 #endif
 
 void setqptimeout(lng usecs)
-		__attribute__((__visibility__("hidden")));
+		ATTR_VISIBILITY_HIDDEN;
 
 extern size_t qsize;
 

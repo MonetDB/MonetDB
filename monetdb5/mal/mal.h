@@ -73,7 +73,7 @@ mal_export int mal_init(const char *const *modules, bool embedded,
 mal_export _Noreturn void mal_exit(int status);
 mal_export void mal_reset(void);
 mal_export const char *mal_version(void)
-	__attribute__((__const__));
+	ATTR_CONST;
 
 /* This should be here, but cannot, as "Client" isn't known, yet ... |-(
  * For now, we move the prototype declaration to src/mal/mal_client.c,
@@ -162,7 +162,7 @@ typedef struct INSTR {
 	const char *fcnname;		/* function name, reference into namespace */
 	int argc, retc, maxarg;		/* total and result argument count */
 	int inout;			/* starting index of the inout result arguments in argv, -1 if none*/
-	int argv[] __attribute__((__counted_by__(maxarg)));	/* at least a few entries */
+	int argv[] ATTR_COUNTED_BY(maxarg);	/* at least a few entries */
 } *InstrPtr, InstrRecord;
 
 typedef struct MALBLK {
@@ -225,7 +225,7 @@ typedef struct MALSTK {
 
 	struct MALSTK *up;			/* stack trace list */
 	struct MALBLK *blk;			/* associated definition */
-	ValRecord stk[] __attribute__((__counted_by__(stksize)));
+	ValRecord stk[] ATTR_COUNTED_BY(stksize);
 } MalStack, *MalStkPtr;
 
 #endif /*  _MAL_H */

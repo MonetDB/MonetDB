@@ -20,15 +20,15 @@
 #include "gdk.h"
 
 void dump_threads(FILE *outf)
-	__attribute__((__visibility__("hidden")));
+	ATTR_VISIBILITY_HIDDEN;
 void join_detached_threads(void)
-	__attribute__((__visibility__("hidden")));
+	ATTR_VISIBILITY_HIDDEN;
 bool MT_kill_threads(void)
-	__attribute__((__visibility__("hidden")));
+	ATTR_VISIBILITY_HIDDEN;
 bool MT_thread_override_limits(void)
-	__attribute__((__visibility__("hidden")));
+	ATTR_VISIBILITY_HIDDEN;
 int parse_cpuset(FILE *f)
-	__attribute__((__visibility__("hidden")));
+	ATTR_VISIBILITY_HIDDEN;
 
 #ifdef NATIVE_WIN32
 #define GDKwinerror(...)						\
@@ -52,7 +52,7 @@ struct freebats {
 	uint32_t nfreebats;
 };
 struct freebats *MT_thread_getfreebats(void)
-	__attribute__((__visibility__("hidden")));
+	ATTR_VISIBILITY_HIDDEN;
 
 struct allocator {
 	size_t size;	 /* size of the allocator in terms of blocks */

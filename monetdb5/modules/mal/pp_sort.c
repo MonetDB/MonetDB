@@ -773,7 +773,7 @@ typedef struct sop_t {
 	MT_Lock l;
 
 	part_t *h, *t;
-	part_t *workers[] __attribute__((__counted_by__(nr_workers)));
+	part_t *workers[] ATTR_COUNTED_BY(nr_workers);
 } sop_t;
 
 static void

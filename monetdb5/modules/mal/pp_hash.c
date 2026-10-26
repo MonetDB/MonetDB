@@ -2015,7 +2015,7 @@ error:
 					oid_mtd[mtdcnt] = off+i; \
 					slt[mtdcnt] = (oid)(slot - 1); \
 					mtdcnt++; \
-					if (match && *single && freq[slot - 1] > 1) { \
+					if (match && single && freq[slot - 1] > 1) { \
 						err = createException(SQL, "oahash.probe", "more than one match"); \
 						goto error; \
 					} \
@@ -2038,7 +2038,7 @@ error:
 					oid_mtd[mtdcnt] = off+i; \
 					slt[mtdcnt] = (oid)(slot - 1); \
 					mtdcnt++; \
-					if (match && *single && freq[slot - 1] > 1) { \
+					if (match && single && freq[slot - 1] > 1) { \
 						err = createException(SQL, "oahash.probe", "more than one match"); \
 						goto error; \
 					} \
@@ -2064,7 +2064,7 @@ error:
 				break; \
 		} \
 		TIMEOUT_LOOP_IDX_DECL(i, keycnt, qry_ctx) { \
-			if (!(*semantics) && is_##Type##_nil(ky[i])) { \
+			if (!(semantics) && is_##Type##_nil(ky[i])) { \
 				if (!match && empty) { \
 					oid_mtd[mtdcnt] = off+i; \
 					slt[mtdcnt] = oid_nil; \
@@ -2083,7 +2083,7 @@ error:
 				oid_mtd[mtdcnt] = off+i; \
 				slt[mtdcnt] = match?(oid)(slot - 1):oid_nil; \
 				mtdcnt++; \
-				if (match && *single && freq[slot - 1] > 1) { \
+				if (match && single && freq[slot - 1] > 1) { \
 					err = createException(SQL, "oahash.probe", "more than one match"); \
 					goto error; \
 				} \
@@ -2103,7 +2103,7 @@ error:
 		Type *vals = ht->vals; \
 		\
 		TIMEOUT_LOOP_IDX_DECL(i, keycnt, qry_ctx) { \
-			if (!(*semantics) && is_##Type##_nil(ky[i])) { \
+			if (!(semantics) && is_##Type##_nil(ky[i])) { \
 				if (!match && empty) { \
 					oid_mtd[mtdcnt] = off+i; \
 					slt[mtdcnt] = oid_nil; \
@@ -2122,7 +2122,7 @@ error:
 				oid_mtd[mtdcnt] = off+i; \
 				slt[mtdcnt] = match?(oid)(slot - 1):oid_nil; \
 				mtdcnt++; \
-				if (match && *single && freq[slot - 1] > 1) { \
+				if (match && single && freq[slot - 1] > 1) { \
 					err = createException(SQL, "oahash.probe", "more than one match"); \
 					goto error; \
 				} \
@@ -2140,7 +2140,7 @@ error:
 		TIMEOUT_LOOP_IDX_DECL(i, keycnt, qry_ctx) { \
 			var_t voff = VarHeapVal(bi.base,i,bi.width);				\
 			char *val = voff == 0 ? (char*) ATOMnilptr((bi).type) : (char *) ((bi).vh->base+voff); \
-			if (!(*semantics) && atomcmp(val, nil) == 0) { \
+			if (!(semantics) && atomcmp(val, nil) == 0) { \
 				if (!match && empty) { \
 					oid_mtd[mtdcnt] = off+i; \
 					slt[mtdcnt] = oid_nil; \
@@ -2159,7 +2159,7 @@ error:
 				oid_mtd[mtdcnt] = off+i; \
 				slt[mtdcnt] = match?(oid)(slot - 1):oid_nil; \
 				mtdcnt++; \
-				if (match && *single && freq[slot - 1] > 1) { \
+				if (match && single && freq[slot - 1] > 1) { \
 					err = createException(SQL, "oahash.probe", "more than one match"); \
 					bat_iterator_end(&bi); \
 					goto error; \
@@ -2170,7 +2170,7 @@ error:
 	} while (0)
 
 static str
-OAHASHprobe1(Client ctx, bat *PRB_oid, bat *HSH_slotid, const bat *PRB_key, const bat *HSH_ht, const bat *frequency, const bit *single, const bit *semantics, bit match)
+_OAHASHprobe1(Client ctx, bat *PRB_oid, bat *HSH_slotid, const bat *PRB_key, const bat *HSH_ht, const bat *frequency, bit single, bit semantics, bit match)
 {
 	(void)ctx;
 	BAT *o = NULL, *s = NULL, *k = NULL, *t = NULL, *f = NULL;
@@ -2178,7 +2178,7 @@ OAHASHprobe1(Client ctx, bat *PRB_oid, bat *HSH_slotid, const bat *PRB_key, cons
 	lng *freq = NULL;
 	str err = NULL;
 
-	assert(((*single) && frequency) || !(*single));
+	assert(((single) && frequency) || !(single));
 
 	k = BATdescriptor(*PRB_key);
 	t = BATdescriptor(*HSH_ht);
@@ -2186,7 +2186,7 @@ OAHASHprobe1(Client ctx, bat *PRB_oid, bat *HSH_slotid, const bat *PRB_key, cons
 		err = createException(SQL, "oahash.probe", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		goto error;
 	}
-	if (*single) {
+	if (single) {
 		/* frequency is required to check if a match is single */
 		f = BATdescriptor(*frequency);
 		if (!f) {
@@ -2421,25 +2421,25 @@ error:
 static str
 OAHASHprobe_single(Client ctx, bat *PRB_oid, bat *HSH_slotid, const bat *PRB_key, const bat *HSH_ht, const bat *frequency, const bit *single, const bit *semantics)
 {
-	return OAHASHprobe1(ctx, PRB_oid, HSH_slotid, PRB_key, HSH_ht, frequency, single, semantics, true);
+	return _OAHASHprobe1(ctx, PRB_oid, HSH_slotid, PRB_key, HSH_ht, frequency, *single, *semantics, true);
 }
 
 static str
 OAHASHprobe(Client ctx, bat *PRB_oid, bat *HSH_slotid, const bat *PRB_key, const bat *HSH_ht, const bit *single, const bit *semantics)
 {
-	return OAHASHprobe1(ctx, PRB_oid, HSH_slotid, PRB_key, HSH_ht, NULL, single, semantics, true);
+	return _OAHASHprobe1(ctx, PRB_oid, HSH_slotid, PRB_key, HSH_ht, NULL, *single, *semantics, true);
 }
 
 static str
 OAHASHnprobe_single(Client ctx, bat *PRB_oid, bat *HSH_slotid, const bat *PRB_key, const bat *HSH_ht, const bat *frequency, const bit *single, const bit *semantics)
 {
-	return OAHASHprobe1(ctx, PRB_oid, HSH_slotid, PRB_key, HSH_ht, frequency, single, semantics, false);
+	return _OAHASHprobe1(ctx, PRB_oid, HSH_slotid, PRB_key, HSH_ht, frequency, *single, *semantics, false);
 }
 
 static str
 OAHASHnprobe(Client ctx, bat *PRB_oid, bat *HSH_slotid, const bat *PRB_key, const bat *HSH_ht, const bit *single, const bit *semantics)
 {
-	return OAHASHprobe1(ctx, PRB_oid, HSH_slotid, PRB_key, HSH_ht, NULL, single, semantics, false);
+	return _OAHASHprobe1(ctx, PRB_oid, HSH_slotid, PRB_key, HSH_ht, NULL, *single, *semantics, false);
 }
 
 #define BATvoprobe() \
@@ -2463,7 +2463,7 @@ OAHASHnprobe(Client ctx, bat *PRB_oid, bat *HSH_slotid, const bat *PRB_key, cons
 			if (slot) { \
 				slt[mtdcnt] = (oid)(slot - 1); \
 				mark[mtdcnt] = true; \
-				if (*single && freq[slot - 1] > 1) { \
+				if (single && freq[slot - 1] > 1) { \
 					err = createException(SQL, "oahash.probe", "more than one match"); \
 					goto error; \
 				} \
@@ -2489,7 +2489,7 @@ OAHASHnprobe(Client ctx, bat *PRB_oid, bat *HSH_slotid, const bat *PRB_key, cons
 		Type *vals = ht->vals; \
 		\
 		TIMEOUT_LOOP_IDX_DECL(i, keycnt, qry_ctx) { \
-			if (!(*semantics) && is_##Type##_nil(ky[i])) { \
+			if (!(semantics) && is_##Type##_nil(ky[i])) { \
 				oid_mtd[mtdcnt] = off+i; \
 				slt[mtdcnt] = oid_nil; \
 				mark[mtdcnt] = any?empty:false; \
@@ -2507,7 +2507,7 @@ OAHASHnprobe(Client ctx, bat *PRB_oid, bat *HSH_slotid, const bat *PRB_key, cons
 			if (slot) { \
 				slt[mtdcnt] = (oid)(slot - 1); \
 				mark[mtdcnt] = true; \
-				if (*single && freq[slot - 1] > 1) { \
+				if (single && freq[slot - 1] > 1) { \
 					err = createException(SQL, "oahash.probe", "more than one match"); \
 					goto error; \
 				} \
@@ -2539,7 +2539,7 @@ OAHASHnprobe(Client ctx, bat *PRB_oid, bat *HSH_slotid, const bat *PRB_key, cons
 		Type *vals = ht->vals; \
 		\
 		TIMEOUT_LOOP_IDX_DECL(i, keycnt, qry_ctx) { \
-			if (!(*semantics) && is_##Type##_nil(ky[i])) { \
+			if (!(semantics) && is_##Type##_nil(ky[i])) { \
 				oid_mtd[mtdcnt] = off+i; \
 				slt[mtdcnt] = oid_nil; \
 				mark[mtdcnt] = any?empty:false; \
@@ -2557,7 +2557,7 @@ OAHASHnprobe(Client ctx, bat *PRB_oid, bat *HSH_slotid, const bat *PRB_key, cons
 			if (slot) { \
 				slt[mtdcnt] = (oid)(slot - 1); \
 				mark[mtdcnt] = true; \
-				if (*single && freq[slot - 1] > 1) { \
+				if (single && freq[slot - 1] > 1) { \
 					err = createException(SQL, "oahash.probe", "more than one match"); \
 					goto error; \
 				} \
@@ -2587,7 +2587,7 @@ OAHASHnprobe(Client ctx, bat *PRB_oid, bat *HSH_slotid, const bat *PRB_key, cons
 		TIMEOUT_LOOP_IDX_DECL(i, keycnt, qry_ctx) { \
 			var_t voff = VarHeapVal(bi.base,i,bi.width);				\
 			char *val = voff == 0 ? (char*) ATOMnilptr((bi).type) : (char *) ((bi).vh->base+voff); \
-			if (!(*semantics) && atomcmp(val, nil) == 0) { \
+			if (!(semantics) && atomcmp(val, nil) == 0) { \
 				oid_mtd[mtdcnt] = off+i; \
 				slt[mtdcnt] = oid_nil; \
 				mark[mtdcnt] = any?empty:false; \
@@ -2605,7 +2605,7 @@ OAHASHnprobe(Client ctx, bat *PRB_oid, bat *HSH_slotid, const bat *PRB_key, cons
 			if (slot) { \
 				slt[mtdcnt] = (oid)(slot - 1); \
 				mark[mtdcnt] = true; \
-				if (*single && freq[slot - 1] > 1) { \
+				if (single && freq[slot - 1] > 1) { \
 					err = createException(SQL, "oahash.oprobe", "more than one match"); \
 					bat_iterator_end(&bi); \
 					goto error; \
@@ -2628,7 +2628,7 @@ OAHASHnprobe(Client ctx, bat *PRB_oid, bat *HSH_slotid, const bat *PRB_key, cons
 	} while (0)
 
 static str
-OAHASHomprobe(Client ctx, bat *PRB_oid, bat *HSH_slotid, bat *PRB_mark, const bat *PRB_key, const bat *HSH_ht, const bat *frequency, const bit *single, const bit *semantics, bool any, bool match_nulls)
+_OAHASHomprobe(Client ctx, bat *PRB_oid, bat *HSH_slotid, bat *PRB_mark, const bat *PRB_key, const bat *HSH_ht, const bat *frequency, bit single, bit semantics, bool any, bool match_nulls)
 {
 	(void)ctx;
 	BAT *o = NULL, *s = NULL, *m = NULL, *k = NULL, *t = NULL, *f = NULL;
@@ -2636,7 +2636,7 @@ OAHASHomprobe(Client ctx, bat *PRB_oid, bat *HSH_slotid, bat *PRB_mark, const ba
 	lng *freq = NULL;
 	str err = NULL;
 
-	assert(((*single) && frequency) || !(*single));
+	assert(((single) && frequency) || !(single));
 	if (match_nulls) assert(any);
 
 	k = BATdescriptor(*PRB_key);
@@ -2645,7 +2645,7 @@ OAHASHomprobe(Client ctx, bat *PRB_oid, bat *HSH_slotid, bat *PRB_mark, const ba
 		err = createException(SQL, "oahash.probe", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		goto error;
 	}
-	if (*single) {
+	if (single) {
 		/* frequency is required to check if a match is single */
 		f = BATdescriptor(*frequency);
 		if (!f) {
@@ -2778,25 +2778,25 @@ error:
 static str
 OAHASHoprobe_single(Client ctx, bat *PRB_oid, bat *HSH_slotid, bat *PRB_mark, const bat *PRB_key, const bat *HSH_ht, const bat *frequency, const bit *single, const bit *semantics)
 {
-	return OAHASHomprobe(ctx, PRB_oid, HSH_slotid, PRB_mark, PRB_key, HSH_ht, frequency, single, semantics, false /*any*/, false /*match_nulls*/);
+	return _OAHASHomprobe(ctx, PRB_oid, HSH_slotid, PRB_mark, PRB_key, HSH_ht, frequency, *single, *semantics, false /*any*/, false /*match_nulls*/);
 }
 
 static str
 OAHASHoprobe(Client ctx, bat *PRB_oid, bat *HSH_slotid, bat *PRB_mark, const bat *PRB_key, const bat *HSH_ht, const bit *single, const bit *semantics)
 {
-	return OAHASHomprobe(ctx, PRB_oid, HSH_slotid, PRB_mark, PRB_key, HSH_ht, NULL, single, semantics, false /*any*/, false /*match_nulls*/);
+	return _OAHASHomprobe(ctx, PRB_oid, HSH_slotid, PRB_mark, PRB_key, HSH_ht, NULL, *single, *semantics, false /*any*/, false /*match_nulls*/);
 }
 
 static str
 OAHASHmprobe_single(Client ctx, bat *PRB_oid, bat *HSH_slotid, bat *PRB_mark, const bat *PRB_key, const bat *HSH_ht, const bat *frequency, const bit *single, const bit *semantics, const bit *match_nulls)
 {
-	return OAHASHomprobe(ctx, PRB_oid, HSH_slotid, PRB_mark, PRB_key, HSH_ht, frequency, single, semantics, true /*any*/, match_nulls);
+	return _OAHASHomprobe(ctx, PRB_oid, HSH_slotid, PRB_mark, PRB_key, HSH_ht, frequency, *single, *semantics, true /*any*/, *match_nulls);
 }
 
 static str
 OAHASHmprobe(Client ctx, bat *PRB_oid, bat *HSH_slotid, bat *PRB_mark, const bat *PRB_key, const bat *HSH_ht, const bit *single, const bit *semantics, const bit *match_nulls)
 {
-	return OAHASHomprobe(ctx, PRB_oid, HSH_slotid, PRB_mark, PRB_key, HSH_ht, NULL, single, semantics, true /*any*/, match_nulls);
+	return _OAHASHomprobe(ctx, PRB_oid, HSH_slotid, PRB_mark, PRB_key, HSH_ht, NULL, *single, *semantics, true /*any*/, *match_nulls);
 }
 
 #define BATvprobe_cmbd() \
