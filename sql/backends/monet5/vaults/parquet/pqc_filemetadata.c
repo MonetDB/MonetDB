@@ -65,7 +65,7 @@ struct pqc_file {
 ATTR_FORMAT(__printf__, 2, 3)
 static void
 pq_set_error(pqc_file *pq,
-			 _In_z_ _Printf_format_string_ const char *format, ... )
+			 _Printf_format_string_ const char *format, ... )
 {
 	va_list	ap;
 

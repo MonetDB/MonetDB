@@ -229,7 +229,7 @@ checkUTF8(const char *v, size_t *ncp)
 
 ATTR_FORMAT(__printf__, 4, 0)
 static inline int
-vreallocprintf(char **buf, size_t *pos, size_t *capacity, _In_z_ _Printf_format_string_ const char *fmt, va_list args)
+vreallocprintf(char **buf, size_t *pos, size_t *capacity, _Printf_format_string_ const char *fmt, va_list args)
 {
 	va_list ap;
 
@@ -280,7 +280,7 @@ vreallocprintf(char **buf, size_t *pos, size_t *capacity, _In_z_ _Printf_format_
 
 ATTR_FORMAT(__printf__, 4, 5)
 static inline int
-reallocprintf(char **buf, size_t *pos, size_t *capacity, _In_z_ _Printf_format_string_ const char *fmt, ...)
+reallocprintf(char **buf, size_t *pos, size_t *capacity, _Printf_format_string_ const char *fmt, ...)
 {
 	int n;
 	va_list ap;

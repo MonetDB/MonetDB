@@ -655,9 +655,6 @@ gmtime_r(const time_t *restrict timep, struct tm *restrict result)
 #define ioctlsocket ioctl
 #endif
 
-#ifndef _In_z_
-#define _In_z_
-#endif
 #ifndef _Printf_format_string_
 #define _Printf_format_string_
 #endif

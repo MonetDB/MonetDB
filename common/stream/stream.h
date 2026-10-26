@@ -86,7 +86,7 @@ stream_export const char* mnstr_peek_error(const stream *s);
 stream_export mnstr_error_kind mnstr_errnr(const stream *s);
 stream_export const char *mnstr_error_kind_name(mnstr_error_kind k);
 stream_export void mnstr_clearerr(stream *s);
-stream_export void mnstr_set_error(stream *s, mnstr_error_kind kind, _In_z_ _Printf_format_string_ const char *fmt, ...)
+stream_export void mnstr_set_error(stream *s, mnstr_error_kind kind, _Printf_format_string_ const char *fmt, ...)
 	ATTR_FORMAT(__printf__, 3, 4);
 
 
@@ -130,7 +130,7 @@ stream_export int mnstr_writeLngArray(stream *restrict s, const int64_t *restric
 stream_export int mnstr_readHgeArray(stream *restrict s, int128_t *restrict val, size_t cnt); // unused
 stream_export int mnstr_writeHgeArray(stream *restrict s, const int128_t *restrict val, size_t cnt); // unused
 #endif
-stream_export int mnstr_printf(stream *restrict s, _In_z_ _Printf_format_string_ const char *restrict format, ...) // USED all over
+stream_export int mnstr_printf(stream *restrict s, _Printf_format_string_ const char *restrict format, ...) // USED all over
 	ATTR_FORMAT(__printf__, 2, 3);
 stream_export ssize_t mnstr_read(stream *restrict s, void *restrict buf, size_t elmsize, size_t cnt); // USED all over
 stream_export ssize_t mnstr_readline(stream *restrict s, void *restrict buf, size_t maxcnt); // used in mclient, sql.c/mvc_export_table_wrap, bat_logger.c

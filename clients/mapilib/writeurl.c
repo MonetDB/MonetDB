@@ -79,7 +79,7 @@ ob_append_escaped(struct outbuf *ob, const char *text, bool escape_colon)
 
 ATTR_FORMAT(__printf__, 2, 3)
 static void
-ob_printf(struct outbuf *ob, _In_z_ _Printf_format_string_ const char *fmt, ...)
+ob_printf(struct outbuf *ob, _Printf_format_string_ const char *fmt, ...)
 {
 	va_list ap;
 	size_t avail = ob->end - ob->pos;

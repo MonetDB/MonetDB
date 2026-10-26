@@ -100,7 +100,7 @@ extern void setODBCdebug(const char *filename, bool overrideEnvVar);
 
 ATTR_FORMAT(__printf__, 1, 2)
 static inline void
-ODBCLOG(_In_z_ _Printf_format_string_ const char *fmt, ...)
+ODBCLOG(_Printf_format_string_ const char *fmt, ...)
 {
 	va_list ap;
 

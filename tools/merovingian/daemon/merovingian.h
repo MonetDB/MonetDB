@@ -56,7 +56,7 @@ typedef struct _dpair {
 	struct _dpair* next;
 }* dpair;
 
-char *newErr(_In_z_ _Printf_format_string_ const char *fmt, ...)
+char *newErr(_Printf_format_string_ const char *fmt, ...)
 	ATTR_FORMAT(__printf__, 1, 2);
 bool terminateProcess(char *dbname, pid_t pid, mtype type);
 void logFD(dpair dp, int fd, const char *type, const char *dbname, long long pid, FILE *stream, bool rest);
