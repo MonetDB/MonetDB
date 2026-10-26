@@ -825,7 +825,7 @@ push_up_project_exp(visitor *v, sql_rel *rel, sql_exp *e)
 					e->r = ne->r;
 					e->nid = ne->nid;
 					e->freevar = ne->freevar;
-					e->alias.label = 0;
+					//e->alias.label = 0;
 				} else {
 					ne = exp_copy(v->sql, ne);
 					return push_up_project_exp(v, rel, ne);
@@ -1597,21 +1597,26 @@ rel_rewrite_setops(visitor *v, sql_rel *rel)
 	if (!rel)
 		return rel;
 	if (rel->op == op_inter || rel->op == op_except) {
-		if (need_distinct(rel)) { /* => project(groupby(l) semi/anti project(r)) */
+		sql_rel *l = rel_dup(rel->l), *r = rel_dup(rel->r);
+		if (need_distinct(rel) || need_distinct(l)) { /* => project(groupby(l) semi/anti project(r)) */
 			bool anti = (rel->op == op_except);
-			sql_rel *l = rel_dup(rel->l), *r = rel_dup(rel->r);
 			/* possitional naming ! */
 			if (!is_project(r->op)) {
 				list *rexps = rel_projections(v->sql, r, NULL, 0, 1);
 				r = rel_project(v->sql->sa, r, rexps);
 			}
-			list *gbes = rel_projections(v->sql, l, NULL, 0, 1);
-			l = rel_groupby(v->sql, rel->l, NULL/*gbes*/);
-			l->r = gbes;
-			l->exps = sa_list(v->sql->sa);
-			/* simply refer to the group by exps */
-			for(node *n = gbes->h; n; n = n->next)
-				append(l->exps, exp_ref(v->sql, n->data));
+			if (need_distinct(rel)) {
+				list *gbes = rel_projections(v->sql, l, NULL, 0, 1);
+				l = rel_groupby(v->sql, rel->l, NULL/*gbes*/);
+				l->r = gbes;
+				l->exps = sa_list(v->sql->sa);
+				/* simply refer to the group by exps */
+				for(node *n = gbes->h; n; n = n->next)
+					append(l->exps, exp_ref(v->sql, n->data));
+			} else if (!is_project(l->op)) {
+				list *lexps = rel_projections(v->sql, l, NULL, 0, 1);
+				l = rel_project(v->sql->sa, l, lexps);
+			}
 			sql_rel *nrel = rel_crossproduct(v->sql->sa, l, r, anti ? op_anti : op_semi);
 			/* add compare exps */
 			nrel->exps = sa_list(v->sql->sa);
@@ -3856,6 +3861,7 @@ add_outers_repr(visitor *v, sql_rel *d, struct unnesting *info, bool relabel)
 	}
 	for (; n && m; n = n->next, m = m->next) {
 		sql_exp *new = relabel ? n->data : exp_copy(v->sql, n->data);
+		set_not_unique(new);
 		sql_exp *old = m->data;
 		info->repr = sa_list_append(v->sql->sa, info->repr, old);
 		info->repr = sa_list_append(v->sql->sa, info->repr, new);
@@ -3950,7 +3956,7 @@ unnest(visitor *v, sql_rel *parent, sql_rel * rel, struct unnesting *info, list 
 			sql_exp *aexp = n->data;
 			n->data = aexp = exp_rewrite(v->sql, rel, aexp, info->info->outer_refs);
 		}
-		rel->exps = add_outers(v, rel->exps, info, false, false);
+		rel->exps = add_outers(v, rel->exps, info, false, true);
 		rel->nr_outers = list_length(info->info->outer_refs);
 		rel->exps = rewrite_columns(v, rel->exps, info);
 		if (rel->r) {

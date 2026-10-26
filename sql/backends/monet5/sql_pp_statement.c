@@ -669,6 +669,53 @@ stmt_mark_matched(backend *be, stmt *inout, stmt *pos)
 }
 
 stmt *
+stmt_mark_nulls(backend *be, stmt *inout, stmt *nils, stmt *pos)
+{
+	InstrPtr q = newStmt(be->mb, ialgebraRef, "matched");
+	if (q == NULL) return NULL;
+	setVarType(be->mb, getArg(q, 0), newBatType(TYPE_oid)); /* expanded */
+	q = pushArgument(be->mb, q, inout->nr);
+	q->inout = 1;
+	q = pushArgument(be->mb, q, nils->nr);
+	q = pushArgument(be->mb, q, pos->nr);
+	pushInstruction(be->mb, q);
+
+	stmt *s = stmt_none(be);
+	if (s == NULL) return NULL;
+	s->op4.typeval = *tail_type(pos);
+	s->nr = getArg(q, 0);
+	s->nrcols = 1;
+	s->q = q;
+	s->op1 = inout;
+	s->op2 = nils;
+	s->op3 = pos;
+	s->flag = cmp_project;
+	s->key = 0;
+	return s;
+}
+
+stmt *
+stmt_hash_empty(backend *be, stmt *ht)
+{
+	InstrPtr q = newStmt(be->mb, putName("oahash"), "empty");
+	if (q == NULL) return NULL;
+	setVarType(be->mb, getArg(q, 0), TYPE_bit);
+	q = pushArgument(be->mb, q, ht->nr);
+	pushInstruction(be->mb, q);
+
+	stmt *s = stmt_none(be);
+	if (s == NULL) return NULL;
+	s->op4.typeval = *sql_fetch_localtype(TYPE_bit);
+	s->nr = getArg(q, 0);
+	s->nrcols = 1;
+	s->q = q;
+	s->op1 = ht;
+	s->flag = cmp_project;
+	s->key = 1;
+	return s;
+}
+
+stmt *
 stmt_oahash_expand(backend *be, const stmt *prb_res, const stmt *freq, bit outer)
 {
 	if (!freq)
@@ -751,6 +798,26 @@ stmt_oahash_explode_unmatched(backend *be, const stmt *ht, const stmt *mrk, cons
 	q = pushArgument(be->mb, q, ht->nr);
 	q = pushArgument(be->mb, q, mrk->nr);
 	q = pushArgument(be->mb, q, freq->nr);
+	pushInstruction(be->mb, q);
+
+	stmt *s = stmt_none(be);
+	if (s == NULL) return NULL;
+	s->op4.typeval = *sql_fetch_localtype(TYPE_oid);
+	s->nr = getArg(q, 0);
+	s->nrcols = 1;
+	s->q = q;
+	return s;
+}
+
+stmt *
+stmt_oahash_select_unmatched(backend *be, const stmt *slice, const stmt *cnt)
+{
+	InstrPtr q = newStmt(be->mb, putName("oahash"), putName("select_unmatched"));
+	if (q == NULL)
+		return NULL;
+	setVarType(be->mb, getArg(q, 0), newBatType(TYPE_oid)); /* expanded */
+	q = pushArgument(be->mb, q, slice->nr);
+	q = pushArgument(be->mb, q, cnt->nr);
 	pushInstruction(be->mb, q);
 
 	stmt *s = stmt_none(be);

@@ -2323,6 +2323,8 @@ rel_has_union(sql_rel *r)
 {
 	if (!r || r->op == op_basetable)
 		return false;
+	if (rel_is_ref(r))
+		return true;
 	if (r->op == op_munion)
 		return true;
 	if (r->op == op_project || r->op == op_groupby || r->op == op_select)

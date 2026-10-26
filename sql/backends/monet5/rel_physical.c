@@ -490,6 +490,7 @@ find_cmp_exps(list **exps_hsh, list **exps_prb, const list *exps, sql_rel *rel_h
 	for (node *n = exps->h; n; n = n->next) {
 		sql_exp *e = n->data;
 		bit any = is_any(e);
+		bit semantic = is_semantics(e);
 
 		assert(e->type == e_cmp);
 
@@ -505,6 +506,8 @@ find_cmp_exps(list **exps_hsh, list **exps_prb, const list *exps, sql_rel *rel_h
 					set_unique(er);
 				if (any)
 					set_any(er);
+				if (semantic)
+					set_semantics(er);
 				append(*exps_hsh, er);
 				append(*exps_prb, e->l);
 			} else {
@@ -515,6 +518,8 @@ find_cmp_exps(list **exps_hsh, list **exps_prb, const list *exps, sql_rel *rel_h
 					set_unique(el);
 				if (any)
 					set_any(el);
+				if (semantic)
+					set_semantics(el);
 				append(*exps_hsh, el);
 				append(*exps_prb, e->r);
 			}
@@ -899,6 +904,7 @@ rel_pipeline(visitor *v, sql_rel *rel, bool materialize, int pb)
 				need_all = true;
 			rel_hsh = rel_buildhash(v, rel_hsh, NULL, list_empty(eq_exps));
 			rel_hsh->flag = (int)(needs_payload?op_join:op_semi);
+			rel_hsh->oahash = (rel->op == op_anti && rel->oahash==1);
 		}
 		rel_prb = rel_probehash(v, rel_prb, NULL);
 		rel->r = (rel->oahash==1) ? rel_prb : rel_hsh;
