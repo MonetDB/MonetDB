@@ -23,6 +23,7 @@ import fnmatch
 import http
 import http.server
 import datetime
+import pathlib
 import pymonetdb  # check for pymonetdb early: it is essential for our work
 import concurrent.futures
 
@@ -1908,7 +1909,11 @@ def RunTest(env, TST, COND, oktests, length, pSrvr, total_tests, options, enviro
             else:
                 negate = False
             if cond in relcond:
-                if not os.path.exists(os.path.join(env['GDK_DBFARM'], relcond[cond][0])):
+                if 'UPGRADE_DBFARMS' in environ \
+                   and f'{cond[:4]}RELEASE' in environ:
+                    pass
+                elif not os.path.exists(os.path.join(env['GDK_DBFARM'],
+                                                     relcond[cond][0])):
                     reason = 'as %s release database is not available' % relcond[cond][1]
                     elem = SkipTest(env, TST, EXT, reason, length, TSTDIR, TSTTRGDIR, TSTSRCDIR)
                     break
@@ -3833,6 +3838,17 @@ def main():
         parser.add_argument('--produce-html', action='store_true',
                             dest='produce_html', help='produce HTML files')
     parser.add_argument('--loglevel', action='store', help='log level')
+    parser.add_argument('--upgrade-farms', action='store',
+                        help='URL of directory where upgrade databases are stored')
+    parser.add_argument('--lastrelease', action='store',
+                        help=('name of last release for'
+                              ' sql/test/*db-upgrade* tests'))
+    parser.add_argument('--prevrelease', action='store',
+                        help=('name of previous release for'
+                              ' sql/test/*db-previous-upgrade* tests'))
+    parser.add_argument('--testtools', action='store', type=pathlib.Path,
+                        help=('location of TestTools directory to provide'
+                              ' defaults for --lastrelease and --prevrelease'))
 
     parser.add_argument('tests', nargs='*',
                         help=('The positional arguments are either a list'
@@ -3841,6 +3857,22 @@ def main():
                               ' of tests within that directory.'))
     opts = parser.parse_args()
     args = opts.tests
+
+    if opts.upgrade_farms:
+        os.environ['UPGRADE_DBFARMS'] = opts.upgrade_farms
+    if opts.testtools:
+        if (opts.testtools / 'config/lastrelease').exists():
+            with (opts.testtools / 'config/lastrelease').open() as f:
+                lastrelease = f.readline().strip()
+                os.environ['LASTRELEASE'] = lastrelease
+        if (opts.testtools / 'config/prevrelease').exists():
+            with (opts.testtools / 'config/prevrelease').open() as f:
+                prevrelease = f.readline().strip()
+                os.environ['PREVRELEASE'] = prevrelease
+    if opts.lastrelease:
+        os.environ['LASTRELEASE'] = opts.lastrelease
+    if opts.prevrelease:
+        os.environ['PREVRELEASE'] = opts.prevrelease
 
     if CONDITIONALS['HAVE_LIBR']:
         if CheckExec('R'):
