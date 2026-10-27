@@ -375,7 +375,8 @@ rel2bin_oahash_build(backend *be, sql_rel *rel, list *refs)
 
 	bool need_freq = (rel->flag != (int)op_semi || rel->ref.refcnt > 2 || !list_empty(exps_prj_hsh));
 	bool perfect = false;
-	if (need_freq && list_length(exps_cmp_hsh) == 1 && !is_single(rel)) {
+	sql_rel *inner = rel->l;
+	if (need_freq && list_length(exps_cmp_hsh) == 1 && !is_single(rel) && (inner && !is_munion(inner->op))) {
 		sql_exp *e = exps_cmp_hsh->h->data;
 		if (e->unique) {
 			need_freq = false;
