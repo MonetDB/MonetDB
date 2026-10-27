@@ -480,6 +480,8 @@ class server(Popen):
             cmd = ['mserver5',
                    '--set', 'mapi_listenaddr=all' if ipv6 else 'mapi_listenaddr=0.0.0.0',
                    '--set', 'gdk_nr_threads=1']
+        if os.getenv('PIPELINE'):
+            cmd.append('--pipeline')
         if os.getenv('NOWAL'):
             cmd.extend(['--set', 'sql_debug=128'])
         if verbose:
