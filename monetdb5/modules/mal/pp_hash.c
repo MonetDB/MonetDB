@@ -1237,6 +1237,8 @@ UHASHext(Client cntxt, MalBlkPtr m, MalStkPtr s, InstrPtr p)
 		Type *vals = h->vals; \
 		\
 		TIMEOUT_LOOP_IDX_DECL(i, cnt, qry_ctx) { \
+			if (need_has_nil) \
+				(void)ATOMIC_OR(&h->has_nil, is_##Type##_nil(bp[i])); \
 			bool fnd = 0; \
 			gid g = 0; \
 			while (!fnd) { \
@@ -1372,6 +1374,8 @@ UHASHext(Client cntxt, MalBlkPtr m, MalStkPtr s, InstrPtr p)
 		Type *vals = h->vals; \
 		\
 		TIMEOUT_LOOP_IDX_DECL(i, cnt, qry_ctx) { \
+			if (need_has_nil) \
+				(void)ATOMIC_OR(&h->has_nil, is_##Type##_nil(bp[i])); \
 			bool fnd = 0; \
 			gid g = 0; \
 			while (!fnd) { \
@@ -1419,6 +1423,8 @@ UHASHext(Client cntxt, MalBlkPtr m, MalStkPtr s, InstrPtr p)
 			bool fnd = 0; \
 			var_t voff = VarHeapVal(bi.base,i,bi.width);				\
 			void *bpi = voff == 0 ? (void*) ATOMnilptr((bi).type) : (void *) ((bi).vh->base+voff); \
+			if (need_has_nil) \
+				(void)ATOMIC_OR(&h->has_nil, (voff == 0)); \
 			gid g = 0; \
 			while (!fnd) { \
 				gid k = (gid)combine(gi[i], h->hsh(bpi), prime)&h->mask; \
@@ -1468,6 +1474,8 @@ UHASHext(Client cntxt, MalBlkPtr m, MalStkPtr s, InstrPtr p)
 				bool fnd = 0; \
 				var_t voff = VarHeapVal(bi.base,i,bi.width);				\
 				void *bpi = voff == 0 ? (void*) ATOMnilptr((bi).type) : (void *) ((bi).vh->base+voff); \
+				if (need_has_nil) \
+					(void)ATOMIC_OR(&h->has_nil, (voff == 0)); \
 				gid g = 0; \
 				while (!fnd) { \
 					gid k = (gid)combine(gi[i], str_hsh(bpi), prime)&h->mask; \
@@ -1510,6 +1518,8 @@ UHASHext(Client cntxt, MalBlkPtr m, MalStkPtr s, InstrPtr p)
 				bool fnd = 0; \
 				var_t voff = VarHeapVal(bi.base,i,bi.width);				\
 				void *bpi = voff == 0 ? (void*) ATOMnilptr((bi).type) : (void *) ((bi).vh->base+voff); \
+				if (need_has_nil) \
+					(void)ATOMIC_OR(&h->has_nil, (voff == 0)); \
 				gid g = 0; \
 				while (!fnd) { \
 					gid k = (gid)combine(gi[i], h->hsh(bpi), prime)&h->mask; \
@@ -1569,9 +1579,6 @@ OAHASHbuild(Client ctx, MalBlkPtr m, MalStkPtr s, InstrPtr p)
 
 	/* we only work with shared hashtable in the build phase */
 	assert(*hashtable && !is_bat_nil(*hashtable));
-
-	/* need_has_nil is only for the first hash column */
-	assert(!need_has_nil || (need_has_nil && !parents));
 
 	b = BATdescriptor(*keys);
 	u = BATdescriptor(*hashtable);
