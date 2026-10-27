@@ -1146,9 +1146,7 @@ typedef enum {
 	INHERIT
 } meroset;
 
-static _Noreturn void command_set(int argc, char *argv[], meroset type);
-
-static void
+static _Noreturn void
 command_set(int argc, char *argv[], meroset type)
 {
 	bool doall = true;
