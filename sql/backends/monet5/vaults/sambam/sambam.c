@@ -386,7 +386,7 @@ sam_query(int caller, mvc *sql, sql_subfunc *f, char *filename, list *res_exps, 
 					pos += printauxdata(buf + pos, sizeof(buf) - pos, aux_type, -1, aux);
 					aux = bam_aux_next(bamdata, aux);
 				}
-				buf[pos] = '\0';
+				buf[pos >= sizeof(buf) ? sizeof(buf) - 1 : pos] = '\0';
 				gdkret = bunfastapp(colmetadata[11].bat, (void *) (pos > 0 ? buf : str_nil));
 			}
 
