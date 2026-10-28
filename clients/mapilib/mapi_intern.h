@@ -269,12 +269,12 @@ void mapi_clrError(Mapi mid)
 	ATTR_NONNULL(1);
 MapiMsg mapi_setError(Mapi mid, const char *msg, const char *action, MapiMsg error)
 	ATTR_NONNULL(2, 3);
-MapiMsg mapi_printError(Mapi mid, const char *action, MapiMsg error, _In_z_ _Printf_format_string_ const char *fmt, ...)
+MapiMsg mapi_printError(Mapi mid, const char *action, MapiMsg error, _Printf_format_string_ const char *fmt, ...)
 	ATTR_NONNULL(2)
 	ATTR_FORMAT(__printf__, 4, 5);
 
 void mapi_impl_log_data(Mapi mid, const char *filename, long line, const char *mark, const char *data, size_t len);
-void mapi_impl_log_record(Mapi mid, const char *filename, long line, const char *mark, _In_z_ _Printf_format_string_ const char *fmt, ...)
+void mapi_impl_log_record(Mapi mid, const char *filename, long line, const char *mark, _Printf_format_string_ const char *fmt, ...)
 	ATTR_FORMAT(__printf__, 5, 6);
 #define mapi_log_data(mid, mark, start, len)  do { if ((mid)->tracelog) mapi_impl_log_data(mid, __func__, __LINE__, mark, start, len); } while (0)
 #define mapi_log_record(mid, mark, ...)  do { if ((mid)->tracelog) mapi_impl_log_record(mid, __func__, __LINE__, mark, __VA_ARGS__); } while (0)
@@ -322,7 +322,7 @@ void close_connection(Mapi mid);
 void set_uri(Mapi mid);
 
 #ifdef HAVE_OPENSSL
-MapiMsg croak_openssl(Mapi mid, const char *action, _In_z_ _Printf_format_string_ const char *fmt, ...)
+MapiMsg croak_openssl(Mapi mid, const char *action, _Printf_format_string_ const char *fmt, ...)
 	ATTR_FORMAT(__printf__, 3, 4);
 
 MapiMsg add_system_certificates(Mapi mid, SSL_CTX *ctx);

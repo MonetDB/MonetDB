@@ -175,14 +175,14 @@ struct stream {
 void mnstr_va_set_error(stream *s, mnstr_error_kind kind, const char *fmt, va_list ap)
 	ATTR_VISIBILITY_HIDDEN;
 
-void mnstr_set_error_errno(stream *s, mnstr_error_kind kind, _In_z_ _Printf_format_string_ const char *fmt, ...)
+void mnstr_set_error_errno(stream *s, mnstr_error_kind kind, _Printf_format_string_ const char *fmt, ...)
 	ATTR_FORMAT(__printf__, 3, 4)
 	ATTR_VISIBILITY_HIDDEN;
 
 void mnstr_copy_error(stream *dst, stream *src)
 	ATTR_VISIBILITY_HIDDEN;
 
-void mnstr_set_open_error(const char *name, int errnr, _In_z_ _Printf_format_string_ const char *fmt, ...)
+void mnstr_set_open_error(const char *name, int errnr, _Printf_format_string_ const char *fmt, ...)
 	ATTR_FORMAT(__printf__, 3, 4)
 	ATTR_VISIBILITY_HIDDEN;
 

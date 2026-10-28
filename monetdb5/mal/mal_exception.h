@@ -40,13 +40,13 @@ enum malexception {
 	do { if ((TMP = (PRV)) != MAL_SUCCEED) return(TMP); } while(0)
 
 mal_export str createException(enum malexception, const char *,
-							   _In_z_ _Printf_format_string_ const char *, ...)
+							   _Printf_format_string_ const char *, ...)
 	ATTR_MALLOC
 	ATTR_FORMAT(__printf__, 3, 4)
 	ATTR_RETURNS_NONNULL;
 /*FIXmal_export str createMalException(MalBlkPtr mb, int pc, enum malexception type, const char *prev, const char *format, ...);*/
 mal_export str createMalException(MalBlkPtr, int, enum malexception,
-								  _In_z_ _Printf_format_string_ const char *,
+								  _Printf_format_string_ const char *,
 								  ...)
 	ATTR_MALLOC
 	ATTR_FORMAT(__printf__, 4, 5)

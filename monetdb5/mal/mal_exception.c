@@ -82,7 +82,7 @@ ATTR_FORMAT(__printf__, 3, 0)
 ATTR_RETURNS_NONNULL
 static str
 createExceptionInternal(enum malexception type, const char *fcn,
-						_In_z_ _Printf_format_string_ const char *format, va_list ap)
+						_Printf_format_string_ const char *format, va_list ap)
 {
 	size_t msglen;
 	int len;
@@ -193,7 +193,7 @@ ATTR_FORMAT(__printf__, 5, 0)
 ATTR_RETURNS_NONNULL
 static str
 createMalExceptionInternal(MalBlkPtr mb, int pc, enum malexception type,
-						   const char *prev, _In_z_ _Printf_format_string_ const char *format, va_list ap)
+						   const char *prev, _Printf_format_string_ const char *format, va_list ap)
 {
 	bool addnl = false;
 	const char *s = getInstrPtr(mb, 0) ? getModName(mb) : "unknown";

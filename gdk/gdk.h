@@ -540,7 +540,7 @@ gdk_export void GDKtracer_log(const char *file, const char *func,
 			      int lineno, log_level_t lvl,
 			      component_t comp,
 			      const char *syserr,
-			      _In_z_ _Printf_format_string_ const char *format,
+			      _Printf_format_string_ const char *format,
 			      ...)
 	ATTR_FORMAT(__printf__, 7, 8);
 
@@ -1345,7 +1345,7 @@ GDKstrerror(int errnum, char *buf, size_t buflen)
 }
 
 gdk_export _Noreturn void GDKfatal(
-	_In_z_ _Printf_format_string_ const char *format, ...)
+	_Printf_format_string_ const char *format, ...)
 	ATTR_FORMAT(__printf__, 1, 2);
 
 #undef MIN

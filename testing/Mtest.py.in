@@ -23,6 +23,7 @@ import fnmatch
 import http
 import http.server
 import datetime
+import pathlib
 import pymonetdb  # check for pymonetdb early: it is essential for our work
 import concurrent.futures
 
@@ -1156,14 +1157,16 @@ def PerformDir(env, testdir, testlist, total_tests):
         else:
             RELSRCDIR = os.path.join(* [os.pardir] * (len(TSTDIR.split(os.sep)) + 1) + [env['RELSRCBASE'], TSTDIR, TSTSUFF])
         environ = os.environ.copy()
-        environ['TSTDB']     = TSTDB
-        environ['TSTDIR']    = TSTDIR
+        environ['TSTDB'] = TSTDB
+        environ['TSTDIR'] = TSTDIR
         environ['TSTSRCDIR'] = TSTSRCDIR
         environ['TSTTRGDIR'] = TSTTRGDIR
         environ['RELSRCDIR'] = RELSRCDIR
         environ['HAVE_HGE'] = CONDITIONALS['HAVE_HGE']
         environ['HAVE_SHP'] = CONDITIONALS['HAVE_SHP']
         environ['TST_BITS'] = env['TST_BITS']
+        if CONDITIONALS['PIPELINE']:
+            environ['PIPELINE'] = '1'
         if 'TSTDATAPATH' not in environ and TSTDATAPATH:
             env['TSTDATAPATH'] = TSTDATAPATH
             environ['TSTDATAPATH'] = TSTDATAPATH
@@ -1901,7 +1904,11 @@ def RunTest(env, TST, COND, oktests, length, pSrvr, total_tests, options, enviro
             else:
                 negate = False
             if cond in relcond:
-                if not os.path.exists(os.path.join(env['GDK_DBFARM'], relcond[cond][0])):
+                if 'UPGRADE_DBFARMS' in environ \
+                   and f'{cond[:4]}RELEASE' in environ:
+                    pass
+                elif not os.path.exists(os.path.join(env['GDK_DBFARM'],
+                                                     relcond[cond][0])):
                     reason = 'as %s release database is not available' % relcond[cond][1]
                     elem = SkipTest(env, TST, EXT, reason, length, TSTDIR, TSTTRGDIR, TSTSRCDIR)
                     break
@@ -3718,72 +3725,176 @@ def main():
     env = {}
 
     # most intuitive (?) default settings
-    dft['TSTSRCBASE']     = r"'@QXSOURCE@'"
-    dft['TSTTRGBASE']     = r"'@QXprefix@'"   # or os.getcwd() ?
-    dft['GDK_DEBUG']      = 'TSTDBG'
+    dft['TSTSRCBASE'] = r"'@QXSOURCE@'"
+    dft['TSTTRGBASE'] = r"'@QXprefix@'"   # or os.getcwd() ?
+    dft['GDK_DEBUG'] = 'TSTDBG'
     dft['GDK_NR_THREADS'] = 'TSTTHREADS'
     dft['MONETDB_MOD_PATH'] = "''"
     dft['setMONETDB_MOD_PATH'] = "'--set \"monet_mod_path='+env['MONETDB_MOD_PATH']+'\"'"
-    dft['MALCLIENT']      = "'mclient -lmal -ftest -tnone -Eutf-8'"
-    dft['SQLCLIENT']      = "'mclient -lsql -ftest -tnone -Eutf-8'"
-    dft['SQLDUMP']        = "'msqldump -q'"
+    dft['MALCLIENT'] = "'mclient -lmal -ftest -tnone -Eutf-8'"
+    dft['SQLCLIENT'] = "'mclient -lsql -ftest -tnone -Eutf-8'"
+    dft['SQLDUMP'] = "'msqldump -q'"
 
     # commandline options overrule environment
-    parser = argparse.ArgumentParser(usage='%(prog)s [options] ( [<dir>] [<tests>] | [<dirs>] )', epilog='See %s for details about %s.' % (os.path.join('@QXSOURCE@','testing','README'), THISFILE))
+    parser = argparse.ArgumentParser()
     parser.add_argument('--version', action='version', version='@VERSION@')
-    parser.add_argument('--recursive', '-r', action='store_true', dest='recursive', help="recurse into subdirectories (implies 'All')")
-    parser.add_argument('--revision', action='store', dest='revision', metavar='<hgid>', help='use given revision as the HG short hash')
-    parser.add_argument('--TSTSRCBASE', action='store', dest='TSTSRCBASE', metavar='<path>', help='default: "%s"' % '@QXSOURCE@')
-    parser.add_argument('--TSTTRGBASE', action='store', dest='TSTTRGBASE', metavar='<path>', help='default: "%s"' % '@QXprefix@')
-    parser.add_argument('--verbose', '-v', action='store_true', dest='verbose', default=0, help='more verbose test output')
-    parser.add_argument('--procdebug', action='store_true', dest='procdebug', help='process debugging (Mtest developers only)')
-    parser.add_argument('--urlprefix', action='store', help='URL prefix to the MonetDB Mercurial repository')
+    parser.add_argument('--recursive', '-r', action='store_true',
+                        help="recurse into subdirectories (implies 'All')")
+    parser.add_argument('--revision', action='store', metavar='<hgid>',
+                        help='use given revision as the HG short hash')
+    parser.add_argument('--TSTSRCBASE', action='store', metavar='<path>',
+                        help='default: "%s"' % '@QXSOURCE@')
+    parser.add_argument('--TSTTRGBASE', action='store', metavar='<path>',
+                        help='default: "%s"' % '@QXprefix@')
+    parser.add_argument('--verbose', '-v', action='store_true', default=0,
+                        help='more verbose test output')
+    parser.add_argument('--procdebug', action='store_true',
+                        help='process debugging (Mtest developers only)')
+    parser.add_argument('--urlprefix', action='store',
+                        help='URL prefix to the MonetDB Mercurial repository')
 
-    parser.add_argument('-t', action='store', dest='timeout', metavar='<sec>', type=int, default=60, help='timeout: kill (hanging) tests after <sec> seconds;\n-t0 means no timeout (default: -t60)')
-    parser.add_argument('--debug', '-d', action=OrAction, dest='debug', metavar='<num>', type=int, default=int(TSTDBG), help="debug value to be used by mserver5, multiple -d options are ORed together (default: -d%s)\n(see `mserver5 --help' for details)" % TSTDBG)
-    parser.add_argument('--nr_threads', '-n', action='store', dest='nr_threads', metavar='<num>', type=int, default=int(TSTTHREADS), help='number of threads for mserver5 (default: -n%s)\n-n0 => mserver5 automatically determines the number of CPU cores' % TSTTHREADS)
-    parser.add_argument('--pipeline', action='store_true', dest='pipeline', help='run with pipeline processing enabled')
-    parser.add_argument('--monet_mod_path', action='store', dest='monet_mod_path', metavar='<pathlist>', help="override mserver5's default module search path")
-    parser.add_argument('--dbfarm', action='store', dest='gdk_dbfarm', default=os.path.join('@QXlocalstatedir@','MonetDB'), metavar='<directory>', help='override default location of database directory')
-    parser.add_argument('--MALCLIENT', action='store', dest='MALCLIENT', metavar='<mal-client program>', help='default: %s' % dft['MALCLIENT'])
-    parser.add_argument('--SQLCLIENT', action='store', dest='SQLCLIENT', metavar='<sql-client program>', help='default: %s' % dft['SQLCLIENT'])
-    parser.add_argument('--SQLDUMP', action='store', dest='SQLDUMP', metavar='<sql-dump program>', help='default: %s' % dft['SQLDUMP'])
-    parser.add_argument('--dbg', action='store', dest='dbg', metavar='<debugger/valgrind>', help='debugger to start before each server')
-    parser.add_argument('--mserver_set', action='append', dest='mserver_set', metavar='<mserver5_option>', help='This passes a single set to the server')
-    parser.add_argument('--loadmodule', action='append', dest='loadmodule', metavar='<module_name>', help='Pass on loadmodule to mserver5')
-    parser.add_argument('--no-clean', action='store_true', dest='no_clean', help='Do not clean up before test')
-    parser.add_argument('--testweb', action='store_true', dest='testweb', help='Optimize testing for testweb')
-    parser.add_argument('--releaserun', action='store_true', dest='releaserun', help='run tests as if for a release test')
-    parser.add_argument('--multifarm', action='store_true', dest='multifarm', help='use multiple dbfarms (developers only)')
-    parser.add_argument('--transient-inmemory', action='store_true', dest='inmemory', help="don't write transient data to disk")
-    parser.add_argument('--nomito', action='store_true', dest='nomito', help='Do not pass --forcemito to server')
-    parser.add_argument('--restart', action='store_true', dest='restart', help='Restart server after each test')
-    parser.add_argument('--addreqs', action='store_true', dest='addreqs', help='automatically add required tests when testing individual tests')
-    parser.add_argument('--global_timeout', '-T', action='store', dest='global_timeout', type=int, default=global_timeout, metavar='<sec>', help='global timeout')
-    parser.add_argument('--data_path', '-D', action='store', dest='data_path', metavar='<path>', help='Path to the root directory of the data files needed for testing (default: TSTDATAPATH environment variable)')
-    parser.add_argument('--alltests', action='store_true', dest='alltests', help='also run tests that are known to fail')
-    parser.add_argument('--initdb', action='store', dest='initdb', metavar='<zipfile>', help='zip file with contents for initial database')
-    parser.add_argument('--single-in-memory', action='store_true', dest='single_in_memory', help='use --in-memory for SingleServer directories')
-    parser.add_argument('--approve', action='store_true', help='produce .newtest file in testing directory with calculated content')
-    parser.add_argument('--approve+replace', action='store_true', dest='approve_replace', help='produce new .test file in source directory with calculated content')
-    parser.add_argument('--threshold', action='store', type=int, help='hash-threshold for .test files when approving')
-    parser.add_argument('--ignore-conditions', action='store_true', dest='ignore_conditions', help='ignore conditions in All file')
-    parser.add_argument('--skip-test-with-timeout', action='store_true', help='skip tests that have a .timeout file')
-    parser.add_argument('--stop-at-crash', action='store_true', dest='stop_crash', help='stop testing when the server crashes')
-    parser.add_argument('--ci', action='store_true', dest='ci', help='special handling for continuous integration (no error return unless serious problem)')
-    parser.add_argument('--parallel', action='store', type=int, default=1, metavar='<directories>', help='run multiple directories in parallel')
-    parser.add_argument('--checkkeys', action='store_true', help='at end of directory check all system keys')
-    parser.add_argument('--use-tcp', action='store_true', help='do not use UNIX domain sockets')
+    parser.add_argument('--timeout', '-t', action='store', metavar='<sec>',
+                        type=int, default=60,
+                        help=('timeout: kill tests after <sec> seconds;'
+                              '-t0 means no timeout (default: -t60)'))
+    parser.add_argument('--debug', '-d', action=OrAction, metavar='<num>',
+                        type=int, default=int(TSTDBG),
+                        help=("debug value to be used by mserver5,"
+                              " multiple -d options are ORed together"
+                              f" (default: -d{TSTDBG}; see `mserver5 --help'"
+                              " for details)"))
+    parser.add_argument('--nr_threads', '-n', action='store', metavar='<num>',
+                        type=int, default=int(TSTTHREADS),
+                        help=('number of threads for mserver5'
+                              f' (default: -n{TSTTHREADS});'
+                              ' -n0 => mserver5 automatically determines'
+                              ' the number of CPU cores'))
+    parser.add_argument('--pipeline', action='store_true',
+                        help='run with pipeline processing enabled')
+    parser.add_argument('--monet_mod_path', action='store',
+                        metavar='<pathlist>',
+                        help="override mserver5's default module search path")
+    parser.add_argument('--dbfarm', action='store',
+                        default=os.path.join('@QXlocalstatedir@', 'MonetDB'),
+                        metavar='<directory>',
+                        help='override default location of database directory')
+    parser.add_argument('--MALCLIENT', action='store',
+                        metavar='<mal-client program>',
+                        help=f'default: {dft["MALCLIENT"]}')
+    parser.add_argument('--SQLCLIENT', action='store',
+                        metavar='<sql-client program>',
+                        help=f'default: {dft["SQLCLIENT"]}')
+    parser.add_argument('--SQLDUMP', action='store',
+                        metavar='<sql-dump program>',
+                        help=f'default: {dft["SQLDUMP"]}')
+    parser.add_argument('--dbg', action='store', metavar='<debugger/valgrind>',
+                        help='debugger to start before each server')
+    parser.add_argument('--mserver_set', action='append',
+                        metavar='<mserver5_option>',
+                        help='This passes a single set to the server')
+    parser.add_argument('--loadmodule', action='append',
+                        metavar='<module_name>',
+                        help='Pass on loadmodule to mserver5')
+    parser.add_argument('--no-clean', action='store_true',
+                        help='Do not clean up before test')
+    parser.add_argument('--testweb', action='store_true',
+                        help='Optimize testing for testweb')
+    parser.add_argument('--releaserun', action='store_true',
+                        help='run tests as if for a release test')
+    parser.add_argument('--multifarm', action='store_true',
+                        help='use multiple dbfarms (developers only)')
+    parser.add_argument('--transient-inmemory', action='store_true',
+                        dest='inmemory',
+                        help="don't write transient data to disk")
+    parser.add_argument('--nomito', action='store_true',
+                        help='Do not pass --forcemito to server')
+    parser.add_argument('--restart', action='store_true',
+                        help='Restart server after each test')
+    parser.add_argument('--addreqs', action='store_true',
+                        help=('automatically add required tests when testing'
+                              ' individual tests'))
+    parser.add_argument('--global_timeout', '-T', action='store',
+                        type=int, default=global_timeout, metavar='<sec>',
+                        help='global timeout')
+    parser.add_argument('--data_path', '-D', action='store', metavar='<path>',
+                        help=('Path to the root directory of the data files'
+                              ' needed for testing (default: TSTDATAPATH'
+                              ' environment variable)'))
+    parser.add_argument('--alltests', action='store_true',
+                        help='also run tests that are known to fail')
+    parser.add_argument('--initdb', action='store', metavar='<zipfile>',
+                        help='zip file with contents for initial database')
+    parser.add_argument('--single-in-memory', action='store_true',
+                        help='use --in-memory for SingleServer directories')
+    parser.add_argument('--approve', action='store_true',
+                        help=('produce .newtest file in testing directory'
+                              ' with calculated content'))
+    parser.add_argument('--approve+replace', action='store_true',
+                        dest='approve_replace',
+                        help=('produce new .test file in source directory'
+                              ' with calculated content'))
+    parser.add_argument('--threshold', action='store', type=int,
+                        help='hash-threshold for .test files when approving')
+    parser.add_argument('--ignore-conditions', action='store_true',
+                        help='ignore conditions in All file')
+    parser.add_argument('--skip-test-with-timeout', action='store_true',
+                        help='skip tests that have a .timeout file')
+    parser.add_argument('--stop-at-crash', action='store_true',
+                        help='stop testing when the server crashes')
+    parser.add_argument('--ci', action='store_true',
+                        help=('special handling for continuous integration'
+                              ' (no error return unless serious problem)'))
+    parser.add_argument('--parallel', action='store', type=int, default=1,
+                        metavar='<directories>',
+                        help='run multiple directories in parallel')
+    parser.add_argument('--checkkeys', action='store_true',
+                        help='at end of directory check all system keys')
+    parser.add_argument('--use-tcp', action='store_true',
+                        help='do not use UNIX domain sockets')
     global produce_html
     if produce_html:
-        parser.add_argument('--no-html', action='store_false', dest='produce_html', help='do not produce HTML files')
+        parser.add_argument('--no-html', action='store_false',
+                            dest='produce_html',
+                            help='do not produce HTML files')
     else:
-        parser.add_argument('--produce-html', action='store_true', dest='produce_html', help='produce HTML files')
+        parser.add_argument('--produce-html', action='store_true',
+                            dest='produce_html', help='produce HTML files')
     parser.add_argument('--loglevel', action='store', help='log level')
+    parser.add_argument('--upgrade-farms', action='store',
+                        help='URL of directory where upgrade databases are stored')
+    parser.add_argument('--lastrelease', action='store',
+                        help=('name of last release for'
+                              ' sql/test/*db-upgrade* tests'))
+    parser.add_argument('--prevrelease', action='store',
+                        help=('name of previous release for'
+                              ' sql/test/*db-previous-upgrade* tests'))
+    parser.add_argument('--testtools', action='store', type=pathlib.Path,
+                        help=('location of TestTools directory to provide'
+                              ' defaults for --lastrelease and --prevrelease'))
 
-    parser.add_argument('tests', nargs='*', help='The positional arguments are either a list of one or more directories to be tested, or a single directory followed by a list of tests within that directory.')
+    parser.add_argument('tests', nargs='*',
+                        help=('The positional arguments are either a list'
+                              ' of one or more directories to be tested,'
+                              ' or a single directory followed by a list'
+                              ' of tests within that directory.'))
     opts = parser.parse_args()
     args = opts.tests
+
+    if opts.upgrade_farms:
+        os.environ['UPGRADE_DBFARMS'] = opts.upgrade_farms
+    if opts.testtools:
+        if (opts.testtools / 'config/lastrelease').exists():
+            with (opts.testtools / 'config/lastrelease').open() as f:
+                lastrelease = f.readline().strip()
+                os.environ['LASTRELEASE'] = lastrelease
+        if (opts.testtools / 'config/prevrelease').exists():
+            with (opts.testtools / 'config/prevrelease').open() as f:
+                prevrelease = f.readline().strip()
+                os.environ['PREVRELEASE'] = prevrelease
+    if opts.lastrelease:
+        os.environ['LASTRELEASE'] = opts.lastrelease
+    if opts.prevrelease:
+        os.environ['PREVRELEASE'] = opts.prevrelease
 
     CONDITIONALS['HAVE_SQLITE3ODBC'] = os.path.exists('/usr/lib64/libsqlite3odbc.so')
 
@@ -3821,7 +3932,7 @@ def main():
     if opts.threshold:
         threshold = opts.threshold
     global stop_crash
-    stop_crash = opts.stop_crash
+    stop_crash = opts.stop_at_crash
     ignore_conditions = opts.ignore_conditions
     global skip_timeout
     skip_timeout = opts.skip_test_with_timeout
@@ -3849,7 +3960,7 @@ def main():
     a = opts.monet_mod_path
     if a is not None:
         env['MONETDB_MOD_PATH'] = a
-    a = opts.gdk_dbfarm
+    a = opts.dbfarm
     if a is not None:
         env['GDK_DBFARM'] = os.path.abspath(a)
     a = opts.dbg

@@ -5091,7 +5091,7 @@ rel_push_select_down(visitor *v, sql_rel *rel)
 							sql_subfunc *rankf = ranke->f;
 							if (rankf->func->type == F_ANALYTIC) { /* rank functions cannot have a frame */
 								sql_rel *tn = NULL;
-								if (strcmp(rankf->func->base.name, "rank") == 0 && is_simple_project(pl->op) && pl->r) {
+								if (0 && strcmp(rankf->func->base.name, "rank") == 0 && is_simple_project(pl->op) && pl->r) {
 									tn = r->l = rel_topn(v->sql->sa, r->l, append(sa_list(v->sql->sa), e->r));
 									tn->grouped = 1;
 									v->changes++;
@@ -5354,12 +5354,15 @@ rel_optimize_select_and_joins_topdown_(visitor *v, sql_rel *rel)
 {
 	/* push_join_down introduces semijoins */
 	uint8_t cycle = *(uint8_t*) v->data;
-	if (cycle <= 0)
+	if (cycle <= 0 && 0)
 		rel = rel_push_join_down(v, rel);
 
-	rel = rel_simplify_fk_joins(v, rel);
-	rel = rel_push_select_down(v, rel);
-	rel = rel_select_leftgroup_2_semi(v, rel);
+	if (is_simple_project(rel->op) || is_groupby(rel->op))
+		rel = rel_simplify_fk_joins(v, rel);
+	if (is_select(rel->op)) {
+		rel = rel_push_select_down(v, rel);
+		rel = rel_select_leftgroup_2_semi(v, rel);
+	}
 	if (rel && rel->l && (is_select(rel->op) || is_join(rel->op)))
 		rel = rel_use_index(v, rel);
 	return rel;
