@@ -9,14 +9,38 @@ try:
 except ImportError:
     import process
 
-import sys, os, zipfile, platform
+import sys
+import os
+import zipfile
+import platform
+import urllib.request
+import urllib.parse
 
 xit = 0
 
-# find zipped database
 dbfarm = os.environ['GDK_DBFARM']
 db = os.path.join(dbfarm, os.environ['TSTDB'])
 archive = os.path.join(dbfarm, 'lastrelempty.zip')
+
+url = os.environ.get('UPGRADE_DBFARMS')
+lastrelease = os.environ.get('LASTRELEASE')
+if url is not None and lastrelease is not None:
+    if sys.byteorder == 'little':
+        if os.environ.get('TST_BITS', '64bit') == '64bit':
+            arch = 'x86_64'
+        else:
+            arch = 'i386'
+    else:
+        arch = 's390x'
+    u = urllib.parse.urlsplit(url)
+    url = urllib.parse.urlunsplit((u[0], u[1],
+                                   f'{u[2]}/{lastrelease}/{arch}-empty.zip',
+                                   '', ''))
+    with urllib.request.urlopen(url) as r, \
+         open(archive, 'wb') as f:
+        f.write(r.read())
+
+# find zipped database
 if not os.path.exists(archive):
     print(f'file "{archive}" not found', file=sys.stderr)
     sys.exit(1)

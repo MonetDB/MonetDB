@@ -1085,8 +1085,8 @@ rel_get_statistics_(visitor *v, sql_rel *rel)
 					}
 				}
 				dbl est = (dbl)lv * (dbl)rv * sel;
-				if (est < 1)
-					est = 1;
+				if (est <= 1)
+					est = 2;
 				set_count_prop(v->sql->sa, rel, est > (dbl)BUN_MAX ? BUN_MAX : (BUN)est);
 				prop *sp = NULL;
 				if ((sp = find_prop(rel->p, PROP_SELECTIVITY)) == NULL) {
@@ -1120,8 +1120,8 @@ rel_get_statistics_(visitor *v, sql_rel *rel)
 					BUN est = cnt == 0 ? 0 : (BUN)((dbl)cnt * sel);
 					if (est > cnt)
 						est = cnt;
-					if (est < 1 && cnt > 0)
-						est = 1;
+					if (est <= 1 && cnt > 0)
+						est = 2;
 					set_count_prop(v->sql->sa, rel, est);
 					prop *sp = NULL;
 					if ((sp = find_prop(rel->p, PROP_SELECTIVITY)) == NULL) {

@@ -243,6 +243,22 @@ find_sequence_on_scope(mvc *sql, const char *sname, const char *name, const char
 		error);
 }
 
+static sql_ustr *
+find_ustr(mvc *sql, sql_schema *s, const char *name)
+{
+	return find_sql_ustr(sql->session->tr, s, name);
+}
+
+sql_ustr *
+find_ustr_on_scope(mvc *sql, const char *sname, const char *name, const char *error)
+{
+	return (sql_ustr *) search_object_on_path_func(
+		sql,
+		(sql_base *(*)(mvc *, sql_schema *, const char *)) find_ustr,
+		NULL, sname, name, SQLSTATE(42000), "distinct string column",
+		error);
+}
+
 sql_idx *
 find_idx_on_scope(mvc *sql, const char *sname, const char *name, const char *error)
 {
