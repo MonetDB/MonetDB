@@ -112,13 +112,33 @@ returns table (
 external name sql."statistics";
 grant execute on function sys."statistics"(varchar(1024),varchar(1024),varchar(1024)) to public;
 
-create aggregate uniques_guess(c integer)
+create aggregate uniques_guess(c tinyint)
 returns bigint external name aggr.uniques_guess;
-grant execute on aggregate uniques_guess(integer) to public;
+grant execute on aggregate uniques_guess(tinyint) to public;
+
+create aggregate uniques_guess(c smallint)
+returns bigint external name aggr.uniques_guess;
+grant execute on aggregate uniques_guess(smallint) to public;
+
+create aggregate uniques_guess(c mediumint)
+returns bigint external name aggr.uniques_guess;
+grant execute on aggregate uniques_guess(mediumint) to public;
 
 create aggregate uniques_guess(c bigint)
 returns bigint external name aggr.uniques_guess;
 grant execute on aggregate uniques_guess(bigint) to public;
+
+create aggregate uniques_guess(c hugeint)
+returns bigint external name aggr.uniques_guess;
+grant execute on aggregate uniques_guess(hugeint) to public;
+
+create aggregate uniques_guess(c real)
+returns bigint external name aggr.uniques_guess;
+grant execute on aggregate uniques_guess(real) to public;
+
+create aggregate uniques_guess(c double)
+returns bigint external name aggr.uniques_guess;
+grant execute on aggregate uniques_guess(double) to public;
 
 create aggregate uniques_guess(c varchar)
 returns bigint external name aggr.uniques_guess;

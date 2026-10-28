@@ -3007,7 +3007,8 @@ col_stats(sql_trans *tr, sql_column *c, bool *nonil, bool *unique, double *uniqu
 			BATiter bi = bat_iterator(b);
 			*nonil = bi.nonil && !bi.nil;
 
-			if ((EC_NUMBER(eclass) || EC_VARCHAR(eclass) || EC_TEMP_NOFRAC(eclass) || eclass == EC_DATE) &&
+			if ((EC_NUMBER(eclass) || EC_VARCHAR(eclass) ||
+				 EC_TEMP_NOFRAC(eclass) || eclass == EC_DATE) &&
 				d->cs.ucnt == 0) {
 				if (c->min && VALinit(NULL, min, bi.type, c->min))
 					ok |= 1;
@@ -3022,12 +3023,14 @@ col_stats(sql_trans *tr, sql_column *c, bool *nonil, bool *unique, double *uniqu
 				if (d->cs.st == ST_DEFAULT || d->cs.st == ST_USTR) {
 					*unique = bi.key;
 					*unique_est = bi.unique_est;
-					if (*unique_est == 0) {
-						if (BATcount(b) > GDKL3_size)
-							*unique_est = bat_guess_uniques(b, NULL, NULL);
-						else
-							*unique_est = (double)BATguess_uniques(b,NULL);
-						//printf("estimates %s %s %f\n", c->base.name, c->type.type->base.name, *unique_est);
+					if (*unique_est == 0 && bi.count) {
+						uint8_t tmp_sketch[BUCKETS][CLZ_BUCKETS] = {0};
+						if (bat_sketch(&bi, NULL, tmp_sketch) != GDK_SUCCEED)
+							*unique_est = -1;
+						else {
+							/* printf("col_stats estimating for bat id %d\n", b->batCacheid); */
+							*unique_est = sketch_estimate(tmp_sketch);
+						}
 					}
 				} else if (d->cs.st == ST_DICT && (off = bind_col_no_view(tr, c, QUICK))) {
 					/* for dict, check the offsets bat for uniqueness */

@@ -1154,6 +1154,33 @@ BATappend2(BAT *b, BAT *n, BAT *s, bool force, bool mayshare)
 		hlocked = false;
 	}
 
+	if (b->tsketch) {
+		if (n->tsketch) {
+			if (BATcount(b) == 0) {
+				memcpy(b->tsketch->base, n->tsketch->base, SKETCH_SIZE);
+				if (b->tunique_est == 0)
+					b->tunique_est = sketch_estimate((uint8_t (*)[CLZ_BUCKETS]) b->tsketch->base);
+			} else {
+				if (sketch_merge((uint8_t (*)[CLZ_BUCKETS]) b->tsketch->base,
+						 (uint8_t (*)[CLZ_BUCKETS]) n->tsketch->base) != GDK_SUCCEED)
+					goto bailout;
+			}
+		} else {
+			uint8_t tmp_sketch[BUCKETS][CLZ_BUCKETS] = {0};
+			if (bat_sketch(&ni, &ci, tmp_sketch) != GDK_SUCCEED)
+				goto bailout;
+			if (BATcount(b) == 0) {
+				memcpy(b->tsketch->base, tmp_sketch, SKETCH_SIZE);
+				if (b->tunique_est == 0)
+					b->tunique_est = sketch_estimate((uint8_t (*)[CLZ_BUCKETS]) b->tsketch->base);
+			} else {
+				if (sketch_merge((uint8_t (*)[CLZ_BUCKETS]) b->tsketch->base,
+						 (uint8_t (*)[CLZ_BUCKETS]) tmp_sketch) != GDK_SUCCEED)
+					goto bailout;
+			}
+		}
+	}
+
   doreturn:
 	bat_iterator_end(&ni);
 	if (minbound)

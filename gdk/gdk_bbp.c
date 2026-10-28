@@ -607,6 +607,22 @@ heapinit(BAT *b, const char *buf,
 	} else {
 		b->tvheap = NULL;
 	}
+	if (ATOMsketchable(t) && b->theap->hasfile) {
+		b->tsketch->free = SKETCH_SIZE;
+		b->tsketch->size = SKETCH_SIZE;
+		b->tsketch->base = NULL;
+		strtconcat(b->tsketch->filename, sizeof(b->tsketch->filename),
+			   filename, ".tsketch", NULL);
+		b->tsketch->farmid = BBPselectfarm(PERSISTENT, b->ttype, sketchheap);
+		b->tsketch->role = PERSISTENT;
+		b->tsketch->dirty = false;
+		b->tsketch->hasfile = true;
+		b->tsketch->storage = STORE_INVALID;
+		b->tsketch->parentid = b->batCacheid;
+
+	} else {
+		b->tsketch = NULL;
+	}
 	return n;
 }
 
@@ -757,12 +773,14 @@ BBPreadEntries(FILE *fp, unsigned bbpversion, int lineno
 		BAT b;
 		Heap h;
 		Heap vh;
-		vh = h = (Heap) {
+		Heap skh;
+		skh = vh = h = (Heap) {
 			.free = 0,
 		};
 		b = (BAT) {
 			.theap = &h,
 			.tvheap = &vh,
+			.tsketch = &skh
 		};
 		char *options;
 		char headname[129];
@@ -838,8 +856,8 @@ BBPreadEntries(FILE *fp, unsigned bbpversion, int lineno
 		*bn = b;
 		*hn = h;
 		bn->theap = hn;
+		Heap *vhn;
 		if (b.tvheap) {
-			Heap *vhn;
 			assert(b.tvheap == &vh);
 			if ((vhn = GDKmalloc(sizeof(Heap))) == NULL) {
 				GDKfree(hn);
@@ -850,6 +868,20 @@ BBPreadEntries(FILE *fp, unsigned bbpversion, int lineno
 			*vhn = vh;
 			bn->tvheap = vhn;
 			ATOMIC_INIT(&bn->tvheap->refs, 1);
+		}
+		if (b.tsketch) {
+			Heap *skhn;
+			assert(b.tsketch == &skh);
+			if ((skhn = GDKmalloc(sizeof(Heap))) == NULL) {
+				GDKfree(hn);
+				GDKfree(vhn);
+				GDKfree(options);
+				TRC_CRITICAL(GDK, "cannot allocate memory for BAT.");
+				goto bailout;
+			}
+			*skhn = skh;
+			bn->tsketch = skhn;
+			ATOMIC_INIT(&bn->tsketch->refs, 1);
 		}
 
 		char name[MT_NAME_LEN];
@@ -4761,6 +4793,9 @@ BBPdiskscan(const char *parent, size_t baseoff)
 			} else if (strncmp(p + 1, "theap", 5) == 0) {
 				BAT *b = getdesc(bid);
 				delete = (b == NULL || !b->tvheap || !b->batCopiedtodisk || b->tvheap->free == 0);
+			} else if (strncmp(p + 1, "tsketch", 7) == 0) {
+				BAT *b = getdesc(bid);
+				delete = (b == NULL || b->tsketch == NULL || !b->batCopiedtodisk || b->tsketch->free == 0);
 			} else if (strncmp(p + 1, "thashl", 6) == 0 ||
 				   strncmp(p + 1, "thashb", 6) == 0) {
 				BAT *b = getdesc(bid);

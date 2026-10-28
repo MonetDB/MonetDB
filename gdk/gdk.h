@@ -1549,12 +1549,13 @@ typedef struct pipeline_io {
 
 #define ORDERIDXOFF		3
 
-#define HLL_BITS 6
+#define HLL_BITS    6
 #define BITS_MASK   ((1ULL << HLL_BITS) - 1)
 #define MAX_CLZ     (64 - HLL_BITS)
 #define BUCKETS     (1U << HLL_BITS)
 #define CLZ_BUCKETS (MAX_CLZ + 1)
 #define HLLSEED     0xadc83b19ULL
+#define SKETCH_SIZE (BUCKETS * CLZ_BUCKETS)
 
 /* assert that atom width is power of 2, i.e., width == 1<<shift */
 #define assert_shift_width(shift,width)				\
@@ -1631,6 +1632,7 @@ typedef struct BAT {
 	Heap *theap;		/* space for the column. */
 	BUN tbaseoff;		/* offset in heap->base (in whole items) */
 	Heap *tvheap;		/* space for the varsized data. */
+	Heap *tsketch;
 	Hash *thash;		/* hash table */
 #ifdef HAVE_RTREE
 	RTree *trtree;		/* rtree geometric index */
@@ -2082,6 +2084,20 @@ gdk_export const inet6 inet6_nil;
 #define ATOMtype(t)		((t) == TYPE_void ? TYPE_oid : (t))
 #define ATOMextern(t)		(ATOMstorage(t) >= TYPE_str)
 
+static inline bool
+ATOMsketchable(int type)
+{
+	switch (type) {
+	case TYPE_void:
+	case TYPE_bit:
+	case TYPE_msk:
+	case TYPE_oid:
+	case TYPE_ptr:
+		return false;
+	}
+	return true;
+}
+
 /* The base type is the storage type if the comparison function, the
  * hash function, and the nil value are the same as those of the
  * storage type; otherwise it is the type itself. */
@@ -2308,6 +2324,7 @@ typedef struct BATiter {
 	Heap *h;
 	void *base;
 	Heap *vh;
+	Heap *skh;
 	BUN count;
 	BUN baseoff;
 	oid tseq;
@@ -2355,6 +2372,7 @@ bat_iterator_nolock(BAT *b)
 				: NULL,
 			.baseoff = b->tbaseoff,
 			.vh = b->tvheap,
+			.skh = b->tsketch,
 			.count = b->batCount,
 			.width = b->twidth,
 			.shift = b->tshift,
@@ -3421,11 +3439,11 @@ gdk_export void STRMPdestroy(BAT *b);
 gdk_export bool BAThasstrimps(BAT *b);
 gdk_export gdk_return BATsetstrimps(BAT *b);
 
-gdk_export int sketch_populate(BAT* n, BATiter *ni, struct canditer *nci,
-			       uint8_t cnting_sketch[BUCKETS][CLZ_BUCKETS]);
-/* gdk_export void sketch_merge(BAT* b, BAT* n); */
-gdk_export double sketch_estimate(uint8_t cnt_sketch[BUCKETS][CLZ_BUCKETS]);
-gdk_export double bat_guess_uniques(BAT *b, BATiter *bi, struct canditer *bci);
+/* Sketches exported functions */
+gdk_export gdk_return sketch_update_many(BATiter *bi, uint8_t (*sketch)[CLZ_BUCKETS], const void *values, size_t count);
+gdk_export gdk_return sketch_merge(uint8_t (*dst)[CLZ_BUCKETS], uint8_t (*src)[CLZ_BUCKETS]);
+gdk_export double sketch_estimate(uint8_t (*sketch)[CLZ_BUCKETS]);
+gdk_return bat_sketch(BATiter *bi, struct canditer *bci, uint8_t (*sketch)[CLZ_BUCKETS]);
 
 /* Rtree structure functions */
 #ifdef HAVE_RTREE
@@ -3900,7 +3918,8 @@ enum heaptype {
 	hashheap,
 	orderidxheap,
 	strimpheap,
-	dataheap
+	dataheap,
+	sketchheap
 };
 gdk_export int BBPselectfarm(role_t role, int type, enum heaptype hptype);
 

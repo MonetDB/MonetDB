@@ -44,7 +44,6 @@
 #include "monetdb_config.h"
 #include "gdk.h"
 #include "gdk_private.h"
-#include "mutils.h"
 
 #ifdef ALIGN
 #undef ALIGN
@@ -118,7 +117,7 @@ BATcreatedesc(oid hseq, int tt, bool heapnames, role_t role, uint16_t width)
 {
 	bat bid;
 	BAT *bn;
-	Heap *h = NULL, *vh = NULL;
+	Heap *h = NULL, *vh = NULL, *skh = NULL;
 
 	/*
 	 * Alloc space for the BAT and its dependent records.
@@ -148,12 +147,26 @@ BATcreatedesc(oid hseq, int tt, bool heapnames, role_t role, uint16_t width)
 				.refs = ATOMIC_VAR_INIT(1),
 			};
 		}
+
+		if (ATOMsketchable(tt) && role == PERSISTENT) {
+			if ((skh = GDKmalloc(sizeof(Heap))) == NULL) {
+				GDKfree(h);
+				GDKfree(vh);
+				return NULL;
+			}
+			*skh = (Heap) {
+				.farmid = BBPselectfarm(role, tt, sketchheap),
+				.dirty = true,
+				.refs = ATOMIC_VAR_INIT(1),
+			};
+		}
 	}
 
 	bid = BBPallocbat(tt);
 	if (bid == 0) {
 		GDKfree(h);
 		GDKfree(vh);
+		GDKfree(skh);
 		return NULL;
 	}
 	bn = BBP_desc(bid);
@@ -183,6 +196,7 @@ BATcreatedesc(oid hseq, int tt, bool heapnames, role_t role, uint16_t width)
 		.batRestricted = BAT_WRITE,
 		.theap = h,
 		.tvheap = vh,
+		.tsketch = skh,
 		.creator_tid = MT_getpid(),
 		.qc = role == TRANSIENT ? MT_thread_get_qry_ctx() : NULL,
 	};
@@ -192,6 +206,12 @@ BATcreatedesc(oid hseq, int tt, bool heapnames, role_t role, uint16_t width)
 		const char *nme = BBP_physical(bn->batCacheid);
 		settailname(bn->theap, nme, tt, width);
 
+		if (bn->tsketch) {
+			bn->tsketch->parentid = bn->batCacheid;
+			strtconcat(bn->tsketch->filename,
+				   sizeof(bn->tsketch->filename),
+				   nme, ".tsketch", NULL);
+		}
 		if (bn->tvheap) {
 			bn->tvheap->parentid = bn->batCacheid;
 			strtconcat(bn->tvheap->filename,
@@ -334,10 +354,21 @@ COLnew2(oid hseq, int tt, BUN cap, role_t role, uint16_t width)
 		goto bailout;
 	}
 
+	if (ATOMsketchable(tt) && role == PERSISTENT) {
+		assert(bn->tsketch);
+		if (HEAPalloc(bn->tsketch, SKETCH_SIZE, sizeof(uint8_t)) != GDK_SUCCEED) {
+			HEAPfree(bn->theap, true);
+			goto bailout;
+		}
+		memset(bn->tsketch->base, 0, SKETCH_SIZE);
+	}
+
 	if (bn->tvheap && width == 0 && ATOMheap(tt, bn->tvheap, cap) != GDK_SUCCEED) {
 		HEAPfree(bn->theap, true);
+		HEAPfree(bn->tsketch, true);
 		goto bailout;
 	}
+
 	BBPcacheit(bn, true);
 	TRC_DEBUG(ALGO, "-> " ALGOBATFMT "\n", ALGOBATPAR(bn));
 	return bn;
@@ -539,6 +570,11 @@ BATclear(BAT *b, bool force)
 		}
 	}
 
+	if (b->tsketch) {
+		memset(b->tsketch->base, 0, SKETCH_SIZE);
+		b->tsketch->dirty = true;
+	}
+
 	b->batInserted = 0;
 	b->batCount = 0;
 	if (b->ttype == TYPE_void)
@@ -610,6 +646,19 @@ BATfree(BAT *b)
 		assert(b->tvheap->parentid == b->batCacheid);
 		HEAPfree(b->tvheap, false);
 	}
+	/* wait until there are no other references to the heap; a
+	 * reference is possible in e.g. BBPsync that uses a
+	 * bat_iterator directly on the BBP_desc, i.e. without fix */
+	while (b->tsketch && (ATOMIC_GET(&b->tsketch->refs) & HEAPREFS) > 1) {
+		MT_lock_unset(&b->theaplock);
+		MT_sleep_ms(1);
+		MT_lock_set(&b->theaplock);
+	}
+	if (b->tsketch) {
+		assert((ATOMIC_GET(&b->tsketch->refs) & HEAPREFS) == 1);
+		assert(b->tsketch->parentid == b->batCacheid);
+		HEAPfree(b->tsketch, false);
+	}
 	MT_lock_unset(&b->theaplock);
 }
 
@@ -626,6 +675,9 @@ BATdestroy(BAT *b)
 	MT_rwlock_destroy(&b->thashlock);
 	if (b->theap) {
 		GDKfree(b->theap);
+	}
+	if (b->tsketch) {
+		GDKfree(b->tsketch);
 	}
 	if (b->oldtail) {
 		ATOMIC_AND(&b->oldtail->refs, ~DELAYEDREMOVE);
@@ -872,6 +924,10 @@ COLcopy2(BAT *b, int tt, bool writable, bool mayshare, role_t role)
 		memcpy(bn->theap->base, bi.base, bi.hfree);
 		bn->theap->free = bi.hfree;
 		bn->theap->dirty = true;
+		if (bn->tsketch) {
+			memcpy(bn->theap->base, bi.skh, SKETCH_SIZE);
+			bn->tsketch->dirty = true;
+		}
 
 		/* make sure we use the correct capacity */
 		if (ATOMstorage(bn->ttype) == TYPE_msk)
@@ -886,10 +942,13 @@ COLcopy2(BAT *b, int tt, bool writable, bool mayshare, role_t role)
 
 		TIMEOUT_LOOP_IDX_DECL(p, bi.count, qry_ctx) {
 			const void *t = BUNtail(&bi, p);
-
-			if (bunfastapp_nocheck(bn, t) != GDK_SUCCEED) {
+			if (bunfastapp_nocheck(bn, t) != GDK_SUCCEED)
 				goto bunins_failed;
-			}
+		}
+		if (bn->tsketch) {
+			if (bat_sketch(&bi, NULL, (uint8_t (*)[CLZ_BUCKETS]) bn->tsketch->base) != GDK_SUCCEED)
+				goto bunins_failed;
+			bn->tsketch->dirty = true;
 		}
 		TIMEOUT_CHECK(qry_ctx, GOTO_LABEL_TIMEOUT_HANDLER(bunins_failed, qry_ctx));
 		bn->theap->dirty |= bi.count > 0;
@@ -921,6 +980,10 @@ COLcopy2(BAT *b, int tt, bool writable, bool mayshare, role_t role)
 		memcpy(Tloc(bn, 0), bi.base, bn->theap->free);
 		bn->theap->dirty |= bi.count > 0;
 		algo = "memcpy heap";
+		if (bn->tsketch) {
+			memcpy(bn->tsketch->base, bi.skh, SKETCH_SIZE);
+			bn->tsketch->dirty = true;
+		}
 	}
 	/* copy all properties (size+other) from the source bat */
 	BATsetcount(bn, bi.count);
@@ -1198,6 +1261,18 @@ BUNappendmulti(BAT *b, const void *values, BUN count, bool force)
 				}
 				nunique = b->thash ? b->thash->nunique : 0;
 			}
+			if (b->tsketch) {
+				/* printf("sketch_update_many updating dense for bat id %d\n", b->batCacheid); */
+				if (sketch_update_many(&bi, (uint8_t (*)[CLZ_BUCKETS]) bi.skh->base,
+						       values, count) != GDK_SUCCEED) {
+					MT_rwlock_wrunlock(&b->thashlock);
+					if (minbound)
+						VALclear(&minprop);
+					if (maxbound)
+						VALclear(&maxprop);
+					return GDK_FAIL;
+				}
+			}
 		} else if (ATOMstorage(b->ttype) == TYPE_msk) {
 			bi.minpos = bi.maxpos = BUN_NONE;
 			minvalp = maxvalp = NULL;
@@ -1244,6 +1319,14 @@ BUNappendmulti(BAT *b, const void *values, BUN count, bool force)
 				p++;
 			}
 			nunique = b->thash ? b->thash->nunique : 0;
+			if (b->tsketch) {
+				/* printf("sketch_update_many updating dense for bat id %d\n", b->batCacheid); */
+				if(sketch_update_many(&bi, (uint8_t (*)[CLZ_BUCKETS]) bi.skh->base,
+						      values, count) != GDK_SUCCEED) {
+					MT_rwlock_wrunlock(&b->thashlock);
+					return GDK_FAIL;
+				}
+			}
 		}
 	} else {
 		/* inserting nils, unless it's msk */
@@ -1289,12 +1372,14 @@ BUNappendmulti(BAT *b, const void *values, BUN count, bool force)
 				    (count > 1 ||
 				     b->tseqbase + b->batCount != ((oid *) values)[0]))
 					b->tseqbase = oid_nil;
-				if (b->tsorted && !is_oid_nil(((oid *) b->theap->base)[b->batCount - 1]) && ((oid *) b->theap->base)[b->batCount - 1] > ((oid *) values)[0]) {
+				if (b->tsorted && !is_oid_nil(((oid *) b->theap->base)[b->batCount - 1]) &&
+				    ((oid *) b->theap->base)[b->batCount - 1] > ((oid *) values)[0]) {
 					b->tsorted = false;
 					if (b->tnosorted == 0)
 						b->tnosorted = b->batCount;
 				}
-				if (b->trevsorted && !is_oid_nil(((oid *) values)[0]) && ((oid *) b->theap->base)[b->batCount - 1] < ((oid *) values)[0]) {
+				if (b->trevsorted && !is_oid_nil(((oid *) values)[0]) &&
+				    ((oid *) b->theap->base)[b->batCount - 1] < ((oid *) values)[0]) {
 					b->trevsorted = false;
 					if (b->tnorevsorted == 0)
 						b->tnorevsorted = b->batCount;
@@ -1402,6 +1487,10 @@ BUNappendmulti(BAT *b, const void *values, BUN count, bool force)
 	BATsetcount(b, p);
 	if (nunique != 0)
 		b->tunique_est = (double) nunique;
+	else if (b->tsketch) {
+		/* printf("BUNappendmulti estimating for bat id %d\n", b->batCacheid); */
+		b->tunique_est = sketch_estimate((uint8_t (*)[CLZ_BUCKETS]) b->tsketch->base);
+	}
 	MT_lock_unset(&b->theaplock);
 	MT_rwlock_wrunlock(&b->thashlock);
 

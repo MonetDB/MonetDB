@@ -738,6 +738,26 @@ BATsave_iter(BAT *b, BATiter *bi, BUN size)
 					close(fd);
 				}
 			}
+			if (bi->skh) {
+				fd = GDKfdlocate(bi->skh->farmid, bi->skh->filename, "rb+", NULL);
+				if (fd < 0) {
+					GDKsyserror("cannot open file %s for sync\n",
+						    bi->skh->filename);
+					err = GDK_FAIL;
+				} else {
+					if (
+#if defined(NATIVE_WIN32)
+						_commit(fd) < 0
+#elif defined(HAVE_FDATASYNC)
+						fdatasync(fd) < 0
+#elif defined(HAVE_FSYNC)
+						fsync(fd) < 0
+#endif
+						)
+						GDKsyserror("sync failed for %s\n", bi->skh->filename);
+					close(fd);
+				}
+			}
 		}
 	} else {
 		const char *nme = BBP_physical(b->batCacheid);
@@ -752,6 +772,8 @@ BATsave_iter(BAT *b, BATiter *bi, BUN size)
 		    && ATOMvarsized(bi->type)
 		    && err == GDK_SUCCEED)
 			err = HEAPsave(bi->vh, nme, "theap", dosync, bi->vhfree, bi->type == TYPE_msk ? NULL : &b->theaplock);
+		if (err == GDK_SUCCEED && bi->skh)
+			err = HEAPsave(bi->skh, nme, "tsketch", dosync, SKETCH_SIZE, &b->theaplock);
 	}
 
 	if (err == GDK_SUCCEED) {
@@ -767,11 +789,18 @@ BATsave_iter(BAT *b, BATiter *bi, BUN size)
 			b->tvheap->wasempty = bi->vh->wasempty;
 			b->tvheap->hasfile |= bi->vh->hasfile;
 		}
+		if (b->tsketch != bi->skh) {
+			assert(b->tsketch->dirty);
+			b->tsketch->wasempty = bi->skh->wasempty;
+			b->tsketch->hasfile |= bi->skh->hasfile;
+		}
 		if (size != b->batCount) {
 			/* if the size doesn't match, the BAT must be dirty */
 			b->theap->dirty = true;
 			if (!b->ustr && b->tvheap)
 				b->tvheap->dirty = true;
+			if (b->tsketch)
+				b->tsketch->dirty = true;
 		}
 		/* there is something on disk now */
 		b->batCopiedtodisk = true;
@@ -833,6 +862,17 @@ BATload_intern(bat bid, bool lock)
 			assert(b->theap->size >> b->tshift <= BUN_MAX);
 			b->batCapacity = (BUN) (b->theap->size >> b->tshift);
 		}
+
+		if (b->tsketch /* TODO */ && ATOMsketchable(b->ttype)) {
+			b->tsketch->storage = STORE_INVALID;
+			if (HEAPload(b->tsketch, nme, "tsketch", false) != GDK_SUCCEED) {
+				HEAPfree(b->theap, false);
+				HEAPfree(b->tsketch, false);
+				return NULL;
+			} else {
+				b->tunique_est = sketch_estimate((uint8_t (*)[CLZ_BUCKETS]) b->tsketch->base);
+			}
+		}
 	} else {
 		b->theap->base = NULL;
 	}
@@ -892,6 +932,9 @@ BATdelete(BAT *b)
 	}
 	if (b->tvheap && !b->ustr) {
 		HEAPfree(b->tvheap, true);
+	}
+	if (b->tsketch) {
+		HEAPfree(b->tsketch, true);
 	}
 	b->batCopiedtodisk = false;
 }

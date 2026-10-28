@@ -13,6 +13,37 @@
 #if defined(HAVE_GETENTROPY) && defined(HAVE_SYS_RANDOM_H)
 #include <sys/random.h>
 #endif
+#include "xoshiro256starstar.h"
+
+#if !defined(HAVE_GETENTROPY) && defined(HAVE_RAND_S)
+static int
+getentropy(void *buffer, size_t length)
+{
+	uint8_t *b = buffer;
+	for (size_t i = 0; i < length; i += sizeof(unsigned int)) {
+		unsigned int r;
+		if (rand_s(&r) != 0)
+			return -1;
+		for (size_t j = 0; j < sizeof(unsigned int); j++) {
+			if (i + j == length)
+				return 0;
+			b[i + j] = (uint8_t) (r >> (j * 8));
+		}
+	}
+	return 0;
+}
+static int
+leading_zeroes(uint64_t x)
+{
+	if (x == 0)
+		return 64;
+	unsigned long i;
+	BitScanReverse64(&i, x);
+	return (int) (63 - i);
+}
+#else
+#define leading_zeroes(x) (x == 0 ? 64 : __builtin_clzll(x))
+#endif
 
 // Helper function sigma as defined in
 // "New cardinality estimation algorithms for HyperLogLog sketches"
@@ -59,13 +90,13 @@ tau(double x)
 // Otmar Ertl, arXiv:1702.01284.
 // Only difference is how the multiplicity array is computed
 double
-sketch_estimate(uint8_t cnt_sketch[BUCKETS][CLZ_BUCKETS])
+sketch_estimate(uint8_t (*sketch)[CLZ_BUCKETS])
 {
 	int8_t C[CLZ_BUCKETS + 1] = {0};
 	for (size_t bucket = 0; bucket < BUCKETS; bucket++) {
 		int K = -1;
 		for (int clz = 0; clz < CLZ_BUCKETS; clz++)
-			if (cnt_sketch[bucket][clz] > 0)
+			if (sketch[bucket][clz] > 0)
 				K = clz;
 		K == -1 ? C[0]++ : C[K + 1]++;
 	}
@@ -79,131 +110,77 @@ sketch_estimate(uint8_t cnt_sketch[BUCKETS][CLZ_BUCKETS])
 	return alpha * (double) BUCKETS * BUCKETS / z;
 }
 
-#define my_is_int_nil(v) is_int_nil(*(int *) (v))
-#define my_is_lng_nil(v) is_lng_nil(*(lng *) (v))
-#define my_is_str_nil(v) strNil(v)
-
-#define my_sizeof_int(v) sizeof(int)
-#define my_sizeof_lng(v) sizeof(lng)
-#define my_sizeof_str(v) strlen(v)
-
-/* #define my_get_val_int(ptr, i) ptr[i] */
-/* #define my_get_val_lng(ptr, i) ptr[i] */
-/* #define my_get_val_str(ptr, i) */
-
-#if !defined(HAVE_GETENTROPY) && defined(HAVE_RAND_S)
-static int
-getentropy(void *buffer, size_t length)
-{
-	uint8_t *b = buffer;
-	for (size_t i = 0; i < length; i += sizeof(unsigned int)) {
-		unsigned int r;
-		if (rand_s(&r) != 0)
-			return -1;
-		for (size_t j = 0; j < sizeof(unsigned int); j++) {
-			if (i + j == length)
-				return 0;
-			b[i + j] = (uint8_t) (r >> (j * 8));
-		}
-	}
-	return 0;
-}
-static int
-leading_zeroes(uint64_t x)
-{
-	unsigned long i;
-	BitScanReverse64(&i, x);
-	return (int) (63 - i);
-}
-#else
-#define leading_zeroes(x)	__builtin_clzll(x)
-#endif
-
-#define SKETCH_UPDATE(CNTING_SKETCH, HASH)				\
+#define SKETCH_UPDATE_ONE(SKETCH, HASH)					\
 	do {								\
-		bucket = hash & BITS_MASK;				\
-		hash |= BITS_MASK;					\
-		clz = leading_zeroes(hash);				\
-		assert(clz <= 58);					\
-		if (CNTING_SKETCH[bucket][clz] <= 128) {		\
-			CNTING_SKETCH[bucket][clz]++;			\
+		uint8_t bucket = HASH & BITS_MASK;			\
+		HASH |= BITS_MASK;					\
+		uint8_t clz_bucket = leading_zeroes(hash);		\
+		assert(clz_bucket <= 58);				\
+		if (SKETCH[bucket][clz_bucket] <= 128) {		\
+			SKETCH[bucket][clz_bucket]++;			\
+		} else if (SKETCH[bucket][clz_bucket] < 255){		\
+			uint8_t k = SKETCH[bucket][clz_bucket] - 128;	\
+			uint64_t rand64_1 = next(rse);			\
+			uint8_t clz_rand64_1 = leading_zeroes(rand64_1); \
+			if (k < 64) {					\
+				if (clz_rand64_1 == k)			\
+					SKETCH[bucket][clz_bucket]++;	\
+			} else {					\
+				uint64_t rand64_2 = next(rse);		\
+				uint8_t clz_rand64_2 = 64 + leading_zeroes(rand64_2); \
+				if (clz_rand64_2 == k)			\
+					SKETCH[bucket][clz_bucket]++;	\
+			}						\
 		} else {						\
-			if (rng_i == 0 && getentropy(rng_buf, 256 /* maximum */) != 0) { \
-				/* TRC_ERROR(ACCELERATOR, "Failed to generate sketch seed." */ \
-				/* 	  "Aborting count distinct estimation."); */ \
-				rc = GDK_FAIL;				\
-				break;					\
-			}						\
-			uint64_t rng = rng_buf[rng_i];			\
-			rng_i = rng_i >= 31 ? 0 : rng_i + 1;		\
-			uint8_t k = CNTING_SKETCH[bucket][clz] - 128;	\
-			if ((rng & ((1ULL << k) - 1)) == 0)		\
-				CNTING_SKETCH[bucket][clz]++;		\
+			/* probabilistic counter is satured */		\
+			continue;					\
 		}							\
 	} while (0)
 
-#define SKETCH_POPULATE(TYPE)						\
-	do {								\
-		oid hseq = b->hseqbase;					\
-		uint64_t hash;						\
-		uint8_t bucket;						\
-		uint8_t clz;						\
-		uint64_t rng_buf[32];					\
-		int rng_i = 0;						\
-		TIMEOUT_LOOP(n_bci.ncand, qry_ctx) {			\
-			oid p = canditer_next(&n_bci) - hseq;		\
-			const void *ptr = BUNtail(&n_bi, p);		\
-			if (!my_is_##TYPE##_nil(ptr)) {			\
-				hash = XXH64(ptr, my_sizeof_##TYPE(ptr), HLLSEED); \
-				SKETCH_UPDATE(cnting_sketch, hash);	\
-			}						\
-		}							\
-	} while (0)
-
-/* #define SKETCH_POPULATE_DENSE(TYPE)					\ */
-/* 	do {								\ */
-/* 		uint64_t hash;						\ */
-/* 		uint8_t bucket;						\ */
-/* 		uint8_t clz;						\ */
-/* 		uint64_t rng_buf[32];					\ */
-/* 		int rng_i = 0;						\ */
-/* 		TYPE *p = Tloc(b, 0);					\ */
-/* 		TIMEOUT_LOOP_IDX_DECL(i, BATcount(b), qry_ctx) {	\ */
-/* 			const void *ptr = TODO;				\ */
-/* 			if (!my_is_##TYPE##_nil(ptr)) {			\ */
-/* 				hash = XXH64(ptr, my_sizeof_##TYPE(ptr), HLLSEED); \ */
-/* 				SKETCH_UPDATE(cnting_sketch, hash);	\ */
-/* 			}						\ */
-/* 		}							\ */
-/* 	} while (0) */
-
-int
-sketch_populate(BAT *b, BATiter *bi, struct canditer *bci,
-		uint8_t cnting_sketch[BUCKETS][CLZ_BUCKETS])
+gdk_return
+sketch_update_many(BATiter *bi, uint8_t (*sketch)[CLZ_BUCKETS],
+		   const void *values, size_t count)
 {
-	lng t0 = GDKusec();
 	gdk_return rc = GDK_SUCCEED;
+	assert(sketch && values && (count > 0));
 	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
+	random_state_engine rse;
+	init_random_state_engine(rse, (uint64_t) GDKusec());
 
-	/* if (!bi && !bci) { */
-	/* 	switch (b->ttype) { */
-	/* 	case TYPE_int: */
-	/* 		SKETCH_POPULATE_DENSE(int); */
-	/* 		break; */
-	/* 	case TYPE_lng: */
-	/* 		SKETCH_POPULATE_DENSE(lng); */
-	/* 		break; */
-	/* 	case TYPE_str: */
-	/* 		SKETCH_POPULATE_DENSE(str); */
-	/* 		break; */
-	/* 	default: */
-	/* 		/\* TRC_ERROR(ACCELERATOR, "Type not supported for counting sketches." *\/ */
-	/* 		/\* 	  "Aborting count distinct estimation."); *\/ */
-	/* 		break; */
-	/* 	} */
-	/* } */
+	int8_t values_t = bi->type;
+	const void *atomnil = ATOMnilptr(values_t);
+	bool (*atomeq) (const void *, const void *) = ATOMequal(values_t);
 
-	BATiter n_bi = bi ? *bi : bat_iterator(b);
+	TIMEOUT_LOOP_IDX_DECL(i, count, qry_ctx) {
+		const void *v;
+		v = ATOMvarsized(values_t) ? BUNtvar(bi, i) : BUNtloc(bi, i);
+		if (atomeq(v, atomnil))
+			continue;
+		uint64_t hash = XXH64(v, ATOMlen(values_t, v), HLLSEED);
+		SKETCH_UPDATE_ONE(sketch, hash);
+	}
+
+	return rc;
+}
+
+gdk_return
+sketch_merge(uint8_t (*dst)[CLZ_BUCKETS], uint8_t (*src)[CLZ_BUCKETS])
+{
+	assert(dst != NULL && src != NULL);
+	for (size_t i = 0; i < BUCKETS; i++)
+		for (size_t j = 0; j < CLZ_BUCKETS; j++)
+			if (src[i][j] > dst[i][j])
+				dst[i][j] = src[i][j];
+	return GDK_SUCCEED;
+}
+
+gdk_return
+bat_sketch(BATiter *bi, struct canditer *bci, uint8_t (*sketch)[CLZ_BUCKETS])
+{
+	gdk_return rc = GDK_SUCCEED;
+	lng t0 = GDKusec();
+	BAT *b = bi->b;
+
 	struct canditer n_bci;
 	if (bci == NULL) {
 		canditer_init(&n_bci, b, NULL);
@@ -212,58 +189,79 @@ sketch_populate(BAT *b, BATiter *bi, struct canditer *bci,
 		canditer_reset(&n_bci);
 	}
 
-	switch (ATOMstorage(n_bi.type)) {
-	case TYPE_int:
-		SKETCH_POPULATE(int);
-		break;
-	case TYPE_lng:
-		SKETCH_POPULATE(lng);
-		break;
-	case TYPE_str:
-		SKETCH_POPULATE(str);
-		break;
-	default:
-		/* TRC_ERROR(ACCELERATOR, "Type not supported for counting sketches." */
-		/* 	  "Aborting count distinct estimation."); */
-		break;
+	if (n_bci.tpe == cand_dense) {
+		rc = sketch_update_many(bi, sketch, bi->base, n_bci.ncand);
+	} else {
+		QryCtx *qry_ctx = MT_thread_get_qry_ctx();
+		random_state_engine rse;
+		init_random_state_engine(rse, (uint64_t) GDKusec());
+
+		int8_t values_t = bi->type;
+		const void *atomnil = ATOMnilptr(values_t);
+		bool (*atomeq) (const void *, const void *) = ATOMequal(values_t);
+
+		TIMEOUT_LOOP(n_bci.ncand, qry_ctx) {
+			BUN o = canditer_next(&n_bci) - bi->b->hseqbase;
+			const void *v;
+			v = ATOMvarsized(values_t) ? BUNtvar(bi, o) : BUNtloc(bi, o);
+			if (atomeq(v, atomnil))
+				continue;
+			uint64_t hash = XXH64(v, ATOMlen(values_t, v), HLLSEED);
+			SKETCH_UPDATE_ONE(sketch, hash);
+		}
 	}
 
-	if (bi == NULL)
-		bat_iterator_end(&n_bi);
-
-	TRC_DEBUG(ALGO, ALGOBATFMT " " LLFMT " usec\n", ALGOBATPAR(b),
+	TRC_DEBUG(ALGO, ALGOBATFMT " "LLFMT" usec\n", ALGOBATPAR(b),
 		  GDKusec() - t0);
 	return rc;
 }
 
-/* void */
-/* sketch_merge(BAT* b, BAT* n) */
+/* gdk_return */
+/* sketch_update_many(BATiter *bi, uint8_t (*sketch)[CLZ_BUCKETS], */
+/* 		   const void *values, size_t count) */
 /* { */
-/* 	MT_lock_set(&b->batIdxLock); */
-/* 	for (size_t i = 0; i < BUCKETS; i++) */
-/* 		for (size_t j = 0; j < CLZ_BUCKETS; j++) */
-/* 			if (n->cnting_sketch[i][j] > b->cnting_sketch[i][j]) */
-/* 				b->cnting_sketch[i][j] = n->cnting_sketch[i][j]; */
-/* 	b->unique_guess = sketch_estimate(b->cnting_sketch); */
-/* 	MT_lock_unset(&b->batIdxLock); */
+/* 	gdk_return rc = GDK_SUCCEED; */
+/* 	assert(sketch && values && (count > 0)); */
+/* 	QryCtx *qry_ctx = MT_thread_get_qry_ctx(); */
+/* 	random_state_engine rse; */
+/* 	init_random_state_engine(rse, (uint64_t) GDKusec()); */
+
+/* 	int8_t values_t = bi->type; */
+/* 	const void *atomnil = ATOMnilptr(values_t); */
+/* 	bool (*atomeq) (const void *, const void *) = ATOMequal(values_t); */
+
+/* 	TIMEOUT_LOOP_IDX_DECL(i, count, qry_ctx) { */
+/* 		const void *v; */
+/* 		v = ATOMvarsized(values_t) ? BUNtvar(bi, i) : BUNtloc(bi, i); */
+/* 		if (ATOMvarsized(values_t)) { */
+/* 			printf("sketch_update_many bat id %d count %zu varsized value %s\n", bi->b->batCacheid, count, atomeq(v, atomnil) ? "str_nil" : (char *) v); */
+/* 		} else { */
+/* 			switch(values_t) { */
+/* 			case TYPE_bte: */
+/* 				printf("sketch_update_many bat id %d count %zu value %hhd\n", bi->b->batCacheid, count, atomeq(v, atomnil) ? bte_nil : *(int8_t *) v); */
+/* 				break; */
+/* 			case TYPE_sht: */
+/* 				printf("sketch_update_many bat id %d count %zu value %hd\n", bi->b->batCacheid, count, atomeq(v, atomnil) ? sht_nil : *(int16_t *) v); */
+/* 				break; */
+/* 			case TYPE_int: */
+/* 				printf("sketch_update_many bat id %d count %zu value %d\n", bi->b->batCacheid, count, atomeq(v, atomnil) ? int_nil : *(int32_t *) v); */
+/* 				break; */
+/* 			case TYPE_lng: */
+/* 				printf("sketch_update_many bat id %d count %zu value %ld\n", bi->b->batCacheid, count, atomeq(v, atomnil) ? lng_nil : *(int64_t *) v); */
+/* 				break; */
+/* 			case TYPE_flt: */
+/* 				printf("sketch_update_many bat id %d count %zu value %f\n", bi->b->batCacheid, count, atomeq(v, atomnil) ? flt_nil : *(float *) v); */
+/* 				break; */
+/* 			case TYPE_dbl: */
+/* 				printf("sketch_update_many bat id %d count %zu value %f\n", bi->b->batCacheid, count, atomeq(v, atomnil) ? dbl_nil : *(double *) v); */
+/* 				break; */
+/* 			} */
+/* 		} */
+/* 		if (atomeq(v, atomnil)) */
+/* 			continue; */
+/* 		uint64_t hash = XXH64(v, ATOMlen(values_t, v), HLLSEED); */
+/* 		SKETCH_UPDATE_ONE(sketch, hash); */
+/* 	} */
+
+/* 	return rc; */
 /* } */
-
-double
-bat_guess_uniques(BAT *b, BATiter *bi, struct canditer *bci)
-{
-	lng t0 = GDKusec();
-	uint8_t cnting_sketch[BUCKETS][CLZ_BUCKETS] = {0};
-	double unique_guess = 0;
-
-	if (b->tsorted && b->trevsorted) /* all values are the same */
-		unique_guess = (double) (b->batCount > 0);
-	else if (b->tkey)	/* all values are distinct */
-		unique_guess = (double) b->batCount;
-	else if (sketch_populate(b, bi, bci, cnting_sketch) == GDK_SUCCEED)
-		unique_guess = sketch_estimate(cnting_sketch);
-
-	b->tunique_est = unique_guess;
-	TRC_DEBUG(ALGO, ALGOBATFMT " " LLFMT " usec\n", ALGOBATPAR(b),
-		  GDKusec() - t0);
-	return unique_guess;
-}

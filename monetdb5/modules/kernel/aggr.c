@@ -1545,14 +1545,34 @@ uniques_guess(Client c, lng *guess, const bat *bid)
 	(void) c;
 
 	BAT *b = BATdescriptor(*bid);
+	bat pb = 0;
+
 	if (b == NULL)
-		throw(MAL, "AGGRcde", RUNTIME_OBJECT_MISSING);
+		throw(MAL, "uniques_guess", RUNTIME_OBJECT_MISSING);
+
+	if ((pb = VIEWtparent(b)) != 0) {
+		BBPreclaim(b);
+		b = BATdescriptor(pb);
+		if (b == NULL) {
+			BBPreclaim(b);
+			throw(MAL, "uniques_guess", RUNTIME_OBJECT_MISSING);
+		}
+	}
+
+	/* *guess = llroundl(bat_uniques_guess(b, &bi, NULL)); */
 
 	BATiter bi = bat_iterator(b);
 	struct canditer bci;
 	canditer_init(&bci, b, NULL);
-
-	*guess = llroundl(bat_guess_uniques(b, &bi, &bci));
+	uint8_t sketch[BUCKETS][CLZ_BUCKETS] = {0};
+	/* uint8_t (*sketch_ptr)[CLZ_BUCKETS] = sketch; */
+	gdk_return rc = bat_sketch(&bi, &bci, sketch);
+	if (rc == GDK_SUCCEED) {
+		/* printf("uniques_guess estimating for bat id %d\n", b->batCacheid); */
+		*guess = llroundl(sketch_estimate(sketch));
+	} else {
+		*guess = -1;
+	}
 
 	bat_iterator_end(&bi);
 	BBPreclaim(b);

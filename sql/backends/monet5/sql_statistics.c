@@ -167,6 +167,7 @@ sql_analyze(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 			if (tbl && strcmp(b->name, tbl))
 				continue;
+
 			if (isTable(t) && ol_first_node(t->columns)) {
 				bool allowed = table_privs(m, t, PRIV_SELECT);
 				for (node *ncol = ol_first_node((t)->columns); ncol; ncol = ncol->next) {
@@ -175,7 +176,6 @@ sql_analyze(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 						continue;
 					BAT *b, *unq;
 					ptr mn, mx;
-					double unique_est;
 
 					if (col && strcmp(c->base.name, col))
 						continue;
@@ -202,24 +202,15 @@ sql_analyze(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 					if ((unq = BATunique(b, NULL)))
 						BBPunfix(unq->batCacheid);
 
-					/* Guess number of uniques if not entirely unique */
-					/* unique_est = (double)BATguess_uniques(b, NULL); */
-					unique_est = (double)bat_guess_uniques(b, NULL, NULL);
-					MT_lock_set(&b->theaplock);
-					b->tunique_est = unique_est;
-					MT_lock_unset(&b->theaplock);
-
 					/* Collect min and max values */
 					mn = BATmin(b, NULL);
 					GDKfree(mn);
 					mx = BATmax(b, NULL);
 					GDKfree(mx);
 					BBPunfix(b->batCacheid);
-
-					/* if (unique_est > 0) */
-					/* 	store->storage_api.set_stats_col(tr, c, &unique_est, NULL, NULL); */
 				}
 			}
+
 			if (!col && isTable(t) && ol_first_node(t->idxs)) {
 				bool allowed = table_privs(m, t, PRIV_SELECT);
 				for (node *nidx = ol_first_node((t)->idxs); nidx; nidx = nidx->next) {
@@ -228,7 +219,6 @@ sql_analyze(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 						continue;
 					BAT *b, *unq;
 					ptr mn, mx;
-					double unique_est;
 
 					if (!(b = store->storage_api.bind_idx(tr, idx, RDONLY)))
 						continue; /* At the moment we ignore the error, but maybe we can change this */
@@ -250,13 +240,6 @@ sql_analyze(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 					/* Test if column is unique */
 					if ((unq = BATunique(b, NULL)))
 						BBPunfix(unq->batCacheid);
-
-					/* Guess number of uniques if not entirely unique */
-					//(void) BATguess_uniques(b, NULL);
-					unique_est = (double)bat_guess_uniques(b, NULL, NULL);
-					MT_lock_set(&b->theaplock);
-					b->tunique_est = unique_est;
-					MT_lock_unset(&b->theaplock);
 
 					/* Collect min and max values */
 					mn = BATmin(b, NULL);
