@@ -35,86 +35,86 @@ typedef lng timestamp;			/* we use 26+37=63 bits out of 64 */
 gdk_export const timestamp unixepoch;
 
 gdk_export date date_create(int year, int month, int day)
-	__attribute__((__const__));
+	ATTR_CONST;
 gdk_export date date_add_day(date dt, int days)
-	__attribute__((__const__));
+	ATTR_CONST;
 gdk_export date date_add_month(date dt, int months)
-	__attribute__((__const__));
+	ATTR_CONST;
 #define date_add_year(d, y)		date_add_month(d, (y) * 12)
 gdk_export int date_diff(date d1, date d2)
-	__attribute__((__const__));
+	ATTR_CONST;
 gdk_export bte date_dayofweek(date dt) /* Monday=1, Sunday=7 */
-	__attribute__((__const__));
+	ATTR_CONST;
 gdk_export bte date_weekofyear(date dt)
-	__attribute__((__const__));
+	ATTR_CONST;
 gdk_export bte date_usweekofyear(date dt)
-	__attribute__((__const__));
+	ATTR_CONST;
 gdk_export sht date_dayofyear(date dt)
-	__attribute__((__const__));
+	ATTR_CONST;
 gdk_export int date_century(date dt)
-	__attribute__((__const__));
+	ATTR_CONST;
 gdk_export int date_decade(date dt)
-	__attribute__((__const__));
+	ATTR_CONST;
 gdk_export int date_year(date dt)
-	__attribute__((__const__));
+	ATTR_CONST;
 gdk_export bte date_quarter(date dt)
-	__attribute__((__const__));
+	ATTR_CONST;
 gdk_export bte date_month(date dt)
-	__attribute__((__const__));
+	ATTR_CONST;
 gdk_export bte date_day(date dt)
-	__attribute__((__const__));
+	ATTR_CONST;
 
 gdk_export daytime daytime_create(int hour, int minute, int second, int usec)
-	__attribute__((__const__));
+	ATTR_CONST;
 gdk_export lng daytime_diff(daytime d1, daytime d2)
-	__attribute__((__const__));
+	ATTR_CONST;
 gdk_export daytime daytime_add_usec(daytime tm, lng usec)
-	__attribute__((__const__));
+	ATTR_CONST;
 #define daytime_add_sec(t, s)	daytime_add_usec(t, (s)*LL_CONSTANT(1000000))
 #define daytime_add_min(t, m)			daytime_add_sec(t, (m) * 60)
 #define daytime_add_hour(t, h)			daytime_add_min(t, (h) * 60)
 
 /* add to daytime, but wrap around (modulo a full day) */
 gdk_export daytime daytime_add_usec_modulo(daytime tm, lng usec)
-	__attribute__((__const__));
+	ATTR_CONST;
 #define daytime_add_sec_modulo(t, s)	daytime_add_usec_modulo(t, (s)*LL_CONSTANT(1000000))
 #define daytime_add_min_modulo(t, m)	daytime_add_sec_modulo(t, (m) * 60)
 #define daytime_add_hour_modulo(t, h)	daytime_add_min_modulo(t, (h) * 60)
 gdk_export bte daytime_hour(daytime tm)
-	__attribute__((__const__));
+	ATTR_CONST;
 gdk_export bte daytime_min(daytime tm)
-	__attribute__((__const__));
+	ATTR_CONST;
 gdk_export int daytime_sec(daytime tm)
-	__attribute__((__const__));
+	ATTR_CONST;
 gdk_export int daytime_usec(daytime tm)
-	__attribute__((__const__));
+	ATTR_CONST;
 gdk_export int daytime_sec_usec(daytime tm)
-	__attribute__((__const__));
+	ATTR_CONST;
 
 gdk_export timestamp timestamp_fromtime(time_t timeval)
-	__attribute__((__const__));
+	ATTR_CONST;
 gdk_export timestamp timestamp_fromusec(lng usec)
-	__attribute__((__const__));
+	ATTR_CONST;
 gdk_export timestamp timestamp_fromdate(date dt)
-	__attribute__((__const__));
+	ATTR_CONST;
 gdk_export timestamp timestamp_create(date dt, daytime tm)
-	__attribute__((__const__));
+	ATTR_CONST;
 gdk_export timestamp timestamp_current(void);
 gdk_export timestamp timestamp_add_usec(timestamp t, lng usec)
-	__attribute__((__const__));
+	ATTR_CONST;
 #define timestamp_add_sec(t, s)	timestamp_add_usec(t, (s)*LL_CONSTANT(1000000))
 #define timestamp_add_min(t, m)		timestamp_add_sec(t, (m) * 60)
 #define timestamp_add_hour(t, h)	timestamp_add_min(t, (h) * 60)
 #define timestamp_add_day(t, d)		timestamp_add_hour(t, (d) * 24)
 gdk_export timestamp timestamp_add_month(timestamp t, int m)
-	__attribute__((__const__));
+	ATTR_CONST;
 #define timestamp_add_year(t, y)	timestamp_add_month(t, (y) * 12)
 gdk_export date timestamp_date(timestamp t)
-	__attribute__((__const__));
+	ATTR_CONST;
 gdk_export daytime timestamp_daytime(timestamp t)
-	__attribute__((__const__));
+	ATTR_CONST;
 gdk_export lng timestamp_diff(timestamp t1, timestamp t2)
-	__attribute__((__const__));
+	ATTR_CONST;
 
 /* interfaces for GDK level atoms date, daytime, and timestamp */
 gdk_export ssize_t date_fromstr(allocator *ma, const char *buf, size_t *len, date **d, bool external);

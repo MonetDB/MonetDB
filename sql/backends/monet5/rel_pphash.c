@@ -104,8 +104,7 @@ find_joinidx_basetable(mvc *sql, sql_rel *r, sql_exp *e)
 			return find_joinidx_basetable(sql, r->l, e);
 		return find_joinidx_basetable(sql, r->r, e);
 	}
-	assert(0);
-	return r;
+	return NULL;
 }
 
 /* fetch join for tid's */
@@ -376,11 +375,12 @@ rel2bin_oahash_build(backend *be, sql_rel *rel, list *refs)
 
 	bool need_freq = (rel->flag != (int)op_semi || rel->ref.refcnt > 2 || !list_empty(exps_prj_hsh));
 	bool perfect = false;
-	if (need_freq && list_length(exps_cmp_hsh) == 1 && !is_single(rel)) {
+	sql_rel *inner = rel->l;
+	if (need_freq && list_length(exps_cmp_hsh) == 1 && !is_single(rel) && (inner && !is_munion(inner->op))) {
 		sql_exp *e = exps_cmp_hsh->h->data;
 		if (e->unique) {
 			need_freq = false;
-			if (strcmp(exp_name(e), TID) == 0)
+			if (strcmp(exp_name(e), TID) == 0 && find_joinidx_basetable(be->mvc, rel->l, e))
 				perfect = true;
 		}
 	}

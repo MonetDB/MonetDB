@@ -203,7 +203,7 @@ typedef oid BUN;		/* BUN position */
 
 typedef union {
 	uint32_t align;		/* force alignment, only used for equality */
-	uint8_t quad[4] __attribute__((__nonstring__));
+	uint8_t quad[4] ATTR_NONSTRING;
 } inet4;			/* IPv4 internet address */
 
 typedef union {
@@ -212,7 +212,7 @@ typedef union {
 #else
 	uint64_t align[2];	/* force alignment, not otherwise used */
 #endif
-	uint8_t hex[16] __attribute__((__nonstring__));
+	uint8_t hex[16] ATTR_NONSTRING;
 } inet6;			/* IPv6 internet address */
 
 #define UUID_SIZE	16	/* size of a UUID */
@@ -224,15 +224,15 @@ typedef union {
 #else
 	uint64_t l[2];		/* force alignment, not otherwise used */
 #endif
-	uint8_t u[UUID_SIZE] __attribute__((__nonstring__));
+	uint8_t u[UUID_SIZE] ATTR_NONSTRING;
 } uuid;
 
 typedef struct {
 	size_t nitems;
-	uint8_t data[] __attribute__((__nonstring__))
-		__attribute__((__counted_by__(nitems)));
+	uint8_t data[] ATTR_NONSTRING
+		ATTR_COUNTED_BY(nitems);
 } blob;
-gdk_export size_t blobsize(size_t nitems) __attribute__((__const__));
+gdk_export size_t blobsize(size_t nitems) ATTR_CONST;
 
 #define SIZEOF_LNG		8
 #define LL_CONSTANT(val)	INT64_C(val)
@@ -540,9 +540,9 @@ gdk_export void GDKtracer_log(const char *file, const char *func,
 			      int lineno, log_level_t lvl,
 			      component_t comp,
 			      const char *syserr,
-			      _In_z_ _Printf_format_string_ const char *format,
+			      _Printf_format_string_ const char *format,
 			      ...)
-	__attribute__((__format__(__printf__, 7, 8)));
+	ATTR_FORMAT(__printf__, 7, 8);
 
 gdk_export gdk_return GDKtracer_flush_buffer(void);
 
@@ -1265,7 +1265,7 @@ gdk_export void MT_cond_broadcast(MT_Cond *cond);
 gdk_export size_t MT_getrss(void);
 
 gdk_export bool MT_path_absolute(const char *path)
-	__attribute__((__nonnull__(1)));
+	ATTR_NONNULL(1);
 
 
 /*
@@ -1325,7 +1325,7 @@ gdk_export char *ctime_r(const time_t *restrict, char *restrict);
 gdk_export int strerror_r(int errnum, char *buf, size_t buflen);
 #endif
 
-__attribute__((__access__(write_only, 2, 3)))
+ATTR_ACCESS(write_only, 2, 3)
 static inline const char *
 GDKstrerror(int errnum, char *buf, size_t buflen)
 {
@@ -1345,8 +1345,8 @@ GDKstrerror(int errnum, char *buf, size_t buflen)
 }
 
 gdk_export _Noreturn void GDKfatal(
-	_In_z_ _Printf_format_string_ const char *format, ...)
-	__attribute__((__format__(__printf__, 1, 2)));
+	_Printf_format_string_ const char *format, ...)
+	ATTR_FORMAT(__printf__, 1, 2);
 
 #undef MIN
 #undef MAX
@@ -1512,9 +1512,9 @@ typedef struct {
 /* interface definitions */
 gdk_export void *VALconvert(allocator *ma, int typ, ValPtr t);
 gdk_export char *VALformat(allocator *ma, const ValRecord *res)
-	__attribute__((__warn_unused_result__));
+	ATTR_WARN_UNUSED_RESULT;
 gdk_export void VALempty(ValPtr v)
-	__attribute__((__access__(write_only, 1)));
+	ATTR_ACCESS(write_only, 1);
 gdk_export void VALclear(ValPtr v);
 gdk_export ValPtr VALset(ValPtr v, int t, void *p);
 gdk_export void *VALget(ValPtr v);
@@ -1675,7 +1675,7 @@ mskSetVal(const BAT *b, BUN p, msk v)
 		mskClr(b, p);
 }
 
-__attribute__((__pure__))
+ATTR_PURE
 static inline msk
 mskGetVal(const BAT *b, BUN p)
 {
@@ -1683,18 +1683,18 @@ mskGetVal(const BAT *b, BUN p)
 }
 
 gdk_export gdk_return HEAPextend(Heap *h, size_t size)
-	__attribute__((__warn_unused_result__));
+	ATTR_WARN_UNUSED_RESULT;
 gdk_export size_t HEAPvmsize(const Heap *h)
-	__attribute__((__pure__));
+	ATTR_PURE;
 gdk_export size_t HEAPmemsize(const Heap *h)
-	__attribute__((__pure__));
+	ATTR_PURE;
 gdk_export void HEAPdecref(Heap *h, bool remove);
 gdk_export void HEAPincref(Heap *h);
 gdk_export gdk_return HEAPalloc(Heap *h, size_t nitems, size_t itemsize)
-	__attribute__((__warn_unused_result__));
-	//__attribute__((__visibility__("hidden")));
+	ATTR_WARN_UNUSED_RESULT;
+	//ATTR_VISIBILITY_HIDDEN;
 
-__attribute__((__pure__))
+ATTR_PURE
 static inline bat
 VIEWtparent(const BAT *b)
 {
@@ -1703,7 +1703,7 @@ VIEWtparent(const BAT *b)
 		: b->theap->parentid;
 }
 
-__attribute__((__pure__))
+ATTR_PURE
 static inline bat
 VIEWvtparent(const BAT *b)
 {
@@ -1712,7 +1712,7 @@ VIEWvtparent(const BAT *b)
 		: b->tvheap->parentid;
 }
 
-__attribute__((__pure__))
+ATTR_PURE
 static inline bool
 isVIEW(const BAT *b)
 {
@@ -1857,7 +1857,7 @@ gdk_export const char *ATOMname(int id);
 gdk_export size_t ATOMlen(int id, const void *v);
 gdk_export int ATOMprint(int id, const void *val, stream *fd);
 gdk_export char *ATOMformat(allocator *ma, int id, const void *val)
-	__attribute__((__warn_unused_result__));
+	ATTR_WARN_UNUSED_RESULT;
 
 /*
  * @- maximum atomic string lengths
@@ -2117,7 +2117,7 @@ ATOMsketchable(int type)
  * this would make the commit tremendously complicated.
  */
 
-__attribute__((__warn_unused_result__))
+ATTR_WARN_UNUSED_RESULT
 static inline gdk_return
 ATOMputVAR(BAT *b, var_t *dst, const void *src)
 {
@@ -2128,7 +2128,7 @@ ATOMputVAR(BAT *b, var_t *dst, const void *src)
 }
 
 
-__attribute__((__warn_unused_result__))
+ATTR_WARN_UNUSED_RESULT
 static inline gdk_return
 ATOMputFIX(int type, void *dst, const void *src)
 {
@@ -2163,7 +2163,7 @@ ATOMputFIX(int type, void *dst, const void *src)
 	return GDK_SUCCEED;
 }
 
-__attribute__((__warn_unused_result__))
+ATTR_WARN_UNUSED_RESULT
 static inline gdk_return
 ATOMreplaceVAR(BAT *b, var_t *dst, const void *src)
 {
@@ -2217,28 +2217,28 @@ ATOMreplaceVAR(BAT *b, var_t *dst, const void *src)
  * though we have to take corrective action to ensure that str(nil) is
  * the smallest value of the domain.
  */
-__attribute__((__pure__))
+ATTR_PURE
 static inline bool
 strEQ(const char *l, const char *r)
 {
 	return strcmp(l, r) == 0;
 }
 
-__attribute__((__pure__))
+ATTR_PURE
 static inline bool
 strNil(const char *s)
 {
 	return s == NULL || (s[0] == '\200' && s[1] == '\0');
 }
 
-__attribute__((__pure__))
+ATTR_PURE
 static inline size_t
 strLen(const char *s)
 {
 	return strNil(s) ? 2 : strlen(s) + 1;
 }
 
-__attribute__((__pure__))
+ATTR_PURE
 static inline int
 strCmp(const char *l, const char *r)
 {
@@ -2249,7 +2249,7 @@ strCmp(const char *l, const char *r)
 		: strNil(l) ? -1 : strcmp(l, r);
 }
 
-__attribute__((__pure__))
+ATTR_PURE
 static inline bool
 strEq(const char *l, const char *r)
 {
@@ -2260,7 +2260,7 @@ strEq(const char *l, const char *r)
 		: strNil(l) ? false : strcmp(l, r) == 0;
 }
 
-__attribute__((__pure__))
+ATTR_PURE
 static inline var_t
 VarHeapVal(const void *b, BUN p, int w)
 {
@@ -2515,59 +2515,59 @@ gdk_export var_t HEAP_malloc(BAT *b, size_t nbytes);
 gdk_export void HEAP_free(Heap *heap, var_t block);
 
 gdk_export BAT *COLnew(oid hseq, int tltype, BUN capacity, role_t role)
-	__attribute__((__warn_unused_result__));
+	ATTR_WARN_UNUSED_RESULT;
 gdk_export BAT *COLnew2(oid hseq, int tt, BUN cap, role_t role, uint16_t width)
-	__attribute__((__warn_unused_result__));
+	ATTR_WARN_UNUSED_RESULT;
 gdk_export BAT *BATdense(oid hseq, oid tseq, BUN cnt)
-	__attribute__((__warn_unused_result__));
+	ATTR_WARN_UNUSED_RESULT;
 gdk_export gdk_return BATextend(BAT *b, BUN newcap)
-	__attribute__((__warn_unused_result__));
+	ATTR_WARN_UNUSED_RESULT;
 gdk_export gdk_return BATconvert2ustr(BAT *b, BAT *bu)
-	__attribute__((__warn_unused_result__));
+	ATTR_WARN_UNUSED_RESULT;
 
 /* internal */
 gdk_export uint8_t ATOMelmshift(int sz)
-	__attribute__((__const__));
+	ATTR_CONST;
 gdk_export gdk_return ATOMheap(int id, Heap *hp, size_t cap)
-	__attribute__((__warn_unused_result__));
+	ATTR_WARN_UNUSED_RESULT;
 gdk_export const char *BATtailname(const BAT *b);
 
 gdk_export gdk_return GDKupgradevarheap(BAT *b, var_t v, BUN cap, BUN ncopy)
-	__attribute__((__warn_unused_result__));
+	ATTR_WARN_UNUSED_RESULT;
 gdk_export gdk_return BUNappend(BAT *b, const void *right, bool force)
-	__attribute__((__warn_unused_result__));
+	ATTR_WARN_UNUSED_RESULT;
 gdk_export gdk_return BUNappendmulti(BAT *b, const void *values, BUN count,
 				     bool force)
-	__attribute__((__warn_unused_result__));
+	ATTR_WARN_UNUSED_RESULT;
 gdk_export gdk_return BATappend(BAT *b, BAT *n, BAT *s, bool force)
-	__attribute__((__warn_unused_result__));
+	ATTR_WARN_UNUSED_RESULT;
 
 gdk_export gdk_return BUNreplace(BAT *b, oid left, const void *right,
 				 bool force)
-	__attribute__((__warn_unused_result__));
+	ATTR_WARN_UNUSED_RESULT;
 gdk_export gdk_return BUNreplacemulti(BAT *b, const oid *positions,
 				      const void *values, BUN count, bool force)
-	__attribute__((__warn_unused_result__));
+	ATTR_WARN_UNUSED_RESULT;
 gdk_export gdk_return BUNreplacemultiincr(BAT *b, oid position,
 					  const void *values, BUN count,
 					  bool force)
-	__attribute__((__warn_unused_result__));
+	ATTR_WARN_UNUSED_RESULT;
 
 gdk_export gdk_return BUNdelete(BAT *b, oid o)
-	__attribute__((__warn_unused_result__));
+	ATTR_WARN_UNUSED_RESULT;
 gdk_export gdk_return BATdel(BAT *b, BAT *d)
-	__attribute__((__warn_unused_result__));
+	ATTR_WARN_UNUSED_RESULT;
 
 gdk_export gdk_return BATreplace(BAT *b, BAT *p, BAT *n, bool force)
-	__attribute__((__warn_unused_result__));
+	ATTR_WARN_UNUSED_RESULT;
 gdk_export gdk_return BATupdate(BAT *b, BAT *p, BAT *n, bool force)
-	__attribute__((__warn_unused_result__));
+	ATTR_WARN_UNUSED_RESULT;
 gdk_export gdk_return BATupdatepos(BAT *b, const oid *positions, BAT *n,
 				   bool autoincr, bool force)
-	__attribute__((__warn_unused_result__));
+	ATTR_WARN_UNUSED_RESULT;
 
 gdk_export gdk_return unshare_varsized_heap(BAT *b)
-	__attribute__((__warn_unused_result__));
+	ATTR_WARN_UNUSED_RESULT;
 /* Functions to perform a binary search on a sorted BAT.
  * See gdk_search.c for details. */
 gdk_export BUN SORTfnd(BAT *b, const void *v);
@@ -2650,7 +2650,7 @@ struct canditer {
 
 /* returns the position of the lowest order bit in x, i.e. the
  * smallest n such that (x & (1<<n)) != 0; must not be called with 0 */
-__attribute__((__const__))
+ATTR_CONST
 static inline int
 candmask_lobit(uint32_t x)
 {
@@ -2681,7 +2681,7 @@ candmask_lobit(uint32_t x)
 }
 
 /* population count: count number of 1 bits in a value */
-__attribute__((__const__))
+ATTR_CONST
 static inline uint32_t
 candmask_pop(uint32_t x)
 {
@@ -2762,18 +2762,18 @@ canditer_next(struct canditer *ci)
 }
 
 gdk_export void canditer_init(struct canditer *ci, BAT *b, BAT *s)
-	__attribute__((__access__(write_only, 1)));
+	ATTR_ACCESS(write_only, 1);
 gdk_export oid canditer_peek(const struct canditer *ci)
-	__attribute__((__pure__));
+	ATTR_PURE;
 gdk_export oid canditer_last(const struct canditer *ci)
-	__attribute__((__pure__));
+	ATTR_PURE;
 gdk_export oid canditer_prev(struct canditer *ci);
 gdk_export oid canditer_peekprev(const struct canditer *ci)
-	__attribute__((__pure__));
+	ATTR_PURE;
 gdk_export oid canditer_idx(const struct canditer *ci, BUN p)
-	__attribute__((__pure__));
+	ATTR_PURE;
 
-__attribute__((__pure__))
+ATTR_PURE
 static inline oid
 canditer_idx_dense(const struct canditer *ci, BUN p)
 {
@@ -2783,7 +2783,7 @@ canditer_idx_dense(const struct canditer *ci, BUN p)
 gdk_export void canditer_setidx(struct canditer *ci, BUN p);
 gdk_export void canditer_reset(struct canditer *ci);
 
-__attribute__((__pure__))
+ATTR_PURE
 static inline BUN
 canditer_search_dense(const struct canditer *ci, oid o, bool next)
 {
@@ -2796,9 +2796,9 @@ canditer_search_dense(const struct canditer *ci, oid o, bool next)
 }
 
 gdk_export BUN canditer_search(const struct canditer *ci, oid o, bool next)
-	__attribute__((__pure__));
+	ATTR_PURE;
 
-__attribute__((__pure__))
+ATTR_PURE
 static inline bool
 canditer_contains(const struct canditer *ci, oid o)
 {
@@ -2818,7 +2818,7 @@ canditer_contains(const struct canditer *ci, oid o)
 }
 
 gdk_export oid canditer_mask_next(const struct canditer *ci, oid o, bool next)
-	__attribute__((__pure__));
+	ATTR_PURE;
 
 gdk_export BAT *canditer_slice(const struct canditer *ci, BUN lo, BUN hi);
 gdk_export BAT *canditer_sliceval(const struct canditer *ci, oid lo, oid hi);
@@ -2835,7 +2835,7 @@ gdk_export BAT *BATmergecand(BAT *a, BAT *b);
 gdk_export BAT *BATintersectcand(BAT *a, BAT *b);
 gdk_export BAT *BATdiffcand(BAT *a, BAT *b);
 
-__attribute__((__pure__))
+ATTR_PURE
 static inline BUN
 BUNfndVOID(const BAT *b, const oid *v)
 {
@@ -2847,7 +2847,7 @@ BUNfndVOID(const BAT *b, const oid *v)
 }
 
 /* return required heap size in bytes for `cnt` elements */
-__attribute__((__pure__))
+ATTR_PURE
 static inline size_t
 tailsize(const BAT *b, BUN cnt)
 {
@@ -2859,21 +2859,21 @@ tailsize(const BAT *b, BUN cnt)
 	return 0;
 }
 
-__attribute__((__pure__))
+ATTR_PURE
 static inline void *		/* not const! */
 Tloc(const BAT *b, BUN p)
 {
 	return b->theap->base + ((p + b->tbaseoff) << b->tshift);
 }
 
-__attribute__((__pure__))
+ATTR_PURE
 static inline BUN
 BATcount(const BAT *b)
 {
 	return b->batCount;
 }
 
-__attribute__((__pure__))
+ATTR_PURE
 static inline bool
 Tmskval(const BATiter *bi, BUN p)
 {
@@ -2881,7 +2881,7 @@ Tmskval(const BATiter *bi, BUN p)
 	return ((const uint32_t *) bi->base)[p / 32] & (1U << (p % 32));
 }
 
-__attribute__((__pure__))
+ATTR_PURE
 static inline const void *
 BUNtmsk(BATiter *bi, BUN p)
 {
@@ -2889,7 +2889,7 @@ BUNtmsk(BATiter *bi, BUN p)
 	return &bi->tmsk;
 }
 
-__attribute__((__pure__))
+ATTR_PURE
 static inline const void *
 BUNtloc(const BATiter *bi, BUN p)
 {
@@ -2899,9 +2899,9 @@ BUNtloc(const BATiter *bi, BUN p)
 
 /* too large: not inline */
 gdk_export const void *BUNtpos(BATiter *bi, BUN p)
-	__attribute__((__pure__));
+	ATTR_PURE;
 
-__attribute__((__pure__))
+ATTR_PURE
 static inline const void *
 BUNtvar(const BATiter *bi, BUN p)
 {
@@ -2910,7 +2910,7 @@ BUNtvar(const BATiter *bi, BUN p)
 	return off == 0 ? ATOMnilptr(bi->type) : bi->vh->base + off;
 }
 
-__attribute__((__pure__))
+ATTR_PURE
 static inline const void *
 BUNtail(BATiter *bi, BUN p)
 {
@@ -2929,7 +2929,7 @@ BUNtail(BATiter *bi, BUN p)
 
 /* return the oid value at BUN position p from the (v)oid bat b
  * works with any TYPE_void or TYPE_oid bat */
-__attribute__((__pure__))
+ATTR_PURE
 static inline oid
 BUNtoid(BAT *b, BUN p)
 {
@@ -2966,11 +2966,11 @@ gdk_export void BAThseqbase(BAT *b, oid o);
 gdk_export void BATtseqbase(BAT *b, oid o);
 
 gdk_export BAT *BATsetaccess(BAT *b, restrict_t mode)
-	__attribute__((__warn_unused_result__));
+	ATTR_WARN_UNUSED_RESULT;
 gdk_export restrict_t BATgetaccess(BAT *b);
 
 
-__attribute__((__pure__))
+ATTR_PURE
 static inline bool
 BATdirty(const BAT *b)
 {
@@ -2981,7 +2981,7 @@ BATdirty(const BAT *b)
 
 #define BATdirtybi(bi)	(!(bi).copiedtodisk || (bi).hdirty || (bi).vhdirty)
 
-__attribute__((__pure__))
+ATTR_PURE
 static inline BUN
 BATcapacity(const BAT *b)
 {
@@ -2995,13 +2995,13 @@ gdk_export BAT *COLcopy2(BAT *b, int tt, bool writable, bool mayshare,
 
 gdk_export gdk_return BATgroup(BAT **groups, BAT **extents, BAT **histo,
 			       BAT *b, BAT *s, BAT *g, BAT *e, BAT *h)
-	__attribute__((__access__(write_only, 1)))
-	__attribute__((__access__(write_only, 2)))
-	__attribute__((__access__(write_only, 3)))
-	__attribute__((__warn_unused_result__));
+	ATTR_ACCESS(write_only, 1)
+	ATTR_ACCESS(write_only, 2)
+	ATTR_ACCESS(write_only, 3)
+	ATTR_WARN_UNUSED_RESULT;
 
 gdk_export gdk_return BATsave(BAT *b)
-	__attribute__((__warn_unused_result__));
+	ATTR_WARN_UNUSED_RESULT;
 
 #define NOFARM (-1) /* indicate to GDKfilepath to create relative path */
 #define MAXPATH	1024		/* maximum supported file path */
@@ -3009,7 +3009,7 @@ gdk_export gdk_return BATsave(BAT *b)
 gdk_export gdk_return GDKfilepath(char *buf, size_t bufsize, int farmid,
 				  const char *dir, const char *nme,
 				  const char *ext)
-	__attribute__((__access__(write_only, 1, 2)));
+	ATTR_ACCESS(write_only, 1, 2);
 gdk_export bool GDKinmemory(int farmid);
 gdk_export bool GDKembedded(void);
 gdk_export gdk_return GDKcreatedir(const char *nme);
@@ -3024,10 +3024,10 @@ gdk_export bool BATordered_rev(BAT *b);
 gdk_export gdk_return BATsort(BAT **sorted, BAT **order, BAT **groups, BAT *b,
 			      BAT *o, BAT *g, bool reverse, bool nilslast,
 			      bool stable)
-	__attribute__((__access__(write_only, 1)))
-	__attribute__((__access__(write_only, 2)))
-	__attribute__((__access__(write_only, 3)))
-	__attribute__((__warn_unused_result__));
+	ATTR_ACCESS(write_only, 1)
+	ATTR_ACCESS(write_only, 2)
+	ATTR_ACCESS(write_only, 3)
+	ATTR_WARN_UNUSED_RESULT;
 
 
 gdk_export void GDKqsort(void *restrict h, void *restrict t,
@@ -3035,14 +3035,14 @@ gdk_export void GDKqsort(void *restrict h, void *restrict t,
 			 int tpe, bool reverse, bool nilslast);
 
 /* BAT is dense (i.e., BATtvoid() is true and tseqbase is not NIL) */
-__attribute__((__pure__))
+ATTR_PURE
 static inline bool
 BATtdense(const BAT *b)
 {
 	return !is_oid_nil(b->tseqbase) &&
 		(b->tvheap == NULL || b->tvheap->free == 0);
 }
-__attribute__((__pure__))
+ATTR_PURE
 static inline bool
 BATtdensebi(const BATiter *bi)
 {
@@ -3051,21 +3051,21 @@ BATtdensebi(const BATiter *bi)
 }
 
 /* BATtvoid: BAT can be (or actually is) represented by TYPE_void */
-__attribute__((__pure__))
+ATTR_PURE
 static inline bool
 BATtvoid(const BAT *b)
 {
 	return b->ttype == TYPE_void || BATtdense(b);
 }
 
-__attribute__((__pure__))
+ATTR_PURE
 static inline bool
 BATtkey(const BAT *b)
 {
 	return b->tkey || BATtdense(b);
 }
 
-__attribute__((__pure__))
+ATTR_PURE
 static inline int
 BATttype(const BAT *b)
 {
@@ -3245,7 +3245,7 @@ gdk_export void GDKclrerr(void);
  * allocated in the theap (tvheap for variable-sized types is still
  * extended if needed, making that these functions can fail).
  */
-__attribute__((__warn_unused_result__))
+ATTR_WARN_UNUSED_RESULT
 static inline gdk_return
 tfastins_nochecknolockVAR(BAT *b, BUN p, const void *v)
 {
@@ -3292,7 +3292,7 @@ tfastins_nochecknolockVAR(BAT *b, BUN p, const void *v)
 	return GDK_SUCCEED;
 }
 
-__attribute__((__warn_unused_result__))
+ATTR_WARN_UNUSED_RESULT
 static inline gdk_return
 tfastins_nocheckVAR(BAT *b, BUN p, const void *v)
 {
@@ -3302,14 +3302,14 @@ tfastins_nocheckVAR(BAT *b, BUN p, const void *v)
 	return rc;
 }
 
-__attribute__((__warn_unused_result__))
+ATTR_WARN_UNUSED_RESULT
 static inline gdk_return
 tfastins_nocheckFIX(BAT *b, BUN p, const void *v)
 {
 	return ATOMputFIX(b->ttype, Tloc(b, p), v);
 }
 
-__attribute__((__warn_unused_result__))
+ATTR_WARN_UNUSED_RESULT
 static inline gdk_return
 tfastins_nocheck(BAT *b, BUN p, const void *v)
 {
@@ -3327,7 +3327,7 @@ tfastins_nocheck(BAT *b, BUN p, const void *v)
 	return GDK_SUCCEED;
 }
 
-__attribute__((__warn_unused_result__))
+ATTR_WARN_UNUSED_RESULT
 static inline gdk_return
 tfastins(BAT *b, BUN p, const void *v)
 {
@@ -3347,7 +3347,7 @@ tfastins(BAT *b, BUN p, const void *v)
 	return tfastins_nocheck(b, p, v);
 }
 
-__attribute__((__warn_unused_result__))
+ATTR_WARN_UNUSED_RESULT
 static inline gdk_return
 bunfastapp_nocheck(BAT *b, const void *v)
 {
@@ -3366,7 +3366,7 @@ bunfastapp_nocheck(BAT *b, const void *v)
 	return rc;
 }
 
-__attribute__((__warn_unused_result__))
+ATTR_WARN_UNUSED_RESULT
 static inline gdk_return
 bunfastapp(BAT *b, const void *v)
 {
@@ -3385,7 +3385,7 @@ bunfastapp(BAT *b, const void *v)
 	return rc;
 }
 
-__attribute__((__warn_unused_result__))
+ATTR_WARN_UNUSED_RESULT
 static inline gdk_return
 bunfastappOID(BAT *b, oid o)
 {
@@ -3418,7 +3418,7 @@ bunfastappOID(BAT *b, oid o)
 	  ((TYPE *) (b)->theap->base)[(b)->batCount++] = * (const TYPE *) (v), \
 	  GDK_SUCCEED))
 
-__attribute__((__warn_unused_result__))
+ATTR_WARN_UNUSED_RESULT
 static inline gdk_return
 bunfastapp_nocheckVAR(BAT *b, const void *v)
 {
@@ -3567,7 +3567,7 @@ HASHputlink(Hash *h, BUN i, BUN v)
 	}
 }
 
-__attribute__((__pure__))
+ATTR_PURE
 static inline BUN
 HASHget(const Hash *h, BUN i)
 {
@@ -3590,7 +3590,7 @@ HASHget(const Hash *h, BUN i)
 	}
 }
 
-__attribute__((__pure__))
+ATTR_PURE
 static inline BUN
 HASHgetlink(const Hash *h, BUN i)
 {
@@ -3619,28 +3619,28 @@ HASHgetlink(const Hash *h, BUN i)
 #define XXHASHFUNC	XXH64
 #endif
 
-__attribute__((__pure__))
+ATTR_PURE
 static inline BUN
 bteHash(const void *x)
 {
 	return (BUN) *(uint8_t *) x;
 }
 
-__attribute__((__pure__))
+ATTR_PURE
 static inline BUN
 shtHash(const void *x)
 {
 	return (BUN) *(uint16_t *) x;
 }
 
-__attribute__((__pure__))
+ATTR_PURE
 static inline BUN
 intHash(const void *x)
 {
 	return (BUN) XXH32(x, sizeof(int), 0);
 }
 
-__attribute__((__pure__))
+ATTR_PURE
 static inline BUN
 lngHash(const void *x)
 {
@@ -3654,7 +3654,7 @@ lngHash(const void *x)
 #endif
 
 #ifdef HAVE_HGE
-__attribute__((__pure__))
+ATTR_PURE
 static inline BUN
 hgeHash(const void *x)
 {
@@ -3662,7 +3662,7 @@ hgeHash(const void *x)
 }
 #endif
 
-__attribute__((__pure__))
+ATTR_PURE
 static inline BUN
 fltHash(const void *x)
 {
@@ -3673,7 +3673,7 @@ fltHash(const void *x)
 	return intHash(x);
 }
 
-__attribute__((__pure__))
+ATTR_PURE
 static inline BUN
 dblHash(const void *x)
 {
@@ -3685,42 +3685,42 @@ dblHash(const void *x)
 }
 
 /* if you happen to already know the string length, pass it along */
-__attribute__((__pure__))
+ATTR_PURE
 static inline BUN
 strHashLen(const void *x, size_t len)
 {
 	return (BUN) XXHASHFUNC(x, len, 0);
 }
 
-__attribute__((__pure__))
+ATTR_PURE
 static inline BUN
 strHash(const void *x)
 {
 	return strHashLen(x, strlen(x));
 }
 
-__attribute__((__pure__))
+ATTR_PURE
 static inline BUN
 uuidHash(const void *x)
 {
 	return (BUN) XXHASHFUNC(x, sizeof(uuid), 0);
 }
 
-__attribute__((__pure__))
+ATTR_PURE
 static inline BUN
 inet4Hash(const void *x)
 {
 	return (BUN) XXH32(x, sizeof(inet4), 0);
 }
 
-__attribute__((__pure__))
+ATTR_PURE
 static inline BUN
 inet6Hash(const void *x)
 {
 	return (BUN) XXHASHFUNC(x, sizeof(inet6), 0);
 }
 
-__attribute__((__pure__))
+ATTR_PURE
 static inline BUN
 blobHash(const void *x)
 {
@@ -3942,7 +3942,7 @@ BBPreclaim(BAT *b)
 gdk_export int BBPretain(bat b);
 gdk_export int BBPrelease(bat b);
 gdk_export void BBPkeepref(BAT *b)
-	__attribute__((__nonnull__(1)));
+	ATTR_NONNULL(1);
 gdk_export void BBPcold(bat i);
 gdk_export void BBPrelinquishbats(void);
 #ifdef GDKLIBRARY_JSON
@@ -3970,10 +3970,10 @@ gdk_export gdk_return BBPdir_first(bool subcommit, lng logno,
 				   FILE **obbpfp, FILE **nbbpfp);
 gdk_export bat BBPdir_step(bat bid, BUN size, int n, char *buf, size_t bufsize,
 			   FILE **obbpfp, FILE *nbbpf, BATiter *bi, int *nbatp)
-	__attribute__((__access__(read_write, 4, 5)));
+	ATTR_ACCESS(read_write, 4, 5);
 gdk_export gdk_return BBPdir_last(int n, char *buf, size_t bufsize,
 				  FILE *obbpf, FILE *nbbpf)
-	__attribute__((__access__(read_write, 2, 3)));
+	ATTR_ACCESS(read_write, 2, 3);
 
 gdk_export BUN GDKL3_size;
 
@@ -4006,7 +4006,7 @@ gdk_export size_t GDK_mem_maxsize;	/* max allowed size of committed
 gdk_export size_t GDK_vm_maxsize;	/* max allowed size of reserved vm */
 
 gdk_export void *GDKmmap(const char *path, int mode, size_t len)
-	__attribute__((__warn_unused_result__));
+	ATTR_WARN_UNUSED_RESULT;
 gdk_export gdk_return GDKmunmap(void *addr, size_t len);
 
 gdk_export size_t GDKmem_cursize(void);	/* RAM/swapmem that MonetDB has
@@ -4016,28 +4016,28 @@ gdk_export size_t GDKvm_cursize(void);	/* current MonetDB VM address
 
 gdk_export void GDKfree(void *blk);
 gdk_export void *GDKmalloc(size_t size)
-	__attribute__((__malloc__))
-	__attribute__((__malloc__(GDKfree, 1)))
-	__attribute__((__alloc_size__(1)))
-	__attribute__((__warn_unused_result__));
+	ATTR_MALLOC
+	ATTR_MALLOC_ARGS(GDKfree, 1)
+	ATTR_ALLOC_SIZE(1)
+	ATTR_WARN_UNUSED_RESULT;
 gdk_export void *GDKzalloc(size_t size)
-	__attribute__((__malloc__))
-	__attribute__((__malloc__(GDKfree, 1)))
-	__attribute__((__alloc_size__(1)))
-	__attribute__((__warn_unused_result__));
+	ATTR_MALLOC
+	ATTR_MALLOC_ARGS(GDKfree, 1)
+	ATTR_ALLOC_SIZE(1)
+	ATTR_WARN_UNUSED_RESULT;
 gdk_export void *GDKrealloc(void *pold, size_t size)
-	__attribute__((__alloc_size__(2)))
-	__attribute__((__warn_unused_result__));
+	ATTR_ALLOC_SIZE(2)
+	ATTR_WARN_UNUSED_RESULT;
 gdk_export char *GDKstrdup(const char *s)
-	__attribute__((__malloc__))
-	__attribute__((__malloc__(GDKfree, 1)))
-	__attribute__((__warn_unused_result__));
+	ATTR_MALLOC
+	ATTR_MALLOC_ARGS(GDKfree, 1)
+	ATTR_WARN_UNUSED_RESULT;
 gdk_export char *GDKstrndup(const char *s, size_t n)
-	__attribute__((__malloc__))
-	__attribute__((__malloc__(GDKfree, 1)))
-	__attribute__((__warn_unused_result__));
+	ATTR_MALLOC
+	ATTR_MALLOC_ARGS(GDKfree, 1)
+	ATTR_WARN_UNUSED_RESULT;
 gdk_export char *humansize(size_t val, char *buf, size_t buflen)
-	__attribute__((__access__(write_only, 2, 3)));
+	ATTR_ACCESS(write_only, 2, 3);
 
 gdk_export void MT_init(void);	/*  init the package. */
 struct opt;
@@ -4055,10 +4055,10 @@ gdk_export void GDKprepareExit(void);
 gdk_export void GDKreset(int status);
 /* global version number */
 gdk_export const char *GDKversion(bool full)
-	__attribute__((__const__));
+	ATTR_CONST;
 /* ABI version of GDK library */
 gdk_export const char *GDKlibversion(void)
-	__attribute__((__const__));
+	ATTR_CONST;
 
 // these are used in embedded mode to jump out of GDKfatal
 gdk_export jmp_buf GDKfataljump;
@@ -4075,7 +4075,7 @@ gdk_export int GDKms(void);
 
 /* functions defined in gdk_bat.c */
 gdk_export gdk_return void_inplace(BAT *b, oid id, const void *val, bool force)
-	__attribute__((__warn_unused_result__));
+	ATTR_WARN_UNUSED_RESULT;
 
 #ifdef NATIVE_WIN32
 #ifdef _MSC_VER
@@ -4087,7 +4087,7 @@ gdk_export gdk_return void_inplace(BAT *b, oid id, const void *val, bool force)
 
 /* Return a pointer to the value contained in V.  Also see VALget
  * which returns a void *. */
-__attribute__((__pure__))
+ATTR_PURE
 static inline const void *
 VALptr(const ValRecord *v)
 {
@@ -4142,7 +4142,7 @@ gdk_export BAT *BATdescriptor(bat i);
 
 gdk_export gdk_return TMsubcommit_list(bat *restrict subcommit,
 				       BUN *restrict sizes, int cnt, lng logno)
-	__attribute__((__warn_unused_result__));
+	ATTR_WARN_UNUSED_RESULT;
 
 gdk_export void BATcommit(BAT *b, BUN size);
 
@@ -4202,70 +4202,70 @@ gdk_export BAT *BATconstant(oid hseq, int tt, const void *val, BUN cnt,
 			    role_t role);
 gdk_export gdk_return BATsubcross(BAT **r1p, BAT **r2p, BAT *l, BAT *r,
 				  BAT *sl, BAT *sr, bool max_one)
-	__attribute__((__access__(write_only, 1)))
-	__attribute__((__access__(write_only, 2)))
-	__attribute__((__warn_unused_result__));
+	ATTR_ACCESS(write_only, 1)
+	ATTR_ACCESS(write_only, 2)
+	ATTR_WARN_UNUSED_RESULT;
 gdk_export gdk_return BAToutercross(BAT **r1p, BAT **r2p, BAT *l, BAT *r,
 				    BAT *sl, BAT *sr, bool max_one)
-	__attribute__((__access__(write_only, 1)))
-	__attribute__((__access__(write_only, 2)))
-	__attribute__((__warn_unused_result__));
+	ATTR_ACCESS(write_only, 1)
+	ATTR_ACCESS(write_only, 2)
+	ATTR_WARN_UNUSED_RESULT;
 
 gdk_export gdk_return BATleftjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r,
 				  BAT *sl, BAT *sr, bool nil_matches,
 				  BUN estimate)
-	__attribute__((__access__(write_only, 1)))
-	__attribute__((__access__(write_only, 2)))
-	__attribute__((__warn_unused_result__));
+	ATTR_ACCESS(write_only, 1)
+	ATTR_ACCESS(write_only, 2)
+	ATTR_WARN_UNUSED_RESULT;
 gdk_export gdk_return BATmarkjoin(BAT **r1p, BAT **r2p, BAT **r3p,
 				  BAT *l, BAT *r, BAT *sl, BAT *sr,
 				  bool nil_matches, BUN estimate)
-	__attribute__((__access__(write_only, 1)))
-	__attribute__((__access__(write_only, 2)))
-	__attribute__((__access__(write_only, 3)))
-	__attribute__((__warn_unused_result__));
+	ATTR_ACCESS(write_only, 1)
+	ATTR_ACCESS(write_only, 2)
+	ATTR_ACCESS(write_only, 3)
+	ATTR_WARN_UNUSED_RESULT;
 gdk_export gdk_return BATouterjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r,
 				   BAT *sl, BAT *sr, bool nil_matches,
 				   bool match_one, BUN estimate)
-	__attribute__((__access__(write_only, 1)))
-	__attribute__((__access__(write_only, 2)))
-	__attribute__((__warn_unused_result__));
+	ATTR_ACCESS(write_only, 1)
+	ATTR_ACCESS(write_only, 2)
+	ATTR_WARN_UNUSED_RESULT;
 gdk_export gdk_return BATthetajoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r,
 				   BAT *sl, BAT *sr, int op, bool nil_matches,
 				   BUN estimate)
-	__attribute__((__access__(write_only, 1)))
-	__attribute__((__access__(write_only, 2)))
-	__attribute__((__warn_unused_result__));
+	ATTR_ACCESS(write_only, 1)
+	ATTR_ACCESS(write_only, 2)
+	ATTR_WARN_UNUSED_RESULT;
 gdk_export gdk_return BATsemijoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r,
 				  BAT *sl, BAT *sr, bool nil_matches,
 				  bool max_one, BUN estimate)
-	__attribute__((__access__(write_only, 1)))
-	__attribute__((__access__(write_only, 2)))
-	__attribute__((__warn_unused_result__));
+	ATTR_ACCESS(write_only, 1)
+	ATTR_ACCESS(write_only, 2)
+	ATTR_WARN_UNUSED_RESULT;
 gdk_export BAT *BATintersect(BAT *l, BAT *r, BAT *sl, BAT *sr,
 			     bool nil_matches, bool max_one, BUN estimate);
 gdk_export BAT *BATdiff(BAT *l, BAT *r, BAT *sl, BAT *sr, bool nil_matches,
 			bool not_in, BUN estimate);
 gdk_export gdk_return BATjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r,
 			      BAT *sl, BAT *sr, bool nil_matches, BUN estimate)
-	__attribute__((__access__(write_only, 1)))
-	__attribute__((__access__(write_only, 2)))
-	__attribute__((__warn_unused_result__));
+	ATTR_ACCESS(write_only, 1)
+	ATTR_ACCESS(write_only, 2)
+	ATTR_WARN_UNUSED_RESULT;
 gdk_export BUN BATguess_uniques(BAT *b, struct canditer *ci);
 gdk_export gdk_return BATbandjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r,
 				  BAT *sl, BAT *sr, const void *c1,
 				  const void *c2, bool li, bool hi,
 				  BUN estimate)
-	__attribute__((__access__(write_only, 1)))
-	__attribute__((__access__(write_only, 2)))
-	__attribute__((__warn_unused_result__));
+	ATTR_ACCESS(write_only, 1)
+	ATTR_ACCESS(write_only, 2)
+	ATTR_WARN_UNUSED_RESULT;
 gdk_export gdk_return BATrangejoin(BAT **r1p, BAT **r2p, BAT *l,
 				   BAT *rl, BAT *rh, BAT *sl, BAT *sr,
 				   bool li, bool hi, bool anti, bool symmetric,
 				   BUN estimate)
-	__attribute__((__access__(write_only, 1)))
-	__attribute__((__access__(write_only, 2)))
-	__attribute__((__warn_unused_result__));
+	ATTR_ACCESS(write_only, 1)
+	ATTR_ACCESS(write_only, 2)
+	ATTR_WARN_UNUSED_RESULT;
 gdk_export BAT *BATproject(BAT *restrict l, BAT *restrict r);
 gdk_export BAT *BATproject2(BAT *restrict l, BAT *restrict r1,
 			    BAT *restrict r2);
@@ -4278,35 +4278,35 @@ gdk_export BAT *BATunique(BAT *b, BAT *s);
 gdk_export gdk_return BATfirstn(BAT **topn, BAT **gids, BAT *b, BAT *cands,
 				BAT *grps, BUN n, bool asc, bool nilslast,
 				bool distinct)
-	__attribute__((__access__(write_only, 1)))
-	__attribute__((__access__(write_only, 2)))
-	__attribute__((__warn_unused_result__));
+	ATTR_ACCESS(write_only, 1)
+	ATTR_ACCESS(write_only, 2)
+	ATTR_WARN_UNUSED_RESULT;
 gdk_export BAT *BATfirstn_offset(BAT *b, BAT *s, BAT *g, BUN n, BUN o,
 				 bool asc, bool nilslast, bool distinct)
-	__attribute__((__warn_unused_result__));
+	ATTR_WARN_UNUSED_RESULT;
 gdk_export BAT *BATgroupedfirstn(BUN n, BAT *s, BAT *g, int nbats, BAT **bats,
 				 bool *asc, bool *nilslast)
-	__attribute__((__warn_unused_result__));
+	ATTR_WARN_UNUSED_RESULT;
 gdk_export BAT *BATgroupedfirstn_offset(BUN n, BUN o, BAT *s, BAT *g,
 					int nbats, BAT **bats, bool *asc,
 					bool *nilslast)
-	__attribute__((__warn_unused_result__));
+	ATTR_WARN_UNUSED_RESULT;
 
 gdk_export gdk_return GDKtoupper(allocator *ma, char **restrict buf,
 				 size_t *restrict buflen,
 				 const char *restrict s)
-	__attribute__((__access__(read_write, 2)))
-	__attribute__((__access__(read_write, 3)));
+	ATTR_ACCESS(read_write, 2)
+	ATTR_ACCESS(read_write, 3);
 gdk_export gdk_return GDKtolower(allocator *ma, char **restrict buf,
 				 size_t *restrict buflen,
 				 const char *restrict s)
-	__attribute__((__access__(read_write, 2)))
-	__attribute__((__access__(read_write, 3)));
+	ATTR_ACCESS(read_write, 2)
+	ATTR_ACCESS(read_write, 3);
 gdk_export gdk_return GDKcasefold(allocator *ma, char **restrict buf,
 				  size_t *restrict buflen,
 				  const char *restrict s)
-	__attribute__((__access__(read_write, 2)))
-	__attribute__((__access__(read_write, 3)));
+	ATTR_ACCESS(read_write, 2)
+	ATTR_ACCESS(read_write, 3);
 gdk_export int GDKstrncasecmp(const char *str1, const char *str2,
 			      size_t l1, size_t l2);
 gdk_export int GDKstrcasecmp(const char *s1, const char *s2);
@@ -4317,8 +4317,8 @@ gdk_export BAT *BATcasefold(BAT *b, BAT *s);
 gdk_export gdk_return GDKasciify(allocator *ma, char **restrict buf,
 				 size_t *restrict buflen,
 				 const char *restrict s)
-	__attribute__((__access__(read_write, 2)))
-	__attribute__((__access__(read_write, 3)));
+	ATTR_ACCESS(read_write, 2)
+	ATTR_ACCESS(read_write, 3);
 gdk_export BAT *BATasciify(BAT *b, BAT *s);
 #ifdef HAVE_OPENSSL
 gdk_export gdk_return BATaggrdigest(allocator *ma, BAT **bnp, char **shap,
@@ -4528,7 +4528,7 @@ typedef struct exception_buffer {
 } exception_buffer;
 
 gdk_export exception_buffer *eb_init(exception_buffer *eb)
-	__attribute__((__access__(write_only, 1)));
+	ATTR_ACCESS(write_only, 1);
 
 /* != 0 on when we return to the savepoint */
 #ifdef HAVE_SIGLONGJMP
@@ -4775,50 +4775,50 @@ gdk_export BAT *GDKanalytical_str_group_concat(BAT *b, BAT *p, BAT *o,
 					       int frame_type);
 
 gdk_export ValPtr VALcopy(allocator *va, ValPtr dst, const ValRecord *src)
-	__attribute__((__access__(write_only, 2)));
+	ATTR_ACCESS(write_only, 2);
 gdk_export ValPtr VALinit(allocator *va, ValPtr d, int tpe, const void *s)
-	__attribute__((__access__(write_only, 2)));
+	ATTR_ACCESS(write_only, 2);
 
 gdk_export allocator *create_allocator(const char *, bool use_lock)
-	__attribute__((__warn_unused_result__));
+	ATTR_WARN_UNUSED_RESULT;
 gdk_export bool ma_tmp_active(const allocator *sa);
 gdk_export void ma_reset(allocator *sa);
 gdk_export void *ma_alloc(allocator *sa,  size_t sz)
-	__attribute__((__malloc__))
-	__attribute__((__alloc_size__(2)))
-	__attribute__((__warn_unused_result__));
+	ATTR_MALLOC
+	ATTR_ALLOC_SIZE(2)
+	ATTR_WARN_UNUSED_RESULT;
 gdk_export void *ma_zalloc(allocator *sa,  size_t sz)
-	__attribute__((__malloc__))
-	__attribute__((__alloc_size__(2)))
-	__attribute__((__warn_unused_result__));
+	ATTR_MALLOC
+	ATTR_ALLOC_SIZE(2)
+	ATTR_WARN_UNUSED_RESULT;
 gdk_export void *ma_realloc(allocator *sa,  void *ptr, size_t sz, size_t osz)
-	__attribute__((__alloc_size__(3)))
-	__attribute__((__warn_unused_result__));
+	ATTR_ALLOC_SIZE(3)
+	ATTR_WARN_UNUSED_RESULT;
 gdk_export void ma_destroy(allocator *sa);
 gdk_export char *ma_strndup(allocator *sa, const char *s, size_t l)
-	__attribute__((__malloc__))
-	__attribute__((__warn_unused_result__));
+	ATTR_MALLOC
+	ATTR_WARN_UNUSED_RESULT;
 gdk_export char *ma_strdup(allocator *sa, const char *s)
-	__attribute__((__malloc__))
-	__attribute__((__warn_unused_result__));
+	ATTR_MALLOC
+	ATTR_WARN_UNUSED_RESULT;
 gdk_export char *ma_strconcat(allocator *sa, const char *s1, const char *s2)
-	__attribute__((__malloc__))
-	__attribute__((__warn_unused_result__));
+	ATTR_MALLOC
+	ATTR_WARN_UNUSED_RESULT;
 gdk_export char *ma_copy(allocator *sa, char *s, size_t l)
-	__attribute__((__alloc_size__(3)))
-	__attribute__((__malloc__))
-	__attribute__((__warn_unused_result__))
-	__attribute__((__access__(read_only, 2, 3)));
+	ATTR_ALLOC_SIZE(3)
+	ATTR_MALLOC
+	ATTR_WARN_UNUSED_RESULT
+	ATTR_ACCESS(read_only, 2, 3);
 gdk_export const char *ma_name(allocator *sa);
 gdk_export allocator_state ma_open(allocator *sa);  /* open new frame of tempory allocations */
 gdk_export void ma_close(const allocator_state *); /* close temporary frame, reset to old state */
 gdk_export void ma_free(allocator *sa, void *);
 gdk_export exception_buffer *ma_get_eb(allocator *sa)
-	__attribute__((__pure__));
+	ATTR_PURE;
 
 gdk_export int ma_info(allocator *sa, char *buf, size_t buflen,
 		       const char *pref)
-	__attribute__((__access__(write_only, 2, 3)));
+	ATTR_ACCESS(write_only, 2, 3);
 
 #define MA_NEW(sa, type)		((type *) ma_alloc(sa, sizeof(type)))
 #define MA_ZNEW(sa, type)		((type *) ma_zalloc(sa, sizeof(type)))

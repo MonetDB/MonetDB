@@ -330,9 +330,9 @@ GDKcopyenv(BAT **key, BAT **val, bool writable)
  * Single-lined comments can now be logged safely, together with
  * process, thread and user ID, and the current time.
  */
-__attribute__((__format__(__printf__, 2, 3)))
+ATTR_FORMAT(__printf__, 2, 3)
 static void
-GDKlog(FILE *lockFile, _In_z_ _Printf_format_string_ const char *format, ...)
+GDKlog(FILE *lockFile, _Printf_format_string_ const char *format, ...)
 {
 	va_list ap;
 	char *p = 0, buf[1024];

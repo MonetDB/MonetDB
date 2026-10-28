@@ -3007,8 +3007,7 @@ col_stats(sql_trans *tr, sql_column *c, bool *nonil, bool *unique, double *uniqu
 			BATiter bi = bat_iterator(b);
 			*nonil = bi.nonil && !bi.nil;
 
-			if ((EC_NUMBER(eclass) || EC_VARCHAR(eclass) ||
-				 EC_TEMP_NOFRAC(eclass) || eclass == EC_DATE) &&
+			if ((EC_NUMBER(eclass) || EC_VARCHAR(eclass) || EC_TEMP_NOFRAC(eclass) || eclass == EC_DATE) &&
 				d->cs.ucnt == 0) {
 				if (c->min && VALinit(NULL, min, bi.type, c->min))
 					ok |= 1;
@@ -3032,6 +3031,7 @@ col_stats(sql_trans *tr, sql_column *c, bool *nonil, bool *unique, double *uniqu
 							*unique_est = sketch_estimate(tmp_sketch);
 						}
 					}
+					//printf("estimates %s %s %f\n", c->base.name, c->type.type->base.name, *unique_est);
 				} else if (d->cs.st == ST_DICT && (off = bind_col_no_view(tr, c, QUICK))) {
 					/* for dict, check the offsets bat for uniqueness */
 					MT_lock_set(&off->theaplock);

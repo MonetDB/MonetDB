@@ -20,7 +20,7 @@ mal_export str GRPsubgroup5(Client ctx, bat *ngid, bat *next, bat *nhis,
 
 extern str GRPsubgroup2(Client ctx, bat *ngid, bat *next, bat *nhis, const bat *bid,
 						const bat *gid)
-	__attribute__((__visibility__("hidden")));
+	ATTR_VISIBILITY_HIDDEN;
 extern str GRPgroup3(Client ctx, bat *ngid, bat *next, const bat *bid)
-	__attribute__((__visibility__("hidden")));
+	ATTR_VISIBILITY_HIDDEN;
 #endif /* _GROUP_H_ */

@@ -3099,7 +3099,7 @@ BBPhandover(struct freebats *t, uint32_t n)
 }
 
 #ifndef NDEBUG
-extern void printlist(bat bid) __attribute__((__cold__));
+extern void printlist(bat bid) ATTR_COLD;
 /* print a bat free list, pass start of free list as argument
  * to be used from the debugger */
 void
@@ -4885,7 +4885,7 @@ typedef struct gdk_callback {
 	lng last_called; // timestamp GDKusec
 	gdk_return (*func)(int argc, void *argv[]);
 	struct gdk_callback *next;
-	void *argv[] __attribute__((__counted_by__(argc)));
+	void *argv[] ATTR_COUNTED_BY(argc);
 } gdk_callback;
 
 static struct {

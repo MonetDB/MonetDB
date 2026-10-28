@@ -88,7 +88,7 @@ static str master_password = NULL;
 #include "mal.h"
 #include "mal_client.h"
 
-__attribute__((__nonnull__(1)))
+ATTR_NONNULL(1)
 static void
 CLIENTprintinfo(FILE *outf)
 {
@@ -203,7 +203,7 @@ CLIENTprintinfo(FILE *outf)
 			nrun, nfinish, nblock, MAL_MAXCLIENTS);
 }
 
-__attribute__((__nonnull__(1)))
+ATTR_NONNULL(1)
 static void
 SQLprintinfo(FILE *outf)
 {

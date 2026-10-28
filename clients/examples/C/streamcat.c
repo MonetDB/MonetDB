@@ -78,9 +78,9 @@ static void copy_file_to_stream(FILE *in, stream *out, size_t bufsize, bool do_f
 /* Format the message and write it to stderr. Then exit with the given status.
  * If status is 1, include USAGE in the message.
  */
-__attribute__((__format__(__printf__, 2, 3)))
+ATTR_FORMAT(__printf__, 2, 3)
 _Noreturn static void
-croak(int status, _In_z_ _Printf_format_string_ const char *msg, ...)
+croak(int status, _Printf_format_string_ const char *msg, ...)
 {
 	va_list ap;
 

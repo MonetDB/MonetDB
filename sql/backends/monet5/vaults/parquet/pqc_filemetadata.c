@@ -62,10 +62,10 @@ struct pqc_file {
 #define PQC_MAGIC(c) ((c)[0] == 'P' && (c)[1] == 'A' && (c)[2] == 'R' && (c)[3] == '1')
 
 #define ERRSIZE 1024
-__attribute__((__format__(__printf__, 2, 3)))
+ATTR_FORMAT(__printf__, 2, 3)
 static void
 pq_set_error(pqc_file *pq,
-			 _In_z_ _Printf_format_string_ const char *format, ... )
+			 _Printf_format_string_ const char *format, ... )
 {
 	va_list	ap;
 
