@@ -3736,6 +3736,10 @@ BBPdestroy(BAT *b)
 	if (b->theap) {
 		HEAPdecref(b->theap, tp == 0);
 		b->theap = NULL;
+		if (b->tsketch) {
+			HEAPdecref(b->tsketch, tp == 0);
+			b->tsketch = NULL;
+		}
 		if (tp != 0)
 			BBPrelease(tp);
 	}
