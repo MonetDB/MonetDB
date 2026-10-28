@@ -116,7 +116,7 @@ The following packages are optional but recommended:
 ``libreadline-dev``, ``libssl-dev``, ``zlib1g-dev``.
 
 The following packages are optional:
-``libasan5``, ``libcfitsio-dev``, ``libcmocka-dev``,
+``libasan8``, ``libcfitsio-dev``, ``libcmocka-dev``,
 ``libcurl4-gnutls-dev``, ``libgdal-dev``, ``libgeos-dev``,
 ``libnetcdf-dev``, ``libproj-dev``, ``libxml2-dev``, ``unixodbc-dev``,
 ``valgrind``.
