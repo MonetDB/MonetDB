@@ -456,6 +456,7 @@ Requires: %{name}-server%{?_isa} = %{version}-%{release}
 Obsoletes: MonetDB-geom-MonetDB5 < 11.50.0
 Provides: %{name}-geom-MonetDB5 = %{version}-%{release}
 Provides: %{name}-geom-MonetDB5%{?_isa} = %{version}-%{release}
+# BuildRequires: pkgconfig(geos) >= 3.10.0
 BuildRequires: geos-devel >= 3.10.0
 
 %description geom
