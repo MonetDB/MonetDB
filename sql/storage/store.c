@@ -7761,6 +7761,7 @@ sql_trans_create_ustr(sql_trans *tr, sql_schema *s, const char *uname)
 	sqlid ustr_id = store_next_oid(store);
 	int res;
 	base_init(NULL, &u->base, ustr_id, true, uname);
+	u->s = s;
 	if ((res = os_add(s->ustrs, tr, u->base.name, &u->base)))
 		return res;
 	if ((res = store->table_api.table_insert(tr, sysobs, &ustr_id, &uname,
