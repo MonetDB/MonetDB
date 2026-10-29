@@ -743,10 +743,13 @@ rel_calc_nuniques(mvc *sql, sql_rel *l, list *exps)
 				(min = find_prop_and_get(e->p, PROP_MIN)) && (max = find_prop_and_get(e->p, PROP_MAX))) {
 				/* the range includes min and max, so the atom_inc call is needed */
 				/* if 'euniques' has number of distinct values, compute min between both */
-				if ((sub = atom_sub(sql->sa, max, min)) && (sub = atom_inc(sql->sa, sub)) && (sub = atom_cast(sql->sa, sub, sql_fetch_localtype(TYPE_oid))))
+				if ((sub = atom_sub(sql->sa, max, min)) && (sub = atom_inc(sql->sa, sub)) && (sub = atom_cast(sql->sa, sub, sql_fetch_localtype(TYPE_oid)))) {
+					assert(0);
 					euniques = MIN(euniques, (BUN) sub->data.val.oval);
+					printf("euniques %lu\n", euniques);
+				}
 			}
-			if (euniques != BUN_NONE && (euniques == 0 || nuniques < BUN_MAX/euniques))
+			if (euniques != BUN_NONE && (euniques > 0 && nuniques < BUN_MAX/euniques))
 				nuniques = nuniques * euniques; /* the highest cardinality sets the estimation */
 			else
 				nuniques = BUN_NONE;
