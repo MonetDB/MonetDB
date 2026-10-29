@@ -253,7 +253,7 @@ class Popen(subprocess.Popen):
            self.returncode < 0 and \
            -self.returncode in _coresigs:
             raise RuntimeError('process exited with coredump generating signal'
-                               f' {signal.Signals(-self.returncode)}')
+                               f' {signal.strsignal(-self.returncode)}')
 
     def __del__(self):
         if self._child_created and self.returncode is None:
