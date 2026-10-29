@@ -187,7 +187,7 @@ sam_query(int caller, mvc *sql, sql_subfunc *f, char *filename, list *res_exps, 
 		/* TODO sam_open() logs error msg to stderr when it fails:
 			[E::hts_open_format] Failed to open file "file1.sam" : No such file or directory
 		 */
-		errmsg = "Could not open sam/bam file";
+		errmsg = "Failed to open sam/bam file";
 		/* errmsg = RUNTIME_FILE_NOT_FOUND; */
 		goto end;
 	}
@@ -269,10 +269,10 @@ sam_query(int caller, mvc *sql, sql_subfunc *f, char *filename, list *res_exps, 
 			BAT * b = bat_create(battype, estimate);
 			if (b) {
 				colmetadata[col].bat = b;
-				TRC_DEBUG(LOADER, "Created bat %d type %d size %lu\n", col+1, battype, estimate);
+				TRC_DEBUG(LOADER, "Created bat %d type %d size " BUNFMT "\n", col+1, battype, estimate);
 			} else {
 				errmsg = "Failed to create bat.";
-				TRC_ERROR(LOADER, "Failed to create bat %d type %d size %lu\n", col+1, battype, estimate);
+				TRC_ERROR(LOADER, "Failed to create bat %d type %d size " BUNFMT "\n", col+1, battype, estimate);
 				/* cleanup already created bats */
 				while (col > 0) {
 					col--;
@@ -381,7 +381,7 @@ sam_query(int caller, mvc *sql, sql_subfunc *f, char *filename, list *res_exps, 
 				while (aux && (pos < sizeof(buf))) {
 					char aux_type = bam_aux_type(aux);
 					if (pos > 0)
-						buf[pos++] = ' ';	// add a separator between multiple TAG:TYPE:VALUE
+						buf[pos++] = '\t';	// add a tab separator between multiple TAG:TYPE:VALUE
 					pos += snprintf(buf + pos, sizeof(buf) - pos, "%.2s:%c:", bam_aux_tag(aux), NULL != strchr("cCsSiI", aux_type) ? 'i' : aux_type);
 					pos += printauxdata(buf + pos, sizeof(buf) - pos, aux_type, -1, aux);
 					aux = bam_aux_next(bamdata, aux);
@@ -401,7 +401,6 @@ sam_query(int caller, mvc *sql, sql_subfunc *f, char *filename, list *res_exps, 
 		for (col = 0; col < SAM_NR_COLS; col++) {
 			BAT * b = colmetadata[col].bat;
 			BATsettrivprop(b);
-			/* TODO check that nil and nonil are set correctly for first 11 mandatory cols */
 			assert(BATcount(b) == (BUN)row);
 		}
 

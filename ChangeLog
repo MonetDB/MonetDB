@@ -11,6 +11,7 @@
   We use the HTSlib for reading these files and the library needs to be
   pre-installed on your OS (e.g. on Fedora via: sudo dnf install htslib).
   See also: https://www.htslib.org/download/
+  The HTSlib must be version 1.24 or higher.
   Also the MonetDB server has to be started with startup argument:
    --loadmodule htslib
   to enable it. By default it is not enabled.
