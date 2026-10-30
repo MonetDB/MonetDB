@@ -1306,6 +1306,8 @@ push_up_join_exps( mvc *sql, sql_rel *rel)
 	if (rel_is_ref(rel))
 		return NULL;
 
+	if (is_single(rel))
+		return NULL;
 	switch(rel->op) {
 	case op_join: {
 		sql_rel *rl = rel->l;
@@ -1614,6 +1616,7 @@ find_fk( mvc *sql, list *rels, list *exps)
 						i->p = NULL;
 						je = exp_compare(sql->sa, i, t, cmp_equal);
 					}
+					t->p = prop_create(sql->sa, PROP_HASHCOL, NULL);
 
 					/* Remove all join expressions */
 					for (n = eje->h; n; n = n->next) {
@@ -4038,8 +4041,6 @@ rel_join_order_(visitor *v, sql_rel *rel)
 	}
 	if (is_join(rel->op))
 		rel = reorder_join(v, rel);
-	if (rel && v->opt >= 0)
-		rel->opt = v->opt;
 	return rel;
 }
 

@@ -838,6 +838,12 @@ setVariable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 					throw(SQL, "sql.setVariable", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			} else if (!sqlvar_set_string(m->session->sa, find_global_var(m, s, varname), newopt))
 				throw(SQL, "sql.setVariable", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		} else if (strcmp(s->base.name, "sys") == 0 &&
+				   strcmp(varname, "pipeline") == 0) {
+			bit val = *getArgReference_bit(stk, pci, 4);
+			if (is_bit_nil(val))
+				throw(SQL, "sql.setVariable", SQLSTATE(42000) "Variable '%s.%s' cannot be NULL", sname, varname);
+			cntxt->qryctx.pipeline_mode = (bool) val;
 		} else {
 			ValPtr ptr = &stk->stk[getArg(pci, 4)];
 
