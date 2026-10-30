@@ -33,10 +33,21 @@ thread2.start()
 thread1.join()
 thread2.join()
 
-cursor1.execute("SELECT COUNT(*), COUNT(DISTINCT k), SUM(k) from T;")
+cursor1.execute("SELECT COUNT(*), COUNT(DISTINCT v), SUM(k) from T;")
 res = cursor1.fetchall()
 if res != [(MAX_ITERATIONS, MAX_ITERATIONS, EXPECTED_SUM)]:
-    sys.stderr.write("[(%d,%d,%d)] expected, [(%d,%d,%d)] received" % (MAX_ITERATIONS, MAX_ITERATIONS, EXPECTED_SUM, res[0][0], res[0][1], res[0][2]))
+    print("[(%d,%d,%d)] expected, [(%d,%d,%d)] received" % (MAX_ITERATIONS, MAX_ITERATIONS, EXPECTED_SUM, res[0][0], res[0][1], res[0][2]), file=sys.stderr)
+    cursor1.execute("SELECT * FROM T;")
+    res = cursor1.fetchall()
+    s = set()
+    for t in res:
+        if t[0] in s:
+            print(f"duplicate entry {t}", file=sys.stderr)
+        else:
+            s.add(t[0])
+    for i in range(MAX_ITERATIONS):
+        if i not in s:
+            print(f"entry {i} mssing", file=sys.stderr)
 
 
 cursor1.close()
