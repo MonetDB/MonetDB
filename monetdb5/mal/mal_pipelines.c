@@ -284,6 +284,11 @@ runMALpipelines(Client cntxt, MalBlkPtr mb, int startpc, int stoppc, int maxpart
 	if (!s)
 		throw(MAL, "pipelines", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	MT_lock_set(&pipelineLock);
+	if (ATOMIC_GET(&exiting)) {
+		MT_lock_unset(&pipelineLock);
+		return MAL_SUCCEED;
+	}
+
 	bool profiler = cntxt->sqlprofiler;
 	*s = (Pipelines) {
 		.mb = mb,
@@ -332,9 +337,13 @@ runMALpipelines(Client cntxt, MalBlkPtr mb, int startpc, int stoppc, int maxpart
 		}
 		if (j) {
 			/* here we should wait */
-	MT_lock_unset(&pipelineLock);
+			MT_lock_unset(&pipelineLock);
 			MT_sleep_ms(100);
-	MT_lock_set(&pipelineLock);
+			MT_lock_set(&pipelineLock);
+			if (ATOMIC_GET(&exiting)) {
+				MT_lock_unset(&pipelineLock);
+				return MAL_SUCCEED;
+			}
 		}
 	}
 
@@ -345,6 +354,10 @@ runMALpipelines(Client cntxt, MalBlkPtr mb, int startpc, int stoppc, int maxpart
 	MT_sema_destroy(&s->s);
 	MT_lock_destroy(&s->l);
 	MT_lock_set(&pipelineLock);
+	if (ATOMIC_GET(&exiting)) {
+		MT_lock_unset(&pipelineLock);
+		return MAL_SUCCEED;
+	}
 	bool has_sink = (s->sink != 0);
 	str err = s->error;
 	if (err) {
