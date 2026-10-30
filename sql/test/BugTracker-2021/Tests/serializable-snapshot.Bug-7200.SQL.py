@@ -47,7 +47,7 @@ if res != [(MAX_ITERATIONS, MAX_ITERATIONS, EXPECTED_SUM)]:
             s.add(t[0])
     for i in range(MAX_ITERATIONS):
         if i not in s:
-            print(f"entry {i} mssing", file=sys.stderr)
+            print(f"entry {i} missing", file=sys.stderr)
 
 
 cursor1.close()
