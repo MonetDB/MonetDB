@@ -4041,8 +4041,6 @@ rel_join_order_(visitor *v, sql_rel *rel)
 	}
 	if (is_join(rel->op))
 		rel = reorder_join(v, rel);
-	if (rel_is_ref(rel) && rel && v->opt >= 0)
-		rel->opt = v->opt;
 	return rel;
 }
 
