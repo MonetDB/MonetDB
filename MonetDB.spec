@@ -356,8 +356,10 @@ This package contains the files needed to develop with the
 Summary: MonetDB ODBC driver
 Group: Applications/Databases
 Requires: %{name}-client-lib%{?_isa} = %{version}-%{release}
+%if (0%{?fedora} < 45)
 Requires(post): %{_bindir}/odbcinst
 Requires(postun): %{_bindir}/odbcinst
+%endif
 
 %description client-odbc
 MonetDB is a database management system that is developed from a
@@ -367,6 +369,7 @@ accelerators.  It also has an SQL front end.
 
 This package contains the MonetDB ODBC driver.
 
+%if (0%{?fedora} < 45)
 %post client-odbc
 # install driver if first install of package or if driver not installed yet
 if [ "$1" -eq 1 ] || ! odbcinst -d -q -n MonetDB >& /dev/null; then
@@ -384,12 +387,21 @@ fi
 if [ "$1" -eq 0 ]; then
     odbcinst -u -d -n MonetDB
 fi
+%endif
 
 %files client-odbc
 %license LICENSE
 %defattr(-,root,root)
+%if (0%{?fedora} >= 45)
+%dir %{_prefix}/lib/odbc
+%dir %{_prefix}/lib/odbc/odbcinst.d
+%{_prefix}/lib/odbc/odbcinst.d/30-monetdb.ini
+%{_libdir}/odbc/libMonetODBC.so
+%{_libdir}/odbc/libMonetODBCs.so
+%else
 %{_libdir}/libMonetODBC.so
 %{_libdir}/libMonetODBCs.so
+%endif
 %endif
 
 %if %{without compat}
@@ -1020,6 +1032,18 @@ rm "${RPM_BUILD_ROOT}"%{_sysconfdir}/logrotate.d/monetdbd
 rm "${RPM_BUILD_ROOT}"%{_sysusersdir}/monetdb.conf
 rm "${RPM_BUILD_ROOT}"%{_tmpfilesdir}/monetdbd.conf
 rm "${RPM_BUILD_ROOT}"%{_unitdir}/monetdbd.service
+%else
+%if (0%{?fedora} >= 45)
+mkdir -p "${RPM_BUILD_ROOT}"%{_prefix}/lib/odbc/odbcinst.d
+mkdir -p "${RPM_BUILD_ROOT}"%{_libdir}/odbc
+cat > "${RPM_BUILD_ROOT}"%{_prefix}/lib/odbc/odbcinst.d/30-monetdb.ini <<\EOF
+[MonetDB]
+Description = ODBC for MonetDB
+Driver = libMonetODBC.so
+Setup = libMonetODBCs.so
+EOF
+mv "${RPM_BUILD_ROOT}"%{_libdir}/libMonetODBC*.so "${RPM_BUILD_ROOT}"%{_libdir}/odbc
+%endif
 %endif
 
 %changelog
