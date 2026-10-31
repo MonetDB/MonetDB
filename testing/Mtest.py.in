@@ -1603,76 +1603,81 @@ def GetBitsAndModsAndThreads(env):
     cmd.extend(mserver5_opts)
     if procdebug:
         print('GetBitsAndModsAndThreads: starting process "%s" (inpipe, outpipe, errpipe)\n' % '" "'.join(cmd))
-    with process.Popen(cmd, stdin=process.PIPE, stdout=process.PIPE,
-                       stderr=process.PIPE, text=True) as proc:
-        stderr = proc.stderr
-        proc.stdout = process._BufferedPipe(proc.stdout)
-        proc.stderr = process._BufferedPipe(proc.stderr)
-        proc.killed = False
-        proc.onechild = True
-        qOut = qErr = ''
-        mods = []
-        timeout = par['TIMEOUT'] != 0
-        try:
-            starttime = time.time()
-            while not timeout or time.time() < starttime + 30:
-                proc.poll()
-                if proc.returncode is not None:
-                    qOut = proc.stdout.read()
-                    qErr = proc.stderr.read()
-                    break
-                if os.path.exists(os.path.join(dbpath, '.started')):
-                    break
-                time.sleep(0.1)
-            if proc.returncode is None:
-                with open(os.path.join(dbpath, '.conn')) as fil:
-                    connurl = fil.read()
-                res = mapiportre.search(connurl)
-                try:
-                    with pymonetdb.connect(username='monetdb',
-                                           password='monetdb',
-                                           hostname=HOST,
-                                           port=int(res.group('port')),
-                                           database=TSTPREF,
-                                           autocommit=True,
-                                           connect_timeout=1.0) as dbh:
-                        if timeout:
-                            dbh.settimeout(30)
-                        with dbh.cursor() as crs:
-                            try:
-                                crs.execute('select distinct module from sys.malfunctions() order by module')
-                            except TimeoutError:
-                                pass
-                            else:
-                                mods = crs.fetchall()
-                                mods = [x[0] for x in mods]
+    try:
+        with process.Popen(cmd, stdin=process.PIPE, stdout=process.PIPE,
+                           stderr=process.PIPE, text=True) as proc:
+            stderr = proc.stderr
+            proc.stdout = process._BufferedPipe(proc.stdout)
+            proc.stderr = process._BufferedPipe(proc.stderr)
+            proc.killed = False
+            proc.onechild = True
+            qOut = qErr = ''
+            mods = []
+            timeout = par['TIMEOUT'] != 0
+            try:
+                starttime = time.time()
+                while not timeout or time.time() < starttime + 30:
+                    proc.poll()
+                    if proc.returncode is not None:
+                        qOut = proc.stdout.read()
+                        qErr = proc.stderr.read()
+                        break
+                    if os.path.exists(os.path.join(dbpath, '.started')):
+                        break
+                    time.sleep(0.1)
+                if proc.returncode is None:
+                    with open(os.path.join(dbpath, '.conn')) as fil:
+                        connurl = fil.read()
+                    res = mapiportre.search(connurl)
+                    try:
+                        with pymonetdb.connect(username='monetdb',
+                                               password='monetdb',
+                                               hostname=HOST,
+                                               port=int(res.group('port')),
+                                               database=TSTPREF,
+                                               autocommit=True,
+                                               connect_timeout=1.0) as dbh:
+                            if timeout:
+                                dbh.settimeout(30)
+                            with dbh.cursor() as crs:
                                 try:
-                                    mods.remove('user')
-                                except ValueError:
+                                    crs.execute('select distinct module from sys.malfunctions() order by module')
+                                except TimeoutError:
                                     pass
-                except KeyboardInterrupt:
-                    raise
-                except:
-                    print('Exception caught')
-                    print('Local variables:')
-                    print(locals())
-                    print('Global variables:')
-                    print(globals())
-                    raise
-                proc.terminate()
-                qOut = proc.stdout.read(timeout=5)
-                qErr = proc.stderr.read(timeout=5)
-                try:
-                    proc.wait(timeout=5)
-                except process.TimeoutExpired:
-                    proc.kill()
+                                else:
+                                    mods = crs.fetchall()
+                                    mods = [x[0] for x in mods]
+                                    try:
+                                        mods.remove('user')
+                                    except ValueError:
+                                        pass
+                    except KeyboardInterrupt:
+                        raise
+                    except:
+                        print('Exception caught')
+                        print('Local variables:')
+                        print(locals())
+                        print('Global variables:')
+                        print(globals())
+                        raise
+                    proc.terminate()
+                    qOut = proc.stdout.read(timeout=5)
+                    qErr = proc.stderr.read(timeout=5)
+                    try:
+                        proc.wait(timeout=5)
+                    except process.TimeoutExpired:
+                        proc.kill()
+                        proc.wait()
+            finally:
+                if proc.returncode is None:
+                    killProc(proc, stderr, cmd)
                     proc.wait()
-        finally:
-            if proc.returncode is None:
-                killProc(proc, stderr, cmd)
-                proc.wait()
-            if procdebug:
-                print('GetBitsAndModsAndThreads: process exited "%s" (%s)\n' % ('" "'.join(cmd), proc.returncode))
+                if procdebug:
+                    print('GetBitsAndModsAndThreads: process exited "%s" (%s)\n'
+                          % ('" "'.join(cmd), proc.returncode))
+    except RuntimeError as e:
+        print(str(e))
+        return 1
     env['TST_MODS'] = mods
     env['TST_BITS'] = ''
     env['TST_INT128'] = ''

@@ -105,8 +105,8 @@ EXPLAIN SHOW DETAILS SELECT i FROM split_test WHERE CASE WHEN j IS NULL THEN k E
 project (
 | select (
 | | project (
-| | | table("sys"."split_test") [ "split_test"."i", "split_test"."j", "split_test"."k" NOT NULL UNIQUE ]
-| | ) [ "split_test"."i", "sys"."case"(("split_test"."j") * = (int(6) NULL), varchar["split_test"."k" NOT NULL UNIQUE] NOT NULL, varchar["split_test"."j"]) as "%2"."%2" ]
+| | | table("sys"."split_test") [ "split_test"."i", "split_test"."j", "split_test"."k" NOT NULL ]
+| | ) [ "split_test"."i", "sys"."case"(("split_test"."j") * = (int(6) NULL), varchar["split_test"."k" NOT NULL] NOT NULL, varchar["split_test"."j"]) as "%2"."%2" ]
 | ) [ ("%2"."%2") = (varchar "10") ]
 ) [ "split_test"."i" ]
 
@@ -157,3 +157,4 @@ SELECT i FROM split_test WHERE CASE WHEN i > 3 THEN 1 ELSE 0 END = 1 AND CASE WH
 
 statement ok
 DROP TABLE split_test
+

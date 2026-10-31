@@ -1300,9 +1300,8 @@ rel_get_statistics(visitor *v, global_props *gp, sql_rel *rel)
 run_optimizer
 bind_get_statistics(visitor *v, global_props *gp)
 {
-	bool pipeline_mode = MT_thread_get_qry_ctx()->pipeline_mode;
 	(void) v;
-	return (!pipeline_mode && gp->opt_level == 1 /*&& !gp->cnt[op_insert]*/) ? rel_get_statistics : NULL;
+	return (gp->opt_level == 1) ? rel_get_statistics : NULL;
 }
 
 
@@ -1593,6 +1592,177 @@ bind_final_optimization_loop(visitor *v, global_props *gp)
 		(flag & push_select_up) && (flag & optimize_select_and_joins_topdown) && (flag & optimize_projections) ? rel_final_optimization_loop : NULL;
 }
 
+static sql_rel *
+rel_estimate(visitor *v, sql_rel *rel)
+{
+	/* Don't prune updates as pruning will possibly result in removing the joins which therefore cannot be used for constraint checking */
+	sql_rel *l = rel->l, *r = rel->r;
+
+	if (is_join(rel->op) || is_semi(rel->op)) {
+		rel->l = rel_estimate(v, rel->l);
+		rel->r = rel_estimate(v, rel->r);
+	}
+	switch (rel->op) {
+	case op_join:
+	case op_left:
+	case op_right:
+	case op_full:
+	{
+		/* propagate row count */
+		BUN lv = get_rel_count(l), rv = get_rel_count(r), r_uniques_estimate = BUN_MAX, join_idx_estimate = BUN_MAX;
+
+		//assert (lv < 1000000000 && rv < 1000000000);
+		if (!list_empty(rel->exps) && !is_single(rel) && rel->op == op_join) {
+			for (node *n = rel->exps->h ; n ; n = n->next) {
+				sql_exp *e = n->data, *el = e->l, *er = e->r;
+				BUN uniques_estimate = BUN_MAX;
+
+				if (find_prop(e->p, PROP_JOINIDX)) {
+					prop *lsp = find_prop(l->p, PROP_SELECTIVITY), *rsp = find_prop(r->p, PROP_SELECTIVITY);
+					dbl ls = lsp && is_join(l->op) ? lsp->value.dval : 1.0;
+					dbl rs = rsp && is_join(r->op) ? rsp->value.dval : 1.0;
+					join_idx_estimate = lv>rv?lv:rv;
+					join_idx_estimate = (BUN)(join_idx_estimate * ls * rs);
+					if (join_idx_estimate < 1)
+						join_idx_estimate = 1;
+					dbl s = ((dbl)join_idx_estimate/(lv*rv));
+					prop *sp = prop_create(v->sql->sa, PROP_SELECTIVITY, (prop *) e->p);
+					sp->value.dval = s;
+					e->p = sp;
+				} else if (e->type == e_cmp && e->flag == cmp_equal) {
+					/* if one of the sides is unique, the cardinality will be at most the cardinality of the other side */
+					if (!is_semantics(e) || !has_nil(el) || !has_nil(er)) {
+						BUN lu = lv, ru = rv;
+						prop *p = NULL;
+						if ((p = find_prop(el->p, PROP_NUNIQUES)))
+							lu = (BUN) p->value.dval;
+						if ((p = find_prop(er->p, PROP_NUNIQUES)))
+							ru = (BUN) p->value.dval;
+						if (is_unique(el) || lu > lv) {
+							BUN ncount = (is_right(rel->op) || is_full(rel->op) || !lv || lu < lv) ? MAX(lv, rv) : rv/(lu/lv);
+							if (ncount == 0)
+								ncount = MAX(lv, rv);
+							uniques_estimate = MIN(uniques_estimate, ncount);
+						} else if (is_unique(er) || ru > rv) {
+							BUN ncount = (is_left(rel->op) || is_full(rel->op) || !rv || ru < rv) ? MAX(lv, rv) : lv/(ru/rv);
+							if (ncount == 0)
+								ncount = MAX(lv, rv);
+							uniques_estimate = MIN(uniques_estimate, ncount);
+						}
+						if (uniques_estimate < BUN_MAX) {
+							if (uniques_estimate < r_uniques_estimate)
+								r_uniques_estimate = uniques_estimate;
+							dbl s = ((dbl)uniques_estimate/(lv*rv));
+							prop *sp = prop_create(v->sql->sa, PROP_SELECTIVITY, (prop *) e->p);
+							sp->value.dval = s;
+							e->p = sp;
+						} else {
+							dbl u = (dbl)MAX(lu, ru);
+							dbl s = u/(lv*rv);
+							//dbl s = 1/u;
+							prop *sp = prop_create(v->sql->sa, PROP_SELECTIVITY, (prop *) e->p);
+							sp->value.dval = s;
+							e->p = sp;
+						}
+					}
+				}
+			}
+		}
+		if (is_single(rel) || is_left(rel->op)) {
+			set_count_prop(v->sql->sa, rel, lv);
+		} else if (is_right(rel->op)) {
+			set_count_prop(v->sql->sa, rel, rv);
+		} else if (is_full(rel->op)) {
+			set_count_prop(v->sql->sa, rel, MAX(lv,rv));
+		} else if (join_idx_estimate < BUN_MAX) {
+			set_count_prop(v->sql->sa, rel, join_idx_estimate);
+		} else if (r_uniques_estimate < BUN_MAX) {
+			set_count_prop(v->sql->sa, rel, r_uniques_estimate);
+		} else if (list_length(rel->exps) == 1 && (exp_is_false(rel->exps->h->data) || exp_is_null(rel->exps->h->data))) {
+			/* corner cases for outer joins */
+			if (is_left(rel->op)) {
+				set_count_prop(v->sql->sa, rel, lv);
+			} else if (is_right(rel->op)) {
+				set_count_prop(v->sql->sa, rel, rv);
+			} else if (is_full(rel->op) && lv != BUN_NONE && rv != BUN_NONE) {
+				set_count_prop(v->sql->sa, rel, (rv > (BUN_MAX - lv)) ? BUN_MAX : (lv + rv)); /* overflow check */
+			} else if (lv != BUN_NONE && rv != BUN_NONE) {
+				set_count_prop(v->sql->sa, rel, 0);
+			}
+		} else if (lv == 0) {
+			set_count_prop(v->sql->sa, rel, (is_right(rel->op) || is_full(rel->op)) ? rv : 0);
+		} else if (rv == 0) {
+			set_count_prop(v->sql->sa, rel, (is_left(rel->op) || is_full(rel->op)) ? lv : 0);
+		} else if (lv != BUN_NONE && rv != BUN_NONE) {
+			dbl sel = 1.0;
+			if (!list_empty(rel->exps)) {
+				for (node *n = rel->exps->h ; n ; n = n->next) {
+					sql_exp *e = n->data;
+					prop *sp = NULL;
+					if ((sp = find_prop(e->p, PROP_SELECTIVITY)) == NULL) {
+						dbl s = exp_estimate_selectivity(v->sql, e);
+						/* store selectivity on predicate for later use */
+						sp = prop_create(v->sql->sa, PROP_SELECTIVITY, e->p);
+						sp->value.dval = s;
+						e->p = sp;
+					}
+					sel *= sp->value.dval;
+				}
+			}
+			dbl est = (dbl)lv * (dbl)rv * sel;
+			if (est <= 1)
+				est = 2;
+			set_count_prop(v->sql->sa, rel, est > (dbl)BUN_MAX ? BUN_MAX : (BUN)est);
+			prop *sp = NULL;
+			if ((sp = find_prop(rel->p, PROP_SELECTIVITY)) == NULL) {
+				/* store selectivity on predicate for later use */
+				rel->p = sp = prop_create(v->sql->sa, PROP_SELECTIVITY, rel->p);
+				sp->value.dval = sel;
+			}
+		}
+	}	break;
+	case op_anti:
+		set_count_prop(v->sql->sa, rel, get_rel_count(l));
+		break;
+	case op_semi:
+		if (list_length(rel->exps) == 1 && (exp_is_false(rel->exps->h->data) || exp_is_null(rel->exps->h->data))) {
+			set_count_prop(v->sql->sa, rel, 0);
+		} else {
+			if (!list_empty(rel->exps) && !is_single(rel)) {
+				BUN cnt = get_rel_count(l);
+				dbl sel = 1.0;
+				for (node *n = rel->exps->h ; n ; n = n->next) {
+					sql_exp *e = n->data;
+					dbl s = exp_estimate_selectivity(v->sql, e);
+					/* store selectivity on predicate for later use */
+					prop *sp = prop_create(v->sql->sa, PROP_SELECTIVITY, (prop *) e->p);
+					sp->value.dval = s;
+					e->p = sp;
+					sel *= s;
+				}
+				BUN est = cnt == 0 ? 0 : (BUN)((dbl)cnt * sel);
+				if (est > cnt)
+					est = cnt;
+				if (est <= 1 && cnt > 0)
+					est = 2;
+				set_count_prop(v->sql->sa, rel, est);
+				prop *sp = NULL;
+				if ((sp = find_prop(rel->p, PROP_SELECTIVITY)) == NULL) {
+					/* store selectivity on predicate for later use */
+					rel->p = sp = prop_create(v->sql->sa, PROP_SELECTIVITY, rel->p);
+					sp->value.dval = sel;
+				}
+			} else {
+				set_count_prop(v->sql->sa, rel, get_rel_count(l));
+			}
+		}
+		break;
+	default:
+		break;
+	}
+	return rel;
+}
+
 /* join order2: reorder joins using statistical information (selectivity/cardinality).
  * Runs after the main statistics pass, ensuring up-to-date cardinality estimates
  * are available for cost-based join ordering decisions.
@@ -1601,6 +1771,7 @@ bind_final_optimization_loop(visitor *v, global_props *gp)
 static sql_rel *
 rel_join_order2_(visitor *v, sql_rel *rel, int skip)
 {
+	sql_rel *old = rel;
 	if (!rel)
 		return rel;
 
@@ -1668,12 +1839,10 @@ rel_join_order2_(visitor *v, sql_rel *rel, int skip)
 	if (is_innerjoin(rel->op) && !is_single(rel) && !rel_is_ref(rel) && list_empty(rel->attr)) {
 		if (!skip) {
 			rel = reorder_join(v, rel);
-			rel = rel_get_statistics_(v, rel);
+			rel = rel_estimate(v, rel);
 		}
-	} else {
-		if (is_join(rel->op) || is_semi(rel->op))
-			rel->used = 0;
-		rel = rel_get_statistics_(v, rel);
+	} else if (old != rel) {
+		rel = rel_estimate(v, rel);
 	}
 	if (rel && v->opt >= 0)
 		rel->opt = v->opt;
