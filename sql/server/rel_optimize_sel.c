@@ -1616,7 +1616,7 @@ find_fk( mvc *sql, list *rels, list *exps)
 						i->p = NULL;
 						je = exp_compare(sql->sa, i, t, cmp_equal);
 					}
-					t->p = prop_create(sql->sa, PROP_HASHCOL, NULL);
+					//t->p = prop_create(sql->sa, PROP_HASHCOL, NULL);
 
 					/* Remove all join expressions */
 					for (n = eje->h; n; n = n->next) {
@@ -2822,8 +2822,12 @@ exp_selectivity(visitor *v, sql_exp *e, sql_rel *l, sql_rel *r, prop *p)
 		if (!is_semantics(e) || !has_nil(el) || !has_nil(er)) {
 			BUN lu = lv, ru = rv, nlv = lv, nrv = rv;
 			prop *up = NULL;
+			if (el->type == e_column && (is_select(l->op) || is_basetable(l->op)))
+				el = rel_find_exp(l, el);
 			if ((up = find_prop(el->p, PROP_NUNIQUES)))
 				lu = (BUN) up->value.dval;
+			if (er->type == e_column && (is_select(r->op) || is_basetable(r->op)))
+				er = rel_find_exp(r, er);
 			if ((up = find_prop(er->p, PROP_NUNIQUES)))
 				ru = (BUN) up->value.dval;
 			if (is_unique(el) || (is_unique(er) && runique)) {
