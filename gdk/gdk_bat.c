@@ -924,7 +924,7 @@ COLcopy2(BAT *b, int tt, bool writable, bool mayshare, role_t role)
 		memcpy(bn->theap->base, bi.base, bi.hfree);
 		bn->theap->free = bi.hfree;
 		bn->theap->dirty = true;
-		if (bn->tsketch) {
+		if (bn->tsketch && bi.skh) {
 			memcpy(bn->theap->base, bi.skh, SKETCH_SIZE);
 			bn->tsketch->dirty = true;
 		}
