@@ -2851,7 +2851,7 @@ exp_selectivity(visitor *v, sql_exp *e, sql_rel *l, sql_rel *r, prop *p)
 			}
 		}
 	} else {
-		dbl s = exp_estimate_selectivity(v->sql, e);
+		dbl s = exp_estimate_selectivity(v->sql, e, l);
 		/* store selectivity on predicate for later use */
 		if (!p)
 			p = prop_create(v->sql->sa, PROP_SELECTIVITY, e->p);

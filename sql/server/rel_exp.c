@@ -4333,7 +4333,7 @@ free_exp(allocator *sa, sql_exp *e)
 }
 
 dbl
-exp_estimate_selectivity(mvc *sql, sql_exp *e)
+exp_estimate_selectivity(mvc *sql, sql_exp *e, sql_rel *rel)
 {
 	dbl sel = 0.1;
 	(void)sql;
@@ -4349,7 +4349,7 @@ exp_estimate_selectivity(mvc *sql, sql_exp *e)
 	case e_column:
 		return 0.1;
 	case e_convert:
-		return exp_estimate_selectivity(sql, (sql_exp *) e->l);
+		return exp_estimate_selectivity(sql, (sql_exp *) e->l, rel);
 	case e_func:
 		return 0.1;
 	case e_aggr:
@@ -4362,11 +4362,21 @@ exp_estimate_selectivity(mvc *sql, sql_exp *e)
 			switch (e->flag) {
 			case cmp_equal:
 				if (exp_is_atom(r) && !exp_is_atom(l)) {
-					prop *p = find_prop(l->p, PROP_NUNIQUES);
-					if (p && p->value.dval > 1)
-						sel = 1.0 / p->value.dval;
-					else
-						sel = 0.1;
+					/* assumes select over left outer */
+					sql_rel *i  = rel->l;
+					if (is_select(rel->op) && i && is_left(i->op) && exp_is_null(r)) {
+						BUN v = (get_rel_count(i->l) - get_rel_count(i->r));
+						if (v)
+							sel = get_rel_count(i->l)/v;
+						else
+							sel = 0.1;
+					} else {
+						prop *p = find_prop(l->p, PROP_NUNIQUES);
+						if (p && p->value.dval > 1)
+							sel = 1.0 / p->value.dval;
+						else
+							sel = 0.1;
+					}
 				} else if (exp_is_atom(l) && !exp_is_atom(r)) {
 					prop *p = find_prop(r->p, PROP_NUNIQUES);
 					if (p && p->value.dval > 1)
@@ -4430,14 +4440,14 @@ exp_estimate_selectivity(mvc *sql, sql_exp *e)
 				  list *lst = (list *) e->l;
 				  sel = 1.0;
 				  for (node *n = lst->h; n; n = n->next)
-					  sel *= exp_estimate_selectivity(sql, (sql_exp *) n->data);
+					  sel *= exp_estimate_selectivity(sql, (sql_exp *) n->data, rel);
 				  break;
 			}
 			case cmp_dis: {
 				  list *lst = (list *) e->l;
 				  sel = 0.0;
 				  for (node *n = lst->h; n; n = n->next)
-				  sel += exp_estimate_selectivity(sql, (sql_exp *) n->data);
+				  sel += exp_estimate_selectivity(sql, (sql_exp *) n->data, rel);
 				  if (sel > 1.0)
 					  sel = 1.0;
 				  break;

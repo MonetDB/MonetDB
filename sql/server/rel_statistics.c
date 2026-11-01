@@ -1075,7 +1075,7 @@ rel_get_statistics_(visitor *v, sql_rel *rel)
 						sql_exp *e = n->data;
 						prop *sp = NULL;
 						if ((sp = find_prop(e->p, PROP_SELECTIVITY)) == NULL) {
-							dbl s = exp_estimate_selectivity(v->sql, e);
+							dbl s = exp_estimate_selectivity(v->sql, e, rel);
 							/* store selectivity on predicate for later use */
 							sp = prop_create(v->sql->sa, PROP_SELECTIVITY, e->p);
 							sp->value.dval = s;
@@ -1110,7 +1110,7 @@ rel_get_statistics_(visitor *v, sql_rel *rel)
 					dbl sel = 1.0;
 					for (node *n = rel->exps->h ; n ; n = n->next) {
 						sql_exp *e = n->data;
-						dbl s = exp_estimate_selectivity(v->sql, e);
+						dbl s = exp_estimate_selectivity(v->sql, e, rel);
 						/* store selectivity on predicate for later use */
 						prop *sp = prop_create(v->sql->sa, PROP_SELECTIVITY, (prop *) e->p);
 						sp->value.dval = s;
@@ -1697,7 +1697,7 @@ rel_estimate(visitor *v, sql_rel *rel)
 					sql_exp *e = n->data;
 					prop *sp = NULL;
 					if ((sp = find_prop(e->p, PROP_SELECTIVITY)) == NULL) {
-						dbl s = exp_estimate_selectivity(v->sql, e);
+						dbl s = exp_estimate_selectivity(v->sql, e, rel);
 						/* store selectivity on predicate for later use */
 						sp = prop_create(v->sql->sa, PROP_SELECTIVITY, e->p);
 						sp->value.dval = s;
@@ -1730,7 +1730,7 @@ rel_estimate(visitor *v, sql_rel *rel)
 				dbl sel = 1.0;
 				for (node *n = rel->exps->h ; n ; n = n->next) {
 					sql_exp *e = n->data;
-					dbl s = exp_estimate_selectivity(v->sql, e);
+					dbl s = exp_estimate_selectivity(v->sql, e, rel);
 					/* store selectivity on predicate for later use */
 					prop *sp = prop_create(v->sql->sa, PROP_SELECTIVITY, (prop *) e->p);
 					sp->value.dval = s;
