@@ -310,8 +310,13 @@ int main(int argc, char **argv) {
 	str retval;
 	Client c;
 	int i = 0;
+	if (argc > 1 && strcmp(argv[1], "--pipeline") == 0) {
+		default_pipeline_mode = true;
+		argc--;
+		argv++;
+	}
 	if (argc <= 1) {
-		printf("Usage: shutdowntest [testdir]\n");
+		printf("Usage: shutdowntest [--pipeline] testdir\n");
 		return -1;
 	}
 	dbdir = argv[1];
