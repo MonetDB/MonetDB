@@ -53,6 +53,18 @@ _estimate(mvc *sql, sql_rel *rel)
 	return est;
 }
 
+static int
+cnt_any(list *exps)
+{
+	int cnt = 0;
+	if (list_length(exps) > 1) {
+		for (node *n = exps->h; n; n = n->next) {
+			cnt += (int)is_any((sql_exp*)n->data);
+		}
+	}
+	return cnt;
+}
+
 static stmt *
 _start_pp(backend *be, sql_rel *rel, bit buildphase, list *refs, stmt *shared_ht)
 {
@@ -519,7 +531,7 @@ rel2bin_oahash_equi_join(backend *be, sql_rel *rel, list *refs, list *jexps, stm
         	sql_exp *e = rel->attr->h->data;
         	if (exp_is_atom(e)) {
             	mark = true;
-				manti = !exp_is_true(rel->attr->h->data) && list_length(rel->exps) > 1;
+				manti = !exp_is_true(rel->attr->h->data) && cnt_any(rel->exps) > 1;
 			}
 		}
 	}
@@ -921,7 +933,7 @@ rel2bin_oahash_groupjoin(backend *be, sql_rel *rel, list *refs)
 			mark = true;
 			if (exp_is_false(e)) {
 				exist = false;
-				manti = list_length(rel->exps) > 1;
+				manti = cnt_any(rel->exps) > 1;
 			}
 		}
 	}
@@ -1521,13 +1533,12 @@ rel2bin_oahash_semi(backend *be, sql_rel *rel, list *refs)
 	split_join_exps(rel, jexps, sexps, false /* anti */, true /* eqonly */, false /* firstonly */);
 
 	bool anti = (list_length(jexps) == 1 && rel->op == op_anti);
-	bool manti = (list_length(jexps) > 1 && rel->op == op_anti);
 	bool hf = false;
 	if (list_empty(jexps)) { /* cartesian */
 		stmt *stmts_ht = rel2bin_oahash_cart_build(be, rel, refs);
 		sub = rel2bin_oahash_cart(be, rel, refs, stmts_ht, &probed_ids, &probe_sub, &probe_side, &hash_side, NULL, &hf);
 	} else if (!list_empty(sexps)) {
-		sub = rel2bin_oahash_equi_join(be, rel, refs, jexps, &probed_ids, &probe_sub, &nulls, NULL /* prb_mrk */, NULL /* hsh_mrk */, &probe_side, &hash_side, true /* has_outerselect */, NULL, manti ? &ht_empty : NULL);
+		sub = rel2bin_oahash_equi_join(be, rel, refs, jexps, &probed_ids, &probe_sub, &nulls, NULL /* prb_mrk */, NULL /* hsh_mrk */, &probe_side, &hash_side, true /* has_outerselect */, NULL, &ht_empty);
 	} else {
 		assert(!list_empty(jexps) && list_length(jexps) == list_length(exps_cmp_prb));
 		/* build-phase res: hash-table and hash-payload stmts */
@@ -1538,7 +1549,7 @@ rel2bin_oahash_semi(backend *be, sql_rel *rel, list *refs)
 		probe_sub = sub = _start_pp(be, rel_prb->l, false, refs, NULL);
 		if (!sub) return NULL;
 
-		stmt *prb_res = hash_probe(be, rel, rel->exps, exps_cmp_prb, stmts_ht, sub, anti, false /* groupjoin */, false /* has_outerselect */, &nulls, NULL, NULL, manti ? &ht_empty : NULL);
+		stmt *prb_res = hash_probe(be, rel, rel->exps, exps_cmp_prb, stmts_ht, sub, anti, false /* groupjoin */, false /* has_outerselect */, &nulls, NULL, NULL, &ht_empty);
 		if (prb_res == NULL) return NULL;
 
 		/*** PROJECT RESULT PHASE ***/

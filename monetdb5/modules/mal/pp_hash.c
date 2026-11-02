@@ -2644,7 +2644,7 @@ _OAHASHomprobe(Client ctx, bat *PRB_oid, bat *HSH_slotid, bat *PRB_mark, const b
 	str err = NULL;
 
 	assert(((single) && frequency) || !(single));
-	if (match_nulls) assert(any);
+	if (match_nulls) assert(any && !semantics);
 
 	k = BATdescriptor(*PRB_key);
 	t = BATdescriptor(*HSH_ht);

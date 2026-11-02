@@ -1005,7 +1005,14 @@ rel_pipeline(visitor *v, sql_rel *rel, bool materialize, int pb)
 			list *eq_exps = sa_list(v->sql->sa);
 			list *other = sa_list(v->sql->sa);
 			/* manti: multi-column not-exist */
-			bool manti = list_length(rel->attr) == 1 && list_length(rel->exps) > 1 && exp_is_atom(rel->attr->h->data) && !exp_is_true(rel->attr->h->data);
+			int m_any = 0;
+
+			if (list_length(rel->exps) > 1) {
+				for (node *n = rel->exps->h; n; n = n->next)
+					m_any += (int)is_any((sql_exp*)n->data);
+			}
+
+			bool manti = list_length(rel->attr) == 1 && m_any > 1 && exp_is_atom(rel->attr->h->data) && !exp_is_true(rel->attr->h->data);
 			if (!list_empty(rel->attr))
 				rel->exps = get_simple_equi_joins_first(v->sql, rel, rel->exps);
 			split_join_exps(rel, eq_exps, other, true /* anti */, true /* eqonly */, false /* firstonly */);
