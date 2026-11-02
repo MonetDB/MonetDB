@@ -93,5 +93,6 @@ set_minmax_property(mvc *sql, sql_exp *e, prop_kind kind, atom *val)
 extern sql_hash *sql_functions_lookup ATTR_VISIBILITY_HIDDEN;
 extern void initialize_sql_functions_lookup(allocator *sa) ATTR_VISIBILITY_HIDDEN;
 extern sql_rel * rel_get_statistics_(visitor *v, sql_rel *rel);
+extern sql_exp * rel_propagate_statistics(visitor *v, sql_rel *rel, sql_exp *e, int depth);
 
 #endif /*_REL_STATISTICS_H_*/
