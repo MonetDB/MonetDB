@@ -34,7 +34,7 @@ static struct worker {
 	Queue *q;				/* pipeline tasks to execute */
 	int self;
 } workers[THREADS];
-static int pipelines_initialized = 0;
+static bool pipelines_initialized = false;
 
 static ATOMIC_TYPE exiting = ATOMIC_VAR_INIT(0);
 static MT_Lock pipelineLock = MT_LOCK_INITIALIZER(pipelineLock);
@@ -122,6 +122,7 @@ mal_pipelines_reset(void)
 	}
 	memset((char*) workers, 0,  sizeof(workers));
 	ATOMIC_SET(&exiting, 0);
+	pipelines_initialized = false;
 }
 
 static MalStkPtr
@@ -266,7 +267,7 @@ PIPELINESinitialize(void)
 		}
 	}
 	if (created)
-		pipelines_initialized = 1;
+		pipelines_initialized = true;
 	MT_lock_unset(&pipelineLock);
 	MT_lock_unset(&mal_contextLock);
 	if (created == 0) /* no threads created */
