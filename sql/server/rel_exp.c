@@ -4367,7 +4367,7 @@ exp_estimate_selectivity(mvc *sql, sql_exp *e, sql_rel *rel)
 					if (is_select(rel->op) && i && is_left(i->op) && exp_is_null(r)) {
 						BUN v = (get_rel_count(i->l) - get_rel_count(i->r));
 						if (v)
-							sel = get_rel_count(i->l)/v;
+							sel = (dbl) get_rel_count(i->l) / v;
 						else
 							sel = 0.1;
 					} else {

@@ -552,6 +552,7 @@ gdk_export void GDKsetdebug(unsigned debug);
 gdk_export unsigned GDKgetdebug(void);
 
 gdk_export int GDKnr_threads;
+gdk_export int GDKnr_pipeline_threads;
 
 /* API */
 

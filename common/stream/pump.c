@@ -126,16 +126,16 @@ static int pump_flush(stream *s, mnstr_flush_level flush_level)
 	pump_action action;
 
 	switch (flush_level) {
-		case MNSTR_FLUSH_DATA:
-			action = PUMP_FLUSH_DATA;
-			break;
-		case MNSTR_FLUSH_ALL:
-			action = PUMP_FLUSH_ALL;
-			break;
-		default:
-			assert(0 /* unknown flush_level */);
-			action = PUMP_FLUSH_DATA;
-			break;
+	case MNSTR_FLUSH_DATA:
+		action = PUMP_FLUSH_DATA;
+		break;
+	case MNSTR_FLUSH_ALL:
+		action = PUMP_FLUSH_ALL;
+		break;
+	default:
+		assert(0 /* unknown flush_level */);
+		action = PUMP_FLUSH_DATA;
+		break;
 	}
 
 	state->set_src_win(inner_state, (pump_buffer){ .start = NULL, .count = 0 });

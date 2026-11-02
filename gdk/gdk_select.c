@@ -129,6 +129,8 @@ hashselect(BATiter *bi, struct canditer *restrict ci, BAT *bn,
 		off = VarHeapVal(pbi.base, i, pbi.width);
 		bat_iterator_end(&pbi);
 		BBPreclaim(b2);
+		b2 = NULL;
+		phash = false;
 		tl = &off;
 	} else if (phash && (b2 = BATdescriptor(VIEWtparent(bi->b))) != NULL) {
 		*algo = "hashselect on parent";

@@ -61,7 +61,7 @@ random_timestamp(struct rng *rng)
 		days == 28 &&
 		year > 0 && year % 4 == 0 &&
 		(year % 100 != 0 || year % 400 == 0)
-	);
+		);
 	if (leap_year)
 		days = 29;
 	ts.date.day = 1 + rng_next(rng) % days;
@@ -84,22 +84,22 @@ gen_timestamps(FILE *f, bool byteswap, long nrecs, char *arg)
 	}
 }
 
-#define GEN_TIMESTAMP_FIELD(name, typ, fld, nilvalue) \
-	void name \
-		(FILE *f, bool byteswap, long nrecs, char *arg) \
-	{ \
-		(void)arg; \
-		struct rng rng = my_favorite_rng(); \
-	\
-		for (long i = 0; i < nrecs; i++) { \
+#define GEN_TIMESTAMP_FIELD(name, typ, fld, nilvalue)			\
+	void name							\
+	(FILE *f, bool byteswap, long nrecs, char *arg)			\
+	{								\
+		(void)arg;						\
+		struct rng rng = my_favorite_rng();			\
+									\
+		for (long i = 0; i < nrecs; i++) {			\
 			copy_binary_timestamp ts = random_timestamp(&rng); \
-			typ *p = &ts.fld; \
-			typ tmp = ts.date.day == 255 ? nilvalue : *p; \
-			if (byteswap) { \
-				copy_binary_convert_timestamp(&ts); \
-			} \
-			fwrite(&tmp, sizeof(tmp), 1, f); \
-		} \
+			typ *p = &ts.fld;				\
+			typ tmp = ts.date.day == 255 ? nilvalue : *p;	\
+			if (byteswap) {					\
+				copy_binary_convert_timestamp(&ts);	\
+			}						\
+			fwrite(&tmp, sizeof(tmp), 1, f);		\
+		}							\
 	}
 
 GEN_TIMESTAMP_FIELD(gen_timestamp_times, copy_binary_time, time, binary_nil_timestamp.time)

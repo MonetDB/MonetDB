@@ -453,6 +453,7 @@ size_t _MT_npages = 0;		/* variable holding memory size in pages */
 static lng programepoch;
 
 int GDKnr_threads = 0;
+int GDKnr_pipeline_threads = 0;
 
 void
 MT_init(void)
@@ -1190,6 +1191,9 @@ GDKinit(opt *set, int setlen, bool embedded, const char *caller_revision)
 	}
 	if (GDKnr_threads > THREADS)
 		GDKnr_threads = THREADS;
+	GDKnr_pipeline_threads = GDKgetenv_int("gdk_nr_pipeline_threads", 0);
+	if (GDKnr_pipeline_threads == 0)
+		GDKnr_pipeline_threads = GDKnr_threads;
 #if defined(HAVE_SYSCONF) && defined(_SC_LEVEL3_CACHE_SIZE)
 	GDKL3_size = (size_t)sysconf(_SC_LEVEL3_CACHE_SIZE); /* error (-1), will lead too huge L3_size */
 #else

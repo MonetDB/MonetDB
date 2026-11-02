@@ -171,8 +171,8 @@ handler(int sig)
 	const char *signame = sigtostr(sig);
 
 	if (write(1, "caught ", 7) < 0 ||
-		(signame ? write(1, signame, strlen(signame)) : write(1, "some signal", 11)) < 0 ||
-		write(1, ", starting shutdown sequence\n", 29) < 0)
+	    (signame ? write(1, signame, strlen(signame)) : write(1, "some signal", 11)) < 0 ||
+	    write(1, ", starting shutdown sequence\n", 29) < 0)
 		perror("write failed");
 	_mero_keep_listening = 0;
 }
@@ -231,7 +231,7 @@ void reinitialize(void)
 			*f++ = '\0';
 			if (strcmp(h, MONETDB5_PASSWDHASH) != 0) {
 				Mlevelfprintf(WARNING, stderr, "ignoring passphrase with incompatible "
-						"password hash: %s\n", h);
+					      "password hash: %s\n", h);
 				setConfVal(kv, NULL);
 			} else {
 				setConfVal(kv, f);
@@ -249,28 +249,28 @@ void reinitialize(void)
 	t = open(f, O_WRONLY | O_APPEND | O_CREAT | O_CLOEXEC, S_IRUSR | S_IWUSR);
 	if (t == -1) {
 		Mlevelfprintf(ERROR, stderr, "forced to ignore SIGHUP: unable to open "
-				"'%s': %s\n", f, strerror(errno));
+			      "'%s': %s\n", f, strerror(errno));
 	} else {
 #if O_CLOEXEC == 0
 		(void) fcntl(t, F_SETFD, FD_CLOEXEC);
 #endif
 		Mlevelfprintf(INFORMATION, _mero_logfile, "%s END merovingian[%lld]: "
-				"caught SIGHUP, closing logfile\n",
-				mytime, (long long int)_mero_topdp->next->pid);
+			      "caught SIGHUP, closing logfile\n",
+			      mytime, (long long int)_mero_topdp->next->pid);
 		_mero_topdp->input[0].fd = _mero_topdp->input[1].fd = t;
 		FILE *f = _mero_logfile;
 		if ((_mero_logfile = fdopen(t, "a")) == NULL) {
 			/* revert to old log so that we have something */
 			Mlevelfprintf(ERROR, f, "%s ERR merovingian[%lld]: "
-					 "failed to reopen logfile\n",
-					 mytime, (long long int)_mero_topdp->next->pid);
+				      "failed to reopen logfile\n",
+				      mytime, (long long int)_mero_topdp->next->pid);
 			_mero_topdp->input[0].fd = _mero_topdp->input[1].fd = fileno(f);
 			_mero_logfile = f;
 		} else {
 			fclose(f);
 			Mlevelfprintf(INFORMATION, _mero_logfile, "%s BEG merovingian[%lld]: "
-					 "reopening logfile\n",
-					 mytime, (long long int)_mero_topdp->next->pid);
+				      "reopening logfile\n",
+				      mytime, (long long int)_mero_topdp->next->pid);
 		}
 	}
 
@@ -309,8 +309,8 @@ childhandler(void)
 				p->input[1].fd = -1;
 				if (WIFEXITED(wstatus)) {
 					Mlevelfprintf(INFORMATION, stdout, "database '%s' (%lld) has exited with "
-							 "exit status %d\n", p->dbname,
-							 (long long int)pid, WEXITSTATUS(wstatus));
+						      "exit status %d\n", p->dbname,
+						      (long long int)pid, WEXITSTATUS(wstatus));
 				} else if (WIFSIGNALED(wstatus)) {
 					const char *sigstr = sigtostr(WTERMSIG(wstatus));
 					char signum[8];
@@ -320,12 +320,12 @@ childhandler(void)
 					}
 					if (WCOREDUMP(wstatus)) {
 						Mlevelfprintf(ERROR, stdout, "database '%s' (%lld) has crashed "
-								 "with signal %s (dumped core)\n",
-								 p->dbname, (long long int)pid, sigstr);
+							      "with signal %s (dumped core)\n",
+							      p->dbname, (long long int)pid, sigstr);
 					} else {
 						Mlevelfprintf(WARNING, stdout, "database '%s' (%lld) was killed "
-								 "by signal %s\n",
-								 p->dbname, (long long int)pid, sigstr);
+							      "by signal %s\n",
+							      p->dbname, (long long int)pid, sigstr);
 					}
 				}
 				break;
@@ -353,11 +353,11 @@ segvhandler(int sig) {
 
 	if (_mero_topdp != NULL) {
 		static const char errmsg[] = "\nSEGMENTATION FAULT OCCURRED\n"
-				"\nA fatal error has occurred which prevents monetdbd from operating."
-				"\nThis is likely a bug in monetdbd, please report it on https://github.com/MonetDB/MonetDB/issues/"
-				"\nand include the tail of this log in your bugreport with your explanation of "
-				"\nwhat you were doing, if possible.\n"
-				"\nABORTING NOW, YOU HAVE TO MANUALLY KILL ALL REMAINING mserver5 PROCESSES\n";
+			"\nA fatal error has occurred which prevents monetdbd from operating."
+			"\nThis is likely a bug in monetdbd, please report it on https://github.com/MonetDB/MonetDB/issues/"
+			"\nand include the tail of this log in your bugreport with your explanation of "
+			"\nwhat you were doing, if possible.\n"
+			"\nABORTING NOW, YOU HAVE TO MANUALLY KILL ALL REMAINING mserver5 PROCESSES\n";
 		if (write(_mero_topdp->input[1].fd, errmsg, sizeof(errmsg) - 1) >= 0)
 			sync();
 	}

@@ -34,7 +34,7 @@ static struct worker {
 	Queue *q;				/* pipeline tasks to execute */
 	int self;
 } workers[THREADS];
-static int pipelines_initialized = 0;
+static bool pipelines_initialized = false;
 
 static ATOMIC_TYPE exiting = ATOMIC_VAR_INIT(0);
 static MT_Lock pipelineLock = MT_LOCK_INITIALIZER(pipelineLock);
@@ -122,6 +122,7 @@ mal_pipelines_reset(void)
 	}
 	memset((char*) workers, 0,  sizeof(workers));
 	ATOMIC_SET(&exiting, 0);
+	pipelines_initialized = false;
 }
 
 static MalStkPtr
@@ -250,7 +251,7 @@ PIPELINESinitialize(void)
 		MT_lock_unset(&mal_contextLock);
 		return 0;
 	}
-	for (i = 0; i < GDKnr_threads; i++) {
+	for (i = 0; i < GDKnr_pipeline_threads; i++) {
 		char name[MT_NAME_LEN];
 		snprintf(name, sizeof(name), "PIPELINEsema%d", i);
 		workers[i].flag = IDLE;
@@ -266,7 +267,7 @@ PIPELINESinitialize(void)
 		}
 	}
 	if (created)
-		pipelines_initialized = 1;
+		pipelines_initialized = true;
 	MT_lock_unset(&pipelineLock);
 	MT_lock_unset(&mal_contextLock);
 	if (created == 0) /* no threads created */
@@ -299,13 +300,13 @@ runMALpipelines(Client cntxt, MalBlkPtr mb, int startpc, int stoppc, int maxpart
 		.maxparts = maxparts,
 		.sink = sink,
 		.master_counter = 0,
-		.nr_workers = GDKnr_threads,
+		.nr_workers = GDKnr_pipeline_threads,
 		.status = 0,
 		.error = NULL,
 		.errbuf = GDKgetbuf(),
 	};
 	if (maxparts > 0)
-		s->nr_workers = MIN(maxparts, GDKnr_threads);
+		s->nr_workers = MIN(maxparts, GDKnr_pipeline_threads);
 	if (s->nr_workers > 1)
 		cntxt->sqlprofiler = false;
 	/* initialize with direct increment of all threads at once */
@@ -321,13 +322,13 @@ runMALpipelines(Client cntxt, MalBlkPtr mb, int startpc, int stoppc, int maxpart
 	/* somehow get number of workers from statement/barrier */
 	int j = s->nr_workers;
 	while (j) {
-		for (int i = 0; i < GDKnr_threads && j > 0; i++)
+		for (int i = 0; i < GDKnr_pipeline_threads && j > 0; i++)
 			if (!workers[i].q->last)
 				j--;
 		if (j < s->nr_workers) {
 			/* run with less threads ?? */
 			s->nr_workers -= j;
-			for (int i = 0, k = s->nr_workers; i < GDKnr_threads && k > 0; i++) {
+			for (int i = 0, k = s->nr_workers; i < GDKnr_pipeline_threads && k > 0; i++) {
 				if (!workers[i].q->last) {
 					q_enqueue(workers[i].q, s);
 					k--;
