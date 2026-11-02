@@ -137,7 +137,7 @@ stmt *
 rel2bin_orderby(backend *be, sql_rel *rel, list *refs)
 {
 	assert(rel->r);
-	InstrPtr sop = stmt_sop_new(be, GDKnr_threads); /* keep sorted parts in a set */
+	InstrPtr sop = stmt_sop_new(be, GDKnr_pipeline_threads); /* keep sorted parts in a set */
 	//list *shared = rel2bin_project_prepare(be, rel);
 	stmt *pp = NULL;
 
