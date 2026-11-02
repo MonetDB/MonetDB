@@ -1541,6 +1541,7 @@ push_in_join_down(mvc *sql, list *rels, list *exps)
 }
 
 
+static sql_rel * reorder_join(visitor *v, sql_rel *rel);
 /* join order2: reorder joins using statistical information (selectivity/cardinality).
  * Runs after the main statistics pass, ensuring up-to-date cardinality estimates
  * are available for cost-based join ordering decisions.
@@ -1694,7 +1695,7 @@ push_up_join_exps( mvc *sql, sql_rel *rel)
 
 static sql_rel *rel_join_order_(visitor *v, sql_rel *rel);
 
-sql_rel *
+static sql_rel *
 reorder_join(visitor *v, sql_rel *rel)
 {
 	bool pipeline_mode = MT_thread_get_qry_ctx()->pipeline_mode;
@@ -2045,7 +2046,6 @@ find_fk( mvc *sql, list *rels, list *exps)
 		}
 	}
 }
-
 
 
 static sql_rel *
