@@ -21,8 +21,8 @@
 // #include <string.h>
 
 #ifdef _WIN32
-  #include <io.h>
-  #include <fcntl.h>
+#include <io.h>
+#include <fcntl.h>
 #endif
 
 // There we go again
@@ -241,24 +241,24 @@ main(int argc, char **argv)
 	bool do_encode;
 
 	switch (argc) {
-		case 1:
-			do_encode = true;
+	case 1:
+		do_encode = true;
+		break;
+	case 2:
+		if (strcmp(argv[1], "-d") == 0) {
+			do_encode = false;
 			break;
-		case 2:
-			if (strcmp(argv[1], "-d") == 0) {
-				do_encode = false;
-				break;
-			}
-			/* fallthrough */
-		default:
-			fprintf(stderr, "Usage: %s [-d] <input >output\n", argv[0]);
-			return 1;
+		}
+		/* fallthrough */
+	default:
+		fprintf(stderr, "Usage: %s [-d] <input >output\n", argv[0]);
+		return 1;
 	}
 
-	#ifdef _WIN32
+#ifdef _WIN32
 	_setmode(_fileno(stdout),O_BINARY);
 	_setmode(_fileno(stdin),O_BINARY);
-	#endif
+#endif
 
 	if (setvbuf(stdout, NULL, _IOFBF, 128 * 1024) < 0) {
 		fprintf(stderr, "setvbuf stdout: %s\n", strerror(errno));

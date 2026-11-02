@@ -398,8 +398,8 @@ static void copy_file_to_stream(FILE *in, stream *out, size_t bufsize, bool do_f
 			croak(2, "Write error after %" PRId64 " bytes: %s", total, mnstr_peek_error(out));
 		if ((size_t)nwritten != nread)
 			croak(2, "Partial write (%lu/%lu bytes) after %" PRId64 " bytes: %s",
-				(unsigned long)nwritten,  (unsigned long)nread,
-				total + (int64_t)nwritten, mnstr_peek_error(out));
+			      (unsigned long)nwritten,  (unsigned long)nread,
+			      total + (int64_t)nwritten, mnstr_peek_error(out));
 		total += (int64_t)nwritten;
 		if (do_flush)
 			if (mnstr_flush(out, flush_level) != 0)
@@ -542,26 +542,26 @@ int cmd_bstream(char *argv[])
 	// Parse the flags
 	while (*arg && arg[0][0] == '-') {
 		switch (arg[0][1]) {
-			case 'a':
-				if (!*++arg || arg[0][0] == '-')
-					croak(1, "-a requires argument");
-				additional = *arg++;
-				break;
-			case 'i':
-				if (!*++arg)
-					croak(1, "-i requires argument");
-				inout_filename = *arg++;
-				dump = true;
-				break;
-			case 'o':
-				if (!*++arg)
-					croak(1, "-o requires argument");
-				inout_filename = *arg++;
-				dump = false;
-				break;
-			default:
-				croak(1, "unknown option: %s", *arg);
-				break;
+		case 'a':
+			if (!*++arg || arg[0][0] == '-')
+				croak(1, "-a requires argument");
+			additional = *arg++;
+			break;
+		case 'i':
+			if (!*++arg)
+				croak(1, "-i requires argument");
+			inout_filename = *arg++;
+			dump = true;
+			break;
+		case 'o':
+			if (!*++arg)
+				croak(1, "-o requires argument");
+			inout_filename = *arg++;
+			dump = false;
+			break;
+		default:
+			croak(1, "unknown option: %s", *arg);
+			break;
 		}
 	}
 	if (!inout_filename)
