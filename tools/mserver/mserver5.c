@@ -35,7 +35,7 @@
 /* Windows only:
    our definition of new and delete clashes with the one if
    _CRTDBG_MAP_ALLOC is defined.
- */
+*/
 #undef _CRTDBG_MAP_ALLOC
 #endif
 
@@ -54,8 +54,8 @@ mserver_abort()
 #ifdef _MSC_VER
 static void
 mserver_invalid_parameter_handler(const wchar_t *expression,
-								  const wchar_t *function, const wchar_t *file,
-								  unsigned int line, uintptr_t reserved)
+				  const wchar_t *function, const wchar_t *file,
+				  unsigned int line, uintptr_t reserved)
 {
 	(void) expression;
 	(void) function;
@@ -129,22 +129,22 @@ monet_hello(void)
 	printf("# This is an unreleased version\n");
 #endif
 	printf("# Serving database '%s', using %d thread%s\n",
-		   GDKgetenv("gdk_dbname"), GDKnr_threads,
-		   (GDKnr_threads != 1) ? "s" : "");
+	       GDKgetenv("gdk_dbname"), GDKnr_threads,
+	       (GDKnr_threads != 1) ? "s" : "");
 	printf("# Compiled for %s/%zubit%s\n", HOST, sizeof(ptr) * 8,
 #ifdef HAVE_HGE
-		   " with 128bit integers"
+	       " with 128bit integers"
 #else
-		   ""
+	       ""
 #endif
-			);
+		);
 	sz_mem_h = (double) MT_npages() * MT_pagesize();
 	while (sz_mem_h >= 1000.0 && qi < 6) {
 		sz_mem_h /= 1024.0;
 		qi++;
 	}
 	snprintf(buf, sizeof(buf),
-			 "# Found %.3f %ciB available main-memory", sz_mem_h, qc[qi]);
+		 "# Found %.3f %ciB available main-memory", sz_mem_h, qc[qi]);
 	sz_mem_h = (double) GDK_mem_maxsize;
 	qi = 0;
 	while (sz_mem_h >= 1000.0 && qi < 6) {
@@ -160,14 +160,14 @@ monet_hello(void)
 			qi++;
 		}
 		printf("# Virtual memory usage limited to %.3f %ciB\n", sz_mem_h,
-			   qc[qi]);
+		       qc[qi]);
 	}
 #ifdef MONET_GLOBAL_DEBUG
 	printf("# Database path:%s\n", GDKgetenv("gdk_dbpath"));
 	printf("# Module path:%s\n", GDKgetenv("monet_mod_path"));
 #endif
 	printf("# Copyright (c) %s MonetDB Foundation, all rights reserved\n",
-		   &__DATE__[7]);
+	       &__DATE__[7]);
 	printf("# Visit https://www.monetdb.org/ for further information\n");
 
 	fflush(stdout);
@@ -199,18 +199,18 @@ monet_init(opt *set, int setlen, bool embedded)
 	sscanf(version, "%d.%d.%d", &maj, &min, &patch);
 	if (maj != GDK_VERSION_MAJOR || min < GDK_VERSION_MINOR) {
 		fprintf(stderr,
-				"Linked GDK library not compatible with the one this was compiled with\n");
+			"Linked GDK library not compatible with the one this was compiled with\n");
 		fprintf(stderr, "Linked version: %s, compiled version: %s\n", version,
-				GDK_VERSION);
+			GDK_VERSION);
 		return 0;
 	}
 	version = mal_version();
 	sscanf(version, "%d.%d.%d", &maj, &min, &patch);
 	if (maj != MONETDB5_VERSION_MAJOR || min < MONETDB5_VERSION_MINOR) {
 		fprintf(stderr,
-				"Linked MonetDB5 library not compatible with the one this was compiled with\n");
+			"Linked MonetDB5 library not compatible with the one this was compiled with\n");
 		fprintf(stderr, "Linked version: %s, compiled version: %s\n", version,
-				MONETDB5_VERSION);
+			MONETDB5_VERSION);
 		return 0;
 	}
 
@@ -293,7 +293,7 @@ int
 #ifdef _MSC_VER
 wmain(int argc, wchar_t **argv)
 #else
-main(int argc, char **av)
+	main(int argc, char **av)
 #endif
 {
 	/* make sure stdout is line buffered, even when not to a terminal;
@@ -432,7 +432,7 @@ main(int argc, char **av)
 		int option_index = 0;
 
 		int c = getopt_long(argc, av, "c:d::rs:?",
-							long_options, &option_index);
+				    long_options, &option_index);
 
 		if (c == -1)
 			break;
@@ -453,13 +453,13 @@ main(int argc, char **av)
 				size_t optarglen = strlen(optarg);
 				/* remove trailing directory separator */
 				while (optarglen > 0
-					   && (optarg[optarglen - 1] == '/'
-						   || optarg[optarglen - 1] == '\\'))
+				       && (optarg[optarglen - 1] == '/'
+					   || optarg[optarglen - 1] == '\\'))
 					optarg[--optarglen] = '\0';
 				dbpath = absolute_path(optarg);
 				if (dbpath == NULL) {
 					fprintf(stderr,
-							"#error: can not allocate memory for dbpath\n");
+						"#error: can not allocate memory for dbpath\n");
 					exit(1);
 				}
 				if (strlen(dbpath) >= FILENAME_MAX - 45) {
@@ -467,13 +467,13 @@ main(int argc, char **av)
 					exit(1);
 				}
 				setlen = mo_add_option(&set, setlen, opt_cmdline,
-									   "gdk_dbpath", dbpath);
+						       "gdk_dbpath", dbpath);
 				break;
 			}
 			if (strcmp(long_options[option_index].name, "dbextra") == 0) {
 				if (dbextra) {
 					fprintf(stderr,
-							"#warning: ignoring multiple --dbextra arguments\n");
+						"#warning: ignoring multiple --dbextra arguments\n");
 					break;
 				}
 				if (strcmp(optarg, in_memory) == 0) {
@@ -482,13 +482,13 @@ main(int argc, char **av)
 					size_t optarglen = strlen(optarg);
 					/* remove trailing directory separator */
 					while (optarglen > 0
-						   && (optarg[optarglen - 1] == '/'
-							   || optarg[optarglen - 1] == '\\'))
+					       && (optarg[optarglen - 1] == '/'
+						   || optarg[optarglen - 1] == '\\'))
 						optarg[--optarglen] = '\0';
 					dbextra = absolute_path(optarg);
 					if (dbextra == NULL) {
 						fprintf(stderr,
-								"#error: can not allocate memory for dbextra\n");
+							"#error: can not allocate memory for dbextra\n");
 						exit(1);
 					}
 					if (strlen(dbextra) >= FILENAME_MAX - 45) {
@@ -501,7 +501,7 @@ main(int argc, char **av)
 			if (strcmp(long_options[option_index].name, "dbtemp") == 0) {
 				if (dbtemp) {
 					fprintf(stderr,
-							"#warning: ignoring multiple --dbtemp arguments\n");
+						"#warning: ignoring multiple --dbtemp arguments\n");
 					break;
 				}
 				if (strcmp(optarg, in_memory) == 0) {
@@ -510,13 +510,13 @@ main(int argc, char **av)
 					size_t optarglen = strlen(optarg);
 					/* remove trailing directory separator */
 					while (optarglen > 0
-						   && (optarg[optarglen - 1] == '/'
-							   || optarg[optarglen - 1] == '\\'))
+					       && (optarg[optarglen - 1] == '/'
+						   || optarg[optarglen - 1] == '\\'))
 						optarg[--optarglen] = '\0';
 					dbtemp = absolute_path(optarg);
 					if (dbtemp == NULL) {
 						fprintf(stderr,
-								"#error: can not allocate memory for dbtemp\n");
+							"#error: can not allocate memory for dbtemp\n");
 						exit(1);
 					}
 					if (strlen(dbtemp) >= FILENAME_MAX - 45) {
@@ -531,8 +531,8 @@ main(int argc, char **av)
 				size_t optarglen = strlen(optarg);
 				/* remove trailing directory separator */
 				while (optarglen > 0
-					   && (optarg[optarglen - 1] == '/'
-						   || optarg[optarglen - 1] == '\\'))
+				       && (optarg[optarglen - 1] == '/'
+					   || optarg[optarglen - 1] == '\\'))
 					optarg[--optarglen] = '\0';
 				if (strcmp(optarg, "stdout") == 0)
 					dbtrace = optarg;
@@ -540,16 +540,16 @@ main(int argc, char **av)
 					dbtrace = absolute_path(optarg);
 				if (dbtrace == NULL)
 					fprintf(stderr,
-							"#error: can not allocate memory for dbtrace\n");
+						"#error: can not allocate memory for dbtrace\n");
 				else
 					setlen = mo_add_option(&set, setlen, opt_cmdline,
-										   "gdk_dbtrace", dbtrace);
+							       "gdk_dbtrace", dbtrace);
 				break;
 			}
 
 			if (strcmp(long_options[option_index].name, "single-user") == 0) {
 				setlen = mo_add_option(&set, setlen, opt_cmdline,
-									   "gdk_single_user", "yes");
+						       "gdk_single_user", "yes");
 				break;
 			}
 			if (strcmp(long_options[option_index].name, "version") == 0) {
@@ -562,7 +562,7 @@ main(int argc, char **av)
 					*tmp = 0;
 					if (GDKtracer_set_component_level(optarg, tmp + 1) != GDK_SUCCEED) {
 						fprintf(stderr, "WARNING: could not set logging component %s to %s\n",
-								optarg, tmp + 1);
+							optarg, tmp + 1);
 					}
 				} else {
 					fprintf(stderr, "ERROR: --logging flag requires component=level argument\n");
@@ -620,12 +620,12 @@ main(int argc, char **av)
 			}
 			if (strcmp(long_options[option_index].name, "process-wal-and-exit") == 0) {
 				setlen = mo_add_option(&set, setlen, opt_cmdline,
-									   "process-wal-and-exit", "yes");
+						       "process-wal-and-exit", "yes");
 				break;
 			}
 			if (strcmp(long_options[option_index].name, "clean-BBP") == 0) {
 				setlen = mo_add_option(&set, setlen, opt_cmdline,
-									   "clean-BBP", "yes");
+						       "clean-BBP", "yes");
 				break;
 			}
 			if (strcmp(long_options[option_index].name, "loadmodule") == 0) {
@@ -633,7 +633,7 @@ main(int argc, char **av)
 					modules[mods++] = optarg;
 				else
 					fprintf(stderr,
-							"ERROR: maximum number of modules reached\n");
+						"ERROR: maximum number of modules reached\n");
 				break;
 			}
 			if (strcmp(long_options[option_index].name, "without-geom") == 0) {
@@ -661,7 +661,7 @@ main(int argc, char **av)
 				debug |= strtoul(optarg, &endarg, 10);
 				if (*endarg != '\0') {
 					fprintf(stderr, "ERROR: wrong format for --debug=%s\n",
-							optarg);
+						optarg);
 					usage(prog, -1);
 				}
 			} else {
@@ -670,7 +670,7 @@ main(int argc, char **av)
 			break;
 		case 'r':
 			setlen = mo_add_option(&set, setlen, opt_cmdline, "gdk_readonly",
-								   "yes");
+					       "yes");
 			break;
 		case 's':{
 			/* should add option to a list */
@@ -680,7 +680,7 @@ main(int argc, char **av)
 			if (tmp) {
 				*tmp = '\0';
 				setlen = mo_add_option(&set, setlen, opt_cmdline, optarg,
-									   tmp + 1);
+						       tmp + 1);
 			} else
 				fprintf(stderr, "ERROR: wrong format %s\n", optarg);
 			break;
@@ -690,11 +690,11 @@ main(int argc, char **av)
 			   current `c' is based on and see if we recognize
 			   it: if -? or --help, exit with 0, else with -1 */
 			usage(prog, strcmp(av[optind - 1], "-?") == 0
-				  || strcmp(av[optind - 1], "--help") == 0 ? 0 : -1);
+			      || strcmp(av[optind - 1], "--help") == 0 ? 0 : -1);
 		default:
 			fprintf(stderr,
-					"ERROR: getopt returned character " "code '%c' 0%o\n", c,
-					(unsigned) (uint8_t) c);
+				"ERROR: getopt returned character " "code '%c' 0%o\n", c,
+				(unsigned) (uint8_t) c);
 			usage(prog, -1);
 		}
 	}
@@ -726,19 +726,19 @@ main(int argc, char **av)
 
 	if (dbpath && inmemory) {
 		fprintf(stderr,
-				"!ERROR: both dbpath and in-memory must not be set at the same time\n");
+			"!ERROR: both dbpath and in-memory must not be set at the same time\n");
 		exit(1);
 	}
 
 	if (inmemory && readpwdxit) {
 		fprintf(stderr,
-				"!ERROR: cannot have both in-memory and read-password-initialize-and-exit\n");
+			"!ERROR: cannot have both in-memory and read-password-initialize-and-exit\n");
 		exit(1);
 	}
 
 	if (inmemory) {
 		if (BBPaddfarm(NULL, (1U << PERSISTENT) | (1U << TRANSIENT) | (1U << SYSTRANS) | (1U << TEMPFARM), true) !=
-			GDK_SUCCEED) {
+		    GDK_SUCCEED) {
 			fprintf(stderr, "!ERROR: cannot add in-memory farm\n");
 			exit(1);
 		}
@@ -747,15 +747,15 @@ main(int argc, char **av)
 			dbpath = absolute_path(mo_find_option(set, setlen, "gdk_dbpath"));
 			if (dbpath == NULL) {
 				fprintf(stderr,
-						"!ERROR: cannot allocate memory for database directory \n");
+					"!ERROR: cannot allocate memory for database directory \n");
 				exit(1);
 			}
 		}
 		if (BBPaddfarm(dbpath, 1U << PERSISTENT, true) != GDK_SUCCEED
-			|| BBPaddfarm(dbextra ? dbextra : dbpath, 1U << TRANSIENT,
-						  true) != GDK_SUCCEED
-			|| BBPaddfarm(dbtemp ? dbtemp : dbextra ? dbextra : dbpath,
-						  1U << TEMPFARM, true) != GDK_SUCCEED) {
+		    || BBPaddfarm(dbextra ? dbextra : dbpath, 1U << TRANSIENT,
+				  true) != GDK_SUCCEED
+		    || BBPaddfarm(dbtemp ? dbtemp : dbextra ? dbextra : dbpath,
+				  1U << TEMPFARM, true) != GDK_SUCCEED) {
 			fprintf(stderr, "!ERROR: cannot add farm\n");
 			exit(1);
 		}
@@ -766,7 +766,7 @@ main(int argc, char **av)
 		/* GDKcreatedir makes sure that all parent directories of dbtrace exist */
 		if (!inmemory && GDKcreatedir(dbtrace) != GDK_SUCCEED) {
 			fprintf(stderr, "!ERROR: cannot create directory for %s\n",
-					dbtrace);
+				dbtrace);
 			exit(1);
 		}
 		GDKfree(dbtrace);
@@ -783,15 +783,15 @@ main(int argc, char **av)
 	mo_free_options(set, setlen);
 
 	if (GDKsetenv("monet_version", GDKversion(true)) != GDK_SUCCEED
-		|| GDKsetenv("monet_build_type", BUILD_TYPE) != GDK_SUCCEED
-		|| GDKsetenv("monet_extra_c_flags", EXTRA_C_FLAGS) != GDK_SUCCEED
-		|| GDKsetenv("monet_release",
+	    || GDKsetenv("monet_build_type", BUILD_TYPE) != GDK_SUCCEED
+	    || GDKsetenv("monet_extra_c_flags", EXTRA_C_FLAGS) != GDK_SUCCEED
+	    || GDKsetenv("monet_release",
 #ifdef MONETDB_RELEASE
-					 MONETDB_RELEASE
+			 MONETDB_RELEASE
 #else
-					 "unreleased"
+			 "unreleased"
 #endif
-		) != GDK_SUCCEED) {
+		    ) != GDK_SUCCEED) {
 		fprintf(stderr, "!ERROR: GDKsetenv failed\n");
 		exit(1);
 	}
@@ -806,7 +806,7 @@ main(int argc, char **av)
 		/* "remove" common prefix of configured BIN and LIB
 		 * directories from LIBDIR */
 		for (pref = 0; LIBDIR[pref] != 0 && BINDIR[pref] == LIBDIR[pref];
-			 pref++) ;
+		     pref++) ;
 		const char *libdirs[] = {
 			&LIBDIR[pref],
 			"lib",
@@ -818,8 +818,8 @@ main(int argc, char **av)
 		struct stat sb;
 		if (binpath != NULL) {
 			if (MT_stat(binpath, &sb) != 0 &&
-				MT_stat(av[0], &sb) == 0 &&
-				MT_path_absolute(av[0]))
+			    MT_stat(av[0], &sb) == 0 &&
+			    MT_path_absolute(av[0]))
 				binpath = av[0];
 			char *p = strrchr(binpath, DIR_SEP);
 			if (p != NULL)
@@ -829,9 +829,9 @@ main(int argc, char **av)
 				*p = '\0';
 				for (int i = 0; libdirs[i] != NULL; i++) {
 					int len = snprintf(prmodpath, sizeof(prmodpath),
-									   "%s%c%s%cmonetdb5-%s",
-									   binpath, DIR_SEP, libdirs[i], DIR_SEP,
-									   MONETDB_VERSION);
+							   "%s%c%s%cmonetdb5-%s",
+							   binpath, DIR_SEP, libdirs[i], DIR_SEP,
+							   MONETDB_VERSION);
 					if (len == -1 || len >= FILENAME_MAX)
 						continue;
 					if (MT_stat(prmodpath, &sb) == 0) {
@@ -839,8 +839,8 @@ main(int argc, char **av)
 						break;
 					}
 					len = snprintf(prmodpath, sizeof(prmodpath),
-									   "%s%c%s%cmonetdb5",
-									   binpath, DIR_SEP, libdirs[i], DIR_SEP);
+						       "%s%c%s%cmonetdb5",
+						       binpath, DIR_SEP, libdirs[i], DIR_SEP);
 					if (len == -1 || len >= FILENAME_MAX)
 						continue;
 					if (MT_stat(prmodpath, &sb) == 0) {
@@ -850,18 +850,18 @@ main(int argc, char **av)
 				}
 			} else {
 				printf("#warning: unusable binary location, "
-					   "please use --set monet_mod_path=/path/to/... to "
-					   "allow finding modules\n");
+				       "please use --set monet_mod_path=/path/to/... to "
+				       "allow finding modules\n");
 				fflush(stdout);
 			}
 		} else {
 			printf("#warning: unable to determine binary location, "
-				   "please use --set monet_mod_path=/path/to/... to "
-				   "allow finding modules\n");
+			       "please use --set monet_mod_path=/path/to/... to "
+			       "allow finding modules\n");
 			fflush(stdout);
 		}
 		if (modpath != NULL
-			&& GDKsetenv("monet_mod_path", modpath) != GDK_SUCCEED) {
+		    && GDKsetenv("monet_mod_path", modpath) != GDK_SUCCEED) {
 			fprintf(stderr, "!ERROR: GDKsetenv failed\n");
 			exit(1);
 		}
@@ -892,8 +892,8 @@ main(int argc, char **av)
 		sa.sa_flags = 0;
 		sa.sa_handler = handler;
 		if (sigaction(SIGINT, &sa, NULL) == -1
-			|| sigaction(SIGQUIT, &sa, NULL) == -1
-			|| sigaction(SIGTERM, &sa, NULL) == -1) {
+		    || sigaction(SIGQUIT, &sa, NULL) == -1
+		    || sigaction(SIGTERM, &sa, NULL) == -1) {
 			fprintf(stderr, "!unable to create signal handlers\n");
 		}
 		(void) sigemptyset(&sa.sa_mask);
@@ -952,7 +952,7 @@ main(int argc, char **av)
 		} else {
 			if ((secretf = MT_fopen(GDKgetenv("monet_vault_key"), "r")) == NULL) {
 				fprintf(stderr, "unable to open vault_key_file %s: %s\n",
-						GDKgetenv("monet_vault_key"), strerror(errno));
+					GDKgetenv("monet_vault_key"), strerror(errno));
 				/* don't show this as a crash */
 				msab_registerStop();
 				exit(1);
@@ -967,8 +967,8 @@ main(int argc, char **av)
 				exit(1);
 			} else if (len < 5) {
 				fprintf(stderr,
-						"#warning: your vault key is too short "
-						"(%zu), enlarge your vault key!\n", len);
+					"#warning: your vault key is too short "
+					"(%zu), enlarge your vault key!\n", len);
 			}
 			fclose(secretf);
 		}

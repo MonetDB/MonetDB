@@ -24,7 +24,7 @@ indent_style = space
 indent_size = 2
 trim_trailing_whitespace = true
 
-[{clients,common,gdk,geom}/**.{c,h}{,.in}]
+[{clients,common,gdk,geom,tools}/**.{c,h}{,.in}]
 tab_width = 8
 max_line_length = 72
 

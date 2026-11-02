@@ -145,7 +145,7 @@ static str monetdb_initialize(void) {
 				*p = '\0';
 				for (i = 0; libdirs[i] != NULL; i++) {
 					int len = snprintf(prmodpath, sizeof(prmodpath), "%s%c%s%cmonetdb5",
-							binpath, DIR_SEP, libdirs[i], DIR_SEP);
+							   binpath, DIR_SEP, libdirs[i], DIR_SEP);
 					if (len == -1 || len >= FILENAME_MAX)
 						continue;
 					if (MT_stat(prmodpath, &sb) == 0) {
@@ -155,14 +155,14 @@ static str monetdb_initialize(void) {
 				}
 			} else {
 				printf("#warning: unusable binary location, "
-					   "please use --set monet_mod_path=/path/to/... to "
-					   "allow finding modules\n");
+				       "please use --set monet_mod_path=/path/to/... to "
+				       "allow finding modules\n");
 				fflush(NULL);
 			}
 		} else {
 			printf("#warning: unable to determine binary location, "
-				   "please use --set monet_mod_path=/path/to/... to "
-				   "allow finding modules\n");
+			       "please use --set monet_mod_path=/path/to/... to "
+			       "allow finding modules\n");
 			fflush(NULL);
 		}
 		if (modpath != NULL &&
@@ -230,7 +230,7 @@ static str monetdb_initialize(void) {
 				exit(1);
 			} else if (len < 5) {
 				fprintf(stderr, "#warning: your vault key is too short "
-								"(%zu), enlarge your vault key!\n", len);
+					"(%zu), enlarge your vault key!\n", len);
 			}
 			fclose(secretf);
 		}
@@ -283,7 +283,7 @@ static str monetdb_initialize(void) {
 
 	mo_free_options(set, setlen);
 	return MAL_SUCCEED;
-cleanup:
+  cleanup:
 	if (ma) {
 		ma_destroy(ma);
 		MT_thread_setallocator(NULL);
