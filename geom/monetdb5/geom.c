@@ -25,9 +25,9 @@ mbr mbrNIL = {0}; // will be initialized properly by geom prelude
  **/
 
 /**
-* Collect (Group By implementation)
-*
-**/
+ * Collect (Group By implementation)
+ *
+ **/
 //Gets the type of collection a single geometry should belong to
 static int
 GEOSGeom_getCollectionType (int GEOSGeom_type) {
@@ -47,7 +47,8 @@ GEOSGeom_getCollectionType (int GEOSGeom_type) {
 		return GEOS_GEOMETRYCOLLECTION;
 }
 
-/* Group By operation. Joins geometries together in the same group into a MultiGeometry */
+/* Group By operation. Joins geometries together in the same group into
+ * a MultiGeometry */
 str
 wkbCollectAggrSubGroupedCand(Client ctx, bat *outid, const bat *bid, const bat *gid, const bat *eid, const bat *sid, const bit *skip_nils)
 {
@@ -78,8 +79,8 @@ wkbCollectAggrSubGroupedCand(Client ctx, bat *outid, const bat *bid, const bat *
 
 	//Get the BAT descriptors for the value, group and candidate bats
 	if ((b = BATdescriptor(*bid)) == NULL ||
-		(gid && !is_bat_nil(*gid) && (g = BATdescriptor(*gid)) == NULL) ||
-		(sid && !is_bat_nil(*sid) && (s = BATdescriptor(*sid)) == NULL)) {
+	    (gid && !is_bat_nil(*gid) && (g = BATdescriptor(*gid)) == NULL) ||
+	    (sid && !is_bat_nil(*sid) && (s = BATdescriptor(*sid)) == NULL)) {
 		msg = createException(MAL, "geom.Collect", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		goto free;
 	}
@@ -89,7 +90,8 @@ wkbCollectAggrSubGroupedCand(Client ctx, bat *outid, const bat *bid, const bat *
 		goto free;
 	}
 
-	//Project new order onto input bat IF the sortedorder isn't dense (in which case, the original input order is correct)
+	//Project new order onto input bat IF the sortedorder isn't
+	//dense (in which case, the original input order is correct)
 	if (!BATtdense(sortedorder)) {
 		BAT *sortedinput = BATproject(sortedorder, b);
 		BBPreclaim(sortedorder);
@@ -114,7 +116,8 @@ wkbCollectAggrSubGroupedCand(Client ctx, bat *outid, const bat *bid, const bat *
 		goto free;
 	}
 
-	//Create a new BAT column of wkb type, with length equal to the number of groups
+	//Create a new BAT column of wkb type, with length equal to the
+	//number of groups
 	if ((out = COLnew(ngrp?min:0, ATOMindex("wkb"), ngrp, TRANSIENT)) == NULL) {
 		msg = createException(MAL, "geom.Collect", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto free;
@@ -149,10 +152,12 @@ wkbCollectAggrSubGroupedCand(Client ctx, bat *outid, const bat *bid, const bat *
 
 			if (grp != lastGrp) {
 				if (lastGrp != (oid)-1) {
-					//Finish the previous group, move on to the next one
+					//Finish the previous group,
+					//move on to the next one
 					collection = GEOSGeom_createCollection_r(geoshandle, geomCollectionType, unionGroup, (unsigned int) geomCount);
 					GEOSSetSRID_r(geoshandle, collection,srid);
-					//Save collection to unions array as wkb
+					//Save collection to unions
+					//array as wkb
 					unions[lastGrp] = geos2wkb(ma, &(wkb*){NULL}, &(size_t){0}, collection);
 
 					GEOSGeom_destroy_r(geoshandle, collection);
@@ -198,7 +203,7 @@ wkbCollectAggrSubGroupedCand(Client ctx, bat *outid, const bat *bid, const bat *
 	if (s)
 		BBPunfix(s->batCacheid);
 	return MAL_SUCCEED;
-free:
+  free:
 	if (b)
 		BBPunfix(b->batCacheid);
 	if (g)
@@ -248,7 +253,9 @@ wkbCollectAggr(Client ctx, wkb **out, const bat *bid) {
 		//Set collection type on first geometry
 		if (geomCollectionType == -1)
 			geomCollectionType = GEOSGeom_getCollectionType(GEOSGeomTypeId_r(geoshandle, unionGroup[i]));
-		//Then, check if we need to change it a Geometry collection (if the current geometry is different from the previous type)
+		//Then, check if we need to change it a Geometry
+		//collection (if the current geometry is different from
+		//the previous type)
 		if (geomCollectionType != GEOS_GEOMETRYCOLLECTION && GEOSGeom_getCollectionType(GEOSGeomTypeId_r(geoshandle, unionGroup[i])) != geomCollectionType)
 			geomCollectionType = GEOS_GEOMETRYCOLLECTION;
 	}
@@ -260,8 +267,9 @@ wkbCollectAggr(Client ctx, wkb **out, const bat *bid) {
 		msg = createException(MAL, "geom.ConvexHull", SQLSTATE(38000) "Geos operation geos2wkb failed");
 
 	// Cleanup
-	// Data ownership has been transferred from unionGroup elements to
-	// collection. Check libgeos GEOSGeom_createCollection_r(geoshandle, ) for more.
+	// Data ownership has been transferred from unionGroup elements
+	// to collection. Check libgeos
+	// GEOSGeom_createCollection_r(geoshandle, ) for more.
 	bat_iterator_end(&bi);
 	GEOSGeom_destroy_r(geoshandle, collection);
 	BBPunfix(b->batCacheid);
@@ -328,24 +336,24 @@ geometryHasM(int info)
 //TODO Remove?
 /** convert degrees to radians */
 /*static inline void
-degrees2radians(double *x, double *y, double *z)
-{
-	double val = M_PI / 180.0;
-	*x *= val;
-	*y *= val;
-	*z *= val;
-}*/
+  degrees2radians(double *x, double *y, double *z)
+  {
+  double val = M_PI / 180.0;
+  *x *= val;
+  *y *= val;
+  *z *= val;
+  }*/
 
 //TODO Remove?
 /** convert radians to degrees */
 /*static inline void
-radians2degrees(double *x, double *y, double *z)
-{
-	double val = 180.0 / M_PI;
-	*x *= val;
-	*y *= val;
-	*z *= val;
-}*/
+  radians2degrees(double *x, double *y, double *z)
+  {
+  double val = 180.0 / M_PI;
+  *x *= val;
+  *y *= val;
+  *z *= val;
+  }*/
 
 static str
 transformCoordSeq(int idx, int coordinatesNum, PJ *P, const GEOSCoordSequence *gcs_old, GEOSCoordSeq gcs_new)
@@ -538,7 +546,8 @@ transformPolygon(GEOSGeometry **transformedGeometry, const GEOSGeometry *geosGeo
 
 	if(numInteriorRings > 0)
 	{
-		/* iterate over the interiorRing and transform each one of them */
+		/* iterate over the interiorRing and transform each one
+		 * of them */
 		transformedInteriorRingGeometries = ma_alloc(ma, numInteriorRings * sizeof(GEOSGeometry *));
 		if (transformedInteriorRingGeometries == NULL) {
 			*transformedGeometry = NULL;
@@ -681,9 +690,9 @@ wkbTransform(Client ctx, wkb **transformedWKB, wkb **geomWKB, int *srid_src, int
 	}
 	//Create PROJ transformation object with PROJ strings passed as argument
 	P = proj_create_crs_to_crs(PJ_DEFAULT_CTX,
-							   *proj4_src_str,
-							   *proj4_dst_str,
-							   NULL);
+				   *proj4_src_str,
+				   *proj4_dst_str,
+				   NULL);
 	if (P==0)
 		throw(MAL, "geom.Transform", SQLSTATE(38000) "PROJ initialization failed");
 
@@ -732,7 +741,8 @@ wkbTransform(Client ctx, wkb **transformedWKB, wkb **geomWKB, int *srid_src, int
 #endif
 }
 
-//gets a coord seq and forces it to have dim dimensions adding or removing extra dimensions
+//gets a coord seq and forces it to have dim dimensions adding or
+//removing extra dimensions
 static str
 forceDimCoordSeq(int idx, int coordinatesNum, int dim, const GEOSCoordSequence *gcs_old, GEOSCoordSeq gcs_new)
 {
@@ -846,7 +856,8 @@ forceDimLineString(GEOSGeometry **outGeometry, const GEOSGeometry *geosGeometry,
 
 }
 
-//Although linestring and linearRing are essentially the same we need to distinguish that when creating polygon from the rings
+//Although linestring and linearRing are essentially the same we need to
+//distinguish that when creating polygon from the rings
 static str
 forceDimLinearRing(GEOSGeometry **outGeometry, const GEOSGeometry *geosGeometry, int dim)
 {
@@ -967,8 +978,9 @@ forceDimMultiGeometry(GEOSGeometry **outGeometry, const GEOSGeometry *geosGeomet
 		throw(MAL, "geom.ForceDim", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 
-	//In order to have the geometries in the output in the same order as in the input
-	//we should read them and put them in the area in reverse order
+	//In order to have the geometries in the output in the same
+	//order as in the input we should read them and put them in the
+	//area in reverse order
 	for (i = geometriesNum - 1; i >= 0; i--) {
 		const GEOSGeometry *multiGeometry = GEOSGetGeometryN_r(geoshandle, geosGeometry, i);
 
@@ -1107,7 +1119,8 @@ segmentizeLineString(GEOSGeometry **outGeometry, const GEOSGeometry *geosGeometr
 		*outGeometry = NULL;
 		throw(MAL, "geom.Segmentize", SQLSTATE(38000) "Geos operation GEOSCoordSeq_getSize failed");
 	}
-	//store the points so that I do not have to read them multiple times using geos
+	//store the points so that I do not have to read them multiple
+	//times using geos
 	if ((xCoords_org = ma_alloc(ma, pointsNum * sizeof(double))) == NULL) {
 		*outGeometry = NULL;
 		throw(MAL, "geom.Segmentize", SQLSTATE(HY013) MAL_MALLOC_FAIL " for %u double values", pointsNum);
@@ -1656,8 +1669,9 @@ translateMultiGeometry(GEOSGeometry **outGeometry, const GEOSGeometry *geosGeome
 	if (transformedMultiGeometries == NULL)
 		throw(MAL, "geom.Translate", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 
-	//In order to have the geometries in the output in the same order as in the input
-	//we should read them and put them in the area in reverse order
+	//In order to have the geometries in the output in the same
+	//order as in the input we should read them and put them in the
+	//area in reverse order
 	for (i = geometriesNum - 1; i >= 0; i--) {
 		const GEOSGeometry *multiGeometry = GEOSGetGeometryN_r(geoshandle, geosGeometry, i);
 
@@ -2071,7 +2085,7 @@ dumpPointsPolygon(Client ctx, BAT *idBAT, BAT *geomBAT, const GEOSGeometry *geos
 	if (newPath == NULL)
 		throw(MAL, "geom.DumpPoints", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	snprintf(newPath, pathLength + lvlDigitsNum + extraLength + 1,
-			 "%s%u%s", path, *lvl, extraStr);
+		 "%s%u%s", path, *lvl, extraStr);
 
 	//get the points in the exterior ring
 	err = dumpPointsLineString(ctx, idBAT, geomBAT, exteriorRingGeometry, newPath);
@@ -2091,7 +2105,7 @@ dumpPointsPolygon(Client ctx, BAT *idBAT, BAT *geomBAT, const GEOSGeometry *geos
 		if (newPath == NULL)
 			throw(MAL, "geom.DumpPoints", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		snprintf(newPath, pathLength + lvlDigitsNum + extraLength + 1,
-				 "%s%u%s", path, *lvl, extraStr);
+			 "%s%u%s", path, *lvl, extraStr);
 
 		err = dumpPointsLineString(ctx, idBAT, geomBAT, GEOSGetInteriorRingN_r(geoshandle, geosGeometry, i), newPath);
 		if (err != MAL_SUCCEED)
@@ -2128,7 +2142,7 @@ dumpPointsMultiGeometry(Client ctx, BAT *idBAT, BAT *geomBAT, const GEOSGeometry
 		if (newPath == NULL)
 			throw(MAL, "geom.DumpPoints", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		snprintf(newPath, pathLength + lvlDigitsNum + extraLength + 1,
-				 "%s%u%s", path, lvl, extraStr);
+			 "%s%u%s", path, lvl, extraStr);
 
 		//*secondLevel = 0;
 		err = dumpPointsGeometry(ctx, idBAT, geomBAT, multiGeometry, newPath);
@@ -2407,7 +2421,8 @@ mbrFromGeos(allocator *ma, const GEOSGeom geosGeometry)
 	if (geomMBR == NULL)	//problem in reserving space
 		return NULL;
 
-	/* if input is null or GEOSEnvelope created exception then create a nill mbr */
+	/* if input is null or GEOSEnvelope created exception then
+	 * create a nill mbr */
 	if (!geosGeometry || (envelope = GEOSEnvelope_r(geoshandle, geosGeometry)) == NULL) {
 		*geomMBR = mbrNIL;
 		return geomMBR;
@@ -2427,7 +2442,7 @@ mbrFromGeos(allocator *ma, const GEOSGeom geosGeometry)
 		geomMBR->ymin = (float) ymin;
 		geomMBR->xmax = (float) xmin;
 		geomMBR->ymax = (float) ymin;
-	} else {		// GEOSGeomTypeId_r(geoshandle, envelope) == GEOS_POLYGON
+	} else { // GEOSGeomTypeId_r(geoshandle, envelope) == GEOS_POLYGON
 #if GEOS_CAPI_VERSION_MAJOR >= 1 && GEOS_CAPI_VERSION_MINOR >= 3
 		const GEOSGeometry *ring = GEOSGetExteriorRing_r(geoshandle, envelope);
 #else
@@ -2619,8 +2634,9 @@ wkbFromWKB(Client ctx, wkb **w, wkb **src)
 }
 
 /* creates a wkb from the given textual representation */
-/* int* tpe is needed to verify that the type of the FromText function used is the
- * same with the type of the geometry created from the wkt representation */
+/* int* tpe is needed to verify that the type of the FromText function
+ * used is the same with the type of the geometry created from the wkt
+ * representation */
 str
 wkbFromText(Client ctx, wkb **geomWKB, str *geomWKT, int *srid, int *tpe)
 {
@@ -2729,7 +2745,8 @@ wkbMLineStringToPolygon(Client ctx, wkb **geomWKB, str *geomWKT, int *srid, int 
 		throw(MAL, "geom.MLineStringToPolygon", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 
-	//create one polygon for each lineString and compute the area of each of them
+	//create one polygon for each lineString and compute the area of
+	//each of them
 	for (i = 1; i <= itemsNum; i++) {
 		wkb *polygonWKB;
 
@@ -3269,21 +3286,21 @@ wkbMakeLine(Client ctx, wkb **out, wkb **geom1WKB, wkb **geom2WKB)
 	}
 	//check the types of the geometries
 	if (GEOSGeomTypeId_r(geoshandle, geom1Geometry) + 1 != wkbPoint_mdb &&
-		 GEOSGeomTypeId_r(geoshandle, geom1Geometry) + 1 != wkbLineString_mdb &&
-		 GEOSGeomTypeId_r(geoshandle, geom2Geometry) + 1 != wkbPoint_mdb &&
-		 GEOSGeomTypeId_r(geoshandle, geom2Geometry) + 1 != wkbLineString_mdb) {
+	    GEOSGeomTypeId_r(geoshandle, geom1Geometry) + 1 != wkbLineString_mdb &&
+	    GEOSGeomTypeId_r(geoshandle, geom2Geometry) + 1 != wkbPoint_mdb &&
+	    GEOSGeomTypeId_r(geoshandle, geom2Geometry) + 1 != wkbLineString_mdb) {
 		err = createException(MAL, "geom.MakeLine", SQLSTATE(38000) "Geometries should be Point or LineString");
 		goto bailout;
 	}
 	//get the coordinate sequences of the geometries
 	if ((geom1CoordSeq = GEOSGeom_getCoordSeq_r(geoshandle, geom1Geometry)) == NULL ||
-		 (geom2CoordSeq = GEOSGeom_getCoordSeq_r(geoshandle, geom2Geometry)) == NULL) {
+	    (geom2CoordSeq = GEOSGeom_getCoordSeq_r(geoshandle, geom2Geometry)) == NULL) {
 		err = createException(MAL, "geom.MakeLine", SQLSTATE(38000) "Geos operation GEOSGeom_getCoordSeq failed");
 		goto bailout;
 	}
 	//make sure that the dimensions of the geometries are the same
 	if (!GEOSCoordSeq_getDimensions_r(geoshandle, geom1CoordSeq, &geom1Dimension) ||
-		 !GEOSCoordSeq_getDimensions_r(geoshandle, geom2CoordSeq, &geom2Dimension)) {
+	    !GEOSCoordSeq_getDimensions_r(geoshandle, geom2CoordSeq, &geom2Dimension)) {
 		err = createException(MAL, "geom.MakeLine", SQLSTATE(38000) "Geos operation GEOSGeom_getDimensions failed");
 		goto bailout;
 	}
@@ -3293,7 +3310,7 @@ wkbMakeLine(Client ctx, wkb **out, wkb **geom1WKB, wkb **geom2WKB)
 	}
 	//get the number of coordinates in the two geometries
 	if (!GEOSCoordSeq_getSize_r(geoshandle, geom1CoordSeq, &geom1Size) ||
-		 !GEOSCoordSeq_getSize_r(geoshandle, geom2CoordSeq, &geom2Size)) {
+	    !GEOSCoordSeq_getSize_r(geoshandle, geom2CoordSeq, &geom2Size)) {
 		err = createException(MAL, "geom.MakeLine", SQLSTATE(38000) "Geos operation GEOSGeom_getSize failed");
 		goto bailout;
 	}
@@ -3505,8 +3522,8 @@ wkbMakeLineAggrSubGroupedCand(Client ctx, bat *outid, const bat *bid, const bat 
 
 	//Get the BAT descriptors for the value, group and candidate bats
 	if ((b = BATdescriptor(*bid)) == NULL ||
-		(gid && !is_bat_nil(*gid) && (g = BATdescriptor(*gid)) == NULL) ||
-		(sid && !is_bat_nil(*sid) && (s = BATdescriptor(*sid)) == NULL)) {
+	    (gid && !is_bat_nil(*gid) && (g = BATdescriptor(*gid)) == NULL) ||
+	    (sid && !is_bat_nil(*sid) && (s = BATdescriptor(*sid)) == NULL)) {
 		msg = createException(MAL, "aggr.MakeLine", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		goto free;
 	}
@@ -3604,7 +3621,7 @@ wkbMakeLineAggrSubGroupedCand(Client ctx, bat *outid, const bat *bid, const bat 
 	if (s)
 		BBPunfix(s->batCacheid);
 	return MAL_SUCCEED;
-free:
+  free:
 	if (b)
 		BBPunfix(b->batCacheid);
 	if (g)
@@ -3984,8 +4001,9 @@ wkbInteriorRingN(Client ctx, wkb **interiorRingWKB, wkb **geom, int *ringNum)
 	return err;
 }
 
-/* Returns the number of interior rings in the first polygon of the provided geometry
- * plus the exterior ring depending on the value of exteriorRing*/
+/* Returns the number of interior rings in the first polygon of the
+ * provided geometry plus the exterior ring depending on the value of
+ * exteriorRing*/
 str
 wkbNumRings(Client ctx, int *out, wkb **geom, int *exteriorRing)
 {
@@ -4352,7 +4370,8 @@ wkbDistance(dbl *out, wkb **a, wkb **b)
 	return err;
 }
 
-/* Returns the 2d length of the geometry if it is a linestring or multilinestring */
+/* Returns the 2d length of the geometry if it is a linestring or
+ * multilinestring */
 str
 wkbLength(Client ctx, dbl *out, wkb **a)
 {
@@ -4769,13 +4788,16 @@ wkbDWithinMbr(Client ctx, bit *out, wkb **a, wkb **b, mbr **mbr_a, mbr **mbr_b, 
 		return err;
 	halfd_b *= .5;
 
-	// Every bounding box can be inscribed in a circle. When calculating the distance
-	// between two mbrs we do so by their centroids which are actually the origins of
-	// their circumscribed circles. Then, independently of the bounded geometry, we can
-	// find two rough distance limits which are giving us a zone outside of which the
-	// questions 'distance within' can be answered only by the bounding box geometry.
-	// If the 'distance within' check is done over distance value in this zone then we
-	// actually need to perform the underlying geometry distance calculation.
+	// Every bounding box can be inscribed in a circle. When
+	// calculating the distance between two mbrs we do so by their
+	// centroids which are actually the origins of their
+	// circumscribed circles. Then, independently of the bounded
+	// geometry, we can find two rough distance limits which are
+	// giving us a zone outside of which the questions 'distance
+	// within' can be answered only by the bounding box geometry.
+	// If the 'distance within' check is done over distance value in
+	// this zone then we actually need to perform the underlying
+	// geometry distance calculation.
 	ambiguous_zone_max = bboxDistance;
 	ambiguous_zone_min = bboxDistance - halfd_a - halfd_b;
 
@@ -4866,7 +4888,8 @@ wkbNumGeometries(Client ctx, int *out, wkb **geom)
 }
 
 
-/* TODO: Analyze these functions below (what's the dif from normal contain, is it unfinished?) */
+/* TODO: Analyze these functions below (what's the diff from normal
+ * contain, is it unfinished?) */
 
 static inline double
 isLeft(double P0x, double P0y, double P1x, double P1y, double P2x, double P2y)
@@ -4908,7 +4931,8 @@ pnpoly(int *out, int nvert, dbl *vx, dbl *vy, bat *point_x, bat *point_y)
 		throw(MAL, "geom.point", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 
-	/*Iterate over the Point BATs and determine if they are in Polygon represented by vertex BATs */
+	/*Iterate over the Point BATs and determine if they are in
+	 * Polygon represented by vertex BATs */
 	BATiter bpxi = bat_iterator(bpx);
 	BATiter bpyi = bat_iterator(bpy);
 	px = (dbl *) bpxi.base;
@@ -4922,11 +4946,13 @@ pnpoly(int *out, int nvert, dbl *vx, dbl *vy, bat *point_x, bat *point_y)
 		for (j = 0; j < nv; j++) {
 			if (vy[j] <= py[i]) {
 				if (vy[j + 1] > py[i])
-					if (isLeft(vx[j], vy[j], vx[j + 1], vy[j + 1], px[i], py[i]) > 0)
+					if (isLeft(vx[j], vy[j], vx[j + 1],
+						   vy[j + 1], px[i], py[i]) > 0)
 						++wn;
 			} else {
 				if (vy[j + 1] <= py[i])
-					if (isLeft(vx[j], vy[j], vx[j + 1], vy[j + 1], px[i], py[i]) < 0)
+					if (isLeft(vx[j], vy[j], vx[j + 1],
+						   vy[j + 1], px[i], py[i]) < 0)
 						--wn;
 			}
 		}
@@ -4976,7 +5002,8 @@ pnpolyWithHoles(bat *out, int nvert, dbl *vx, dbl *vy, int nholes, dbl **hx, dbl
 		throw(MAL, "geom.point", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 
-	/*Iterate over the Point BATs and determine if they are in Polygon represented by vertex BATs */
+	/*Iterate over the Point BATs and determine if they are in
+	 * Polygon represented by vertex BATs */
 	BATiter bpxi = bat_iterator(bpx);
 	BATiter bpyi = bat_iterator(bpy);
 	px = (dbl *) bpxi.base;

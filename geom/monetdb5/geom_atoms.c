@@ -848,7 +848,8 @@ mbrRight_wkb(Client ctx, bit *out, wkb **geom1WKB, wkb **geom2WKB)
 	return mbrrelation_wkb(ctx, out, geom1WKB, geom2WKB, mbrRight);
 }
 
-/* returns true if box1 overlaps or is above box2 when only the Y coordinate is considered*/
+/* returns true if box1 overlaps or is above box2 when only the Y
+ * coordinate is considered*/
 str
 mbrOverlapOrAbove(Client ctx, bit *out, mbr **b1, mbr **b2)
 {
@@ -868,7 +869,8 @@ mbrOverlapOrAbove_wkb(Client ctx, bit *out, wkb **geom1WKB, wkb **geom2WKB)
 	return mbrrelation_wkb(ctx, out, geom1WKB, geom2WKB, mbrOverlapOrAbove);
 }
 
-/* returns true if box1 overlaps or is below box2 when only the Y coordinate is considered*/
+/* returns true if box1 overlaps or is below box2 when only the Y
+ * coordinate is considered*/
 str
 mbrOverlapOrBelow(Client ctx, bit *out, mbr **b1, mbr **b2)
 {
@@ -888,7 +890,8 @@ mbrOverlapOrBelow_wkb(Client ctx, bit *out, wkb **geom1WKB, wkb **geom2WKB)
 	return mbrrelation_wkb(ctx, out, geom1WKB, geom2WKB, mbrOverlapOrBelow);
 }
 
-/* returns true if box1 overlaps or is left of box2 when only the X coordinate is considered*/
+/* returns true if box1 overlaps or is left of box2 when only the X
+ * coordinate is considered*/
 str
 mbrOverlapOrLeft(Client ctx, bit *out, mbr **b1, mbr **b2)
 {
@@ -1027,7 +1030,8 @@ mbrDistance(Client ctx, dbl *out, mbr **b1, mbr **b2)
 	return MAL_SUCCEED;
 }
 
-/*returns the Euclidean distance of the centroids of the mbrs of the two geometries */
+/*returns the Euclidean distance of the centroids of the mbrs of the two
+ * geometries */
 str
 mbrDistance_wkb(Client ctx, dbl *out, wkb **geom1WKB, wkb **geom2WKB)
 {
