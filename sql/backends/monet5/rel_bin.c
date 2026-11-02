@@ -8286,6 +8286,12 @@ exp_remap(sql_exp *le, sql_exp *re, list *remapped)
 		return (subtype_cmp(ll->h->data, rl->h->data) == 0 &&
 			    subtype_cmp(ll->h->next->data, rl->h->next->data) == 0 &&
 				exp_remap(le->l , re->l, remapped) == 0)?0:-1;
+	case e_func: {
+		sql_subfunc *lf = le->f, *rf = re->f;
+		list *lexps = le->l, *rexps = re->l;
+		if (subfunc_cmp(lf, rf) == 0 && list_length(lexps) == list_length(rexps))
+			return exps_remap(lexps, rexps, remapped);
+	} break;
 	case e_cmp:
 		if (le->flag != re->flag)
 			return -1;
