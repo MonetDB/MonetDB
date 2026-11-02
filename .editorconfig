@@ -7,11 +7,11 @@ insert_final_newline = true
 
 [*.{c,h,y}{,.in}]
 indent_style = tab
-tab_width = 4
+tab_width = 8
 indent_size = tab
 trim_trailing_whitespace = true
 charset = utf-8
-max_line_length = 120
+max_line_length = 72
 
 [*.py{,.in}]
 indent_style = space
@@ -24,9 +24,9 @@ indent_style = space
 indent_size = 2
 trim_trailing_whitespace = true
 
-[{clients,common,gdk,geom,tools}/**.{c,h}{,.in}]
-tab_width = 8
-max_line_length = 72
+[{monetdb5,sql}/**.{c,h,y}{,.in}]
+tab_width = 4
+max_line_length = 120
 
 [*.yml]
 indent_style = space
