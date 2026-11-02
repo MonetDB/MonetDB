@@ -38,11 +38,11 @@ print_libversion(const char *lib, const char *rtvers, const char *cmvers)
 void
 monet_version(void)
 {
-	dbl sz_mem_gb;
+	double sz_mem_gb;
 	int cores;
 
 	MT_init();  /* for MT_pagesize */
-	sz_mem_gb = (dbl)(MT_npages() * MT_pagesize()) / (1024.0 * 1024.0 * 1024.0);
+	sz_mem_gb = ldexp((double) (MT_npages() * MT_pagesize()), -30);
 	if ((cores = GDKnr_threads) == 0)
 		cores = MT_check_nr_cores();
 
@@ -65,7 +65,8 @@ monet_version(void)
 #ifndef MONETDB_RELEASE
 	printf("This is an unreleased version\n");
 #endif
-	printf("Copyright (C) %s MonetDB Foundation.\n", &__DATE__[7]);
+	printf("Copyright (C) %s MonetDB Foundation, all rights reserved\n",
+	       &__DATE__[7]);
 	printf("Visit https://www.monetdb.org/ for further information\n");
 	printf("Found %.1fGiB available memory, %d available cpu core%s\n",
 	       sz_mem_gb, cores, cores != 1 ? "s" : "");
