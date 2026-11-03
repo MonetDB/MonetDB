@@ -216,6 +216,7 @@ hash_probe(backend *be, sql_rel *rel, list *jexps, list *exps_cmp_prb, const stm
 		key = column(be, key);
 		bool single = ((rel->single == 1 && rel->op != op_semi) && (n->next == NULL) && !has_outerselect);
 		bool eq = (e2->flag == cmp_equal) && !anti;
+		bool grpjoin = groupjoin && is_any(e2);
 
 		if (first && match_cnt && is_any(e2)) {
 			first = false;
@@ -233,7 +234,7 @@ hash_probe(backend *be, sql_rel *rel, list *jexps, list *exps_cmp_prb, const stm
 		assert(!perfect || (!groupjoin && !has_leftouter && !prb_res));
 		prb_res = perfect ?
 				stmt_fhash_probe(be, key, m->data, stmts_ht->op3, single, e2->semantics, eq) :
-				stmt_oahash_probe(be, key, prb_res, m->data, stmts_ht->op3, outerm, single, e2->semantics, eq, has_leftouter, groupjoin, anti&&groupjoin);
+				stmt_oahash_probe(be, key, prb_res, m->data, stmts_ht->op3, outerm, single, e2->semantics, eq, has_leftouter, grpjoin, anti&&grpjoin);
 		if (prb_res == NULL) return NULL;
 
 		if (has_leftouter || groupjoin) {
