@@ -968,8 +968,7 @@ GDKinit(opt *set, int setlen, bool embedded, const char *caller_revision)
 	const char *dbpath;
 	const char *dbtrace;
 	const char *p;
-	opt *n;
-	int i, nlen = 0;
+	int i;
 	char buf[16];
 
 	if (caller_revision) {
@@ -1089,7 +1088,8 @@ GDKinit(opt *set, int setlen, bool embedded, const char *caller_revision)
 	GDK_mem_maxsize = (size_t) ((double) MT_npages() * (double) MT_pagesize() * 0.815);
 	const char *allow = mo_find_option(set, setlen, "allow_hge_upgrade");
 	const char *procwalxit = mo_find_option(set, setlen, "process-wal-and-exit");
-	if (BBPinit(allow && strcmp(allow, "yes") == 0, procwalxit && strcmp(procwalxit, "yes") == 0) != GDK_SUCCEED)
+	if (BBPinit(allow && strcmp(allow, "yes") == 0,
+		    procwalxit && strcmp(procwalxit, "yes") == 0) != GDK_SUCCEED)
 		return GDK_FAIL;
 	first = false;
 
@@ -1099,70 +1099,75 @@ GDKinit(opt *set, int setlen, bool embedded, const char *caller_revision)
 			GDK_mmap_minsize_persistent = GDK_mmap_minsize_transient;
 	}
 
-	n = (opt *) malloc(setlen * sizeof(opt));
-	if (n == NULL) {
-		GDKsyserror("malloc failed\n");
-		return GDK_FAIL;
-	}
-
-	for (i = 0; i < setlen; i++) {
-		bool done = false;
-
-		for (int j = 0; j < nlen; j++) {
-			if (strcmp(n[j].name, set[i].name) == 0) {
-				if (n[j].kind < set[i].kind) {
-					n[j] = set[i];
-				}
-				done = true;
-				break;
-			}
-		}
-		if (!done) {
-			n[nlen] = set[i];
-			nlen++;
-		}
-	}
 	/* check some options before creating our first BAT */
-	for (i = 0; i < nlen; i++) {
-		if (strcmp("gdk_mem_maxsize", n[i].name) == 0) {
-			GDK_mem_maxsize = (size_t) strtoll(n[i].value, NULL, 10);
-			GDK_mem_maxsize = MAX(1 << 26, GDK_mem_maxsize);
-			if (GDK_mem_maxsize / 16 < GDK_mmap_minsize_transient)
-				GDK_mmap_minsize_transient = MAX(MMAP_PAGESIZE, GDK_mem_maxsize / 16);
-			if (GDK_mmap_minsize_persistent > GDK_mmap_minsize_transient)
-				GDK_mmap_minsize_persistent = GDK_mmap_minsize_transient;
-		} else if (strcmp("gdk_vm_maxsize", n[i].name) == 0) {
-			GDK_vm_maxsize = (size_t) strtoll(n[i].value, NULL, 10);
-			GDK_vm_maxsize = MAX(1 << 30, GDK_vm_maxsize);
-		} else if (strcmp("gdk_mmap_minsize_persistent", n[i].name) == 0) {
-			GDK_mmap_minsize_persistent = (size_t) strtoll(n[i].value, NULL, 10);
-		} else if (strcmp("gdk_mmap_minsize_transient", n[i].name) == 0) {
-			GDK_mmap_minsize_transient = (size_t) strtoll(n[i].value, NULL, 10);
-		} else if (strcmp("gdk_mmap_pagesize", n[i].name) == 0) {
-			GDK_mmap_pagesize = (size_t) strtoll(n[i].value, NULL, 10);
-			if (GDK_mmap_pagesize < 1 << 12 ||
-			    GDK_mmap_pagesize > 1 << 20 ||
-			    /* x & (x - 1): turn off rightmost 1 bit;
-			     * i.e. if result is zero, x is power of
-			     * two */
-			    (GDK_mmap_pagesize & (GDK_mmap_pagesize - 1)) != 0) {
-				free(n);
-				TRC_CRITICAL(GDK, "gdk_mmap_pagesize must be power of 2 between 2**12 and 2**20\n");
-				return GDK_FAIL;
-			}
+	p = mo_find_option(set, setlen, "gdk_mem_maxsize");
+	if (p) {
+		char *e;
+		GDK_mem_maxsize = (size_t) strtoll(p, &e, 10);
+		if (e && *e) {
+			TRC_CRITICAL(GDK, "gdk_mem_maxsize must be an integer");
+			return GDK_FAIL;
+		}
+		GDK_mem_maxsize = MAX(1 << 26, GDK_mem_maxsize);
+		if (GDK_mem_maxsize / 16 < GDK_mmap_minsize_transient)
+			GDK_mmap_minsize_transient = MAX(MMAP_PAGESIZE, GDK_mem_maxsize / 16);
+		if (GDK_mmap_minsize_persistent > GDK_mmap_minsize_transient)
+			GDK_mmap_minsize_persistent = GDK_mmap_minsize_transient;
+	}
+	p = mo_find_option(set, setlen, "gdk_vm_maxsize");
+	if (p) {
+		char *e;
+		GDK_vm_maxsize = (size_t) strtoll(p, &e, 10);
+		if (e && *e) {
+			TRC_CRITICAL(GDK, "gdk_vm_maxsize must be an integer");
+			return GDK_FAIL;
+		}
+		GDK_vm_maxsize = MAX(1 << 30, GDK_vm_maxsize);
+	}
+	p = mo_find_option(set, setlen, "gdk_mmap_minsize_persistent");
+	if (p) {
+		char *e;
+		GDK_mmap_minsize_persistent = (size_t) strtoll(p, &e, 10);
+		if (e && *e) {
+			TRC_CRITICAL(GDK, "gdk_mmap_minsize_persistent must be an integer");
+			return GDK_FAIL;
+		}
+	}
+	p = mo_find_option(set, setlen, "gdk_mmap_minsize_transient");
+	if (p) {
+		char *e;
+		GDK_mmap_minsize_transient = (size_t) strtoll(p, &e, 10);
+		if (e && *e) {
+			TRC_CRITICAL(GDK, "gdk_mmap_minsize_transient must be an integer");
+			return GDK_FAIL;
+		}
+	}
+	p = mo_find_option(set, setlen, "gdk_mmap_pagesize");
+	if (p) {
+		char *e;
+		GDK_mmap_pagesize = (size_t) strtoll(p, &e, 10);
+		if (e && *e) {
+			TRC_CRITICAL(GDK, "gdk_mmap_pagesize must be an integer");
+			return GDK_FAIL;
+		}
+		if (GDK_mmap_pagesize < 1 << 12 ||
+		    GDK_mmap_pagesize > 1 << 20 ||
+		    /* x & (x - 1): turn off rightmost 1 bit; i.e. if
+		     * result is zero, x is power of two */
+		    (GDK_mmap_pagesize & (GDK_mmap_pagesize - 1)) != 0) {
+			TRC_CRITICAL(GDK, "gdk_mmap_pagesize must be power of 2 between 2**12 and 2**20\n");
+			return GDK_FAIL;
 		}
 	}
 
 	GDKkey = COLnew(0, TYPE_str, 100, TRANSIENT);
 	GDKval = COLnew(0, TYPE_str, 100, TRANSIENT);
 	if (GDKkey == NULL || GDKval == NULL) {
-		free(n);
 		TRC_CRITICAL(GDK, "Could not create environment BATs");
 		return GDK_FAIL;
 	}
 	if (BBPrename(GDKkey, "environment_key") != 0 ||
 	    BBPrename(GDKval, "environment_val") != 0) {
-		free(n);
 		TRC_CRITICAL(GDK, "BBPrename of environment BATs failed");
 		return GDK_FAIL;
 	}
@@ -1170,13 +1175,27 @@ GDKinit(opt *set, int setlen, bool embedded, const char *caller_revision)
 	BBP_pid(GDKval->batCacheid) = 0;
 
 	/* store options into environment BATs */
-	for (i = 0; i < nlen; i++)
-		if (GDKsetenv(n[i].name, n[i].value) != GDK_SUCCEED) {
-			TRC_CRITICAL(GDK, "GDKsetenv %s failed", n[i].name);
-			free(n);
+	for (i = 0; i < setlen; i++) {
+		if (set[i].kind == opt_builtin &&
+		    GDKsetenv(set[i].name, set[i].value) != GDK_SUCCEED) {
+			TRC_CRITICAL(GDK, "GDKsetenv %s failed", set[i].name);
 			return GDK_FAIL;
 		}
-	free(n);
+	}
+	for (i = 0; i < setlen; i++) {
+		if (set[i].kind == opt_config &&
+		    GDKsetenv(set[i].name, set[i].value) != GDK_SUCCEED) {
+			TRC_CRITICAL(GDK, "GDKsetenv %s failed", set[i].name);
+			return GDK_FAIL;
+		}
+	}
+	for (i = 0; i < setlen; i++) {
+		if (set[i].kind == opt_cmdline &&
+		    GDKsetenv(set[i].name, set[i].value) != GDK_SUCCEED) {
+			TRC_CRITICAL(GDK, "GDKsetenv %s failed", set[i].name);
+			return GDK_FAIL;
+		}
+	}
 
 	if (GDKgetenv_int("gdk_nr_threads", 0) != 0) {
 		GDKnr_threads = GDKgetenv_int("gdk_nr_threads", 0);

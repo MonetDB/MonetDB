@@ -330,44 +330,84 @@ wmain(int argc, wchar_t **argv)
 	bool inmemory = false;
 	bool readpwdxit = false;
 	static const char in_memory[] = "in-memory";
+	enum options {
+		/* options that correspond to short options */
+		opt_CONFIG = 'c',
+		opt_DEBUG = 'd',
+		opt_READONLY = 'r',
+		opt_SET = 's',
+
+		/* options only available as long options */
+		opt_DBEXTRA = 1000,
+		opt_DBTEMP,
+		opt_DBPATH,
+		opt_DBTRACE,
+		opt_IN_MEMORY,
+		opt_SINGLE_USER,
+		opt_LOGGING,
+		opt_ALGORITHMS,
+		opt_FORCEMITO,
+		opt_HEAPS,
+		opt_IO,
+		opt_MEMORY,
+		opt_MODULES,
+		opt_PERFORMANCE,
+		opt_PROPERTIES,
+		opt_THREADS,
+		opt_TRANSACTIONS,
+		opt_LOADMODULE,
+		opt_WITHOUT_GEOM,
+		opt_PIPELINE,
+		opt_READ_PASSWORD_INITIALIZE_AND_EXIT,
+		opt_PROCESS_WAL_AND_EXIT,
+		opt_CLEAN_BBP,
+		opt_ACCEPT_THE_RISKS_RUNNING_AS_ROOT,
+		opt_VERSION,
+		opt_HELP,
+	};
 	static const struct option long_options[] = {
-		{"config", required_argument, NULL, 'c'},
-		{"dbextra", required_argument, NULL, 0},
-		{"dbtemp", required_argument, NULL, 0},
-		{"dbpath", required_argument, NULL, 0},
-		{"dbtrace", required_argument, NULL, 0},
-		{"debug", optional_argument, NULL, 'd'},
-		{"help", no_argument, NULL, '?'},
-		{"in-memory", no_argument, NULL, 0},
-		{"readonly", no_argument, NULL, 'r'},
-		{"set", required_argument, NULL, 's'},
-		{"single-user", no_argument, NULL, 0},
-		{"version", no_argument, NULL, 0},
+		/* last field uniquely identifies option
+		 * if letter, option is equivalent to short form option */
+		{"config", required_argument, NULL, opt_CONFIG},
+		{"dbextra", required_argument, NULL, opt_DBEXTRA},
+		{"dbtemp", required_argument, NULL, opt_DBTEMP},
+		{"dbpath", required_argument, NULL, opt_DBPATH},
+		{"dbtrace", required_argument, NULL, opt_DBTRACE},
+		{"debug", optional_argument, NULL, opt_DEBUG},
+		{"in-memory", no_argument, NULL, opt_IN_MEMORY},
+		{"readonly", no_argument, NULL, opt_READONLY},
+		{"set", required_argument, NULL, opt_SET},
+		{"single-user", no_argument, NULL, opt_SINGLE_USER},
 
-		{"logging", required_argument, NULL, 0},
+		{"logging", required_argument, NULL, opt_LOGGING},
 
-		{"algorithms", no_argument, NULL, 0},
-		{"forcemito", no_argument, NULL, 0},
-		{"heaps", no_argument, NULL, 0},
-		{"io", no_argument, NULL, 0},
-		{"memory", no_argument, NULL, 0},
-		{"modules", no_argument, NULL, 0},
-		{"performance", no_argument, NULL, 0},
-		{"properties", no_argument, NULL, 0},
-		{"threads", no_argument, NULL, 0},
-		{"transactions", no_argument, NULL, 0},
+		{"algorithms", no_argument, NULL, opt_ALGORITHMS},
+		{"forcemito", no_argument, NULL, opt_FORCEMITO},
+		{"heaps", no_argument, NULL, opt_HEAPS},
+		{"io", no_argument, NULL, opt_IO},
+		{"memory", no_argument, NULL, opt_MEMORY},
+		{"modules", no_argument, NULL, opt_MODULES},
+		{"performance", no_argument, NULL, opt_PERFORMANCE},
+		{"properties", no_argument, NULL, opt_PROPERTIES},
+		{"threads", no_argument, NULL, opt_THREADS},
+		{"transactions", no_argument, NULL, opt_TRANSACTIONS},
 
-		{"loadmodule", required_argument, NULL, 0},
-		{"without-geom", no_argument, NULL, 0},
-		{"pipeline", no_argument, NULL, 0},
+		{"loadmodule", required_argument, NULL, opt_LOADMODULE},
+		{"without-geom", no_argument, NULL, opt_WITHOUT_GEOM},
+		{"pipeline", no_argument, NULL, opt_PIPELINE},
 
-		{"read-password-initialize-and-exit", no_argument, NULL, 0},
-		{"process-wal-and-exit", no_argument, NULL, 0},
-		{"clean-BBP", no_argument, NULL, 0},
+		{"read-password-initialize-and-exit", no_argument, NULL,
+		 opt_READ_PASSWORD_INITIALIZE_AND_EXIT},
+		{"process-wal-and-exit", no_argument, NULL,
+		 opt_PROCESS_WAL_AND_EXIT},
+		{"clean-BBP", no_argument, NULL, opt_CLEAN_BBP},
 
 #ifdef HAVE_GETUID
-		{"accept-the-risks-running-as-root", no_argument, NULL, 0},
+		{"accept-the-risks-running-as-root", no_argument, NULL,
+		 opt_ACCEPT_THE_RISKS_RUNNING_AS_ROOT},
 #endif
+		{"version", no_argument, NULL, opt_VERSION},
+		{"help", no_argument, NULL, opt_HELP},
 
 		{NULL, 0, NULL, 0}
 	};
@@ -429,233 +469,18 @@ wmain(int argc, wchar_t **argv)
 #endif
 
 	for (;;) {
-		int option_index = 0;
-
 		int c = getopt_long(argc, av, "c:d::rs:?",
-				    long_options, &option_index);
+				    long_options, NULL);
 
 		if (c == -1)
 			break;
 
 		switch (c) {
-		case 0:
-#ifdef HAVE_GETUID
-			if (strcmp(long_options[option_index].name, "accept-the-risks-running-as-root") == 0) {
-				allow_root = true;
-				break;
-			}
-#endif
-			if (strcmp(long_options[option_index].name, in_memory) == 0) {
-				inmemory = true;
-				break;
-			}
-			if (strcmp(long_options[option_index].name, "dbpath") == 0) {
-				size_t optarglen = strlen(optarg);
-				/* remove trailing directory separator */
-				while (optarglen > 0
-				       && (optarg[optarglen - 1] == '/'
-					   || optarg[optarglen - 1] == '\\'))
-					optarg[--optarglen] = '\0';
-				dbpath = absolute_path(optarg);
-				if (dbpath == NULL) {
-					fprintf(stderr,
-						"#error: can not allocate memory for dbpath\n");
-					exit(1);
-				}
-				if (strlen(dbpath) >= FILENAME_MAX - 45) {
-					fprintf(stderr, "#error: dbpath name too long\n");
-					exit(1);
-				}
-				setlen = mo_add_option(&set, setlen, opt_cmdline,
-						       "gdk_dbpath", dbpath);
-				break;
-			}
-			if (strcmp(long_options[option_index].name, "dbextra") == 0) {
-				if (dbextra) {
-					fprintf(stderr,
-						"#warning: ignoring multiple --dbextra arguments\n");
-					break;
-				}
-				if (strcmp(optarg, in_memory) == 0) {
-					dbextra = (char *) in_memory;
-				} else {
-					size_t optarglen = strlen(optarg);
-					/* remove trailing directory separator */
-					while (optarglen > 0
-					       && (optarg[optarglen - 1] == '/'
-						   || optarg[optarglen - 1] == '\\'))
-						optarg[--optarglen] = '\0';
-					dbextra = absolute_path(optarg);
-					if (dbextra == NULL) {
-						fprintf(stderr,
-							"#error: can not allocate memory for dbextra\n");
-						exit(1);
-					}
-					if (strlen(dbextra) >= FILENAME_MAX - 45) {
-						fprintf(stderr, "#error: dbextra name too long\n");
-						exit(1);
-					}
-				}
-				break;
-			}
-			if (strcmp(long_options[option_index].name, "dbtemp") == 0) {
-				if (dbtemp) {
-					fprintf(stderr,
-						"#warning: ignoring multiple --dbtemp arguments\n");
-					break;
-				}
-				if (strcmp(optarg, in_memory) == 0) {
-					dbtemp = (char *) in_memory;
-				} else {
-					size_t optarglen = strlen(optarg);
-					/* remove trailing directory separator */
-					while (optarglen > 0
-					       && (optarg[optarglen - 1] == '/'
-						   || optarg[optarglen - 1] == '\\'))
-						optarg[--optarglen] = '\0';
-					dbtemp = absolute_path(optarg);
-					if (dbtemp == NULL) {
-						fprintf(stderr,
-							"#error: can not allocate memory for dbtemp\n");
-						exit(1);
-					}
-					if (strlen(dbtemp) >= FILENAME_MAX - 45) {
-						fprintf(stderr, "#error: dbtemp name too long\n");
-						exit(1);
-					}
-				}
-				break;
-			}
-
-			if (strcmp(long_options[option_index].name, "dbtrace") == 0) {
-				size_t optarglen = strlen(optarg);
-				/* remove trailing directory separator */
-				while (optarglen > 0
-				       && (optarg[optarglen - 1] == '/'
-					   || optarg[optarglen - 1] == '\\'))
-					optarg[--optarglen] = '\0';
-				if (strcmp(optarg, "stdout") == 0)
-					dbtrace = optarg;
-				else
-					dbtrace = absolute_path(optarg);
-				if (dbtrace == NULL)
-					fprintf(stderr,
-						"#error: can not allocate memory for dbtrace\n");
-				else
-					setlen = mo_add_option(&set, setlen, opt_cmdline,
-							       "gdk_dbtrace", dbtrace);
-				break;
-			}
-
-			if (strcmp(long_options[option_index].name, "single-user") == 0) {
-				setlen = mo_add_option(&set, setlen, opt_cmdline,
-						       "gdk_single_user", "yes");
-				break;
-			}
-			if (strcmp(long_options[option_index].name, "version") == 0) {
-				monet_version();
-				exit(0);
-			}
-			if (strcmp(long_options[option_index].name, "logging") == 0) {
-				char *tmp = strchr(optarg, '=');
-				if (tmp) {
-					*tmp = 0;
-					if (GDKtracer_set_component_level(optarg, tmp + 1) != GDK_SUCCEED) {
-						fprintf(stderr, "WARNING: could not set logging component %s to %s\n",
-							optarg, tmp + 1);
-					}
-				} else {
-					fprintf(stderr, "ERROR: --logging flag requires component=level argument\n");
-				}
-				break;
-			}
-			/* debugging options */
-			if (strcmp(long_options[option_index].name, "pipeline") == 0) {
-				default_pipeline_mode = true;
-				break;
-			}
-			if (strcmp(long_options[option_index].name, "algorithms") == 0) {
-				grpdebug |= GRPalgorithms;
-				break;
-			}
-			if (strcmp(long_options[option_index].name, "forcemito") == 0) {
-				grpdebug |= GRPforcemito;
-				break;
-			}
-			if (strcmp(long_options[option_index].name, "heaps") == 0) {
-				grpdebug |= GRPheaps;
-				break;
-			}
-			if (strcmp(long_options[option_index].name, "io") == 0) {
-				grpdebug |= GRPio;
-				break;
-			}
-			if (strcmp(long_options[option_index].name, "memory") == 0) {
-				grpdebug |= GRPmemory;
-				break;
-			}
-			if (strcmp(long_options[option_index].name, "modules") == 0) {
-				grpdebug |= GRPmodules;
-				break;
-			}
-			if (strcmp(long_options[option_index].name, "performance") == 0) {
-				grpdebug |= GRPperformance;
-				break;
-			}
-			if (strcmp(long_options[option_index].name, "properties") == 0) {
-				grpdebug |= GRPproperties;
-				break;
-			}
-			if (strcmp(long_options[option_index].name, "threads") == 0) {
-				grpdebug |= GRPthreads;
-				break;
-			}
-			if (strcmp(long_options[option_index].name, "transactions") == 0) {
-				grpdebug |= GRPtransactions;
-				break;
-			}
-			if (strcmp(long_options[option_index].name, "read-password-initialize-and-exit") == 0) {
-				readpwdxit = true;
-				break;
-			}
-			if (strcmp(long_options[option_index].name, "process-wal-and-exit") == 0) {
-				setlen = mo_add_option(&set, setlen, opt_cmdline,
-						       "process-wal-and-exit", "yes");
-				break;
-			}
-			if (strcmp(long_options[option_index].name, "clean-BBP") == 0) {
-				setlen = mo_add_option(&set, setlen, opt_cmdline,
-						       "clean-BBP", "yes");
-				break;
-			}
-			if (strcmp(long_options[option_index].name, "loadmodule") == 0) {
-				if (mods < MAX_MODULES)
-					modules[mods++] = optarg;
-				else
-					fprintf(stderr,
-						"ERROR: maximum number of modules reached\n");
-				break;
-			}
-			if (strcmp(long_options[option_index].name, "without-geom") == 0) {
-				for (int i = 0; i < mods; i++) {
-					if (strcmp(modules[i], "geom") == 0) {
-						while (i + 1 < mods) {
-							modules[i] = modules[i + 1];
-							i++;
-						}
-						mods--;
-						break;
-					}
-				}
-				break;
-			}
-			usage(prog, -1);
-			/* not reached */
-		case 'c':
+		case opt_CONFIG:
 			/* coverity[var_deref_model] */
 			setlen = mo_add_option(&set, setlen, opt_cmdline, "config", optarg);
 			break;
-		case 'd':
+		case opt_DEBUG:
 			if (optarg) {
 				char *endarg;
 				debug |= strtoul(optarg, &endarg, 10);
@@ -668,11 +493,11 @@ wmain(int argc, wchar_t **argv)
 				debug |= CHECKMASK;
 			}
 			break;
-		case 'r':
+		case opt_READONLY:
 			setlen = mo_add_option(&set, setlen, opt_cmdline, "gdk_readonly",
 					       "yes");
 			break;
-		case 's':{
+		case opt_SET: {
 			/* should add option to a list */
 			/* coverity[var_deref_model] */
 			char *tmp = strchr(optarg, '=');
@@ -685,17 +510,201 @@ wmain(int argc, wchar_t **argv)
 				fprintf(stderr, "ERROR: wrong format %s\n", optarg);
 			break;
 		}
+		case opt_DBEXTRA:
+			if (dbextra) {
+				fprintf(stderr,
+					"#warning: ignoring multiple --dbextra arguments\n");
+				break;
+			}
+			if (strcmp(optarg, in_memory) == 0) {
+				dbextra = (char *) in_memory;
+			} else {
+				size_t optarglen = strlen(optarg);
+				/* remove trailing directory separator */
+				while (optarglen > 0
+				       && (optarg[optarglen - 1] == '/'
+					   || optarg[optarglen - 1] == '\\'))
+					optarg[--optarglen] = '\0';
+				dbextra = absolute_path(optarg);
+				if (dbextra == NULL) {
+					fprintf(stderr,
+						"#error: can not allocate memory for dbextra\n");
+					exit(1);
+				}
+				if (strlen(dbextra) >= FILENAME_MAX - 45) {
+					fprintf(stderr, "#error: dbextra name too long\n");
+					exit(1);
+				}
+			}
+			break;
+		case opt_DBTEMP:
+			if (dbtemp) {
+				fprintf(stderr,
+					"#warning: ignoring multiple --dbtemp arguments\n");
+				break;
+			}
+			if (strcmp(optarg, in_memory) == 0) {
+				dbtemp = (char *) in_memory;
+			} else {
+				size_t optarglen = strlen(optarg);
+				/* remove trailing directory separator */
+				while (optarglen > 0
+				       && (optarg[optarglen - 1] == '/'
+					   || optarg[optarglen - 1] == '\\'))
+					optarg[--optarglen] = '\0';
+				dbtemp = absolute_path(optarg);
+				if (dbtemp == NULL) {
+					fprintf(stderr,
+						"#error: can not allocate memory for dbtemp\n");
+					exit(1);
+				}
+				if (strlen(dbtemp) >= FILENAME_MAX - 45) {
+					fprintf(stderr, "#error: dbtemp name too long\n");
+					exit(1);
+				}
+			}
+			break;
+		case opt_DBPATH:
+			/* remove trailing directory separator */
+			for (size_t optarglen = strlen(optarg);
+			     optarglen > 0
+				     && (optarg[optarglen - 1] == '/'
+					 || optarg[optarglen - 1] == '\\');
+			     optarglen--)
+				optarg[optarglen - 1] = '\0';
+			dbpath = absolute_path(optarg);
+			if (dbpath == NULL) {
+				fprintf(stderr,
+					"#error: can not allocate memory for dbpath\n");
+				exit(1);
+			}
+			if (strlen(dbpath) >= FILENAME_MAX - 45) {
+				fprintf(stderr, "#error: dbpath name too long\n");
+				exit(1);
+			}
+			setlen = mo_add_option(&set, setlen, opt_cmdline,
+					       "gdk_dbpath", dbpath);
+			break;
+		case opt_DBTRACE:
+			/* remove trailing directory separator */
+			for (size_t optarglen = strlen(optarg);
+			     optarglen > 0
+				     && (optarg[optarglen - 1] == '/'
+					 || optarg[optarglen - 1] == '\\');
+			     optarglen--)
+				optarg[optarglen - 1] = '\0';
+			if (strcmp(optarg, "stdout") == 0)
+				dbtrace = optarg;
+			else
+				dbtrace = absolute_path(optarg);
+			if (dbtrace == NULL)
+				fprintf(stderr,
+					"#error: can not allocate memory for dbtrace\n");
+			else
+				setlen = mo_add_option(&set, setlen, opt_cmdline,
+						       "gdk_dbtrace", dbtrace);
+			break;
+		case opt_IN_MEMORY:
+			inmemory = true;
+			break;
+		case opt_SINGLE_USER:
+			setlen = mo_add_option(&set, setlen, opt_cmdline,
+					       "gdk_single_user", "yes");
+			break;
+		case opt_VERSION:
+			monet_version();
+			exit(0);
+		case opt_LOGGING: {
+			char *tmp = strchr(optarg, '=');
+			if (tmp) {
+				*tmp = 0;
+				if (GDKtracer_set_component_level(optarg, tmp + 1) != GDK_SUCCEED) {
+					fprintf(stderr, "WARNING: could not set logging component %s to %s\n",
+						optarg, tmp + 1);
+				}
+			} else {
+				fprintf(stderr, "ERROR: --logging flag requires component=level argument\n");
+			}
+			break;
+		}
+		/* debugging options */
+		case opt_ALGORITHMS:
+			grpdebug |= GRPalgorithms;
+			break;
+		case opt_FORCEMITO:
+			grpdebug |= GRPforcemito;
+			break;
+		case opt_HEAPS:
+			grpdebug |= GRPheaps;
+			break;
+		case opt_IO:
+			grpdebug |= GRPio;
+			break;
+		case opt_MEMORY:
+			grpdebug |= GRPmemory;
+			break;
+		case opt_MODULES:
+			grpdebug |= GRPmodules;
+			break;
+		case opt_PERFORMANCE:
+			grpdebug |= GRPperformance;
+			break;
+		case opt_PROPERTIES:
+			grpdebug |= GRPproperties;
+			break;
+		case opt_THREADS:
+			grpdebug |= GRPthreads;
+			break;
+		case opt_TRANSACTIONS:
+			grpdebug |= GRPtransactions;
+			break;
+		case opt_LOADMODULE:
+			if (mods < MAX_MODULES)
+				modules[mods++] = optarg;
+			else
+				fprintf(stderr,
+					"ERROR: maximum number of modules reached\n");
+			break;
+		case opt_WITHOUT_GEOM:
+			for (int i = 0; i < mods; i++) {
+				if (strcmp(modules[i], "geom") == 0) {
+					while (i + 1 < mods) {
+						modules[i] = modules[i + 1];
+						i++;
+					}
+					mods--;
+					break;
+				}
+			}
+			break;
+		case opt_PIPELINE:
+			default_pipeline_mode = true;
+			break;
+		case opt_READ_PASSWORD_INITIALIZE_AND_EXIT:
+			readpwdxit = true;
+			break;
+		case opt_PROCESS_WAL_AND_EXIT:
+			setlen = mo_add_option(&set, setlen, opt_cmdline,
+					       "process-wal-and-exit", "yes");
+			break;
+		case opt_CLEAN_BBP:
+			setlen = mo_add_option(&set, setlen, opt_cmdline,
+					       "clean-BBP", "yes");
+			break;
+#ifdef HAVE_GETUID
+		case opt_ACCEPT_THE_RISKS_RUNNING_AS_ROOT:
+			allow_root = true;
+			break;
+#endif
+		case opt_HELP:
+			usage(prog, 0);
+			/* not reached */
 		case '?':
-			/* a bit of a hack: look at the option that the
-			   current `c' is based on and see if we recognize
-			   it: if -? or --help, exit with 0, else with -1 */
-			usage(prog, strcmp(av[optind - 1], "-?") == 0
-			      || strcmp(av[optind - 1], "--help") == 0 ? 0 : -1);
+			usage(prog, optopt == 0 ? 0 : -1);
+			/* not reached */
 		default:
-			fprintf(stderr,
-				"ERROR: getopt returned character " "code '%c' 0%o\n", c,
-				(unsigned) (uint8_t) c);
 			usage(prog, -1);
+			/* not reached */
 		}
 	}
 

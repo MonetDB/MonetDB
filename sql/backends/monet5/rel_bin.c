@@ -5550,11 +5550,11 @@ insert_check_ukey(backend *be, list *inserts, sql_key *k, stmt *idx_inserts)
 			s = stmt_join(be, s, h, 0, cmp_equal, 0, k->type == unndkey? 1: 0, false);
 			/* s should be empty */
 			s = stmt_result(be, s, 0);
-			s = stmt_aggr(be, s, NULL, NULL, cnt, 1, 0, 1);
+			s = stmt_aggr_nopp(be, s, NULL, NULL, cnt, 1, 0, 1);
 		} else {
 			s = stmt_uselect(be, s, h, cmp_equal, NULL, 0, k->type == unndkey? 1: 0);
 			/* s should be empty */
-			s = stmt_aggr(be, s, NULL, NULL, cnt, 1, 0, 1);
+			s = stmt_aggr_nopp(be, s, NULL, NULL, cnt, 1, 0, 1);
 		}
 		/* s should be empty */
 		s = stmt_binop(be, s, stmt_atom_lng(be, 0), NULL, ne);
@@ -5790,7 +5790,7 @@ sql_insert_check_null(backend *be, sql_table *t, list *inserts)
 				s = stmt_selectnil(be, column(be, i), NULL);
 				if (!cnt)
 					cnt = sql_bind_func(sql, "sys", "count", sql_fetch_localtype(TYPE_void), NULL, F_AGGR, true, true);
-				s = stmt_aggr(be, s, NULL, NULL, cnt, 1, 0, 1);
+				s = stmt_aggr_nopp(be, s, NULL, NULL, cnt, 1, 0, 1);
 			} else {
 				sql_subfunc *isnil = sql_bind_func(sql, "sys", "isnull", &c->type, NULL, F_FUNC, true, true);
 
