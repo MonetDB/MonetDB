@@ -1562,17 +1562,17 @@ uniques_guess(Client c, lng *guess, const bat *bid)
 	/* *guess = llroundl(bat_uniques_guess(b, &bi, NULL)); */
 
 	BATiter bi = bat_iterator(b);
+	printf("from the iter field struct %lld\n", llroundl(bi.unique_est));
+	printf("from the bat field struct %lld\n", llroundl(b->tunique_est));
 	struct canditer bci;
 	canditer_init(&bci, b, NULL);
 	uint8_t sketch[BUCKETS][CLZ_BUCKETS] = {0};
-	/* uint8_t (*sketch_ptr)[CLZ_BUCKETS] = sketch; */
+
 	gdk_return rc = bat_sketch(&bi, &bci, sketch);
-	if (rc == GDK_SUCCEED) {
-		/* printf("uniques_guess estimating for bat id %d\n", b->batCacheid); */
+	if (rc == GDK_SUCCEED)
 		*guess = llroundl(sketch_estimate(sketch));
-	} else {
+	else
 		*guess = -1;
-	}
 
 	bat_iterator_end(&bi);
 	BBPreclaim(b);

@@ -4069,6 +4069,7 @@ BBPbackup(BAT *b, bool subcommit)
 	if (b->oldtail && b->oldtail != (Heap *) 1) {
 		bi.h = b->oldtail;
 		bi.hdirty = b->oldtail->dirty;
+		bi.skhdirty = b->oldtail->dirty;
 	}
 	bat_iterator_incref(&bi);
 	MT_lock_unset(&b->theaplock);
@@ -4078,6 +4079,8 @@ BBPbackup(BAT *b, bool subcommit)
 		rc = do_backup(bi.h, bi.hdirty, subcommit);
 		if (rc == GDK_SUCCEED && bi.vh != NULL && !bi.ustr)
 			rc = do_backup(bi.vh, bi.vhdirty, subcommit);
+		if (rc == GDK_SUCCEED && bi.skh != NULL)
+			rc = do_backup(bi.skh, bi.skhdirty, subcommit);
 	}
 	bat_iterator_end(&bi);
 	return rc;

@@ -2344,6 +2344,7 @@ typedef struct BATiter {
 		revsorted:1,
 		hdirty:1,
 		vhdirty:1,
+		skhdirty:1,
 		copiedtodisk:1,
 		transient:1,
 		ascii:1;
@@ -2412,6 +2413,10 @@ bat_iterator_nolock(BAT *b)
 			.vhdirty = b->tvheap &&
 				b->tvheap->parentid == b->batCacheid &&
 				b->tvheap->dirty,
+			/* also, if there is no tsketch, it's not dirty */
+			.skhdirty = b->tsketch &&
+				b->tsketch->parentid == b->batCacheid &&
+				b->tsketch->dirty,
 			.copiedtodisk = b->batCopiedtodisk,
 			.transient = b->batTransient,
 			.restricted = b->batRestricted,
@@ -2432,6 +2437,8 @@ bat_iterator_incref(BATiter *bi)
 	HEAPincref(bi->h);
 	if (bi->vh)
 		HEAPincref(bi->vh);
+	if (bi->skh)
+		HEAPincref(bi->skh);
 }
 
 static inline BATiter
@@ -2488,6 +2495,8 @@ bat_iterator_copy(const BATiter *bip)
 		HEAPincref(bip->h);
 	if (bip->vh)
 		HEAPincref(bip->vh);
+	if (bip->skh)
+		HEAPincref(bip->skh);
 	return *bip;
 }
 
@@ -2501,6 +2510,8 @@ bat_iterator_end(BATiter *bip)
 		HEAPdecref(bip->h, false);
 	if (bip->vh)
 		HEAPdecref(bip->vh, false);
+	if (bip->skh)
+		HEAPdecref(bip->skh, false);
 	*bip = (BATiter) {0};
 }
 

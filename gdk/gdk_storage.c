@@ -684,7 +684,8 @@ BATsave_iter(BAT *b, BATiter *bi, BUN size)
 	}
 	/* views cannot be saved */
 	if ((bi->h != NULL && bi->h->parentid != b->batCacheid) ||
-	    (bi->vh != NULL && bi->vh->parentid != b->batCacheid && bi->vh->parentid != b->ustr)) {
+	    (bi->vh != NULL && bi->vh->parentid != b->batCacheid && bi->vh->parentid != b->ustr) ||
+	    (bi->skh != NULL && bi->skh->parentid != b->batCacheid)) {
 		if (locked)
 			MT_rwlock_rdunlock(&b->thashlock);
 		GDKerror("%s is a view on %s; cannot be saved\n", BATgetId(b), BBP_logical(VIEWtparent(b)));
@@ -771,7 +772,9 @@ BATsave_iter(BAT *b, BATiter *bi, BUN size)
 		    && ATOMvarsized(bi->type)
 		    && err == GDK_SUCCEED)
 			err = HEAPsave(bi->vh, nme, "theap", dosync, bi->vhfree, bi->type == TYPE_msk ? NULL : &b->theaplock);
-		if (err == GDK_SUCCEED && bi->skh)
+		if (err == GDK_SUCCEED
+		    && bi->skh
+		    && (!bi->copiedtodisk || bi->skhdirty))
 			err = HEAPsave(bi->skh, nme, "tsketch", dosync, SKETCH_SIZE, &b->theaplock);
 	}
 
@@ -870,6 +873,7 @@ BATload_intern(bat bid, bool lock)
 				return NULL;
 			} else {
 				b->tunique_est = sketch_estimate((uint8_t (*)[CLZ_BUCKETS]) b->tsketch->base);
+				printf("BATload_intern estimating %f for bat id %d\n", b->tunique_est, b->batCacheid);
 			}
 		}
 	} else {
