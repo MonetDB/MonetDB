@@ -1619,7 +1619,8 @@ LALGgroup(Client ctx, bat *rid, bat *uid, bat *bid)
 	MT_lock_set(&b->theaplock);
 	if ((ATOMvarsized(u->ttype) && !VIEWvtparent(b)) ||
 	    (ATOMvarsized(u->ttype) && BATcount(b) && u->tvheap->parentid != u->batCacheid && u->tvheap->parentid != b->tvheap->parentid) ||
-		(ATOMvarsized(u->ttype) && u->twidth != b->twidth)) {
+		(ATOMvarsized(u->ttype) && u->twidth != b->twidth) ||
+		(ATOMvarsized(u->ttype) && BATcount(b) && BATcount(u) == 0 && u->tvheap->parentid == u->batCacheid && BBPquickdesc(VIEWvtparent(b))->batRole != PERSISTENT)) {
 		local_storage = true;
 		MT_lock_unset(&b->theaplock);
 		MT_lock_unset(&u->theaplock);
@@ -1906,7 +1907,8 @@ LALGderive(Client ctx, bat *rid, bat *uid, bat *Gid, bat *Ph, bat *bid)
 	MT_lock_set(&b->theaplock);
 	if ((ATOMvarsized(u->ttype) && !VIEWvtparent(b)) ||
 	    (ATOMvarsized(u->ttype) && BATcount(b) && u->tvheap->parentid != u->batCacheid && u->tvheap->parentid != b->tvheap->parentid) ||
-		(ATOMvarsized(u->ttype) && u->twidth != b->twidth)) {
+		(ATOMvarsized(u->ttype) && u->twidth != b->twidth) ||
+		(ATOMvarsized(u->ttype) && BATcount(b) && BATcount(u) == 0 && u->tvheap->parentid == u->batCacheid && BBPquickdesc(VIEWvtparent(b))->batRole != PERSISTENT)) {
 		local_storage = true;
 		MT_lock_unset(&b->theaplock);
 		MT_lock_unset(&u->theaplock);
