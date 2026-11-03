@@ -2371,6 +2371,7 @@ rewrite_anyequal(visitor *v, sql_rel *rel, sql_exp *e, int depth)
 					(void)rewrite_inner(sql, rel, rsq, op, &rewrite, NULL);
 					exp_reset_props(rewrite, re, is_left(rewrite->op));
 				}
+				tomarkjoin &= (MT_thread_get_qry_ctx()->pipeline_mode);
 				if (!rewrite)
 					return NULL;
 				sql_exp *inexp;
