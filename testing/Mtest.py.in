@@ -2424,10 +2424,12 @@ def killchildren(pid, procs=None):
     if procs is None:
         try:
             os.killpg(pid, signal.SIGKILL)
+            print(f'sent SIGKILL to process group {pid}', file=sys.stderr)
             return
         except AttributeError:
             try:
                 os.kill(-pid, signal.SIGKILL)
+                print(f'sent SIGKILL to process group {pid}', file=sys.stderr)
                 return
             except OSError:
                 pass
@@ -2440,6 +2442,7 @@ def killchildren(pid, procs=None):
         print('killing process %d' % pid)
     try:
         os.kill(pid, signal.SIGKILL)
+        print(f'sent SIGKILL to process {pid}', file=sys.stderr)
     except OSError:
         if procdebug:
             print('killing process %d failed' % pid)

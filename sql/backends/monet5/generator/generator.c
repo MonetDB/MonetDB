@@ -1233,7 +1233,7 @@ VLTgenerator_thetasubselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 		}																\
 		v = (TPE*) Tloc(bn,0);											\
 		for(; cnt-- > 0; o++){											\
-			oid oi = BUNtoid(b, o);										\
+			oid oi = fetchtoid(b, o);										\
 			if (is_oid_nil(oi)) {										\
 				val = TPE##_nil;										\
 			} else {													\
@@ -1331,7 +1331,7 @@ VLTgenerator_projection(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			v = (date*) Tloc(bn,0);
 
 			for(; cnt-- > 0; o++){
-				t = ((int) BUNtoid(b, o)) * s;
+				t = ((int) fetchtoid(b, o)) * s;
 				val = date_add_month(f, t);
 				if (is_date_nil(val)) {
 					BBPunfix(b->batCacheid);
@@ -1372,7 +1372,7 @@ VLTgenerator_projection(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			v = (date*) Tloc(bn,0);
 
 			for(; cnt-- > 0; o++){
-				t = ((int) BUNtoid(b, o)) * s;
+				t = ((int) fetchtoid(b, o)) * s;
 				val = date_add_day(f, (int) t);
 				if (is_date_nil(val)) {
 					BBPunfix(b->batCacheid);
@@ -1417,7 +1417,7 @@ VLTgenerator_projection(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			v = (timestamp*) Tloc(bn,0);
 
 			for(; cnt-- > 0; o++){
-				t = ((lng) BUNtoid(b, o)) * s;
+				t = ((lng) fetchtoid(b, o)) * s;
 				val = timestamp_add_usec(f, t);
 				if (is_timestamp_nil(val)) {
 					BBPunfix(b->batCacheid);

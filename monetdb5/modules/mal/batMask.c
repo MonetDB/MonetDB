@@ -51,8 +51,8 @@ MSKmask(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		BUN cap;
 		BUN max = 0;
 		if (b->tsorted) {
-			fst = BUNtoid(b, 0);
-			dst = COLnew(fst, TYPE_msk, BUNtoid(b, BATcount(b) - 1) + 1 - fst,
+			fst = fetchtoid(b, 0);
+			dst = COLnew(fst, TYPE_msk, fetchtoid(b, BATcount(b) - 1) + 1 - fst,
 						 TRANSIENT);
 		} else {
 			fst = 0;
@@ -62,7 +62,7 @@ MSKmask(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		if (dst) {
 			memset(Tloc(dst, 0), 0, dst->theap->size);
 			for (BUN p = 0; p < BATcount(b); p++) {
-				oid o = BUNtoid(b, p);
+				oid o = fetchtoid(b, p);
 				if (is_oid_nil(o)) {
 					BBPunfix(b->batCacheid);
 					BBPreclaim(dst);

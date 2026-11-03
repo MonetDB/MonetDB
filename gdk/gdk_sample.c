@@ -250,7 +250,10 @@ BATsample_with_seed(BAT *b, BUN n, uint64_t seed)
 	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
 	init_random_state_engine(rse, seed);
 
-	BAT *bn = do_batsample(b->hseqbase, BATcount(b), n, rse);
+	MT_lock_set(&b->theaplock);
+	BUN cnt = BATcount(b);
+	MT_lock_unset(&b->theaplock);
+	BAT *bn = do_batsample(b->hseqbase, cnt, n, rse);
 	TRC_DEBUG(ALGO, ALGOBATFMT "," BUNFMT " -> " ALGOOPTBATFMT
 		  " (" LLFMT " usec)\n",
 		  ALGOBATPAR(b), n, ALGOOPTBATPAR(bn), GDKusec() - t0);

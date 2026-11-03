@@ -1699,7 +1699,7 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 	 * large; check for existence of hash last since that may
 	 * involve I/O */
 	if ((equi || antiequi) && !bi.sorted && !bi.revsorted) {
-		double cost = joincost(b, true, 1, &ci, &havehash, &phash, NULL);
+		double cost = joincost(&bi, true, 1, &ci, &havehash, &phash, NULL);
 		if (cost > 0 && cost < ci.ncand) {
 			wanthash = true;
 			if (havehash) {

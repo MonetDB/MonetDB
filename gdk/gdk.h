@@ -2311,6 +2311,7 @@ typedef struct BATiter {
 	Heap *vh;
 	BUN count;
 	BUN baseoff;
+	oid hseq;
 	oid tseq;
 	BUN hfree, vhfree;
 	BUN nokey[2];
@@ -2331,11 +2332,12 @@ typedef struct BATiter {
 		copiedtodisk:1,
 		transient:1,
 		ascii:1;
-	bat ustr;
 	restrict_t restricted:2;
 #ifndef NDEBUG
 	bool locked:1;
 #endif
+	bat id;
+	bat ustr;
 	union {
 		oid tvid;
 		bool tmsk;
@@ -2350,6 +2352,7 @@ bat_iterator_nolock(BAT *b)
 		const bool isview = VIEWtparent(b) != 0;
 		return (BATiter) {
 			.b = b,
+			.id = b->batCacheid,
 			.h = b->theap,
 			.base = b->theap->base
 				? b->theap->base + (b->tbaseoff << b->tshift)
@@ -2360,6 +2363,7 @@ bat_iterator_nolock(BAT *b)
 			.width = b->twidth,
 			.shift = b->tshift,
 			.type = b->ttype,
+			.hseq = b->hseqbase,
 			.tseq = b->tseqbase,
 			/* don't use b->theap->free in case b is a slice */
 			.hfree = b->ttype
@@ -2485,6 +2489,15 @@ bat_iterator_end(BATiter *bip)
 	if (bip->vh)
 		HEAPdecref(bip->vh, false);
 	*bip = (BATiter) {0};
+}
+
+ATTR_PURE
+static inline bat
+VIEWtparentbi(const BATiter *bi)
+{
+	return bi->h == NULL || bi->h->parentid == bi->id
+		? 0
+		: bi->h->parentid;
 }
 
 gdk_export gdk_return HEAP_initialize(
@@ -2914,29 +2927,35 @@ BUNtail(BATiter *bi, BUN p)
  * works with any TYPE_void or TYPE_oid bat */
 ATTR_PURE
 static inline oid
-BUNtoid(BAT *b, BUN p)
+BUNtoid(BATiter *bi, BUN p)
 {
-	assert(ATOMtype(b->ttype) == TYPE_oid);
+	assert(ATOMtype(bi->type) == TYPE_oid);
 	/* BATcount is the number of valid entries, so with
 	 * exceptions, the last value can well be larger than
-	 * b->tseqbase + BATcount(b) */
-	assert(p < BATcount(b));
-	assert(b->ttype == TYPE_void || b->tvheap == NULL);
-	if (is_oid_nil(b->tseqbase)) {
-		if (b->ttype == TYPE_void)
+	 * bi->seqbase + BATcount(b) */
+	assert(p < bi->count);
+	assert(bi->type == TYPE_void || bi->vh == NULL);
+	if (is_oid_nil(bi->tseq)) {
+		if (bi->type == TYPE_void)
 			return oid_nil;
-		MT_lock_set(&b->theaplock);
-		oid o = ((const oid *) b->theap->base)[p + b->tbaseoff];
-		MT_lock_unset(&b->theaplock);
-		return o;
+		return ((const oid *) bi->base)[p];
 	}
-	if (b->ttype == TYPE_oid || b->tvheap == NULL) {
-		return b->tseqbase + p;
+	if (bi->type == TYPE_oid || bi->vh == NULL) {
+		return bi->tseq + p;
 	}
-	/* b->tvheap != NULL, so we know there will be no parallel
-	 * modifications (so no locking) */
-	BATiter bi = bat_iterator_nolock(b);
-	return * (const oid *) BUNtpos(&bi, p);
+	/* bi->vh != NULL, so we know there will be no parallel
+	 * modifications */
+	return * (const oid *) BUNtpos(bi, p);
+}
+
+ATTR_PURE
+static inline oid
+fetchtoid(BAT *b, BUN p)
+{
+	BATiter bi = bat_iterator(b);
+	oid o = BUNtoid(&bi, p);
+	bat_iterator_end(&bi);
+	return o;
 }
 
 gdk_export BUN BATcount_no_nil(BAT *b, BAT *s);
@@ -3025,6 +3044,7 @@ BATtdense(const BAT *b)
 	return !is_oid_nil(b->tseqbase) &&
 		(b->tvheap == NULL || b->tvheap->free == 0);
 }
+
 ATTR_PURE
 static inline bool
 BATtdensebi(const BATiter *bi)
@@ -3039,6 +3059,13 @@ static inline bool
 BATtvoid(const BAT *b)
 {
 	return b->ttype == TYPE_void || BATtdense(b);
+}
+
+ATTR_PURE
+static inline bool
+BATtvoidbi(const BATiter *bi)
+{
+	return bi->type == TYPE_void || BATtdensebi(bi);
 }
 
 ATTR_PURE

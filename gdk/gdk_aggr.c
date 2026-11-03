@@ -86,7 +86,7 @@ BATgroupaggrinit2(bool pipeline,
 	} else if (e == NULL) {
 		if (g->tmaxpos != BUN_NONE) {
 			min = 0;
-			max = BUNtoid(g, g->tmaxpos);
+			max = fetchtoid(g, g->tmaxpos);
 		} else {
 			min = oid_nil;	/* note that oid_nil > 0! (unsigned) */
 			max = 0;

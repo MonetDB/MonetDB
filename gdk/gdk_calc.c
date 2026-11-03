@@ -4098,9 +4098,9 @@ BATcalcbetween(BAT *b, BAT *lo, BAT *hi, BAT *s, BAT *slo, BAT *shi,
 				i = canditer_next(&ci) - b->hseqbase;
 				j = canditer_next(&cilo) - lo->hseqbase;
 				k = canditer_next(&cihi) - hi->hseqbase;
-				dst[l] = BETWEEN(BUNtoid(b, i),
-						 BUNtoid(lo, j),
-						 BUNtoid(hi, k), oid);
+				dst[l] = BETWEEN(fetchtoid(b, i),
+						 fetchtoid(lo, j),
+						 fetchtoid(hi, k), oid);
 				nils += is_bit_nil(dst[l]);
 			}
 			BATsetcount(bn, ci.ncand);
@@ -4173,7 +4173,7 @@ BATcalcbetweencstcst(BAT *b, const ValRecord *lo, const ValRecord *hi,
 			BUN nils = 0;
 			TIMEOUT_LOOP_IDX(l, ci.ncand, qry_ctx) {
 				i = canditer_next(&ci) - b->hseqbase;
-				dst[l] = BETWEEN(BUNtoid(b, i), lo->val.oval,
+				dst[l] = BETWEEN(fetchtoid(b, i), lo->val.oval,
 						 hi->val.oval, oid);
 				nils += is_bit_nil(dst[l]);
 			}
@@ -4247,7 +4247,7 @@ BATcalcbetweenbatcst(BAT *b, BAT *lo, const ValRecord *hi, BAT *s, BAT *slo,
 			TIMEOUT_LOOP_IDX(l, ci.ncand, qry_ctx) {
 				i = canditer_next(&ci) - b->hseqbase;
 				j = canditer_next(&cilo) - lo->hseqbase;
-				dst[l] = BETWEEN(BUNtoid(b, i), BUNtoid(lo, j),
+				dst[l] = BETWEEN(fetchtoid(b, i), fetchtoid(lo, j),
 						 hi->val.oval, oid);
 				nils += is_bit_nil(dst[l]);
 			}
@@ -4327,8 +4327,8 @@ BATcalcbetweencstbat(BAT *b, const ValRecord *lo, BAT *hi, BAT *s, BAT *shi,
 			TIMEOUT_LOOP_IDX(l, ci.ncand, qry_ctx) {
 				i = canditer_next(&ci) - b->hseqbase;
 				k = canditer_next(&cihi) - hi->hseqbase;
-				dst[l] = BETWEEN(BUNtoid(b, i), lo->val.oval,
-						 BUNtoid(hi, k), oid);
+				dst[l] = BETWEEN(fetchtoid(b, i), lo->val.oval,
+						 fetchtoid(hi, k), oid);
 				nils += is_bit_nil(dst[l]);
 			}
 			BATsetcount(bn, ci.ncand);

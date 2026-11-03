@@ -3648,7 +3648,7 @@ log_delta(logger *lg, BAT *uid, BAT *uval, log_id id)
 		goto bailout;
 	}
 	for (p = 0; p < BATcount(uid) && ok == GDK_SUCCEED; p++) {
-		const oid id = BUNtoid(uid, p);
+		const oid id = fetchtoid(uid, p);
 
 		ok = wh(&id, lg->current->output_log, 1);
 	}
