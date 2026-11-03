@@ -148,12 +148,27 @@ sketch_update_many(BATiter *bi, uint8_t (*sketch)[CLZ_BUCKETS],
 	init_random_state_engine(rse, (uint64_t) GDKusec());
 
 	int8_t values_t = bi->type;
+	uint8_t values_s = bi->shift;
 	const void *atomnil = ATOMnilptr(values_t);
 	bool (*atomeq) (const void *, const void *) = ATOMequal(values_t);
+	const void *v;
+	var_t offset;
 
 	TIMEOUT_LOOP_IDX_DECL(i, count, qry_ctx) {
-		const void *v;
-		v = ATOMvarsized(values_t) ? BUNtvar(bi, i) : BUNtloc(bi, i);
+		/* v = ATOMvarsized(values_t) ? */
+		/* 	values ? ((void **) values)[i] : */
+		/* 		 (offset = VarHeapVal(bi->base, i, bi->width)) == 0 ? */
+		/* 		 	atomnil : bi->vh->base + offset : */
+		/* 	(void *) ((char *) values + (i << values_s)); */
+		if (ATOMvarsized(values_t)) {
+			if (values)
+				v = ((void **) values)[i];
+			else
+				v = (offset = VarHeapVal(bi->base, i, bi->width)) == 0 ?
+					atomnil : bi->vh->base + offset;
+		} else {
+			v = (void *) ((char *) values + (i << values_s));
+		}
 		if (atomeq(v, atomnil))
 			continue;
 		uint64_t hash = XXH64(v, ATOMlen(values_t, v), HLLSEED);
@@ -189,19 +204,20 @@ bat_sketch(BATiter *bi, struct canditer *bci, uint8_t (*sketch)[CLZ_BUCKETS])
 		canditer_reset(&n_bci);
 	}
 
-	if (n_bci.tpe == cand_dense) {
-		rc = sketch_update_many(bi, sketch, bi->base, n_bci.ncand);
+	if (false && n_bci.tpe == cand_dense) {
+		rc = sketch_update_many(bi, sketch, NULL, n_bci.ncand);
 	} else {
 		QryCtx *qry_ctx = MT_thread_get_qry_ctx();
 		random_state_engine rse;
 		init_random_state_engine(rse, (uint64_t) GDKusec());
 
 		int8_t values_t = bi->type;
+		oid hseq_b = b->hseqbase;
 		const void *atomnil = ATOMnilptr(values_t);
 		bool (*atomeq) (const void *, const void *) = ATOMequal(values_t);
 
 		TIMEOUT_LOOP(n_bci.ncand, qry_ctx) {
-			BUN o = canditer_next(&n_bci) - bi->b->hseqbase;
+			BUN o = canditer_next(&n_bci) - hseq_b;
 			const void *v;
 			v = ATOMvarsized(values_t) ? BUNtvar(bi, o) : BUNtloc(bi, o);
 			if (atomeq(v, atomnil))
@@ -233,6 +249,8 @@ bat_sketch(BATiter *bi, struct canditer *bci, uint8_t (*sketch)[CLZ_BUCKETS])
 /* 	TIMEOUT_LOOP_IDX_DECL(i, count, qry_ctx) { */
 /* 		const void *v; */
 /* 		v = ATOMvarsized(values_t) ? BUNtvar(bi, i) : BUNtloc(bi, i); */
+/* 		if (atomeq(v, atomnil)) */
+/* 			continue; */
 /* 		if (ATOMvarsized(values_t)) { */
 /* 			printf("sketch_update_many bat id %d count %zu varsized value %s\n", bi->b->batCacheid, count, atomeq(v, atomnil) ? "str_nil" : (char *) v); */
 /* 		} else { */
@@ -257,9 +275,8 @@ bat_sketch(BATiter *bi, struct canditer *bci, uint8_t (*sketch)[CLZ_BUCKETS])
 /* 				break; */
 /* 			} */
 /* 		} */
-/* 		if (atomeq(v, atomnil)) */
-/* 			continue; */
 /* 		uint64_t hash = XXH64(v, ATOMlen(values_t, v), HLLSEED); */
+/* 		printf("hash %lu\n", hash); */
 /* 		SKETCH_UPDATE_ONE(sketch, hash); */
 /* 	} */
 
