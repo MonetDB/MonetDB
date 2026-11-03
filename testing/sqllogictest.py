@@ -495,7 +495,8 @@ class SQLLogic:
                     elif columns[i] == 'D':
                         nrow.append(str(row[i]))
                     elif columns[i] == 'R':
-                        nrow.append(f'{row[i]:.3f}')
+                        val = f'{row[i]:.3f}'
+                        nrow.append('0.000' if val == '-0.000' else val)
                     else:
                         self.raise_error('incorrect column type indicator')
                 except TypeError:

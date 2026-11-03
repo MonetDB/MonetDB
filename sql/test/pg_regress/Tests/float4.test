@@ -86,9 +86,9 @@ query TR rowsort
 SELECT '' AS five, FLOAT4_TBL.* FROM FLOAT4_TBL
 ----
 (empty)
--0.000
-(empty)
 -34.840
+(empty)
+0.000
 (empty)
 0.000
 (empty)
@@ -104,9 +104,9 @@ query TR rowsort
 SELECT '' AS four, f.* FROM FLOAT4_TBL f WHERE f.f1 <> '1004.3'
 ----
 (empty)
--0.000
-(empty)
 -34.840
+(empty)
+0.000
 (empty)
 0.000
 (empty)
@@ -126,9 +126,9 @@ query TR rowsort
 SELECT '' AS three, f.* FROM FLOAT4_TBL f WHERE '1004.3' > f.f1
 ----
 (empty)
--0.000
-(empty)
 -34.840
+(empty)
+0.000
 (empty)
 0.000
 (empty)
@@ -140,9 +140,9 @@ query TR rowsort
 SELECT '' AS three, f.* FROM FLOAT4_TBL f WHERE  f.f1 < '1004.3'
 ----
 (empty)
--0.000
-(empty)
 -34.840
+(empty)
+0.000
 (empty)
 0.000
 (empty)
@@ -154,9 +154,9 @@ query TR rowsort
 SELECT '' AS four, f.* FROM FLOAT4_TBL f WHERE '1004.3' >= f.f1
 ----
 (empty)
--0.000
-(empty)
 -34.840
+(empty)
+0.000
 (empty)
 0.000
 (empty)
@@ -170,9 +170,9 @@ query TR rowsort
 SELECT '' AS four, f.* FROM FLOAT4_TBL f WHERE  f.f1 <= '1004.3'
 ----
 (empty)
--0.000
-(empty)
 -34.840
+(empty)
+0.000
 (empty)
 0.000
 (empty)
@@ -188,10 +188,10 @@ SELECT '' AS three, f.f1, f.f1 * '-10' AS x FROM FLOAT4_TBL f
 ----
 (empty)
 0.000
--0.000
+0.000
 (empty)
 0.000
--0.000
+0.000
 (empty)
 1004.300
 -10043.000
@@ -222,10 +222,10 @@ SELECT '' AS three, f.f1, f.f1 / '-10' AS x FROM FLOAT4_TBL f
 ----
 (empty)
 0.000
--0.000
+0.000
 (empty)
 0.000
--0.000
+0.000
 (empty)
 1004.300
 -100.430
@@ -258,11 +258,11 @@ SELECT '' AS five, f.f1, abs(f1) AS abs_f1
    FROM FLOAT4_TBL f
 ----
 (empty)
--0.000
-0.000
-(empty)
 -34.840
 34.840
+(empty)
+0.000
+0.000
 (empty)
 0.000
 0.000
@@ -288,11 +288,11 @@ SELECT '' AS five, f.f1, round(f.f1, 0) AS round_f1
    FROM FLOAT4_TBL f
 ----
 (empty)
--0.000
--0.000
-(empty)
 -34.840
 -35.000
+(empty)
+0.000
+0.000
 (empty)
 0.000
 0.000
@@ -312,8 +312,8 @@ SELECT '' AS five, f.f1, round(f.f1, 0) AS round_f1
 query R rowsort
 select ceil(f1) as ceil_f1 from float4_tbl f
 ----
--0.000
 -34.000
+0.000
 0.000
 1.000
 1.000
@@ -323,8 +323,8 @@ select ceil(f1) as ceil_f1 from float4_tbl f
 query R rowsort
 select ceiling(f1) as ceiling_f1 from float4_tbl f
 ----
--0.000
 -34.000
+0.000
 0.000
 1.000
 1.000
@@ -403,9 +403,9 @@ query TR rowsort
 SELECT '' AS five, * FROM FLOAT4_TBL
 ----
 (empty)
--0.000
-(empty)
 -34.840
+(empty)
+0.000
 (empty)
 0.000
 (empty)
@@ -429,17 +429,17 @@ query TR rowsort
 SELECT '' AS five, * FROM FLOAT4_TBL
 ----
 (empty)
--0.000
-(empty)
--0.000
-(empty)
--0.000
-(empty)
 -1004.300
 (empty)
 -123456790000000008192.000
 (empty)
 -34.840
+(empty)
+0.000
+(empty)
+0.000
+(empty)
+0.000
 (empty)
 0.000
 
