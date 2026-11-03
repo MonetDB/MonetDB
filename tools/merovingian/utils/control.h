@@ -12,22 +12,22 @@
 #define _SEEN_CONTROL_H 1
 
 char* control_send(
-		char** ret,
-		const char *host,
-		int port,
-		const char *database,
-		const char *command,
-		bool wait,
-		const char *pass);
+	char** ret,
+	const char *host,
+	int port,
+	const char *database,
+	const char *command,
+	bool wait,
+	const char *pass);
 char* control_send_callback(
-		char** ret,
-		const char *host,
-		int port,
-		const char *database,
-		const char *command,
-		void (*callback)(const void *data, size_t size, void *cb_private),
-		void *cb_private,
-		const char *pass);
+	char** ret,
+	const char *host,
+	int port,
+	const char *database,
+	const char *command,
+	void (*callback)(const void *data, size_t size, void *cb_private),
+	void *cb_private,
+	const char *pass);
 char* control_hash(const char *pass, const char *salt);
 char *control_ping(const char *host, int port, const char *pass);
 

@@ -1179,7 +1179,7 @@ rewrite_empty_project(visitor *v, sql_rel *rel)
 		v->changes++;
 	}
 	sql_rel *l = rel->l;
-	if (l && !l->l && is_simple_project(rel->op) && is_simple_project(l->op) && list_length(l->exps) == 1) {
+	if (is_simple_project(rel->op) && l && is_simple_project(l->op) && !l->l && list_length(l->exps) == 1) {
 		list *exps = l->exps;
 		sql_exp *e = exps->h->data;
 		if (!e->f && exp_is_atom(e) && exp_is_true(e) && !exps_uses_exp(rel->exps, e) && !exps_have_rel_exp(rel->exps) && exps_are_atoms(rel->exps) && !exps_have_rank(rel->exps)) {

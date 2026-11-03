@@ -1512,9 +1512,11 @@ mvc_ustr(mvc *m, sql_schema *s, sql_column *col, dlist *l)
 	TRC_DEBUG(SQL_TRANS, "Ustr: %s %s.%s\n", col->base.name, s->base.name, uname);
 	if (!EC_VARCHAR(col->type.type->eclass))
 		return -5;
-	sql_ustr *u = find_sql_ustr(m->session->tr, s, uname);
+	sql_ustr *u = find_ustr_on_scope(m, sname, uname, "CREATE TABLE");
 	if (u == NULL)
 		return -6;
+	if (u->s)
+		s = u->s;
 	char buf[32];	   /* max 2 times 10 digits, 2 spaces, "USTR", \0 */
 	int len = snprintf(buf, sizeof(buf), "USTR %d %d", s->base.id, u->base.id);
 	assert(len < (int) sizeof(buf) && len > 5);

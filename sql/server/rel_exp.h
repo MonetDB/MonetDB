@@ -212,7 +212,7 @@ extern sql_exp *exps_bind_column2(list *exps, const char *rname, const char *cna
 extern sql_exp * list_find_exp(const list *exps, sql_exp *e);
 extern sql_exp *predicates_find_nid(const list *exps, int nid);
 
-extern dbl exp_estimate_selectivity(mvc *sql, sql_exp *e);
+extern dbl exp_estimate_selectivity(mvc *sql, sql_exp *e, sql_rel *rel);
 extern unsigned int exps_card( list *l );
 extern void exps_fix_card( list *exps, unsigned int card);
 extern void exps_setcard( list *exps, unsigned int card);

@@ -682,8 +682,7 @@ BATsave_iter(BAT *b, BATiter *bi, BUN size)
 			MT_rwlock_rdunlock(&b->thashlock);
 		return GDK_SUCCEED;
 	}
-	/* views cannot be saved, but make an exception for
-	 * force-remapped views */
+	/* views cannot be saved */
 	if ((bi->h != NULL && bi->h->parentid != b->batCacheid) ||
 	    (bi->vh != NULL && bi->vh->parentid != b->batCacheid && bi->vh->parentid != b->ustr)) {
 		if (locked)
@@ -718,7 +717,7 @@ BATsave_iter(BAT *b, BATiter *bi, BUN size)
 						    bi->h->filename);
 				close(fd);
 			}
-			if (bi->vh && !bi->ustr) {
+			if (bi->vh && bi->vhfree > 0 && !bi->ustr) {
 				fd = GDKfdlocate(bi->vh->farmid, bi->vh->filename, "rb+", NULL);
 				if (fd < 0) {
 					GDKsyserror("cannot open file %s for sync\n",

@@ -24,9 +24,7 @@
 #include "mutils.h"		/* mercurial_revision */
 #include "dotmonetdb.h"
 
-static _Noreturn void usage(const char *prog, int xit);
-
-static void
+static _Noreturn void
 usage(const char *prog, int xit)
 {
 	fprintf(stderr, "Usage: %s [ options ] [ dbname ]\n", prog);

@@ -41,7 +41,7 @@ control_setup(
 	const char *database,
 	const char *command,
 	const char *pass
-)
+	)
 {
 	ssize_t len;
 	char *buf;
@@ -51,11 +51,11 @@ control_setup(
 		/* UNIX socket connect */
 		if ((control->sock = socket(PF_UNIX, SOCK_STREAM
 #ifdef SOCK_CLOEXEC
-						   | SOCK_CLOEXEC
+					    | SOCK_CLOEXEC
 #endif
-						   , 0)) == -1) {
+					    , 0)) == -1) {
 			snprintf(control->sbuf, sizeof(control->sbuf), "cannot open connection: %s",
-					strerror(errno));
+				 strerror(errno));
 			return(strdup(control->sbuf));
 		}
 #if !defined(SOCK_CLOEXEC) && defined(HAVE_FCNTL)
@@ -99,9 +99,9 @@ control_setup(
 		for (rp = res; rp; rp = rp->ai_next) {
 			control->sock = socket(rp->ai_family, rp->ai_socktype
 #ifdef SOCK_CLOEXEC
-						 | SOCK_CLOEXEC
+					       | SOCK_CLOEXEC
 #endif
-						 , rp->ai_protocol);
+					       , rp->ai_protocol);
 			if (control->sock == INVALID_SOCKET)
 				continue;
 			if (connect(control->sock, rp->ai_addr, (socklen_t) rp->ai_addrlen) != SOCKET_ERROR)
@@ -112,11 +112,11 @@ control_setup(
 		if (rp == NULL) {
 			snprintf(control->sbuf, sizeof(control->sbuf), "cannot connect to %s:%s: %s", host, sport,
 #ifdef _MSC_VER
-					 wsaerror(WSAGetLastError())
+				 wsaerror(WSAGetLastError())
 #else
-					 strerror(errno)
+				 strerror(errno)
 #endif
-			);
+				);
 			return(strdup(control->sbuf));
 		}
 #if !defined(SOCK_CLOEXEC) && defined(HAVE_FCNTL)
@@ -160,120 +160,120 @@ control_setup(
 			}
 		} else {
 			if (strstr(control->rbuf + 2, ":BIG:") != NULL ||
-				strstr(control->rbuf + 2, ":LIT:") != NULL)
+			    strstr(control->rbuf + 2, ":LIT:") != NULL)
 			{
 				snprintf(control->sbuf, sizeof(control->sbuf), "cannot connect: "
-						"server looks like a mapi server, "
-						"are you connecting to an mserver directly "
-						"instead of monetdbd?");
+					 "server looks like a mapi server, "
+					 "are you connecting to an mserver directly "
+					 "instead of monetdbd?");
 			} else {
 				snprintf(control->sbuf, sizeof(control->sbuf), "cannot connect: "
-						"unsupported monetdbd server");
+					 "unsupported monetdbd server");
 			}
 			closesocket(control->sock);
 			return(strdup(control->sbuf));
 		}
 
 		switch (ver) {
-			case 1:
-			case 2:  /* we never really used the mode specifier of v2 */
-				p = strchr(buf, ':');
-				if (p != NULL)
-					*p = '\0';
-				p = control_hash(pass, buf);
-				len = snprintf(control->sbuf, sizeof(control->sbuf), "%s%s\n",
-						p, ver == 2 ? ":control" : "");
-				len = send(control->sock, control->sbuf, len, 0);
-				free(p);
-				if (len == -1) {
-					closesocket(control->sock);
-					return(strdup("cannot send challenge response to server"));
-				}
-				break;
-			case 9:
-			{
-				char *chal = NULL;
-				char *algos = NULL;
-				char *shash = NULL;
-				char *phash = NULL;
-				static const char *algsv[] = {
-					"RIPEMD160",
-					"SHA512",
-					"SHA384",
-					"SHA256",
-					"SHA224",
-					"SHA1",
-					NULL
-				};
-				(void)algsv;
-
-				/* buf at this point looks like
-				 * "challenge:servertype:protover:algos:endian:hash:" */
-				chal = buf; /* chal */
-				p = strchr(chal, ':');
-				if (p == NULL) {
-					snprintf(control->sbuf, sizeof(control->sbuf), "cannot connect: "
-							"invalid challenge from monetdbd server");
-					close_stream(control->fdout);
-					close_stream(control->fdin);
-					return(strdup(control->sbuf));
-				}
-				*p++ = '\0'; /* servertype */
-				p = strchr(p, ':');
-				if (p == NULL) {
-					snprintf(control->sbuf, sizeof(control->sbuf), "cannot connect: "
-							"invalid challenge from monetdbd server");
-					close_stream(control->fdout);
-					close_stream(control->fdin);
-					return(strdup(control->sbuf));
-				}
-				*p++ = '\0'; /* protover */
-				p = strchr(p, ':');
-				if (p == NULL) {
-					snprintf(control->sbuf, sizeof(control->sbuf), "cannot connect: "
-							"invalid challenge from monetdbd server");
-					close_stream(control->fdout);
-					close_stream(control->fdin);
-					return(strdup(control->sbuf));
-				}
-				*p++ = '\0'; /* algos */
-				algos = p;
-				p = strchr(p, ':');
-				if (p == NULL) {
-					snprintf(control->sbuf, sizeof(control->sbuf), "cannot connect: "
-							"invalid challenge from monetdbd server");
-					close_stream(control->fdout);
-					close_stream(control->fdin);
-					return(strdup(control->sbuf));
-				}
-				*p++ = '\0'; /* endian */
-				p = strchr(p, ':');
-				if (p == NULL) {
-					snprintf(control->sbuf, sizeof(control->sbuf), "cannot connect: "
-							"invalid challenge from monetdbd server");
-					close_stream(control->fdout);
-					close_stream(control->fdin);
-					return(strdup(control->sbuf));
-				}
-				*p++ = '\0'; /* hash */
-				shash = p;
-				p = strchr(p, ':');
-				if (p == NULL) {
-					snprintf(control->sbuf, sizeof(control->sbuf), "cannot connect: "
-							"invalid challenge from monetdbd server");
-					close_stream(control->fdout);
-					close_stream(control->fdin);
-					return(strdup(control->sbuf));
-				}
+		case 1:
+		case 2:  /* we never really used the mode specifier of v2 */
+			p = strchr(buf, ':');
+			if (p != NULL)
 				*p = '\0';
+			p = control_hash(pass, buf);
+			len = snprintf(control->sbuf, sizeof(control->sbuf), "%s%s\n",
+				       p, ver == 2 ? ":control" : "");
+			len = send(control->sock, control->sbuf, len, 0);
+			free(p);
+			if (len == -1) {
+				closesocket(control->sock);
+				return(strdup("cannot send challenge response to server"));
+			}
+			break;
+		case 9:
+		{
+			char *chal = NULL;
+			char *algos = NULL;
+			char *shash = NULL;
+			char *phash = NULL;
+			static const char *algsv[] = {
+				"RIPEMD160",
+				"SHA512",
+				"SHA384",
+				"SHA256",
+				"SHA224",
+				"SHA1",
+				NULL
+			};
+			(void)algsv;
 
-				/* we first need to hash our password in the form the
-				 * server stores it too */
-				if (strcmp(shash, "RIPEMD160") == 0) {
-					phash = mcrypt_RIPEMD160Sum(pass, strlen(pass));
-				} else if (strcmp(shash, "SHA512") == 0) {
-					phash = mcrypt_SHA512Sum(pass, strlen(pass));
-				} else
+			/* buf at this point looks like
+			 * "challenge:servertype:protover:algos:endian:hash:" */
+			chal = buf; /* chal */
+			p = strchr(chal, ':');
+			if (p == NULL) {
+				snprintf(control->sbuf, sizeof(control->sbuf), "cannot connect: "
+					 "invalid challenge from monetdbd server");
+				close_stream(control->fdout);
+				close_stream(control->fdin);
+				return(strdup(control->sbuf));
+			}
+			*p++ = '\0'; /* servertype */
+			p = strchr(p, ':');
+			if (p == NULL) {
+				snprintf(control->sbuf, sizeof(control->sbuf), "cannot connect: "
+					 "invalid challenge from monetdbd server");
+				close_stream(control->fdout);
+				close_stream(control->fdin);
+				return(strdup(control->sbuf));
+			}
+			*p++ = '\0'; /* protover */
+			p = strchr(p, ':');
+			if (p == NULL) {
+				snprintf(control->sbuf, sizeof(control->sbuf), "cannot connect: "
+					 "invalid challenge from monetdbd server");
+				close_stream(control->fdout);
+				close_stream(control->fdin);
+				return(strdup(control->sbuf));
+			}
+			*p++ = '\0'; /* algos */
+			algos = p;
+			p = strchr(p, ':');
+			if (p == NULL) {
+				snprintf(control->sbuf, sizeof(control->sbuf), "cannot connect: "
+					 "invalid challenge from monetdbd server");
+				close_stream(control->fdout);
+				close_stream(control->fdin);
+				return(strdup(control->sbuf));
+			}
+			*p++ = '\0'; /* endian */
+			p = strchr(p, ':');
+			if (p == NULL) {
+				snprintf(control->sbuf, sizeof(control->sbuf), "cannot connect: "
+					 "invalid challenge from monetdbd server");
+				close_stream(control->fdout);
+				close_stream(control->fdin);
+				return(strdup(control->sbuf));
+			}
+			*p++ = '\0'; /* hash */
+			shash = p;
+			p = strchr(p, ':');
+			if (p == NULL) {
+				snprintf(control->sbuf, sizeof(control->sbuf), "cannot connect: "
+					 "invalid challenge from monetdbd server");
+				close_stream(control->fdout);
+				close_stream(control->fdin);
+				return(strdup(control->sbuf));
+			}
+			*p = '\0';
+
+			/* we first need to hash our password in the form the
+			 * server stores it too */
+			if (strcmp(shash, "RIPEMD160") == 0) {
+				phash = mcrypt_RIPEMD160Sum(pass, strlen(pass));
+			} else if (strcmp(shash, "SHA512") == 0) {
+				phash = mcrypt_SHA512Sum(pass, strlen(pass));
+			} else
 				if (strcmp(shash, "SHA384") == 0) {
 					phash = mcrypt_SHA384Sum(pass, strlen(pass));
 				} else if (strcmp(shash, "SHA256") == 0) {
@@ -285,47 +285,47 @@ control_setup(
 				} else {
 					(void)phash; (void)algos;
 					snprintf(control->sbuf, sizeof(control->sbuf), "cannot connect: "
-							"monetdbd server requires unknown hash: %s", shash);
+						 "monetdbd server requires unknown hash: %s", shash);
 					close_stream(control->fdout);
 					close_stream(control->fdin);
 					return(strdup(control->sbuf));
 				}
-				if (!phash) {
-					snprintf(control->sbuf, sizeof(control->sbuf), "cannot connect: "
-							"allocation failure while establishing connection");
-					close_stream(control->fdout);
-					close_stream(control->fdin);
-					return(strdup(control->sbuf));
-				}
+			if (!phash) {
+				snprintf(control->sbuf, sizeof(control->sbuf), "cannot connect: "
+					 "allocation failure while establishing connection");
+				close_stream(control->fdout);
+				close_stream(control->fdin);
+				return(strdup(control->sbuf));
+			}
 
-				/* now hash the password hash with the provided
-				 * challenge */
-				const char **algs = algsv;
-				for (; *algs != NULL; algs++) {
-					/* TODO: make this actually obey the separation by
-					 * commas, and only allow full matches */
-					if (strstr(algos, *algs) != NULL) {
-						p = mcrypt_hashPassword(*algs, phash, chal);
-						if (p == NULL)
-							continue;
-						mnstr_printf(control->fdout,
-								"BIG:monetdb:{%s}%s:control:merovingian:\n",
-								*algs, p);
-						mnstr_flush(control->fdout, MNSTR_FLUSH_DATA);
-						free(p);
-						break;
-					}
-				}
-				free(phash);
-				if (p == NULL) {
-					/* the server doesn't support what we can */
-					snprintf(control->sbuf, sizeof(control->sbuf), "cannot connect: "
-							"unsupported hash algorithms: %s", algos);
-					close_stream(control->fdout);
-					close_stream(control->fdin);
-					return(strdup(control->sbuf));
+			/* now hash the password hash with the provided
+			 * challenge */
+			const char **algs = algsv;
+			for (; *algs != NULL; algs++) {
+				/* TODO: make this actually obey the separation by
+				 * commas, and only allow full matches */
+				if (strstr(algos, *algs) != NULL) {
+					p = mcrypt_hashPassword(*algs, phash, chal);
+					if (p == NULL)
+						continue;
+					mnstr_printf(control->fdout,
+						     "BIG:monetdb:{%s}%s:control:merovingian:\n",
+						     *algs, p);
+					mnstr_flush(control->fdout, MNSTR_FLUSH_DATA);
+					free(p);
+					break;
 				}
 			}
+			free(phash);
+			if (p == NULL) {
+				/* the server doesn't support what we can */
+				snprintf(control->sbuf, sizeof(control->sbuf), "cannot connect: "
+					 "unsupported hash algorithms: %s", algos);
+				close_stream(control->fdout);
+				close_stream(control->fdin);
+				return(strdup(control->sbuf));
+			}
+		}
 		}
 
 		if (control->fdin != NULL) {
@@ -476,13 +476,13 @@ control_receive_nowait(char **ret, struct control_state *control)
  * connection).
  */
 char* control_send(
-		char** ret,
-		const char* host,
-		int port,
-		const char *database,
-		const char *command,
-		bool wait,
-		const char *pass)
+	char** ret,
+	const char* host,
+	int port,
+	const char *database,
+	const char *command,
+	bool wait,
+	const char *pass)
 {
 	char *msg;
 	struct control_state control_state = {0};
@@ -523,14 +523,14 @@ char* control_send(
  * connection).
  */
 char* control_send_callback(
-		char** ret,
-		const char *host,
-		int port,
-		const char *database,
-		const char *command,
-		void (*callback)(const void *data, size_t size, void *cb_private),
-		void *cb_private,
-		const char *pass)
+	char** ret,
+	const char *host,
+	int port,
+	const char *database,
+	const char *command,
+	void (*callback)(const void *data, size_t size, void *cb_private),
+	void *cb_private,
+	const char *pass)
 {
 	char *msg = NULL;
 	struct control_state control_state = {0};

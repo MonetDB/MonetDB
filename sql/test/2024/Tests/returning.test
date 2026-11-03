@@ -7,10 +7,8 @@ insert into foo values (1, 10), (2, 20), (3, 30)
 query II nosort
 delete from foo where i > 1 returning i*2, j*j as k
 ----
-4
-400
-6
-900
+4	400
+6	900
 
 query I nosort
 select count(*) from foo
@@ -26,10 +24,8 @@ insert into foo values (1, 10), (2, 20), (3, 30)
 query II nosort
 update foo set j = -j where i < 3 returning j+5 as bla, i+i
 ----
--5
-2
--15
-4
+-5	2
+-15	4
 
 statement ok
 truncate foo
@@ -59,8 +55,7 @@ update foo set i = -i returning sum(j)
 query II nosort
 update foo set i = -i where i >0 returning sum(j), count(j)
 ----
--60
-3
+-60	3
 
 statement error 42000!SELECT: cannot use non GROUP BY column 'i' in query results without an aggregate function
 update foo set i = -i returning sum(j), i
@@ -227,7 +222,7 @@ table("sys"."foo") [ "foo"."i" NOT NULL MIN "1" MAX "3" NUNIQUES 3.000000, "foo"
 )
 ) [ "foo"."i" NOT NULL NUNIQUES 3.000000 MAX "3" MIN "1" ]')
 ----
-@project (@insert(@table("sys"."foo") [ "foo"."i" NOT NULL UNIQUE, "foo"."j" NOT NULL, "foo"."%TID%" NOT NULL UNIQUE ]@ [  [ int(31) NULL, int(31) NULL ] as "%4"."%4",  [ int(31) "40", int(31) "50" ] as "%1"."%1" ]@) [ "%4"."%4" as "foo"."i", "%1"."%1" as "foo"."j" ]@) [ "foo"."i" NOT NULL UNIQUE ]
+@project (@insert(@table("sys"."foo") [ "foo"."i" NOT NULL, "foo"."j" NOT NULL, "foo"."%TID%" NOT NULL UNIQUE ]@ [  [ int(31) NULL, int(31) NULL ] as "%4"."%4",  [ int(31) "40", int(31) "50" ] as "%1"."%1" ]@) [ "%4"."%4" as "foo"."i", "%1"."%1" as "foo"."j" ]@) [ "foo"."i" NOT NULL ]
 
 # update foo set j = -j where j > 10 returning i
 query T nosort

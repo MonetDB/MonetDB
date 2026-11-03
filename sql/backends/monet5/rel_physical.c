@@ -451,6 +451,8 @@ find_payload_exps(mvc *sql, list **exps_hsh, list **exps_prb, sql_rel *p, sql_re
 		else
 			exps = list_merge(list_dup(exps, NULL), p->attr, NULL);
 	}
+	if (is_topn(p->op) && p->l)
+		p = p->l;
 	if (is_select(p->op) || is_join(p->op))
 		exps = NULL;
 	if (exps_hsh) {

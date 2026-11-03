@@ -4108,8 +4108,8 @@ OAHASHno_slices(Client ctx, int *no_slices, bat *ht_sink)
 	else
 		*no_slices = (int)((h->size+SLICE_SIZE-1)/SLICE_SIZE);
 	FORCEMITODEBUG
-	if (*no_slices < GDKnr_threads)
-		*no_slices = GDKnr_threads;
+	if (*no_slices < GDKnr_pipeline_threads)
+		*no_slices = GDKnr_pipeline_threads;
 	BBPunfix(b->batCacheid);
 	return MAL_SUCCEED;
 }

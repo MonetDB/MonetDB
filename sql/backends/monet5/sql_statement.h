@@ -262,6 +262,8 @@ extern stmt *stmt_Nop(backend *be, stmt *ops, stmt *sel, sql_subfunc *op, stmt* 
 sql_export stmt *stmt_func(backend *be, stmt *ops, const char *name, sql_rel *imp, int f_union);
 extern stmt *stmt_direct_func(backend *be, InstrPtr q);
 extern stmt *stmt_aggr(backend *be, stmt *op1, stmt *grp, stmt *ext, sql_subfunc *op, int reduce, int no_nil, int nil_if_empty);
+extern stmt * stmt_aggr_nopp(backend *be, stmt *op1, stmt *grp, stmt *ext, sql_subfunc *op, int reduce, int no_nil, int nil_if_empty);
+
 
 sql_export stmt *stmt_blackbox_result(backend *be, InstrPtr q, int retnr, sql_subtype *t);
 

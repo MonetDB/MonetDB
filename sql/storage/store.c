@@ -61,14 +61,20 @@ store_transaction_id(sqlstore *store)
 ulng
 store_oldest(sqlstore *store, sql_trans *tr)
 {
-	if (tr && tr->ts == (ulng) ATOMIC_GET(&store->oldest)) {
-		sql_trans *otr = store->active->h->data;
-		if (otr == tr && store->active->h->next) {
-			otr = store->active->h->next->data;
-			return otr->ts;
+	ulng oldest = (ulng) ATOMIC_GET(&store->oldest);
+
+	if (tr && tr->ts == oldest) {
+		ulng noldest = 0;
+		for (node *n = store->active->h; n; n = n->next) {
+			sql_trans *otr = n->data;
+			/* go over all active transactions as transaction timestamps change in the commit */
+			if (otr != tr && otr->active == 1 && (!noldest || otr->ts < noldest))
+				noldest = otr->ts;
 		}
+		if (noldest)
+			oldest = noldest;
 	}
-	return (ulng) ATOMIC_GET(&store->oldest);
+	return oldest;
 }
 
 static ulng
@@ -7761,6 +7767,7 @@ sql_trans_create_ustr(sql_trans *tr, sql_schema *s, const char *uname)
 	sqlid ustr_id = store_next_oid(store);
 	int res;
 	base_init(NULL, &u->base, ustr_id, true, uname);
+	u->s = s;
 	if ((res = os_add(s->ustrs, tr, u->base.name, &u->base)))
 		return res;
 	if ((res = store->table_api.table_insert(tr, sysobs, &ustr_id, &uname,
