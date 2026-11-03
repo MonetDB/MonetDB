@@ -2366,12 +2366,12 @@ rewrite_anyequal(visitor *v, sql_rel *rel, sql_exp *e, int depth)
 					tomarkjoin = tomarkjoin && foundnil;
 				}
 
+				tomarkjoin &= (MT_thread_get_qry_ctx()->pipeline_mode);
 				if (rsq) {
 					operator_type op = tomarkjoin?op_join:(is_anyequal(sf)?op_semi:op_anti);
 					(void)rewrite_inner(sql, rel, rsq, op, &rewrite, NULL);
 					exp_reset_props(rewrite, re, is_left(rewrite->op));
 				}
-				tomarkjoin &= (MT_thread_get_qry_ctx()->pipeline_mode);
 				if (!rewrite)
 					return NULL;
 				sql_exp *inexp;
