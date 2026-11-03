@@ -3702,7 +3702,7 @@ OAHASHexpand3(Client ctx, MalBlkPtr mbp, MalStkPtr s, InstrPtr p)
 					k &= ht->mask;
 					hk = ht->gids[k];
 				}
-				assert(hk > 0);				
+				assert(hk > 0);
 
 				resp[idx] = oids[i];
 				resh[idx] = (oid)(hk-1);

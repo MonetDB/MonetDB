@@ -95,8 +95,8 @@ split_join_exps(sql_rel *rel, list *joinable, list *not_joinable, bool anti, boo
 
 			/* eqonly -
 			 *   TRUE: only handle equi-join expressions, e.g. in case of pipeline hash join
-			 *   FALSE: we can (also) handle thetajoins, rangejoins and filter joins (like) 
-			 * firstonly - 
+			 *   FALSE: we can (also) handle thetajoins, rangejoins and filter joins (like)
+			 * firstonly -
 			 *   TRUE: add only the first joinable `e` to `joinable` (used by marked-manti-join)
 			 *   FALSE: add all joinable `e` to `joinable`
 			 */
