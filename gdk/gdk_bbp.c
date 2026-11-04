@@ -856,7 +856,7 @@ BBPreadEntries(FILE *fp, unsigned bbpversion, int lineno
 		*bn = b;
 		*hn = h;
 		bn->theap = hn;
-		Heap *vhn;
+		Heap *vhn = NULL;
 		if (b.tvheap) {
 			assert(b.tvheap == &vh);
 			if ((vhn = GDKmalloc(sizeof(Heap))) == NULL) {
