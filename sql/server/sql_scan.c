@@ -888,8 +888,8 @@ scanner_string(mvc *c, int quote, bool escapes)
 		const size_t yycur = rs->pos + lc->yycur;
 
 		while (cur != EOF && (quote != '"' || cur != 0xFEFF) && pos < limit &&
-		       (((cur = rs->buf[yycur + pos++]) & 0x80) == 0) &&
-		       cur && (cur != quote || escape)) {
+		       (cur = rs->buf[yycur + pos++]) != 0 &&
+		       (cur != quote || escape)) {
 			if (escapes && cur == '\\')
 				escape = !escape;
 			else
