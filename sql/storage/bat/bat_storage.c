@@ -3002,12 +3002,16 @@ col_stats(sql_trans *tr, sql_column *c, bool *nonil, bool *unique, double *uniqu
 					*unique = bi.key;
 					*unique_est = bi.unique_est;
 					if (*unique_est == 0 && bi.count) {
-						uint8_t tmp_sketch[BUCKETS][CLZ_BUCKETS] = {0};
-						if (bat_sketch(&bi, NULL, tmp_sketch) != GDK_SUCCEED)
-							*unique_est = -1;
-						else {
-							/* printf("col_stats estimating for bat id %d\n", b->batCacheid); */
-							*unique_est = sketch_estimate(tmp_sketch);
+						if (bi.b->tsketch) {
+							*unique_est = sketch_estimate((uint8_t (*)[CLZ_BUCKETS]) bi.b->tsketch->base);
+						} else {
+							uint8_t tmp_sketch[BUCKETS][CLZ_BUCKETS] = {0};
+							if (bat_sketch(&bi, NULL, tmp_sketch) != GDK_SUCCEED)
+								*unique_est = -1;
+							else {
+								/* printf("col_stats estimating for bat id %d\n", b->batCacheid); */
+								*unique_est = sketch_estimate(tmp_sketch);
+							}
 						}
 					}
 				} else if (d->cs.st == ST_DICT && (off = bind_col_no_view(tr, c, QUICK))) {
