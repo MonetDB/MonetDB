@@ -149,6 +149,10 @@ option(WITH_OPENSSL
   "Include TLS support"
   ON)
 
+option(WITH_HTSLIB
+  "Include htslib support"
+  ON)
+
 option(CMAKE_SUMMARY
   "Show a summary of the cmake configuration (for debug purposes)"
   OFF)

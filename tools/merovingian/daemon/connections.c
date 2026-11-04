@@ -89,37 +89,37 @@ openConnectionIP(int *socks, bool udp, const char *bindaddr, unsigned short port
 		for (rp = result; rp != NULL; rp = rp->ai_next) {
 			sock = socket(rp->ai_family, rp->ai_socktype
 #ifdef SOCK_CLOEXEC
-						  | SOCK_CLOEXEC
+				      | SOCK_CLOEXEC
 #endif
-						  , rp->ai_protocol);
+				      , rp->ai_protocol);
 			if (sock == -1) {
 				e = errno;
 				continue;
 			}
 #if !defined(SOCK_CLOEXEC) && defined(HAVE_FCNTL)
 			if (fcntl(sock, F_SETFD, FD_CLOEXEC) < 0)
-					Mlevelfprintf(ERROR, log, "fcntl FD_CLOEXEC: %s\n", strerror(e));
+				Mlevelfprintf(ERROR, log, "fcntl FD_CLOEXEC: %s\n", strerror(e));
 #endif
 
 			if (rp->ai_family == AF_INET6 &&
-				setsockopt(sock, IPPROTO_IPV6, IPV6_V6ONLY,
-						   (const char *) &(int){0}, sizeof(int)) == -1)
+			    setsockopt(sock, IPPROTO_IPV6, IPV6_V6ONLY,
+				       (const char *) &(int){0}, sizeof(int)) == -1)
 				Mlevelfprintf(ERROR, log, "setsockopt IPV6_V6ONLY: %s\n", strerror(e));
 
 			if (setsockopt(sock, SOL_SOCKET, SO_REUSEADDR,
-						   (const char *) &on, sizeof on) < 0) {
+				       (const char *) &on, sizeof on) < 0) {
 				e = errno;
 				closesocket(sock);
 				continue;
 			}
 #ifdef SO_EXCLUSIVEADDRUSE
 			if (setsockopt(sock, SOL_SOCKET, SO_EXCLUSIVEADDRUSE,
-						   (const char *) &on, sizeof on) < 0)
+				       (const char *) &on, sizeof on) < 0)
 				Mlevelfprintf(ERROR, log, "setsockopt SO_EXCLUSIVEADDRUSE: %s\n", strerror(e));
 #endif
 #ifdef SO_EXCLBIND
 			if (setsockopt(sock, SOL_SOCKET, SO_EXCLBIND,
-						   (const char *) &on, sizeof on) < 0)
+				       (const char *) &on, sizeof on) < 0)
 				Mlevelfprintf(ERROR, log, "setsockopt SO_EXCLBIND: %s\n", strerror(e));
 #endif
 
@@ -148,9 +148,9 @@ openConnectionIP(int *socks, bool udp, const char *bindaddr, unsigned short port
 				continue;
 			}
 			if (getnameinfo((struct sockaddr *) &addr, addrlen,
-							host, sizeof(host),
-							sport, sizeof(sport),
-							NI_NUMERICSERV | (udp ? NI_DGRAM : 0)) != 0) {
+					host, sizeof(host),
+					sport, sizeof(sport),
+					NI_NUMERICSERV | (udp ? NI_DGRAM : 0)) != 0) {
 				host[0] = 0;
 				snprintf(sport, sizeof(sport), "%hu", port);
 			}
@@ -174,7 +174,7 @@ openConnectionIP(int *socks, bool udp, const char *bindaddr, unsigned short port
 	if (nsock == 0) {
 		if (e != 0) {			/* results found, error occurred */
 			return newErr("binding to %s socket port %hu failed: %s",
-						  udp ? "datagram" : "stream", port, strerror(e));
+				      udp ? "datagram" : "stream", port, strerror(e));
 		} else { /* no results found, could not translate address */
 			return newErr("cannot translate host %s", msghost);
 		}
@@ -195,12 +195,12 @@ openConnectionUNIX(int *ret, const char *path, int mode, FILE *log)
 
 	sock = socket(AF_UNIX, SOCK_STREAM
 #ifdef SOCK_CLOEXEC
-				  | SOCK_CLOEXEC
+		      | SOCK_CLOEXEC
 #endif
-				  , 0);
+		      , 0);
 	if (sock == -1)
 		return(newErr("creation of UNIX stream socket failed: %s",
-					strerror(errno)));
+			      strerror(errno)));
 #if !defined(SOCK_CLOEXEC) && defined(HAVE_FCNTL)
 	(void) fcntl(sock, F_SETFD, FD_CLOEXEC);
 #endif
@@ -217,14 +217,14 @@ openConnectionUNIX(int *ret, const char *path, int mode, FILE *log)
 		umask(omask);
 		closesocket(sock);
 		return(newErr("binding to UNIX stream socket at %s failed: %s",
-				path, strerror(errno)));
+			      path, strerror(errno)));
 	}
 	umask(omask);
 
 	if (listen(sock, SOMAXCONN) == -1) {
 		closesocket(sock);
 		return(newErr("setting UNIX stream socket at %s to listen failed: %s",
-					  path, strerror(errno)));
+			      path, strerror(errno)));
 	}
 
 	Mlevelfprintf(INFORMATION, log, "accepting connections on UNIX domain socket %s\n", path);

@@ -257,7 +257,7 @@ MEROgetStatus(sabdb **ret, char *database)
 		database = "#all";
 
 	e = control_send(&buf, mero_host, mero_port,
-			database, "status", true, mero_pass);
+			 database, "status", true, mero_pass);
 	if (e != NULL)
 		return(e);
 
@@ -274,7 +274,7 @@ MEROgetStatus(sabdb **ret, char *database)
 			e = msab_deserialise(&stats, p);
 			if (e != NULL) {
 				printf("WARNING: failed to parse response from "
-						"monetdbd: %s\n", e);
+				       "monetdbd: %s\n", e);
 				free(e);
 				swpos--;
 				continue;
@@ -326,20 +326,20 @@ printStatus(sabdb *stats, int mode, int dbwidth, int uriwidth)
 		char *uri;
 
 		switch (stats->state) {
-			case SABdbStarting:
-				state = 'B';
+		case SABdbStarting:
+			state = 'B';
 			break;
-			case SABdbRunning:
-				state = 'R';
+		case SABdbRunning:
+			state = 'R';
 			break;
-			case SABdbCrashed:
-				state = 'C';
+		case SABdbCrashed:
+			state = 'C';
 			break;
-			case SABdbInactive:
-				state = 'S';
+		case SABdbInactive:
+			state = 'S';
 			break;
-			default:
-				state = ' ';
+		default:
+			state = ' ';
 			break;
 		}
 		/* override if locked for brevity */
@@ -352,8 +352,8 @@ printStatus(sabdb *stats, int mode, int dbwidth, int uriwidth)
 			t = localtime(&uplog.laststart);
 			strftime(info, sizeof(info), "starting up since %Y-%m-%d %H:%M:%S", t);
 		} else if (uplog.lastcrash != -1 &&
-				stats->state != SABdbRunning &&
-				uplog.crashavg1 == 1)
+			   stats->state != SABdbRunning &&
+			   uplog.crashavg1 == 1)
 		{
 			struct tm *t;
 			t = localtime(&uplog.lastcrash);
@@ -361,21 +361,21 @@ printStatus(sabdb *stats, int mode, int dbwidth, int uriwidth)
 		}
 
 		switch (stats->state) {
-			case SABdbRunning:
-			case SABdbStarting:
-				secondsToString(uptime, sizeof(uptime), time(NULL) - uplog.laststart, 1);
+		case SABdbRunning:
+		case SABdbStarting:
+			secondsToString(uptime, sizeof(uptime), time(NULL) - uplog.laststart, 1);
+			break;
+		case SABdbCrashed:
+			secondsToString(uptime, sizeof(uptime), time(NULL) - uplog.lastcrash, 1);
+			break;
+		case SABdbInactive:
+			if (uplog.laststop != -1) {
+				secondsToString(uptime, sizeof(uptime), time(NULL) - uplog.laststop, 1);
 				break;
-			case SABdbCrashed:
-				secondsToString(uptime, sizeof(uptime), time(NULL) - uplog.lastcrash, 1);
-				break;
-			case SABdbInactive:
-				if (uplog.laststop != -1) {
-					secondsToString(uptime, sizeof(uptime), time(NULL) - uplog.laststop, 1);
-					break;
-				} /* else fall through */
-			default:
-				uptime[0] = '\0';
-				break;
+			} /* else fall through */
+		default:
+			uptime[0] = '\0';
+			break;
 		}
 
 		/* cut too long names */
@@ -383,16 +383,16 @@ printStatus(sabdb *stats, int mode, int dbwidth, int uriwidth)
 		abbreviateString(dbname, stats->dbname, dbwidth);
 		uri = malloc(sizeof(char) * (uriwidth + 1));
 		abbreviateString(uri,
-				info[0] != '\0' ? info : stats->uri ? stats->uri : "",
-				uriwidth);
+				 info[0] != '\0' ? info : stats->uri ? stats->uri : "",
+				 uriwidth);
 		/* dbname | state | health | uri/crash */
 		printf("%-*s  %c%c%3s", dbwidth, dbname,
-				locked ? locked : state, locked ? state : ' ', uptime);
+		       locked ? locked : state, locked ? state : ' ', uptime);
 		free(dbname);
 		if (uplog.startcntr) {
 			secondsToString(avg, sizeof(avg), uplog.avguptime, 1);
 			printf("  %3d%% %3s",
-					100 - (uplog.crashcntr * 100 / uplog.startcntr), avg);
+			       100 - (uplog.crashcntr * 100 / uplog.startcntr), avg);
 		} else {
 			printf("           ");
 		}
@@ -406,20 +406,20 @@ printStatus(sabdb *stats, int mode, int dbwidth, int uriwidth)
 		struct tm *t;
 
 		switch (stats->state) {
-			case SABdbStarting:
-				state = "starting up";
+		case SABdbStarting:
+			state = "starting up";
 			break;
-			case SABdbRunning:
-				state = "running";
+		case SABdbRunning:
+			state = "running";
 			break;
-			case SABdbCrashed:
-				state = "crashed";
+		case SABdbCrashed:
+			state = "crashed";
 			break;
-			case SABdbInactive:
-				state = "stopped";
+		case SABdbInactive:
+			state = "stopped";
 			break;
-			default:
-				state = "unknown";
+		default:
+			state = "unknown";
 			break;
 		}
 
@@ -433,12 +433,12 @@ printStatus(sabdb *stats, int mode, int dbwidth, int uriwidth)
 		if (entry == NULL) {
 			printf(" (none)");
 		} else while (entry != NULL) {
-			printf(" %s", entry->val);
-			entry = entry->next;
-		}
+				printf(" %s", entry->val);
+				entry = entry->next;
+			}
 		printf("\n");
 		printf("  start count: %d\n  stop count: %d\n  crash count: %d\n",
-				uplog.startcntr, uplog.stopcntr, uplog.crashcntr);
+		       uplog.startcntr, uplog.stopcntr, uplog.crashcntr);
 		if (stats->state == SABdbRunning) {
 			secondsToString(up, sizeof(up), time(NULL) - uplog.laststart, 999);
 			printf("  current uptime: %s\n", up);
@@ -471,11 +471,11 @@ printStatus(sabdb *stats, int mode, int dbwidth, int uriwidth)
 		}
 		printf("  last stop: %s\n", up);
 		printf("  average of crashes in the last start attempt: %d\n",
-				uplog.crashavg1);
+		       uplog.crashavg1);
 		printf("  average of crashes in the last 10 start attempts: %.2f\n",
-				uplog.crashavg10);
+		       uplog.crashavg10);
 		printf("  average of crashes in the last 30 start attempts: %.2f\n",
-				uplog.crashavg30);
+		       uplog.crashavg30);
 	} else {
 		/* this shows most used properties, and is shown also for modes
 		 * that are added but we don't understand (yet) */
@@ -487,40 +487,40 @@ printStatus(sabdb *stats, int mode, int dbwidth, int uriwidth)
 		/* dbname, status -- since, crash averages */
 
 		switch (stats->state) {
-			case SABdbStarting:
-				snprintf(buf, sizeof(buf), "starting ");
-				off = sizeof("starting ") - 1;
-				/* fall through */
-			case SABdbRunning:
-				t = localtime(&uplog.laststart);
-				off += strftime(buf + off, sizeof(buf) - off,
-								"up since %Y-%m-%d %H:%M:%S, ", t);
-				secondsToString(up, sizeof(up), time(NULL) - uplog.laststart, 999);
-				strcpy(buf + off, up);
+		case SABdbStarting:
+			snprintf(buf, sizeof(buf), "starting ");
+			off = sizeof("starting ") - 1;
+			/* fall through */
+		case SABdbRunning:
+			t = localtime(&uplog.laststart);
+			off += strftime(buf + off, sizeof(buf) - off,
+					"up since %Y-%m-%d %H:%M:%S, ", t);
+			secondsToString(up, sizeof(up), time(NULL) - uplog.laststart, 999);
+			strcpy(buf + off, up);
 			break;
-			case SABdbCrashed:
-				t = localtime(&uplog.lastcrash);
-				strftime(buf, sizeof(buf), "crashed (started on %Y-%m-%d %H:%M:%S)", t);
+		case SABdbCrashed:
+			t = localtime(&uplog.lastcrash);
+			strftime(buf, sizeof(buf), "crashed (started on %Y-%m-%d %H:%M:%S)", t);
 			break;
-			case SABdbInactive:
-				snprintf(buf, sizeof(buf), "not running");
+		case SABdbInactive:
+			snprintf(buf, sizeof(buf), "not running");
 			break;
-			default:
-				snprintf(buf, sizeof(buf), "unknown");
+		default:
+			snprintf(buf, sizeof(buf), "unknown");
 			break;
 		}
 		if (stats->locked)
 			strcat(buf, ", locked");
 		printf("database %s, %s\n", stats->dbname, buf);
 		printf("  crash average: %d.00 %.2f %.2f (over 1, 15, 30 starts) "
-				"in total %d crashes\n",
-				uplog.crashavg1, uplog.crashavg10, uplog.crashavg30,
-				uplog.crashcntr);
+		       "in total %d crashes\n",
+		       uplog.crashavg1, uplog.crashavg10, uplog.crashavg30,
+		       uplog.crashcntr);
 		secondsToString(min, sizeof(min), uplog.minuptime, 1);
 		secondsToString(avg, sizeof(avg), uplog.avguptime, 1);
 		secondsToString(max, sizeof(max), uplog.maxuptime, 1);
 		printf("  uptime stats (min/avg/max): %s/%s/%s over %d runs\n",
-				min, avg, max, uplog.stopcntr);
+		       min, avg, max, uplog.stopcntr);
 	}
 }
 
@@ -542,10 +542,12 @@ globMatchDBS(int *fails, int argc, char *argv[], sabdb **orig, char *cmd)
 			for (stats = *orig; stats != NULL; stats = stats->next) {
 				if (db_glob(argv[i], stats->dbname)) {
 					matched = true;
-					/* move out of orig into w, such that we can't
-					 * get double matches in the same output list
-					 * (as side effect also avoids a double free
-					 * later on) */
+					/* move out of orig into w, such
+					 * that we can't get double
+					 * matches in the same output
+					 * list (as side effect also
+					 * avoids a double free later
+					 * on) */
 					if (w == NULL) {
 						top = w = stats;
 					} else {
@@ -602,13 +604,13 @@ simple_argv_cmd(char *cmd, sabdb *dbs, char *merocmd,
 		}
 
 		ret = control_send(&out, mero_host, mero_port,
-				dbs->dbname, merocmd, false, mero_pass);
+				   dbs->dbname, merocmd, false, mero_pass);
 
 		if (ret != NULL) {
 			if (premsg != NULL && !monetdb_quiet)
 				printf("FAILED\n");
 			fprintf(stderr, "%s: %s\n",
-					cmd, ret);
+				cmd, ret);
 			free(ret);
 			exit(2);
 		}
@@ -728,50 +730,50 @@ command_status(int argc, char *argv[])
 		if (argv[i][0] == '-') {
 			for (p = argv[i] + 1; *p != '\0'; p++) {
 				switch (*p) {
-					case 'c':
-						mode = 0;
+				case 'c':
+					mode = 0;
 					break;
-					case 'l':
-						mode = 2;
+				case 'l':
+					mode = 2;
 					break;
-					case 's':
-						if (*(p + 1) != '\0') {
-							state = ++p;
-						} else if (i + 1 < argc && argv[i + 1][0] != '-') {
-							state = argv[++i];
-						} else {
-							fprintf(stderr, "status: -s needs an argument\n");
+				case 's':
+					if (*(p + 1) != '\0') {
+						state = ++p;
+					} else if (i + 1 < argc && argv[i + 1][0] != '-') {
+						state = argv[++i];
+					} else {
+						fprintf(stderr, "status: -s needs an argument\n");
+						command_help(2, &argv[-1]);
+						exit(1);
+					}
+					for (p = state; *p != '\0'; p++) {
+						switch (*p) {
+						case 'b': /* booting (starting up) */
+						case 'r': /* running (started) */
+						case 's': /* stopped */
+						case 'c': /* crashed */
+						case 'l': /* locked */
+							break;
+						default:
+							fprintf(stderr, "status: unknown flag for -s: -%c\n", *p);
 							command_help(2, &argv[-1]);
 							exit(1);
 						}
-						for (p = state; *p != '\0'; p++) {
-							switch (*p) {
-								case 'b': /* booting (starting up) */
-								case 'r': /* running (started) */
-								case 's': /* stopped */
-								case 'c': /* crashed */
-								case 'l': /* locked */
-								break;
-								default:
-									fprintf(stderr, "status: unknown flag for -s: -%c\n", *p);
-									command_help(2, &argv[-1]);
-									exit(1);
-							}
-						}
-						p--;
+					}
+					p--;
 					break;
-					case '-':
-						if (p[1] == '\0') {
-							if (argc - 1 > i)
-								doall = false;
-							i = argc;
-							break;
-						}
-						/* fall through */
-					default:
-						fprintf(stderr, "status: unknown option: -%c\n", *p);
-						command_help(2, &argv[-1]);
-						exit(1);
+				case '-':
+					if (p[1] == '\0') {
+						if (argc - 1 > i)
+							doall = false;
+						i = argc;
+						break;
+					}
+					/* fall through */
+				default:
+					fprintf(stderr, "status: unknown option: -%c\n", *p);
+					command_help(2, &argv[-1]);
+					exit(1);
 				}
 			}
 			/* make this option no longer available, for easy use
@@ -801,27 +803,27 @@ command_status(int argc, char *argv[])
 		bool curLock = false;
 		SABdbState curMode = SABdbIllegal;
 		switch (*p) {
-			case 'b':
-				curMode = SABdbStarting;
+		case 'b':
+			curMode = SABdbStarting;
 			break;
-			case 'r':
-				curMode = SABdbRunning;
+		case 'r':
+			curMode = SABdbRunning;
 			break;
-			case 's':
-				curMode = SABdbInactive;
+		case 's':
+			curMode = SABdbInactive;
 			break;
-			case 'c':
-				curMode = SABdbCrashed;
+		case 'c':
+			curMode = SABdbCrashed;
 			break;
-			case 'l':
-				curLock = true;
+		case 'l':
+			curLock = true;
 			break;
 		}
 		stats = orig;
 		prev = NULL;
 		while (stats != NULL) {
 			if (stats->locked == curLock &&
-					(curLock || stats->state == curMode))
+			    (curLock || stats->state == curMode))
 			{
 				sabdb *next = stats->next;
 				stats->next = neworig;
@@ -854,23 +856,23 @@ command_status(int argc, char *argv[])
 		}
 
 		/* Ultra Condensed State(tm) since Feb2013:
-		state
-		R  6s     (Running)
-		R 14w
-		R 99y     (purely hypothetical)
-		B  3s     (Booting: in practice cannot be observed yet due to lock)
-		S  1w     (Stopped)
-		LR12h     (Locked/Running)
-		LS        (Locked/Stopped)
-		C         (Crashed)
-		      = 5 chars
+		   state
+		   R  6s     (Running)
+		   R 14w
+		   R 99y     (purely hypothetical)
+		   B  3s     (Booting: in practice cannot be observed yet due to lock)
+		   S  1w     (Stopped)
+		   LR12h     (Locked/Running)
+		   LS        (Locked/Stopped)
+		   C         (Crashed)
+		   = 5 chars
 		*/
 
 		/* health
-		 health
-		100% 12d
-		 42%  4s
-		         = 8 chars
+		   health
+		   100% 12d
+		   42%  4s
+		   = 8 chars
 		*/
 
 		len = (dbwidth < 4 ? 4 : dbwidth) + 2 + 5 + 2 + 8 + 2 + uriwidth;
@@ -899,8 +901,8 @@ command_status(int argc, char *argv[])
 
 		/* print header */
 		printf("%*sname%*s  state   health   %*sremarks\n",
-				(dbwidth - 4) / 2, "", (dbwidth - 4 + 1) / 2, "",
-				(uriwidth - 7) / 2, "");
+		       (dbwidth - 4) / 2, "", (dbwidth - 4 + 1) / 2, "",
+		       (uriwidth - 7) / 2, "");
 	}
 
 	for (stats = orig; stats != NULL; stats = stats->next)
@@ -955,7 +957,7 @@ command_discover(int argc, char *argv[])
 	 * which help each other, just like merovingians do among each
 	 * other. */
 	p = control_send(&buf, mero_host, mero_port,
-			"anelosimus", "eximius", true, mero_pass);
+			 "anelosimus", "eximius", true, mero_pass);
 	if (p != NULL) {
 		printf("%s: %s\n", argv[0], p);
 		free(p);
@@ -974,7 +976,7 @@ command_discover(int argc, char *argv[])
 			if ((q = strchr(p, '\t')) == NULL) {
 				/* doesn't look correct */
 				printf("%s: WARNING: discarding incorrect line: %s\n",
-						argv[0], p);
+				       argv[0], p);
 				continue;
 			}
 			*q++ = '\0';
@@ -991,7 +993,7 @@ command_discover(int argc, char *argv[])
 				/* store what we found */
 				if (posloc == numlocs)
 					locations = realloc(locations,
-							sizeof(char *) * (numlocs = numlocs * 2));
+							    sizeof(char *) * (numlocs = numlocs * 2));
 				locations[posloc++] = strdup(location);
 				if (strlen(location) > loclen)
 					loclen = strlen(location);
@@ -1005,7 +1007,7 @@ command_discover(int argc, char *argv[])
 
 	if (posloc > 0) {
 		printf("%*slocation\n",
-				(int)(loclen - 8 /* "location" */ - ((loclen - 8) / 2)), "");
+		       (int)(loclen - 8 /* "location" */ - ((loclen - 8) / 2)), "");
 		qsort(locations, posloc, sizeof(char *), cmpurl);
 		for (loclen = 0; loclen < posloc; loclen++) {
 			printf("%s\n", locations[loclen]);
@@ -1038,17 +1040,17 @@ command_startstop(int argc, char *argv[], startstop mode)
 	int fails = 0;
 
 	switch (mode) {
-		case START:
-			type = "start";
-			action = "starting database";
+	case START:
+		type = "start";
+		action = "starting database";
 		break;
-		case STOP:
-			type = "stop";
-			action = "stopping database";
+	case STOP:
+		type = "stop";
+		action = "stopping database";
 		break;
-		case KILL:
-			type = "kill";
-			action = "killing database";
+	case KILL:
+		type = "kill";
+		action = "killing database";
 		break;
 	}
 
@@ -1065,21 +1067,21 @@ command_startstop(int argc, char *argv[], startstop mode)
 		if (argv[i][0] == '-') {
 			for (p = argv[i] + 1; *p != '\0'; p++) {
 				switch (*p) {
-					case 'a':
-						doall = true;
+				case 'a':
+					doall = true;
 					break;
-					case '-':
-						if (p[1] == '\0') {
-							if (argc - 1 > i)
-								doall = false;
-							i = argc;
-							break;
-						}
-						/* fall through */
-					default:
-						fprintf(stderr, "%s: unknown option: -%c\n", type, *p);
-						command_help(2, &argv[-1]);
-						exit(1);
+				case '-':
+					if (p[1] == '\0') {
+						if (argc - 1 > i)
+							doall = false;
+						i = argc;
+						break;
+					}
+					/* fall through */
+				default:
+					fprintf(stderr, "%s: unknown option: -%c\n", type, *p);
+					command_help(2, &argv[-1]);
+					exit(1);
 					break;
 				}
 			}
@@ -1112,8 +1114,8 @@ command_startstop(int argc, char *argv[], startstop mode)
 		 * started databases, so we need to check first. */
 
 		if (doall && (
-				((mode == STOP || mode == KILL) && (stats->state != SABdbRunning && stats->state != SABdbStarting))
-				|| (mode == START && stats->state == SABdbRunning)))
+			    ((mode == STOP || mode == KILL) && (stats->state != SABdbRunning && stats->state != SABdbStarting))
+			    || (mode == START && stats->state == SABdbRunning)))
 		{
 			/* needs not to be started/stopped, remove from list */
 			if (prev == NULL) {
@@ -1176,17 +1178,17 @@ command_set(int argc, char *argv[], meroset type)
 		if (argv[i][0] == '-') {
 			for (p = argv[i] + 1; *p != '\0'; p++) {
 				switch (*p) {
-					case '-':
-						if (p[1] == '\0') {
-							i = argc;
-							break;
-						}
-						/* fall through */
-					default:
-						fprintf(stderr, "%s: unknown option: -%c\n",
-								argv[0], *p);
-						command_help(2, &argv[-1]);
-						exit(1);
+				case '-':
+					if (p[1] == '\0') {
+						i = argc;
+						break;
+					}
+					/* fall through */
+				default:
+					fprintf(stderr, "%s: unknown option: -%c\n",
+						argv[0], *p);
+					command_help(2, &argv[-1]);
+					exit(1);
 					break;
 				}
 			}
@@ -1248,12 +1250,12 @@ command_set(int argc, char *argv[], meroset type)
 
 		if (orig->next != NULL) {
 			fprintf(stderr, "%s: cannot rename multiple databases to "
-					"the same name\n", argv[0]);
+				"the same name\n", argv[0]);
 			exit(1);
 		}
 
 		out = control_send(&res, mero_host, mero_port,
-				orig->dbname, p, false, mero_pass);
+				   orig->dbname, p, false, mero_pass);
 		if (out != NULL || strcmp(res, "OK") != 0) {
 			res = out == NULL ? res : out;
 			fprintf(stderr, "%s: %s\n", argv[0], res);
@@ -1272,7 +1274,7 @@ command_set(int argc, char *argv[], meroset type)
 
 	for (stats = orig; stats != NULL; stats = stats->next) {
 		out = control_send(&res, mero_host, mero_port,
-				stats->dbname, p, false, mero_pass);
+				   stats->dbname, p, false, mero_pass);
 		if (out != NULL || strcmp(res, "OK") != 0) {
 			res = out == NULL ? res : out;
 			fprintf(stderr, "%s: %s\n", argv[0], res);
@@ -1317,18 +1319,18 @@ command_get(int argc, char *argv[])
 		if (argv[i][0] == '-') {
 			for (p = argv[i] + 1; *p != '\0'; p++) {
 				switch (*p) {
-					case '-':
-						if (p[1] == '\0') {
-							if (argc - 1 > i)
-								doall = false;
-							i = argc;
-							break;
-						}
-						/* fall through */
-					default:
-						fprintf(stderr, "get: unknown option: -%c\n", *p);
-						command_help(2, &argv[-1]);
-						exit(1);
+				case '-':
+					if (p[1] == '\0') {
+						if (argc - 1 > i)
+							doall = false;
+						i = argc;
+						break;
+					}
+					/* fall through */
+				default:
+					fprintf(stderr, "get: unknown option: -%c\n", *p);
+					command_help(2, &argv[-1]);
+					exit(1);
 					break;
 				}
 			}
@@ -1373,7 +1375,7 @@ command_get(int argc, char *argv[])
 	}
 
 	e = control_send(&buf, mero_host, mero_port,
-			"#defaults", "get", true, mero_pass);
+			 "#defaults", "get", true, mero_pass);
 	if (e != NULL) {
 		fprintf(stderr, "get: %s\n", e);
 		free(e);
@@ -1401,7 +1403,7 @@ command_get(int argc, char *argv[])
 	stats = orig;
 	while (stats != NULL) {
 		e = control_send(&buf, mero_host, mero_port,
-				stats->dbname, "get", true, mero_pass);
+				 stats->dbname, "get", true, mero_pass);
 		if (e != NULL) {
 			fprintf(stderr, "get: %s\n", e);
 			free(e);
@@ -1457,9 +1459,9 @@ command_get(int argc, char *argv[])
 			if (kv != NULL && kv->val != NULL) {
 				if (strcmp(kv->val, "mfunnel") == 0) {
 					if (strcmp(p, "name") != 0 &&
-							strcmp(p, "type") != 0 &&
-							strcmp(p, "mfunnel") != 0 &&
-							strcmp(p, "shared") != 0)
+					    strcmp(p, "type") != 0 &&
+					    strcmp(p, "mfunnel") != 0 &&
+					    strcmp(p, "shared") != 0)
 						continue;
 				}
 			} else { /* no type == database (default) */
@@ -1500,7 +1502,7 @@ command_get(int argc, char *argv[])
 			}
 
 			printf("%-15s  %-8s  %-7s  %s\n",
-					stats->dbname, p, source, value);
+			       stats->dbname, p, source, value);
 		}
 
 		freeConfFile(props);
@@ -1661,9 +1663,9 @@ command_destroy(int argc, char *argv[])
 		for (stats = orig; stats != NULL; stats = stats->next)
 			printf("%s'%s'", stats != orig ? ", " : "", stats->dbname);
 		printf("\nALL data in %s will be lost, are you sure? [y/N] ",
-				orig->next != NULL ? "these databases" : "this database");
+		       orig->next != NULL ? "these databases" : "this database");
 		if (scanf("%c", &answ) >= 1 &&
-				(answ == 'y' || answ == 'Y'))
+		    (answ == 'y' || answ == 'Y'))
 		{
 			/* do it! */
 		} else {
@@ -1676,7 +1678,7 @@ command_destroy(int argc, char *argv[])
 		for (stats = orig; stats != NULL; stats = stats->next) {
 			if (stats->state == SABdbRunning || stats->state == SABdbStarting) {
 				ret = control_send(&out, mero_host, mero_port,
-						stats->dbname, "stop", false, mero_pass);
+						   stats->dbname, "stop", false, mero_pass);
 				if (ret != NULL)
 					free(ret);
 				else
@@ -2278,7 +2280,7 @@ command_snapshot_destroy(int argc, char *argv[])
 			}
 		char answ;
 		printf("ALL data in %s will be lost, are you sure? [y/N] ",
-			nhits > 1 ? "these snapshots": "this snapshot");
+		       nhits > 1 ? "these snapshots": "this snapshot");
 		if (scanf("%c", &answ) < 1 || (answ != 'y' && answ != 'Y')) {
 			printf("aborted\n");
 			exit(1);
@@ -2289,7 +2291,7 @@ command_snapshot_destroy(int argc, char *argv[])
 		if (hitlist[i] != 0)
 			snapshot_destroy_file(snapshots[i].path);
 
-end:
+  end:
 	free_snapshots(snapshots, nsnapshots);
 	free(hitlist);
 }
@@ -2333,9 +2335,9 @@ command_snapshot_write(int argc, char *argv[])
 	static const char merocmd[] = "snapshot stream";
 
 	msg = control_send_callback(
-			&out, mero_host, mero_port, dbname,
-			merocmd, command_snapshot_write_cb, stdout,
-			mero_pass);
+		&out, mero_host, mero_port, dbname,
+		merocmd, command_snapshot_write_cb, stdout,
+		mero_pass);
 	if (msg) {
 		fprintf(stderr, "snapshot: database '%s': %s\n", dbname, msg);
 		exit(2);
@@ -2414,68 +2416,68 @@ main(int argc, char *argv[])
 	/* handle monetdb_options */
 	for (i = 1; argc > i && argv[i][0] == '-'; i++) {
 		switch (argv[i][1]) {
-			case 'v':
-				command_version();
+		case 'v':
+			command_version();
 			return(0);
-			case 'q':
-				monetdb_quiet = true;
+		case 'q':
+			monetdb_quiet = true;
 			break;
-			case 'h':
-				if (strlen(&argv[i][2]) > 0) {
-					mero_host = &argv[i][2];
+		case 'h':
+			if (strlen(&argv[i][2]) > 0) {
+				mero_host = &argv[i][2];
+			} else {
+				if (i + 1 < argc) {
+					mero_host = argv[++i];
 				} else {
-					if (i + 1 < argc) {
-						mero_host = argv[++i];
-					} else {
-						fprintf(stderr, "monetdb: -h needs an argument\n");
-						return(1);
-					}
+					fprintf(stderr, "monetdb: -h needs an argument\n");
+					return(1);
 				}
+			}
 			break;
-			case 'p':
-				if (strlen(&argv[i][2]) > 0) {
-					mero_port = atoi(&argv[i][2]);
+		case 'p':
+			if (strlen(&argv[i][2]) > 0) {
+				mero_port = atoi(&argv[i][2]);
+			} else {
+				if (i + 1 < argc) {
+					mero_port = atoi(argv[++i]);
 				} else {
-					if (i + 1 < argc) {
-						mero_port = atoi(argv[++i]);
-					} else {
-						fprintf(stderr, "monetdb: -p needs an argument\n");
-						return(1);
-					}
+					fprintf(stderr, "monetdb: -p needs an argument\n");
+					return(1);
 				}
+			}
 			break;
-			case 'P':
-				/* take care we remove the password from argv so it
-				 * doesn't show up in e.g. ps -ef output */
-				if (strlen(&argv[i][2]) > 0) {
-					mero_pass = strdup(&argv[i][2]);
-					memset(&argv[i][2], 0, strlen(mero_pass));
+		case 'P':
+			/* take care we remove the password from argv so it
+			 * doesn't show up in e.g. ps -ef output */
+			if (strlen(&argv[i][2]) > 0) {
+				mero_pass = strdup(&argv[i][2]);
+				memset(&argv[i][2], 0, strlen(mero_pass));
+			} else {
+				if (i + 1 < argc) {
+					mero_pass = strdup(argv[++i]);
+					memset(argv[i], 0, strlen(mero_pass));
 				} else {
-					if (i + 1 < argc) {
-						mero_pass = strdup(argv[++i]);
-						memset(argv[i], 0, strlen(mero_pass));
-					} else {
-						fprintf(stderr, "monetdb: -P needs an argument\n");
-						return(1);
-					}
+					fprintf(stderr, "monetdb: -P needs an argument\n");
+					return(1);
 				}
+			}
 			break;
-			case '-':
-				/* skip -- */
-				if (argv[i][2] == '\0')
-					break;
-				if (strcmp(&argv[i][2], "version") == 0) {
-					command_version();
-					return(0);
-				} else if (strcmp(&argv[i][2], "help") == 0) {
-					command_help(0, NULL);
-					return(0);
-				}
-				/* fall through */
-			default:
-				fprintf(stderr, "monetdb: unknown option: %s\n", argv[i]);
+		case '-':
+			/* skip -- */
+			if (argv[i][2] == '\0')
+				break;
+			if (strcmp(&argv[i][2], "version") == 0) {
+				command_version();
+				return(0);
+			} else if (strcmp(&argv[i][2], "help") == 0) {
 				command_help(0, NULL);
-				return(1);
+				return(0);
+			}
+			/* fall through */
+		default:
+			fprintf(stderr, "monetdb: unknown option: %s\n", argv[i]);
+			command_help(0, NULL);
+			return(1);
 			break;
 		}
 	}
@@ -2514,7 +2516,7 @@ main(int argc, char *argv[])
 			mero_host = "/tmp";
 		/* first try the port given (or else its default) */
 		if (snprintf(buf, sizeof(buf), "%s/.s.merovingian.%d",
-					 mero_host, mero_port == -1 ? MAPI_PORT : mero_port) >= (int) sizeof(buf)) {
+			     mero_host, mero_port == -1 ? MAPI_PORT : mero_port) >= (int) sizeof(buf)) {
 			fprintf(stderr, "monetdb: directory name too long\n");
 			exit(1);
 		}
@@ -2531,14 +2533,14 @@ main(int argc, char *argv[])
 				d = opendir(mero_host);
 				if (d == NULL) {
 					fprintf(stderr, "monetdb: %s: %s\n",
-							mero_host, strerror(errno));
+						mero_host, strerror(errno));
 					exit(1);
 				}
 				while ((e = readdir(d)) != NULL) {
 					if (strncmp(e->d_name, ".s.merovingian.", 15) != 0)
 						continue;
 					if (snprintf(buf, sizeof(buf), "%s/%s", mero_host, e->d_name) >= (int) sizeof(buf) ||
-						stat(buf, &s) == -1) {
+					    stat(buf, &s) == -1) {
 						/* too long or doesn't exist */
 						continue;
 					}

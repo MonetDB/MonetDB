@@ -232,6 +232,7 @@ split_segment(segments *segs, segment *o, segment *p, sql_trans *tr, size_t star
 {
 	assert(tr);
 	if (o->start == start && o->end == start+cnt) {
+		assert(deleted);
 		assert(o->deleted != deleted || o->ts < TRANSACTION_ID_BASE);
 		o->oldts = o->ts;
 		o->ts = tr->tid;
@@ -454,11 +455,11 @@ segments2cs(sql_trans *tr, segments *segs, column_storage *cs)
 	return LOG_OK;
 }
 
-/* TODO return LOG_OK/ERR */
 static void
 merge_segments(storage *s, sql_trans *tr, sql_change *change, ulng commit_ts, ulng oldest)
 {
-	sqlstore* store = tr->store;
+	if (commit_ts == oldest && !tr->parent) /* we are the only active transaction */
+		oldest++;
 	segment *cur = s->segs->h, *seg = NULL;
 	for (; cur; cur = ATOMIC_PTR_GET(&cur->next)) {
 		if (cur->ts == tr->tid) {
@@ -467,46 +468,24 @@ merge_segments(storage *s, sql_trans *tr, sql_change *change, ulng commit_ts, ul
 			cur->ts = commit_ts;
 			cur->cnr = 0;
 		}
-		if (!seg) {
-			/* first segment */
-			seg = cur;
-		}
-		else if (seg->ts < TRANSACTION_ID_BASE) {
-			/* possible merge since both deleted flags are equal */
-			if (seg->deleted == cur->deleted && cur->ts < TRANSACTION_ID_BASE) {
-				int merge = 1;
-				node *n = store->active->h;
-				for (int i = 0; i < store->active->cnt; i++, n = n->next) {
-					sql_trans* other = ((sql_trans*)n->data);
-					ulng active = other->ts;
-					if(other->active == 2)
-						continue; /* pretend that another recently committed transaction is no longer active */
-					if (active == tr->ts)
-						continue; /* pretend that committing transaction has already committed and is no longer active */
-					if (seg->ts < active && cur->ts < active)
-						break;
-					if (seg->ts > active && cur->ts > active)
-						continue;
-
-					assert((active > seg->ts && active < cur->ts) || (active < seg->ts && active > cur->ts));
-					/* cannot safely merge since there is an active transaction between the segments */
-					merge = false;
-					break;
-				}
-				/* merge segments */
-				if (merge) {
-					seg->end = cur->end;
-					ATOMIC_PTR_SET(&seg->next, ATOMIC_PTR_GET(&cur->next));
-					if (cur == s->segs->t)
-						s->segs->t = seg;
-					if (commit_ts == oldest) {
-						_DELETE(cur);
-					} else
-						mark4destroy(cur, change, commit_ts);
-					cur = seg;
-					continue;
-				}
-			}
+		/* possible merge since both deleted flags are equal */
+		if (seg && seg->deleted == cur->deleted &&
+				((seg->ts < oldest && cur->ts < oldest) ||
+				(seg->ts == cur->ts && cur->ts == tr->tid) ||
+				(seg->ts == cur->ts && cur->ts == tr->ts) ||
+				(seg->ts == cur->ts && cur->ts == commit_ts))) {
+			/* merge segments */
+			seg->end = cur->end;
+			ATOMIC_PTR_SET(&seg->next, ATOMIC_PTR_GET(&cur->next));
+			if (cur == s->segs->t)
+				s->segs->t = seg;
+			if (commit_ts == oldest) {
+				_DELETE(cur);
+			} else
+				mark4destroy(cur, change, commit_ts);
+			cur = seg;
+			seg = NULL;
+			continue;
 		}
 		seg = cur;
 	}
@@ -4837,7 +4816,7 @@ claim_segmentsV2(sql_trans *tr, sql_table *t, storage *s, size_t cnt, BUN *offse
 	if (ATOMIC_GET(&s->segs->deleted) != 0)
 	for (segment *seg = s->segs->h, *p = NULL; seg && cnt && ok == LOG_OK; p = seg, seg = ATOMIC_PTR_GET(&seg->next)) {
 		if (seg->deleted && seg->ts < oldest && seg->end > seg->start) { /* reuse old deleted or rolled back append */
-			if ((seg->end - seg->start) >= cnt) {
+			if ((seg->end - seg->start) > cnt) {
 				/* if previous is claimed before we could simply adjust the end/start */
 				if (p && p->ts == tr->tid && p->cnr == tr->cnr && !p->deleted) {
 					slot = p->end;
@@ -4932,7 +4911,7 @@ claim_segments(sql_trans *tr, sql_table *t, storage *s, size_t cnt, BUN *offset,
 	for (segment *seg = s->segs->h, *p = NULL; seg && ok == LOG_OK; p = seg, seg = ATOMIC_PTR_GET(&seg->next)) {
 		if (seg->deleted && seg->ts < oldest && (seg->end-seg->start) >= cnt) { /* reuse old deleted or rolled back append */
 
-			if ((seg->end - seg->start) >= cnt) {
+			if ((seg->end - seg->start) > cnt) {
 
 				/* if previous is claimed before we could simply adjust the end/start */
 				if (p && p->ts == tr->tid && p->cnr == tr->cnr && !p->deleted) {

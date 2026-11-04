@@ -280,6 +280,7 @@ CONDITIONALS = {
     'HAVE_LIBZ'            : '@HAVE_LIBZ_FALSE@',
     'HAVE_SNAPPY'          : '@HAVE_SNAPPY_FALSE@',
     'HAVE_ZSTD'            : '@HAVE_ZSTD_FALSE@',
+    'HAVE_HTSLIB'          : '@HAVE_HTSLIB_FALSE@',
     'HAVE_NETCDF'          : '@HAVE_NETCDF_FALSE@',
     'HAVE_ODBC'            : '@HAVE_ODBC_FALSE@',
     'HAVE_OPENSSL'         : '@HAVE_OPENSSL_FALSE@',
@@ -1110,6 +1111,27 @@ def PerformDir(env, testdir, testlist, total_tests):
             options = []            # not used
         else:
             oneserver = not restart
+            mod = None
+            for arg in options:
+                if arg == '--loadmodule':
+                    mod = ''
+                elif mod is not None:
+                    mod = arg
+                elif arg.startswith('--loadmodule='):
+                    mod = arg[13:]
+                if mod:
+                    so_prefix = '@SO_PREFIX@' if os.name != 'nt' else ''
+                    for lib in ['lib', 'lib64', 'lib/64', 'lib32']:
+                        if os.path.exists(
+                                os.path.join('@QXprefix@', lib,
+                                             f'monetdb5-@MONETDB_VERSION@',
+                                             f'{so_prefix}_{mod}@SO_EXT@')):
+                            break
+                    else:
+                        # Warn(f"Required module {mod} not available;"
+                        #      " skipping directory")
+                        return TSTDIR, elem, max(FdOut, FdErr), interrupted
+                    mod = None
 
         if testlist:
             tl = []
@@ -2424,10 +2446,12 @@ def killchildren(pid, procs=None):
     if procs is None:
         try:
             os.killpg(pid, signal.SIGKILL)
+            print(f'sent SIGKILL to process group {pid}', file=sys.stderr)
             return
         except AttributeError:
             try:
                 os.kill(-pid, signal.SIGKILL)
+                print(f'sent SIGKILL to process group {pid}', file=sys.stderr)
                 return
             except OSError:
                 pass
@@ -2440,6 +2464,7 @@ def killchildren(pid, procs=None):
         print('killing process %d' % pid)
     try:
         os.kill(pid, signal.SIGKILL)
+        print(f'sent SIGKILL to process {pid}', file=sys.stderr)
     except OSError:
         if procdebug:
             print('killing process %d failed' % pid)
@@ -3079,10 +3104,10 @@ def progress(count, errors, total, test, spaces=' '*(ttywidth or 100)):
         nl = up = down = ''
     perc = int(count*100/total) if total and count else 0
     width = len(str(total))
-    s = f'[{count:{width}}/{total}] ({perc:2}%)    {test}'
+    s = f'[{count:{width}}/{total}] ({perc:3}%)   {test}'
     if len(s) > ttywidth:
         test = test[len(s)-ttywidth:]
-        s = f'[{count:{width}}/{total}] ({perc:2}%)    {test}'
+        s = f'[{count:{width}}/{total}] ({perc:3}%)   {test}'
     sys.stdout.write(nl + '\r' + up + spaces + '\r' + s + down + errs)
 
 

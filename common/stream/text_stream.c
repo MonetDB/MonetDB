@@ -107,8 +107,8 @@ text_pump_in(inner_state_t *ist, pump_action action)
 
 	while (1) {
 		size_t span = ist->src_win.count < ist->dst_win.count
-					? ist->src_win.count
-					: ist->dst_win.count;
+			? ist->src_win.count
+			: ist->dst_win.count;
 		if (span == 0)
 			break;
 

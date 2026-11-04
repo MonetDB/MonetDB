@@ -211,8 +211,8 @@ SLICERno_slices(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	else
 		*res = (int)((cnt+SLICE_SIZE-1)/SLICE_SIZE);
 	FORCEMITODEBUG
-	if (*res < GDKnr_threads)
-		*res = MIN((int)GDKnr_threads,(int)cnt);
+	if (*res < GDKnr_pipeline_threads)
+		*res = MIN(GDKnr_pipeline_threads, (int) cnt);
 	BBPunfix(b->batCacheid);
 	return MAL_SUCCEED;
 }

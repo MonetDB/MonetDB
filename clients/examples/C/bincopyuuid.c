@@ -27,7 +27,7 @@ random_uuid(struct rng *rng, my_uuid *u)
 	//
 	// _0_1_2_3 _4_5 _6_7 _8_9
 	// 123e4567-e89b-12d3-a456-426614174000
-    // xxxxxxxx-xxxx-Mxxx-Nxxx-xxxxxxxxxxxx
+	// xxxxxxxx-xxxx-Mxxx-Nxxx-xxxxxxxxxxxx
 	//
 	// M: uuid version, located in byte 6
 	// N: uuid variant, located in byte 8
@@ -80,4 +80,3 @@ gen_text_uuids(FILE *f, bool byteswap, long nrecs, char *arg)
 	}
 	(void)byteswap;
 }
-

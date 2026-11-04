@@ -185,7 +185,7 @@ logFD(dpair dp, int fd, const char *type, const char *dbname, long long pid, FIL
 				dp->input[fd].cnt = 0;
 				dp->input[fd].buf[0] = '\0';
 				fprintf(stream, "%s %s %s[%lld]: %s\n",
-						mytime, type, dbname, pid, q);
+					mytime, type, dbname, pid, q);
 				break;
 			}
 			last = p + 1 - buf;
@@ -210,19 +210,19 @@ logFD(dpair dp, int fd, const char *type, const char *dbname, long long pid, FIL
 					/* last message was repeated but not all repeats reported */
 					char tmptime[20];
 					strftime(tmptime, sizeof(tmptime), "%Y-%m-%d %H:%M:%S",
-							 localtime(&dp->input[fd].ts));
+						 localtime(&dp->input[fd].ts));
 					if (dp->input[fd].cnt == 1)
 						fprintf(stream, "%s %s %s[%lld]: %s\n",
-								tmptime, type, dbname, pid, dp->input[fd].buf);
+							tmptime, type, dbname, pid, dp->input[fd].buf);
 					else
 						fprintf(stream, "%s %s %s[%lld]: message repeated %d times: %s\n",
-								tmptime, type, dbname, pid, dp->input[fd].cnt, dp->input[fd].buf);
+							tmptime, type, dbname, pid, dp->input[fd].cnt, dp->input[fd].buf);
 				}
 				dp->input[fd].ts = now;
 				dp->input[fd].cnt = 0;
 				strcpy(dp->input[fd].buf, q);
 				fprintf(stream, "%s %s %s[%lld]: %.*s\n",
-						mytime, type, dbname, pid, (int) (p - q), q);
+					mytime, type, dbname, pid, (int) (p - q), q);
 			}
 		}
 		fflush(stream);
@@ -231,13 +231,13 @@ logFD(dpair dp, int fd, const char *type, const char *dbname, long long pid, FIL
 		/* last message was repeated but not all repeats reported */
 		char tmptime[20];
 		strftime(tmptime, sizeof(tmptime), "%Y-%m-%d %H:%M:%S",
-				 localtime(&dp->input[fd].ts));
+			 localtime(&dp->input[fd].ts));
 		if (dp->input[fd].cnt == 1)
 			fprintf(stream, "%s %s %s[%lld]: %s\n",
-					tmptime, type, dbname, pid, dp->input[fd].buf);
+				tmptime, type, dbname, pid, dp->input[fd].buf);
 		else
 			fprintf(stream, "%s %s %s[%lld]: message repeated %d times: %s\n",
-					tmptime, type, dbname, pid, dp->input[fd].cnt, dp->input[fd].buf);
+				tmptime, type, dbname, pid, dp->input[fd].cnt, dp->input[fd].buf);
 		dp->input[fd].cnt = 0;
 		dp->input[fd].buf[0] = 0;
 	}
@@ -342,18 +342,18 @@ logListener(void *x)
 				for (int i = 0; i < nfds; i++) {
 					if (pfd[i].fd == w->input[0].fd && pfd[i].revents & POLLIN)
 						logFD(w, 0, "MSG", w->dbname,
-							  (long long int)w->pid, _mero_logfile, false);
+						      (long long int)w->pid, _mero_logfile, false);
 					else if (pfd[i].fd == w->input[1].fd && pfd[i].revents & POLLIN)
 						logFD(w, 1, "ERR", w->dbname,
-							  (long long int)w->pid, _mero_logfile, false);
+						      (long long int)w->pid, _mero_logfile, false);
 				}
 #else
 				if (FD_ISSET(w->input[0].fd, &readfds) != 0)
 					logFD(w, 0, "MSG", w->dbname,
-						  (long long int)w->pid, _mero_logfile, false);
+					      (long long int)w->pid, _mero_logfile, false);
 				if (w->input[1].fd != w->input[0].fd && FD_ISSET(w->input[1].fd, &readfds) != 0)
 					logFD(w, 1, "ERR", w->dbname,
-						  (long long int)w->pid, _mero_logfile, false);
+					      (long long int)w->pid, _mero_logfile, false);
 #endif
 				w->flag &= ~1;
 			}
@@ -563,13 +563,13 @@ main(int argc, char *argv[])
 	*dbfarm = '\0';
 	if (argc > 1) {
 		if (strcmp(argv[1], "--help") == 0 ||
-				strcmp(argv[1], "-h") == 0 ||
-				strcmp(argv[1], "help") == 0)
+		    strcmp(argv[1], "-h") == 0 ||
+		    strcmp(argv[1], "help") == 0)
 		{
 			exit(command_help(argc - 1, &argv[1]));
 		} else if (strcmp(argv[1], "--version") == 0 ||
-				strcmp(argv[1], "-v") == 0 ||
-				strcmp(argv[1], "version") == 0)
+			   strcmp(argv[1], "-v") == 0 ||
+			   strcmp(argv[1], "version") == 0)
 		{
 			exit(command_version());
 		} else if (strcmp(argv[1], "create") == 0) {
@@ -584,12 +584,13 @@ main(int argc, char *argv[])
 			if (argc == 3 + merodontfork) {
 				int len;
 				len = snprintf(dbfarm, sizeof(dbfarm), "%s",
-						argv[2 + merodontfork]);
+					       argv[2 + merodontfork]);
 
 				if (len > 0 && (size_t)len >= sizeof(dbfarm)) {
-					Mlevelfprintf(ERROR, stderr, "fatal: dbfarm exceeds allocated " \
-							"path length, please file a bug at " \
-							"https://github.com/MonetDB/MonetDB/issues/\n");
+					Mlevelfprintf(ERROR, stderr,
+						      "fatal: dbfarm exceeds allocated "
+						      "path length, please file a bug at "
+						      "https://github.com/MonetDB/MonetDB/issues/\n");
 					exit(1);
 				}
 			} else {
@@ -622,88 +623,88 @@ main(int argc, char *argv[])
 			return(1);
 		}
 		switch (fork()) {
-			case -1:
-				/* oops, forking went wrong! */
-				Mlevelfprintf(ERROR, stderr, "unable to fork into background: %s\n",
-						strerror(errno));
-				close(pfd[0]);
-				close(pfd[1]);
+		case -1:
+			/* oops, forking went wrong! */
+			Mlevelfprintf(ERROR, stderr, "unable to fork into background: %s\n",
+				      strerror(errno));
+			close(pfd[0]);
+			close(pfd[1]);
+			return(1);
+		case 0:
+			/* detach client from controlling tty, we only write to the
+			 * pipe to daddy */
+			if (setsid() < 0)
+				Mlevelfprintf(WARNING, stderr, "hmmm, can't detach from controlling tty, "
+					      "continuing anyway\n");
+			if ((retfd = open("/dev/null", O_RDONLY | O_CLOEXEC)) < 0) {
+				Mlevelfprintf(ERROR, stderr, "unable to dup stdin: %s\n", strerror(errno));
 				return(1);
-			case 0:
-				/* detach client from controlling tty, we only write to the
-				 * pipe to daddy */
-				if (setsid() < 0)
-					Mlevelfprintf(WARNING, stderr, "hmmm, can't detach from controlling tty, "
-							"continuing anyway\n");
-				if ((retfd = open("/dev/null", O_RDONLY | O_CLOEXEC)) < 0) {
-					Mlevelfprintf(ERROR, stderr, "unable to dup stdin: %s\n", strerror(errno));
-					return(1);
-				}
-				dup_err = dup2(retfd, 0);
-				if (dup_err == -1) {
-					Mlevelfprintf(ERROR, stderr, "unable to dup stdin: %s\n", strerror(errno));
-				}
-				close(retfd);
-				close(pfd[0]); /* close unused read end */
-				retfd = pfd[1]; /* store the write end */
-				if (dup_err == -1) {
-					return(1);
-				}
+			}
+			dup_err = dup2(retfd, 0);
+			if (dup_err == -1) {
+				Mlevelfprintf(ERROR, stderr, "unable to dup stdin: %s\n", strerror(errno));
+			}
+			close(retfd);
+			close(pfd[0]); /* close unused read end */
+			retfd = pfd[1]; /* store the write end */
+			if (dup_err == -1) {
+				return(1);
+			}
 #if !defined(HAVE_PIPE2) || O_CLOEXEC == 0
-				(void) fcntl(retfd, F_SETFD, FD_CLOEXEC);
+			(void) fcntl(retfd, F_SETFD, FD_CLOEXEC);
 #endif
-				break;
-			default:
-				/* the parent, we want it to die, after we know the child
-				 * is having a good time */
-				close(pfd[1]); /* close unused write end */
-				freeConfFile(ckv); /* make debug tools happy */
-				if (read(pfd[0], &buf, 1) != 1) {
-					Mlevelfprintf(ERROR, stderr, "unable to retrieve startup status\n");
-					close(pfd[0]);
-					return(1);
-				}
+			break;
+		default:
+			/* the parent, we want it to die, after we know the child
+			 * is having a good time */
+			close(pfd[1]); /* close unused write end */
+			freeConfFile(ckv); /* make debug tools happy */
+			if (read(pfd[0], &buf, 1) != 1) {
+				Mlevelfprintf(ERROR, stderr, "unable to retrieve startup status\n");
 				close(pfd[0]);
-				return(buf[0]); /* whatever the child returned, we return */
+				return(1);
+			}
+			close(pfd[0]);
+			return(buf[0]); /* whatever the child returned, we return */
 		}
 	}
 
 /* use after the logger thread has started */
-#define MERO_EXIT(status)											\
-	do {															\
-		if (!merodontfork) {										\
-			char s = (char) status;									\
-			if (write(retfd, &s, 1) != 1 || close(retfd) != 0) {	\
-				Mlevelfprintf(ERROR, stderr, "could not write to parent\n");	\
-			}														\
-		}															\
-		if (status != 0) {											\
+#define MERO_EXIT(status)						\
+	do {								\
+		if (!merodontfork) {					\
+			char s = (char) status;				\
+			if (write(retfd, &s, 1) != 1 || close(retfd) != 0) { \
+				Mlevelfprintf(ERROR, stderr, "could not write to parent\n"); \
+			}						\
+		}							\
+		if (status != 0) {					\
 			Mlevelfprintf(ERROR, stderr, "fatal startup condition encountered, " \
-					 "aborting startup\n");							\
-			goto shutdown;											\
-		}															\
+				      "aborting startup\n");		\
+			goto shutdown;					\
+		}							\
 	} while (0)
 
 /* use before logger thread has started */
-#define MERO_EXIT_CLEAN(status)										\
-	do {															\
-		if (!merodontfork) {										\
-			char s = (char) status;									\
-			if (write(retfd, &s, 1) != 1 || close(retfd) != 0) {	\
-				Mlevelfprintf(ERROR, stderr, "could not write to parent\n");	\
-			}														\
-		}															\
-		exit(status);												\
+#define MERO_EXIT_CLEAN(status)						\
+	do {								\
+		if (!merodontfork) {					\
+			char s = (char) status;				\
+			if (write(retfd, &s, 1) != 1 || close(retfd) != 0) { \
+				Mlevelfprintf(ERROR, stderr, "could not write to parent\n"); \
+			}						\
+		}							\
+		exit(status);						\
 	} while (0)
 
 	/* chdir to dbfarm so we are at least in a known to exist location */
 	if (chdir(dbfarm) < 0) {
 		if (errno == ENOENT)
 			Mlevelfprintf(ERROR, stderr, "dbfarm directory '%s' does not exist, "
-					 "use monetdbd create first\n", dbfarm);
+				      "use monetdbd create first\n", dbfarm);
 		else
 			Mlevelfprintf(ERROR, stderr, "could not move to dbfarm '%s': %s\n",
-					 dbfarm, strerror(errno));
+				      dbfarm, strerror(errno));
 		MERO_EXIT_CLEAN(1);
 	}
 	/* absolutise dbfarm if it isn't yet (we're in it now) */
@@ -711,10 +712,10 @@ main(int argc, char *argv[])
 		if (getcwd(dbfarm, sizeof(dbfarm)) == NULL) {
 			if (errno == ERANGE) {
 				Mlevelfprintf(ERROR, stderr, "current path exceeds allocated path length" \
-						"please file a bug at https://github.com/MonetDB/MonetDB/issues/\n");
+					      "please file a bug at https://github.com/MonetDB/MonetDB/issues/\n");
 			} else {
 				Mlevelfprintf(ERROR, stderr, "could not get dbfarm working directory: %s\n",
-						strerror(errno));
+					      strerror(errno));
 			}
 			MERO_EXIT_CLEAN(1);
 		}
@@ -728,7 +729,7 @@ main(int argc, char *argv[])
 		if (stat(_mero_mserver, &sb) == -1) {
 			/* exit early if this is not going to work well */
 			Mlevelfprintf(ERROR, stderr, "cannot stat %s executable: %s\n",
-					_mero_mserver, strerror(errno));
+				      _mero_mserver, strerror(errno));
 			MERO_EXIT_CLEAN(1);
 		}
 	}
@@ -736,7 +737,7 @@ main(int argc, char *argv[])
 	/* read the merovingian properties from the dbfarm */
 	if (readProps(ckv, ".") != 0) {
 		Mlevelfprintf(ERROR, stderr, "cannot find or read properties file, was "
-				"this dbfarm created by `monetdbd create`?\n");
+			      "this dbfarm created by `monetdbd create`?\n");
 		MERO_EXIT_CLEAN(1);
 	}
 	_mero_props = ckv;
@@ -746,7 +747,7 @@ main(int argc, char *argv[])
 	p = getConfVal(_mero_props, "forward");
 	if (strcmp(p, "redirect") != 0 && strcmp(p, "proxy") != 0) {
 		Mlevelfprintf(ERROR, stderr, "invalid forwarding mode: %s, defaulting to proxy\n",
-				p);
+			      p);
 		kv = findConfKey(_mero_props, "forward");
 		setConfVal(kv, "proxy");
 		writeProps(_mero_props, ".");
@@ -755,7 +756,7 @@ main(int argc, char *argv[])
 	kv = findConfKey(_mero_props, "listenaddr");
 	if (kv->val == NULL || strlen(kv->val) < 1) {
 		Mlevelfprintf(ERROR, stderr, "invalid host name: %s, defaulting to localhost\n",
-				kv->val);
+			      kv->val);
 		setConfVal(kv, "localhost");
 		writeProps(_mero_props, ".");
 	}
@@ -764,7 +765,7 @@ main(int argc, char *argv[])
 	kv = findConfKey(_mero_props, "port");
 	if (kv->ival <= 0 || kv->ival > 65535) {
 		Mlevelfprintf(ERROR, stderr, "invalid port number: %s, defaulting to %s\n",
-				kv->val, MERO_PORT);
+			      kv->val, MERO_PORT);
 		setConfVal(kv, MERO_PORT);
 		writeProps(_mero_props, ".");
 	}
@@ -780,13 +781,13 @@ main(int argc, char *argv[])
 		char *h = kv->val + 1;
 		if ((p = strchr(h, '}')) == NULL) {
 			Mlevelfprintf(WARNING, stderr, "warning: incompatible passphrase (not hashed as "
-					MONETDB5_PASSWDHASH "), disabling passphrase\n");
+				      MONETDB5_PASSWDHASH "), disabling passphrase\n");
 		} else {
 			*p = '\0';
 			if (strcmp(h, MONETDB5_PASSWDHASH) != 0) {
 				Mlevelfprintf(WARNING, stderr, "warning: passphrase hash '%s' incompatible, "
-						"expected '%s', disabling passphrase\n",
-						h, MONETDB5_PASSWDHASH);
+					      "expected '%s', disabling passphrase\n",
+					      h, MONETDB5_PASSWDHASH);
 			} else {
 				/* p points into kv->val which gets freed before p
 				 * gets copied inside setConfVal, hence we need to
@@ -806,19 +807,19 @@ main(int argc, char *argv[])
 	} else if (lockfd == -2) {
 		/* directory or something doesn't exist */
 		Mlevelfprintf(ERROR, stderr, "unable to create %s/.merovingian_lock file: %s\n",
-				dbfarm, strerror(errno));
+			      dbfarm, strerror(errno));
 		MERO_EXIT_CLEAN(1);
 	}
 
 	/* set up UNIX socket paths for control and mapi */
 	p = getConfVal(_mero_props, "sockdir");
 	snprintf(control_usock, sizeof(control_usock), "%s/" CONTROL_SOCK "%d",
-			p, port);
+		 p, port);
 	snprintf(mapi_usock, sizeof(mapi_usock), "%s/" MERO_SOCK "%d",
-			p, port);
+		 p, port);
 
 	if ((remove(control_usock) != 0 && errno != ENOENT) ||
-		(remove(mapi_usock) != 0 && errno != ENOENT)) {
+	    (remove(mapi_usock) != 0 && errno != ENOENT)) {
 		/* cannot remove socket files */
 		Mlevelfprintf(ERROR, stderr, "cannot remove socket files: %s\n", strerror(errno));
 		MERO_EXIT_CLEAN(1);
@@ -840,10 +841,10 @@ main(int argc, char *argv[])
 	p = getConfVal(_mero_props, "logfile");
 	/* write to the given file */
 	_mero_topdp->input[0].fd = open(p, O_WRONLY | O_APPEND | O_CREAT | O_CLOEXEC,
-			S_IRUSR | S_IWUSR);
+					S_IRUSR | S_IWUSR);
 	if (_mero_topdp->input[0].fd == -1) {
 		Mlevelfprintf(ERROR, stderr, "unable to open '%s': %s\n",
-				p, strerror(errno));
+			      p, strerror(errno));
 		MERO_EXIT_CLEAN(1);
 	}
 #if O_CLOEXEC == 0
@@ -853,7 +854,7 @@ main(int argc, char *argv[])
 
 	if(!(_mero_logfile = fdopen(_mero_topdp->input[0].fd, "a"))) {
 		Mlevelfprintf(ERROR, stderr, "unable to open file descriptor: %s\n",
-				 strerror(errno));
+			      strerror(errno));
 		MERO_EXIT(1);
 	}
 
@@ -868,7 +869,7 @@ main(int argc, char *argv[])
 	/* redirect stdout */
 	if (pipe2(pfd, O_CLOEXEC) == -1) {
 		Mlevelfprintf(ERROR, stderr, "unable to create pipe: %s\n",
-				strerror(errno));
+			      strerror(errno));
 		MERO_EXIT(1);
 	}
 #if !defined(HAVE_PIPE2) || O_CLOEXEC == 0
@@ -885,7 +886,7 @@ main(int argc, char *argv[])
 	/* redirect stderr */
 	if (pipe2(pfd, O_CLOEXEC) == -1) {
 		Mlevelfprintf(ERROR, stderr, "unable to create pipe: %s\n",
-				strerror(errno));
+			      strerror(errno));
 		MERO_EXIT(1);
 	}
 #if !defined(HAVE_PIPE2) || O_CLOEXEC == 0
@@ -934,7 +935,7 @@ main(int argc, char *argv[])
 	pthread_mutex_init(&d->fork_lock, NULL);
 	if (pipe2(pfd, O_CLOEXEC) == -1) {
 		Mlevelfprintf(ERROR, stderr, "unable to create pipe: %s\n",
-				strerror(errno));
+			      strerror(errno));
 		MERO_EXIT(1);
 	}
 #if !defined(HAVE_PIPE2) || O_CLOEXEC == 0
@@ -944,12 +945,12 @@ main(int argc, char *argv[])
 	d->input[0].fd = pfd[0];
 	if(!(_mero_discout = fdopen(pfd[1], "a"))) {
 		Mlevelfprintf(ERROR, stderr, "unable to open file descriptor: %s\n",
-				 strerror(errno));
+			      strerror(errno));
 		MERO_EXIT(1);
 	}
 	if (pipe2(pfd, O_CLOEXEC) == -1) {
 		Mlevelfprintf(ERROR, stderr, "unable to create pipe: %s\n",
-				strerror(errno));
+			      strerror(errno));
 		MERO_EXIT(1);
 	}
 #if !defined(HAVE_PIPE2) || O_CLOEXEC == 0
@@ -959,7 +960,7 @@ main(int argc, char *argv[])
 	d->input[1].fd = pfd[0];
 	if(!(_mero_discerr = fdopen(pfd[1], "a"))) {
 		Mlevelfprintf(ERROR, stderr, "unable to open file descriptor: %s\n",
-				 strerror(errno));
+			      strerror(errno));
 		MERO_EXIT(1);
 	}
 
@@ -974,7 +975,7 @@ main(int argc, char *argv[])
 	pthread_mutex_init(&d->fork_lock, NULL);
 	if (pipe2(pfd, O_CLOEXEC) == -1) {
 		Mlevelfprintf(ERROR, stderr, "unable to create pipe: %s\n",
-				strerror(errno));
+			      strerror(errno));
 		MERO_EXIT(1);
 	}
 #if !defined(HAVE_PIPE2) || O_CLOEXEC == 0
@@ -984,12 +985,12 @@ main(int argc, char *argv[])
 	d->input[0].fd = pfd[0];
 	if(!(_mero_ctlout = fdopen(pfd[1], "a"))) {
 		Mlevelfprintf(ERROR, stderr, "unable to open file descriptor: %s\n",
-				 strerror(errno));
+			      strerror(errno));
 		MERO_EXIT(1);
 	}
 	if (pipe2(pfd, O_CLOEXEC) == -1) {
 		Mlevelfprintf(ERROR, stderr, "unable to create pipe: %s\n",
-				strerror(errno));
+			      strerror(errno));
 		MERO_EXIT(1);
 	}
 #if !defined(HAVE_PIPE2) || O_CLOEXEC == 0
@@ -999,13 +1000,13 @@ main(int argc, char *argv[])
 	d->input[1].fd = pfd[0];
 	if(!(_mero_ctlerr = fdopen(pfd[1], "a"))) {
 		Mlevelfprintf(ERROR, stderr, "unable to open file descriptor: %s\n",
-				 strerror(errno));
+			      strerror(errno));
 		MERO_EXIT(1);
 	}
 
 	if ((thret = pthread_create(&tid, NULL, logListener, NULL)) != 0) {
 		Mlevelfprintf(ERROR, oerr, "%s: FATAL: unable to create logthread: %s\n",
-				argv[0], strerror(thret));
+			      argv[0], strerror(thret));
 		MERO_EXIT(1);
 	}
 
@@ -1013,10 +1014,10 @@ main(int argc, char *argv[])
 	sa.sa_flags = 0;
 	sa.sa_handler = handler;
 	if (sigaction(SIGINT, &sa, NULL) == -1 ||
-		sigaction(SIGQUIT, &sa, NULL) == -1 ||
-		sigaction(SIGTERM, &sa, NULL) == -1) {
+	    sigaction(SIGQUIT, &sa, NULL) == -1 ||
+	    sigaction(SIGTERM, &sa, NULL) == -1) {
 		Mlevelfprintf(ERROR, oerr, "%s: FATAL: unable to create signal handlers: %s\n",
-				 argv[0], strerror(errno));
+			      argv[0], strerror(errno));
 		MERO_EXIT(1);
 	}
 
@@ -1025,7 +1026,7 @@ main(int argc, char *argv[])
 	sa.sa_handler = huphandler;
 	if (sigaction(SIGHUP, &sa, NULL) == -1) {
 		Mlevelfprintf(ERROR, oerr, "%s: FATAL: unable to create signal handlers: %s\n",
-				 argv[0], strerror(errno));
+			      argv[0], strerror(errno));
 		MERO_EXIT(1);
 	}
 
@@ -1034,7 +1035,7 @@ main(int argc, char *argv[])
 	sa.sa_handler = segvhandler;
 	if (sigaction(SIGSEGV, &sa, NULL) == -1) {
 		Mlevelfprintf(ERROR, oerr, "%s: FATAL: unable to create signal handlers: %s\n",
-				 argv[0], strerror(errno));
+			      argv[0], strerror(errno));
 		MERO_EXIT(1);
 	}
 
@@ -1043,16 +1044,16 @@ main(int argc, char *argv[])
 	sa.sa_handler = SIG_IGN;
 	if (sigaction(SIGPIPE, &sa, NULL) == -1) {
 		Mlevelfprintf(ERROR, oerr, "%s: FATAL: unable to create signal handlers: %s\n",
-				 argv[0], strerror(errno));
+			      argv[0], strerror(errno));
 		MERO_EXIT(1);
 	}
 
 	/* make sure we will be able to write our pid */
 	if ((pidfile = fopen(pidfilename, "w")) == NULL) {
 		Mlevelfprintf(ERROR, stderr, "unable to open '%s%s%s' for writing: %s\n",
-				pidfilename[0] != '/' ? dbfarm : "",
-				pidfilename[0] != '/' ? "/" : "",
-				pidfilename, strerror(errno));
+			      pidfilename[0] != '/' ? dbfarm : "",
+			      pidfilename[0] != '/' ? "/" : "",
+			      pidfilename, strerror(errno));
 		MERO_EXIT(1);
 	}
 
@@ -1078,25 +1079,25 @@ main(int argc, char *argv[])
 
 	/* open up connections */
 	if ((e = openConnectionIP(socks, false, host, port, stdout)) == NO_ERR &&
-		(e = openConnectionUNIX(&socks[2], mapi_usock, 0, stdout)) == NO_ERR &&
-		(!discovery || (e = openConnectionIP(discsocks, true, host, port, _mero_discout)) == NO_ERR) &&
-		(e = openConnectionUNIX(&unsock, control_usock, S_IRWXO, _mero_ctlout)) == NO_ERR) {
+	    (e = openConnectionUNIX(&socks[2], mapi_usock, 0, stdout)) == NO_ERR &&
+	    (!discovery || (e = openConnectionIP(discsocks, true, host, port, _mero_discout)) == NO_ERR) &&
+	    (e = openConnectionUNIX(&unsock, control_usock, S_IRWXO, _mero_ctlout)) == NO_ERR) {
 		pthread_t ctid = 0;
 		pthread_t dtid = 0;
 
 		if (discovery) {
 			_mero_broadcastsock = socket(AF_INET, SOCK_DGRAM
 #ifdef SOCK_CLOEXEC
-										 | SOCK_CLOEXEC
+						     | SOCK_CLOEXEC
 #endif
-										 , 0);
+						     , 0);
 			ret = 1;
 			if (_mero_broadcastsock == -1 ||
-				setsockopt(_mero_broadcastsock,
-						   SOL_SOCKET, SO_BROADCAST, &ret, sizeof(ret)) == -1)
+			    setsockopt(_mero_broadcastsock,
+				       SOL_SOCKET, SO_BROADCAST, &ret, sizeof(ret)) == -1)
 			{
 				Mlevelfprintf(ERROR, stderr, "cannot create broadcast package, "
-						"discovery services disabled\n");
+					      "discovery services disabled\n");
 				if (discsocks[0] >= 0)
 					closesocket(discsocks[0]);
 				if (discsocks[1] >= 0)
@@ -1120,11 +1121,11 @@ main(int argc, char *argv[])
 
 		/* handle control commands */
 		if ((thret = pthread_create(&ctid, NULL,
-						controlRunner,
-						(void *) &unsock)) != 0)
+					    controlRunner,
+					    (void *) &unsock)) != 0)
 		{
 			Mlevelfprintf(ERROR, stderr, "unable to create control command thread: %s\n",
-					strerror(thret));
+				      strerror(thret));
 			ctid = 0;
 			closesocket(unsock);
 			if (discsocks[0] >= 0)
@@ -1136,11 +1137,11 @@ main(int argc, char *argv[])
 
 		/* start neighbour discovery and notification thread */
 		if ((discsocks[0] >= 0 || discsocks[1] >= 0) &&
-			(thret = pthread_create(&dtid, NULL,
-					discoveryRunner, (void *) discsocks)) != 0)
+		    (thret = pthread_create(&dtid, NULL,
+					    discoveryRunner, (void *) discsocks)) != 0)
 		{
 			Mlevelfprintf(ERROR, stderr, "unable to start neighbour discovery thread: %s\n",
-					strerror(thret));
+				      strerror(thret));
 			dtid = 0;
 			if (discsocks[0] >= 0)
 				closesocket(discsocks[0]);
@@ -1181,10 +1182,10 @@ main(int argc, char *argv[])
 	/* control channel is already closed at this point */
 	if (unsock != -1 && remove(control_usock) != 0)
 		Mlevelfprintf(ERROR, stderr, "unable to remove control socket '%s': %s\n",
-				control_usock, strerror(errno));
+			      control_usock, strerror(errno));
 	if (socks[2] != -1 && remove(mapi_usock) != 0)
 		Mlevelfprintf(ERROR, stderr, "unable to remove mapi socket '%s': %s\n",
-				mapi_usock, strerror(errno));
+			      mapi_usock, strerror(errno));
 
 	if (e != NO_ERR) {
 		/* console */
@@ -1195,7 +1196,7 @@ main(int argc, char *argv[])
 		MERO_EXIT(1);
 	}
 
-shutdown:
+  shutdown:
 	/* stop started mservers */
 
 	kv = findConfKey(ckv, "exittimeout");
@@ -1214,11 +1215,11 @@ shutdown:
 
 			tlw->next = NULL;
 			if ((thret = pthread_create(&(tlw->tid), NULL,
-						doTerminateProcess, t)) != 0)
+						    doTerminateProcess, t)) != 0)
 			{
 				Mlevelfprintf(ERROR, stderr, "%s: unable to create thread to terminate "
-						"database '%s': %s\n",
-						argv[0], t->dbname, strerror(thret));
+					      "database '%s': %s\n",
+					      argv[0], t->dbname, strerror(thret));
 				tlw->tid = 0;
 			}
 
@@ -1231,7 +1232,7 @@ shutdown:
 		while (tlw != NULL) {
 			if (tlw->tid != 0 && (argp = pthread_join(tlw->tid, NULL)) != 0) {
 				Mlevelfprintf(ERROR, stderr, "failed to wait for termination thread: "
-						"%s\n", strerror(argp));
+					      "%s\n", strerror(argp));
 			}
 			tl = tlw->next;
 			free(tlw);

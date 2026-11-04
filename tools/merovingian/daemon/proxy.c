@@ -73,10 +73,10 @@ proxyThread(void *d)
 		/* name is only set on the client-to-server thread */
 		if (len <= 0) {
 			Mlevelfprintf(DEBUG, stdout, "client %s has disconnected from proxy\n",
-					p->name);
+				      p->name);
 		} else {
 			Mlevelfprintf(WARNING, stdout, "server has terminated proxy connection, "
-					"disconnecting client %s\n", p->name);
+				      "disconnecting client %s\n", p->name);
 		}
 		free(p->name);
 
@@ -96,7 +96,7 @@ proxyThread(void *d)
 
 err
 startProxy(int psock, stream *cfdin, stream *cfout,
-		   const char *url, const char *client)
+	   const char *url, const char *client)
 {
 	int ssock = -1;
 	char *port, *t, *conn = NULL, *endipv6;
@@ -131,8 +131,8 @@ startProxy(int psock, stream *cfdin, stream *cfout,
 				return(newErr("invalid IPv6 address in redirect: %s", url));
 			}
 		} else if (strncmp(url, "monetdb://", 10) == 0 &&
-				   (t = strstr(conn, "sock=")) != NULL &&
-				   stat(t + 5, &statbuf) != -1) {
+			   (t = strstr(conn, "sock=")) != NULL &&
+			   stat(t + 5, &statbuf) != -1) {
 			ssock = 0;
 			usock = t + 5;
 		} else if ((port = strchr(conn, ':')) != NULL) { /* drop anything off after the hostname */
@@ -146,7 +146,7 @@ startProxy(int psock, stream *cfdin, stream *cfout,
 		} else {
 			free(conn);
 			return(newErr("can't find a port in redirect, "
-						"or is not a UNIX socket file: %s", url));
+				      "or is not a UNIX socket file: %s", url));
 		}
 	} else {
 		return(newErr("unsupported protocol/scheme in redirect: %s", url));
@@ -169,9 +169,9 @@ startProxy(int psock, stream *cfdin, stream *cfout,
 		free(conn);
 		if ((ssock = socket(PF_UNIX, SOCK_STREAM
 #ifdef SOCK_CLOEXEC
-							| SOCK_CLOEXEC
+				    | SOCK_CLOEXEC
 #endif
-							, 0)) == -1) {
+				    , 0)) == -1) {
 			return(newErr("cannot open socket: %s", strerror(errno)));
 		}
 #if !defined(SOCK_CLOEXEC) && defined(HAVE_FCNTL)
@@ -206,7 +206,7 @@ startProxy(int psock, stream *cfdin, stream *cfout,
 		msg.msg_flags = 0;
 
 		Mlevelfprintf(DEBUG, stdout, "target connection is on local UNIX domain socket, "
-				"passing on filedescriptor instead of proxying\n");
+			      "passing on filedescriptor instead of proxying\n");
 		if (sendmsg(ssock, &msg, 0) < 0) {
 			closesocket(ssock);
 			return(newErr("could not send initial byte: %s", strerror(errno)));
@@ -246,9 +246,9 @@ startProxy(int psock, stream *cfdin, stream *cfout,
 		for (rp = results; rp; rp = rp->ai_next) {
 			ssock = socket(rp->ai_family, rp->ai_socktype
 #ifdef SOCK_CLOEXEC
-							| SOCK_CLOEXEC
+				       | SOCK_CLOEXEC
 #endif
-						   , rp->ai_protocol);
+				       , rp->ai_protocol);
 			if (ssock == -1)
 				continue;
 			if (connect(ssock, rp->ai_addr, rp->ai_addrlen) == -1) {
@@ -301,7 +301,7 @@ startProxy(int psock, stream *cfdin, stream *cfout,
 	pstoc->co_thr = 0;
 
 	if ((thret = pthread_create(&ptid, NULL,
-				proxyThread, (void *)pstoc)) != 0)
+				    proxyThread, (void *)pstoc)) != 0)
 	{
 		close_stream(sfout);
 		close_stream(sfdin);
@@ -319,7 +319,7 @@ startProxy(int psock, stream *cfdin, stream *cfout,
 	pthread_attr_init(&detachattr);
 	pthread_attr_setdetachstate(&detachattr, PTHREAD_CREATE_DETACHED);
 	if ((thret = pthread_create(&ptid, &detachattr,
-				proxyThread, (void *)pctos)) != 0)
+				    proxyThread, (void *)pctos)) != 0)
 	{
 		close_stream(sfout);
 		close_stream(sfdin);

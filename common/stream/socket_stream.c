@@ -35,7 +35,7 @@ socket_getoob(stream *s)
 	};
 	if (poll(&pfd, 1, 0) > 0)
 #else
-	fd_set xfds;
+		fd_set xfds;
 	struct timeval t = {
 		.tv_sec = 0,
 		.tv_usec = 0,
@@ -50,11 +50,11 @@ socket_getoob(stream *s)
 	FD_SET(fd, &xfds);
 	if (select(
 #ifdef _MSC_VER
-			0,	/* ignored on Windows */
+		    0,	/* ignored on Windows */
 #else
-			fd + 1,
+		    fd + 1,
 #endif
-			NULL, NULL, &xfds, &t) > 0)
+		    NULL, NULL, &xfds, &t) > 0)
 #endif
 	{
 #ifdef HAVE_POLL
@@ -133,7 +133,7 @@ socket_getoob_unix(stream *s)
 	};
 	if (poll(&pfd, 1, 0) > 0)
 #else
-	fd_set fds;
+		fd_set fds;
 	struct timeval t = {
 		.tv_sec = 0,
 		.tv_usec = 0,
@@ -148,22 +148,22 @@ socket_getoob_unix(stream *s)
 	FD_SET(fd, &fds);
 	if (select(
 #ifdef _MSC_VER
-			0,	/* ignored on Windows */
+		    0,	/* ignored on Windows */
 #else
-			fd + 1,
+		    fd + 1,
 #endif
-			&fds, NULL, NULL, &t) > 0)
+		    &fds, NULL, NULL, &t) > 0)
 #endif
-		{
-			char buf[3];
-			ssize_t nr;
-			nr = recv(fd, buf, 2, MSG_PEEK);
-			if (nr == 2 && buf[0] == OOBMSG0 && buf[1] == OOBMSG1) {
-				nr = recv(fd, buf, 3, 0);
-				if (nr == 3)
-					return (unsigned char) buf[2];
-			}
+	{
+		char buf[3];
+		ssize_t nr;
+		nr = recv(fd, buf, 2, MSG_PEEK);
+		if (nr == 2 && buf[0] == OOBMSG0 && buf[1] == OOBMSG1) {
+			nr = recv(fd, buf, 3, 0);
+			if (nr == 3)
+				return (unsigned char) buf[2];
 		}
+	}
 	return 0;
 }
 
@@ -205,11 +205,11 @@ socket_write(stream *restrict s, const void *restrict buf, size_t elmsize, size_
 		       /* Windows send works on int, make sure the argument fits */
 		       ((nr = send(s->stream_data.s, (const char *) buf + res,
 #ifdef _MSC_VER
-						   (int) min(size - res, 1 << 16)
+				   (int) min(size - res, 1 << 16)
 #else
-						   size - res
+				   size - res
 #endif
-						   , 0)) > 0)
+				   , 0)) > 0)
 		       || (nr < 0 &&	/* syscall failed */
 			   s->timeout > 0 &&	/* potentially timeout */
 #ifdef _MSC_VER
@@ -225,9 +225,9 @@ socket_write(stream *restrict s, const void *restrict buf, size_t elmsize, size_
 			   !s->timeout_func(s->timeout_data))	/* callback says don't stop */
 		       || (nr < 0 &&
 #ifdef _MSC_VER
-			  WSAGetLastError() == WSAEINTR
+			   WSAGetLastError() == WSAEINTR
 #else
-			  errno == EINTR
+			   errno == EINTR
 #endif
 			       ))	/* interrupted */
 		) {

@@ -102,9 +102,9 @@ The following packages are optional but recommended:
 ``readline-devel``, ``xz-devel``, ``zlib-devel``.
 
 The following packages are optional:
-``cfitsio-devel``, ``gdal-devel``, ``geos-devel``, ``libcmocka-devel``,
-``libcurl-devel``, ``libxml2-devel``, ``netcdf-devel``, ``proj-devel``,
-``unixODBC-devel``.
+``cfitsio-devel``, ``gdal-devel``, ``geos-devel``, ``htslib-devel``,
+``libcmocka-devel``, ``libcurl-devel``, ``libxml2-devel``,
+``netcdf-devel``, ``proj-devel``, ``unixODBC-devel``.
 
 On Ubuntu and Debian the following packages are required:
 ``bison``, ``cmake``, ``gcc``, ``pkg-config``, ``python3``,
@@ -116,8 +116,8 @@ The following packages are optional but recommended:
 
 The following packages are optional:
 ``libcfitsio-dev``, ``libcmocka-dev``, ``libcurl4-gnutls-dev``,
-``libgdal-dev``, ``libgeos-dev``, ``libnetcdf-dev``, ``libproj-dev``,
-``libxml2-dev``, ``unixodbc-dev``.
+``libgdal-dev``, ``libgeos-dev``, ``libhts-dev``, ``libnetcdf-dev``,
+``libproj-dev``, ``libxml2-dev``, ``unixodbc-dev``.
 
 ``cmake`` must be at least version 3.12, ``python`` must be at least
 version 3.5.
