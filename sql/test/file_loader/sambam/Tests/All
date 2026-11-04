@@ -1,0 +1,2 @@
+HAVE_HTSLIB?read_file1.sam
+HAVE_HTSLIB?read_file1.bam
