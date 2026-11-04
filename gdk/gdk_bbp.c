@@ -607,7 +607,7 @@ heapinit(BAT *b, const char *buf,
 	} else {
 		b->tvheap = NULL;
 	}
-	if (ATOMsketchable(t) && b->theap->hasfile) {
+	if (ATOMsketchable(t) /*&& b->theap->hasfile*/) {
 		b->tsketch->free = SKETCH_SIZE;
 		b->tsketch->size = SKETCH_SIZE;
 		b->tsketch->base = NULL;
@@ -616,10 +616,9 @@ heapinit(BAT *b, const char *buf,
 		b->tsketch->farmid = BBPselectfarm(PERSISTENT, b->ttype, sketchheap);
 		b->tsketch->role = PERSISTENT;
 		b->tsketch->dirty = false;
-		b->tsketch->hasfile = true;
+		b->tsketch->hasfile = b->theap->hasfile;
 		b->tsketch->storage = STORE_INVALID;
 		b->tsketch->parentid = b->batCacheid;
-
 	} else {
 		b->tsketch = NULL;
 	}
@@ -4288,6 +4287,10 @@ BBPsync(int cnt, const bat *restrict subcommit, const BUN *restrict sizes, lng l
 				    !b->ustr &&
 				    GDKmove(0, BAKDIR, fname, "theap", SUBDIR, fname, "theap", false) == GDK_SUCCEED)
 					TRC_DEBUG(IO, "moved %s.theap from %s to %s\n",
+						  fname, BAKDIR, SUBDIR);
+				if (ATOMsketchable(b->ttype) /*&& b->theap->hasfile */ &&
+				    GDKmove(0, BAKDIR, fname, "tsketch", SUBDIR, fname, "tsketch", false) == GDK_SUCCEED)
+					TRC_DEBUG(IO, "moved %s.tsketch from %s to %s\n",
 						  fname, BAKDIR, SUBDIR);
 			}
 		}

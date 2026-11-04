@@ -761,6 +761,13 @@ BATsave_iter(BAT *b, BATiter *bi, BUN size)
 		}
 	} else {
 		const char *nme = BBP_physical(b->batCacheid);
+		if (bi->skh) {
+		       	if ((bi->hdirty || (bi->vh && bi->vhdirty)) && !bi->skhdirty) { /* TODO make sure we set tsketch->dirty correctly */
+				//assert(0);
+				bi->skhdirty = true;
+			}
+			assert(bi->skh->free == SKETCH_SIZE);
+		}
 		if ((!bi->copiedtodisk || bi->hdirty)
 		    && (err == GDK_SUCCEED && bi->type)) {
 			const char *tail = strchr(bi->h->filename, '.') + 1;
@@ -867,14 +874,25 @@ BATload_intern(bat bid, bool lock)
 
 		if (b->tsketch /* TODO */ && ATOMsketchable(b->ttype)) {
 			b->tsketch->storage = STORE_INVALID;
-			if (HEAPload(b->tsketch, nme, "tsketch", false) != GDK_SUCCEED) {
-				HEAPfree(b->theap, false);
-				HEAPfree(b->tsketch, false);
-				return NULL;
+			if (b->batCount > 0) {
+				if (HEAPload(b->tsketch, nme, "tsketch", false) != GDK_SUCCEED) {
+					assert(0);
+					HEAPfree(b->theap, false);
+					HEAPfree(b->tsketch, false);
+					return NULL;
+				}
 			} else {
+				if (HEAPalloc(b->tsketch, SKETCH_SIZE, sizeof(uint8_t)) != GDK_SUCCEED) {
+					HEAPfree(b->theap, false);
+					HEAPfree(b->tsketch, false);
+					return NULL;
+				}
 				b->tunique_est = sketch_estimate((uint8_t (*)[CLZ_BUCKETS]) b->tsketch->base);
-				printf("BATload_intern estimating %f for bat id %d\n", b->tunique_est, b->batCacheid);
+				//printf("BATload_intern estimating %f for bat id %d\n", b->tunique_est, b->batCacheid);
 			}
+			b->tsketch->free = SKETCH_SIZE;
+		} else {
+			b->tsketch = NULL;
 		}
 	} else {
 		b->theap->base = NULL;

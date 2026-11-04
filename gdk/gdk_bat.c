@@ -367,6 +367,7 @@ COLnew2(oid hseq, int tt, BUN cap, role_t role, uint16_t width)
 			goto bailout;
 		}
 		memset(bn->tsketch->base, 0, SKETCH_SIZE);
+		bn->tsketch->free = SKETCH_SIZE;
 	}
 
 	BBPcacheit(bn, true);
@@ -926,7 +927,7 @@ COLcopy2(BAT *b, int tt, bool writable, bool mayshare, role_t role)
 		bn->theap->dirty = true;
 		if (bn->tsketch && b->tsketch && bi.count) {
 			assert(b->tsketch->base);
-			memcpy(bn->theap->base, b->tsketch->base, SKETCH_SIZE);
+			memcpy(bn->tsketch->base, b->tsketch->base, SKETCH_SIZE);
 			bn->tsketch->dirty = true;
 		}
 
@@ -949,7 +950,7 @@ COLcopy2(BAT *b, int tt, bool writable, bool mayshare, role_t role)
 		if (bn->tsketch && bi.count) {
 			if (b->tsketch) {
 				assert(b->tsketch->base);
-				memcpy(bn->theap->base, b->tsketch->base, SKETCH_SIZE);
+				memcpy(bn->tsketch->base, b->tsketch->base, SKETCH_SIZE);
 				bn->tsketch->dirty = true;
 			} else {
 				if (bat_sketch(&bi, NULL, (uint8_t (*)[CLZ_BUCKETS]) bn->tsketch->base) != GDK_SUCCEED)
@@ -1292,7 +1293,7 @@ BUNappendmulti(BAT *b, const void *values, BUN count, bool force)
 				nunique = b->thash ? b->thash->nunique : 0;
 			}
 			if (b->tsketch) {
-				printf("BUNappendmulti updating dense for bat id %d\n", b->batCacheid);
+				//printf("BUNappendmulti updating dense for bat id %d\n", b->batCacheid);
 				MT_lock_set(&b->theaplock);
 				if (sketch_update_many(&bi, (uint8_t (*)[CLZ_BUCKETS]) b->tsketch->base,
 						       values, count) != GDK_SUCCEED) {
@@ -1349,7 +1350,7 @@ BUNappendmulti(BAT *b, const void *values, BUN count, bool force)
 			}
 			nunique = b->thash ? b->thash->nunique : 0;
 			if (b->tsketch) {
-				printf("BUNappendmulti updating dense for bat id %d\n", b->batCacheid);
+				//printf("BUNappendmulti updating dense for bat id %d\n", b->batCacheid);
 				MT_lock_set(&b->theaplock);
 				if(sketch_update_many(&bi, (uint8_t (*)[CLZ_BUCKETS]) b->tsketch->base,
 						      values, count) != GDK_SUCCEED) {
@@ -1518,12 +1519,14 @@ BUNappendmulti(BAT *b, const void *values, BUN count, bool force)
 	}
 	BATsetcount(b, p);
 	if (nunique != 0) {
+		/*
 		if (b->tsketch && b->tsketch->base)
 			printf("BUNappendmulti would be estimation %f for unique bat id %d\n", sketch_estimate((uint8_t (*)[CLZ_BUCKETS]) b->tsketch->base), b->batCacheid);
+			*/
 		b->tunique_est = (double) nunique;
 	} else if (b->tsketch) {
 		b->tunique_est = sketch_estimate((uint8_t (*)[CLZ_BUCKETS]) b->tsketch->base);
-		printf("BUNappendmulti estimating %f for bat id %d\n", b->tunique_est, b->batCacheid);
+		//printf("BUNappendmulti estimating %f for bat id %d\n", b->tunique_est, b->batCacheid);
 	}
 	MT_lock_unset(&b->theaplock);
 	MT_rwlock_wrunlock(&b->thashlock);
@@ -1948,6 +1951,8 @@ BUNinplacemulti(BAT *b, const oid *positions, const void *values, BUN count, boo
 	b->theap->dirty = true;
 	if (b->tvheap)
 		b->tvheap->dirty = true;
+	if (b->tsketch)
+		b->tsketch->dirty = true;
 	MT_lock_unset(&b->theaplock);
 
 	return GDK_SUCCEED;
@@ -2202,6 +2207,8 @@ BATsetcount(BAT *b, BUN cnt)
 		b->theap->dirty |= b->ttype != TYPE_void && cnt > 0;
 		b->theap->free = tailsize(b, cnt);
 	}
+	if (b->tsketch)
+		b->tsketch->dirty |= cnt > 0;
 	if (b->ttype == TYPE_void)
 		b->batCapacity = cnt;
 	if (cnt <= 1) {

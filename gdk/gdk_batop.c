@@ -1160,7 +1160,7 @@ BATappend2(BAT *b, BAT *n, BAT *s, bool force, bool mayshare)
 			if (BATcount(b) == ci.ncand) { /* b was empty */
 				memcpy(b->tsketch->base, n->tsketch->base, SKETCH_SIZE);
 				if (b->tunique_est == 0) {
-					printf("BATappend2 (n has sketch) estimating for bat id %d\n", b->batCacheid);
+					//printf("BATappend2 (n has sketch) estimating for bat id %d\n", b->batCacheid);
 					b->tunique_est = sketch_estimate((uint8_t (*)[CLZ_BUCKETS]) b->tsketch->base);
 				}
 			} else {
@@ -1176,7 +1176,7 @@ BATappend2(BAT *b, BAT *n, BAT *s, bool force, bool mayshare)
 			if (BATcount(b) == ci.ncand) { /* b was empty */
 				memcpy(b->tsketch->base, tmp_sketch, SKETCH_SIZE);
 				if (b->tunique_est == 0) {
-					printf("BATappend2 (n does not have sketch) estimating for bat id %d\n", b->batCacheid);
+					//printf("BATappend2 (n does not have sketch) estimating for bat id %d\n", b->batCacheid);
 					b->tunique_est = sketch_estimate((uint8_t (*)[CLZ_BUCKETS]) b->tsketch->base);
 				}
 			} else {
