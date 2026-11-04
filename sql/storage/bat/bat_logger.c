@@ -1447,7 +1447,6 @@ snapshot_bats(stream *plan, BAT *bats_to_omit, const char *db_dir)
 			.theap = &h,
 			.tvheap = &vh,
 		};
-		char *options;
 		char filename[sizeof(BBP_physical(0))];
 		char batname[129];
 #ifdef GDKLIBRARY_HASHASH
@@ -1458,7 +1457,7 @@ snapshot_bats(stream *plan, BAT *bats_to_omit, const char *db_dir)
 #ifdef GDKLIBRARY_HASHASH
 							   &hashash,
 #endif
-							   batname, filename, &options)) {
+							   batname, filename, NULL)) {
 		case 0:
 			/* end of file */
 			ret = GDK_SUCCEED;
