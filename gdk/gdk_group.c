@@ -732,7 +732,7 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 			/* group bats are not modified in parallel, so
 			 * no need for locks */
 			if (g->tmaxpos != BUN_NONE)
-				maxgrp = BUNtoid(g, g->tmaxpos);
+				maxgrp = fetchtoid(g, g->tmaxpos);
 			if (is_oid_nil(maxgrp) /* && BATcount(g) < 10240 */) {
 				BATmax(g, &maxgrp);
 			}

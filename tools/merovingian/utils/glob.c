@@ -41,45 +41,45 @@ db_glob(const char *expr, const char *haystack)
 			}
 		}
 		switch (*expr) {
-			case '*':
-				if (!escape) {
-					/* store expression position for retry later on */
-					exprmem = expr;
-					/* skip over haystack till the next char from expr */
-					do {
-						expr++;
-						if (*expr == '\0') {
-							/* this will always match the rest */
-							return(true);
-						} else if (!escape && *expr == '*') {
-							continue;
-						} else if (*expr == '\\') {
-							escape = !escape;
-							if (!escape)
-								break;
-						} else {
+		case '*':
+			if (!escape) {
+				/* store expression position for retry later on */
+				exprmem = expr;
+				/* skip over haystack till the next char from expr */
+				do {
+					expr++;
+					if (*expr == '\0') {
+						/* this will always match the rest */
+						return(true);
+					} else if (!escape && *expr == '*') {
+						continue;
+					} else if (*expr == '\\') {
+						escape = !escape;
+						if (!escape)
 							break;
-						}
-					} while(1);
-					while (*haystack != '\0' && *haystack != *expr)
-						haystack++;
-					/* store match position, for retry later on */
-					haymem = haystack + 1;
-					if (*haystack == '\0')
-						/* couldn't find it, so no match  */
-						return(false);
-					break;
-				}
-				/* do asterisk match if escaped */
-				/* fall through */
-			default:
-				if (*expr != *haystack) {
-					if (haymem != NULL) {
-						return(db_glob(exprmem, haymem));
 					} else {
-						return(false);
+						break;
 					}
+				} while(1);
+				while (*haystack != '\0' && *haystack != *expr)
+					haystack++;
+				/* store match position, for retry later on */
+				haymem = haystack + 1;
+				if (*haystack == '\0')
+					/* couldn't find it, so no match  */
+					return(false);
+				break;
+			}
+			/* do asterisk match if escaped */
+			/* fall through */
+		default:
+			if (*expr != *haystack) {
+				if (haymem != NULL) {
+					return(db_glob(exprmem, haymem));
+				} else {
+					return(false);
 				}
+			}
 			break;
 		}
 		expr++;

@@ -108,6 +108,11 @@ rel_unionize_mt_tables_munion(visitor *v, sql_rel* mt, list* tables, merge_table
 	/* create the munion */
 	sql_rel *mu = rel_setop_n_ary(v->sql->sa, rels, op_munion);
 	rel_setop_n_ary_set_exps(v->sql, mu, rel_projections(v->sql, mt, NULL, 1, 1), true);
+	for(node *n = mu->exps->h; n; n = n->next) {
+		sql_exp *e = n->data;
+		e->unique = 0;
+	}
+
 	set_processed(mu);
 
 	return mu;
@@ -413,8 +418,11 @@ merge_table_prune_and_unionize(visitor *v, sql_rel *mt_rel, merge_table_prune_in
 			if (tables->cnt == 1) {
 				nrel = rel_wrap_select_around_mt_child(v, tables->h->data, info);
 			} else {
-				//nrel = rel_unionize_mt_tables_balanced(v, mt_rel, tables, info);
 				nrel = rel_setop_n_ary(v->sql->sa, tables, op_munion);
+				for(node *n = nrel->exps->h; n; n = n->next) {
+					sql_exp *e = n->data;
+					e->unique = 0;
+				}
 			}
 		} else if (mvc_debug_on(v->sql, 32)) {
 			for (node *n = tables->h; n ; n = n->next) {
@@ -433,6 +441,10 @@ merge_table_prune_and_unionize(visitor *v, sql_rel *mt_rel, merge_table_prune_in
 				if (nrel) {
 					nrel = rel_setop_n_ary(v->sql->sa, append(append(sa_list(v->sql->sa), nrel), next), op_munion);
 					rel_setop_n_ary_set_exps(v->sql, nrel, rel_projections(v->sql, mt_rel, NULL, 1, 1), true);
+					for(node *n = nrel->exps->h; n; n = n->next) {
+						sql_exp *e = n->data;
+						e->unique = 0;
+					}
 					set_processed(nrel);
 				} else {
 					nrel = next;

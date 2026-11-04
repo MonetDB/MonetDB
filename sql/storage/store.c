@@ -61,14 +61,13 @@ store_transaction_id(sqlstore *store)
 ulng
 store_oldest(sqlstore *store, sql_trans *tr)
 {
-	if (tr && tr->ts == (ulng) ATOMIC_GET(&store->oldest)) {
-		sql_trans *otr = store->active->h->data;
-		if (otr == tr && store->active->h->next) {
-			otr = store->active->h->next->data;
-			return otr->ts;
-		}
+	ulng oldest = (ulng) ATOMIC_GET(&store->oldest);
+
+	if (tr && oldest == tr->ts && store->active->h && store->active->h->next) {
+		sql_trans *otr = store->active->h->next->data;
+		oldest = otr->ts;
 	}
-	return (ulng) ATOMIC_GET(&store->oldest);
+	return oldest;
 }
 
 static ulng
@@ -2531,7 +2530,7 @@ store_manager(sqlstore *store)
 			MT_lock_unset(&store->flush);
 			store_lock(store);
 			if (ATOMIC_GET(&store->nr_active) == 0) {
-				ulng oldest = store_timestamp(store)+1;
+				ulng oldest = store_get_timestamp(store)+1;
 				store_pending_changes(store, oldest, NULL);
 			}
 			store_unlock(store);
@@ -4527,8 +4526,6 @@ sql_trans_commit(sql_trans *tr)
 			}
 			n = next;
 		}
-		tr->active = 2; /* small hack enabling to signal that this transaction has committed */
-		tr->ts = commit_ts; /* fix profiler output */
 		store_unlock(store);
 		/* flush the log structure */
 		if (log) {

@@ -21,8 +21,6 @@
 #include "mal_namespace.h"
 #include "mal_builder.h"
 
-static stmt * stmt_aggr_(backend *be, stmt *op1, stmt *grp, stmt *ext, sql_subfunc *op, int reduce, int no_nil, int nil_if_empty);
-
 /*
  * Some utility routines to generate code
  * The equality operator in MAL is '==' instead of '='.
@@ -4387,7 +4385,7 @@ stmt_Nop(backend *be, stmt *ops, stmt *sel, sql_subfunc *f, stmt* rows)
 		push_cands = f->func->type == F_FUNC && can_push_cands(sel, mod, fimp);
 		default_nargs = (f->res && list_length(f->res) ? list_length(f->res) : 1) + list_length(ops->op4.lval) + (o && o->nrcols > 0 ? 6 : 4);
 		if (rows) {
-			card = stmt_aggr_(be, rows, NULL, NULL, sql_bind_func(be->mvc, "sys", "count", sql_fetch_localtype(TYPE_void), NULL, F_AGGR, true, true), 1, 0, 1);
+			card = stmt_aggr_nopp(be, rows, NULL, NULL, sql_bind_func(be->mvc, "sys", "count", sql_fetch_localtype(TYPE_void), NULL, F_AGGR, true, true), 1, 0, 1);
 			default_nargs++;
 		}
 
@@ -4604,8 +4602,8 @@ stmt_func(backend *be, stmt *ops, const char *name, sql_rel *rel, int f_union)
 	return NULL;
 }
 
-static stmt *
-stmt_aggr_(backend *be, stmt *op1, stmt *grp, stmt *ext, sql_subfunc *op, int reduce, int no_nil, int nil_if_empty)
+stmt *
+stmt_aggr_nopp(backend *be, stmt *op1, stmt *grp, stmt *ext, sql_subfunc *op, int reduce, int no_nil, int nil_if_empty)
 {
 	MalBlkPtr mb = be->mb;
 	InstrPtr q = NULL;
@@ -4748,7 +4746,7 @@ stmt_aggr(backend *be, stmt *op1, stmt *grp, stmt *ext, sql_subfunc *op, int red
 	if (be->pipeline)
 		return stmt_pp_aggr(be, op1, grp, ext, op, reduce, no_nil, nil_if_empty);
 	else
-		return stmt_aggr_(be, op1, grp, ext, op, reduce, no_nil, nil_if_empty);
+		return stmt_aggr_nopp(be, op1, grp, ext, op, reduce, no_nil, nil_if_empty);
 }
 
 static stmt *

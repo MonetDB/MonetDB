@@ -803,9 +803,13 @@ rel2bin_oahash_cart(backend *be, sql_rel *rel, list *refs, stmt *stmts_ht, stmt 
 	assert(stmts_ht->type == st_list && stmts_prb_res->type == st_list);
 
 	stmt *rowrepeat = stmts_ht->op4.lval->h->data;
-	stmt *setrepeat = stmts_prb_res->op4.lval->h->data;
-	assert(rowrepeat && setrepeat); /* must find */
+	stmt *setrepeat = !list_empty(stmts_prb_res->op4.lval)?stmts_prb_res->op4.lval->h->data:NULL;
+	prop *count = find_prop(rel->p, PROP_COUNT);
+	(void)count;
+	assert(rowrepeat && (setrepeat || (count && !count->value.lval))); /* must find */
 
+	if (!setrepeat)
+		setrepeat = stmt_bat_new(be, sql_fetch_localtype(TYPE_bte), 0);
  	/* Check for single: either rel->r is single or rel->l is empty. */
 	if (rel->single && list_empty(rel->exps)) {
 		if (rowrepeat->nrcols > 0) {

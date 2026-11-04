@@ -349,11 +349,11 @@ gen_inet6(FILE *f, bool byteswap, long nrecs, char *arg)
 #include "bincopydecimal_impl.h"
 
 #ifdef HAVE_HGE
-	#define FUNCNAME gen_decimal_hugeints
-	#define STYP int128_t
-	#define UTYP uint128_t
-	#define CONVERT copy_binary_convert128
-	#include "bincopydecimal_impl.h"
+#define FUNCNAME gen_decimal_hugeints
+#define STYP int128_t
+#define UTYP uint128_t
+#define CONVERT copy_binary_convert128
+#include "bincopydecimal_impl.h"
 #endif
 
 typedef void (*generator_t)(FILE *f, bool byteswap, long nrecs, char *argument);
@@ -485,7 +485,7 @@ main(int argc, char *argv[])
 #else
 		true
 #endif
-	;
+		;
 	bool i_am_big_endian = !i_am_little_endian;
 
 	char **args = &argv[1];

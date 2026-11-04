@@ -2045,6 +2045,43 @@ rel_zero_or_one(mvc *sql, sql_rel *rel, exp_kind ek)
 	return rel;
 }
 
+BUN
+get_rel_count(sql_rel *rel)
+{
+	if (rel && is_physical(rel->op) && rel->l)
+		return get_rel_count(rel->l);
+	prop *found = find_prop(rel->p, PROP_COUNT);
+	if (!found && rel && is_simple_project(rel->op) && rel->l)
+		return get_rel_count(rel->l);
+	if (!found && rel && is_munion(rel->op) && rel->l) {
+		BUN res = 0;
+		for(node *n = ((list*)rel->l)->h; n; n = n->next) {
+			BUN ires = get_rel_count(n->data);
+			if (ires == BUN_NONE)
+				return BUN_NONE;
+			res += ires;
+		}
+		return res;
+	}
+	return found ? found->value.lval : BUN_NONE;
+}
+
+void
+set_count_prop(allocator *sa, sql_rel *rel, BUN val)
+{
+	if (val != BUN_NONE) {
+		prop *found = find_prop(rel->p, PROP_COUNT);
+
+		if (found) {
+			found->value.lval = val;
+		} else {
+			prop *p = rel->p = prop_create(sa, PROP_COUNT, rel->p);
+			p->value.lval = val;
+		}
+	}
+}
+
+
 static sql_rel *
 refs_find_rel(list *refs, sql_rel *rel)
 {
@@ -2898,4 +2935,3 @@ find_basetable( sql_rel *r)
 		return NULL;
 	}
 }
-

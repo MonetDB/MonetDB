@@ -11,9 +11,9 @@
 #include "geod.h"
 
 /**
-*  Conversions
-*
-**/
+ *  Conversions
+ *
+ **/
 
 const double earth_radius = 6371.009;
 const double earth_radius_meters = 6371009;
@@ -21,7 +21,7 @@ const double earth_radius_meters = 6371009;
 #define M_PI	((double) 3.14159265358979323846)	/* pi */
 #endif
 #ifndef M_PI_2
-#define M_PI_2      1.57079632679489661923132169163975144   /* pi/2           */
+#define M_PI_2	1.57079632679489661923132169163975144   /* pi/2 */
 #endif
 
 /* Converts a longitude value in degrees to radians */
@@ -186,8 +186,9 @@ geoLinesFromGeom(allocator *ma, GEOSGeom geom)
 
 static BoundingBox * boundingBoxLines(allocator *ma, GeoLines lines);
 
-/* Converts the a GEOSGeom Line into GeoPolygon (with exterior ring and zero-to-multiple interior rings)
-   Argument must be a Polygon geometry. */
+/* Converts the a GEOSGeom Line into GeoPolygon (with exterior ring and
+   zero-to-multiple interior rings) Argument must be a Polygon
+   geometry. */
 static GeoPolygon
 geoPolygonFromGeom(allocator *ma, GEOSGeom geom)
 {
@@ -195,7 +196,8 @@ geoPolygonFromGeom(allocator *ma, GEOSGeom geom)
 	//Get exterior ring GeoLines
 	geo.exteriorRing = geoLinesFromGeom(ma, (GEOSGeom)GEOSGetExteriorRing_r(geoshandle, geom));
 	geo.interiorRingsCount = GEOSGetNumInteriorRings_r(geoshandle, geom);
-	//If there are interior rings, allocate space to their GeoLines representation
+	//If there are interior rings, allocate space to their GeoLines
+	//representation
 	if (geo.interiorRingsCount > 0)
 		//TODO Malloc fail exception?
 		geo.interiorRings = ma_alloc(ma, sizeof(GeoLines) * geo.interiorRingsCount);
@@ -228,7 +230,8 @@ cartPointFromXYZ(double x, double y, double z)
 	return cart;
 }
 
-/* Converts Well-Known Bytes into Geos Geometries, if they are not NULL and have the same SRID (used for geographic functions) */
+/* Converts Well-Known Bytes into Geos Geometries, if they are not NULL
+ * and have the same SRID (used for geographic functions) */
 str
 wkbGetCompatibleGeometries(wkb * const *a, wkb * const *b, GEOSGeom *ga, GEOSGeom *gb)
 {
@@ -252,9 +255,9 @@ wkbGetCompatibleGeometries(wkb * const *a, wkb * const *b, GEOSGeom *ga, GEOSGeo
 }
 
 /**
-* Convert spherical coordinates to cartesian coordinates on unit sphere.
-* The inputs have to be in radians.
-*/
+ * Convert spherical coordinates to cartesian coordinates on unit sphere.
+ * The inputs have to be in radians.
+ */
 static CartPoint3D
 geo2cart(GeoPoint geo)
 {
@@ -266,9 +269,9 @@ geo2cart(GeoPoint geo)
 }
 
 /**
-* Convert spherical coordinates to cartesian coordinates on unit sphere.
-* The inputs have to be in degrees.
-*/
+ * Convert spherical coordinates to cartesian coordinates on unit sphere.
+ * The inputs have to be in degrees.
+ */
 static CartPoint3D
 geo2cartFromDegrees(GeoPoint geo)
 {
@@ -285,7 +288,8 @@ cart2geo(CartPoint3D cart)
 	return geo;
 }
 
-/* Converts two lat/lon points into cartesian coordinates and creates a Line geometry */
+/* Converts two lat/lon points into cartesian coordinates and creates a
+ * Line geometry */
 static GEOSGeom
 cartesianLineFromGeoPoints(GeoPoint p1, GeoPoint p2)
 {
@@ -299,9 +303,9 @@ cartesianLineFromGeoPoints(GeoPoint p1, GeoPoint p2)
 }
 
 /**
-*  Bounding Box functions
-*
-**/
+ *  Bounding Box functions
+ *
+ **/
 /* Adds a Cartesian Point to the BoundingBox */
 static void
 boundingBoxAddPoint(BoundingBox *bb, CartPoint3D p)
@@ -360,7 +364,8 @@ boundingBoxContainsPoint(BoundingBox bb, CartPoint3D pt)
 	return bb.xmin <= pt.x && bb.xmax >= pt.x && bb.ymin <= pt.y && bb.ymax >= pt.y && bb.zmin <= pt.z && bb.zmax >= pt.z;
 }
 
-/* Returns a point outside of the polygon's bounding box, for Point-In-Polygon calculation */
+/* Returns a point outside of the polygon's bounding box, for
+ * Point-In-Polygon calculation */
 static GeoPoint
 pointOutsidePolygon(GeoPolygon polygon)
 {
@@ -428,14 +433,15 @@ pointOutsidePolygon(GeoPolygon polygon)
 }
 
 /**
-* Distance functions
-*
-**/
+ * Distance functions
+ *
+ **/
 /**
-* The haversine formula calculate the distance in meters between two lat/lon points
-* The points must be measured in radians.
-* This formula assumes a spherical model of the earth, which can lead to an error of about 0.3% compared to a ellipsoidal model.
-*/
+ * The haversine formula calculate the distance in meters between two
+ * lat/lon points The points must be measured in radians.  This formula
+ * assumes a spherical model of the earth, which can lead to an error of
+ * about 0.3% compared to a ellipsoidal model.
+ */
 static double
 haversine(GeoPoint a, GeoPoint b)
 {
@@ -454,7 +460,8 @@ geoDistancePointPoint(GeoPoint a, GeoPoint b)
 	return haversine(deg2RadPoint(a), deg2RadPoint(b));
 }
 
-/* Calculates the distance between the perpendicular projection of a point in the Line */
+/* Calculates the distance between the perpendicular projection of a
+ * point in the Line */
 static double
 calculatePerpendicularDistance(GeoPoint p_geo, GeoPoint l1_geo, GeoPoint l2_geo)
 {
@@ -470,11 +477,13 @@ calculatePerpendicularDistance(GeoPoint p_geo, GeoPoint l1_geo, GeoPoint l2_geo)
 	double d_ab = (l2.z - l1.z) * (l2.z - l1.z) + (l2.y - l1.y) * (l2.y - l1.y) + (l2.x - l1.x) * (l2.x - l1.x);
 	double t = (((p.x - l1.x) * (l2.x - l1.x)) + ((p.y - l1.y) * (l2.y - l1.y)) + ((p.z - l1.z) * (l2.z - l1.z))) / d_ab;
 
-	//If t is not between 0 and 1, the projected point is not in the line, so there is no perpendicular, return huge number
+	//If t is not between 0 and 1, the projected point is not in the
+	//line, so there is no perpendicular, return huge number
 	if (t < 0 || t > 1)
 		return INT_MAX;
 
-	//If the projection is in the line segment, build the point -> projection = l1 + t * (l2-l1)
+	//If the projection is in the line segment, build the point ->
+	//projection = l1 + t * (l2-l1)
 	projection = cartPointFromXYZ(l1.x + t * (l2.x - l1.x), l1.y + t * (l2.y - l1.y), l1.z + t * (l2.z - l1.z));
 
 	//Convert into geographic coordinates (radians)
@@ -485,8 +494,9 @@ calculatePerpendicularDistance(GeoPoint p_geo, GeoPoint l1_geo, GeoPoint l2_geo)
 }
 
 /* Distance between Point and Line
-   The returned distance is the minimum distance between the point and the line vertices
-   and the perpendicular projection of the point in each line segment.  */
+   The returned distance is the minimum distance between the point and
+   the line vertices and the perpendicular projection of the point in
+   each line segment.  */
 static double
 geoDistancePointLine(GeoPoint point, GeoLines lines, double distance_min_limit)
 {
@@ -498,7 +508,8 @@ geoDistancePointLine(GeoPoint point, GeoLines lines, double distance_min_limit)
 			min_distance = distancePoint;
 		if (distancePerpendicular < min_distance)
 			min_distance = distancePerpendicular;
-		//Shortcut, if the geometries are already at their minimum distance
+		//Shortcut, if the geometries are already at their
+		//minimum distance
 		if (min_distance <= distance_min_limit)
 			return min_distance;
 	}
@@ -515,7 +526,8 @@ geoDistanceLineLine(GeoLines line1, GeoLines line2, double distance_min_limit)
 		distance = geoDistancePointLine(line1.points[i], line2, distance_min_limit);
 		if (distance < min_distance)
 			min_distance = distance;
-		//Shortcut, if the geometries are already at their minimum distance
+		//Shortcut, if the geometries are already at their
+		//minimum distance
 		if (min_distance <= distance_min_limit)
 			return min_distance;
 	}
@@ -524,7 +536,8 @@ geoDistanceLineLine(GeoLines line1, GeoLines line2, double distance_min_limit)
 			distance = calculatePerpendicularDistance(line2.points[i],line1.points[j],line1.points[j+1]);
 			if (distance < min_distance)
 				min_distance = distance;
-			//Shortcut, if the geometries are already at their minimum distance
+			//Shortcut, if the geometries are already at
+			//their minimum distance
 			if (min_distance <= distance_min_limit)
 				return min_distance;
 		}
@@ -548,19 +561,22 @@ pointWithinPolygon(GeoPolygon polygon, GeoPoint point)
 		return false;
 
 	/*printf("Outside point: (%f %f)\n",outsidePoint.lon, outsidePoint.lat);
-	fflush(stdout);*/
+	  fflush(stdout);*/
 
 	//Construct a line between the outside point and the input point
 	GEOSGeometry *outInLine = cartesianLineFromGeoPoints(point, outsidePoint);
 
-	//TODO This is producing wrong results, review the intersection conditional
-	//Count the number of intersections between the polygon exterior ring and the constructed line
+	//TODO This is producing wrong results, review the intersection
+	//conditional
+	//Count the number of intersections between the polygon exterior
+	//ring and the constructed line
 	polygonRing = polygon.exteriorRing;
 	for (int i = 0; i < polygonRing.pointCount-1; i++) {
 		segmentPolygon = cartesianLineFromGeoPoints(polygonRing.points[i], polygonRing.points[i+1]);
 		intersectionPoints = GEOSIntersection_r(geoshandle, segmentPolygon, outInLine);
 
-		//If there is an intersection, a point will be returned (line when there is none)
+		//If there is an intersection, a point will be returned
+		//(line when there is none)
 		if (GEOSGeomTypeId_r(geoshandle, intersectionPoints) == GEOS_POINT)
 			intersectionNum++;
 
@@ -570,14 +586,16 @@ pointWithinPolygon(GeoPolygon polygon, GeoPoint point)
 			GEOSGeom_destroy_r(geoshandle, segmentPolygon);
 	}
 
-	//Count the number of intersections between the polygon interior rings and the constructed line
+	//Count the number of intersections between the polygon interior
+	//rings and the constructed line
 	for (int j = 0; j < polygon.interiorRingsCount; j++) {
 		polygonRing = polygon.interiorRings[j];
 		for (int i = 0; i < polygonRing.pointCount-1; i++) {
 			segmentPolygon = cartesianLineFromGeoPoints(polygonRing.points[i], polygonRing.points[i+1]);
 			intersectionPoints = GEOSIntersection_r(geoshandle, segmentPolygon, outInLine);
 
-			//If there is an intersection, a point will be returned (line when there is none)
+			//If there is an intersection, a point will be
+			//returned (line when there is none)
 			if (GEOSGeomTypeId_r(geoshandle, intersectionPoints) == GEOS_POINT)
 				intersectionNum++;
 
@@ -603,13 +621,15 @@ geoDistancePointPolygon(GeoPoint point, GeoPolygon polygon, double distance_min_
 	if (pointWithinPolygon(polygon, point))
 		return 0;
 
-	//Calculate distance from Point to the exterior and interior rings of the polygon
+	//Calculate distance from Point to the exterior and interior
+	//rings of the polygon
 	double distance, min_distance = INT_MAX;
 	//First, calculate distance to the exterior ring
 	min_distance = geoDistancePointLine(point, polygon.exteriorRing, distance_min_limit);
 	//Then, calculate distance to the interior rings
 	for (int i = 0; i < polygon.interiorRingsCount; i++) {
-		//Shortcut, if the geometries are already at their minimum distance
+		//Shortcut, if the geometries are already at their
+		//minimum distance
 		if (min_distance <= distance_min_limit)
 			return min_distance;
 		distance = geoDistancePointLine(point, polygon.interiorRings[i], distance_min_limit);
@@ -643,7 +663,8 @@ static double
 geoDistancePolygonPolygon(GeoPolygon polygon1, GeoPolygon polygon2, double distance_min_limit)
 {
 	double distance1, distance2;
-	//Calculate the distance between the exterior ring of polygon1 and all segments of polygon2 (including the interior rings)
+	//Calculate the distance between the exterior ring of polygon1
+	//and all segments of polygon2 (including the interior rings)
 	distance1 = geoDistanceLinePolygon(polygon1.exteriorRing, polygon2, distance_min_limit);
 	//Shortcut, if the geometries are already at their minimum distance
 	if (distance1 <= distance_min_limit)
@@ -726,7 +747,9 @@ geoDistanceInternal(GEOSGeom a, GEOSGeom b, double distance_min_limit)
 		for (int j = 0; j < numGeomsB; j++) {
 			geo2 = (GEOSGeometry *)GEOSGetGeometryN_r(geoshandle, (const GEOSGeometry *)b, j);
 			distance = geoDistanceSingle(geo1, geo2, distance_min_limit);
-			//Shortcut, if the geometries are already at their minimum distance (0 in the case of normal Distance)
+			//Shortcut, if the geometries are already at
+			//their minimum distance (0 in the case of
+			//normal Distance)
 			if (distance <= distance_min_limit)
 				return distance;
 			if (distance < min_distance)
@@ -737,10 +760,11 @@ geoDistanceInternal(GEOSGeom a, GEOSGeom b, double distance_min_limit)
 }
 
 /**
-* Distance
-*
-**/
-/* Calculates the distance, in meters, between two geographic geometries with latitude/longitude coordinates */
+ * Distance
+ *
+ **/
+/* Calculates the distance, in meters, between two geographic geometries
+ * with latitude/longitude coordinates */
 str
 wkbDistanceGeographic(Client ctx, dbl *out, wkb * const *a, wkb * const *b)
 {
@@ -757,9 +781,9 @@ wkbDistanceGeographic(Client ctx, dbl *out, wkb * const *a, wkb * const *b)
 }
 
 /**
-* Distance Within
-*
-**/
+ * Distance Within
+ *
+ **/
 /* Checks if two geographic geometries are within d meters of one another */
 str
 wkbDWithinGeographic(Client ctx, bit *out, wkb * const *a, wkb * const *b, const dbl *d)
@@ -779,9 +803,9 @@ wkbDWithinGeographic(Client ctx, bit *out, wkb * const *a, wkb * const *b, const
 }
 
 /**
-* Intersects
-*
-**/
+ * Intersects
+ *
+ **/
 /* Checks if two geographic geometries intersect at any point */
 str
 wkbIntersectsGeographic(Client ctx, bit *out, wkb * const *a, wkb * const *b)
@@ -824,7 +848,8 @@ geoCoversSingle(GEOSGeom a, GEOSGeom b)
 {
 	int dimA = GEOSGeom_getDimensions_r(geoshandle, a), dimB = GEOSGeom_getDimensions_r(geoshandle, b);
 	if (dimA < dimB)
-		//If the dimension of A is smaller than B, then it must not cover it
+		//If the dimension of A is smaller than B, then it must
+		//not cover it
 		return false;
 
 	if (dimA == 0){
@@ -863,7 +888,8 @@ geoCoversSingle(GEOSGeom a, GEOSGeom b)
 		} else {
 			//B is Polygon
 			GeoPolygon polygonB = geoPolygonFromGeom(ta, b);
-			//If every point in the exterior ring of B is covered, polygon B is covered by polygon A
+			//If every point in the exterior ring of B is
+			//covered, polygon B is covered by polygon A
 			res = geoPolygonCoversLine(polygonA, polygonB.exteriorRing);
 		}
 		ma_close(&ta_state);
@@ -889,9 +915,9 @@ geoCoversInternal(GEOSGeom a, GEOSGeom b)
 }
 
 /**
-* Covers
-*
-**/
+ * Covers
+ *
+ **/
 /* Checks if no point of Geometry B is outside Geometry A */
 str
 wkbCoversGeographic(Client ctx, bit *out, wkb * const *a, wkb * const *b)
@@ -1040,7 +1066,7 @@ filterJoinGeomGeomDoubleToBit(bat *lres_id, bat *rres_id, const bat *l_id, const
 
 	//Allocate arrays for reutilizing GEOS type conversion
 	if ((l_geoms = ma_alloc(ta, l_ci.ncand * sizeof(GEOSGeometry *))) == NULL ||
-		(r_geoms = ma_alloc(ta, r_ci.ncand * sizeof(GEOSGeometry *))) == NULL) {
+	    (r_geoms = ma_alloc(ta, r_ci.ncand * sizeof(GEOSGeometry *))) == NULL) {
 		msg = createException(MAL, name, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto free;
 	}
@@ -1124,7 +1150,7 @@ filterJoinGeomGeomDoubleToBit(bat *lres_id, bat *rres_id, const bat *l_id, const
 	*rres_id = rres->batCacheid;
 	BBPkeepref(rres);
 	return MAL_SUCCEED;
-free:
+  free:
 	if (l_geoms) {
 		for (BUN i = 0; i < l_ci.ncand; i++) {
 			GEOSGeom_destroy_r(geoshandle, l_geoms[i]);

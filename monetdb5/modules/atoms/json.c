@@ -2548,17 +2548,17 @@ JSONfoldKeyValue(Client ctx, str *ret, const bat *id, const bat *key, const bat 
 	row[1] = 0;
 	len = 1;
 	if (id) {
-		o = BUNtoid(bo, 0);
+		o = fetchtoid(bo, 0);
 	}
 
 	bki = bat_iterator(bk);
 	bvi = bat_iterator(bv);
 	for (i = 0; i < cnt; i++) {
 		if (id && bk) {
-			if (BUNtoid(bo, i) != o) {
+			if (fetchtoid(bo, i) != o) {
 				snprintf(row + len, lim - len, ", ");
 				len += 2;
-				o = BUNtoid(bo, i);
+				o = fetchtoid(bo, i);
 			}
 		}
 
@@ -2827,7 +2827,7 @@ JSONjsonaggr(Client ctx, BAT **bnp, BAT *b, BAT *g, BAT *e, BAT *s, int skip_nil
 
 	assert(maxlen > 256);		/* make sure every floating point fits on the dense case */
 	assert(b->ttype == TYPE_str || b->ttype == TYPE_dbl);
-	if ((err = BATgroupaggrinit(b, g, e, s, &min, &max, &ngrp, &ci)) != NULL) {
+	if ((err = BATgroupaggrinit(b, g, e, s, &min, &max, &ngrp, &ci, NULL)) != NULL) {
 		return err;
 	}
 	if (BATcount(b) == 0 || ngrp == 0) {

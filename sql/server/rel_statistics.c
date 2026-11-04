@@ -396,7 +396,7 @@ rel_munion_get_statistics(mvc *sql, sql_rel *rel, list *rels, sql_exp *e, int i)
 }
 
 
-static sql_exp *
+sql_exp *
 rel_propagate_statistics(visitor *v, sql_rel *rel, sql_exp *e, int depth)
 {
 	mvc *sql = v->sql;
@@ -1075,7 +1075,7 @@ rel_get_statistics_(visitor *v, sql_rel *rel)
 						sql_exp *e = n->data;
 						prop *sp = NULL;
 						if ((sp = find_prop(e->p, PROP_SELECTIVITY)) == NULL) {
-							dbl s = exp_estimate_selectivity(v->sql, e);
+							dbl s = exp_estimate_selectivity(v->sql, e, rel);
 							/* store selectivity on predicate for later use */
 							sp = prop_create(v->sql->sa, PROP_SELECTIVITY, e->p);
 							sp->value.dval = s;
@@ -1110,7 +1110,7 @@ rel_get_statistics_(visitor *v, sql_rel *rel)
 					dbl sel = 1.0;
 					for (node *n = rel->exps->h ; n ; n = n->next) {
 						sql_exp *e = n->data;
-						dbl s = exp_estimate_selectivity(v->sql, e);
+						dbl s = exp_estimate_selectivity(v->sql, e, rel);
 						/* store selectivity on predicate for later use */
 						prop *sp = prop_create(v->sql->sa, PROP_SELECTIVITY, (prop *) e->p);
 						sp->value.dval = s;
@@ -1297,9 +1297,8 @@ rel_get_statistics(visitor *v, global_props *gp, sql_rel *rel)
 run_optimizer
 bind_get_statistics(visitor *v, global_props *gp)
 {
-	bool pipeline_mode = MT_thread_get_qry_ctx()->pipeline_mode;
 	(void) v;
-	return (!pipeline_mode && gp->opt_level == 1 /*&& !gp->cnt[op_insert]*/) ? rel_get_statistics : NULL;
+	return (gp->opt_level == 1) ? rel_get_statistics : NULL;
 }
 
 
@@ -1588,113 +1587,4 @@ bind_final_optimization_loop(visitor *v, global_props *gp)
 	/* At the moment, this optimizer has dependency on 3 flags */
 	return gp->opt_level == 1 && (gp->cnt[op_groupby] || gp->cnt[op_select]) &&
 		(flag & push_select_up) && (flag & optimize_select_and_joins_topdown) && (flag & optimize_projections) ? rel_final_optimization_loop : NULL;
-}
-
-/* join order2: reorder joins using statistical information (selectivity/cardinality).
- * Runs after the main statistics pass, ensuring up-to-date cardinality estimates
- * are available for cost-based join ordering decisions.
- * For hash-based joins, cost ~ sum of input/output cardinalities. */
-
-static sql_rel *
-rel_join_order2_(visitor *v, sql_rel *rel, int skip)
-{
-	if (!rel)
-		return rel;
-
-	if (v->opt >= 0 && rel->opt >= v->opt) /* only once */
-		return rel;
-
-	switch (rel->op) {
-	case op_basetable:
-		break;
-	case op_table:
-		if (IS_TABLE_PROD_FUNC(rel->flag) || rel->flag == TABLE_FROM_RELATION)
-			rel->l = rel_join_order2_(v, rel->l, false);
-		break;
-	case op_join:
-		rel->l = rel_join_order2_(v, rel->l, true);
-		rel->r = rel_join_order2_(v, rel->r, true);
-		break;
-
-	case op_left:
-	case op_right:
-	case op_full:
-		rel->l = rel_join_order2_(v, rel->l, false);
-		rel->r = rel_join_order2_(v, rel->r, false);
-		break;
-
-	case op_semi:
-	case op_anti:
-
-	case op_inter:
-	case op_except:
-		rel->l = rel_join_order2_(v, rel->l, false);
-		rel->r = rel_join_order2_(v, rel->r, false);
-		break;
-	case op_munion:
-		assert(rel->l);
-		for (node *n = ((list*)rel->l)->h; n; n = n->next)
-			n->data = rel_join_order2_(v, n->data, false);
-		break;
-	case op_project:
-	case op_select:
-	case op_groupby:
-	case op_topn:
-	case op_sample:
-		rel->l = rel_join_order2_(v, rel->l, false);
-		break;
-	case op_ddl:
-		if (rel->flag == ddl_output || rel->flag == ddl_create_seq || rel->flag == ddl_alter_seq || rel->flag == ddl_alter_table || rel->flag == ddl_create_table || rel->flag == ddl_create_view) {
-			rel->l = rel_join_order2_(v, rel->l, false);
-		} else if (rel->flag == ddl_list || rel->flag == ddl_exception) {
-			rel->l = rel_join_order2_(v, rel->l, false);
-			rel->r = rel_join_order2_(v, rel->r, false);
-		}
-		break;
-	case op_insert:
-	case op_update:
-	case op_delete:
-		rel->r = rel_join_order2_(v, rel->r, false);
-		break;
-	case op_truncate:
-	case op_buildhash:
-	case op_probehash:
-	case op_partition:
-		break;
-	}
-	if (is_innerjoin(rel->op) && !is_single(rel) && !rel_is_ref(rel) && list_empty(rel->attr)) {
-		if (!skip) {
-			rel = reorder_join(v, rel);
-			rel = rel_get_statistics_(v, rel);
-		}
-	} else {
-		if (is_join(rel->op) || is_semi(rel->op))
-			rel->used = 0;
-		rel = rel_get_statistics_(v, rel);
-	}
-	if (rel && v->opt >= 0)
-		rel->opt = v->opt;
-	return rel;
-}
-
-static sql_rel *
-rel_join_order2(visitor *v, global_props *gp, sql_rel *rel)
-{
-	(void)gp;
-	v->data = NULL;
-	if (v->opt >= 0 && rel)
-		v->opt = rel->opt+1;
-	/* propagate statistics first to get up-to-date cardinality and selectivity */
-	allocator *ta = MT_thread_getallocator();
-	allocator_state ta_state = ma_open(ta);
-	sql_rel *r = rel_join_order2_(v, rel, false);
-	ma_close(&ta_state);
-	return r;
-}
-
-run_optimizer
-bind_join_order2(visitor *v, global_props *gp)
-{
-	int flag = v->sql->sql_optimizer;
-	return gp->opt_level == 1 && (flag & join_order) ? rel_join_order2 : NULL;
 }

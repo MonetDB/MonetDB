@@ -18,6 +18,7 @@
 #include "sql_datetime.h"
 #include "sql_atom.h"
 #include "rel_rel.h"
+#include "mal_client.h"			/* for default_pipeline_mode */
 
 static void
 destroy_sql_var(void *gdata, void *data)
@@ -82,6 +83,8 @@ init_global_variables(mvc *sql)
 	SQL_GLOBAL(sa, sname, "last_id", &sec);
 	SQL_GLOBAL(sa, sname, "rowcnt", &sec);
 
+	sql_find_subtype(&ctype, "boolean", 0, 0);
+	SQL_GLOBAL(sa, sname, "pipeline", &(bit){default_pipeline_mode});
 	return 0;
 }
 

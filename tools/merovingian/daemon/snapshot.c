@@ -41,18 +41,18 @@ static err unpack_tarstream(stream *tarstream, char *destdir, int skipcomponents
 static err parse_snapshot_name_selftest(void);
 
 const char *VALID_EXTENSIONS[] = {
-		".tar.lz4",
-		".tar",
-		".tar.gz",
-		".tar.xz",
-		".tar.bz2",
-		NULL
+	".tar.lz4",
+	".tar",
+	".tar.gz",
+	".tar.xz",
+	".tar.bz2",
+	NULL
 };
 
 static char*
 snapshot_database_stream_helper(
 	void *priv, const char *filename, bool binary,
-	 const void *data, size_t size)
+	const void *data, size_t size)
 {
 	(void)binary; // old servers request ascii because the protocol didn't support binary yet
 	if (size == 0)
@@ -104,8 +104,8 @@ snapshot_database_stream(char *dbname, stream *s)
 
 	/* Set up the connection. Connect directly to the unix domain socket */
 	if (stats->conns == NULL || stats->conns[0].val == NULL ||
-		(conn = mapi_mapiuri(stats->conns[0].val, ".snapshot",
-							 stats->secret, "sql")) == NULL) {
+	    (conn = mapi_mapiuri(stats->conns[0].val, ".snapshot",
+				 stats->secret, "sql")) == NULL) {
 		e = newErr("internal error: no conn");
 		goto bailout;
 	}
@@ -132,7 +132,7 @@ snapshot_database_stream(char *dbname, stream *s)
 	}
 
 	/* everything seems ok. Leave e == NO_ERR */
-bailout:
+  bailout:
 	if (handle != NULL)
 		mapi_close_handle(handle);
 	if (conn != NULL)
@@ -182,7 +182,7 @@ snapshot_database_to(char *dbname, char *dest)
 
 	/* Set up the connection. Connect directly to the unix domain socket */
 	if (stats->conns == NULL || stats->conns[0].val == NULL ||
-		(conn = mapi_mapiuri(stats->conns[0].val, ".snapshot", stats->secret, "sql")) == NULL) {
+	    (conn = mapi_mapiuri(stats->conns[0].val, ".snapshot", stats->secret, "sql")) == NULL) {
 		e = newErr("internal error: no conn");
 		goto bailout;
 	}
@@ -212,7 +212,7 @@ snapshot_database_to(char *dbname, char *dest)
 	}
 
 	/* everything seems ok. Leave e == NO_ERR */
-bailout:
+  bailout:
 	if (handle != NULL)
 		mapi_close_handle(handle);
 	if (conn != NULL)
@@ -310,11 +310,11 @@ snapshot_restore_from(char *dbname, char *source)
 	/* and finally, move the thing into place */
 	if (rename(tmppath, destpath) < 0) {
 		e = newErr("Couldn't rename '%s' to '%s': %s",
-			tmppath, destpath, strerror(errno));
+			   tmppath, destpath, strerror(errno));
 		goto bailout;
 	}
 
-bailout:
+  bailout:
 	if (existing != NULL)
 		msab_freeStatus(&existing);
 	if (instream != NULL)
@@ -384,7 +384,7 @@ snapshot_list(int *nsnapshots, struct snapshot **snapshots)
 		snprintf(snap->path, pathlen, "%s/%s", snapdir, ent->d_name);
 	}
 
-bailout:
+  bailout:
 	if (dir != NULL)
 		closedir(dir);
 	return e;
@@ -547,8 +547,8 @@ snapshot_default_filename(char **ret, const char *dbname)
 	}
 	if (snapext == NULL) {
 		e = newErr("Unsupported file format: '%s'",
-			snapext_conf != NULL ? snapext_conf : "");
-			goto bailout;
+			   snapext_conf != NULL ? snapext_conf : "");
+		goto bailout;
 	}
 
 	/* get the current time, in UTC */
@@ -567,7 +567,7 @@ snapshot_default_filename(char **ret, const char *dbname)
 	/* return it */
 	*ret = name_buf;
 
-bailout:
+  bailout:
 	if (e != NULL)
 		free(name_buf);
 	return e;
@@ -599,7 +599,7 @@ validate_location(const char *dest)
 	resolved_snapdir = realpath(configured_snapdir, NULL);
 	if (resolved_snapdir == NULL) {
 		e = newErr("Cannot resolve configured snapshot directory '%s': %s",
-			configured_snapdir, strerror(errno));
+			   configured_snapdir, strerror(errno));
 		goto bailout;
 	}
 
@@ -610,7 +610,7 @@ validate_location(const char *dest)
 	resolved_destination = realpath(dest_dir, NULL);
 	if (resolved_destination == NULL) {
 		e = newErr("Cannot resolve snapshot directory '%s': %s",
-			dest_dir, strerror(errno));
+			   dest_dir, strerror(errno));
 		goto bailout;
 	}
 
@@ -621,13 +621,13 @@ validate_location(const char *dest)
 			resolved_snapdir,
 			resolved_destination,
 			strlen(resolved_snapdir))
-	) {
+		) {
 		e = newErr("Snapshot directory '%s' is not inside configured snapshot directory '%s'",
-			dest, resolved_snapdir);
+			   dest, resolved_snapdir);
 		goto bailout;
 	}
 
-bailout:
+  bailout:
 	free(resolved_snapdir);
 	free(dest_dup);
 	free(resolved_destination);
@@ -723,7 +723,7 @@ prepare_directory(struct dir_helper *state, const char *prefix_dir, const char *
 
 	free(dir_buf);
 	return NULL;
-bailout:
+  bailout:
 	free(dir_buf);
 	if (state->fd > 0) {
 		close(state->fd);
@@ -894,7 +894,7 @@ unpack_tarstream(stream *tarstream, char *destdir, int skipfirstcomponent)
 	}
 	prepare_directory(&dirhelper, NULL, NULL);
 
-bailout:
+  bailout:
 	if (outfile != NULL)
 		fclose(outfile);
 	free(whole_filename);

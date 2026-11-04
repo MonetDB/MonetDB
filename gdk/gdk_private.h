@@ -64,6 +64,10 @@ BAT *BATload_intern(bat bid, bool lock)
 gdk_return BATmaterialize(BAT *b, BUN cap)
 	ATTR_WARN_UNUSED_RESULT
 	ATTR_VISIBILITY_HIDDEN;
+bool BATIordered(BATiter *bi)
+	ATTR_VISIBILITY_HIDDEN;
+bool BATIordered_rev(BATiter *bi)
+	ATTR_VISIBILITY_HIDDEN;
 gdk_return BATsave_iter(BAT *bd, BATiter *bi, BUN size)
 	ATTR_VISIBILITY_HIDDEN;
 void BATsetdims(BAT *b, uint16_t width)
@@ -204,7 +208,7 @@ void HEAP_recover(Heap *, const var_t *, BUN)
 gdk_return HEAPsave(Heap *h, const char *nme, const char *ext, bool dosync, BUN free, MT_Lock *lock)
 	ATTR_WARN_UNUSED_RESULT
 	ATTR_VISIBILITY_HIDDEN;
-double joincost(BAT *r, bat lustr, BUN lcount, struct canditer *rci, bool *hash, bool *phash, bool *cand)
+double joincost(BATiter *ri, bat lustr, BUN lcount, struct canditer *rci, bool *hash, bool *phash, bool *cand)
 	ATTR_VISIBILITY_HIDDEN;
 void STRMPincref(Strimps *strimps)
 	ATTR_VISIBILITY_HIDDEN;
@@ -336,7 +340,7 @@ ilog2(BUN x)
 	BATcount(b),							\
 	b->hseqbase,							\
 	ATOMname(b->ttype),						\
-	b->ttype==TYPE_str?b->twidth==1?"1":b->twidth==2?"2":b->twidth==4?"4":"8":"", \
+	b->ttype == TYPE_str ? b->twidth == 1 ? "1" : b->twidth == 2 ? "2" : b->twidth == 4 ? "4" : "8" : "", \
 	b->ttype == TYPE_str && b->ustr ? "U" : "",			\
 	!b->batTransient ? "P" : b->theap && b->theap->parentid != b->batCacheid ? "V" : b->tvheap && b->tvheap->parentid != b->batCacheid ? "v" : "T", \
 	BATtdense(b) ? "D" : b->ttype == TYPE_void && b->tvheap ? "X" : ATOMstorage(b->ttype) == TYPE_str && b->tvheap && GDK_ELIMDOUBLES(b->tvheap) ? "E" : "", \
@@ -348,6 +352,23 @@ ilog2(BUN x)
 	b->thash ? "H" : "",						\
 	b->torderidx ? "O" : "",					\
 	b->tstrimps ? "I" : b->theap && b->theap->parentid && BBP_desc(b->theap->parentid) && BBP_desc(b->theap->parentid)->tstrimps ? "(I)" : ""
+#define ALGOBATIPAR(bi)							\
+	BATgetId((bi)->b),						\
+	(bi)->count,							\
+	(bi)->hseq,							\
+	ATOMname((bi)->type),						\
+	(bi)->type == TYPE_str ? (bi)->width == 1 ? "1" : (bi)->width == 2 ? "2" : (bi)->width == 4 ? "4" : "8" : "", \
+	(bi)->type == TYPE_str && (bi)->ustr ? "U" : "",		\
+	!(bi)->transient ? "P" : (bi)->h && (bi)->h->parentid != (bi)->id ? "V" : (bi)->vh && (bi)->vh->parentid != (bi)->id ? "v" : "T", \
+	BATtdensebi((bi)) ? "D" : (bi)->type == TYPE_void && (bi)->vh ? "X" : ATOMstorage((bi)->type) == TYPE_str && (bi)->vh && GDK_ELIMDOUBLES((bi)->vh) ? "E" : "", \
+	(bi)->sorted ? "S" : (bi)->nosorted ? "!s" : "",		\
+	(bi)->revsorted ? "R" : (bi)->norevsorted ? "!r" : "",		\
+	(bi)->key ? "K" : (bi)->nokey[1] ? "!k" : "",			\
+	(bi)->vkey ? "k" : "",						\
+	(bi)->nonil ? "N" : "",						\
+	(bi)->b->thash ? "H" : "",					\
+	(bi)->b->torderidx ? "O" : "",					\
+	(bi)->b->tstrimps ? "I" : (bi)->h && (bi)->h->parentid && BBP_desc((bi)->h->parentid) && BBP_desc((bi)->h->parentid)->tstrimps ? "(I)" : ""
 /* use ALGOOPTBAT* when BAT is optional (can be NULL) */
 #define ALGOOPTBATFMT	"%s%s" BUNFMT "%s" OIDFMT "%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s"
 #define ALGOOPTBATPAR(b)						\
