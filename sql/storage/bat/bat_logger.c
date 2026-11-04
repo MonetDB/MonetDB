@@ -1440,12 +1440,14 @@ snapshot_bats(stream *plan, BAT *bats_to_omit, const char *db_dir)
 		BAT b;
 		Heap h;
 		Heap vh;
-		vh = h = (Heap) {
+		Heap th;
+		th = vh = h = (Heap) {
 			.free = 0,
 		};
 		b = (BAT) {
 			.theap = &h,
 			.tvheap = &vh,
+			.tsketch = &th,
 		};
 		char filename[sizeof(BBP_physical(0))];
 		char batname[129];
