@@ -2759,6 +2759,8 @@ canditer_next(struct canditer *ci)
 
 gdk_export void canditer_init(struct canditer *ci, BAT *b, BAT *s)
 	ATTR_ACCESS(write_only, 1);
+gdk_export void canditer_init_bi(struct canditer *ci, BATiter *bi, BAT *s)
+	ATTR_ACCESS(write_only, 1);
 gdk_export oid canditer_peek(const struct canditer *ci)
 	ATTR_PURE;
 gdk_export oid canditer_last(const struct canditer *ci)

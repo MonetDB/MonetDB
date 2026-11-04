@@ -824,8 +824,11 @@ BATappend2(BAT *b, BAT *n, BAT *s, bool force, bool mayshare)
 	if (b == NULL || n == NULL || BATcount(n) == 0) {
 		return GDK_SUCCEED;
 	}
-	canditer_init(&ci, n, s);
+
+	BATiter ni = bat_iterator(n);
+	canditer_init_bi(&ci, &ni, s);
 	if (ci.ncand == 0) {
+		bat_iterator_end(&ni);
 		return GDK_SUCCEED;
 	}
 
@@ -839,7 +842,8 @@ BATappend2(BAT *b, BAT *n, BAT *s, bool force, bool mayshare)
 	ALIGNapp(b, force, GDK_FAIL);
 
 	if (ATOMstorage(ATOMtype(b->ttype)) != ATOMstorage(ATOMtype(n->ttype))) {
-		GDKerror("Incompatible operands ("ALGOBATFMT" vs. "ALGOBATFMT").\n", ALGOBATPAR(b), ALGOBATPAR(n));
+		GDKerror("Incompatible operands ("ALGOBATFMT" vs. "ALGOBATFMT").\n", ALGOBATPAR(b), ALGOBATIPAR(&ni));
+		bat_iterator_end(&ni);
 		return GDK_FAIL;
 	}
 
@@ -850,8 +854,6 @@ BATappend2(BAT *b, BAT *n, BAT *s, bool force, bool mayshare)
 	}
 
 	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
-
-	BATiter ni = bat_iterator(n);
 
 	if (BATcount(b) + ci.ncand > BUN_MAX) {
 		bat_iterator_end(&ni);
@@ -3411,8 +3413,8 @@ BATcount_no_nil(BAT *b, BAT *s)
 	BATcheck(b, 0);
 
 	hseq = b->hseqbase;
-	canditer_init(&ci, b, s);
 	BATiter bi = bat_iterator(b);
+	canditer_init_bi(&ci, &bi, s);
 	if (bi.nonil) {
 		bat_iterator_end(&bi);
 		return ci.ncand;

@@ -3389,9 +3389,10 @@ BATcalcavg(BAT *b, BAT *s, dbl *avg, BUN *vals, int scale, bool inout)
 
 	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
 
-	canditer_init(&ci, b, s);
-
 	BATiter bi = bat_iterator(b);
+
+	canditer_init_bi(&ci, &bi, s);
+
 	src = bi.base;
 
 	switch (b->ttype) {
@@ -4069,7 +4070,7 @@ BATmin_skipnil(allocator *ma, BAT *b, void *aggr, bit skipnil, bool inout)
 				HEAPdecref(oidxh, false);
 			} else {
 				struct canditer ci;
-				canditer_init(&ci, b, NULL);
+				canditer_init_bi(&ci, &bi, NULL);
 				(void) do_groupmin(&pos, &bi, NULL, 1, 0, 0, &ci,
 						   skipnil, false);
 			}
@@ -4204,7 +4205,7 @@ BATmax_skipnil(allocator *ma, BAT *b, void *aggr, bit skipnil, bool inout)
 				HEAPdecref(oidxh, false);
 			} else {
 				struct canditer ci;
-				canditer_init(&ci, b, NULL);
+				canditer_init_bi(&ci, &bi, NULL);
 				(void) do_groupmax(&pos, &bi, NULL, 1, 0, 0, &ci,
 						   skipnil, false);
 			}

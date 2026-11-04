@@ -1415,9 +1415,12 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 		return NULL;
 	}
 
-	canditer_init(&ci, b, s);
+	BATiter bi = bat_iterator(b);
+
+	canditer_init_bi(&ci, &bi, s);
 	if (ci.ncand == 0) {
 		/* trivially empty result */
+		bat_iterator_end(&bi);
 		MT_thread_setalgorithm("trivially empty", __func__);
 		bn = BATdense(0, 0, 0);
 		TRC_DEBUG(ALGO, "b=" ALGOBATFMT
@@ -1428,8 +1431,6 @@ BATselect(BAT *b, BAT *s, const void *tl, const void *th,
 			  ALGOOPTBATPAR(bn), GDKusec() - t0);
 		return bn;
 	}
-
-	BATiter bi = bat_iterator(b);
 
 	t = bi.type;
 	nil = ATOMnilptr(t);
