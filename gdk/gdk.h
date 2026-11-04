@@ -4734,11 +4734,19 @@ gdk_export BAT *BATgroupquantile_avg(BAT *b, BAT *g, BAT *e, BAT *s, int tp,
 				     double quantile, bool skip_nils);
 
 /* helper function for grouped aggregates */
-gdk_export const char *BATgroupaggrinit(
-	BAT *b, BAT *g, BAT *e, BAT *s,
-	/* outputs: */
-	oid *minp, oid *maxp, BUN *ngrpp,
-	struct canditer *ci);
+gdk_export const char *BATgroupaggrinit(BAT *b, BAT *g, BAT *e, BAT *s,
+					/* outputs: */
+					oid *minp, oid *maxp, BUN *ngrpp,
+					struct canditer *ci, BATiter *bi)
+	ATTR_NONNULL(5)
+	ATTR_NONNULL(6)
+	ATTR_NONNULL(7)
+	ATTR_NONNULL(8)
+	ATTR_ACCESS(write_only, 5)
+	ATTR_ACCESS(write_only, 6)
+	ATTR_ACCESS(write_only, 7)
+	ATTR_ACCESS(write_only, 8)
+	ATTR_ACCESS(write_only, 9);
 
 gdk_export gdk_return BATsum(void *res, int tp, BAT *b, BAT *s, bool skip_nils,
 			     bool nil_if_empty, bool inout);

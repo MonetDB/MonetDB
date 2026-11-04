@@ -1406,7 +1406,7 @@ BATgroupedfirstn(BUN n, BAT *s, BAT *g, int nbats, BAT **bats, bool *asc, bool *
 	if (n > BATcount(bats[0]))
 		n = BATcount(bats[0]);
 
-	if ((err = BATgroupaggrinit(bats[0], g, NULL /* e */, s, &min, &max, &ngrp, &ci)) != NULL) {
+	if ((err = BATgroupaggrinit(bats[0], g, NULL /* e */, s, &min, &max, &ngrp, &ci, NULL)) != NULL) {
 		GDKerror("%s\n", err);
 		return NULL;
 	}
@@ -1431,14 +1431,15 @@ BATgroupedfirstn(BUN n, BAT *s, BAT *g, int nbats, BAT **bats, bool *asc, bool *
 	bn->tnonil = false;
 
 	for (int i = 0; i < nbats; i++) {
+		BATiter bi = bat_iterator(bats[i]);
 		batinfo[i] = (struct batinfo) {
-			.bi1 = bat_iterator(bats[i]),
-			.bi2 = bat_iterator(bats[i]),
+			.bi1 = bi,
+			.bi2 = bat_iterator_copy(&bi),
 			.asc = asc ? asc[i] : false,
 			.nilslast = nilslast ? nilslast[i] : true,
-			.cmp = ATOMcompare(bats[i]->ttype),
-			.hseq = bats[i]->hseqbase,
-			.nil = ATOMnilptr(bats[i]->ttype),
+			.cmp = ATOMcompare(bi.type),
+			.hseq = bi.hseq,
+			.nil = ATOMnilptr(bi.type),
 		};
 	}
 

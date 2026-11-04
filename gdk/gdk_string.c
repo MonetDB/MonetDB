@@ -1476,7 +1476,7 @@ BATgroupstr_group_concat(BAT *b, BAT *g, BAT *e, BAT *s, BAT *sep, bool skip_nil
 	(void) skip_nils;
 
 	if ((err = BATgroupaggrinit(b, g, e, s, &min, &max, &ngrp,
-				    &ci)) != NULL) {
+				    &ci, NULL)) != NULL) {
 		GDKerror("%s\n", err);
 		return NULL;
 	}
@@ -10184,7 +10184,7 @@ BATaggrdigest(allocator *ma, BAT **bnp, char **shap, const char *digest,
 	assert(bnp == NULL || shap == NULL);
 	assert(bnp != NULL || shap != NULL);
 
-	if ((err = BATgroupaggrinit(b, g, e, s, &min, &max, &ngrp, &ci)) != NULL) {
+	if ((err = BATgroupaggrinit(b, g, e, s, &min, &max, &ngrp, &ci, NULL)) != NULL) {
 		GDKerror("%s\n", err);
 		return GDK_FAIL;
 	}
