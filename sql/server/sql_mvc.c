@@ -342,7 +342,7 @@ mvc_init(int debug, store_type store_tpe, int ro, int su, const char *initpasswd
 				mvc_destroy(m);
 				mvc_exit(store);
 				TRC_CRITICAL(SQL_TRANS,
-					     "Initialization: creation of sys.tables column %s failed\n", cview[i].name);
+					     "Initialization: creation of sys.columns column %s failed\n", cview[i].name);
 				return NULL;
 			}
 			cview[i].newid = col->base.id;
