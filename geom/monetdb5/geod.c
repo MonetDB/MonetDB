@@ -970,15 +970,16 @@ filterSelectGeomGeomDoubleToBit(bat* outid, const bat *bid , const bat *sid, con
 		BBPunfix(b->batCacheid);
 		throw(MAL, name, SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	}
-	canditer_init(&ci, b, s);
+	b_iter = bat_iterator(b);
+	canditer_init_bi(&ci, &b_iter, s);
 	//create a new BAT for the output
 	if ((out = COLnew(0, ATOMindex("oid"), ci.ncand, TRANSIENT)) == NULL) {
+		bat_iterator_end(&b_iter);
 		BBPunfix(b->batCacheid);
 		if (s)
 			BBPunfix(s->batCacheid);
 		throw(MAL, name, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
-	b_iter = bat_iterator(b);
 	//Loop through column and compare with constant
 	for (BUN i = 0; i < ci.ncand; i++) {
 		oid c_oid = canditer_next(&ci);
@@ -1051,15 +1052,21 @@ filterJoinGeomGeomDoubleToBit(bat *lres_id, bat *rres_id, const bat *l_id, const
 		msg = createException(MAL, name, SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		goto free;
 	}
-	canditer_init(&l_ci, l, ls);
-	canditer_init(&r_ci, r, rs);
+	l_iter = bat_iterator(l);
+	r_iter = bat_iterator(r);
+	canditer_init_bi(&l_ci, &l_iter, ls);
+	canditer_init_bi(&r_ci, &r_iter, rs);
 	//create new BATs for the output
 	est = is_lng_nil(*estimate) || *estimate == 0 ? l_ci.ncand : (BUN) *estimate;
 	if ((lres = COLnew(0, ATOMindex("oid"), est, TRANSIENT)) == NULL) {
+		bat_iterator_end(&l_iter);
+		bat_iterator_end(&r_iter);
 		msg = createException(MAL, name, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto free;
 	}
 	if ((rres = COLnew(0, ATOMindex("oid"), est, TRANSIENT)) == NULL) {
+		bat_iterator_end(&l_iter);
+		bat_iterator_end(&r_iter);
 		msg = createException(MAL, name, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto free;
 	}
@@ -1067,12 +1074,12 @@ filterJoinGeomGeomDoubleToBit(bat *lres_id, bat *rres_id, const bat *l_id, const
 	//Allocate arrays for reutilizing GEOS type conversion
 	if ((l_geoms = ma_alloc(ta, l_ci.ncand * sizeof(GEOSGeometry *))) == NULL ||
 	    (r_geoms = ma_alloc(ta, r_ci.ncand * sizeof(GEOSGeometry *))) == NULL) {
+		bat_iterator_end(&l_iter);
+		bat_iterator_end(&r_iter);
 		msg = createException(MAL, name, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto free;
 	}
 
-	l_iter = bat_iterator(l);
-	r_iter = bat_iterator(r);
 
 	//Convert wkb to GEOS only once
 	for (BUN i = 0; i < l_ci.ncand; i++) {

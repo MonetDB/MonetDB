@@ -1127,21 +1127,25 @@ mvc_get_value_bulk(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		msg = createException(SQL, "sql.get_value", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		goto bailout;
 	}
-	canditer_init(&ci1, scheb, sches);
-	canditer_init(&ci2, seqb, seqs);
+	schi = bat_iterator(scheb);
+	seqi = bat_iterator(seqb);
+	canditer_init_bi(&ci1, &schi, sches);
+	canditer_init_bi(&ci2, &seqi, seqs);
 	if (ci2.ncand != ci1.ncand || ci1.hseq != ci2.hseq) {
+		bat_iterator_end(&schi);
+		bat_iterator_end(&seqi);
 		msg = createException(SQL, "sql.get_value", ILLEGAL_ARGUMENT " Requires bats of identical size");
 		goto bailout;
 	}
 	if (!(bn = COLnew(ci1.hseq, TYPE_lng, ci1.ncand, TRANSIENT))) {
+		bat_iterator_end(&schi);
+		bat_iterator_end(&seqi);
 		msg = createException(SQL, "sql.get_value", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto bailout;
 	}
 
 	off1 = scheb->hseqbase;
 	off2 = seqb->hseqbase;
-	schi = bat_iterator(scheb);
-	seqi = bat_iterator(seqb);
 	vals = Tloc(bn, 0);
 	for (BUN i = 0; i < ci1.ncand; i++) {
 		oid p1 = canditer_next(&ci1) - off1, p2 = canditer_next(&ci2) - off2;

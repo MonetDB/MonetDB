@@ -222,7 +222,7 @@ BATfirstn_unique(BATiter *bi, BAT *s, BUN n, bool asc, bool nilslast, oid *lastp
 	BUN pos, childpos;
 
 	MT_thread_setalgorithm(__func__, NULL);
-	canditer_init(&ci, bi->b, s);
+	canditer_init_bi(&ci, bi, s);
 
 	if (n >= ci.ncand) {
 		/* trivial: return all candidates */
@@ -730,7 +730,7 @@ BATfirstn_unique_with_groups(BATiter *bi, BAT *s, BAT *g, BUN n, bool asc, bool 
 	BUN pos, childpos;
 
 	MT_thread_setalgorithm(__func__, NULL);
-	canditer_init(&ci, bi->b, s);
+	canditer_init_bi(&ci, bi, s);
 
 	if (n > ci.ncand)
 		n = ci.ncand;

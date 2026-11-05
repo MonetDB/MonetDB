@@ -343,8 +343,8 @@ bl_postversion(void *Store, logger *lg)
 			return GDK_FAIL;
 		}
 		struct canditer ci;
-		canditer_init(&ci, func_func, cands);
 		BATiter ffi = bat_iterator_nolock(func_func);
+		canditer_init_bi(&ci, &ffi, cands);
 		for (BUN p = 0; p < ci.ncand; p++) {
 			oid o = canditer_next(&ci);
 			const char *f = BUNtvar(&ffi, o - func_func->hseqbase);

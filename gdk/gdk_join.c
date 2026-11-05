@@ -2058,7 +2058,7 @@ mergejoin(BAT **r1p, BAT **r2p, BAT **r3p, BATiter *li, BATiter *ri,
 
 	if (lci->tpe == cand_mask) {
 		mlci = lci;
-		canditer_init(&xlci, li->b, NULL);
+		canditer_init_bi(&xlci, li, NULL);
 		lci = &xlci;
 	} else {
 		mlci = NULL;
@@ -2066,7 +2066,7 @@ mergejoin(BAT **r1p, BAT **r2p, BAT **r3p, BATiter *li, BATiter *ri,
 	}
 	if (rci->tpe == cand_mask) {
 		mrci = rci;
-		canditer_init(&xrci, ri->b, NULL);
+		canditer_init_bi(&xrci, ri, NULL);
 		rci = &xrci;
 	} else {
 		mrci = NULL;
@@ -3667,7 +3667,7 @@ count_unique(BATiter *bi, BAT *s, BUN *cnt1, BUN *cnt2)
 	lng t0 = 0;
 
 	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
-	canditer_init(&ci, bi->b, s);
+	canditer_init_bi(&ci, bi, s);
 	half = ci.ncand / 2;
 
 	if (bi->key || ci.ncand <= 1 || BATtdensebi(bi)) {
@@ -3842,35 +3842,32 @@ count_unique(BATiter *bi, BAT *s, BUN *cnt1, BUN *cnt2)
 }
 
 static double
-guess_uniques(BAT *b, struct canditer *ci)
+guess_uniques(BATiter *bi, struct canditer *ci)
 {
 	BUN cnt1 = 0, cnt2;
-	BUN max = b->twidth < SIZEOF_BUN ? (BUN) 1 << (8*b->twidth) : BUN_MAX;
+	BUN max = bi->width < SIZEOF_BUN ? (BUN) 1 << (8*bi->width) : BUN_MAX;
 	BAT *s1;
 
-	BATiter bi = bat_iterator(b);
-	bool key = bi.key;
-	double unique_est = bi.unique_est;
-	BUN batcount = bi.count;
-	if (bi.type == TYPE_str && GDK_ELIMDOUBLES(bi.vh)) {
-		cnt1 = countStrings(bi.vh);
+	bool key = bi->key;
+	double unique_est = bi->unique_est;
+	BUN batcount = bi->count;
+	if (bi->type == TYPE_str && GDK_ELIMDOUBLES(bi->vh)) {
+		cnt1 = countStrings(bi->vh);
 		if (ci->s == NULL ||
 		    (ci->tpe == cand_dense && ci->ncand == batcount)) {
-			if (bi.unique_est == 0)
-				b->tunique_est = bi.unique_est = (double) cnt1;
+			if (bi->unique_est == 0)
+				bi->b->tunique_est = bi->unique_est = (double) cnt1;
 		}
 	}
 	if (key || ci->ncand <= 1) {
 		assert(ci->ncand <= max);
-		bat_iterator_end(&bi);
 		return (double) ci->ncand;
 	}
 
 	if (cnt1 > 0) {
-		bat_iterator_end(&bi);
 		if (cnt1 >= batcount) {
 			/* we may be able to set some properties */
-			(void) BATordered(b);
+			(void) BATordered(bi->b);
 		}
 		return (double) (cnt1 < ci->ncand ? cnt1 : ci->ncand);
 	}
@@ -3883,29 +3880,25 @@ guess_uniques(BAT *b, struct canditer *ci)
 	if (ci->s == NULL ||
 	    (ci->tpe == cand_dense && ci->ncand == batcount)) {
 		if (unique_est != 0) {
-			bat_iterator_end(&bi);
 			TRC_DEBUG(ALGO, "b=" ALGOBATFMT " use cached value\n",
-				  ALGOBATPAR(b));
+				  ALGOBATIPAR(bi));
 			return unique_est;
 		}
-		s1 = BATsample(b, 1000);
+		s1 = BATsample(bi->b, 1000);
 	} else {
 		BAT *s2 = BATsample(ci->s, 1000);
 		if (s2 == NULL) {
-			bat_iterator_end(&bi);
 			return -1;
 		}
 		s1 = BATproject(s2, ci->s);
 		BBPreclaim(s2);
 	}
 	if (s1 == NULL) {
-		bat_iterator_end(&bi);
 		return -1;
 	}
 	BUN n2 = BATcount(s1);
 	BUN n1 = n2 / 2;
-	if (count_unique(&bi, s1, &cnt1, &cnt2) != GDK_SUCCEED) {
-		bat_iterator_end(&bi);
+	if (count_unique(bi, s1, &cnt1, &cnt2) != GDK_SUCCEED) {
 		BBPreclaim(s1);
 		return -1;
 	}
@@ -3917,14 +3910,13 @@ guess_uniques(BAT *b, struct canditer *ci)
 	B += A * ci->ncand;
 	if (B > (double) max)
 		B = (double) max;
-	MT_lock_set(&b->theaplock);
+	MT_lock_set(&bi->b->theaplock);
 	if (ci->s == NULL ||
-	    (ci->tpe == cand_dense && ci->ncand == BATcount(b) && ci->ncand == batcount)) {
-		if (bi.unique_est == 0)
-			b->tunique_est = B;
+	    (ci->tpe == cand_dense && ci->ncand == BATcount(bi->b) && ci->ncand == batcount)) {
+		if (bi->unique_est == 0)
+			bi->b->tunique_est = B;
 	}
-	MT_lock_unset(&b->theaplock);
-	bat_iterator_end(&bi);
+	MT_lock_unset(&bi->b->theaplock);
 	return B;
 }
 
@@ -3945,12 +3937,14 @@ BATguess_uniques(BAT *b, struct canditer *ci)
 	MT_lock_unset(&b->theaplock);
 	if (n != BUN_NONE)
 		return n;
+	BATiter bi = bat_iterator(b);
 	struct canditer lci;
 	if (ci == NULL) {
-		canditer_init(&lci, b, NULL);
+		canditer_init_bi(&lci, &bi, NULL);
 		ci = &lci;
 	}
-	double uniques = guess_uniques(b, ci);
+	double uniques = guess_uniques(&bi, ci);
+	bat_iterator_end(&bi);
 	return uniques < 0 ? 0 : (BUN) uniques;
 }
 
@@ -4022,7 +4016,7 @@ joincost(BATiter *ri, bat lustr, BUN lcount, struct canditer *rci,
 		if (!rhash) {
 			double unique_est = ri->unique_est;
 			if (unique_est == 0) {
-				unique_est = guess_uniques(ri->b, &(struct canditer){.tpe=cand_dense, .ncand=ri->count});
+				unique_est = guess_uniques(ri, &(struct canditer){.tpe=cand_dense, .ncand=ri->count});
 				if (unique_est <= 0) {
 					return -1;
 				}
@@ -4055,7 +4049,7 @@ joincost(BATiter *ri, bat lustr, BUN lcount, struct canditer *rci,
 			} else {
 				double unique_est = ri->unique_est;
 				if (unique_est == 0) {
-					unique_est = guess_uniques(ri->b, rci);
+					unique_est = guess_uniques(ri, rci);
 					if (unique_est <= 0) {
 						return -1;
 					}
@@ -4111,8 +4105,8 @@ thetajoin(BAT **r1p, BAT **r2p, BATiter *li, BATiter *ri, BAT *sl, BAT *sr,
 	assert(ATOMtype(li->type) == ATOMtype(ri->type));
 	assert((opcode & (MASK_EQ | MASK_LT | MASK_GT)) != 0);
 
-	canditer_init(&lci, li->b, sl);
-	canditer_init(&rci, ri->b, sr);
+	canditer_init_bi(&lci, li, sl);
+	canditer_init_bi(&rci, ri, sr);
 
 	lvals = BATtvoidbi(li) ? NULL : (const char *) li->base;
 	rvals = BATtvoidbi(ri) ? NULL : (const char *) ri->base;
@@ -4459,8 +4453,8 @@ leftjoin(BAT **r1p, BAT **r2p, BAT **r3p, BATiter *li, BATiter *ri,
 	if (r3p)
 		*r3p = NULL;
 
-	canditer_init(&lci, li->b, sl);
-	canditer_init(&rci, ri->b, sr);
+	canditer_init_bi(&lci, li, sl);
+	canditer_init_bi(&rci, ri, sr);
 
 	if ((parent = VIEWtparentbi(li)) != 0) {
 		lp = BATdescriptor(parent);
@@ -4630,7 +4624,7 @@ leftjoin(BAT **r1p, BAT **r2p, BAT **r3p, BATiter *li, BATiter *ri,
 					rc = GDK_FAIL;
 					goto doreturn;
 				}
-				canditer_init(&rci, ri->b, sr);
+				canditer_init_bi(&rci, ri, sr);
 			}
 			if (li->vh &&
 			    ri->vh &&
@@ -4906,11 +4900,11 @@ BATjoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr, bool nil_matches
 
 	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
 
-	canditer_init(&lci, l, sl);
-	canditer_init(&rci, r, sr);
-
 	BATiter li = bat_iterator(l);
 	BATiter ri = bat_iterator(r);
+
+	canditer_init_bi(&lci, &li, sl);
+	canditer_init_bi(&rci, &ri, sr);
 
 	if ((parent = VIEWtparentbi(&li)) != 0) {
 		lp = BATdescriptor(parent);
@@ -5140,8 +5134,8 @@ bandjoin(BAT **r1p, BAT **r2p, BATiter *li, BATiter *ri, BAT *sl, BAT *sr,
 	t = ATOMtype(li->type);
 	t = ATOMbasetype(t);
 
-	canditer_init(&lci, li->b, sl);
-	canditer_init(&rci, ri->b, sr);
+	canditer_init_bi(&lci, li, sl);
+	canditer_init_bi(&rci, ri, sr);
 
 	if (lci.ncand == 0 || rci.ncand == 0) {
 		rc = nomatch(r1p, r2p, NULL, li, ri, &lci,
@@ -5941,8 +5935,8 @@ BATrangejoin(BAT **r1p, BAT **r2p, BAT *l, BAT *rl, BAT *rh,
 	if ((rc = joinparamcheck(&li, &rli, &rhi, sl, sr, __func__)) != GDK_SUCCEED) {
 		goto doreturn;
 	}
-	canditer_init(&lci, l, sl);
-	canditer_init(&rci, rl, sr);
+	canditer_init_bi(&lci, &li, sl);
+	canditer_init_bi(&rci, &rli, sr);
 	if (lci.ncand == 0 ||
 	    rci.ncand == 0 ||
 	    (li.type == TYPE_void && is_oid_nil(li.tseq)) ||

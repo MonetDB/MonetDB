@@ -312,8 +312,10 @@ STRMPbuildHeader(BAT *b, BAT *s, CharPair *hpairs)
 
 	TRC_DEBUG_IF(ACCELERATOR) t0 = GDKusec();
 
-	canditer_init(&ci, b, s);
+	bi = bat_iterator(b);
+	canditer_init_bi(&ci, &bi, s);
 	if (ci.ncand == 0) {
+		bat_iterator_end(&bi);
 		GDKerror("Not enough distinct values to create strimp index\n");
 		return false;
 	}
@@ -323,12 +325,12 @@ STRMPbuildHeader(BAT *b, BAT *s, CharPair *hpairs)
 
 	hlen = STRIMP_HISTSIZE;
 	if ((hist = (PairHistogramElem *)ma_zalloc(ta, hlen*sizeof(PairHistogramElem))) == NULL) {
+		bat_iterator_end(&bi);
 		ma_close(&ta_state);
 		return false;
 	}
 
 	// Create Histogram
-	bi = bat_iterator(b);
 	for (i = 0; i < ci.ncand; i++) {
 		x = canditer_next(&ci) - b->hseqbase;
 		const char *cs = BUNtvar(&bi, x);
@@ -961,9 +963,9 @@ STRMPcreate(BAT *b, BAT *s)
 		MT_lock_set(&b->batIdxLock);
 	}
 	dh = (uint64_t *)r->bitstrings_base + b->hseqbase;
-	canditer_init(&ci, b, s);
-
 	bi = bat_iterator(b);
+	canditer_init_bi(&ci, &bi, s);
+
 	for (i = 0; i < ci.ncand; i++) {
 		x = canditer_next(&ci) - b->hseqbase;
 		const char *cs = BUNtvar(&bi, x);
