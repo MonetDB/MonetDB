@@ -386,7 +386,7 @@ exp_print(mvc *sql, stream *fout, sql_exp *e, int depth, list *refs, int comma, 
 		/* don't show properties on value lists */
 		if (decorate && e->p && e->type != e_atom && !exp_is_atom(e)) {
 			for (prop *p = e->p; p; p = p->p) {
-				if (p->kind != PROP_MIN && p->kind != PROP_MAX && p->kind != PROP_NUNIQUES && p->kind != PROP_SELECTIVITY) {
+				if (sql->show_all_details || (p->kind != PROP_MIN && p->kind != PROP_MAX && p->kind != PROP_NUNIQUES && p->kind != PROP_SELECTIVITY)) {
 					char *pv = propvalue2string(ta, p);
 					mnstr_printf(fout, " %s %s", propkind2string(p), pv);
 				}

@@ -921,6 +921,7 @@ scanner_string(mvc *c, int quote, bool escapes)
 			cur = scanner_read_more(c, 1);
 		} else {
 			cur = scanner_getc(c);
+			escape = false;
 		}
 	}
 	(void) sql_error(c, 2, "%s", lc->errstr ? lc->errstr : SQLSTATE(42000) "Unexpected end of input");
