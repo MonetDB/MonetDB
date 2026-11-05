@@ -607,7 +607,7 @@ heapinit(BAT *b, const char *buf,
 	} else {
 		b->tvheap = NULL;
 	}
-	if (ATOMsketchable(t) /*&& b->theap->hasfile*/) {
+	if (ATOMsketchable(b->ttype) /*&& b->theap->hasfile*/) {
 		b->tsketch->free = SKETCH_SIZE;
 		b->tsketch->size = SKETCH_SIZE;
 		b->tsketch->base = NULL;
