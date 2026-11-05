@@ -887,8 +887,8 @@ scanner_string(mvc *c, int quote, bool escapes)
 		const size_t yycur = rs->pos + lc->yycur;
 
 		while (cur != EOF && (quote != '"' || cur != 0xFEFF) && pos < limit &&
-		       (cur = rs->buf[yycur + pos++]) != 0 &&
-		       (cur != quote || escape)) {
+		       (((cur = rs->buf[yycur + pos++]) & 0x80) == 0) &&
+		       cur && (cur != quote || escape)) {
 			if (escapes && cur == '\\')
 				escape = !escape;
 			else
@@ -921,6 +921,7 @@ scanner_string(mvc *c, int quote, bool escapes)
 			cur = scanner_read_more(c, 1);
 		} else {
 			cur = scanner_getc(c);
+			escape = false;
 		}
 	}
 	(void) sql_error(c, 2, "%s", lc->errstr ? lc->errstr : SQLSTATE(42000) "Unexpected end of input");
