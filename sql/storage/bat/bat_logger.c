@@ -191,7 +191,8 @@ tabins(logger *lg, ...)
 	BAT *b;
 
 	va_start(va, lg);
-	BATiter cni = bat_iterator(lg->catalog_id);
+	(void) BAThash(lg->catalog_id);
+	BATiter cni = bat_iterator_hash(lg->catalog_id);
 	while ((cid = va_arg(va, int)) != 0) {
 		cval = va_arg(va, void *);
 		if ((b = log_temp_descriptor(log_find_bat(lg, cid))) == NULL) {
@@ -201,14 +202,12 @@ tabins(logger *lg, ...)
 		rc = BUNappend(b, cval, true);
 		if (rc == GDK_SUCCEED) {
 			BUN p;
-			MT_rwlock_rdlock(&cni.b->thashlock);
-			HASHloop_int(&cni, cni.b->thash, p, &cid) {
+			HASHloop_int(&cni, cni.hash, p, &cid) {
 				if (BUNfnd(lg->dcatalog, &(oid){p}) == BUN_NONE) {
 					rc = BUNreplace(lg->catalog_cnt, p, &(lng){BATcount(b)}, false);
 					break;
 				}
 			}
-			MT_rwlock_rdunlock(&cni.b->thashlock);
 		}
 		bat_destroy(b);
 		if (rc != GDK_SUCCEED)
