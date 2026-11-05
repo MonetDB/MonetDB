@@ -142,7 +142,7 @@ sketch_update_many(BATiter *bi, uint8_t (*sketch)[CLZ_BUCKETS],
 		   const void *values, size_t count)
 {
 	gdk_return rc = GDK_SUCCEED;
-	assert(sketch && values && (count > 0));
+	assert(sketch && (count > 0));
 	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
 	random_state_engine rse;
 	init_random_state_engine(rse, (uint64_t) GDKusec());
@@ -167,6 +167,8 @@ sketch_update_many(BATiter *bi, uint8_t (*sketch)[CLZ_BUCKETS],
 				v = (offset = VarHeapVal(bi->base, i, bi->width)) == 0 ?
 					atomnil : bi->vh->base + offset;
 		} else {
+			if (values == NULL)
+				values = bi->base;
 			v = (void *) ((char *) values + (i << values_s));
 		}
 		if (atomeq(v, atomnil))
@@ -186,6 +188,9 @@ sketch_merge(uint8_t (*dst)[CLZ_BUCKETS], uint8_t (*src)[CLZ_BUCKETS])
 		for (size_t j = 0; j < CLZ_BUCKETS; j++)
 			if (src[i][j] > dst[i][j])
 				dst[i][j] = src[i][j];
+	/* for (size_t i = 0; i < BUCKETS; i++) */
+	/* 	for (size_t j = 0; j < CLZ_BUCKETS; j++) */
+	/* 		dst[i][j] = dst[i][j] + src[i][j]; */
 	return GDK_SUCCEED;
 }
 
@@ -193,7 +198,6 @@ gdk_return
 bat_sketch(BATiter *bi, struct canditer *bci, uint8_t (*sketch)[CLZ_BUCKETS])
 {
 	gdk_return rc = GDK_SUCCEED;
-	lng t0 = GDKusec();
 	BAT *b = bi->b;
 
 	struct canditer n_bci;
@@ -204,7 +208,7 @@ bat_sketch(BATiter *bi, struct canditer *bci, uint8_t (*sketch)[CLZ_BUCKETS])
 		canditer_reset(&n_bci);
 	}
 
-	if (false && n_bci.tpe == cand_dense) {
+	if (n_bci.tpe == cand_dense) {
 		rc = sketch_update_many(bi, sketch, NULL, n_bci.ncand);
 	} else {
 		QryCtx *qry_ctx = MT_thread_get_qry_ctx();
@@ -227,8 +231,6 @@ bat_sketch(BATiter *bi, struct canditer *bci, uint8_t (*sketch)[CLZ_BUCKETS])
 		}
 	}
 
-	TRC_DEBUG(ALGO, ALGOBATFMT " "LLFMT" usec\n", ALGOBATPAR(b),
-		  GDKusec() - t0);
 	return rc;
 }
 

@@ -205,18 +205,17 @@ BATcreatedesc(oid hseq, int tt, bool heapnames, role_t role, uint16_t width)
 		bn->theap->parentid = bn->batCacheid;
 		const char *nme = BBP_physical(bn->batCacheid);
 		settailname(bn->theap, nme, tt, width);
-
-		if (bn->tsketch) {
-			bn->tsketch->parentid = bn->batCacheid;
-			strtconcat(bn->tsketch->filename,
-				   sizeof(bn->tsketch->filename),
-				   nme, ".tsketch", NULL);
-		}
 		if (bn->tvheap) {
 			bn->tvheap->parentid = bn->batCacheid;
 			strtconcat(bn->tvheap->filename,
 				   sizeof(bn->tvheap->filename),
 				   nme, ".theap", NULL);
+		}
+		if (bn->tsketch) {
+			bn->tsketch->parentid = bn->batCacheid;
+			strtconcat(bn->tsketch->filename,
+				   sizeof(bn->tsketch->filename),
+				   nme, ".tsketch", NULL);
 		}
 	}
 	char name[MT_NAME_LEN];
@@ -1384,8 +1383,8 @@ BUNappendmulti(BAT *b, const void *values, BUN count, bool force)
 	}
 	b->tminpos = bi.minpos;
 	b->tmaxpos = bi.maxpos;
-	/* if (count > BATcount(b) / gdk_unique_estimate_keep_fraction) */
-	/* 	b->tunique_est = 0; */
+	if (count > BATcount(b) / gdk_unique_estimate_keep_fraction)
+		b->tunique_est = 0;
 
 	if (b->ttype == TYPE_oid) {
 		/* spend extra effort on oid (possible candidate list) */
