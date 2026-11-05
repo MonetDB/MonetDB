@@ -111,7 +111,7 @@ wkbCollectAggrSubGroupedCand(Client ctx, bat *outid, const bat *bid, const bat *
 	}
 
 	//Fill in the values of the group aggregate operation
-	if ((err = BATgroupaggrinit(b, g, NULL, s, &min, &max, &ngrp, &ci)) != NULL) {
+	if ((err = BATgroupaggrinit(b, g, NULL, s, &min, &max, &ngrp, &ci, NULL)) != NULL) {
 		msg = createException(MAL, "geom.Collect", "%s", err);
 		goto free;
 	}
@@ -3553,7 +3553,7 @@ wkbMakeLineAggrSubGroupedCand(Client ctx, bat *outid, const bat *bid, const bat 
 	}
 
 	//Fill in the values of the group aggregate operation
-	if ((msg = (str) BATgroupaggrinit(b, g, NULL, s, &min, &max, &ngrp, &ci)) != NULL) {
+	if ((msg = (str) BATgroupaggrinit(b, g, NULL, s, &min, &max, &ngrp, &ci, NULL)) != NULL) {
 		msg = createException(MAL, "aggr.MakeLine", "%s", msg);
 		goto free;
 	}

@@ -707,7 +707,7 @@ bl_postversion(void *Store, logger *lg)
 			bat_destroy(del_cols);
 			return GDK_FAIL;
 		}
-		oid dbpos = BUNtoid(b, 0);
+		oid dbpos = fetchtoid(b, 0);
 		bat_destroy(b);
 		b = BATselect(tabnme, cands, "privileges", NULL, true, true, false, false);
 		bat_destroy(tabnme);
@@ -720,7 +720,7 @@ bl_postversion(void *Store, logger *lg)
 			return GDK_FAIL;
 		}
 		int dbid = ((int *) tabid->theap->base)[dbpos];
-		int prid = ((int *) tabid->theap->base)[BUNtoid(b, 0)];
+		int prid = ((int *) tabid->theap->base)[fetchtoid(b, 0)];
 		BAT *coltid = log_temp_descriptor(log_find_bat(lg, 2082)); /* sys._columns.table_id */
 		if (coltid == NULL) {
 			bat_destroy(b);
@@ -745,7 +745,7 @@ bl_postversion(void *Store, logger *lg)
 		}
 		int privids[5];
 		for (int i = 0; i < 5; i++) {
-			oid p = BUNtoid(b1, i);
+			oid p = fetchtoid(b1, i);
 			privids[((int *) colnr->theap->base)[p]] = ((int *) colid->theap->base)[p];
 		}
 		bat_destroy(b1);
@@ -919,7 +919,7 @@ bl_postversion(void *Store, logger *lg)
 			 * output arg for sys.st_interiorrings and the function
 			 * itself) */
 			for (BUN p = 0, q = r1->batCount; p < q; p++) {
-				oid o = BUNtoid(r1, p);
+				oid o = fetchtoid(r1, p);
 				if (BUNreplace(b, o, &(bool) {true}, false) != GDK_SUCCEED) {
 					bat_destroy(funcs);
 					bat_destroy(r1);
@@ -928,7 +928,7 @@ bl_postversion(void *Store, logger *lg)
 					bat_destroy(a);
 					return GDK_FAIL;
 				}
-				o = BUNtoid(r2, p);
+				o = fetchtoid(r2, p);
 				if (BUNreplace(a, o, &(bool) {true}, false) != GDK_SUCCEED) {
 					bat_destroy(funcs);
 					bat_destroy(r1);
