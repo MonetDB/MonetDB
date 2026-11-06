@@ -128,18 +128,16 @@ log_find(BAT *b, BAT *d, int val)
 
 	assert(b->ttype == TYPE_int);
 	assert(d->ttype == TYPE_oid);
-	BATiter bi = bat_iterator(b);
-	if (BAThash(b) == GDK_SUCCEED) {
-		MT_rwlock_rdlock(&b->thashlock);
-		HASHloop_int(&bi, b->thash, p, &val) {
+	(void) BAThash(b);
+	BATiter bi = bat_iterator_hash(b);
+	if (bi.hash) {
+		HASHloop_int(&bi, bi.hash, p, &val) {
 			oid pos = p;
 			if (BUNfnd(d, &pos) == BUN_NONE) {
-				MT_rwlock_rdunlock(&b->thashlock);
 				bat_iterator_end(&bi);
 				return p;
 			}
 		}
-		MT_rwlock_rdunlock(&b->thashlock);
 	} else {		/* unlikely: BAThash failed */
 		int *t = (int *) bi.base;
 
@@ -163,20 +161,18 @@ internal_find_bat(logger *lg, log_id id, int tid)
 	BUN p;
 
 	if (BAThash(lg->catalog_id) == GDK_SUCCEED) {
-		BATiter cni = bat_iterator(lg->catalog_id);
-		MT_rwlock_rdlock(&cni.b->thashlock);
+		BATiter cni = bat_iterator_hash(lg->catalog_id);
 		if (tid < 0) {
-			HASHloop_int(&cni, cni.b->thash, p, &id) {
+			HASHloop_int(&cni, cni.hash, p, &id) {
 				oid pos = p;
 				if (BUNfnd(lg->dcatalog, &pos) == BUN_NONE) {
-					MT_rwlock_rdunlock(&cni.b->thashlock);
 					bat_iterator_end(&cni);
 					return *(log_bid *) Tloc(lg->catalog_bid, p);
 				}
 			}
 		} else {
 			BUN cp = BUN_NONE;
-			HASHloop_int(&cni, cni.b->thash, p, &id) {
+			HASHloop_int(&cni, cni.hash, p, &id) {
 				lng lid = *(lng *) Tloc(lg->catalog_lid, p);
 				if (lid != lng_nil && lid <= tid) {
 					break;
@@ -184,12 +180,10 @@ internal_find_bat(logger *lg, log_id id, int tid)
 				cp = p;
 			}
 			if (cp != BUN_NONE) {
-				MT_rwlock_rdunlock(&cni.b->thashlock);
 				bat_iterator_end(&cni);
 				return *(log_bid *) Tloc(lg->catalog_bid, cp);
 			}
 		}
-		MT_rwlock_rdunlock(&cni.b->thashlock);
 		bat_iterator_end(&cni);
 		return 0;	/* not found */
 	}
@@ -1582,13 +1576,12 @@ log_read_transaction(logger *lg, BAT *ids_to_omit, uint32_t *updated, BUN maxupd
 		case LOG_CREATE_USTR:
 		case LOG_DESTROY:
 			if (tr != NULL && updated && BAThash(lg->catalog_id) == GDK_SUCCEED) {
-				BATiter cni = bat_iterator(lg->catalog_id);
+				BATiter cni = bat_iterator_hash(lg->catalog_id);
 				BUN p;
 				BUN posnew = BUN_NONE;
 				BUN posold = BUN_NONE;
 				BUN posustr = BUN_NONE;
-				MT_rwlock_rdlock(&cni.b->thashlock);
-				HASHloop_int(&cni, cni.b->thash, p, &l.id) {
+				HASHloop_int(&cni, cni.hash, p, &l.id) {
 					lng lid = *(lng *) Tloc(lg->catalog_lid, p);
 					if (lid == lng_nil || lid > tr->tid)
 						posnew = p;
@@ -1601,7 +1594,6 @@ log_read_transaction(logger *lg, BAT *ids_to_omit, uint32_t *updated, BUN maxupd
 							GDKwarning("should not be possible\n");
 					}
 				}
-				MT_rwlock_rdunlock(&cni.b->thashlock);
 				bat_iterator_end(&cni);
 				/* Normally at this point, posnew is the
 				 * location of the bat that this

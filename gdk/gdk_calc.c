@@ -860,7 +860,7 @@ BATcalcisnil_implementation(BAT *b, BAT *s, bool notnil)
 
 	bhseqbase = b->hseqbase;
 	BATiter bi = bat_iterator(b);
-	canditer_init(&ci, b, s);
+	canditer_init_bi(&ci, &bi, s);
 
 	if (b->tnonil || BATtdense(b)) {
 		bat_iterator_end(&bi);

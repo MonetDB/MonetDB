@@ -78,16 +78,16 @@ transfer_to_systrans(BAT *b)
 		BBPreclaim(b);
 		return bn;
 	}
-	if (b->theap->farmid == TRANSIENT ||
-		(b->tvheap && b->tvheap->farmid == TRANSIENT)) {
+	if (b->theap->role == TRANSIENT ||
+		(b->tvheap && b->tvheap->role == TRANSIENT)) {
 		QryCtx *qc = MT_thread_get_qry_ctx();
 		if (qc) {
-			if (b->theap->farmid == TRANSIENT && b->theap->parentid == b->batCacheid) {
+			if (b->theap->role == TRANSIENT && b->theap->parentid == b->batCacheid) {
 				ATOMIC_SUB(&qc->datasize, b->theap->size);
 				b->theap->role = SYSTRANS;
 				b->batRole = SYSTRANS;
 			}
-			if (b->tvheap && b->tvheap->farmid == TRANSIENT && b->tvheap->parentid == b->batCacheid) {
+			if (b->tvheap && b->tvheap->role == TRANSIENT && b->tvheap->parentid == b->batCacheid) {
 				ATOMIC_SUB(&qc->datasize, b->tvheap->size);
 				b->tvheap->role = SYSTRANS;
 			}

@@ -664,8 +664,8 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 		return GDK_FAIL;
 	}
 	assert(s == NULL || BATttype(s) == TYPE_oid);
-	canditer_init(&ci, b, s);
 	bi = bat_iterator(b);
+	canditer_init_bi(&ci, &bi, s);
 
 	allocator *ta = MT_thread_getallocator();
 	allocator_state ta_state = ma_open(ta);

@@ -173,7 +173,7 @@ NAME##_bulk(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)	\
 		goto bailout;													\
 	}																	\
 	off = b1->hseqbase;													\
-	canditer_init(&ci, b1, s);											\
+	canditer_init_bi(&ci, &b1i, s);											\
 	if ((bn = COLnew(ci.hseq, TYPE_##OUTTYPE, ci.ncand, TRANSIENT)) == NULL) { \
 		msg = createException(MAL, "batmtime." MALFUNC,					\
 			  SQLSTATE(HY013) MAL_MALLOC_FAIL);							\
@@ -281,8 +281,8 @@ NAME##_bulk(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)	\
 			  SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);					\
 		goto bailout;													\
 	}																	\
-	canditer_init(&ci1, b1, s1);										\
-	canditer_init(&ci2, b2, s2);										\
+	canditer_init_bi(&ci1, &b1i, s1);									\
+	canditer_init_bi(&ci2, &b2i, s2);									\
 	if (ci2.ncand != ci1.ncand || ci1.hseq != ci2.hseq) {				\
 		msg = createException(MAL, "batmtime." MALFUNC,					\
 			  "inputs not the same size");								\
@@ -372,7 +372,7 @@ NAME##_bulk_p1(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)	\
 			  SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);					\
 		goto bailout;													\
 	}																	\
-	canditer_init(&ci2, b2, s2);										\
+	canditer_init_bi(&ci2, &b2i, s2);									\
 	if ((bn = COLnew(ci2.hseq, TYPE_##OUTTYPE,							\
 					 ci2.ncand, TRANSIENT)) == NULL) {					\
 		msg = createException(MAL, "batmtime." MALFUNC,					\
@@ -453,7 +453,7 @@ NAME##_bulk_p2(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)	\
 			  SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);					\
 		goto bailout;													\
 	}																	\
-	canditer_init(&ci1, b1, s1);										\
+	canditer_init_bi(&ci1, &b1i, s1);									\
 	if ((bn = COLnew(ci1.hseq, TYPE_##OUTTYPE,							\
 					 ci1.ncand, TRANSIENT)) == NULL) {					\
 		msg = createException(MAL, "batmtime." MALFUNC,					\
@@ -569,8 +569,8 @@ NAME##_bulk(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)	\
 			  SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);					\
 		goto bailout;													\
 	}																	\
-	canditer_init(&ci1, b1, s1);										\
-	canditer_init(&ci2, b2, s2);										\
+	canditer_init_bi(&ci1, &b1i, s1);									\
+	canditer_init_bi(&ci2, &b2i, s2);									\
 	if (ci2.ncand != ci1.ncand || ci1.hseq != ci2.hseq) {				\
 		msg = createException(MAL, "batmtime." MALFUNC,					\
 			  "inputs not the same size");								\
@@ -663,7 +663,7 @@ NAME##_bulk_p1(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)	\
 			  SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);					\
 		goto bailout;													\
 	}																	\
-	canditer_init(&ci2, b2, s2);										\
+	canditer_init_bi(&ci2, &b2i, s2);									\
 	if ((bn = COLnew(ci2.hseq, TYPE_##OUTTYPE,							\
 					 ci2.ncand, TRANSIENT)) == NULL) {					\
 		msg = createException(MAL, "batmtime." MALFUNC,					\
@@ -745,7 +745,7 @@ NAME##_bulk_p2(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)	\
 			  SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);					\
 		goto bailout;													\
 	}																	\
-	canditer_init(&ci1, b1, s1);										\
+	canditer_init_bi(&ci1, &b1i, s1);									\
 	if ((bn = COLnew(ci1.hseq, TYPE_##OUTTYPE,							\
 					 ci1.ncand, TRANSIENT)) == NULL) {					\
 		msg = createException(MAL, "batmtime." MALFUNC,					\

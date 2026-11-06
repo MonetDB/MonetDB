@@ -1974,78 +1974,71 @@ BUNfnd(BAT *b, const void *v)
 		bat_iterator_end(&bi);
 		v = &off;
 	}
-	bi = bat_iterator(b);	/* outside of hashlock */
-	if (BAThash(b) == GDK_SUCCEED) {
-		MT_rwlock_rdlock(&b->thashlock);
-		if (b->thash == NULL) {
-			MT_rwlock_rdunlock(&b->thashlock);
-			goto hashfnd_failed;
-		}
+	(void) BAThash(b);
+	bi = bat_iterator_hash(b);
+	if (bi.hash) {
 		switch (ATOMbasetype(bi.type)) {
 		case TYPE_bte:
-			HASHloop_bte(&bi, b->thash, r, v)
+			HASHloop_bte(&bi, bi.hash, r, v)
 				break;
 			break;
 		case TYPE_sht:
-			HASHloop_sht(&bi, b->thash, r, v)
+			HASHloop_sht(&bi, bi.hash, r, v)
 				break;
 			break;
 		case TYPE_int:
-			HASHloop_int(&bi, b->thash, r, v)
+			HASHloop_int(&bi, bi.hash, r, v)
 				break;
 			break;
 		case TYPE_flt:
-			HASHloop_flt(&bi, b->thash, r, v)
+			HASHloop_flt(&bi, bi.hash, r, v)
 				break;
 			break;
 		case TYPE_dbl:
-			HASHloop_dbl(&bi, b->thash, r, v)
+			HASHloop_dbl(&bi, bi.hash, r, v)
 				break;
 			break;
 		case TYPE_lng:
-			HASHloop_lng(&bi, b->thash, r, v)
+			HASHloop_lng(&bi, bi.hash, r, v)
 				break;
 			break;
 #ifdef HAVE_HGE
 		case TYPE_hge:
-			HASHloop_hge(&bi, b->thash, r, v)
+			HASHloop_hge(&bi, bi.hash, r, v)
 				break;
 			break;
 #endif
 		case TYPE_uuid:
-			HASHloop_uuid(&bi, b->thash, r, v)
+			HASHloop_uuid(&bi, bi.hash, r, v)
 				break;
 			break;
 		case TYPE_inet4:
-			HASHloop_inet4(&bi, b->thash, r, v)
+			HASHloop_inet4(&bi, bi.hash, r, v)
 				break;
 			break;
 		case TYPE_inet6:
-			HASHloop_inet6(&bi, b->thash, r, v)
+			HASHloop_inet6(&bi, bi.hash, r, v)
 				break;
 			break;
 		case TYPE_str:
 			if (bi.ustr) {
-				HASHloop_var_t(&bi, b->thash, r, v)
+				HASHloop_var_t(&bi, bi.hash, r, v)
 					break;
 			} else {
-				HASHloop_str(&bi, b->thash, r, v)
+				HASHloop_str(&bi, bi.hash, r, v)
 					break;
 			}
 			break;
 		default:
-			HASHloop(&bi, b->thash, r, v)
+			HASHloop(&bi, bi.hash, r, v)
 				break;
 			break;
 		}
-		MT_rwlock_rdunlock(&b->thashlock);
-		bat_iterator_end(&bi);
-		return r;
+	} else {
+		/* can't build hash table, search the slow way */
+		GDKclrerr();
+		r = slowfnd(&bi, v);
 	}
-  hashfnd_failed:
-	/* can't build hash table, search the slow way */
-	GDKclrerr();
-	r = slowfnd(&bi, v);
 	bat_iterator_end(&bi);
 	return r;
 }
