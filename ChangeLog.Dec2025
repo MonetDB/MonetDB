@@ -1,6 +1,18 @@
 # ChangeLog file for devel
 # This file is updated with Maddlog
 
+* Fri Nov  6 2026 Sjoerd Mullender <sjoerd@acm.org>
+- There was a regression in the handling of the --dbextra=in-memory option.
+  Instead of keeping the "extra" farm (i.e. all transient BATs) fully
+  in memory, they were stored in a subdirectory called in-memory.
+- There was a bug in handling backslash escapes in strings if the
+  backslash was immediately followed by a non-ASCII UTF-8 character.
+- On Fedora 45, there was a change in how the ODBC drivers are configured.
+  The MonetDB ODBC driver now follows the new way of doing things.
+- In Dec2025-SP4, the MonetDB-geom module was accidentally not built for
+  Fedora and RHEL 9 and 10.  This has been corrected.  The module cannot
+  be built for RHEL 8 since the required geos library is too old.
+
 * Fri Oct 23 2026 Sjoerd Mullender <sjoerd@acm.org>
 - Added an option --relative-dir to mclient to specify the directory
   for relative path names when using the ON CLIENT option in SQL queries.
