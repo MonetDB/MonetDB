@@ -285,16 +285,20 @@ BATXMLdocument(Client ctx, bat *ret, const bat *bid)
 	BUN p, q;
 	BATiter bi;
 	size_t size = BUFSIZ;
-	str buf = GDKmalloc(size);
+	allocator *ma = MT_thread_getallocator();
+	allocator_state ma_state = ma_open(ma);
+	str buf = ma_alloc(ma, size);
 	const char *err = OPERATION_FAILED;
 
-	if (buf == NULL)
+	if (buf == NULL) {
+		ma_close(&ma_state);
 		throw(MAL, "xml.document", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+	}
 	if ((b = BATdescriptor(*bid)) == NULL) {
-		GDKfree(buf);
+		ma_close(&ma_state);
 		throw(MAL, "xml.document", INTERNAL_BAT_ACCESS);
 	}
-	prepareResult(bn, b, TYPE_xml, "document", GDKfree(buf));
+	prepareResult(bn, b, TYPE_xml, "document", ma_close(&ma_state));
 	bi = bat_iterator(b);
 	BATloop(&bi, p, q) {
 		const char *t = (const char *) BUNtvar(&bi, p);
@@ -317,9 +321,8 @@ BATXMLdocument(Client ctx, bat *ret, const bat *bid)
 		xmlDocDumpMemory(doc, &s, &len);
 		xmlFreeDoc(doc);
 		if ((size_t) len + 2 >= size) {
-			GDKfree(buf);
+			buf = ma_realloc(ma, buf, (size_t) len + 128, size);
 			size = (size_t) len + 128;
-			buf = GDKmalloc(size);
 			if (buf == NULL) {
 				xmlFree(s);
 				err = MAL_MALLOC_FAIL;
@@ -333,12 +336,12 @@ BATXMLdocument(Client ctx, bat *ret, const bat *bid)
 			goto bunins_failed;
 	}
 	bat_iterator_end(&bi);
-	GDKfree(buf);
+	ma_close(&ma_state);
 	finalizeResult(ret, bn, b);
 	return MAL_SUCCEED;
   bunins_failed:
 	bat_iterator_end(&bi);
-	GDKfree(buf);
+	ma_close(&ma_state);
 	BBPunfix(b->batCacheid);
 	BBPunfix(bn->batCacheid);
 	throw(MAL, "xml.document", "%s", err);
@@ -354,19 +357,23 @@ BATXMLcontent(Client ctx, bat *ret, const bat *bid)
 	xmlDocPtr doc;
 	xmlNodePtr root;
 	size_t size = BUFSIZ;
-	str buf = GDKmalloc(size);
+	allocator *ma = MT_thread_getallocator();
+	allocator_state ma_state = ma_open(ma);
+	str buf = ma_alloc(ma, size);
 	const char *err = OPERATION_FAILED;
 	xmlBufferPtr xbuf;
 
-	if (buf == NULL)
+	if (buf == NULL) {
+		ma_close(&ma_state);
 		throw(MAL, "xml.content", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+	}
 	if ((b = BATdescriptor(*bid)) == NULL) {
-		GDKfree(buf);
+		ma_close(&ma_state);
 		throw(MAL, "xml.content", INTERNAL_BAT_ACCESS);
 	}
 	doc = xmlParseMemory("<doc/>", 6);
 	root = xmlDocGetRootElement(doc);
-	prepareResult(bn, b, TYPE_xml, "content", GDKfree(buf));
+	prepareResult(bn, b, TYPE_xml, "content", ma_close(&ma_state););
 	bi = bat_iterator(b);
 	xbuf = xmlBufferCreate();
 	BATloop(&bi, p, q) {
@@ -392,9 +399,8 @@ BATXMLcontent(Client ctx, bat *ret, const bat *bid)
 		s = xmlBufferContent(xbuf);
 		len = strlen((const char *) s);
 		if (len + 2 >= size) {
-			GDKfree(buf);
+			buf = ma_realloc(ma, buf, len + 128, size);
 			size = len + 128;
-			buf = GDKmalloc(size);
 			if (buf == NULL) {
 				err = SQLSTATE(HY013) MAL_MALLOC_FAIL;
 				goto bunins_failed;
@@ -410,14 +416,14 @@ BATXMLcontent(Client ctx, bat *ret, const bat *bid)
 	bat_iterator_end(&bi);
 	xmlBufferFree(xbuf);
 	xmlFreeDoc(doc);
-	GDKfree(buf);
+	ma_close(&ma_state);
 	finalizeResult(ret, bn, b);
 	return MAL_SUCCEED;
   bunins_failed:
 	bat_iterator_end(&bi);
 	xmlBufferFree(xbuf);
 	xmlFreeDoc(doc);
-	GDKfree(buf);
+	ma_close(&ma_state);
 	BBPunfix(b->batCacheid);
 	BBPunfix(bn->batCacheid);
 	throw(MAL, "xml.document", "%s", err);
@@ -478,30 +484,31 @@ BATXMLisdocument(Client ctx, bat *ret, const bat *bid)
  * most reasonable interpretation.
  */
 static str
-BATXMLoptions(Client ctx, bat *ret, const char *const *name, const char *const *options,
-			  const bat *bid)
+BATXMLoptions(Client ctx, bat *ret, const char *const *name,
+			  const char *const *options, const bat *bid)
 {
 	(void) ctx;
 	BAT *b, *bn;
 	BUN p, q;
-	str buf = GDKmalloc(BUFSIZ);
-	str val = GDKmalloc(BUFSIZ);
-	size_t size = BUFSIZ, len = strlen(*name);
+	allocator *ma = MT_thread_getallocator();
+	allocator_state ma_state = ma_open(ma);
+	size_t len = strlen(*name);
+	size_t size = 2 * len + 6 < BUFSIZ ? BUFSIZ : 2 * len + 6;
+	str buf = ma_alloc(ma, size);
+	/* allocate val last, since we may realloc, and then it can grow */
+	str val = ma_alloc(ma, size);
 	BATiter bi = {.b = NULL };
 	const char *err = OPERATION_FAILED " During bulk options analysis";
 
 	if (val == NULL || buf == NULL) {
-		GDKfree(val);
-		GDKfree(buf);
+		ma_close(&ma_state);
 		throw(MAL, "batxml.options", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 	if ((b = BATdescriptor(*bid)) == NULL) {
-		GDKfree(val);
-		GDKfree(buf);
+		ma_close(&ma_state);
 		throw(MAL, "xml.options", INTERNAL_BAT_ACCESS);
 	}
-	prepareResult(bn, b, TYPE_xml, "options", GDKfree(val);
-				  GDKfree(buf));
+	prepareResult(bn, b, TYPE_xml, "options", ma_close(&ma_state));
 
 	if (strcmp(*options, "absent") == 0)
 		buf[0] = 0;
@@ -517,7 +524,6 @@ BATXMLoptions(Client ctx, bat *ret, const char *const *name, const char *const *
 		goto bunins_failed;
 	}
 
-	snprintf(val, size, "<%s>", *name);
 	bi = bat_iterator(b);
 	BATloop(&bi, p, q) {
 		const char *t = (const char *) BUNtvar(&bi, p);
@@ -526,24 +532,23 @@ BATXMLoptions(Client ctx, bat *ret, const char *const *name, const char *const *
 			if (bunfastapp_nocheckVAR(bn, buf) != GDK_SUCCEED)
 				goto bunins_failed1;
 		} else {
-			if (strlen(t) > size - 2 * len - 6) {
-				char *tmp;
-				size += strlen(t);
-				tmp = (char *) GDKrealloc(val, size + strlen(t));
-				if (tmp == NULL) {
+			size_t tlen = strlen(t);
+			size_t reqsize = 2 * len + 6 + tlen;
+			if (reqsize > size) {
+				val = ma_realloc(ma, val, reqsize, size);
+				size = reqsize;
+				if (val == NULL) {
 					err = SQLSTATE(HY013) MAL_MALLOC_FAIL;
 					goto bunins_failed1;
 				}
-				val = tmp;
 			}
-			snprintf(val + len + 2, size - len, "%s</%s>", t, *name);
+			snprintf(val, size, "<%s>%s</%s>", *name, t, *name);
 			if (bunfastapp_nocheckVAR(bn, val) != GDK_SUCCEED)
 				goto bunins_failed1;
 		}
 	}
 	bat_iterator_end(&bi);
-	GDKfree(val);
-	GDKfree(buf);
+	ma_close(&ma_state);
 	finalizeResult(ret, bn, b);
 	return MAL_SUCCEED;
   bunins_failed1:
@@ -551,8 +556,7 @@ BATXMLoptions(Client ctx, bat *ret, const char *const *name, const char *const *
   bunins_failed:
 	BBPunfix(b->batCacheid);
 	BBPunfix(bn->batCacheid);
-	GDKfree(buf);
-	GDKfree(val);
+	ma_close(&ma_state);
 	throw(MAL, "batxml.options", "%s", err);
 }
 
