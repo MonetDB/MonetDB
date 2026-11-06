@@ -3,8 +3,8 @@
 
 * Fri Nov  6 2026 Sjoerd Mullender <sjoerd@acm.org>
 - In Dec2025-SP4, the MonetDB-geom module was accidentally not built for
-  RHEL 9 and 10.  This has been corrected.  The module cannot be built
-  for RHEL 8 since the required geos library is too old.
+  Fedora and RHEL 9 and 10.  This has been corrected.  The module cannot
+  be built for RHEL 8 since the required geos library is too old.
 
 * Fri Oct 23 2026 Sjoerd Mullender <sjoerd@acm.org>
 - Added an option --relative-dir to mclient to specify the directory
