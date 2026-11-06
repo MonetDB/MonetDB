@@ -229,10 +229,10 @@ typedef union {
 
 typedef struct {
 	size_t nitems;
-	uint8_t data[] ATTR_NONSTRING
-		ATTR_COUNTED_BY(nitems);
+	uint8_t data[] ATTR_NONSTRING ATTR_COUNTED_BY(nitems);
 } blob;
-gdk_export size_t blobsize(size_t nitems) ATTR_CONST;
+gdk_export size_t blobsize(size_t nitems)
+	ATTR_CONST;
 
 #define SIZEOF_LNG		8
 #define LL_CONSTANT(val)	INT64_C(val)
@@ -1691,7 +1691,6 @@ gdk_export void HEAPdecref(Heap *h, bool remove);
 gdk_export void HEAPincref(Heap *h);
 gdk_export gdk_return HEAPalloc(Heap *h, size_t nitems, size_t itemsize)
 	ATTR_WARN_UNUSED_RESULT;
-	//ATTR_VISIBILITY_HIDDEN;
 
 ATTR_PURE
 static inline bat
