@@ -390,8 +390,8 @@
 #define BUILD_TYPE "@BUILD_TYPE@"
 #define EXTRA_C_FLAGS "@EXTRA_C_FLAGS@"
 
-#cmakedefine MAPI_PORT @MAPI_PORT@
-#cmakedefine MAPI_PORT_STR "@MAPI_PORT_STR@"
+#define MAPI_PORT 50000
+#define MAPI_PORT_STR "50000"
 
 #ifdef _MSC_VER
 #define DIR_SEP '\\'
@@ -399,9 +399,9 @@
 #define DIR_SEP_STR "\\"
 #define SO_PREFIX ""
 #else
-#cmakedefine DIR_SEP '@DIR_SEP@'
-#cmakedefine PATH_SEP '@PATH_SEP@'
-#cmakedefine DIR_SEP_STR "@DIR_SEP_STR@"
+#define DIR_SEP ':'
+#define PATH_SEP '/'
+#define DIR_SEP_STR "/"
 #cmakedefine SO_PREFIX "@SO_PREFIX@"
 #endif
 #cmakedefine SO_EXT "@SO_EXT@"
@@ -485,8 +485,13 @@
 #cmakedefine WORDS_BIGENDIAN @HAVE_WORDS_BIGENDIAN@
 
 /* Does your compiler support `ssize_t' type? (Posix type) */
-#ifndef ssize_t
-#cmakedefine ssize_t @ssize_t@
+#if 0x0@SIZEOF_SSIZE_T@ == 0	/* is a size for `ssize_t` available? */
+#if SIZEOF_SIZE_T == 4
+typedef int32_t ssize_t;
+#else
+typedef int64_t ssize_t;
+#endif
+#define SIZEOF_SSIZE_T SIZEOF_SIZE_T
 #endif
 
 /* The size of `__int128', as computed by sizeof. */
