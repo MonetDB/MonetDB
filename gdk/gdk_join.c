@@ -3745,7 +3745,7 @@ count_unique(BATiter *bi, BAT *s, BUN *cnt1, BUN *cnt2)
 			cnt += candmask_pop(seen[j]);
 		*cnt2 = cnt;
 	} else if (ATOMbasetype(bi->type) == TYPE_sht) {
-		unsigned short val;
+		uint16_t val;
 		uint32_t *seen = NULL;
 		allocator *ta = MT_thread_getallocator();
 		allocator_state ta_state = ma_open(ta);
@@ -3767,7 +3767,7 @@ count_unique(BATiter *bi, BAT *s, BUN *cnt1, BUN *cnt2)
 				*cnt1 = cnt;
 			}
 			o = canditer_next(&ci);
-			val = ((const unsigned short *) bvals)[o - bi->hseq];
+			val = ((const uint16_t *) bvals)[o - bi->hseq];
 			if (!(seen[val >> 5] & (1U << (val & 0x1F)))) {
 				seen[val >> 5] |= 1U << (val & 0x1F);
 			}

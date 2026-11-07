@@ -30,14 +30,18 @@
 static str
 sql_fix_system_tables(Client c, mvc *sql)
 {
+	allocator *ma = MT_thread_getallocator();
+	allocator_state ma_state = ma_open(ma);
 	size_t bufsize = 1000000, pos = 0;
-	char *buf = GDKmalloc(bufsize), *err = NULL;
+	char *buf = ma_alloc(ma, bufsize), *err = NULL;
 	node *n;
 	sql_schema *s;
 	static const char *boolnames[2] = {"false", "true"};
 
-	if (buf == NULL)
+	if (buf == NULL) {
+		ma_close(&ma_state);
 		throw(SQL, __func__, SQLSTATE(HY013) MAL_MALLOC_FAIL);
+	}
 	s = mvc_bind_schema(sql, "sys");
 
 	pos += snprintf(buf + pos, bufsize - pos,
@@ -143,7 +147,7 @@ sql_fix_system_tables(Client c, mvc *sql)
 	printf("Running database upgrade commands to update system tables.\n\n");
 	fflush(stdout);
 	err = SQLstatementIntern(c, buf, "update", true, false, NULL);
-	GDKfree(buf);
+	ma_close(&ma_state);
 	return err;		/* usually MAL_SUCCEED */
 }
 
@@ -241,10 +245,14 @@ sql_update_hugeint(Client c, mvc *sql)
 {
 	size_t bufsize = 8192, pos = 0;
 	char *buf, *err;
+	allocator *ma = MT_thread_getallocator();
+	allocator_state ma_state = ma_open(ma);
 
 	(void) sql;
-	if ((buf = GDKmalloc(bufsize)) == NULL)
+	if ((buf = ma_alloc(ma, bufsize)) == NULL) {
+		ma_close(&ma_state);
 		throw(SQL, __func__, SQLSTATE(HY013) MAL_MALLOC_FAIL);
+	}
 
 	/* 90_generator_hge.sql */
 	pos += snprintf(buf + pos, bufsize - pos,
@@ -344,7 +352,7 @@ sql_update_hugeint(Client c, mvc *sql)
 	printf("Running database upgrade commands:\n%s\n", buf);
 	fflush(stdout);
 	err = SQLstatementIntern(c, buf, "update", true, false, NULL);
-	GDKfree(buf);
+	ma_close(&ma_state);
 	return err;		/* usually MAL_SUCCEED */
 }
 #endif
@@ -416,8 +424,12 @@ sql_update_jan2022(Client c, mvc *sql)
 		return NULL;
 	}
 
-	if ((buf = GDKmalloc(bufsize)) == NULL)
+	allocator *ma = MT_thread_getallocator();
+	allocator_state ma_state = ma_open(ma);
+	if ((buf = ma_alloc(ma, bufsize)) == NULL) {
+		ma_close(&ma_state);
 		throw(SQL, __func__, SQLSTATE(HY013) MAL_MALLOC_FAIL);
+	}
 
 	/* sys.epoch_ms now returns a decimal(18,3) */
 	pos += snprintf(buf + pos, bufsize - pos,
@@ -1706,20 +1718,24 @@ sql_update_jan2022(Client c, mvc *sql)
 	fflush(stdout);
 	err = SQLstatementIntern(c, buf, "update", true, false, NULL);
 
-	GDKfree(buf);
+	ma_close(&ma_state);
 	return err;		/* usually MAL_SUCCEED */
 }
 
 static str
 sql_update_sep2022(Client c, mvc *sql, sql_schema *s)
 {
+	allocator *ma = MT_thread_getallocator();
+	allocator_state ma_state = ma_open(ma);
 	size_t bufsize = 65536, pos = 0;
-	char *err = NULL, *buf = GDKmalloc(bufsize);
+	char *err = NULL, *buf = ma_alloc(ma, bufsize);
 	res_table *output;
 	BAT *b;
 
-	if (buf == NULL)
+	if (buf == NULL) {
+		ma_close(&ma_state);
 		throw(SQL, __func__, SQLSTATE(HY013) MAL_MALLOC_FAIL);
+	}
 
 	/* if sys.db_user_info does not have a column password, we need to
 	 * add a bunch of columns */
@@ -1853,7 +1869,7 @@ sql_update_sep2022(Client c, mvc *sql, sql_schema *s)
 		}
 	}
 	if (err != MAL_SUCCEED) {
-		GDKfree(buf);
+		ma_close(&ma_state);
 		return err;
 	}
 
@@ -1863,7 +1879,7 @@ sql_update_sep2022(Client c, mvc *sql, sql_schema *s)
 	pos = snprintf(buf, bufsize,
 			"select 1 from sys.tables where schema_id = (select \"id\" from sys.schemas where \"name\" = 'sys') and \"name\" = 'describe_partition_tables' and \"query\" not like '%%vals%%';\n");
 	if ((err = SQLstatementIntern(c, buf, "update", true, false, &output))) {
-		GDKfree(buf);
+		ma_close(&ma_state);
 		return err;
 	}
 
@@ -2188,7 +2204,7 @@ sql_update_sep2022(Client c, mvc *sql, sql_schema *s)
 	res_table_destroy(output);
 	output = NULL;
 	if (err != MAL_SUCCEED) {
-		GDKfree(buf);
+		ma_close(&ma_state);
 		return err;
 	}
 
@@ -2218,7 +2234,7 @@ sql_update_sep2022(Client c, mvc *sql, sql_schema *s)
 	res_table_destroy(output);
 	output = NULL;
 	if (err != MAL_SUCCEED) {
-		GDKfree(buf);
+		ma_close(&ma_state);
 		return err;
 	}
 
@@ -2282,29 +2298,33 @@ sql_update_sep2022(Client c, mvc *sql, sql_schema *s)
 	res_table_destroy(output);
 	output = NULL;
 	if (err != MAL_SUCCEED) {
-		GDKfree(buf);
+		ma_close(&ma_state);
 		return err;
 	}
 
 bailout:
 	if (output)
 		res_table_destroy(output);
-	GDKfree(buf);
+	ma_close(&ma_state);
 	return err;		/* usually MAL_SUCCEED */
 }
 
 static str
 sql_update_jun2023(Client c, mvc *sql, sql_schema *s)
 {
+	allocator *ma = MT_thread_getallocator();
+	allocator_state ma_state = ma_open(ma);
 	size_t bufsize = 65536, pos = 0;
-	char *err = NULL, *buf = GDKmalloc(bufsize);
+	char *err = NULL, *buf = ma_alloc(ma, bufsize);
 	res_table *output;
 	BAT *b;
 	sql_subtype t1, t2;
 
 	(void) sql;
-	if (buf == NULL)
+	if (buf == NULL) {
+		ma_close(&ma_state);
 		throw(SQL, __func__, SQLSTATE(HY013) MAL_MALLOC_FAIL);
+	}
 
 	/* wlc/wlr support was removed */
 	{
@@ -2825,22 +2845,30 @@ sql_update_jun2023(Client c, mvc *sql, sql_schema *s)
 		BATiter ik = bat_iterator(rt_key);
 		BATiter iu = bat_iterator(rt_username);
 		BATiter ip = bat_iterator(rt_pwhash);
+		size_t keysize = 1024;
+		char *key = ma_alloc(ma, keysize);
 		for (oid p = 0; p < ik.count; p++) {
 			if (BUNfnd(rt_deleted, &p) == BUN_NONE) {
-				char *key = GDKstrdup(BUNtvar(&ik, p));
+				const char *nkey = BUNtvar(&ik, p);
+				if (strlen(nkey) >= keysize) {
+					key = ma_realloc(ma, key, strlen(nkey) + 128, keysize);
+					keysize = strlen(nkey) + 128;
+					if (key == NULL) {
+						bat_iterator_end(&ik);
+						bat_iterator_end(&iu);
+						bat_iterator_end(&ip);
+						BBPunfix(rt_key->batCacheid);
+						BBPunfix(rt_username->batCacheid);
+						BBPunfix(rt_pwhash->batCacheid);
+						BBPunfix(rt_deleted->batCacheid);
+						ma_close(&ma_state);
+						throw(SQL, __func__, SQLSTATE(HY013) MAL_MALLOC_FAIL);
+					}
+				}
+				strtcpy(key, nkey, keysize);
 				const char *username = BUNtvar(&iu, p);
 				const char *pwhash = BUNtvar(&ip, p);
 
-				if (!key) {
-					bat_iterator_end(&ik);
-					bat_iterator_end(&iu);
-					bat_iterator_end(&ip);
-					BBPunfix(rt_key->batCacheid);
-					BBPunfix(rt_username->batCacheid);
-					BBPunfix(rt_pwhash->batCacheid);
-					BBPunfix(rt_deleted->batCacheid);
-					throw(SQL, __func__, SQLSTATE(HY013) MAL_MALLOC_FAIL);
-				}
 				char *d = strchr(key, '.');
 				/* . not found simply skip */
 				if (d) {
@@ -2856,12 +2884,11 @@ sql_update_jun2023(Client c, mvc *sql, sql_schema *s)
 							BBPunfix(rt_username->batCacheid);
 							BBPunfix(rt_pwhash->batCacheid);
 							BBPunfix(rt_deleted->batCacheid);
-							GDKfree(key);
+							ma_close(&ma_state);
 							throw(SQL, __func__, "Failed to insert remote credentials during upgrade");
 						}
 					}
 				}
-				GDKfree(key);
 			}
 		}
 		bat_iterator_end(&ik);
@@ -2898,7 +2925,7 @@ sql_update_jun2023(Client c, mvc *sql, sql_schema *s)
 		BBPunfix(rt_deleted->batCacheid);
 	}
 
-	GDKfree(buf);
+	ma_close(&ma_state);
 	return err;		/* usually MAL_SUCCEED */
 }
 
@@ -2916,9 +2943,13 @@ sql_update_jun2023_sp3(Client c, mvc *sql, sql_schema *s)
 		sql->session->status = 0;
 		sql->errstr[0] = '\0';
 
-		char *query = GDKmalloc(512);
-		if (query == NULL)
+		allocator *ma = MT_thread_getallocator();
+		allocator_state ma_state = ma_open(ma);
+		char *query = ma_alloc(ma, 512);
+		if (query == NULL) {
+			ma_close(&ma_state);
 			throw(SQL, __func__, SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		}
 
 		snprintf(query, 512, "CREATE FUNCTION timestamp_to_str(d TIMESTAMP, format STRING) RETURNS STRING "
 				 "EXTERNAL NAME mtime.\"timestamp_to_str\";\n"
@@ -2928,7 +2959,7 @@ sql_update_jun2023_sp3(Client c, mvc *sql, sql_schema *s)
 
 		printf("Running database upgrade commands:\n%s\n", query);
 		err = SQLstatementIntern(c, query, "update", true, false, NULL);
-		GDKfree(query);
+		ma_close(&ma_state);
 	}
 
 	return err;		/* usually MAL_SUCCEED */

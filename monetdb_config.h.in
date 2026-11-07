@@ -402,13 +402,13 @@
 #define DIR_SEP '/'
 #define PATH_SEP ':'
 #define DIR_SEP_STR "/"
-#cmakedefine SO_PREFIX "@SO_PREFIX@"
+#define SO_PREFIX "@SO_PREFIX@"
 #endif
-#cmakedefine SO_EXT "@SO_EXT@"
+#define SO_EXT "@SO_EXT@"
 
-#cmakedefine BINDIR "@BINDIR@"
-#cmakedefine LIBDIR "@LIBDIR@"
-#cmakedefine LOCALSTATEDIR "@LOCALSTATEDIR@"
+#define BINDIR "@BINDIR@"
+#define LIBDIR "@LIBDIR@"
+#define LOCALSTATEDIR "@LOCALSTATEDIR@"
 
 // End Section: monetdb macro variables
 
