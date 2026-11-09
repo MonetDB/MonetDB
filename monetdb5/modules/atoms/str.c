@@ -2000,7 +2000,7 @@ STRselect(MalStkPtr stk, InstrPtr pci, const char *fname,
 
 	BATiter li = bat_iterator(l);
 	struct canditer lci;
-	canditer_init(&lci, l, cl);
+	canditer_init_bi(&lci, &li, cl);
 	size_t l_cnt = lci.ncand;
 
 	rl = COLnew(0, TYPE_oid, l_cnt, TRANSIENT);
@@ -2500,7 +2500,7 @@ sorted_strjoin(BAT **rl_ptr, BAT **rr_ptr, BATiter *li, BATiter *ri,
 		}
 		tmp_li = bat_iterator(sorted_l);
 		sorted_li = &tmp_li;
-		canditer_init(&sorted_lci, sorted_l, sorted_cl);
+		canditer_init_bi(&sorted_lci, sorted_li, sorted_cl);
 	} else {
 		sorted_l = l;
 		sorted_cl = cl;
@@ -2528,7 +2528,7 @@ sorted_strjoin(BAT **rl_ptr, BAT **rr_ptr, BATiter *li, BATiter *ri,
 		}
 		tmp_ri = bat_iterator(sorted_r);
 		sorted_ri = &tmp_ri;
-		canditer_init(&sorted_rci, sorted_r, sorted_cr);
+		canditer_init_bi(&sorted_rci, sorted_ri, sorted_cr);
 	} else {
 		sorted_r = r;
 		sorted_cr = cr;
@@ -2693,8 +2693,8 @@ STRjoin(MalStkPtr stk, InstrPtr pci, const char *fname,
 
 	BATiter li = bat_iterator(l), ri = bat_iterator(r);
 	struct canditer lci, rci;
-	canditer_init(&lci, l, cl);
-	canditer_init(&rci, r, cr);
+	canditer_init_bi(&lci, &li, cl);
+	canditer_init_bi(&rci, &ri, cr);
 	size_t l_cnt = lci.ncand, r_cnt = rci.ncand;
 	size_t nested_cost = lci.ncand * rci.ncand,
 		sorted_cost = (size_t)floor(0.8 * (l_cnt * log2((double)l_cnt) + r_cnt * log2((double)r_cnt)));

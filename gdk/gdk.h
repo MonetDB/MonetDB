@@ -229,10 +229,10 @@ typedef union {
 
 typedef struct {
 	size_t nitems;
-	uint8_t data[] ATTR_NONSTRING
-		ATTR_COUNTED_BY(nitems);
+	uint8_t data[] ATTR_NONSTRING ATTR_COUNTED_BY(nitems);
 } blob;
-gdk_export size_t blobsize(size_t nitems) ATTR_CONST;
+gdk_export size_t blobsize(size_t nitems)
+	ATTR_CONST;
 
 #define SIZEOF_LNG		8
 #define LL_CONSTANT(val)	INT64_C(val)
@@ -1691,7 +1691,6 @@ gdk_export void HEAPdecref(Heap *h, bool remove);
 gdk_export void HEAPincref(Heap *h);
 gdk_export gdk_return HEAPalloc(Heap *h, size_t nitems, size_t itemsize)
 	ATTR_WARN_UNUSED_RESULT;
-	//ATTR_VISIBILITY_HIDDEN;
 
 ATTR_PURE
 static inline bat
@@ -2309,6 +2308,7 @@ typedef struct BATiter {
 	Heap *h;
 	void *base;
 	Heap *vh;
+	Hash *hash;		/* if non-NULL, there's a read lock */
 	BUN count;
 	BUN baseoff;
 	oid hseq;
@@ -2422,7 +2422,7 @@ bat_iterator_incref(BATiter *bi)
 }
 
 static inline BATiter
-bat_iterator(BAT *b)
+bat_iterator_internal(BAT *b, bool hash)
 {
 	/* needs matching bat_iterator_end */
 	BATiter bi;
@@ -2435,6 +2435,8 @@ bat_iterator(BAT *b)
 		 * have a parent for its vheap (which would have to be
 		 * our own vheap parent), so lock the vheap after the
 		 * tail */
+		if (hash)
+			MT_rwlock_rdlock(&b->thashlock);
 		MT_lock_set(&b->theaplock);
 		if (b->theap->parentid != b->batCacheid) {
 			pb = BBP_desc(b->theap->parentid);
@@ -2447,6 +2449,11 @@ bat_iterator(BAT *b)
 			MT_lock_set(&pvb->theaplock);
 		}
 		bi = bat_iterator_nolock(b);
+		if (hash &&
+		    ((bi.hash = b->thash) == NULL || bi.hash == (Hash *) 1)) {
+			bi.hash = NULL;
+			MT_rwlock_rdunlock(&b->thashlock);
+		}
 		bat_iterator_incref(&bi);
 		if (pvb)
 			MT_lock_unset(&pvb->theaplock);
@@ -2464,6 +2471,18 @@ bat_iterator(BAT *b)
 	return bi;
 }
 
+static inline BATiter
+bat_iterator(BAT *b)
+{
+	return bat_iterator_internal(b, false);
+}
+
+static inline BATiter
+bat_iterator_hash(BAT *b)
+{
+	return bat_iterator_internal(b, true);
+}
+
 /* return a copy of a BATiter instance; needs to be released with
  * bat_iterator_end */
 static inline BATiter
@@ -2475,6 +2494,8 @@ bat_iterator_copy(const BATiter *bip)
 		HEAPincref(bip->h);
 	if (bip->vh)
 		HEAPincref(bip->vh);
+	if (bip->hash)
+		MT_rwlock_rdlock(&bip->b->thashlock);
 	return *bip;
 }
 
@@ -2484,6 +2505,8 @@ bat_iterator_end(BATiter *bip)
 	/* matches bat_iterator */
 	assert(bip);
 	assert(bip->locked);
+	if (bip->hash)
+		MT_rwlock_rdunlock(&bip->b->thashlock);
 	if (bip->h)
 		HEAPdecref(bip->h, false);
 	if (bip->vh)

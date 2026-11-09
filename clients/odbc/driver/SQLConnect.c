@@ -73,7 +73,7 @@ get_serverinfo(ODBCDbc *dbc)
 		goto end;
 
 	/* table sys.comments should exist since Mar2018 (11.29) */
-	if (dbc->major == 11 && dbc->minor > 29) {
+	if ((dbc->major >= 56) || (dbc->major == 11 && dbc->minor > 29)) {
 		dbc->has_comment = true;
 	} else {
 		mapi_close_handle(hdl);

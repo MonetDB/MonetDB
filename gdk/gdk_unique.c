@@ -48,11 +48,11 @@ BATunique(BAT *b, BAT *s)
 	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
 
 	BATcheck(b, NULL);
-	canditer_init(&ci, b, s);
 
 	(void) BATordered(b);
 	(void) BATordered_rev(b);
 	BATiter bi = bat_iterator(b);
+	canditer_init_bi(&ci, &bi, s);
 	if (bi.key || ci.ncand <= 1 || BATtdensebi(&bi)) {
 		/* trivial: already unique */
 		bn = canditer_slice(&ci, 0, ci.ncand);

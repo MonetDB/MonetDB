@@ -2034,21 +2034,24 @@ BATcalcmuldivmod(BAT *b1, BAT *b2, BAT *s1, BAT *s2, int tp,
 	BATcheck(b1, NULL);
 	BATcheck(b2, NULL);
 
-	canditer_init(&ci1, b1, s1);
-	canditer_init(&ci2, b2, s2);
+	BATiter b1i = bat_iterator(b1);
+	BATiter b2i = bat_iterator(b2);
+	canditer_init_bi(&ci1, &b1i, s1);
+	canditer_init_bi(&ci2, &b2i, s2);
 	if (ci1.ncand != ci2.ncand || ci1.hseq != ci2.hseq) {
+		bat_iterator_end(&b1i);
+		bat_iterator_end(&b2i);
 		GDKerror("%s: inputs not the same size.\n", func);
 		return NULL;
 	}
 
 	bn = COLnew(ci1.hseq, tp, ci1.ncand, TRANSIENT);
-	if (bn == NULL)
-		return NULL;
-	if (ci1.ncand == 0)
+	if (bn == NULL || ci1.ncand == 0) {
+		bat_iterator_end(&b1i);
+		bat_iterator_end(&b2i);
 		return bn;
+	}
 
-	BATiter b1i = bat_iterator(b1);
-	BATiter b2i = bat_iterator(b2);
 	nils = (*typeswitchloop)(b1i.base, b1i.type, true,
 				 b2i.base, b2i.type, true,
 				 Tloc(bn, 0), tp,
@@ -2098,15 +2101,15 @@ BATcalcmulcst(BAT *b, const ValRecord *v, BAT *s, int tp)
 
 	BATcheck(b, NULL);
 
-	canditer_init(&ci, b, s);
+	BATiter bi = bat_iterator(b);
+	canditer_init_bi(&ci, &bi, s);
 
 	bn = COLnew(ci.hseq, tp, ci.ncand, TRANSIENT);
-	if (bn == NULL)
-		return NULL;
-	if (ci.ncand == 0)
+	if (bn == NULL || ci.ncand == 0) {
+		bat_iterator_end(&bi);
 		return bn;
+	}
 
-	BATiter bi = bat_iterator(b);
 	nils = mul_typeswitchloop(bi.base, bi.type, true,
 				  VALptr(v), v->vtype, false,
 				  Tloc(bn, 0), tp,
@@ -2159,15 +2162,15 @@ BATcalccstmul(const ValRecord *v, BAT *b, BAT *s, int tp)
 
 	BATcheck(b, NULL);
 
-	canditer_init(&ci, b, s);
+	BATiter bi = bat_iterator(b);
+	canditer_init_bi(&ci, &bi, s);
 
 	bn = COLnew(ci.hseq, tp, ci.ncand, TRANSIENT);
-	if (bn == NULL)
-		return NULL;
-	if (ci.ncand == 0)
+	if (bn == NULL || ci.ncand == 0) {
+		bat_iterator_end(&bi);
 		return bn;
+	}
 
-	BATiter bi = bat_iterator(b);
 	nils = mul_typeswitchloop(VALptr(v), v->vtype, false,
 				  bi.base, bi.type, true,
 				  Tloc(bn, 0), tp,
