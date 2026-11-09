@@ -504,8 +504,10 @@ find_cmp_exps(list **exps_hsh, list **exps_prb, const list *exps, sql_rel *rel_h
 			sql_exp *ne = NULL;
 			if ((ne = rel_find_exp(rel_hsh, e->r)) != NULL) {
 				sql_exp *er = e->r;
+				/*
 				if (is_unique(ne))
 					set_unique(er);
+					*/
 				if (any)
 					set_any(er);
 				if (semantic)
@@ -516,8 +518,10 @@ find_cmp_exps(list **exps_hsh, list **exps_prb, const list *exps, sql_rel *rel_h
 			    ne = rel_find_exp(rel_hsh, e->l);
 				assert(ne);
 				sql_exp *el = e->l;
+				/*
 				if (is_unique(ne))
 					set_unique(el);
+					*/
 				if (any)
 					set_any(el);
 				if (semantic)

@@ -351,11 +351,12 @@ typedef struct relation {
 				 */
 	int nrcols;	/* nr of cols */
 	unsigned int
-	 flag:16,
 	 card:2,	/* 0, 1 (row), 2 aggr, 3 */
 	 dependent:1, 	/* dependent join */
 	 distinct:1,
 	 fv_distinct:1,	/* set during general unnest */
+	 lunique:1,		/* left side of join unique */
+	 runique:1,		/* right side of join unique */
 	 processed:1,   /* fully processed or still in the process of building */
 	 outer:1,	/* used as outer (ungrouped) */
 	 grouped:1,	/* groupby processed all the group by exps */
@@ -374,6 +375,7 @@ typedef struct relation {
 	 * Used by rewriters at rel_unnest, rel_optimizer and rel_distribute so a relation is not modified twice
 	 * The list is kept at rel_optimizer_private.h Please update it accordingly
 	 */
+	uint16_t flag;
 	uint16_t used;
 	uint16_t nr_outers;
 	int opt;

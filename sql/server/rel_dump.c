@@ -381,7 +381,7 @@ exp_print(mvc *sql, stream *fout, sql_exp *e, int depth, list *refs, int comma, 
 			mnstr_printf(fout, " NULLS LAST");
 		if (e->type != e_atom && e->type != e_cmp && !has_nil(e))
 			mnstr_printf(fout, " NOT NULL");
-		if (e->type != e_atom && e->type != e_cmp && is_unique(e))
+		if (e->type != e_atom && (sql->show_all_details || e->type != e_cmp) && is_unique(e))
 			mnstr_printf(fout, " UNIQUE");
 		/* don't show properties on value lists */
 		if (decorate && e->p && e->type != e_atom && !exp_is_atom(e)) {
