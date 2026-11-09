@@ -565,6 +565,11 @@ stmt_oahash_probe(backend *be, stmt *key, stmt *prev, stmt *rhs_ht, stmt *freq, 
 		q = pushArgument(be->mb, q, getArg(prev->q, 0));
 		q = pushArgument(be->mb, q, getArg(prev->q, 1));
 	}
+	/*
+	sql_subtype *htype = tail_type(rhs_ht);
+	sql_subtype *ptype = tail_type(key);
+	assert(subtype_cmp(htype, ptype) == 0);
+	*/
 	q = pushArgument(be->mb, q, rhs_ht->nr);
 	if (single) {
 		assert(freq);

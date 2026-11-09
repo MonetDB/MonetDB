@@ -176,7 +176,7 @@ exp_compare(allocator *sa, sql_exp *l, sql_exp *r, int cmptype)
 	e->l = l;
 	e->r = r;
 	e->flag = cmptype;
-	if (cmptype == cmp_equal) {
+	if (cmptype == cmp_equal && r->card <= CARD_AGGR) {
 		prop *p = e->p = prop_create(sa, PROP_NUNIQUES, (prop *) e->p);
 		p->value.dval = 1;
 	}
@@ -197,7 +197,7 @@ exp_compare2(allocator *sa, sql_exp *l, sql_exp *r, sql_exp *f, int cmptype, int
 	e->r = r;
 	e->f = f;
 	e->flag = cmptype;
-	if (cmptype == cmp_equal) {
+	if (cmptype == cmp_equal && r->card <= CARD_AGGR) {
 		prop *p = e->p = prop_create(sa, PROP_NUNIQUES, (prop *) e->p);
 		p->value.dval = 1;
 	}
@@ -4419,6 +4419,10 @@ exp_estimate_selectivity(mvc *sql, sql_exp *e, sql_rel *rel)
 			case cmp_lt:
 			case cmp_lte:
 				sel = 0.50;
+				/*
+				if (e->f)
+					sel = 0.10;
+					*/
 				break;
 			case cmp_in:
 			case cmp_notin: {
