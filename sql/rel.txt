@@ -171,7 +171,7 @@ e_cmp
 			cmp_left = 15,			/* special case equi join, keep left order */
 			cmp_left_project = 16	/* last step of outer join */
 		)
-	 -> bool semantics (is null handling), any (in handling)
+	 -> bool semantics (is null handling, indicated with a '*'), any (in handling, indicated with a '+')
 
 e_func
 e_aggr
