@@ -202,7 +202,7 @@ bat_sketch(BATiter *bi, struct canditer *bci, uint8_t (*sketch)[CLZ_BUCKETS])
 
 	struct canditer n_bci;
 	if (bci == NULL) {
-		canditer_init(&n_bci, b, NULL);
+		canditer_init_bi(&n_bci, bi, NULL);
 	} else {
 		n_bci = *bci;
 		canditer_reset(&n_bci);

@@ -995,6 +995,7 @@ rel_get_statistics_(visitor *v, sql_rel *rel)
 					sql_exp *e = n->data, *el = e->l, *er = e->r;
 					BUN uniques_estimate = BUN_MAX;
 
+					/* TODO replace by exp_selectivity */
 					if (find_prop(e->p, PROP_JOINIDX)) {
 						prop *lsp = find_prop(l->p, PROP_SELECTIVITY), *rsp = find_prop(r->p, PROP_SELECTIVITY);
 						dbl ls = lsp && is_join(l->op) ? lsp->value.dval : 1.0;
@@ -1010,12 +1011,15 @@ rel_get_statistics_(visitor *v, sql_rel *rel)
 					} else if (e->type == e_cmp && e->flag == cmp_equal) {
 						/* if one of the sides is unique, the cardinality will be at most the cardinality of the other side */
 						if (!is_semantics(e) || !has_nil(el) || !has_nil(er)) {
-							BUN lu = lv, ru = rv;
+							BUN lu = 1, ru = 1;
+							/*
 							prop *p = NULL;
 							if ((p = find_prop(el->p, PROP_NUNIQUES)))
 								lu = (BUN) p->value.dval;
 							if ((p = find_prop(er->p, PROP_NUNIQUES)))
 								ru = (BUN) p->value.dval;
+								*/
+							/*
 							if (is_unique(el) || lu > lv) {
 								BUN ncount = (is_right(rel->op) || is_full(rel->op) || !lv || lu < lv) ? MAX(lv, rv) : rv/(lu/lv);
 								if (ncount == 0)
@@ -1027,6 +1031,29 @@ rel_get_statistics_(visitor *v, sql_rel *rel)
 									ncount = MAX(lv, rv);
 								uniques_estimate = MIN(uniques_estimate, ncount);
 							}
+							*/
+							sql_exp *el = e->l, *er = e->r;
+							prop *up = NULL;
+							if (el->type == e_column && (is_select(l->op) || is_basetable(l->op)))
+								el = rel_find_exp(l, el);
+							if (!el) {
+								el = e->l;
+								el = rel_find_exp(r, el);
+							}
+							if ((up = find_prop(el->p, PROP_NUNIQUES)))
+								lu = MIN((BUN) up->value.dval, lv);
+							if (er->type == e_column && (is_select(r->op) || is_basetable(r->op)))
+								er = rel_find_exp(r, er);
+							if (!er) {
+								er = e->r;
+								er = rel_find_exp(l, er);
+							}
+							if ((up = find_prop(er->p, PROP_NUNIQUES)))
+								ru = MIN((BUN) up->value.dval, rv);
+							if (is_unique(el) || (is_unique(er) /*&& runique*/))
+								uniques_estimate = MIN(uniques_estimate, MAX(lv, rv));
+							if (is_unique(el) && is_unique(er) /*&& runique*/)
+								uniques_estimate = MIN(lu, ru);
 							if (uniques_estimate < BUN_MAX) {
 								if (uniques_estimate < r_uniques_estimate)
 									r_uniques_estimate = uniques_estimate;
@@ -1035,8 +1062,15 @@ rel_get_statistics_(visitor *v, sql_rel *rel)
 								sp->value.dval = s;
 								e->p = sp;
 							} else {
+								dbl mfl = (dbl)lv/lu;
+								dbl mfr = (dbl)rv/ru;
+								dbl mf = MIN(lv/mfl, rv/mfr);
+								dbl u = mf * mfl * mfr;
+								dbl s = u/(lv*rv);
+								/*
 								dbl u = (dbl)MAX(lu, ru);
 								dbl s = u/(lv*rv);
+								*/
 								//dbl s = 1/u;
 								prop *sp = prop_create(v->sql->sa, PROP_SELECTIVITY, (prop *) e->p);
 								sp->value.dval = s;

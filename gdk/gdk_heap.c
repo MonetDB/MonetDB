@@ -164,7 +164,11 @@ HEAPalloc(Heap *h, size_t nitems, size_t itemsize)
 	size_t allocated;
 	if (GDKinmemory(h->farmid) ||
 	    ((allocated = GDKmem_cursize()) + h->size < GDK_mem_maxsize &&
-	     h->size < (h->role == PERSISTENT ? GDK_mmap_minsize_persistent : GDK_mmap_minsize_transient) &&
+	     h->size < (h->role == PERSISTENT
+			? GDK_mmap_minsize_persistent
+			: (h->role == TEMPFARM
+			   ? GDK_mmap_minsize_temporary
+			   : GDK_mmap_minsize_transient)) &&
 	     h->size < ((GDK_mem_maxsize - allocated) >> 6))) {
 		h->storage = STORE_MEM;
 		size = h->size;
@@ -307,7 +311,11 @@ HEAPextend(Heap *h, size_t size)
 		size_t allocated;
 		bool must_mmap = (!GDKinmemory(h->farmid) &&
 				   ((allocated = GDKmem_cursize()) + size >= GDK_mem_maxsize ||
-				    size >= (h->role == PERSISTENT ? GDK_mmap_minsize_persistent : GDK_mmap_minsize_transient) ||
+				    size >= (h->role == PERSISTENT
+					     ? GDK_mmap_minsize_persistent
+					     : (h->role == TEMPFARM
+						? GDK_mmap_minsize_temporary
+						: GDK_mmap_minsize_transient)) ||
 				    size >= ((GDK_mem_maxsize - allocated) >> 6)));
 
 		h->size = size;
@@ -708,7 +716,9 @@ HEAPload(Heap *h, const char *nme, const char *ext, bool trunc)
 		size_t allocated;
 		h->storage = h->size < (h->role == PERSISTENT
 					? GDK_mmap_minsize_persistent
-					: GDK_mmap_minsize_transient) &&
+					: (h->role == TEMPFARM
+					   ? GDK_mmap_minsize_temporary
+					   : GDK_mmap_minsize_transient)) &&
 			(allocated = GDKmem_cursize()) < GDK_mem_maxsize &&
 			h->size < ((GDK_mem_maxsize - allocated) >> 6) ? STORE_MEM : STORE_MMAP;
 	}

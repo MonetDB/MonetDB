@@ -219,8 +219,10 @@ MKEYbathash(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 							  SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		goto bailout;
 	}
-	canditer_init(&ci, b, bs);
+	bi = bat_iterator(b);
+	canditer_init_bi(&ci, &bi, bs);
 	if (!(bn = COLnew(ci.hseq, TYPE_lng, ci.ncand, TRANSIENT))) {
+		bat_iterator_end(&bi);
 		msg = createException(MAL, "batmkey.bathash",
 							  SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto bailout;
@@ -228,7 +230,6 @@ MKEYbathash(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	off = b->hseqbase;
 	r = (ulng *) Tloc(bn, 0);
 
-	bi = bat_iterator(b);
 	switch (ATOMstorage(b->ttype)) {
 	case TYPE_void:{
 		oid o = b->tseqbase;
@@ -408,9 +409,13 @@ MKEYbulk_rotate_xor_hash(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 		goto bailout;
 	}
 
-	canditer_init(&ci1, hb, s1);
-	canditer_init(&ci2, b, s2);
+	hbi = bat_iterator(hb);
+	bi = bat_iterator(b);
+	canditer_init_bi(&ci1, &hbi, s1);
+	canditer_init_bi(&ci2, &bi, s2);
 	if (ci2.ncand != ci1.ncand || ci1.hseq != ci2.hseq) {
+		bat_iterator_end(&hbi);
+		bat_iterator_end(&bi);
 		msg = createException(MAL, "batmkey.rotate_xor_hash",
 							  ILLEGAL_ARGUMENT
 							  " Requires bats of identical size");
@@ -418,6 +423,8 @@ MKEYbulk_rotate_xor_hash(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 	}
 
 	if (!(bn = COLnew(ci1.hseq, TYPE_lng, ci1.ncand, TRANSIENT))) {
+		bat_iterator_end(&hbi);
+		bat_iterator_end(&bi);
 		msg = createException(MAL, "batmkey.rotate_xor_hash",
 							  SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto bailout;
@@ -428,8 +435,6 @@ MKEYbulk_rotate_xor_hash(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 	off1 = hb->hseqbase;
 	off2 = b->hseqbase;
 
-	hbi = bat_iterator(hb);
-	bi = bat_iterator(b);
 	if (complex_cand(b)) {
 		const ulng *restrict h = (const ulng *) hbi.base;
 		for (BUN i = 0; i < ci1.ncand; i++) {
@@ -571,8 +576,10 @@ MKEYbulkconst_rotate_xor_hash(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 							  SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		goto bailout;
 	}
-	canditer_init(&ci, hb, bs);
+	hbi = bat_iterator(hb);
+	canditer_init_bi(&ci, &hbi, bs);
 	if (!(bn = COLnew(ci.hseq, TYPE_lng, ci.ncand, TRANSIENT))) {
+		bat_iterator_end(&hbi);
 		msg = createException(MAL, "batmkey.rotate_xor_hash",
 							  SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto bailout;
@@ -608,7 +615,6 @@ MKEYbulkconst_rotate_xor_hash(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 	}
 
 	r = (ulng *) Tloc(bn, 0);
-	hbi = bat_iterator(hb);
 	h = (const ulng *) hbi.base;
 	if (ci.tpe == cand_dense) {
 		for (BUN i = 0; i < ci.ncand; i++) {
@@ -685,8 +691,10 @@ MKEYconstbulk_rotate_xor_hash(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 							  SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		goto bailout;
 	}
-	canditer_init(&ci, b, bs);
+	bi = bat_iterator(b);
+	canditer_init_bi(&ci, &bi, bs);
 	if (!(bn = COLnew(ci.hseq, TYPE_lng, ci.ncand, TRANSIENT))) {
+		bat_iterator_end(&bi);
 		msg = createException(MAL, "batmkey.rotate_xor_hash",
 							  SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto bailout;
@@ -694,7 +702,6 @@ MKEYconstbulk_rotate_xor_hash(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 	off = b->hseqbase;
 	r = (ulng *) Tloc(bn, 0);
 
-	bi = bat_iterator(b);
 	switch (ATOMstorage(b->ttype)) {
 	case TYPE_bte:
 		MKEYconstbulk_rotate_xor_hashloop(bte);

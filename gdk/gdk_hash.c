@@ -1112,7 +1112,7 @@ BAThash(BAT *b)
 	if (b->thash == NULL) {
 		struct canditer ci;
 		BATiter bi = bat_iterator(b);;
-		canditer_init(&ci, b, NULL);
+		canditer_init_bi(&ci, &bi, NULL);
 		b->thash = BAThash_impl(&bi, &ci, b->ustr != 0, "thash", 0);
 		bat_iterator_end(&bi);
 		if (b->thash == NULL) {

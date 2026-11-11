@@ -237,7 +237,7 @@ BATrtree(BAT *wkb, BAT *mbrb)
 			return GDK_FAIL;
 		}
 		bi = bat_iterator(mbrb);
-		canditer_init(&ci, mbrb,NULL);
+		canditer_init_bi(&ci, &bi, NULL);
 
 		for (BUN i = 0; i < ci.ncand; i++) {
 			oid p = canditer_next(&ci) - mbrb->hseqbase;

@@ -3448,21 +3448,20 @@ BATcount_no_nil(BAT *b, BAT *s)
 	BATcheck(b, 0);
 
 	hseq = b->hseqbase;
-	BATiter bi = bat_iterator(b);
+	(void) BATcheckhash(b);
+	BATiter bi = bat_iterator_hash(b);
 	canditer_init_bi(&ci, &bi, s);
 	if (bi.nonil) {
 		bat_iterator_end(&bi);
 		return ci.ncand;
 	}
-	if (BATcheckhash(b)) {
-		MT_rwlock_rdlock(&b->thashlock);
+	if (bi.hash) {
 		BUN p = 0;
 		const void *nil = b->ustr ? &(var_t){0} : ATOMnilptr(b->ttype);
 		cnt = ci.ncand;
-		HASHloop(&bi, b->thash, p, nil)
+		HASHloop(&bi, bi.hash, p, nil)
 			if (canditer_contains(&ci, p + b->hseqbase))
 				cnt--;
-		MT_rwlock_rdunlock(&b->thashlock);
 		bat_iterator_end(&bi);
 		return cnt;
 	}

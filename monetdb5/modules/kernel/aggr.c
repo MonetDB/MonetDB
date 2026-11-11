@@ -1565,7 +1565,7 @@ uniques_guess(Client c, lng *guess, const bat *bid)
 	printf("from the iter field struct %lld\n", llroundl(bi.unique_est));
 	printf("from the bat field struct %lld\n", llroundl(b->tunique_est));
 	struct canditer bci;
-	canditer_init(&bci, b, NULL);
+	canditer_init_bi(&bci, &bi, NULL);
 	uint8_t sketch[BUCKETS][CLZ_BUCKETS] = {0};
 
 	gdk_return rc = bat_sketch(&bi, &bci, sketch);

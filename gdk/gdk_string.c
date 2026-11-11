@@ -1440,9 +1440,9 @@ BATstr_group_concat(allocator *ma, ValPtr res, BAT *b, BAT *s, BAT *sep, bool sk
 
 	canditer_init(&ci, b, s);
 
-	BATiter bi = bat_iterator(sep);
+	BATiter sepi = bat_iterator(sep);
 	if (sep && BATcount(sep) == 1) { /* Only one element in sep */
-		separator = BUNtvar(&bi, 0);
+		separator = BUNtvar(&sepi, 0);
 		sep = NULL;
 	}
 	if (separator && strNil(separator))
@@ -1451,13 +1451,13 @@ BATstr_group_concat(allocator *ma, ValPtr res, BAT *b, BAT *s, BAT *sep, bool sk
 	if (ci.ncand == 0) {
 		if (VALinit(ma, res, TYPE_str, nil_if_empty ? str_nil : "") == NULL)
 			r = GDK_FAIL;
-		bat_iterator_end(&bi);
+		bat_iterator_end(&sepi);
 		return r;
 	}
 
 	r = concat_strings(ma, NULL, res, b, b->hseqbase, 1, &ci, NULL, 0, 0,
 			      skip_nils, sep, separator, NULL);
-	bat_iterator_end(&bi);
+	bat_iterator_end(&sepi);
 	return r;
 }
 
@@ -7310,11 +7310,13 @@ BATcaseconvert(BAT *b, BAT *s, int direction, const char *restrict func)
 
 	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
 	BATcheck(b, NULL);
-	canditer_init(&ci, b, s);
-	bn = COLnew(ci.hseq, TYPE_str, ci.ncand, TRANSIENT);
-	if (bn == NULL)
-		return NULL;
 	bi = bat_iterator(b);
+	canditer_init_bi(&ci, &bi, s);
+	bn = COLnew(ci.hseq, TYPE_str, ci.ncand, TRANSIENT);
+	if (bn == NULL) {
+		bat_iterator_end(&bi);
+		return NULL;
+	}
 	char *buf = NULL;
 	size_t buflen = 0;
 	allocator *ta = MT_thread_getallocator();
@@ -10116,11 +10118,13 @@ BATasciify(BAT *b, BAT *s)
 
 	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
 	BATcheck(b, NULL);
-	canditer_init(&ci, b, s);
-	bn = COLnew(ci.hseq, TYPE_str, ci.ncand, TRANSIENT);
-	if (bn == NULL)
-		return NULL;
 	bi = bat_iterator(b);
+	canditer_init_bi(&ci, &bi, s);
+	bn = COLnew(ci.hseq, TYPE_str, ci.ncand, TRANSIENT);
+	if (bn == NULL) {
+		bat_iterator_end(&bi);
+		return NULL;
+	}
 	char *buf = NULL;
 	size_t buflen = 0;
 	allocator *ta = MT_thread_getallocator();

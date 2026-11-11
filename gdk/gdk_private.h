@@ -439,6 +439,7 @@ extern struct BBPfarm_t {
 extern batlock_t GDKbatLock[BBP_BATMASK + 1] ATTR_VISIBILITY_HIDDEN;
 extern size_t GDK_mmap_minsize_persistent ATTR_VISIBILITY_HIDDEN; /* size after which we use memory mapped files for persistent heaps */
 extern size_t GDK_mmap_minsize_transient ATTR_VISIBILITY_HIDDEN; /* size after which we use memory mapped files for transient heaps */
+extern size_t GDK_mmap_minsize_temporary ATTR_VISIBILITY_HIDDEN; /* size after which we use memory mapped files for temporary heaps */
 extern size_t GDK_mmap_pagesize ATTR_VISIBILITY_HIDDEN; /* mmap granularity */
 
 #define BATcheck(tst, err)				\
