@@ -430,6 +430,7 @@ BATSIGinit(void)
 #define MMAP_PAGESIZE		((size_t) 1 << 16)
 size_t GDK_mmap_minsize_persistent = MMAP_MINSIZE_PERSISTENT;
 size_t GDK_mmap_minsize_transient = MMAP_MINSIZE_TRANSIENT;
+size_t GDK_mmap_minsize_temporary = MMAP_MINSIZE_TRANSIENT;
 size_t GDK_mmap_pagesize = MMAP_PAGESIZE; /* mmap granularity */
 size_t GDK_mem_maxsize = GDK_VM_MAXSIZE;
 size_t GDK_vm_maxsize = GDK_VM_MAXSIZE;
@@ -1142,6 +1143,16 @@ GDKinit(opt *set, int setlen, bool embedded, const char *caller_revision)
 			return GDK_FAIL;
 		}
 	}
+	GDK_mmap_minsize_temporary = GDK_mmap_minsize_transient;
+	p = mo_find_option(set, setlen, "gdk_mmap_minsize_temporary");
+	if (p) {
+		char *e;
+		GDK_mmap_minsize_temporary = (size_t) strtoll(p, &e, 10);
+		if (e && *e) {
+			TRC_CRITICAL(GDK, "gdk_mmap_minsize_temporary must be an integer");
+			return GDK_FAIL;
+		}
+	}
 	p = mo_find_option(set, setlen, "gdk_mmap_pagesize");
 	if (p) {
 		char *e;
@@ -1278,6 +1289,13 @@ GDKinit(opt *set, int setlen, bool embedded, const char *caller_revision)
 			return GDK_FAIL;
 		}
 	}
+	if (GDKgetenv("gdk_mmap_minsize_temporary") == NULL) {
+		snprintf(buf, sizeof(buf), "%zu", GDK_mmap_minsize_temporary);
+		if (GDKsetenv("gdk_mmap_minsize_temporary", buf) != GDK_SUCCEED) {
+			TRC_CRITICAL(GDK, "GDKsetenv gdk_mmap_minsize_temporary failed");
+			return GDK_FAIL;
+		}
+	}
 	if (GDKgetenv("gdk_mmap_pagesize") == NULL) {
 		snprintf(buf, sizeof(buf), "%zu", GDK_mmap_pagesize);
 		if (GDKsetenv("gdk_mmap_pagesize", buf) != GDK_SUCCEED) {
@@ -1411,6 +1429,7 @@ GDKreset(int status)
 			if (GDK_mmap_minsize_persistent > GDK_mmap_minsize_transient)
 				GDK_mmap_minsize_persistent = GDK_mmap_minsize_transient;
 		}
+		GDK_mmap_minsize_temporary = GDK_mmap_minsize_transient;
 
 		GDKnr_threads = 0;
 		GDKL3_size = 0;
