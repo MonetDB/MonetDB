@@ -54,7 +54,7 @@
 
 int MAL_MAXCLIENTS = 0;
 ClientRec *mal_clients = NULL;
-bool default_pipeline_mode = false;
+bool default_pipeline_mode = true;
 
 void
 mal_client_reset(void)
