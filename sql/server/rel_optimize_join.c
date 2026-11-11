@@ -545,7 +545,7 @@ exp_cost(visitor *v, sql_exp *e, ulng max, sql_rel *l, sql_rel *r)
 		BUN n = l->nrcols + r->nrcols; /* not correct includes join exps */
 		cost = ( (dbl)lcard + (dbl)rcard + (lcard*rcard * sel * n * 8) );
 		if (VERBOSE) {
-			printf("cost %F %F %lu %lu ", cost, sel, lcard, rcard);
+			printf("cost %F %F " BUNFMT " " BUNFMT " ", cost, sel, lcard, rcard);
 			_exp_print(v->sql, e);
 		}
 	}
