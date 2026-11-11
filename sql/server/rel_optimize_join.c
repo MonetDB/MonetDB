@@ -453,14 +453,7 @@ exp_selectivity(visitor *v, sql_exp *e, sql_rel *l, sql_rel *r, prop *p)
 	bool runique = true;
 
 	if (jip) {
-		//sql_exp *tid = e->r;
-		/* check if TID isn't just in join already */
-		/* single list (doesn't work for bushy, needs to be in the relational tree or in the call ! */
-		//list *tids = v->data;
-		//if (exps_bind_nid(tids, tid->nid)) {
-		//	jip = NULL;
-		//	runique = false;
-		//}
+		/* check if TID is still unique in the join tree */
 		sql_exp *be = find_unique(e->r, r);
 		if (!be || !is_unique(be)) {
 			jip = NULL;
@@ -862,7 +855,6 @@ order_joins_bushy( visitor *v, list *rels, list *exps)
 	/* open problem, some expressions use more than 2 relations */
 	/* For example a.x = b.y * c.z; */
 	void *data = v->data;
-	//list *tids_used = v->data = sa_list(v->sql->sa);
 	while(list_length(rels) >= 2) {
 		sql_rel *l = NULL, *r = NULL;
 		sql_exp *cje;
@@ -907,7 +899,6 @@ order_joins_bushy( visitor *v, list *rels, list *exps)
 			rel_join_add_exp(v->sql->sa, top, cje);
 			if (find_prop(cje->p, PROP_JOINIDX) != NULL) {
 				sql_exp *cjer = cje->r;
-				//append(tids_used, cjer);
 				if (is_unique(cjer)) {
 					if (rel_find_exp(l, cjer))
 						top->runique = is_basetable(r->op) || is_select(r->op) || (r->lunique || r->runique);
@@ -928,8 +919,6 @@ order_joins_bushy( visitor *v, list *rels, list *exps)
 				if (rel_rebind_exp(v->sql, top, e)) {
 					rel_join_add_exp(v->sql->sa, top, e);
 					list_remove_data(exps, NULL, e);
-					//if (find_prop(e->p, PROP_JOINIDX) != NULL)
-						//append(tids_used, e->r);
 				}
 				en = next;
 			}
@@ -972,8 +961,6 @@ order_joins_bushy( visitor *v, list *rels, list *exps)
 					if (rel_rebind_exp(v->sql, l, e)) {
 						rel_join_add_exp(v->sql->sa, l, e);
 						list_remove_data(exps, NULL, e);
-						//if (find_prop(e->p, PROP_JOINIDX) != NULL)
-							//append(tids_used, e->r);
 					}
 					en = next;
 				}
