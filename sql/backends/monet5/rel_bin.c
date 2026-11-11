@@ -8279,7 +8279,7 @@ exp_remap(sql_exp *le, sql_exp *re, list *remapped)
 	case e_column:
 		if (exp_pair_match(remapped, le->nid, re->nid))
 			return 0;
-		break;
+		return -1;
 	case e_convert:
 		ll = le->r;
 		rl = re->r;
@@ -8385,8 +8385,7 @@ deduplicate_refs(mvc *sql, allocator *ta, list *refs, sql_rel *rel)
 	for(node *n = refs->h; n; n = n->next) {
 		sql_rel *or = n->data, *nr = or;
 		prop *op = find_prop(or->p, PROP_HASH);
-		if (or->op == op_buildhash &&
-				op && op->value.lval) {
+		if (or->op == op_buildhash && op && op->value.lval) {
 			BUN h = op->value.lval;
 			for(node *m = prefs->h; m; m = m->next->next) {
 				sql_rel *ir = m->data;

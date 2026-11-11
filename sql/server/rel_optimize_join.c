@@ -115,12 +115,14 @@ rel_estimate(visitor *v, sql_rel *rel)
 	/* Don't prune updates as pruning will possibly result in removing the joins which therefore cannot be used for constraint checking */
 	sql_rel *l = rel->l, *r = rel->r;
 
+	/*
 	if (is_join(rel->op) || is_semi(rel->op)) {
 		rel->l = rel_estimate(v, rel->l);
 		rel->r = rel_estimate(v, rel->r);
 	}
 	if (is_join(rel->op))
 		rel->exps = exps_exp_visitor_bottomup(v, rel, rel->exps, 0, &rel_propagate_statistics, false);
+	*/
 
 	switch (rel->op) {
 	case op_join:
@@ -139,8 +141,8 @@ rel_estimate(visitor *v, sql_rel *rel)
 
 				if (find_prop(e->p, PROP_JOINIDX)) {
 					prop *lsp = find_prop(l->p, PROP_SELECTIVITY), *rsp = find_prop(r->p, PROP_SELECTIVITY);
-					dbl ls = lsp && is_join(l->op) ? lsp->value.dval : 1.0;
-					dbl rs = rsp && is_join(r->op) ? rsp->value.dval : 1.0;
+					dbl ls = lsp /*&& is_join(l->op)*/ ? lsp->value.dval : 1.0;
+					dbl rs = rsp /*&& is_join(r->op)*/ ? rsp->value.dval : 1.0;
 					join_idx_estimate = lv>rv?lv:rv;
 					join_idx_estimate = (BUN)(join_idx_estimate * ls * rs);
 					if (join_idx_estimate < 1)
@@ -152,7 +154,7 @@ rel_estimate(visitor *v, sql_rel *rel)
 				} else if (e->type == e_cmp && e->flag == cmp_equal) {
 					/* if one of the sides is unique, the cardinality will be at most the cardinality of the other side */
 					if (!is_semantics(e) || !has_nil(el) || !has_nil(er)) {
-						BUN lu = lv, ru = rv;
+						BUN lu = 1, ru = 1; /* initialize with worst case */
 						prop *p = NULL;
 						if ((p = find_prop(el->p, PROP_NUNIQUES)))
 							lu = (BUN) p->value.dval;
@@ -177,9 +179,11 @@ rel_estimate(visitor *v, sql_rel *rel)
 							sp->value.dval = s;
 							e->p = sp;
 						} else {
-							dbl u = (dbl)MAX(lu, ru);
+							dbl mfl = (dbl)lv/lu;
+							dbl mfr = (dbl)rv/ru;
+							dbl mf = MIN(lv/mfl, rv/mfr);
+							dbl u = mf * mfl * mfr;
 							dbl s = u/(lv*rv);
-							//dbl s = 1/u;
 							prop *sp = prop_create(v->sql->sa, PROP_SELECTIVITY, (prop *) e->p);
 							sp->value.dval = s;
 							e->p = sp;
@@ -403,22 +407,55 @@ exp_keyvalue(sql_exp *e)
 
 extern void _exp_print(mvc *sql, sql_exp *e);
 extern void _exps_print(mvc *sql, list *l);
+extern void _rel_print(mvc *sql, sql_rel *rel);
+
+static sql_exp *
+find_unique(sql_exp *e, sql_rel *rel)
+{
+	if (is_select(rel->op) || is_basetable(rel->op) || is_simple_project(rel->op))
+		return rel_find_exp(rel, e);
+	if (is_join(rel->op)) {
+		if (rel->lunique)
+			return find_unique(e, rel->l);
+		if (rel->runique)
+			return find_unique(e, rel->r);
+	}
+	return NULL;
+}
+
+static void
+exp_set_uniques(sql_exp *e, sql_rel *l, sql_rel *r)
+{
+	if (e->type == e_cmp) {
+		if (e->flag == cmp_equal || e->flag == cmp_notequal) {
+			exp_set_uniques(e->l, l, r);
+			exp_set_uniques(e->r, l, r);
+		}
+	} else if (e->type == e_column) {
+		sql_exp *be = find_unique(e, l);
+		if (!be)
+			be = find_unique(e, r);
+		if (be && is_unique(be))
+			set_unique(e);
+		else
+			set_not_unique(e);
+	}
+}
+
 
 static prop *
 exp_selectivity(visitor *v, sql_exp *e, sql_rel *l, sql_rel *r, prop *p)
 {
-	BUN lv = get_rel_count(l), rv = get_rel_count(r), r_uniques_estimate = BUN_MAX, join_idx_estimate = BUN_MAX;
+	BUN lv = get_rel_count(l), rv = get_rel_count(r), join_idx_estimate = BUN_MAX;
 	sql_exp *el = e->l, *er = e->r;
 	BUN uniques_estimate = BUN_MAX;
 	prop *jip = find_prop(e->p, PROP_JOINIDX);
 	bool runique = true;
 
 	if (jip) {
-		sql_exp *tid = e->r;
-		/* check if TID isn't just in join already */
-		/* single list (doesn't work for bushy, needs to be in the relational tree or in the call ! */
-		list *tids = v->data;
-		if (exps_bind_nid(tids, tid->nid)) {
+		/* check if TID is still unique in the join tree */
+		sql_exp *be = find_unique(e->r, r);
+		if (!be || !is_unique(be)) {
 			jip = NULL;
 			runique = false;
 		}
@@ -436,30 +473,32 @@ exp_selectivity(visitor *v, sql_exp *e, sql_rel *l, sql_rel *r, prop *p)
 	} else if (e->type == e_cmp && e->flag == cmp_equal) {
 		/* if one of the sides is unique, the cardinality will be at most the cardinality of the other side */
 		if (!is_semantics(e) || !has_nil(el) || !has_nil(er)) {
-			BUN lu = lv, ru = rv, nlv = lv, nrv = rv;
+			BUN lu = 1, ru = 1; /* initialize with worst case */
 			prop *up = NULL;
 			if (el->type == e_column && (is_select(l->op) || is_basetable(l->op)))
 				el = rel_find_exp(l, el);
 			if ((up = find_prop(el->p, PROP_NUNIQUES)))
-				lu = (BUN) up->value.dval;
+				lu = MIN((BUN) up->value.dval, lv);
 			if (er->type == e_column && (is_select(r->op) || is_basetable(r->op)))
 				er = rel_find_exp(r, er);
 			if ((up = find_prop(er->p, PROP_NUNIQUES)))
-				ru = (BUN) up->value.dval;
-			if (is_unique(el) || (is_unique(er) && runique)) {
+				ru = MIN((BUN) up->value.dval, rv);
+			if (is_unique(el) || (is_unique(er) && runique))
 				uniques_estimate = MIN(uniques_estimate, MAX(lv, rv));
-			}
+			if (is_unique(el) && is_unique(er) && runique)
+				uniques_estimate = MIN(lu, ru);
 			if (uniques_estimate != BUN_MAX) {
-				if (uniques_estimate < r_uniques_estimate)
-					r_uniques_estimate = uniques_estimate;
 				dbl s = ((dbl)uniques_estimate/(lv*rv));
 				if (!p)
 					p = prop_create(v->sql->sa, PROP_SELECTIVITY, (prop *) e->p);
 				p->value.dval = s;
 				e->p = p;
 			} else {
-				dbl u = ((dbl)lu*ru) / (nlv*nrv);
-				dbl s = 1/u;
+				dbl mfl = (dbl)lv/lu;
+				dbl mfr = (dbl)rv/ru;
+				dbl mf = MIN(lv/mfl, rv/mfr);
+				dbl u = mf * mfl * mfr;
+				dbl s = u/(lv*rv);
 				if (!p)
 					p = prop_create(v->sql->sa, PROP_SELECTIVITY, (prop *) e->p);
 				p->value.dval = s;
@@ -487,6 +526,7 @@ exp_cost(visitor *v, sql_exp *e, ulng max, sql_rel *l, sql_rel *r)
 
 	if (!l || !r)
 		return 0;
+	exp_set_uniques(e, l, r);
 	p = exp_selectivity(v, e, l, r, p);
 	if (p)
 		sel = p->value.dval;
@@ -505,7 +545,7 @@ exp_cost(visitor *v, sql_exp *e, ulng max, sql_rel *l, sql_rel *r)
 		BUN n = l->nrcols + r->nrcols; /* not correct includes join exps */
 		cost = ( (dbl)lcard + (dbl)rcard + (lcard*rcard * sel * n * 8) );
 		if (VERBOSE) {
-			printf("%F %F ", cost, sel);
+			printf("cost %F %F " BUNFMT " " BUNFMT " ", cost, sel, lcard, rcard);
 			_exp_print(v->sql, e);
 		}
 	}
@@ -787,7 +827,6 @@ order_joins_bushy( visitor *v, list *rels, list *exps)
 
 	mark_join_sides(ta, rels, exps, &max, &rels_a, &r1, &r2, &r3);
 
-
 	/* find number of unique pairs */
 	int *useda = SA_ZNEW_ARRAY(ta, int, nr_exps);
 	int nr_pairs = unique_pairs(r1, r2, nr_exps, useda);
@@ -816,7 +855,6 @@ order_joins_bushy( visitor *v, list *rels, list *exps)
 	/* open problem, some expressions use more than 2 relations */
 	/* For example a.x = b.y * c.z; */
 	void *data = v->data;
-	list *tids_used = v->data = sa_list(v->sql->sa);
 	while(list_length(rels) >= 2) {
 		sql_rel *l = NULL, *r = NULL;
 		sql_exp *cje;
@@ -854,12 +892,20 @@ order_joins_bushy( visitor *v, list *rels, list *exps)
 			   */
 			rsingle = is_single(r);
 			reset_single(r);
+			exp_set_uniques(cje, l, r);
 			sql_rel *top = rel_crossproduct(v->sql->sa, l, r, op_join);
 			if (rsingle)
 				set_single(r);
 			rel_join_add_exp(v->sql->sa, top, cje);
-			if (find_prop(cje->p, PROP_JOINIDX) != NULL)
-				append(tids_used, cje->r);
+			if (find_prop(cje->p, PROP_JOINIDX) != NULL) {
+				sql_exp *cjer = cje->r;
+				if (is_unique(cjer)) {
+					if (rel_find_exp(l, cjer))
+						top->runique = is_basetable(r->op) || is_select(r->op) || (r->lunique || r->runique);
+					else
+						top->lunique = is_basetable(l->op) || is_select(l->op) || (l->lunique || l->runique);
+				}
+			}
 
 			for(int i = 0; i<nr_rels+1; i++) {
 				if (rels_a[i] == l || rels_a[i] == r)
@@ -873,8 +919,6 @@ order_joins_bushy( visitor *v, list *rels, list *exps)
 				if (rel_rebind_exp(v->sql, top, e)) {
 					rel_join_add_exp(v->sql->sa, top, e);
 					list_remove_data(exps, NULL, e);
-					if (find_prop(e->p, PROP_JOINIDX) != NULL)
-						append(tids_used, e->r);
 				}
 				en = next;
 			}
@@ -917,8 +961,6 @@ order_joins_bushy( visitor *v, list *rels, list *exps)
 					if (rel_rebind_exp(v->sql, l, e)) {
 						rel_join_add_exp(v->sql->sa, l, e);
 						list_remove_data(exps, NULL, e);
-						if (find_prop(e->p, PROP_JOINIDX) != NULL)
-							append(tids_used, e->r);
 					}
 					en = next;
 				}
@@ -978,200 +1020,6 @@ order_joins_bushy( visitor *v, list *rels, list *exps)
 		top = rel_estimate(v, top); /* we need stats */
 	v->data = data;
 	return top;
-}
-
-static bool
-exp_allready_checked(sql_rel *r, sql_exp *e, list *exps)
-	/* r is join tree,
-	 * e is equality join expression, which may overlap with earlier join expressions in some transitive way
-	 * exps list of all join expressions in the tree r
-	 */
-{
-	(void)r;
-	sql_exp *el = e->l, *er = e->r;
-	if (e->type != e_cmp || e->flag != cmp_equal || is_anti(e) || is_semantics(e) ||
-		el->type != e_column || er->type != e_column ||
-		list_length(exps) < 2)
-		return false;
-	for (node *n = exps->h; n; n = n->next) {
-		sql_exp *je1 = n->data, *je1l = je1->l, *je1r = je1->r;
-		if (je1->type != e_cmp || je1->flag != cmp_equal || is_anti(je1) || is_semantics(je1) ||
-			je1l->type != e_column || je1r->type != e_column)
-			continue;
-
-		bool c1 = el->nid == je1l->nid, c2 = el->nid == je1r->nid, c3 = er->nid == je1l->nid, c4 = er->nid == je1r->nid;
-		if (c1 || c2 || c3 || c4) {
-			for (node *m = n->next; m; m = m->next) {
-				sql_exp *je2 = n->data, *je2l = je2->l, *je2r = je2->r;
-				if (je2->type != e_cmp || je2->flag != cmp_equal || is_anti(je2) || is_semantics(je2) ||
-					je2l->type != e_column || je2r->type != e_column)
-					continue;
-				bool c1 = el->nid == je2l->nid, c2 = el->nid == je2r->nid, c3 = er->nid == je2l->nid, c4 = er->nid == je2r->nid;
-				if (c1 || c2 || c3 || c4) {
-					/* todo  check if we have some order of el == je1l, je1r == je2l, je2r == er */
-					return true;
-				}
-			}
-		}
-	}
-	return false;
-}
-
-static void
-je_append(list *exps, sql_exp *je)
-{
-	prop *p = find_prop(je->p, PROP_JOINIDX);
-	if (p && p->exps) {
-		list_merge(exps, p->exps, NULL);
-	} else {
-		append(exps, je);
-	}
-}
-
-extern void _rel_print(mvc *sql, sql_rel *rel);
-
-static sql_rel *
-order_joins_bushy2( visitor *v, list *rels, list *exps)
-{
-	/* rels is set of filters relations
-	 * exps is set of join expressions
-	 * returns join tree
-	 */
-
-	int nr_exps = list_length(exps), nr_rels = list_length(rels);
-	/* split joins into n_m joins and filters (ie others with 1 side unique's (pkey/ukey etc) */
-	//sql_rel *T = NULL;
-	//for( node *n = rels->h; n; n = n->next) {
-		//_rel_print(v->sql, n->data);
-	//}
-	int nr = 0;
-	for (node *n = exps->h; n; n = n->next) {
-		sql_exp *je = n->data;
-		if (find_prop(je->p, PROP_JOINIDX)) {
-			//printf("joinidx ");
-			nr++;
-		}
-		if (je->type == e_cmp && je->flag == cmp_equal) {
-			sql_exp *le = je->l;
-			sql_exp *re = je->r;
-			if (find_prop(le->p, PROP_HASHCOL)) {
-				//printf("hashcol ");
-				nr++;
-			} else if (find_prop(re->p, PROP_HASHCOL)) {
-				//printf("hashcol ");
-				nr++;
-			}
-		}
-		//_exp_print(v->sql, je);
-	}
-	if (nr == list_length(exps)) { /* all pk-fk */
-		allocator *ta = MT_thread_getallocator();
-		ulng max = 0;
-		sql_rel **rels_a = NULL;
-		uint16_t *r1, *r2;
-		int *r3, ci = 1, cur_nr = 1;
-
-		mark_join_sides(ta, rels, exps, &max, &rels_a, &r1, &r2, &r3);
-
-		//printf("all pk fk\n");
-		BUN min = get_rel_count(rels->h->data);
-		sql_rel *cur = rels->h->data;
-		for(node *n = rels->h; n; n = n->next, ci++) {
-			sql_rel *r = n->data;
-			BUN cnt = get_rel_count(r);
-
-			if (cnt < min) {
-				cur = r;
-				min = cnt;
-				cur_nr = ci;
-			}
-		}
-		//printf("min %lu ", min);
-		//_rel_print(v->sql, cur);
-		list_remove_data(rels, NULL, cur);
-		list *used_exps = sa_list(ta);
-		while(!list_empty(rels)) {
-			min = BUN_MAX;
-			sql_exp *cje = NULL;
-			for(node *n = exps->h; n; n = n->next) { /* find join expr */
-				sql_exp *je = n->data;
-				if (r1[je->tmp] == cur_nr || r2[je->tmp] == cur_nr) {
-					int oside = (r1[je->tmp] == cur_nr) ? r2[je->tmp] : r1[je->tmp];
-					sql_rel *r = rels_a[oside];
-					BUN cnt = get_rel_count(r);
-					if (cnt < min) {
-						cje = je;
-						min = cnt;
-					}
-				}
-			}
-			if (cje) {
-				int oside = (r1[cje->tmp] == cur_nr) ? r2[cje->tmp] : r1[cje->tmp];
-				sql_rel *r = rels_a[oside], *l = cur;
-				if (rel_rebind_exp(v->sql, l, cje->l))
-					cur = rel_crossproduct(v->sql->sa, l, r, op_join);
-				else
-					cur = rel_crossproduct(v->sql->sa, r, l, op_join);
-				rel_join_add_exp(v->sql->sa, cur, cje);
-				je_append(used_exps, cje);
-				for(int i = 0; i<nr_rels+1; i++) {
-					if (rels_a[i] == l || rels_a[i] == r)
-						rels_a[i] = cur;
-				}
-				for(int i = 0; i<nr_exps; i++) {
-					if (r1[i] == oside)
-						r1[i] = cur_nr;
-					if (r2[i] == oside)
-						r2[i] = cur_nr;
-					if (r1[i] == r2[i] && r1[i] == cur_nr) {
-						sql_exp *je = NULL;
-						for (node *n = exps->h; n && !je; n = n->next) {
-							sql_exp *e = n->data;
-							if (e->tmp == i)
-								je = e;
-						}
-						if (je && je != cje) {
-							if (!exp_allready_checked(cur, je, used_exps))
-								rel_join_add_exp(v->sql->sa, cur, je);
-							je_append(used_exps, je);
-							list_remove_data(exps, NULL, je);
-						}
-					}
-				}
-				list_remove_data(rels, NULL, r);
-				list_remove_data(exps, NULL, cje);
-				cur = rel_estimate(v, cur); /* we need stats */
-			} else {
-				if (!list_empty(exps)) {
-					if(!list_empty(rels)) {
-						sql_rel *r = rels->h->data;
-						list_remove_data(rels, NULL, r);
-						cur = rel_crossproduct(v->sql->sa, cur, r, op_join);
-						cur = rel_estimate(v, cur); /* we need stats */
-					}
-				}
-			}
-			if (list_empty(exps)) {
-				while(!list_empty(rels)) {
-					sql_rel *r = rels->h->data;
-					list_remove_data(rels, NULL, r);
-					cur = rel_crossproduct(v->sql->sa, cur, r, op_join);
-					cur = rel_estimate(v, cur); /* we need stats */
-				}
-			}
-		}
-		while (!list_empty(exps)) {
-			sql_exp *je = exps->h->data;
-			if (!exp_allready_checked(cur, je, used_exps))
-				rel_join_add_exp(v->sql->sa, cur, je);
-			list_remove_data(exps, NULL, je);
-		}
-		assert(list_empty(rels) && list_empty(exps));
-		return cur;
-	}
-	//n_m_rels = /* those relations from rels which are part of a n:m join */
-	//pk_fk_rels = rels / n_m_rels;
-	return order_joins_bushy( v, rels, exps);
 }
 
 static sql_rel *
@@ -1741,7 +1589,7 @@ reorder_join(visitor *v, sql_rel *rel)
 		if (list_length(rels) > 1) {
 			rels = push_in_join_down(v->sql, rels, exps);
 			if (pipeline_mode)
-				rel = order_joins_bushy2(v, rels, exps);
+				rel = order_joins_bushy(v, rels, exps);
 			else
 				rel = order_joins(v, rels, exps);
 		} else {
@@ -2080,6 +1928,13 @@ rel_join_use_fk(visitor *v, sql_rel *rel)
 		rel->exps = NULL; /* should be all crosstables by now */
 		list *rels = sa_list(ta);
 		get_relations(v, rel, rels);
+		/* mark done */
+		if (v->opt > 0)
+			for (node *rn = rels->h; rn; rn = rn->next) {
+				sql_rel *r = rn->data;
+				r->opt = v->opt;
+			}
+
 
 		if (list_length(rels) > 1) {
 			find_fk( v->sql, rels, exps);
@@ -2140,7 +1995,6 @@ transitivity_rule(visitor *v, sql_rel *rel)
 		rel->exps = list_join(exps, nexps);
 	return rel;
 }
-
 
 static sql_rel *
 rel_optimize_joins_topdown_(visitor *v, sql_rel *rel)

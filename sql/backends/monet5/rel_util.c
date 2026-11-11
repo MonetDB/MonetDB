@@ -90,6 +90,7 @@ split_join_exps(sql_rel *rel, list *joinable, list *not_joinable, bool anti, boo
 {
 	bool found = 0;
 	if (!list_empty(rel->exps)) {
+		bool done = false;
 		for (node *n = rel->exps->h; n; n = n->next) {
 			sql_exp *e = n->data;
 
@@ -100,9 +101,12 @@ split_join_exps(sql_rel *rel, list *joinable, list *not_joinable, bool anti, boo
 			 *   TRUE: add only the first joinable `e` to `joinable` (used by marked-manti-join)
 			 *   FALSE: add all joinable `e` to `joinable`
 			 */
-			if (!found && can_join_exp(rel, e, anti) && (!eqonly || (is_equi_exp_(e) && !exp_is_atom(e->r) && !exp_is_atom(e->l)))) {
+			if (!found && !done && (can_join_exp(rel, e, anti) && (!eqonly || (is_equi_exp_(e) && !exp_is_atom(e->r) && !exp_is_atom(e->l))))) {
 				append(joinable, e);
 				found = firstonly;
+				sql_exp *el = e->l, *er = e->r;
+				if (eqonly && is_innerjoin(rel->op) && (is_unique(el) || is_unique(er)))
+					done = true;
 			} else {
 				append(not_joinable, e);
 			}

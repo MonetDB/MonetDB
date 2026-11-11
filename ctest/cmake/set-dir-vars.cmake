@@ -11,12 +11,9 @@
 # Test for the existence of these cmake variables, the source code assumes
 # that they are set by the buildsystem.
 
-assert_variable_exists(DIR_SEP)
 assert_variable_exists(PKGCONFIGDIR)
 assert_variable_exists(BINDIR)
 assert_variable_exists(LOCALSTATEDIR)
-assert_variable_exists(DIR_SEP_STR)
-assert_variable_exists(PATH_SEP)
 assert_variable_exists(SO_PREFIX)
 assert_variable_exists(SO_EXT)
 assert_variable_exists(LIBDIR)
