@@ -552,13 +552,6 @@ rel2bin_oahash_equi_join(backend *be, sql_rel *rel, list *refs, list *jexps, stm
 		prb_oid = stmt_blackbox_result(be, prb_res->q, 0, tpe_oid);
 		hsh_gid = stmt_blackbox_result(be, prb_res->q, 1, tpe_oid);
 		mrk     = stmt_blackbox_result(be, prb_res->q, 2, tpe_bit);
-		/* Get only the rows that are !FALSE */
-		/* TODO: optimisation: add an oahash.mnprobe() to return only the rows that are !FALSE! */
-		stmt *sel = stmt_thetaselect(be, mrk, NULL, stmt_bool(be, 0), "ne", tpe_oid);
-		prb_oid = stmt_project(be, sel, prb_oid);
-		hsh_gid = stmt_project(be, sel, hsh_gid);
-		mrk     = stmt_project(be, sel, mrk);
-
 		/* compute the prb_oid and hsh_gid (from hp_pos) to process the "payload" columns */
 		stmt *expd = stmt_oahash_expand3(be, prb_oid, hsh_gid, mrk, hp_pos, freq);
 		prb_oid = stmt_blackbox_result(be, expd->q, 0, tpe_oid);

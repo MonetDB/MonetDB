@@ -1609,7 +1609,7 @@ rel_outer2inner(visitor *v, list *exps, sql_rel *rel)
 {
 	if (!rel || rel_is_ref(rel))
 		return rel;
-	if (rel->op == op_join /*is_join(rel->op) later nested outers as well */ || is_select(rel->op)) {
+	if ((rel->op == op_join && list_empty(rel->attr)) /*is_join(rel->op) later nested outers as well */ || is_select(rel->op)) {
 		if (!list_empty(rel->exps)) {
 			list *nexps = list_dup(exps, NULL);
 			for (node *n = rel->exps->h; n; n = n->next) {

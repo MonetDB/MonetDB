@@ -1601,13 +1601,13 @@ OAHASHbuild(Client ctx, MalBlkPtr m, MalStkPtr s, InstrPtr p)
 		int tt = b->ttype;
 		gid *gp = Tloc(g, 0);
 
-		h->empty = false;
 		int slots = 0;
 		gid slot = 0;
 		QryCtx *qry_ctx = MT_thread_get_qry_ctx();
 		qry_ctx = qry_ctx ? qry_ctx : &(QryCtx) {.endtime = 0};
 
 		ht_activate(h);
+		h->empty = false;
 		if (!parents) {
 			switch(tt) {
 				case TYPE_void:
@@ -3645,7 +3645,7 @@ OAHASHexpand3(Client ctx, MalBlkPtr mbp, MalStkPtr s, InstrPtr p)
 	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
 	qry_ctx = qry_ctx ? qry_ctx : &(QryCtx) {.endtime = 0};
 	gid *allgids = NULL;
-	if (selcnt) {
+	if (selcnt && !ht->empty) {
 		/* ht->last marks the maximal possible value in ht->gids, but we need
 		 * to go over all of ht->size to find the gids. */
 		allgids = GDKzalloc(ht->last * sizeof(gid));
@@ -3667,6 +3667,8 @@ OAHASHexpand3(Client ctx, MalBlkPtr mbp, MalStkPtr s, InstrPtr p)
 		TIMEOUT_CHECK(qry_ctx, err = createException(SQL, "oahash.expand", RUNTIME_QRY_TIMEOUT));
 		if (err)
 			goto error;
+	} else {
+		xpdcnt = selcnt;
 	}
 
 	ep = COLnew(0, TYPE_oid, xpdcnt, TRANSIENT);
@@ -3681,39 +3683,48 @@ OAHASHexpand3(Client ctx, MalBlkPtr mbp, MalStkPtr s, InstrPtr p)
 	bit *resm = Tloc(em, 0);
 
 	BUN idx = 0;
-	TIMEOUT_LOOP_IDX_DECL(i, selcnt, qry_ctx) {
-		if (is_oid_nil(gids[i])) {
-			/* expand a NULL to all of ht->gids */
-			TIMEOUT_LOOP_IDX_DECL(j, hpcnt, qry_ctx) {
+	if (ht->empty) {
+		TIMEOUT_LOOP_IDX_DECL(i, selcnt, qry_ctx) {
 				resp[idx] = oids[i];
-				resh[idx] = allgids[j];
+				resh[idx] = gids[i];
 				resm[idx] = mrks[i];
 				idx++;
-			}
-		} else if (freq) {
-			gid frq = (gid)freq[gids[i]];
-			assert(frq);
-			int prime = hash_prime_nr[ht->bits-5];
-			TIMEOUT_LOOP_IDX_DECL(j, frq, qry_ctx) {
-				oid k = (gid)combine(gids[i], oidHash(&j), prime) & ht->mask;
-				hash_key_t hk = ht->gids[k];
-				while (hk && (ht->pgids[hk] != gids[i] || ((oid*)ht->vals)[hk] != j)) {
-					k++;
-					k &= ht->mask;
-					hk = ht->gids[k];
+		}
+	} else {
+		TIMEOUT_LOOP_IDX_DECL(i, selcnt, qry_ctx) {
+			if (is_oid_nil(gids[i])) {
+				/* expand a NULL to all of ht->gids */
+				TIMEOUT_LOOP_IDX_DECL(j, hpcnt, qry_ctx) {
+					resp[idx] = oids[i];
+					resh[idx] = allgids[j];
+					resm[idx] = mrks[i];
+					idx++;
 				}
-				assert(hk > 0);
+			} else if (freq) {
+				gid frq = (gid)freq[gids[i]];
+				assert(frq);
+				int prime = hash_prime_nr[ht->bits-5];
+				TIMEOUT_LOOP_IDX_DECL(j, frq, qry_ctx) {
+					oid k = (gid)combine(gids[i], oidHash(&j), prime) & ht->mask;
+					hash_key_t hk = ht->gids[k];
+					while (hk && (ht->pgids[hk] != gids[i] || ((oid*)ht->vals)[hk] != j)) {
+						k++;
+						k &= ht->mask;
+						hk = ht->gids[k];
+					}
+					assert(hk > 0);
 
+					resp[idx] = oids[i];
+					resh[idx] = (oid)(hk-1);
+					resm[idx] = mrks[i];
+					idx++;
+				}
+			} else {
 				resp[idx] = oids[i];
-				resh[idx] = (oid)(hk-1);
+				resh[idx] = gids[i];
 				resm[idx] = mrks[i];
 				idx++;
 			}
-		} else {
-			resp[idx] = oids[i];
-			resh[idx] = gids[i];
-			resm[idx] = mrks[i];
-			idx++;
 		}
 	}
 	TIMEOUT_CHECK(qry_ctx, err = createException(SQL, "oahash.expand", RUNTIME_QRY_TIMEOUT));
