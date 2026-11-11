@@ -3652,7 +3652,7 @@ OAHASHexpand3(Client ctx, MalBlkPtr mbp, MalStkPtr s, InstrPtr p)
 		TIMEOUT_LOOP_IDX_DECL(i, ht->size, qry_ctx) {
 			if(ht->gids[i]) {
 				assert(ht->gids[i] < ht->last);
-				allgids[hpcnt++] = ht->gids[i];
+				allgids[hpcnt++] = ht->gids[i] -1;
 			}
 		}
 
