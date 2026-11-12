@@ -2479,11 +2479,11 @@ OAHASHnprobe(Client ctx, bat *PRB_oid, bat *HSH_slotid, const bat *PRB_key, cons
 					assert(ht->gid_NULL != oid_nil); \
 					mtdcnt++; \
 					oid_mtd[mtdcnt] = off+i; \
-					slt[mtdcnt] = ht->gid_NULL; \
+					slt[mtdcnt] = (oid)ht->gid_NULL; \
 					mark[mtdcnt] = bit_nil; \
 				}\
 			} else { \
-				slt[mtdcnt] = (match_nulls)?ht->gid_NULL:oid_nil; \
+				slt[mtdcnt] = (match_nulls)?(oid)ht->gid_NULL:oid_nil; \
 				mark[mtdcnt] = (any && ht->has_nil)?bit_nil:false; \
 			} \
 			mtdcnt++; \
@@ -2523,11 +2523,11 @@ OAHASHnprobe(Client ctx, bat *PRB_oid, bat *HSH_slotid, const bat *PRB_key, cons
 					assert(ht->gid_NULL != oid_nil); \
 					mtdcnt++; \
 					oid_mtd[mtdcnt] = off+i; \
-					slt[mtdcnt] = ht->gid_NULL; \
+					slt[mtdcnt] = (oid)ht->gid_NULL; \
 					mark[mtdcnt] = bit_nil; \
 				}\
 			} else { \
-				slt[mtdcnt] = (match_nulls)?ht->gid_NULL:oid_nil; \
+				slt[mtdcnt] = (match_nulls)?(oid)ht->gid_NULL:oid_nil; \
 				mark[mtdcnt] = (any && ht->has_nil)?bit_nil:false; \
 			} \
 			mtdcnt++; \
@@ -2573,11 +2573,11 @@ OAHASHnprobe(Client ctx, bat *PRB_oid, bat *HSH_slotid, const bat *PRB_key, cons
 					assert(ht->gid_NULL != oid_nil); \
 					mtdcnt++; \
 					oid_mtd[mtdcnt] = off+i; \
-					slt[mtdcnt] = ht->gid_NULL; \
+					slt[mtdcnt] = (oid)ht->gid_NULL; \
 					mark[mtdcnt] = bit_nil; \
 				}\
 			} else { \
-				slt[mtdcnt] = (match_nulls)?ht->gid_NULL:oid_nil; \
+				slt[mtdcnt] = (match_nulls)?(oid)ht->gid_NULL:oid_nil; \
 				mark[mtdcnt] = (any && ht->has_nil)?bit_nil:false; \
 			} \
 			mtdcnt++; \
@@ -2622,11 +2622,11 @@ OAHASHnprobe(Client ctx, bat *PRB_oid, bat *HSH_slotid, const bat *PRB_key, cons
 					assert(ht->gid_NULL != oid_nil); \
 					mtdcnt++; \
 					oid_mtd[mtdcnt] = off+i; \
-					slt[mtdcnt] = ht->gid_NULL; \
+					slt[mtdcnt] = (oid)ht->gid_NULL; \
 					mark[mtdcnt] = bit_nil; \
 				}\
 			} else { \
-				slt[mtdcnt] = (match_nulls)?ht->gid_NULL:oid_nil; \
+				slt[mtdcnt] = (match_nulls)?(oid)ht->gid_NULL:oid_nil; \
 				mark[mtdcnt] = (any && ht->has_nil)?bit_nil:false; \
 			} \
 			mtdcnt++; \
