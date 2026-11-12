@@ -3612,6 +3612,7 @@ OAHASHexpand3(Client ctx, MalBlkPtr mbp, MalStkPtr s, InstrPtr p)
 	bat *mrk       = getArgReference_bat(s, p, 5);
 	bat *hp_pos    = getArgReference_bat(s, p, 6);
 	bat *frequency = getArgReference_bat(s, p, 7);
+	gid *allgids = NULL;
 
 	BAT *ep = NULL, *eh = NULL, *em = NULL;
 	BAT *o = NULL, *g = NULL, *m = NULL, *f = NULL, *h = NULL;
@@ -3644,11 +3645,14 @@ OAHASHexpand3(Client ctx, MalBlkPtr mbp, MalStkPtr s, InstrPtr p)
 
 	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
 	qry_ctx = qry_ctx ? qry_ctx : &(QryCtx) {.endtime = 0};
-	gid *allgids = NULL;
 	if (selcnt && !ht->empty) {
 		/* ht->last marks the maximal possible value in ht->gids, but we need
 		 * to go over all of ht->size to find the gids. */
 		allgids = GDKzalloc(ht->last * sizeof(gid));
+		if (!allgids) {
+			err = createException(SQL, "oahash.expand", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+			goto error;
+		}
 		TIMEOUT_LOOP_IDX_DECL(i, ht->size, qry_ctx) {
 			if(ht->gids[i]) {
 				assert(ht->gids[i] < ht->last);
@@ -3733,6 +3737,7 @@ OAHASHexpand3(Client ctx, MalBlkPtr mbp, MalStkPtr s, InstrPtr p)
 
 	assert(idx == xpdcnt);
 
+	GDKfree(allgids);
 	BATsetcount(ep, xpdcnt);
 	BATsetcount(eh, xpdcnt);
 	BATsetcount(em, xpdcnt);
@@ -3754,6 +3759,7 @@ OAHASHexpand3(Client ctx, MalBlkPtr mbp, MalStkPtr s, InstrPtr p)
 	BBPreclaim(f);
 	return MAL_SUCCEED;
 error:
+	GDKfree(allgids);
 	BBPreclaim(ep);
 	BBPreclaim(eh);
 	BBPreclaim(em);
