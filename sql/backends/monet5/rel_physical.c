@@ -553,6 +553,8 @@ rel_probehash(visitor *v, sql_rel *rel, sql_rel **iprj)
 {
 	/* todo inplace for hash sharing */
 	sql_rel *r = rel_create(v->sql->sa);
+	r->lunique = rel->lunique;
+	r->runique = rel->runique;
 	if (0 && rel_is_ref(rel)) {
 		sql_rel *l = r;
 		*l = *rel;
@@ -588,6 +590,8 @@ rel_buildhash(visitor *v, sql_rel *rel, sql_rel **iprj, bool crossproduct)
 	}
 	/* Inplace for hash sharing */
 	sql_rel *r = rel_create(v->sql->sa);
+	r->lunique = rel->lunique;
+	r->runique = rel->runique;
 	if (0 && rel_is_ref(rel)) {
 		sql_rel *l = r;
 		*l = *rel;
