@@ -16,6 +16,7 @@
 #include "mal_instruction.h"
 #include "mal_exception.h"
 #include "mal_pipelines.h"
+#include "matomic.h"
 #include "pipeline.h"
 #include "stream.h"
 #include "pp_hash.h"
@@ -108,7 +109,7 @@ _ht_create( int type, size_t size, hash_table *p, int vkey, bool perfect)
 	h->type = type;
 	h->width = ATOMsize(type);
 	h->last = 0;
-	h->empty = true;
+	h->empty = 1;
 	h->has_nil = 0;
 	h->gid_NULL = oid_nil;
 	h->p = p;
@@ -1606,8 +1607,10 @@ OAHASHbuild(Client ctx, MalBlkPtr m, MalStkPtr s, InstrPtr p)
 		QryCtx *qry_ctx = MT_thread_get_qry_ctx();
 		qry_ctx = qry_ctx ? qry_ctx : &(QryCtx) {.endtime = 0};
 
+		if (h->empty == 1)
+			ATOMIC_SET(&h->empty, 0);
+
 		ht_activate(h);
-		h->empty = false;
 		if (!parents) {
 			switch(tt) {
 				case TYPE_void:
@@ -1847,7 +1850,8 @@ FHASHbuild(Client ctx, MalBlkPtr m, MalStkPtr s, InstrPtr p)
 		int tt = b->ttype;
 		gid *gp = Tloc(g, 0);
 
-		h->empty = false;
+		if (h->empty == 1)
+			ATOMIC_SET(&h->empty, 0);
 		gid slot = 0;
 		QryCtx *qry_ctx = MT_thread_get_qry_ctx();
 		qry_ctx = qry_ctx ? qry_ctx : &(QryCtx) {.endtime = 0};
@@ -2689,7 +2693,7 @@ _OAHASHomprobe(Client ctx, bat *PRB_oid, bat *HSH_slotid, bat *PRB_mark, const b
 		oid *slt = Tloc(s, 0);
 		bit *mark = Tloc(m, 0);
 		/* probing an empty hash table always yields FALSE; otherwise, bit_nil for unknown */
-		bit empty = ht->empty?false:bit_nil;
+		bit empty = (ht->empty == 1)?false:bit_nil;
 
 		BUN off = k->hseqbase;
 		switch(tt) {
@@ -3645,7 +3649,7 @@ OAHASHexpand3(Client ctx, MalBlkPtr mbp, MalStkPtr s, InstrPtr p)
 
 	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
 	qry_ctx = qry_ctx ? qry_ctx : &(QryCtx) {.endtime = 0};
-	if (selcnt && !ht->empty) {
+	if (selcnt && (ht->empty == 0)) {
 		/* ht->last marks the maximal possible value in ht->gids, but we need
 		 * to go over all of ht->size to find the gids. */
 		allgids = GDKzalloc(ht->last * sizeof(gid));
@@ -3687,7 +3691,7 @@ OAHASHexpand3(Client ctx, MalBlkPtr mbp, MalStkPtr s, InstrPtr p)
 	bit *resm = Tloc(em, 0);
 
 	BUN idx = 0;
-	if (ht->empty) {
+	if (ht->empty == 1) {
 		TIMEOUT_LOOP_IDX_DECL(i, selcnt, qry_ctx) {
 				resp[idx] = oids[i];
 				resh[idx] = gids[i];
@@ -4184,7 +4188,7 @@ OAHASHempty(Client ctx, bit *empty, bat *ht_sink)
 		return createException(SQL, "oahash.empty",	SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	hash_table *h = (hash_table*)b->pl_io;
 	assert(h && h->pl_io.type == PIPELINE_IO_HASH_TABLE);
-	*empty = h->empty;
+	*empty = (h->empty == 1);
 	BBPunfix(b->batCacheid);
 	return MAL_SUCCEED;
 }
