@@ -545,7 +545,7 @@ exp_cost(visitor *v, sql_exp *e, ulng max, sql_rel *l, sql_rel *r)
 		BUN n = l->nrcols + r->nrcols; /* not correct includes join exps */
 		cost = ( (dbl)lcard + (dbl)rcard + (lcard*rcard * sel * n * 8) );
 		if (VERBOSE) {
-			printf("cost %F %F %lu %lu ", cost, sel, lcard, rcard);
+			printf("cost %F %F " BUNFMT " " BUNFMT " ", cost, sel, lcard, rcard);
 			_exp_print(v->sql, e);
 		}
 	}
@@ -1899,6 +1899,9 @@ find_fk( mvc *sql, list *rels, list *exps)
 static sql_rel *
 rel_join_use_fk(visitor *v, sql_rel *rel)
 {
+	/* Don't look at the same relation twice */
+	if (are_fkeys_found(rel->used))
+		return rel;
 	if ((is_semi(rel->op)) && !list_empty(rel->exps)) {
 		list *exps = rel->exps;
 		list *rels = sa_list(v->sql->sa);
@@ -1929,12 +1932,10 @@ rel_join_use_fk(visitor *v, sql_rel *rel)
 		list *rels = sa_list(ta);
 		get_relations(v, rel, rels);
 		/* mark done */
-		if (v->opt > 0)
-			for (node *rn = rels->h; rn; rn = rn->next) {
-				sql_rel *r = rn->data;
-				r->opt = v->opt;
-			}
-
+		for (node *rn = rels->h; rn; rn = rn->next) {
+			sql_rel *r = rn->data;
+			r->used |= fkeys_found;
+		}
 
 		if (list_length(rels) > 1) {
 			find_fk( v->sql, rels, exps);

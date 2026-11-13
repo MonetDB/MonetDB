@@ -1538,7 +1538,7 @@ rel2bin_oahash_semi(backend *be, sql_rel *rel, list *refs)
 			rids = stmt_project(be, sel, rids);
 		}
 		stmt *c = stmt_mirror(be, bin_find_smallest_column(be, probe_sub));
-		if (rel->op == op_anti && nulls) {
+		if (rel->op == op_anti && nulls && ht_empty) {
 			/* select nulls only if hash side not empty */
 			stmt *f = stmt_const(be, nulls, stmt_bool(be, 0));
 			stmt *s = stmt_thetaselect(be, f, NULL, ht_empty, "==", sql_fetch_localtype(TYPE_bit));

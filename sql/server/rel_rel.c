@@ -1214,6 +1214,8 @@ rel_project(allocator *sa, sql_rel *l, list *e)
 	rel->exps = e;
 	rel->card = exps_card(e);
 	if (l) {
+		rel->lunique = l->lunique;
+		rel->runique = l->runique;
 		rel->card = l->card;
 		if (e)
 			rel->nrcols = list_length(e);
