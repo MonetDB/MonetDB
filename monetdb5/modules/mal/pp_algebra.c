@@ -308,7 +308,7 @@ mulmod(lng a, lng b, lng c)
 #else
 #define fix_avg(T, a, r, n)										\
 	do {														\
-		if (!is_##T##_nil(a) && r > 0 && 2*r + (a < 0) >= n) {	\
+		if (!is_##T##_nil(a) && r > 0 && 2*r + (a >= 0) > n) {	\
 			a++;												\
 			r -= n;												\
 		}														\

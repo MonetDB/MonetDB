@@ -580,6 +580,48 @@ PPmerge(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		} \
 	} while (0)
 
+#define zzl_project_rnil(T, res, zzl, lcol, rcol) \
+	do { \
+		T *o = Tloc(res, 0); \
+		T *l = Tloc(lcol, 0); \
+		bte *r = Tloc(rcol, 0); \
+		BUN p = side?rp:lp; \
+		for (BUN k = 0; k<sz; k++) { \
+			int nr = z[k]; \
+			for (int j = 0; j<nr; j++, p++, op++) \
+				o[op] = side?r[p]:l[p]; \
+			if (side) { \
+				rp = p; \
+				p = lp; \
+			} else { \
+				lp = p; \
+				p = rp; \
+			} \
+			side = !side; \
+		} \
+	} while (0)
+
+#define zzl_project_lnil(T, res, zzl, lcol, rcol) \
+	do { \
+		T *o = Tloc(res, 0); \
+		bte *l = Tloc(lcol, 0); \
+		T *r = Tloc(rcol, 0); \
+		BUN p = side?rp:lp; \
+		for (BUN k = 0; k<sz; k++) { \
+			int nr = z[k]; \
+			for (int j = 0; j<nr; j++, p++, op++) \
+				o[op] = side?r[p]:l[p]; \
+			if (side) { \
+				rp = p; \
+				p = lp; \
+			} else { \
+				lp = p; \
+				p = rp; \
+			} \
+			side = !side; \
+		} \
+	} while (0)
+
 
 /*later optimize by starting at end, moving tuples */
 static str
@@ -627,20 +669,56 @@ PPmproject_any( BAT *res, BAT *zzl, BAT *lcol, BAT *rcol)
 		BATnegateprops(res);
 		BATsetcount(res, cnt);
 		return MAL_SUCCEED;
-	} else if (tt == TYPE_str && res->tvheap->parentid == lcol->tvheap->parentid) {
-		switch (lcol->twidth) {
-		case 1:
-			zzl_project(bte, res, zzl, lcol, rcol);
-			break;
-		case 2:
-			zzl_project(sht, res, zzl, lcol, rcol);
-			break;
-		case 4:
-			zzl_project(int, res, zzl, lcol, rcol);
-			break;
-		case 8:
-			zzl_project(lng, res, zzl, lcol, rcol);
-			break;
+	} else if (tt == TYPE_str &&
+			(res->tvheap->parentid == lcol->tvheap->parentid ||
+			 res->tvheap->parentid == rcol->tvheap->parentid)) {
+		if (lcol->twidth == rcol->twidth) {
+			switch (lcol->twidth) {
+			case 1:
+				zzl_project(bte, res, zzl, lcol, rcol);
+				break;
+			case 2:
+				zzl_project(sht, res, zzl, lcol, rcol);
+				break;
+			case 4:
+				zzl_project(int, res, zzl, lcol, rcol);
+				break;
+			case 8:
+				zzl_project(lng, res, zzl, lcol, rcol);
+				break;
+			}
+		} else {
+			if (lcol->tvheap->free) {
+				switch (lcol->twidth) {
+				case 1:
+					zzl_project_rnil(bte, res, zzl, lcol, rcol);
+					break;
+				case 2:
+					zzl_project_rnil(sht, res, zzl, lcol, rcol);
+					break;
+				case 4:
+					zzl_project_rnil(int, res, zzl, lcol, rcol);
+					break;
+				case 8:
+					zzl_project_rnil(lng, res, zzl, lcol, rcol);
+					break;
+				}
+			} else {
+				switch (rcol->twidth) {
+				case 1:
+					zzl_project_lnil(bte, res, zzl, lcol, rcol);
+					break;
+				case 2:
+					zzl_project_lnil(sht, res, zzl, lcol, rcol);
+					break;
+				case 4:
+					zzl_project_lnil(int, res, zzl, lcol, rcol);
+					break;
+				case 8:
+					zzl_project_lnil(lng, res, zzl, lcol, rcol);
+					break;
+				}
+			}
 		}
 		/* zap props */
 		BATnegateprops(res);
@@ -716,7 +794,10 @@ PPmproject(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		return MAL_SUCCEED;
 	}
 	if (ATOMvarsized(cl->ttype)) {
-		res = COLnew2(0, cl->ttype, sz, TRANSIENT, cl->ttype==TYPE_str?cl->twidth:0);
+		BAT *b=cl;
+		if (b->tvheap->free == 0)
+			b = cr;
+		res = COLnew2(0, b->ttype, sz, TRANSIENT, b->ttype==TYPE_str?b->twidth:0);
 		if (res == NULL) {
 			BBPreclaim(cl);
 			BBPreclaim(cr);
@@ -725,6 +806,14 @@ PPmproject(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		}
 		if (res->ttype == TYPE_str && cl->tvheap->parentid == cr->tvheap->parentid && (BATcount(cl) || BATcount(cr)))
 			BATswap_heaps(res, cl, NULL);
+		else if (res->ttype == TYPE_str && !BATcount(cl))
+			BATswap_heaps(res, cr, NULL);
+		else if (res->ttype == TYPE_str && !BATcount(cr))
+			BATswap_heaps(res, cl, NULL);
+		else if (res->ttype == TYPE_str && cr->tvheap->free == 0)
+			BATswap_heaps(res, cl, NULL);
+		else if (res->ttype == TYPE_str && cl->tvheap->free == 0)
+			BATswap_heaps(res, cr, NULL);
 		else if (res->tvheap != NULL && res->tvheap->base == NULL) {
 			/* this combination can happen since the last
 			 * argument of COLnew2 not being zero triggers a
@@ -748,7 +837,9 @@ PPmproject(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		throw(MAL, "sort.mproject", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 	}
 
-	str msg = PPmproject_any(res, zzl, cl, cr);
+	str msg = NULL;
+	if (BATcount(zzl))
+		msg = PPmproject_any(res, zzl, cl, cr);
 	if (!msg) {
 		*R = res->batCacheid;
 		BBPretain(*R);
@@ -763,7 +854,7 @@ PPmproject(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 typedef struct part_t {
 	struct part_t *next;
 	int nr;
-	bat bats[];
+	bat bats[] ATTR_COUNTED_BY(nr);
 } part_t;
 
 typedef struct sop_t {

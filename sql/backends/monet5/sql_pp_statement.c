@@ -9,6 +9,8 @@
  */
 
 #include "monetdb_config.h"
+#include "mal_instruction.h"
+#include "mal_type.h"
 #include "sql_gencode.h"
 #include "sql_statement.h"
 #include "sql_pp_statement.h"
@@ -549,7 +551,7 @@ stmt_oahash_hash(backend *be, stmt *key, stmt *prev, stmt *ht)
 }
 
 stmt *
-stmt_oahash_probe(backend *be, stmt *key, stmt *prev, stmt *rhs_ht, stmt *freq, stmt *outer, bool single, bool semantics, bool eq, bool outerjoin, bool groupedjoin)
+stmt_oahash_probe(backend *be, stmt *key, stmt *prev, stmt *rhs_ht, stmt *freq, stmt *outer, bool single, bool semantics, bool eq, bool outerjoin, bool groupedjoin, bool matchnulls)
 {
 	InstrPtr q = newStmt(be->mb, putName("oahash"), prev == NULL?
 									groupedjoin?putName("mprobe")         :outerjoin?putName("oprobe")         :eq?putName("probe"):putName("nprobe"):
@@ -577,6 +579,8 @@ stmt_oahash_probe(backend *be, stmt *key, stmt *prev, stmt *rhs_ht, stmt *freq, 
 	}
 	q = pushBit(be->mb, q, single);
 	q = pushBit(be->mb, q, semantics);
+	if (groupedjoin && prev == NULL)
+		q = pushBit(be->mb, q, matchnulls);
 	pushInstruction(be->mb, q);
 
 	stmt *s = stmt_none(be);
@@ -721,7 +725,7 @@ stmt_oahash_expand(backend *be, const stmt *prb_res, const stmt *freq, bit outer
 {
 	if (!freq)
 		return (stmt*)prb_res; /* should be just first result ! */
-	InstrPtr q = newStmtArgs(be->mb, putName("oahash"), putName("expand"), 5);
+	InstrPtr q = newStmt(be->mb, putName("oahash"), putName("expand"));
 	if (q == NULL)
 		return NULL;
 	setVarType(be->mb, getArg(q, 0), newBatType(TYPE_oid)); /* expanded */
@@ -736,6 +740,32 @@ stmt_oahash_expand(backend *be, const stmt *prb_res, const stmt *freq, bit outer
 	s->op4.typeval = *sql_fetch_localtype(TYPE_oid);
 	s->nr = getArg(q, 0);
 	s->nrcols = prb_res->nrcols;
+	s->q = q;
+	return s;
+}
+
+/* for marked-anti-join: expand (prb_oid, hsh_gid, mrk) */
+stmt *
+stmt_oahash_expand3(backend *be, const stmt *prb_oid, const stmt *hsh_gid, const stmt *mrk, const stmt *hp_pos, const stmt *freq)
+{
+	InstrPtr q = newStmt(be->mb, putName("oahash"), putName("expand"));
+	if (q == NULL)
+		return NULL;
+	setVarType(be->mb, getArg(q, 0), newBatType(TYPE_oid));      			 /* expanded prb_oid*/
+	q = pushReturn(be->mb, q, newTmpVariable(be->mb, newBatType(TYPE_oid))); /* expanded hsh_gid */
+	q = pushReturn(be->mb, q, newTmpVariable(be->mb, newBatType(TYPE_bit))); /* expanded mrk */
+	q = pushArgument(be->mb, q, prb_oid->nr);
+	q = pushArgument(be->mb, q, hsh_gid->nr);
+	q = pushArgument(be->mb, q, mrk->nr);
+	q = pushArgument(be->mb, q, hp_pos->nr);
+	q = freq?pushArgument(be->mb, q, freq->nr):pushNilBat(be->mb, q);
+	pushInstruction(be->mb, q);
+
+	stmt *s = stmt_none(be);
+	if (s == NULL) return NULL;
+	s->op4.typeval = *sql_fetch_localtype(TYPE_oid);
+	s->nr = getArg(q, 0);
+	s->nrcols = prb_oid->nrcols;
 	s->q = q;
 	return s;
 }
