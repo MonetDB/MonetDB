@@ -1,0 +1,3227 @@
+statement ok
+start transaction;
+
+statement ok
+create table l (id int, a int, b int, c int);
+
+statement ok
+insert into l values
+	(0, null,    2,    7),
+	(1, null,    3,    6),
+	(2,    2, null,    7),
+	(3,    2, null,    6),
+	(4,    3,    3, null),
+	(5,    3,    4, null);
+
+statement ok
+create table r (id int, x int, y int, z int);
+
+statement ok
+insert into r values
+	(0,    1,    1,    5),
+	(1, null,    1,    5),
+	(2,    2,    2,    7),
+	(3,    2,    3,    8),
+	(4,    3,    3,    4),
+	(5, null,    3,    6);
+
+query IIII nosort
+select * from l where (a,b,c) not in (select x, y, z from r);
+----
+5
+3
+4
+NULL
+
+statement ok
+rollback;
+
+-- empty res
+query I nosort
+select id from (select 1, 10, 100, 1000, 10000) t(id, a,b,c,d) where (a,b,c,d) not in (select   10,  100, 1000, 10000);
+----
+
+
+query I nosort
+select id from (select 1, 10, 100, 1000, 10000) t(id, a,b,c,d) where (a,b,c,d) not in (select NULL,  100, 1000, 10000);
+----
+
+
+query I nosort
+select id from (select 1, 10, 100, 1000, 10000) t(id, a,b,c,d) where (a,b,c,d) not in (select   10, NULL, 1000, 10000);
+----
+
+
+query I nosort
+select id from (select 1, 10, 100, 1000, 10000) t(id, a,b,c,d) where (a,b,c,d) not in (select   10,  100, NULL, 10000);
+----
+
+
+query I nosort
+select id from (select 1, 10, 100, 1000, 10000) t(id, a,b,c,d) where (a,b,c,d) not in (select   10,  100, 1000,  NULL);
+----
+
+
+query I nosort
+select id from (select 1, 10, 100, 1000, 10000) t(id, a,b,c,d) where (a,b,c,d) not in (select NULL, NULL, 1000, 10000);
+----
+
+
+query I nosort
+select id from (select 1, 10, 100, 1000, 10000) t(id, a,b,c,d) where (a,b,c,d) not in (select NULL,  100, NULL, 10000);
+----
+
+
+query I nosort
+select id from (select 1, 10, 100, 1000, 10000) t(id, a,b,c,d) where (a,b,c,d) not in (select NULL,  100, 1000,  NULL);
+----
+
+
+query I nosort
+select id from (select 1, 10, 100, 1000, 10000) t(id, a,b,c,d) where (a,b,c,d) not in (select   10, NULL, NULL, 10000);
+----
+
+
+query I nosort
+select id from (select 1, 10, 100, 1000, 10000) t(id, a,b,c,d) where (a,b,c,d) not in (select   10, NULL, 1000,  NULL);
+----
+
+
+query I nosort
+select id from (select 1, 10, 100, 1000, 10000) t(id, a,b,c,d) where (a,b,c,d) not in (select   10,  100, NULL,  NULL);
+----
+
+
+query I nosort
+select id from (select 1, 10, 100, 1000, 10000) t(id, a,b,c,d) where (a,b,c,d) not in (select NULL, NULL, NULL, 10000);
+----
+
+
+query I nosort
+select id from (select 1, 10, 100, 1000, 10000) t(id, a,b,c,d) where (a,b,c,d) not in (select NULL,  100, NULL,  NULL);
+----
+
+
+query I nosort
+select id from (select 1, 10, 100, 1000, 10000) t(id, a,b,c,d) where (a,b,c,d) not in (select   10, NULL, NULL,  NULL);
+----
+
+
+query I nosort
+select id from (select 1, 10, 100, 1000, 10000) t(id, a,b,c,d) where (a,b,c,d) not in (select NULL, NULL, NULL,  NULL);
+----
+
+
+
+-- empty res
+query I nosort
+select id from (select 1, NULL, 100, 1000, 10000) t(id, a,b,c,d) where (a,b,c,d) not in (select   10,  100, 1000, 10000);
+----
+
+
+query I nosort
+select id from (select 1, NULL, 100, 1000, 10000) t(id, a,b,c,d) where (a,b,c,d) not in (select NULL,  100, 1000, 10000);
+----
+
+
+query I nosort
+select id from (select 1, NULL, 100, 1000, 10000) t(id, a,b,c,d) where (a,b,c,d) not in (select   10, NULL, 1000, 10000);
+----
+
+
+query I nosort
+select id from (select 1, NULL, 100, 1000, 10000) t(id, a,b,c,d) where (a,b,c,d) not in (select   10,  100, NULL, 10000);
+----
+
+
+query I nosort
+select id from (select 1, NULL, 100, 1000, 10000) t(id, a,b,c,d) where (a,b,c,d) not in (select   10,  100, 1000,  NULL);
+----
+
+
+query I nosort
+select id from (select 1, NULL, 100, 1000, 10000) t(id, a,b,c,d) where (a,b,c,d) not in (select NULL, NULL, 1000, 10000);
+----
+
+
+query I nosort
+select id from (select 1, NULL, 100, 1000, 10000) t(id, a,b,c,d) where (a,b,c,d) not in (select NULL,  100, NULL, 10000);
+----
+
+
+query I nosort
+select id from (select 1, NULL, 100, 1000, 10000) t(id, a,b,c,d) where (a,b,c,d) not in (select NULL,  100, 1000,  NULL);
+----
+
+
+query I nosort
+select id from (select 1, NULL, 100, 1000, 10000) t(id, a,b,c,d) where (a,b,c,d) not in (select   10, NULL, NULL, 10000);
+----
+
+
+query I nosort
+select id from (select 1, NULL, 100, 1000, 10000) t(id, a,b,c,d) where (a,b,c,d) not in (select   10, NULL, 1000,  NULL);
+----
+
+
+query I nosort
+select id from (select 1, NULL, 100, 1000, 10000) t(id, a,b,c,d) where (a,b,c,d) not in (select   10,  100, NULL,  NULL);
+----
+
+
+query I nosort
+select id from (select 1, NULL, 100, 1000, 10000) t(id, a,b,c,d) where (a,b,c,d) not in (select NULL, NULL, NULL, 10000);
+----
+
+
+query I nosort
+select id from (select 1, NULL, 100, 1000, 10000) t(id, a,b,c,d) where (a,b,c,d) not in (select NULL,  100, NULL,  NULL);
+----
+
+
+query I nosort
+select id from (select 1, NULL, 100, 1000, 10000) t(id, a,b,c,d) where (a,b,c,d) not in (select   10, NULL, NULL,  NULL);
+----
+
+
+query I nosort
+select id from (select 1, NULL, 100, 1000, 10000) t(id, a,b,c,d) where (a,b,c,d) not in (select NULL, NULL, NULL,  NULL);
+----
+
+
+-- empty res
+query I nosort
+select id from (select 1, 10, NULL, 1000, 10000) t(id, a,b,c,d) where (a,b,c,d) not in (select   10,  100, 1000, 10000);
+----
+
+
+query I nosort
+select id from (select 1, 10, NULL, 1000, 10000) t(id, a,b,c,d) where (a,b,c,d) not in (select NULL,  100, 1000, 10000);
+----
+
+
+query I nosort
+select id from (select 1, 10, NULL, 1000, 10000) t(id, a,b,c,d) where (a,b,c,d) not in (select   10, NULL, 1000, 10000);
+----
+
+
+query I nosort
+select id from (select 1, 10, NULL, 1000, 10000) t(id, a,b,c,d) where (a,b,c,d) not in (select   10,  100, NULL, 10000);
+----
+
+
+query I nosort
+select id from (select 1, 10, NULL, 1000, 10000) t(id, a,b,c,d) where (a,b,c,d) not in (select   10,  100, 1000,  NULL);
+----
+
+
+query I nosort
+select id from (select 1, 10, NULL, 1000, 10000) t(id, a,b,c,d) where (a,b,c,d) not in (select NULL, NULL, 1000, 10000);
+----
+
+
+query I nosort
+select id from (select 1, 10, NULL, 1000, 10000) t(id, a,b,c,d) where (a,b,c,d) not in (select NULL,  100, NULL, 10000);
+----
+
+
+query I nosort
+select id from (select 1, 10, NULL, 1000, 10000) t(id, a,b,c,d) where (a,b,c,d) not in (select NULL,  100, 1000,  NULL);
+----
+
+
+query I nosort
+select id from (select 1, 10, NULL, 1000, 10000) t(id, a,b,c,d) where (a,b,c,d) not in (select   10, NULL, NULL, 10000);
+----
+
+
+query I nosort
+select id from (select 1, 10, NULL, 1000, 10000) t(id, a,b,c,d) where (a,b,c,d) not in (select   10, NULL, 1000,  NULL);
+----
+
+
+query I nosort
+select id from (select 1, 10, NULL, 1000, 10000) t(id, a,b,c,d) where (a,b,c,d) not in (select   10,  100, NULL,  NULL);
+----
+
+
+query I nosort
+select id from (select 1, 10, NULL, 1000, 10000) t(id, a,b,c,d) where (a,b,c,d) not in (select NULL, NULL, NULL, 10000);
+----
+
+
+query I nosort
+select id from (select 1, 10, NULL, 1000, 10000) t(id, a,b,c,d) where (a,b,c,d) not in (select NULL,  100, NULL,  NULL);
+----
+
+
+query I nosort
+select id from (select 1, 10, NULL, 1000, 10000) t(id, a,b,c,d) where (a,b,c,d) not in (select   10, NULL, NULL,  NULL);
+----
+
+
+query I nosort
+select id from (select 1, 10, NULL, 1000, 10000) t(id, a,b,c,d) where (a,b,c,d) not in (select NULL, NULL, NULL,  NULL);
+----
+
+
+
+-- empty res
+query I nosort
+select id from (select 1, 10, 100, NULL, 10000) t(id, a,b,c,d) where (a,b,c,d) not in (select   10,  100, 1000, 10000);
+----
+
+
+query I nosort
+select id from (select 1, 10, 100, NULL, 10000) t(id, a,b,c,d) where (a,b,c,d) not in (select NULL,  100, 1000, 10000);
+----
+
+
+query I nosort
+select id from (select 1, 10, 100, NULL, 10000) t(id, a,b,c,d) where (a,b,c,d) not in (select   10, NULL, 1000, 10000);
+----
+
+
+query I nosort
+select id from (select 1, 10, 100, NULL, 10000) t(id, a,b,c,d) where (a,b,c,d) not in (select   10,  100, NULL, 10000);
+----
+
+
+query I nosort
+select id from (select 1, 10, 100, NULL, 10000) t(id, a,b,c,d) where (a,b,c,d) not in (select   10,  100, 1000,  NULL);
+----
+
+
+query I nosort
+select id from (select 1, 10, 100, NULL, 10000) t(id, a,b,c,d) where (a,b,c,d) not in (select NULL, NULL, 1000, 10000);
+----
+
+
+query I nosort
+select id from (select 1, 10, 100, NULL, 10000) t(id, a,b,c,d) where (a,b,c,d) not in (select NULL,  100, NULL, 10000);
+----
+
+
+query I nosort
+select id from (select 1, 10, 100, NULL, 10000) t(id, a,b,c,d) where (a,b,c,d) not in (select NULL,  100, 1000,  NULL);
+----
+
+
+query I nosort
+select id from (select 1, 10, 100, NULL, 10000) t(id, a,b,c,d) where (a,b,c,d) not in (select   10, NULL, NULL, 10000);
+----
+
+
+query I nosort
+select id from (select 1, 10, 100, NULL, 10000) t(id, a,b,c,d) where (a,b,c,d) not in (select   10, NULL, 1000,  NULL);
+----
+
+
+query I nosort
+select id from (select 1, 10, 100, NULL, 10000) t(id, a,b,c,d) where (a,b,c,d) not in (select   10,  100, NULL,  NULL);
+----
+
+
+query I nosort
+select id from (select 1, 10, 100, NULL, 10000) t(id, a,b,c,d) where (a,b,c,d) not in (select NULL, NULL, NULL, 10000);
+----
+
+
+query I nosort
+select id from (select 1, 10, 100, NULL, 10000) t(id, a,b,c,d) where (a,b,c,d) not in (select NULL,  100, NULL,  NULL);
+----
+
+
+query I nosort
+select id from (select 1, 10, 100, NULL, 10000) t(id, a,b,c,d) where (a,b,c,d) not in (select   10, NULL, NULL,  NULL);
+----
+
+
+query I nosort
+select id from (select 1, 10, 100, NULL, 10000) t(id, a,b,c,d) where (a,b,c,d) not in (select NULL, NULL, NULL,  NULL);
+----
+
+
+
+-- empty res
+query I nosort
+select id from (select 1, 10, 100, 1000, NULL) t(id, a,b,c,d) where (a,b,c,d) not in (select   10,  100, 1000, 10000);
+----
+
+
+query I nosort
+select id from (select 1, 10, 100, 1000, NULL) t(id, a,b,c,d) where (a,b,c,d) not in (select NULL,  100, 1000, 10000);
+----
+
+
+query I nosort
+select id from (select 1, 10, 100, 1000, NULL) t(id, a,b,c,d) where (a,b,c,d) not in (select   10, NULL, 1000, 10000);
+----
+
+
+query I nosort
+select id from (select 1, 10, 100, 1000, NULL) t(id, a,b,c,d) where (a,b,c,d) not in (select   10,  100, NULL, 10000);
+----
+
+
+query I nosort
+select id from (select 1, 10, 100, 1000, NULL) t(id, a,b,c,d) where (a,b,c,d) not in (select   10,  100, 1000,  NULL);
+----
+
+
+query I nosort
+select id from (select 1, 10, 100, 1000, NULL) t(id, a,b,c,d) where (a,b,c,d) not in (select NULL, NULL, 1000, 10000);
+----
+
+
+query I nosort
+select id from (select 1, 10, 100, 1000, NULL) t(id, a,b,c,d) where (a,b,c,d) not in (select NULL,  100, NULL, 10000);
+----
+
+
+query I nosort
+select id from (select 1, 10, 100, 1000, NULL) t(id, a,b,c,d) where (a,b,c,d) not in (select NULL,  100, 1000,  NULL);
+----
+
+
+query I nosort
+select id from (select 1, 10, 100, 1000, NULL) t(id, a,b,c,d) where (a,b,c,d) not in (select   10, NULL, NULL, 10000);
+----
+
+
+query I nosort
+select id from (select 1, 10, 100, 1000, NULL) t(id, a,b,c,d) where (a,b,c,d) not in (select   10, NULL, 1000,  NULL);
+----
+
+
+query I nosort
+select id from (select 1, 10, 100, 1000, NULL) t(id, a,b,c,d) where (a,b,c,d) not in (select   10,  100, NULL,  NULL);
+----
+
+
+query I nosort
+select id from (select 1, 10, 100, 1000, NULL) t(id, a,b,c,d) where (a,b,c,d) not in (select NULL, NULL, NULL, 10000);
+----
+
+
+query I nosort
+select id from (select 1, 10, 100, 1000, NULL) t(id, a,b,c,d) where (a,b,c,d) not in (select NULL,  100, NULL,  NULL);
+----
+
+
+query I nosort
+select id from (select 1, 10, 100, 1000, NULL) t(id, a,b,c,d) where (a,b,c,d) not in (select   10, NULL, NULL,  NULL);
+----
+
+
+query I nosort
+select id from (select 1, 10, 100, 1000, NULL) t(id, a,b,c,d) where (a,b,c,d) not in (select NULL, NULL, NULL,  NULL);
+----
+
+
+
+-- empty res
+query I nosort
+select id from (select 1, NULL, NULL, 1000, 10000) t(id, a,b,c,d) where (a,b,c,d) not in (select   10,  100, 1000, 10000);
+----
+
+
+query I nosort
+select id from (select 1, NULL, NULL, 1000, 10000) t(id, a,b,c,d) where (a,b,c,d) not in (select NULL,  100, 1000, 10000);
+----
+
+
+query I nosort
+select id from (select 1, NULL, NULL, 1000, 10000) t(id, a,b,c,d) where (a,b,c,d) not in (select   10, NULL, 1000, 10000);
+----
+
+
+query I nosort
+select id from (select 1, NULL, NULL, 1000, 10000) t(id, a,b,c,d) where (a,b,c,d) not in (select   10,  100, NULL, 10000);
+----
+
+
+query I nosort
+select id from (select 1, NULL, NULL, 1000, 10000) t(id, a,b,c,d) where (a,b,c,d) not in (select   10,  100, 1000,  NULL);
+----
+
+
+query I nosort
+select id from (select 1, NULL, NULL, 1000, 10000) t(id, a,b,c,d) where (a,b,c,d) not in (select NULL, NULL, 1000, 10000);
+----
+
+
+query I nosort
+select id from (select 1, NULL, NULL, 1000, 10000) t(id, a,b,c,d) where (a,b,c,d) not in (select NULL,  100, NULL, 10000);
+----
+
+
+query I nosort
+select id from (select 1, NULL, NULL, 1000, 10000) t(id, a,b,c,d) where (a,b,c,d) not in (select NULL,  100, 1000,  NULL);
+----
+
+
+query I nosort
+select id from (select 1, NULL, NULL, 1000, 10000) t(id, a,b,c,d) where (a,b,c,d) not in (select   10, NULL, NULL, 10000);
+----
+
+
+query I nosort
+select id from (select 1, NULL, NULL, 1000, 10000) t(id, a,b,c,d) where (a,b,c,d) not in (select   10, NULL, 1000,  NULL);
+----
+
+
+query I nosort
+select id from (select 1, NULL, NULL, 1000, 10000) t(id, a,b,c,d) where (a,b,c,d) not in (select   10,  100, NULL,  NULL);
+----
+
+
+query I nosort
+select id from (select 1, NULL, NULL, 1000, 10000) t(id, a,b,c,d) where (a,b,c,d) not in (select NULL, NULL, NULL, 10000);
+----
+
+
+query I nosort
+select id from (select 1, NULL, NULL, 1000, 10000) t(id, a,b,c,d) where (a,b,c,d) not in (select NULL,  100, NULL,  NULL);
+----
+
+
+query I nosort
+select id from (select 1, NULL, NULL, 1000, 10000) t(id, a,b,c,d) where (a,b,c,d) not in (select   10, NULL, NULL,  NULL);
+----
+
+
+query I nosort
+select id from (select 1, NULL, NULL, 1000, 10000) t(id, a,b,c,d) where (a,b,c,d) not in (select NULL, NULL, NULL,  NULL);
+----
+
+
+-- empty res
+query I nosort
+select id from (select 1, NULL, 100, NULL, 10000) t(id, a,b,c,d) where (a,b,c,d) not in (select   10,  100, 1000, 10000);
+----
+
+
+query I nosort
+select id from (select 1, NULL, 100, NULL, 10000) t(id, a,b,c,d) where (a,b,c,d) not in (select NULL,  100, 1000, 10000);
+----
+
+
+query I nosort
+select id from (select 1, NULL, 100, NULL, 10000) t(id, a,b,c,d) where (a,b,c,d) not in (select   10, NULL, 1000, 10000);
+----
+
+
+query I nosort
+select id from (select 1, NULL, 100, NULL, 10000) t(id, a,b,c,d) where (a,b,c,d) not in (select   10,  100, NULL, 10000);
+----
+
+
+query I nosort
+select id from (select 1, NULL, 100, NULL, 10000) t(id, a,b,c,d) where (a,b,c,d) not in (select   10,  100, 1000,  NULL);
+----
+
+
+query I nosort
+select id from (select 1, NULL, 100, NULL, 10000) t(id, a,b,c,d) where (a,b,c,d) not in (select NULL, NULL, 1000, 10000);
+----
+
+
+query I nosort
+select id from (select 1, NULL, 100, NULL, 10000) t(id, a,b,c,d) where (a,b,c,d) not in (select NULL,  100, NULL, 10000);
+----
+
+
+query I nosort
+select id from (select 1, NULL, 100, NULL, 10000) t(id, a,b,c,d) where (a,b,c,d) not in (select NULL,  100, 1000,  NULL);
+----
+
+
+query I nosort
+select id from (select 1, NULL, 100, NULL, 10000) t(id, a,b,c,d) where (a,b,c,d) not in (select   10, NULL, NULL, 10000);
+----
+
+
+query I nosort
+select id from (select 1, NULL, 100, NULL, 10000) t(id, a,b,c,d) where (a,b,c,d) not in (select   10, NULL, 1000,  NULL);
+----
+
+
+query I nosort
+select id from (select 1, NULL, 100, NULL, 10000) t(id, a,b,c,d) where (a,b,c,d) not in (select   10,  100, NULL,  NULL);
+----
+
+
+query I nosort
+select id from (select 1, NULL, 100, NULL, 10000) t(id, a,b,c,d) where (a,b,c,d) not in (select NULL, NULL, NULL, 10000);
+----
+
+
+query I nosort
+select id from (select 1, NULL, 100, NULL, 10000) t(id, a,b,c,d) where (a,b,c,d) not in (select NULL,  100, NULL,  NULL);
+----
+
+
+query I nosort
+select id from (select 1, NULL, 100, NULL, 10000) t(id, a,b,c,d) where (a,b,c,d) not in (select   10, NULL, NULL,  NULL);
+----
+
+
+query I nosort
+select id from (select 1, NULL, 100, NULL, 10000) t(id, a,b,c,d) where (a,b,c,d) not in (select NULL, NULL, NULL,  NULL);
+----
+
+
+
+-- empty res
+query I nosort
+select id from (select 1, NULL, 100, 1000, NULL) t(id, a,b,c,d) where (a,b,c,d) not in (select   10,  100, 1000, 10000);
+----
+
+
+query I nosort
+select id from (select 1, NULL, 100, 1000, NULL) t(id, a,b,c,d) where (a,b,c,d) not in (select NULL,  100, 1000, 10000);
+----
+
+
+query I nosort
+select id from (select 1, NULL, 100, 1000, NULL) t(id, a,b,c,d) where (a,b,c,d) not in (select   10, NULL, 1000, 10000);
+----
+
+
+query I nosort
+select id from (select 1, NULL, 100, 1000, NULL) t(id, a,b,c,d) where (a,b,c,d) not in (select   10,  100, NULL, 10000);
+----
+
+
+query I nosort
+select id from (select 1, NULL, 100, 1000, NULL) t(id, a,b,c,d) where (a,b,c,d) not in (select   10,  100, 1000,  NULL);
+----
+
+
+query I nosort
+select id from (select 1, NULL, 100, 1000, NULL) t(id, a,b,c,d) where (a,b,c,d) not in (select NULL, NULL, 1000, 10000);
+----
+
+
+query I nosort
+select id from (select 1, NULL, 100, 1000, NULL) t(id, a,b,c,d) where (a,b,c,d) not in (select NULL,  100, NULL, 10000);
+----
+
+
+query I nosort
+select id from (select 1, NULL, 100, 1000, NULL) t(id, a,b,c,d) where (a,b,c,d) not in (select NULL,  100, 1000,  NULL);
+----
+
+
+query I nosort
+select id from (select 1, NULL, 100, 1000, NULL) t(id, a,b,c,d) where (a,b,c,d) not in (select   10, NULL, NULL, 10000);
+----
+
+
+query I nosort
+select id from (select 1, NULL, 100, 1000, NULL) t(id, a,b,c,d) where (a,b,c,d) not in (select   10, NULL, 1000,  NULL);
+----
+
+
+query I nosort
+select id from (select 1, NULL, 100, 1000, NULL) t(id, a,b,c,d) where (a,b,c,d) not in (select   10,  100, NULL,  NULL);
+----
+
+
+query I nosort
+select id from (select 1, NULL, 100, 1000, NULL) t(id, a,b,c,d) where (a,b,c,d) not in (select NULL, NULL, NULL, 10000);
+----
+
+
+query I nosort
+select id from (select 1, NULL, 100, 1000, NULL) t(id, a,b,c,d) where (a,b,c,d) not in (select NULL,  100, NULL,  NULL);
+----
+
+
+query I nosort
+select id from (select 1, NULL, 100, 1000, NULL) t(id, a,b,c,d) where (a,b,c,d) not in (select   10, NULL, NULL,  NULL);
+----
+
+
+query I nosort
+select id from (select 1, NULL, 100, 1000, NULL) t(id, a,b,c,d) where (a,b,c,d) not in (select NULL, NULL, NULL,  NULL);
+----
+
+
+-- empty res
+query I nosort
+select id from (select 1, 10, NULL, NULL, 10000) t(id, a,b,c,d) where (a,b,c,d) not in (select   10,  100, 1000, 10000);
+----
+
+
+query I nosort
+select id from (select 1, 10, NULL, NULL, 10000) t(id, a,b,c,d) where (a,b,c,d) not in (select NULL,  100, 1000, 10000);
+----
+
+
+query I nosort
+select id from (select 1, 10, NULL, NULL, 10000) t(id, a,b,c,d) where (a,b,c,d) not in (select   10, NULL, 1000, 10000);
+----
+
+
+query I nosort
+select id from (select 1, 10, NULL, NULL, 10000) t(id, a,b,c,d) where (a,b,c,d) not in (select   10,  100, NULL, 10000);
+----
+
+
+query I nosort
+select id from (select 1, 10, NULL, NULL, 10000) t(id, a,b,c,d) where (a,b,c,d) not in (select   10,  100, 1000,  NULL);
+----
+
+
+query I nosort
+select id from (select 1, 10, NULL, NULL, 10000) t(id, a,b,c,d) where (a,b,c,d) not in (select NULL, NULL, 1000, 10000);
+----
+
+
+query I nosort
+select id from (select 1, 10, NULL, NULL, 10000) t(id, a,b,c,d) where (a,b,c,d) not in (select NULL,  100, NULL, 10000);
+----
+
+
+query I nosort
+select id from (select 1, 10, NULL, NULL, 10000) t(id, a,b,c,d) where (a,b,c,d) not in (select NULL,  100, 1000,  NULL);
+----
+
+
+query I nosort
+select id from (select 1, 10, NULL, NULL, 10000) t(id, a,b,c,d) where (a,b,c,d) not in (select   10, NULL, NULL, 10000);
+----
+
+
+query I nosort
+select id from (select 1, 10, NULL, NULL, 10000) t(id, a,b,c,d) where (a,b,c,d) not in (select   10, NULL, 1000,  NULL);
+----
+
+
+query I nosort
+select id from (select 1, 10, NULL, NULL, 10000) t(id, a,b,c,d) where (a,b,c,d) not in (select   10,  100, NULL,  NULL);
+----
+
+
+query I nosort
+select id from (select 1, 10, NULL, NULL, 10000) t(id, a,b,c,d) where (a,b,c,d) not in (select NULL, NULL, NULL, 10000);
+----
+
+
+query I nosort
+select id from (select 1, 10, NULL, NULL, 10000) t(id, a,b,c,d) where (a,b,c,d) not in (select NULL,  100, NULL,  NULL);
+----
+
+
+query I nosort
+select id from (select 1, 10, NULL, NULL, 10000) t(id, a,b,c,d) where (a,b,c,d) not in (select   10, NULL, NULL,  NULL);
+----
+
+
+query I nosort
+select id from (select 1, 10, NULL, NULL, 10000) t(id, a,b,c,d) where (a,b,c,d) not in (select NULL, NULL, NULL,  NULL);
+----
+
+
+-- empty res
+query I nosort
+select id from (select 1, 10, NULL, 1000, NULL) t(id, a,b,c,d) where (a,b,c,d) not in (select   10,  100, 1000, 10000);
+----
+
+
+query I nosort
+select id from (select 1, 10, NULL, 1000, NULL) t(id, a,b,c,d) where (a,b,c,d) not in (select NULL,  100, 1000, 10000);
+----
+
+
+query I nosort
+select id from (select 1, 10, NULL, 1000, NULL) t(id, a,b,c,d) where (a,b,c,d) not in (select   10, NULL, 1000, 10000);
+----
+
+
+query I nosort
+select id from (select 1, 10, NULL, 1000, NULL) t(id, a,b,c,d) where (a,b,c,d) not in (select   10,  100, NULL, 10000);
+----
+
+
+query I nosort
+select id from (select 1, 10, NULL, 1000, NULL) t(id, a,b,c,d) where (a,b,c,d) not in (select   10,  100, 1000,  NULL);
+----
+
+
+query I nosort
+select id from (select 1, 10, NULL, 1000, NULL) t(id, a,b,c,d) where (a,b,c,d) not in (select NULL, NULL, 1000, 10000);
+----
+
+
+query I nosort
+select id from (select 1, 10, NULL, 1000, NULL) t(id, a,b,c,d) where (a,b,c,d) not in (select NULL,  100, NULL, 10000);
+----
+
+
+query I nosort
+select id from (select 1, 10, NULL, 1000, NULL) t(id, a,b,c,d) where (a,b,c,d) not in (select NULL,  100, 1000,  NULL);
+----
+
+
+query I nosort
+select id from (select 1, 10, NULL, 1000, NULL) t(id, a,b,c,d) where (a,b,c,d) not in (select   10, NULL, NULL, 10000);
+----
+
+
+query I nosort
+select id from (select 1, 10, NULL, 1000, NULL) t(id, a,b,c,d) where (a,b,c,d) not in (select   10, NULL, 1000,  NULL);
+----
+
+
+query I nosort
+select id from (select 1, 10, NULL, 1000, NULL) t(id, a,b,c,d) where (a,b,c,d) not in (select   10,  100, NULL,  NULL);
+----
+
+
+query I nosort
+select id from (select 1, 10, NULL, 1000, NULL) t(id, a,b,c,d) where (a,b,c,d) not in (select NULL, NULL, NULL, 10000);
+----
+
+
+query I nosort
+select id from (select 1, 10, NULL, 1000, NULL) t(id, a,b,c,d) where (a,b,c,d) not in (select NULL,  100, NULL,  NULL);
+----
+
+
+query I nosort
+select id from (select 1, 10, NULL, 1000, NULL) t(id, a,b,c,d) where (a,b,c,d) not in (select   10, NULL, NULL,  NULL);
+----
+
+
+query I nosort
+select id from (select 1, 10, NULL, 1000, NULL) t(id, a,b,c,d) where (a,b,c,d) not in (select NULL, NULL, NULL,  NULL);
+----
+
+
+-- empty res
+query I nosort
+select id from (select 1, NULL, NULL, NULL, 10000) t(id, a,b,c,d) where (a,b,c,d) not in (select   10,  100, 1000, 10000);
+----
+
+
+query I nosort
+select id from (select 1, NULL, NULL, NULL, 10000) t(id, a,b,c,d) where (a,b,c,d) not in (select NULL,  100, 1000, 10000);
+----
+
+
+query I nosort
+select id from (select 1, NULL, NULL, NULL, 10000) t(id, a,b,c,d) where (a,b,c,d) not in (select   10, NULL, 1000, 10000);
+----
+
+
+query I nosort
+select id from (select 1, NULL, NULL, NULL, 10000) t(id, a,b,c,d) where (a,b,c,d) not in (select   10,  100, NULL, 10000);
+----
+
+
+query I nosort
+select id from (select 1, NULL, NULL, NULL, 10000) t(id, a,b,c,d) where (a,b,c,d) not in (select   10,  100, 1000,  NULL);
+----
+
+
+query I nosort
+select id from (select 1, NULL, NULL, NULL, 10000) t(id, a,b,c,d) where (a,b,c,d) not in (select NULL, NULL, 1000, 10000);
+----
+
+
+query I nosort
+select id from (select 1, NULL, NULL, NULL, 10000) t(id, a,b,c,d) where (a,b,c,d) not in (select NULL,  100, NULL, 10000);
+----
+
+
+query I nosort
+select id from (select 1, NULL, NULL, NULL, 10000) t(id, a,b,c,d) where (a,b,c,d) not in (select NULL,  100, 1000,  NULL);
+----
+
+
+query I nosort
+select id from (select 1, NULL, NULL, NULL, 10000) t(id, a,b,c,d) where (a,b,c,d) not in (select   10, NULL, NULL, 10000);
+----
+
+
+query I nosort
+select id from (select 1, NULL, NULL, NULL, 10000) t(id, a,b,c,d) where (a,b,c,d) not in (select   10, NULL, 1000,  NULL);
+----
+
+
+query I nosort
+select id from (select 1, NULL, NULL, NULL, 10000) t(id, a,b,c,d) where (a,b,c,d) not in (select   10,  100, NULL,  NULL);
+----
+
+
+query I nosort
+select id from (select 1, NULL, NULL, NULL, 10000) t(id, a,b,c,d) where (a,b,c,d) not in (select NULL, NULL, NULL, 10000);
+----
+
+
+query I nosort
+select id from (select 1, NULL, NULL, NULL, 10000) t(id, a,b,c,d) where (a,b,c,d) not in (select NULL,  100, NULL,  NULL);
+----
+
+
+query I nosort
+select id from (select 1, NULL, NULL, NULL, 10000) t(id, a,b,c,d) where (a,b,c,d) not in (select   10, NULL, NULL,  NULL);
+----
+
+
+query I nosort
+select id from (select 1, NULL, NULL, NULL, 10000) t(id, a,b,c,d) where (a,b,c,d) not in (select NULL, NULL, NULL,  NULL);
+----
+
+
+-- empty res
+query I nosort
+select id from (select 1, NULL, 100, NULL, NULL) t(id, a,b,c,d) where (a,b,c,d) not in (select   10,  100, 1000, 10000);
+----
+
+
+query I nosort
+select id from (select 1, NULL, 100, NULL, NULL) t(id, a,b,c,d) where (a,b,c,d) not in (select NULL,  100, 1000, 10000);
+----
+
+
+query I nosort
+select id from (select 1, NULL, 100, NULL, NULL) t(id, a,b,c,d) where (a,b,c,d) not in (select   10, NULL, 1000, 10000);
+----
+
+
+query I nosort
+select id from (select 1, NULL, 100, NULL, NULL) t(id, a,b,c,d) where (a,b,c,d) not in (select   10,  100, NULL, 10000);
+----
+
+
+query I nosort
+select id from (select 1, NULL, 100, NULL, NULL) t(id, a,b,c,d) where (a,b,c,d) not in (select   10,  100, 1000,  NULL);
+----
+
+
+query I nosort
+select id from (select 1, NULL, 100, NULL, NULL) t(id, a,b,c,d) where (a,b,c,d) not in (select NULL, NULL, 1000, 10000);
+----
+
+
+query I nosort
+select id from (select 1, NULL, 100, NULL, NULL) t(id, a,b,c,d) where (a,b,c,d) not in (select NULL,  100, NULL, 10000);
+----
+
+
+query I nosort
+select id from (select 1, NULL, 100, NULL, NULL) t(id, a,b,c,d) where (a,b,c,d) not in (select NULL,  100, 1000,  NULL);
+----
+
+
+query I nosort
+select id from (select 1, NULL, 100, NULL, NULL) t(id, a,b,c,d) where (a,b,c,d) not in (select   10, NULL, NULL, 10000);
+----
+
+
+query I nosort
+select id from (select 1, NULL, 100, NULL, NULL) t(id, a,b,c,d) where (a,b,c,d) not in (select   10, NULL, 1000,  NULL);
+----
+
+
+query I nosort
+select id from (select 1, NULL, 100, NULL, NULL) t(id, a,b,c,d) where (a,b,c,d) not in (select   10,  100, NULL,  NULL);
+----
+
+
+query I nosort
+select id from (select 1, NULL, 100, NULL, NULL) t(id, a,b,c,d) where (a,b,c,d) not in (select NULL, NULL, NULL, 10000);
+----
+
+
+query I nosort
+select id from (select 1, NULL, 100, NULL, NULL) t(id, a,b,c,d) where (a,b,c,d) not in (select NULL,  100, NULL,  NULL);
+----
+
+
+query I nosort
+select id from (select 1, NULL, 100, NULL, NULL) t(id, a,b,c,d) where (a,b,c,d) not in (select   10, NULL, NULL,  NULL);
+----
+
+
+query I nosort
+select id from (select 1, NULL, 100, NULL, NULL) t(id, a,b,c,d) where (a,b,c,d) not in (select NULL, NULL, NULL,  NULL);
+----
+
+
+-- empty res
+query I nosort
+select id from (select 1, 10, NULL, NULL, NULL) t(id, a,b,c,d) where (a,b,c,d) not in (select   10,  100, 1000, 10000);
+----
+
+
+query I nosort
+select id from (select 1, 10, NULL, NULL, NULL) t(id, a,b,c,d) where (a,b,c,d) not in (select NULL,  100, 1000, 10000);
+----
+
+
+query I nosort
+select id from (select 1, 10, NULL, NULL, NULL) t(id, a,b,c,d) where (a,b,c,d) not in (select   10, NULL, 1000, 10000);
+----
+
+
+query I nosort
+select id from (select 1, 10, NULL, NULL, NULL) t(id, a,b,c,d) where (a,b,c,d) not in (select   10,  100, NULL, 10000);
+----
+
+
+query I nosort
+select id from (select 1, 10, NULL, NULL, NULL) t(id, a,b,c,d) where (a,b,c,d) not in (select   10,  100, 1000,  NULL);
+----
+
+
+query I nosort
+select id from (select 1, 10, NULL, NULL, NULL) t(id, a,b,c,d) where (a,b,c,d) not in (select NULL, NULL, 1000, 10000);
+----
+
+
+query I nosort
+select id from (select 1, 10, NULL, NULL, NULL) t(id, a,b,c,d) where (a,b,c,d) not in (select NULL,  100, NULL, 10000);
+----
+
+
+query I nosort
+select id from (select 1, 10, NULL, NULL, NULL) t(id, a,b,c,d) where (a,b,c,d) not in (select NULL,  100, 1000,  NULL);
+----
+
+
+query I nosort
+select id from (select 1, 10, NULL, NULL, NULL) t(id, a,b,c,d) where (a,b,c,d) not in (select   10, NULL, NULL, 10000);
+----
+
+
+query I nosort
+select id from (select 1, 10, NULL, NULL, NULL) t(id, a,b,c,d) where (a,b,c,d) not in (select   10, NULL, 1000,  NULL);
+----
+
+
+query I nosort
+select id from (select 1, 10, NULL, NULL, NULL) t(id, a,b,c,d) where (a,b,c,d) not in (select   10,  100, NULL,  NULL);
+----
+
+
+query I nosort
+select id from (select 1, 10, NULL, NULL, NULL) t(id, a,b,c,d) where (a,b,c,d) not in (select NULL, NULL, NULL, 10000);
+----
+
+
+query I nosort
+select id from (select 1, 10, NULL, NULL, NULL) t(id, a,b,c,d) where (a,b,c,d) not in (select NULL,  100, NULL,  NULL);
+----
+
+
+query I nosort
+select id from (select 1, 10, NULL, NULL, NULL) t(id, a,b,c,d) where (a,b,c,d) not in (select   10, NULL, NULL,  NULL);
+----
+
+
+query I nosort
+select id from (select 1, 10, NULL, NULL, NULL) t(id, a,b,c,d) where (a,b,c,d) not in (select NULL, NULL, NULL,  NULL);
+----
+
+
+-- empty res
+query I nosort
+select id from (select 1, NULL, NULL, NULL, NULL) t(id, a,b,c,d) where (a,b,c,d) not in (select   10,  100, 1000, 10000);
+----
+
+
+query I nosort
+select id from (select 1, NULL, NULL, NULL, NULL) t(id, a,b,c,d) where (a,b,c,d) not in (select NULL,  100, 1000, 10000);
+----
+
+
+query I nosort
+select id from (select 1, NULL, NULL, NULL, NULL) t(id, a,b,c,d) where (a,b,c,d) not in (select   10, NULL, 1000, 10000);
+----
+
+
+query I nosort
+select id from (select 1, NULL, NULL, NULL, NULL) t(id, a,b,c,d) where (a,b,c,d) not in (select   10,  100, NULL, 10000);
+----
+
+
+query I nosort
+select id from (select 1, NULL, NULL, NULL, NULL) t(id, a,b,c,d) where (a,b,c,d) not in (select   10,  100, 1000,  NULL);
+----
+
+
+query I nosort
+select id from (select 1, NULL, NULL, NULL, NULL) t(id, a,b,c,d) where (a,b,c,d) not in (select NULL, NULL, 1000, 10000);
+----
+
+
+query I nosort
+select id from (select 1, NULL, NULL, NULL, NULL) t(id, a,b,c,d) where (a,b,c,d) not in (select NULL,  100, NULL, 10000);
+----
+
+
+query I nosort
+select id from (select 1, NULL, NULL, NULL, NULL) t(id, a,b,c,d) where (a,b,c,d) not in (select NULL,  100, 1000,  NULL);
+----
+
+
+query I nosort
+select id from (select 1, NULL, NULL, NULL, NULL) t(id, a,b,c,d) where (a,b,c,d) not in (select   10, NULL, NULL, 10000);
+----
+
+
+query I nosort
+select id from (select 1, NULL, NULL, NULL, NULL) t(id, a,b,c,d) where (a,b,c,d) not in (select   10, NULL, 1000,  NULL);
+----
+
+
+query I nosort
+select id from (select 1, NULL, NULL, NULL, NULL) t(id, a,b,c,d) where (a,b,c,d) not in (select   10,  100, NULL,  NULL);
+----
+
+
+query I nosort
+select id from (select 1, NULL, NULL, NULL, NULL) t(id, a,b,c,d) where (a,b,c,d) not in (select NULL, NULL, NULL, 10000);
+----
+
+
+query I nosort
+select id from (select 1, NULL, NULL, NULL, NULL) t(id, a,b,c,d) where (a,b,c,d) not in (select NULL,  100, NULL,  NULL);
+----
+
+
+query I nosort
+select id from (select 1, NULL, NULL, NULL, NULL) t(id, a,b,c,d) where (a,b,c,d) not in (select   10, NULL, NULL,  NULL);
+----
+
+
+query I nosort
+select id from (select 1, NULL, NULL, NULL, NULL) t(id, a,b,c,d) where (a,b,c,d) not in (select NULL, NULL, NULL,  NULL);
+----
+
+
+
+-- 1 res
+query I nosort
+select id from (select 1, 10, 100, 1000, 10000) t(id, a,b,c,d) where (a,b,c,d) not in (select   11,  100, 1000, 10000);
+----
+1
+
+query I nosort
+select id from (select 1, 10, 100, 1000, 10000) t(id, a,b,c,d) where (a,b,c,d) not in (select NULL,  101, 1000, 10000);
+----
+1
+
+query I nosort
+select id from (select 1, 10, 100, 1000, 10000) t(id, a,b,c,d) where (a,b,c,d) not in (select NULL,  100, 1001, 10000);
+----
+1
+
+query I nosort
+select id from (select 1, 10, 100, 1000, 10000) t(id, a,b,c,d) where (a,b,c,d) not in (select NULL,  100, 1000, 10001);
+----
+1
+
+query I nosort
+select id from (select 1, 10, 100, 1000, 10000) t(id, a,b,c,d) where (a,b,c,d) not in (select   11, NULL, 1000, 10000);
+----
+1
+
+query I nosort
+select id from (select 1, 10, 100, 1000, 10000) t(id, a,b,c,d) where (a,b,c,d) not in (select   10, NULL, 1001, 10000);
+----
+1
+
+query I nosort
+select id from (select 1, 10, 100, 1000, 10000) t(id, a,b,c,d) where (a,b,c,d) not in (select   10, NULL, 1000, 10001);
+----
+1
+
+query I nosort
+select id from (select 1, 10, 100, 1000, 10000) t(id, a,b,c,d) where (a,b,c,d) not in (select   11,  100, NULL, 10000);
+----
+1
+
+query I nosort
+select id from (select 1, 10, 100, 1000, 10000) t(id, a,b,c,d) where (a,b,c,d) not in (select   10,  101, NULL, 10000);
+----
+1
+
+query I nosort
+select id from (select 1, 10, 100, 1000, 10000) t(id, a,b,c,d) where (a,b,c,d) not in (select   10,  100, NULL, 10001);
+----
+1
+
+query I nosort
+select id from (select 1, 10, 100, 1000, 10000) t(id, a,b,c,d) where (a,b,c,d) not in (select   11,  100, 1000,  NULL);
+----
+1
+
+query I nosort
+select id from (select 1, 10, 100, 1000, 10000) t(id, a,b,c,d) where (a,b,c,d) not in (select   10,  101, 1000,  NULL);
+----
+1
+
+query I nosort
+select id from (select 1, 10, 100, 1000, 10000) t(id, a,b,c,d) where (a,b,c,d) not in (select   10,  100, 1001,  NULL);
+----
+1
+
+query I nosort
+select id from (select 1, 10, 100, 1000, 10000) t(id, a,b,c,d) where (a,b,c,d) not in (select NULL, NULL, 1001, 10000);
+----
+1
+
+query I nosort
+select id from (select 1, 10, 100, 1000, 10000) t(id, a,b,c,d) where (a,b,c,d) not in (select NULL, NULL, 1000, 10001);
+----
+1
+
+query I nosort
+select id from (select 1, 10, 100, 1000, 10000) t(id, a,b,c,d) where (a,b,c,d) not in (select NULL,  101, NULL, 10000);
+----
+1
+
+query I nosort
+select id from (select 1, 10, 100, 1000, 10000) t(id, a,b,c,d) where (a,b,c,d) not in (select NULL,  100, NULL, 10001);
+----
+1
+
+query I nosort
+select id from (select 1, 10, 100, 1000, 10000) t(id, a,b,c,d) where (a,b,c,d) not in (select NULL,  101, 1000,  NULL);
+----
+1
+
+query I nosort
+select id from (select 1, 10, 100, 1000, 10000) t(id, a,b,c,d) where (a,b,c,d) not in (select NULL,  100, 1001,  NULL);
+----
+1
+
+query I nosort
+select id from (select 1, 10, 100, 1000, 10000) t(id, a,b,c,d) where (a,b,c,d) not in (select   11, NULL, NULL, 10000);
+----
+1
+
+query I nosort
+select id from (select 1, 10, 100, 1000, 10000) t(id, a,b,c,d) where (a,b,c,d) not in (select   10, NULL, NULL, 10001);
+----
+1
+
+query I nosort
+select id from (select 1, 10, 100, 1000, 10000) t(id, a,b,c,d) where (a,b,c,d) not in (select   11, NULL, 1000,  NULL);
+----
+1
+
+query I nosort
+select id from (select 1, 10, 100, 1000, 10000) t(id, a,b,c,d) where (a,b,c,d) not in (select   10, NULL, 1001,  NULL);
+----
+1
+
+query I nosort
+select id from (select 1, 10, 100, 1000, 10000) t(id, a,b,c,d) where (a,b,c,d) not in (select   11,  100, NULL,  NULL);
+----
+1
+
+query I nosort
+select id from (select 1, 10, 100, 1000, 10000) t(id, a,b,c,d) where (a,b,c,d) not in (select   10,  101, NULL,  NULL);
+----
+1
+
+query I nosort
+select id from (select 1, 10, 100, 1000, 10000) t(id, a,b,c,d) where (a,b,c,d) not in (select NULL, NULL, NULL, 10001);
+----
+1
+
+query I nosort
+select id from (select 1, 10, 100, 1000, 10000) t(id, a,b,c,d) where (a,b,c,d) not in (select NULL,  101, NULL,  NULL);
+----
+1
+
+query I nosort
+select id from (select 1, 10, 100, 1000, 10000) t(id, a,b,c,d) where (a,b,c,d) not in (select   11, NULL, NULL,  NULL);
+----
+1
+
+
+-- mixed res
+query I nosort
+select id from (select 1, NULL, 100, 1000, 10000) t(id, a,b,c,d) where (a,b,c,d) not in (select   11,  100, 1000, 10000);
+----
+
+
+query I nosort
+select id from (select 1, NULL, 100, 1000, 10000) t(id, a,b,c,d) where (a,b,c,d) not in (select NULL,  101, 1000, 10000);
+----
+1
+
+query I nosort
+select id from (select 1, NULL, 100, 1000, 10000) t(id, a,b,c,d) where (a,b,c,d) not in (select NULL,  100, 1001, 10000);
+----
+1
+
+query I nosort
+select id from (select 1, NULL, 100, 1000, 10000) t(id, a,b,c,d) where (a,b,c,d) not in (select NULL,  100, 1000, 10001);
+----
+1
+
+query I nosort
+select id from (select 1, NULL, 100, 1000, 10000) t(id, a,b,c,d) where (a,b,c,d) not in (select   11, NULL, 1000, 10000);
+----
+
+
+query I nosort
+select id from (select 1, NULL, 100, 1000, 10000) t(id, a,b,c,d) where (a,b,c,d) not in (select   10, NULL, 1001, 10000);
+----
+1
+
+query I nosort
+select id from (select 1, NULL, 100, 1000, 10000) t(id, a,b,c,d) where (a,b,c,d) not in (select   10, NULL, 1000, 10001);
+----
+1
+
+query I nosort
+select id from (select 1, NULL, 100, 1000, 10000) t(id, a,b,c,d) where (a,b,c,d) not in (select   11,  100, NULL, 10000);
+----
+
+
+query I nosort
+select id from (select 1, NULL, 100, 1000, 10000) t(id, a,b,c,d) where (a,b,c,d) not in (select   10,  101, NULL, 10000);
+----
+1
+
+query I nosort
+select id from (select 1, NULL, 100, 1000, 10000) t(id, a,b,c,d) where (a,b,c,d) not in (select   10,  100, NULL, 10001);
+----
+1
+
+query I nosort
+select id from (select 1, NULL, 100, 1000, 10000) t(id, a,b,c,d) where (a,b,c,d) not in (select   11,  100, 1000,  NULL);
+----
+
+
+query I nosort
+select id from (select 1, NULL, 100, 1000, 10000) t(id, a,b,c,d) where (a,b,c,d) not in (select   10,  101, 1000,  NULL);
+----
+1
+
+query I nosort
+select id from (select 1, NULL, 100, 1000, 10000) t(id, a,b,c,d) where (a,b,c,d) not in (select   10,  100, 1001,  NULL);
+----
+1
+
+query I nosort
+select id from (select 1, NULL, 100, 1000, 10000) t(id, a,b,c,d) where (a,b,c,d) not in (select NULL, NULL, 1001, 10000);
+----
+1
+
+query I nosort
+select id from (select 1, NULL, 100, 1000, 10000) t(id, a,b,c,d) where (a,b,c,d) not in (select NULL, NULL, 1000, 10001);
+----
+1
+
+query I nosort
+select id from (select 1, NULL, 100, 1000, 10000) t(id, a,b,c,d) where (a,b,c,d) not in (select NULL,  101, NULL, 10000);
+----
+1
+
+query I nosort
+select id from (select 1, NULL, 100, 1000, 10000) t(id, a,b,c,d) where (a,b,c,d) not in (select NULL,  100, NULL, 10001);
+----
+1
+
+query I nosort
+select id from (select 1, NULL, 100, 1000, 10000) t(id, a,b,c,d) where (a,b,c,d) not in (select NULL,  101, 1000,  NULL);
+----
+1
+
+query I nosort
+select id from (select 1, NULL, 100, 1000, 10000) t(id, a,b,c,d) where (a,b,c,d) not in (select NULL,  100, 1001,  NULL);
+----
+1
+
+query I nosort
+select id from (select 1, NULL, 100, 1000, 10000) t(id, a,b,c,d) where (a,b,c,d) not in (select   11, NULL, NULL, 10000);
+----
+
+
+query I nosort
+select id from (select 1, NULL, 100, 1000, 10000) t(id, a,b,c,d) where (a,b,c,d) not in (select   10, NULL, NULL, 10001);
+----
+1
+
+query I nosort
+select id from (select 1, NULL, 100, 1000, 10000) t(id, a,b,c,d) where (a,b,c,d) not in (select   11, NULL, 1000,  NULL);
+----
+
+
+query I nosort
+select id from (select 1, NULL, 100, 1000, 10000) t(id, a,b,c,d) where (a,b,c,d) not in (select   10, NULL, 1001,  NULL);
+----
+1
+
+query I nosort
+select id from (select 1, NULL, 100, 1000, 10000) t(id, a,b,c,d) where (a,b,c,d) not in (select   11,  100, NULL,  NULL);
+----
+
+
+query I nosort
+select id from (select 1, NULL, 100, 1000, 10000) t(id, a,b,c,d) where (a,b,c,d) not in (select   10,  101, NULL,  NULL);
+----
+1
+
+query I nosort
+select id from (select 1, NULL, 100, 1000, 10000) t(id, a,b,c,d) where (a,b,c,d) not in (select NULL, NULL, NULL, 10001);
+----
+1
+
+query I nosort
+select id from (select 1, NULL, 100, 1000, 10000) t(id, a,b,c,d) where (a,b,c,d) not in (select NULL,  101, NULL,  NULL);
+----
+1
+
+query I nosort
+select id from (select 1, NULL, 100, 1000, 10000) t(id, a,b,c,d) where (a,b,c,d) not in (select   11, NULL, NULL,  NULL);
+----
+
+
+-- mixed res
+query I nosort
+select id from (select 1, 10, NULL, 1000, 10000) t(id, a,b,c,d) where (a,b,c,d) not in (select   11,  100, 1000, 10000);
+----
+1
+
+query I nosort
+select id from (select 1, 10, NULL, 1000, 10000) t(id, a,b,c,d) where (a,b,c,d) not in (select NULL,  101, 1000, 10000);
+----
+
+
+query I nosort
+select id from (select 1, 10, NULL, 1000, 10000) t(id, a,b,c,d) where (a,b,c,d) not in (select NULL,  100, 1001, 10000);
+----
+1
+
+query I nosort
+select id from (select 1, 10, NULL, 1000, 10000) t(id, a,b,c,d) where (a,b,c,d) not in (select NULL,  100, 1000, 10001);
+----
+1
+
+query I nosort
+select id from (select 1, 10, NULL, 1000, 10000) t(id, a,b,c,d) where (a,b,c,d) not in (select   11, NULL, 1000, 10000);
+----
+1
+
+query I nosort
+select id from (select 1, 10, NULL, 1000, 10000) t(id, a,b,c,d) where (a,b,c,d) not in (select   10, NULL, 1001, 10000);
+----
+1
+
+query I nosort
+select id from (select 1, 10, NULL, 1000, 10000) t(id, a,b,c,d) where (a,b,c,d) not in (select   10, NULL, 1000, 10001);
+----
+1
+
+query I nosort
+select id from (select 1, 10, NULL, 1000, 10000) t(id, a,b,c,d) where (a,b,c,d) not in (select   11,  100, NULL, 10000);
+----
+1
+
+query I nosort
+select id from (select 1, 10, NULL, 1000, 10000) t(id, a,b,c,d) where (a,b,c,d) not in (select   10,  101, NULL, 10000);
+----
+
+
+query I nosort
+select id from (select 1, 10, NULL, 1000, 10000) t(id, a,b,c,d) where (a,b,c,d) not in (select   10,  100, NULL, 10001);
+----
+1
+
+query I nosort
+select id from (select 1, 10, NULL, 1000, 10000) t(id, a,b,c,d) where (a,b,c,d) not in (select   11,  100, 1000,  NULL);
+----
+1
+
+query I nosort
+select id from (select 1, 10, NULL, 1000, 10000) t(id, a,b,c,d) where (a,b,c,d) not in (select   10,  101, 1000,  NULL);
+----
+
+
+query I nosort
+select id from (select 1, 10, NULL, 1000, 10000) t(id, a,b,c,d) where (a,b,c,d) not in (select   10,  100, 1001,  NULL);
+----
+1
+
+query I nosort
+select id from (select 1, 10, NULL, 1000, 10000) t(id, a,b,c,d) where (a,b,c,d) not in (select NULL, NULL, 1001, 10000);
+----
+1
+
+query I nosort
+select id from (select 1, 10, NULL, 1000, 10000) t(id, a,b,c,d) where (a,b,c,d) not in (select NULL, NULL, 1000, 10001);
+----
+1
+
+query I nosort
+select id from (select 1, 10, NULL, 1000, 10000) t(id, a,b,c,d) where (a,b,c,d) not in (select NULL,  101, NULL, 10000);
+----
+
+
+query I nosort
+select id from (select 1, 10, NULL, 1000, 10000) t(id, a,b,c,d) where (a,b,c,d) not in (select NULL,  100, NULL, 10001);
+----
+1
+
+query I nosort
+select id from (select 1, 10, NULL, 1000, 10000) t(id, a,b,c,d) where (a,b,c,d) not in (select NULL,  101, 1000,  NULL);
+----
+
+
+query I nosort
+select id from (select 1, 10, NULL, 1000, 10000) t(id, a,b,c,d) where (a,b,c,d) not in (select NULL,  100, 1001,  NULL);
+----
+1
+
+query I nosort
+select id from (select 1, 10, NULL, 1000, 10000) t(id, a,b,c,d) where (a,b,c,d) not in (select   11, NULL, NULL, 10000);
+----
+1
+
+query I nosort
+select id from (select 1, 10, NULL, 1000, 10000) t(id, a,b,c,d) where (a,b,c,d) not in (select   10, NULL, NULL, 10001);
+----
+1
+
+query I nosort
+select id from (select 1, 10, NULL, 1000, 10000) t(id, a,b,c,d) where (a,b,c,d) not in (select   11, NULL, 1000,  NULL);
+----
+1
+
+query I nosort
+select id from (select 1, 10, NULL, 1000, 10000) t(id, a,b,c,d) where (a,b,c,d) not in (select   10, NULL, 1001,  NULL);
+----
+1
+
+query I nosort
+select id from (select 1, 10, NULL, 1000, 10000) t(id, a,b,c,d) where (a,b,c,d) not in (select   11,  100, NULL,  NULL);
+----
+1
+
+query I nosort
+select id from (select 1, 10, NULL, 1000, 10000) t(id, a,b,c,d) where (a,b,c,d) not in (select   10,  101, NULL,  NULL);
+----
+
+
+query I nosort
+select id from (select 1, 10, NULL, 1000, 10000) t(id, a,b,c,d) where (a,b,c,d) not in (select NULL, NULL, NULL, 10001);
+----
+1
+
+query I nosort
+select id from (select 1, 10, NULL, 1000, 10000) t(id, a,b,c,d) where (a,b,c,d) not in (select NULL,  101, NULL,  NULL);
+----
+
+
+query I nosort
+select id from (select 1, 10, NULL, 1000, 10000) t(id, a,b,c,d) where (a,b,c,d) not in (select   11, NULL, NULL,  NULL);
+----
+1
+
+
+-- mixed res
+query I nosort
+select id from (select 1, 10, 100, NULL, 10000) t(id, a,b,c,d) where (a,b,c,d) not in (select   11,  100, 1000, 10000);
+----
+1
+
+query I nosort
+select id from (select 1, 10, 100, NULL, 10000) t(id, a,b,c,d) where (a,b,c,d) not in (select NULL,  101, 1000, 10000);
+----
+1
+
+query I nosort
+select id from (select 1, 10, 100, NULL, 10000) t(id, a,b,c,d) where (a,b,c,d) not in (select NULL,  100, 1001, 10000);
+----
+
+
+query I nosort
+select id from (select 1, 10, 100, NULL, 10000) t(id, a,b,c,d) where (a,b,c,d) not in (select NULL,  100, 1000, 10001);
+----
+1
+
+query I nosort
+select id from (select 1, 10, 100, NULL, 10000) t(id, a,b,c,d) where (a,b,c,d) not in (select   11, NULL, 1000, 10000);
+----
+1
+
+query I nosort
+select id from (select 1, 10, 100, NULL, 10000) t(id, a,b,c,d) where (a,b,c,d) not in (select   10, NULL, 1001, 10000);
+----
+
+
+query I nosort
+select id from (select 1, 10, 100, NULL, 10000) t(id, a,b,c,d) where (a,b,c,d) not in (select   10, NULL, 1000, 10001);
+----
+1
+
+query I nosort
+select id from (select 1, 10, 100, NULL, 10000) t(id, a,b,c,d) where (a,b,c,d) not in (select   11,  100, NULL, 10000);
+----
+1
+
+query I nosort
+select id from (select 1, 10, 100, NULL, 10000) t(id, a,b,c,d) where (a,b,c,d) not in (select   10,  101, NULL, 10000);
+----
+1
+
+query I nosort
+select id from (select 1, 10, 100, NULL, 10000) t(id, a,b,c,d) where (a,b,c,d) not in (select   10,  100, NULL, 10001);
+----
+1
+
+query I nosort
+select id from (select 1, 10, 100, NULL, 10000) t(id, a,b,c,d) where (a,b,c,d) not in (select   11,  100, 1000,  NULL);
+----
+1
+
+query I nosort
+select id from (select 1, 10, 100, NULL, 10000) t(id, a,b,c,d) where (a,b,c,d) not in (select   10,  101, 1000,  NULL);
+----
+1
+
+query I nosort
+select id from (select 1, 10, 100, NULL, 10000) t(id, a,b,c,d) where (a,b,c,d) not in (select   10,  100, 1001,  NULL);
+----
+
+
+query I nosort
+select id from (select 1, 10, 100, NULL, 10000) t(id, a,b,c,d) where (a,b,c,d) not in (select NULL, NULL, 1001, 10000);
+----
+
+
+query I nosort
+select id from (select 1, 10, 100, NULL, 10000) t(id, a,b,c,d) where (a,b,c,d) not in (select NULL, NULL, 1000, 10001);
+----
+1
+
+query I nosort
+select id from (select 1, 10, 100, NULL, 10000) t(id, a,b,c,d) where (a,b,c,d) not in (select NULL,  101, NULL, 10000);
+----
+1
+
+query I nosort
+select id from (select 1, 10, 100, NULL, 10000) t(id, a,b,c,d) where (a,b,c,d) not in (select NULL,  100, NULL, 10001);
+----
+1
+
+query I nosort
+select id from (select 1, 10, 100, NULL, 10000) t(id, a,b,c,d) where (a,b,c,d) not in (select NULL,  101, 1000,  NULL);
+----
+1
+
+query I nosort
+select id from (select 1, 10, 100, NULL, 10000) t(id, a,b,c,d) where (a,b,c,d) not in (select NULL,  100, 1001,  NULL);
+----
+
+
+query I nosort
+select id from (select 1, 10, 100, NULL, 10000) t(id, a,b,c,d) where (a,b,c,d) not in (select   11, NULL, NULL, 10000);
+----
+1
+
+query I nosort
+select id from (select 1, 10, 100, NULL, 10000) t(id, a,b,c,d) where (a,b,c,d) not in (select   10, NULL, NULL, 10001);
+----
+1
+
+query I nosort
+select id from (select 1, 10, 100, NULL, 10000) t(id, a,b,c,d) where (a,b,c,d) not in (select   11, NULL, 1000,  NULL);
+----
+1
+
+query I nosort
+select id from (select 1, 10, 100, NULL, 10000) t(id, a,b,c,d) where (a,b,c,d) not in (select   10, NULL, 1001,  NULL);
+----
+
+
+query I nosort
+select id from (select 1, 10, 100, NULL, 10000) t(id, a,b,c,d) where (a,b,c,d) not in (select   11,  100, NULL,  NULL);
+----
+1
+
+query I nosort
+select id from (select 1, 10, 100, NULL, 10000) t(id, a,b,c,d) where (a,b,c,d) not in (select   10,  101, NULL,  NULL);
+----
+1
+
+query I nosort
+select id from (select 1, 10, 100, NULL, 10000) t(id, a,b,c,d) where (a,b,c,d) not in (select NULL, NULL, NULL, 10001);
+----
+1
+
+query I nosort
+select id from (select 1, 10, 100, NULL, 10000) t(id, a,b,c,d) where (a,b,c,d) not in (select NULL,  101, NULL,  NULL);
+----
+1
+
+query I nosort
+select id from (select 1, 10, 100, NULL, 10000) t(id, a,b,c,d) where (a,b,c,d) not in (select   11, NULL, NULL,  NULL);
+----
+1
+
+
+-- mixed res
+query I nosort
+select id from (select 1, 10, 100, 1000, NULL) t(id, a,b,c,d) where (a,b,c,d) not in (select   11,  100, 1000, 10000);
+----
+1
+
+query I nosort
+select id from (select 1, 10, 100, 1000, NULL) t(id, a,b,c,d) where (a,b,c,d) not in (select NULL,  101, 1000, 10000);
+----
+1
+
+query I nosort
+select id from (select 1, 10, 100, 1000, NULL) t(id, a,b,c,d) where (a,b,c,d) not in (select NULL,  100, 1001, 10000);
+----
+1
+
+query I nosort
+select id from (select 1, 10, 100, 1000, NULL) t(id, a,b,c,d) where (a,b,c,d) not in (select NULL,  100, 1000, 10001);
+----
+
+
+query I nosort
+select id from (select 1, 10, 100, 1000, NULL) t(id, a,b,c,d) where (a,b,c,d) not in (select   11, NULL, 1000, 10000);
+----
+1
+
+query I nosort
+select id from (select 1, 10, 100, 1000, NULL) t(id, a,b,c,d) where (a,b,c,d) not in (select   10, NULL, 1001, 10000);
+----
+1
+
+query I nosort
+select id from (select 1, 10, 100, 1000, NULL) t(id, a,b,c,d) where (a,b,c,d) not in (select   10, NULL, 1000, 10001);
+----
+
+
+query I nosort
+select id from (select 1, 10, 100, 1000, NULL) t(id, a,b,c,d) where (a,b,c,d) not in (select   11,  100, NULL, 10000);
+----
+1
+
+query I nosort
+select id from (select 1, 10, 100, 1000, NULL) t(id, a,b,c,d) where (a,b,c,d) not in (select   10,  101, NULL, 10000);
+----
+1
+
+query I nosort
+select id from (select 1, 10, 100, 1000, NULL) t(id, a,b,c,d) where (a,b,c,d) not in (select   10,  100, NULL, 10001);
+----
+
+
+query I nosort
+select id from (select 1, 10, 100, 1000, NULL) t(id, a,b,c,d) where (a,b,c,d) not in (select   11,  100, 1000,  NULL);
+----
+1
+
+query I nosort
+select id from (select 1, 10, 100, 1000, NULL) t(id, a,b,c,d) where (a,b,c,d) not in (select   10,  101, 1000,  NULL);
+----
+1
+
+query I nosort
+select id from (select 1, 10, 100, 1000, NULL) t(id, a,b,c,d) where (a,b,c,d) not in (select   10,  100, 1001,  NULL);
+----
+1
+
+query I nosort
+select id from (select 1, 10, 100, 1000, NULL) t(id, a,b,c,d) where (a,b,c,d) not in (select NULL, NULL, 1001, 10000);
+----
+1
+
+query I nosort
+select id from (select 1, 10, 100, 1000, NULL) t(id, a,b,c,d) where (a,b,c,d) not in (select NULL, NULL, 1000, 10001);
+----
+
+
+query I nosort
+select id from (select 1, 10, 100, 1000, NULL) t(id, a,b,c,d) where (a,b,c,d) not in (select NULL,  101, NULL, 10000);
+----
+1
+
+query I nosort
+select id from (select 1, 10, 100, 1000, NULL) t(id, a,b,c,d) where (a,b,c,d) not in (select NULL,  100, NULL, 10001);
+----
+
+
+query I nosort
+select id from (select 1, 10, 100, 1000, NULL) t(id, a,b,c,d) where (a,b,c,d) not in (select NULL,  101, 1000,  NULL);
+----
+1
+
+query I nosort
+select id from (select 1, 10, 100, 1000, NULL) t(id, a,b,c,d) where (a,b,c,d) not in (select NULL,  100, 1001,  NULL);
+----
+1
+
+query I nosort
+select id from (select 1, 10, 100, 1000, NULL) t(id, a,b,c,d) where (a,b,c,d) not in (select   11, NULL, NULL, 10000);
+----
+1
+
+query I nosort
+select id from (select 1, 10, 100, 1000, NULL) t(id, a,b,c,d) where (a,b,c,d) not in (select   10, NULL, NULL, 10001);
+----
+
+
+query I nosort
+select id from (select 1, 10, 100, 1000, NULL) t(id, a,b,c,d) where (a,b,c,d) not in (select   11, NULL, 1000,  NULL);
+----
+1
+
+query I nosort
+select id from (select 1, 10, 100, 1000, NULL) t(id, a,b,c,d) where (a,b,c,d) not in (select   10, NULL, 1001,  NULL);
+----
+1
+
+query I nosort
+select id from (select 1, 10, 100, 1000, NULL) t(id, a,b,c,d) where (a,b,c,d) not in (select   11,  100, NULL,  NULL);
+----
+1
+
+query I nosort
+select id from (select 1, 10, 100, 1000, NULL) t(id, a,b,c,d) where (a,b,c,d) not in (select   10,  101, NULL,  NULL);
+----
+1
+
+query I nosort
+select id from (select 1, 10, 100, 1000, NULL) t(id, a,b,c,d) where (a,b,c,d) not in (select NULL, NULL, NULL, 10001);
+----
+
+
+query I nosort
+select id from (select 1, 10, 100, 1000, NULL) t(id, a,b,c,d) where (a,b,c,d) not in (select NULL,  101, NULL,  NULL);
+----
+
+
+query I nosort
+select id from (select 1, 10, 100, 1000, NULL) t(id, a,b,c,d) where (a,b,c,d) not in (select   11, NULL, NULL,  NULL);
+----
+1
+
+
+-- mixed res
+query I nosort
+select id from (select 1, NULL, NULL, 1000, 10000) t(id, a,b,c,d) where (a,b,c,d) not in (select   11,  100, 1000, 10000);
+----
+
+query I nosort
+select id from (select 1, NULL, NULL, 1000, 10000) t(id, a,b,c,d) where (a,b,c,d) not in (select NULL,  101, 1000, 10000);
+----
+
+query I nosort
+select id from (select 1, NULL, NULL, 1000, 10000) t(id, a,b,c,d) where (a,b,c,d) not in (select NULL,  100, 1001, 10000);
+----
+1
+
+query I nosort
+select id from (select 1, NULL, NULL, 1000, 10000) t(id, a,b,c,d) where (a,b,c,d) not in (select NULL,  100, 1000, 10001);
+----
+1
+
+query I nosort
+select id from (select 1, NULL, NULL, 1000, 10000) t(id, a,b,c,d) where (a,b,c,d) not in (select   11, NULL, 1000, 10000);
+----
+
+
+query I nosort
+select id from (select 1, NULL, NULL, 1000, 10000) t(id, a,b,c,d) where (a,b,c,d) not in (select   10, NULL, 1001, 10000);
+----
+1
+
+query I nosort
+select id from (select 1, NULL, NULL, 1000, 10000) t(id, a,b,c,d) where (a,b,c,d) not in (select   10, NULL, 1000, 10001);
+----
+1
+
+query I nosort
+select id from (select 1, NULL, NULL, 1000, 10000) t(id, a,b,c,d) where (a,b,c,d) not in (select   11,  100, NULL, 10000);
+----
+
+
+query I nosort
+select id from (select 1, NULL, NULL, 1000, 10000) t(id, a,b,c,d) where (a,b,c,d) not in (select   10,  101, NULL, 10000);
+----
+
+
+query I nosort
+select id from (select 1, NULL, NULL, 1000, 10000) t(id, a,b,c,d) where (a,b,c,d) not in (select   10,  100, NULL, 10001);
+----
+1
+
+query I nosort
+select id from (select 1, NULL, NULL, 1000, 10000) t(id, a,b,c,d) where (a,b,c,d) not in (select   11,  100, 1000,  NULL);
+----
+
+
+query I nosort
+select id from (select 1, NULL, NULL, 1000, 10000) t(id, a,b,c,d) where (a,b,c,d) not in (select   10,  101, 1000,  NULL);
+----
+
+
+query I nosort
+select id from (select 1, NULL, NULL, 1000, 10000) t(id, a,b,c,d) where (a,b,c,d) not in (select   10,  100, 1001,  NULL);
+----
+1
+
+query I nosort
+select id from (select 1, NULL, NULL, 1000, 10000) t(id, a,b,c,d) where (a,b,c,d) not in (select NULL, NULL, 1001, 10000);
+----
+1
+
+query I nosort
+select id from (select 1, NULL, NULL, 1000, 10000) t(id, a,b,c,d) where (a,b,c,d) not in (select NULL, NULL, 1000, 10001);
+----
+1
+
+query I nosort
+select id from (select 1, NULL, NULL, 1000, 10000) t(id, a,b,c,d) where (a,b,c,d) not in (select NULL,  101, NULL, 10000);
+----
+
+
+query I nosort
+select id from (select 1, NULL, NULL, 1000, 10000) t(id, a,b,c,d) where (a,b,c,d) not in (select NULL,  100, NULL, 10001);
+----
+1
+
+query I nosort
+select id from (select 1, NULL, NULL, 1000, 10000) t(id, a,b,c,d) where (a,b,c,d) not in (select NULL,  101, 1000,  NULL);
+----
+
+
+query I nosort
+select id from (select 1, NULL, NULL, 1000, 10000) t(id, a,b,c,d) where (a,b,c,d) not in (select NULL,  100, 1001,  NULL);
+----
+1
+
+query I nosort
+select id from (select 1, NULL, NULL, 1000, 10000) t(id, a,b,c,d) where (a,b,c,d) not in (select   11, NULL, NULL, 10000);
+----
+
+
+query I nosort
+select id from (select 1, NULL, NULL, 1000, 10000) t(id, a,b,c,d) where (a,b,c,d) not in (select   10, NULL, NULL, 10001);
+----
+1
+
+query I nosort
+select id from (select 1, NULL, NULL, 1000, 10000) t(id, a,b,c,d) where (a,b,c,d) not in (select   11, NULL, 1000,  NULL);
+----
+
+
+query I nosort
+select id from (select 1, NULL, NULL, 1000, 10000) t(id, a,b,c,d) where (a,b,c,d) not in (select   10, NULL, 1001,  NULL);
+----
+1
+
+query I nosort
+select id from (select 1, NULL, NULL, 1000, 10000) t(id, a,b,c,d) where (a,b,c,d) not in (select   11,  100, NULL,  NULL);
+----
+
+
+query I nosort
+select id from (select 1, NULL, NULL, 1000, 10000) t(id, a,b,c,d) where (a,b,c,d) not in (select   10,  101, NULL,  NULL);
+----
+
+
+query I nosort
+select id from (select 1, NULL, NULL, 1000, 10000) t(id, a,b,c,d) where (a,b,c,d) not in (select NULL, NULL, NULL, 10001);
+----
+1
+
+query I nosort
+select id from (select 1, NULL, NULL, 1000, 10000) t(id, a,b,c,d) where (a,b,c,d) not in (select NULL,  101, NULL,  NULL);
+----
+
+
+query I nosort
+select id from (select 1, NULL, NULL, 1000, 10000) t(id, a,b,c,d) where (a,b,c,d) not in (select   11, NULL, NULL,  NULL);
+----
+
+
+-- mixed res
+query I nosort
+select id from (select 1, NULL, 100, NULL, 10000) t(id, a,b,c,d) where (a,b,c,d) not in (select   11,  100, 1000, 10000);
+----
+
+query I nosort
+select id from (select 1, NULL, 100, NULL, 10000) t(id, a,b,c,d) where (a,b,c,d) not in (select NULL,  101, 1000, 10000);
+----
+1
+
+query I nosort
+select id from (select 1, NULL, 100, NULL, 10000) t(id, a,b,c,d) where (a,b,c,d) not in (select NULL,  100, 1001, 10000);
+----
+
+
+query I nosort
+select id from (select 1, NULL, 100, NULL, 10000) t(id, a,b,c,d) where (a,b,c,d) not in (select NULL,  100, 1000, 10001);
+----
+1
+
+query I nosort
+select id from (select 1, NULL, 100, NULL, 10000) t(id, a,b,c,d) where (a,b,c,d) not in (select   11, NULL, 1000, 10000);
+----
+
+
+query I nosort
+select id from (select 1, NULL, 100, NULL, 10000) t(id, a,b,c,d) where (a,b,c,d) not in (select   10, NULL, 1001, 10000);
+----
+
+
+query I nosort
+select id from (select 1, NULL, 100, NULL, 10000) t(id, a,b,c,d) where (a,b,c,d) not in (select   10, NULL, 1000, 10001);
+----
+1
+
+query I nosort
+select id from (select 1, NULL, 100, NULL, 10000) t(id, a,b,c,d) where (a,b,c,d) not in (select   11,  100, NULL, 10000);
+----
+
+
+query I nosort
+select id from (select 1, NULL, 100, NULL, 10000) t(id, a,b,c,d) where (a,b,c,d) not in (select   10,  101, NULL, 10000);
+----
+1
+
+query I nosort
+select id from (select 1, NULL, 100, NULL, 10000) t(id, a,b,c,d) where (a,b,c,d) not in (select   10,  100, NULL, 10001);
+----
+1
+
+query I nosort
+select id from (select 1, NULL, 100, NULL, 10000) t(id, a,b,c,d) where (a,b,c,d) not in (select   11,  100, 1000,  NULL);
+----
+
+
+query I nosort
+select id from (select 1, NULL, 100, NULL, 10000) t(id, a,b,c,d) where (a,b,c,d) not in (select   10,  101, 1000,  NULL);
+----
+1
+
+query I nosort
+select id from (select 1, NULL, 100, NULL, 10000) t(id, a,b,c,d) where (a,b,c,d) not in (select   10,  100, 1001,  NULL);
+----
+
+
+query I nosort
+select id from (select 1, NULL, 100, NULL, 10000) t(id, a,b,c,d) where (a,b,c,d) not in (select NULL, NULL, 1001, 10000);
+----
+
+
+query I nosort
+select id from (select 1, NULL, 100, NULL, 10000) t(id, a,b,c,d) where (a,b,c,d) not in (select NULL, NULL, 1000, 10001);
+----
+1
+
+query I nosort
+select id from (select 1, NULL, 100, NULL, 10000) t(id, a,b,c,d) where (a,b,c,d) not in (select NULL,  101, NULL, 10000);
+----
+1
+
+query I nosort
+select id from (select 1, NULL, 100, NULL, 10000) t(id, a,b,c,d) where (a,b,c,d) not in (select NULL,  100, NULL, 10001);
+----
+1
+
+query I nosort
+select id from (select 1, NULL, 100, NULL, 10000) t(id, a,b,c,d) where (a,b,c,d) not in (select NULL,  101, 1000,  NULL);
+----
+1
+
+query I nosort
+select id from (select 1, NULL, 100, NULL, 10000) t(id, a,b,c,d) where (a,b,c,d) not in (select NULL,  100, 1001,  NULL);
+----
+
+
+query I nosort
+select id from (select 1, NULL, 100, NULL, 10000) t(id, a,b,c,d) where (a,b,c,d) not in (select   11, NULL, NULL, 10000);
+----
+
+
+query I nosort
+select id from (select 1, NULL, 100, NULL, 10000) t(id, a,b,c,d) where (a,b,c,d) not in (select   10, NULL, NULL, 10001);
+----
+1
+
+query I nosort
+select id from (select 1, NULL, 100, NULL, 10000) t(id, a,b,c,d) where (a,b,c,d) not in (select   11, NULL, 1000,  NULL);
+----
+
+
+query I nosort
+select id from (select 1, NULL, 100, NULL, 10000) t(id, a,b,c,d) where (a,b,c,d) not in (select   10, NULL, 1001,  NULL);
+----
+
+
+query I nosort
+select id from (select 1, NULL, 100, NULL, 10000) t(id, a,b,c,d) where (a,b,c,d) not in (select   11,  100, NULL,  NULL);
+----
+
+
+query I nosort
+select id from (select 1, NULL, 100, NULL, 10000) t(id, a,b,c,d) where (a,b,c,d) not in (select   10,  101, NULL,  NULL);
+----
+1
+
+query I nosort
+select id from (select 1, NULL, 100, NULL, 10000) t(id, a,b,c,d) where (a,b,c,d) not in (select NULL, NULL, NULL, 10001);
+----
+1
+
+query I nosort
+select id from (select 1, NULL, 100, NULL, 10000) t(id, a,b,c,d) where (a,b,c,d) not in (select NULL,  101, NULL,  NULL);
+----
+1
+
+query I nosort
+select id from (select 1, NULL, 100, NULL, 10000) t(id, a,b,c,d) where (a,b,c,d) not in (select   11, NULL, NULL,  NULL);
+----
+
+
+-- mixed res
+query I nosort
+select id from (select 1, NULL, 100, 1000, NULL) t(id, a,b,c,d) where (a,b,c,d) not in (select   11,  100, 1000, 10000);
+----
+
+
+query I nosort
+select id from (select 1, NULL, 100, 1000, NULL) t(id, a,b,c,d) where (a,b,c,d) not in (select NULL,  101, 1000, 10000);
+----
+1
+
+query I nosort
+select id from (select 1, NULL, 100, 1000, NULL) t(id, a,b,c,d) where (a,b,c,d) not in (select NULL,  100, 1001, 10000);
+----
+1
+
+query I nosort
+select id from (select 1, NULL, 100, 1000, NULL) t(id, a,b,c,d) where (a,b,c,d) not in (select NULL,  100, 1000, 10001);
+----
+
+
+query I nosort
+select id from (select 1, NULL, 100, 1000, NULL) t(id, a,b,c,d) where (a,b,c,d) not in (select   11, NULL, 1000, 10000);
+----
+
+
+query I nosort
+select id from (select 1, NULL, 100, 1000, NULL) t(id, a,b,c,d) where (a,b,c,d) not in (select   10, NULL, 1001, 10000);
+----
+1
+
+query I nosort
+select id from (select 1, NULL, 100, 1000, NULL) t(id, a,b,c,d) where (a,b,c,d) not in (select   10, NULL, 1000, 10001);
+----
+
+
+query I nosort
+select id from (select 1, NULL, 100, 1000, NULL) t(id, a,b,c,d) where (a,b,c,d) not in (select   11,  100, NULL, 10000);
+----
+
+
+query I nosort
+select id from (select 1, NULL, 100, 1000, NULL) t(id, a,b,c,d) where (a,b,c,d) not in (select   10,  101, NULL, 10000);
+----
+1
+
+query I nosort
+select id from (select 1, NULL, 100, 1000, NULL) t(id, a,b,c,d) where (a,b,c,d) not in (select   10,  100, NULL, 10001);
+----
+
+
+query I nosort
+select id from (select 1, NULL, 100, 1000, NULL) t(id, a,b,c,d) where (a,b,c,d) not in (select   11,  100, 1000,  NULL);
+----
+
+
+query I nosort
+select id from (select 1, NULL, 100, 1000, NULL) t(id, a,b,c,d) where (a,b,c,d) not in (select   10,  101, 1000,  NULL);
+----
+1
+
+query I nosort
+select id from (select 1, NULL, 100, 1000, NULL) t(id, a,b,c,d) where (a,b,c,d) not in (select   10,  100, 1001,  NULL);
+----
+1
+
+query I nosort
+select id from (select 1, NULL, 100, 1000, NULL) t(id, a,b,c,d) where (a,b,c,d) not in (select NULL, NULL, 1001, 10000);
+----
+1
+
+query I nosort
+select id from (select 1, NULL, 100, 1000, NULL) t(id, a,b,c,d) where (a,b,c,d) not in (select NULL, NULL, 1000, 10001);
+----
+
+
+query I nosort
+select id from (select 1, NULL, 100, 1000, NULL) t(id, a,b,c,d) where (a,b,c,d) not in (select NULL,  101, NULL, 10000);
+----
+1
+
+query I nosort
+select id from (select 1, NULL, 100, 1000, NULL) t(id, a,b,c,d) where (a,b,c,d) not in (select NULL,  100, NULL, 10001);
+----
+
+
+query I nosort
+select id from (select 1, NULL, 100, 1000, NULL) t(id, a,b,c,d) where (a,b,c,d) not in (select NULL,  101, 1000,  NULL);
+----
+1
+
+query I nosort
+select id from (select 1, NULL, 100, 1000, NULL) t(id, a,b,c,d) where (a,b,c,d) not in (select NULL,  100, 1001,  NULL);
+----
+1
+
+query I nosort
+select id from (select 1, NULL, 100, 1000, NULL) t(id, a,b,c,d) where (a,b,c,d) not in (select   11, NULL, NULL, 10000);
+----
+
+
+query I nosort
+select id from (select 1, NULL, 100, 1000, NULL) t(id, a,b,c,d) where (a,b,c,d) not in (select   10, NULL, NULL, 10001);
+----
+
+
+query I nosort
+select id from (select 1, NULL, 100, 1000, NULL) t(id, a,b,c,d) where (a,b,c,d) not in (select   11, NULL, 1000,  NULL);
+----
+
+
+query I nosort
+select id from (select 1, NULL, 100, 1000, NULL) t(id, a,b,c,d) where (a,b,c,d) not in (select   10, NULL, 1001,  NULL);
+----
+1
+
+query I nosort
+select id from (select 1, NULL, 100, 1000, NULL) t(id, a,b,c,d) where (a,b,c,d) not in (select   11,  100, NULL,  NULL);
+----
+
+
+query I nosort
+select id from (select 1, NULL, 100, 1000, NULL) t(id, a,b,c,d) where (a,b,c,d) not in (select   10,  101, NULL,  NULL);
+----
+1
+
+query I nosort
+select id from (select 1, NULL, 100, 1000, NULL) t(id, a,b,c,d) where (a,b,c,d) not in (select NULL, NULL, NULL, 10001);
+----
+
+
+query I nosort
+select id from (select 1, NULL, 100, 1000, NULL) t(id, a,b,c,d) where (a,b,c,d) not in (select NULL,  101, NULL,  NULL);
+----
+1
+
+query I nosort
+select id from (select 1, NULL, 100, 1000, NULL) t(id, a,b,c,d) where (a,b,c,d) not in (select   11, NULL, NULL,  NULL);
+----
+1
+
+
+-- mixed res
+query I nosort
+select id from (select 1, 10, NULL, NULL, 10000) t(id, a,b,c,d) where (a,b,c,d) not in (select   11,  100, 1000, 10000);
+----
+1
+
+query I nosort
+select id from (select 1, 10, NULL, NULL, 10000) t(id, a,b,c,d) where (a,b,c,d) not in (select NULL,  101, 1000, 10000);
+----
+
+
+query I nosort
+select id from (select 1, 10, NULL, NULL, 10000) t(id, a,b,c,d) where (a,b,c,d) not in (select NULL,  100, 1001, 10000);
+----
+
+
+query I nosort
+select id from (select 1, 10, NULL, NULL, 10000) t(id, a,b,c,d) where (a,b,c,d) not in (select NULL,  100, 1000, 10001);
+----
+1
+
+query I nosort
+select id from (select 1, 10, NULL, NULL, 10000) t(id, a,b,c,d) where (a,b,c,d) not in (select   11, NULL, 1000, 10000);
+----
+1
+
+query I nosort
+select id from (select 1, 10, NULL, NULL, 10000) t(id, a,b,c,d) where (a,b,c,d) not in (select   10, NULL, 1001, 10000);
+----
+
+
+query I nosort
+select id from (select 1, 10, NULL, NULL, 10000) t(id, a,b,c,d) where (a,b,c,d) not in (select   10, NULL, 1000, 10001);
+----
+1
+
+query I nosort
+select id from (select 1, 10, NULL, NULL, 10000) t(id, a,b,c,d) where (a,b,c,d) not in (select   11,  100, NULL, 10000);
+----
+1
+
+query I nosort
+select id from (select 1, 10, NULL, NULL, 10000) t(id, a,b,c,d) where (a,b,c,d) not in (select   10,  101, NULL, 10000);
+----
+
+
+query I nosort
+select id from (select 1, 10, NULL, NULL, 10000) t(id, a,b,c,d) where (a,b,c,d) not in (select   10,  100, NULL, 10001);
+----
+1
+
+query I nosort
+select id from (select 1, 10, NULL, NULL, 10000) t(id, a,b,c,d) where (a,b,c,d) not in (select   11,  100, 1000,  NULL);
+----
+1
+
+query I nosort
+select id from (select 1, 10, NULL, NULL, 10000) t(id, a,b,c,d) where (a,b,c,d) not in (select   10,  101, 1000,  NULL);
+----
+
+
+query I nosort
+select id from (select 1, 10, NULL, NULL, 10000) t(id, a,b,c,d) where (a,b,c,d) not in (select   10,  100, 1001,  NULL);
+----
+
+
+query I nosort
+select id from (select 1, 10, NULL, NULL, 10000) t(id, a,b,c,d) where (a,b,c,d) not in (select NULL, NULL, 1001, 10000);
+----
+
+
+query I nosort
+select id from (select 1, 10, NULL, NULL, 10000) t(id, a,b,c,d) where (a,b,c,d) not in (select NULL, NULL, 1000, 10001);
+----
+1
+
+query I nosort
+select id from (select 1, 10, NULL, NULL, 10000) t(id, a,b,c,d) where (a,b,c,d) not in (select NULL,  101, NULL, 10000);
+----
+
+
+query I nosort
+select id from (select 1, 10, NULL, NULL, 10000) t(id, a,b,c,d) where (a,b,c,d) not in (select NULL,  100, NULL, 10001);
+----
+1
+
+query I nosort
+select id from (select 1, 10, NULL, NULL, 10000) t(id, a,b,c,d) where (a,b,c,d) not in (select NULL,  101, 1000,  NULL);
+----
+
+
+query I nosort
+select id from (select 1, 10, NULL, NULL, 10000) t(id, a,b,c,d) where (a,b,c,d) not in (select NULL,  100, 1001,  NULL);
+----
+
+
+query I nosort
+select id from (select 1, 10, NULL, NULL, 10000) t(id, a,b,c,d) where (a,b,c,d) not in (select   11, NULL, NULL, 10000);
+----
+1
+
+query I nosort
+select id from (select 1, 10, NULL, NULL, 10000) t(id, a,b,c,d) where (a,b,c,d) not in (select   10, NULL, NULL, 10001);
+----
+1
+
+query I nosort
+select id from (select 1, 10, NULL, NULL, 10000) t(id, a,b,c,d) where (a,b,c,d) not in (select   11, NULL, 1000,  NULL);
+----
+1
+
+query I nosort
+select id from (select 1, 10, NULL, NULL, 10000) t(id, a,b,c,d) where (a,b,c,d) not in (select   10, NULL, 1001,  NULL);
+----
+
+
+query I nosort
+select id from (select 1, 10, NULL, NULL, 10000) t(id, a,b,c,d) where (a,b,c,d) not in (select   11,  100, NULL,  NULL);
+----
+1
+
+query I nosort
+select id from (select 1, 10, NULL, NULL, 10000) t(id, a,b,c,d) where (a,b,c,d) not in (select   10,  101, NULL,  NULL);
+----
+
+
+query I nosort
+select id from (select 1, 10, NULL, NULL, 10000) t(id, a,b,c,d) where (a,b,c,d) not in (select NULL, NULL, NULL, 10001);
+----
+1
+
+query I nosort
+select id from (select 1, 10, NULL, NULL, 10000) t(id, a,b,c,d) where (a,b,c,d) not in (select NULL,  101, NULL,  NULL);
+----
+
+
+query I nosort
+select id from (select 1, 10, NULL, NULL, 10000) t(id, a,b,c,d) where (a,b,c,d) not in (select   11, NULL, NULL,  NULL);
+----
+1
+
+
+-- mixed res
+query I nosort
+select id from (select 1, 10, NULL, 1000, NULL) t(id, a,b,c,d) where (a,b,c,d) not in (select   11,  100, 1000, 10000);
+----
+1
+
+query I nosort
+select id from (select 1, 10, NULL, 1000, NULL) t(id, a,b,c,d) where (a,b,c,d) not in (select NULL,  101, 1000, 10000);
+----
+
+
+query I nosort
+select id from (select 1, 10, NULL, 1000, NULL) t(id, a,b,c,d) where (a,b,c,d) not in (select NULL,  100, 1001, 10000);
+----
+1
+
+query I nosort
+select id from (select 1, 10, NULL, 1000, NULL) t(id, a,b,c,d) where (a,b,c,d) not in (select NULL,  100, 1000, 10001);
+----
+
+
+query I nosort
+select id from (select 1, 10, NULL, 1000, NULL) t(id, a,b,c,d) where (a,b,c,d) not in (select   11, NULL, 1000, 10000);
+----
+1
+
+query I nosort
+select id from (select 1, 10, NULL, 1000, NULL) t(id, a,b,c,d) where (a,b,c,d) not in (select   10, NULL, 1001, 10000);
+----
+1
+
+query I nosort
+select id from (select 1, 10, NULL, 1000, NULL) t(id, a,b,c,d) where (a,b,c,d) not in (select   10, NULL, 1000, 10001);
+----
+
+
+query I nosort
+select id from (select 1, 10, NULL, 1000, NULL) t(id, a,b,c,d) where (a,b,c,d) not in (select   11,  100, NULL, 10000);
+----
+1
+
+query I nosort
+select id from (select 1, 10, NULL, 1000, NULL) t(id, a,b,c,d) where (a,b,c,d) not in (select   10,  101, NULL, 10000);
+----
+
+
+query I nosort
+select id from (select 1, 10, NULL, 1000, NULL) t(id, a,b,c,d) where (a,b,c,d) not in (select   10,  100, NULL, 10001);
+----
+
+
+query I nosort
+select id from (select 1, 10, NULL, 1000, NULL) t(id, a,b,c,d) where (a,b,c,d) not in (select   11,  100, 1000,  NULL);
+----
+1
+
+query I nosort
+select id from (select 1, 10, NULL, 1000, NULL) t(id, a,b,c,d) where (a,b,c,d) not in (select   10,  101, 1000,  NULL);
+----
+
+
+query I nosort
+select id from (select 1, 10, NULL, 1000, NULL) t(id, a,b,c,d) where (a,b,c,d) not in (select   10,  100, 1001,  NULL);
+----
+1
+
+query I nosort
+select id from (select 1, 10, NULL, 1000, NULL) t(id, a,b,c,d) where (a,b,c,d) not in (select NULL, NULL, 1001, 10000);
+----
+1
+
+query I nosort
+select id from (select 1, 10, NULL, 1000, NULL) t(id, a,b,c,d) where (a,b,c,d) not in (select NULL, NULL, 1000, 10001);
+----
+
+
+query I nosort
+select id from (select 1, 10, NULL, 1000, NULL) t(id, a,b,c,d) where (a,b,c,d) not in (select NULL,  101, NULL, 10000);
+----
+
+
+query I nosort
+select id from (select 1, 10, NULL, 1000, NULL) t(id, a,b,c,d) where (a,b,c,d) not in (select NULL,  100, NULL, 10001);
+----
+
+
+query I nosort
+select id from (select 1, 10, NULL, 1000, NULL) t(id, a,b,c,d) where (a,b,c,d) not in (select NULL,  101, 1000,  NULL);
+----
+
+
+query I nosort
+select id from (select 1, 10, NULL, 1000, NULL) t(id, a,b,c,d) where (a,b,c,d) not in (select NULL,  100, 1001,  NULL);
+----
+1
+
+query I nosort
+select id from (select 1, 10, NULL, 1000, NULL) t(id, a,b,c,d) where (a,b,c,d) not in (select   11, NULL, NULL, 10000);
+----
+1
+
+query I nosort
+select id from (select 1, 10, NULL, 1000, NULL) t(id, a,b,c,d) where (a,b,c,d) not in (select   10, NULL, NULL, 10001);
+----
+
+
+query I nosort
+select id from (select 1, 10, NULL, 1000, NULL) t(id, a,b,c,d) where (a,b,c,d) not in (select   11, NULL, 1000,  NULL);
+----
+1
+
+query I nosort
+select id from (select 1, 10, NULL, 1000, NULL) t(id, a,b,c,d) where (a,b,c,d) not in (select   10, NULL, 1001,  NULL);
+----
+1
+
+query I nosort
+select id from (select 1, 10, NULL, 1000, NULL) t(id, a,b,c,d) where (a,b,c,d) not in (select   11,  100, NULL,  NULL);
+----
+1
+
+query I nosort
+select id from (select 1, 10, NULL, 1000, NULL) t(id, a,b,c,d) where (a,b,c,d) not in (select   10,  101, NULL,  NULL);
+----
+
+
+query I nosort
+select id from (select 1, 10, NULL, 1000, NULL) t(id, a,b,c,d) where (a,b,c,d) not in (select NULL, NULL, NULL, 10001);
+----
+
+
+query I nosort
+select id from (select 1, 10, NULL, 1000, NULL) t(id, a,b,c,d) where (a,b,c,d) not in (select NULL,  101, NULL,  NULL);
+----
+
+
+query I nosort
+select id from (select 1, 10, NULL, 1000, NULL) t(id, a,b,c,d) where (a,b,c,d) not in (select   11, NULL, NULL,  NULL);
+----
+1
+
+
+-- mixed res
+query I nosort
+select id from (select 1, 10, 100, NULL, NULL) t(id, a,b,c,d) where (a,b,c,d) not in (select   11,  100, 1000, 10000);
+----
+1
+
+query I nosort
+select id from (select 1, 10, 100, NULL, NULL) t(id, a,b,c,d) where (a,b,c,d) not in (select NULL,  101, 1000, 10000);
+----
+1
+
+query I nosort
+select id from (select 1, 10, 100, NULL, NULL) t(id, a,b,c,d) where (a,b,c,d) not in (select NULL,  100, 1001, 10000);
+----
+
+
+query I nosort
+select id from (select 1, 10, 100, NULL, NULL) t(id, a,b,c,d) where (a,b,c,d) not in (select NULL,  100, 1000, 10001);
+----
+
+
+query I nosort
+select id from (select 1, 10, 100, NULL, NULL) t(id, a,b,c,d) where (a,b,c,d) not in (select   11, NULL, 1000, 10000);
+----
+1
+
+query I nosort
+select id from (select 1, 10, 100, NULL, NULL) t(id, a,b,c,d) where (a,b,c,d) not in (select   10, NULL, 1001, 10000);
+----
+
+
+query I nosort
+select id from (select 1, 10, 100, NULL, NULL) t(id, a,b,c,d) where (a,b,c,d) not in (select   10, NULL, 1000, 10001);
+----
+
+
+query I nosort
+select id from (select 1, 10, 100, NULL, NULL) t(id, a,b,c,d) where (a,b,c,d) not in (select   11,  100, NULL, 10000);
+----
+1
+
+query I nosort
+select id from (select 1, 10, 100, NULL, NULL) t(id, a,b,c,d) where (a,b,c,d) not in (select   10,  101, NULL, 10000);
+----
+1
+
+query I nosort
+select id from (select 1, 10, 100, NULL, NULL) t(id, a,b,c,d) where (a,b,c,d) not in (select   10,  100, NULL, 10001);
+----
+
+
+query I nosort
+select id from (select 1, 10, 100, NULL, NULL) t(id, a,b,c,d) where (a,b,c,d) not in (select   11,  100, 1000,  NULL);
+----
+1
+
+query I nosort
+select id from (select 1, 10, 100, NULL, NULL) t(id, a,b,c,d) where (a,b,c,d) not in (select   10,  101, 1000,  NULL);
+----
+1
+
+query I nosort
+select id from (select 1, 10, 100, NULL, NULL) t(id, a,b,c,d) where (a,b,c,d) not in (select   10,  100, 1001,  NULL);
+----
+
+
+query I nosort
+select id from (select 1, 10, 100, NULL, NULL) t(id, a,b,c,d) where (a,b,c,d) not in (select NULL, NULL, 1001, 10000);
+----
+
+
+query I nosort
+select id from (select 1, 10, 100, NULL, NULL) t(id, a,b,c,d) where (a,b,c,d) not in (select NULL, NULL, 1000, 10001);
+----
+
+
+query I nosort
+select id from (select 1, 10, 100, NULL, NULL) t(id, a,b,c,d) where (a,b,c,d) not in (select NULL,  101, NULL, 10000);
+----
+1
+
+query I nosort
+select id from (select 1, 10, 100, NULL, NULL) t(id, a,b,c,d) where (a,b,c,d) not in (select NULL,  100, NULL, 10001);
+----
+
+
+query I nosort
+select id from (select 1, 10, 100, NULL, NULL) t(id, a,b,c,d) where (a,b,c,d) not in (select NULL,  101, 1000,  NULL);
+----
+1
+
+query I nosort
+select id from (select 1, 10, 100, NULL, NULL) t(id, a,b,c,d) where (a,b,c,d) not in (select NULL,  100, 1001,  NULL);
+----
+
+
+query I nosort
+select id from (select 1, 10, 100, NULL, NULL) t(id, a,b,c,d) where (a,b,c,d) not in (select   11, NULL, NULL, 10000);
+----
+1
+
+query I nosort
+select id from (select 1, 10, 100, NULL, NULL) t(id, a,b,c,d) where (a,b,c,d) not in (select   10, NULL, NULL, 10001);
+----
+
+
+query I nosort
+select id from (select 1, 10, 100, NULL, NULL) t(id, a,b,c,d) where (a,b,c,d) not in (select   11, NULL, 1000,  NULL);
+----
+1
+
+query I nosort
+select id from (select 1, 10, 100, NULL, NULL) t(id, a,b,c,d) where (a,b,c,d) not in (select   10, NULL, 1001,  NULL);
+----
+
+
+query I nosort
+select id from (select 1, 10, 100, NULL, NULL) t(id, a,b,c,d) where (a,b,c,d) not in (select   11,  100, NULL,  NULL);
+----
+1
+
+query I nosort
+select id from (select 1, 10, 100, NULL, NULL) t(id, a,b,c,d) where (a,b,c,d) not in (select   10,  101, NULL,  NULL);
+----
+1
+
+query I nosort
+select id from (select 1, 10, 100, NULL, NULL) t(id, a,b,c,d) where (a,b,c,d) not in (select NULL, NULL, NULL, 10001);
+----
+
+
+query I nosort
+select id from (select 1, 10, 100, NULL, NULL) t(id, a,b,c,d) where (a,b,c,d) not in (select NULL,  101, NULL,  NULL);
+----
+1
+
+query I nosort
+select id from (select 1, 10, 100, NULL, NULL) t(id, a,b,c,d) where (a,b,c,d) not in (select   11, NULL, NULL,  NULL);
+----
+
+
+-- mixed res
+query I nosort
+select id from (select 1, NULL, NULL, NULL, 10000) t(id, a,b,c,d) where (a,b,c,d) not in (select   11,  100, 1000, 10000);
+----
+
+
+query I nosort
+select id from (select 1, NULL, NULL, NULL, 10000) t(id, a,b,c,d) where (a,b,c,d) not in (select NULL,  101, 1000, 10000);
+----
+
+
+query I nosort
+select id from (select 1, NULL, NULL, NULL, 10000) t(id, a,b,c,d) where (a,b,c,d) not in (select NULL,  100, 1001, 10000);
+----
+
+
+query I nosort
+select id from (select 1, NULL, NULL, NULL, 10000) t(id, a,b,c,d) where (a,b,c,d) not in (select NULL,  100, 1000, 10001);
+----
+1
+
+query I nosort
+select id from (select 1, NULL, NULL, NULL, 10000) t(id, a,b,c,d) where (a,b,c,d) not in (select   11, NULL, 1000, 10000);
+----
+
+
+query I nosort
+select id from (select 1, NULL, NULL, NULL, 10000) t(id, a,b,c,d) where (a,b,c,d) not in (select   10, NULL, 1001, 10000);
+----
+
+
+query I nosort
+select id from (select 1, NULL, NULL, NULL, 10000) t(id, a,b,c,d) where (a,b,c,d) not in (select   10, NULL, 1000, 10001);
+----
+1
+
+query I nosort
+select id from (select 1, NULL, NULL, NULL, 10000) t(id, a,b,c,d) where (a,b,c,d) not in (select   11,  100, NULL, 10000);
+----
+
+
+query I nosort
+select id from (select 1, NULL, NULL, NULL, 10000) t(id, a,b,c,d) where (a,b,c,d) not in (select   10,  101, NULL, 10000);
+----
+
+
+query I nosort
+select id from (select 1, NULL, NULL, NULL, 10000) t(id, a,b,c,d) where (a,b,c,d) not in (select   10,  100, NULL, 10001);
+----
+1
+
+query I nosort
+select id from (select 1, NULL, NULL, NULL, 10000) t(id, a,b,c,d) where (a,b,c,d) not in (select   11,  100, 1000,  NULL);
+----
+
+
+query I nosort
+select id from (select 1, NULL, NULL, NULL, 10000) t(id, a,b,c,d) where (a,b,c,d) not in (select   10,  101, 1000,  NULL);
+----
+
+
+query I nosort
+select id from (select 1, NULL, NULL, NULL, 10000) t(id, a,b,c,d) where (a,b,c,d) not in (select   10,  100, 1001,  NULL);
+----
+
+
+query I nosort
+select id from (select 1, NULL, NULL, NULL, 10000) t(id, a,b,c,d) where (a,b,c,d) not in (select NULL, NULL, 1001, 10000);
+----
+
+
+query I nosort
+select id from (select 1, NULL, NULL, NULL, 10000) t(id, a,b,c,d) where (a,b,c,d) not in (select NULL, NULL, 1000, 10001);
+----
+1
+
+query I nosort
+select id from (select 1, NULL, NULL, NULL, 10000) t(id, a,b,c,d) where (a,b,c,d) not in (select NULL,  101, NULL, 10000);
+----
+
+
+query I nosort
+select id from (select 1, NULL, NULL, NULL, 10000) t(id, a,b,c,d) where (a,b,c,d) not in (select NULL,  100, NULL, 10001);
+----
+1
+
+query I nosort
+select id from (select 1, NULL, NULL, NULL, 10000) t(id, a,b,c,d) where (a,b,c,d) not in (select NULL,  101, 1000,  NULL);
+----
+
+
+query I nosort
+select id from (select 1, NULL, NULL, NULL, 10000) t(id, a,b,c,d) where (a,b,c,d) not in (select NULL,  100, 1001,  NULL);
+----
+
+
+query I nosort
+select id from (select 1, NULL, NULL, NULL, 10000) t(id, a,b,c,d) where (a,b,c,d) not in (select   11, NULL, NULL, 10000);
+----
+
+
+query I nosort
+select id from (select 1, NULL, NULL, NULL, 10000) t(id, a,b,c,d) where (a,b,c,d) not in (select   10, NULL, NULL, 10001);
+----
+1
+
+query I nosort
+select id from (select 1, NULL, NULL, NULL, 10000) t(id, a,b,c,d) where (a,b,c,d) not in (select   11, NULL, 1000,  NULL);
+----
+
+
+query I nosort
+select id from (select 1, NULL, NULL, NULL, 10000) t(id, a,b,c,d) where (a,b,c,d) not in (select   10, NULL, 1001,  NULL);
+----
+
+
+query I nosort
+select id from (select 1, NULL, NULL, NULL, 10000) t(id, a,b,c,d) where (a,b,c,d) not in (select   11,  100, NULL,  NULL);
+----
+
+
+query I nosort
+select id from (select 1, NULL, NULL, NULL, 10000) t(id, a,b,c,d) where (a,b,c,d) not in (select   10,  101, NULL,  NULL);
+----
+
+
+query I nosort
+select id from (select 1, NULL, NULL, NULL, 10000) t(id, a,b,c,d) where (a,b,c,d) not in (select NULL, NULL, NULL, 10001);
+----
+1
+
+query I nosort
+select id from (select 1, NULL, NULL, NULL, 10000) t(id, a,b,c,d) where (a,b,c,d) not in (select NULL,  101, NULL,  NULL);
+----
+
+
+query I nosort
+select id from (select 1, NULL, NULL, NULL, 10000) t(id, a,b,c,d) where (a,b,c,d) not in (select   11, NULL, NULL,  NULL);
+----
+
+
+-- mixed res
+query I nosort
+select id from (select 1, NULL, 100, NULL, NULL) t(id, a,b,c,d) where (a,b,c,d) not in (select   11,  100, 1000, 10000);
+----
+
+
+query I nosort
+select id from (select 1, NULL, 100, NULL, NULL) t(id, a,b,c,d) where (a,b,c,d) not in (select NULL,  101, 1000, 10000);
+----
+1
+
+query I nosort
+select id from (select 1, NULL, 100, NULL, NULL) t(id, a,b,c,d) where (a,b,c,d) not in (select NULL,  100, 1001, 10000);
+----
+
+
+query I nosort
+select id from (select 1, NULL, 100, NULL, NULL) t(id, a,b,c,d) where (a,b,c,d) not in (select NULL,  100, 1000, 10001);
+----
+
+
+query I nosort
+select id from (select 1, NULL, 100, NULL, NULL) t(id, a,b,c,d) where (a,b,c,d) not in (select   11, NULL, 1000, 10000);
+----
+
+
+query I nosort
+select id from (select 1, NULL, 100, NULL, NULL) t(id, a,b,c,d) where (a,b,c,d) not in (select   10, NULL, 1001, 10000);
+----
+
+
+query I nosort
+select id from (select 1, NULL, 100, NULL, NULL) t(id, a,b,c,d) where (a,b,c,d) not in (select   10, NULL, 1000, 10001);
+----
+
+
+query I nosort
+select id from (select 1, NULL, 100, NULL, NULL) t(id, a,b,c,d) where (a,b,c,d) not in (select   11,  100, NULL, 10000);
+----
+
+
+query I nosort
+select id from (select 1, NULL, 100, NULL, NULL) t(id, a,b,c,d) where (a,b,c,d) not in (select   10,  101, NULL, 10000);
+----
+1
+
+query I nosort
+select id from (select 1, NULL, 100, NULL, NULL) t(id, a,b,c,d) where (a,b,c,d) not in (select   10,  100, NULL, 10001);
+----
+
+
+query I nosort
+select id from (select 1, NULL, 100, NULL, NULL) t(id, a,b,c,d) where (a,b,c,d) not in (select   11,  100, 1000,  NULL);
+----
+
+
+query I nosort
+select id from (select 1, NULL, 100, NULL, NULL) t(id, a,b,c,d) where (a,b,c,d) not in (select   10,  101, 1000,  NULL);
+----
+1
+
+query I nosort
+select id from (select 1, NULL, 100, NULL, NULL) t(id, a,b,c,d) where (a,b,c,d) not in (select   10,  100, 1001,  NULL);
+----
+
+
+query I nosort
+select id from (select 1, NULL, 100, NULL, NULL) t(id, a,b,c,d) where (a,b,c,d) not in (select NULL, NULL, 1001, 10000);
+----
+
+
+query I nosort
+select id from (select 1, NULL, 100, NULL, NULL) t(id, a,b,c,d) where (a,b,c,d) not in (select NULL, NULL, 1000, 10001);
+----
+
+
+query I nosort
+select id from (select 1, NULL, 100, NULL, NULL) t(id, a,b,c,d) where (a,b,c,d) not in (select NULL,  101, NULL, 10000);
+----
+1
+
+query I nosort
+select id from (select 1, NULL, 100, NULL, NULL) t(id, a,b,c,d) where (a,b,c,d) not in (select NULL,  100, NULL, 10001);
+----
+
+
+query I nosort
+select id from (select 1, NULL, 100, NULL, NULL) t(id, a,b,c,d) where (a,b,c,d) not in (select NULL,  101, 1000,  NULL);
+----
+1
+
+query I nosort
+select id from (select 1, NULL, 100, NULL, NULL) t(id, a,b,c,d) where (a,b,c,d) not in (select NULL,  100, 1001,  NULL);
+----
+
+
+query I nosort
+select id from (select 1, NULL, 100, NULL, NULL) t(id, a,b,c,d) where (a,b,c,d) not in (select   11, NULL, NULL, 10000);
+----
+
+
+query I nosort
+select id from (select 1, NULL, 100, NULL, NULL) t(id, a,b,c,d) where (a,b,c,d) not in (select   10, NULL, NULL, 10001);
+----
+
+
+query I nosort
+select id from (select 1, NULL, 100, NULL, NULL) t(id, a,b,c,d) where (a,b,c,d) not in (select   11, NULL, 1000,  NULL);
+----
+
+
+query I nosort
+select id from (select 1, NULL, 100, NULL, NULL) t(id, a,b,c,d) where (a,b,c,d) not in (select   10, NULL, 1001,  NULL);
+----
+
+
+query I nosort
+select id from (select 1, NULL, 100, NULL, NULL) t(id, a,b,c,d) where (a,b,c,d) not in (select   11,  100, NULL,  NULL);
+----
+
+
+query I nosort
+select id from (select 1, NULL, 100, NULL, NULL) t(id, a,b,c,d) where (a,b,c,d) not in (select   10,  101, NULL,  NULL);
+----
+1
+
+query I nosort
+select id from (select 1, NULL, 100, NULL, NULL) t(id, a,b,c,d) where (a,b,c,d) not in (select NULL, NULL, NULL, 10001);
+----
+
+
+query I nosort
+select id from (select 1, NULL, 100, NULL, NULL) t(id, a,b,c,d) where (a,b,c,d) not in (select NULL,  101, NULL,  NULL);
+----
+1
+
+query I nosort
+select id from (select 1, NULL, 100, NULL, NULL) t(id, a,b,c,d) where (a,b,c,d) not in (select   11, NULL, NULL,  NULL);
+----
+
+
+-- mixed res
+query I nosort
+select id from (select 1, 10, NULL, NULL, NULL) t(id, a,b,c,d) where (a,b,c,d) not in (select   11,  100, 1000, 10000);
+----
+1
+
+query I nosort
+select id from (select 1, 10, NULL, NULL, NULL) t(id, a,b,c,d) where (a,b,c,d) not in (select NULL,  101, 1000, 10000);
+----
+
+
+query I nosort
+select id from (select 1, 10, NULL, NULL, NULL) t(id, a,b,c,d) where (a,b,c,d) not in (select NULL,  100, 1001, 10000);
+----
+
+
+query I nosort
+select id from (select 1, 10, NULL, NULL, NULL) t(id, a,b,c,d) where (a,b,c,d) not in (select NULL,  100, 1000, 10001);
+----
+
+
+query I nosort
+select id from (select 1, 10, NULL, NULL, NULL) t(id, a,b,c,d) where (a,b,c,d) not in (select   11, NULL, 1000, 10000);
+----
+1
+
+query I nosort
+select id from (select 1, 10, NULL, NULL, NULL) t(id, a,b,c,d) where (a,b,c,d) not in (select   10, NULL, 1001, 10000);
+----
+
+
+query I nosort
+select id from (select 1, 10, NULL, NULL, NULL) t(id, a,b,c,d) where (a,b,c,d) not in (select   10, NULL, 1000, 10001);
+----
+
+
+query I nosort
+select id from (select 1, 10, NULL, NULL, NULL) t(id, a,b,c,d) where (a,b,c,d) not in (select   11,  100, NULL, 10000);
+----
+1
+
+query I nosort
+select id from (select 1, 10, NULL, NULL, NULL) t(id, a,b,c,d) where (a,b,c,d) not in (select   10,  101, NULL, 10000);
+----
+
+
+query I nosort
+select id from (select 1, 10, NULL, NULL, NULL) t(id, a,b,c,d) where (a,b,c,d) not in (select   10,  100, NULL, 10001);
+----
+
+
+query I nosort
+select id from (select 1, 10, NULL, NULL, NULL) t(id, a,b,c,d) where (a,b,c,d) not in (select   11,  100, 1000,  NULL);
+----
+1
+
+query I nosort
+select id from (select 1, 10, NULL, NULL, NULL) t(id, a,b,c,d) where (a,b,c,d) not in (select   10,  101, 1000,  NULL);
+----
+
+
+query I nosort
+select id from (select 1, 10, NULL, NULL, NULL) t(id, a,b,c,d) where (a,b,c,d) not in (select   10,  100, 1001,  NULL);
+----
+
+
+query I nosort
+select id from (select 1, 10, NULL, NULL, NULL) t(id, a,b,c,d) where (a,b,c,d) not in (select NULL, NULL, 1001, 10000);
+----
+
+
+query I nosort
+select id from (select 1, 10, NULL, NULL, NULL) t(id, a,b,c,d) where (a,b,c,d) not in (select NULL, NULL, 1000, 10001);
+----
+
+
+query I nosort
+select id from (select 1, 10, NULL, NULL, NULL) t(id, a,b,c,d) where (a,b,c,d) not in (select NULL,  101, NULL, 10000);
+----
+
+
+query I nosort
+select id from (select 1, 10, NULL, NULL, NULL) t(id, a,b,c,d) where (a,b,c,d) not in (select NULL,  100, NULL, 10001);
+----
+
+
+query I nosort
+select id from (select 1, 10, NULL, NULL, NULL) t(id, a,b,c,d) where (a,b,c,d) not in (select NULL,  101, 1000,  NULL);
+----
+
+
+query I nosort
+select id from (select 1, 10, NULL, NULL, NULL) t(id, a,b,c,d) where (a,b,c,d) not in (select NULL,  100, 1001,  NULL);
+----
+
+
+query I nosort
+select id from (select 1, 10, NULL, NULL, NULL) t(id, a,b,c,d) where (a,b,c,d) not in (select   11, NULL, NULL, 10000);
+----
+1
+
+query I nosort
+select id from (select 1, 10, NULL, NULL, NULL) t(id, a,b,c,d) where (a,b,c,d) not in (select   10, NULL, NULL, 10001);
+----
+
+
+query I nosort
+select id from (select 1, 10, NULL, NULL, NULL) t(id, a,b,c,d) where (a,b,c,d) not in (select   11, NULL, 1000,  NULL);
+----
+1
+
+query I nosort
+select id from (select 1, 10, NULL, NULL, NULL) t(id, a,b,c,d) where (a,b,c,d) not in (select   10, NULL, 1001,  NULL);
+----
+
+
+query I nosort
+select id from (select 1, 10, NULL, NULL, NULL) t(id, a,b,c,d) where (a,b,c,d) not in (select   11,  100, NULL,  NULL);
+----
+1
+
+query I nosort
+select id from (select 1, 10, NULL, NULL, NULL) t(id, a,b,c,d) where (a,b,c,d) not in (select   10,  101, NULL,  NULL);
+----
+
+
+query I nosort
+select id from (select 1, 10, NULL, NULL, NULL) t(id, a,b,c,d) where (a,b,c,d) not in (select NULL, NULL, NULL, 10001);
+----
+
+
+query I nosort
+select id from (select 1, 10, NULL, NULL, NULL) t(id, a,b,c,d) where (a,b,c,d) not in (select NULL,  101, NULL,  NULL);
+----
+
+
+query I nosort
+select id from (select 1, 10, NULL, NULL, NULL) t(id, a,b,c,d) where (a,b,c,d) not in (select   11, NULL, NULL,  NULL);
+----
+
+
+-- empty res
+query I nosort
+select id from (select 1, NULL, NULL, NULL, NULL) t(id, a,b,c,d) where (a,b,c,d) not in (select   11,  100, 1000, 10000);
+----
+
+
+query I nosort
+select id from (select 1, NULL, NULL, NULL, NULL) t(id, a,b,c,d) where (a,b,c,d) not in (select NULL,  101, 1000, 10000);
+----
+
+
+query I nosort
+select id from (select 1, NULL, NULL, NULL, NULL) t(id, a,b,c,d) where (a,b,c,d) not in (select NULL,  100, 1001, 10000);
+----
+
+
+query I nosort
+select id from (select 1, NULL, NULL, NULL, NULL) t(id, a,b,c,d) where (a,b,c,d) not in (select NULL,  100, 1000, 10001);
+----
+
+
+query I nosort
+select id from (select 1, NULL, NULL, NULL, NULL) t(id, a,b,c,d) where (a,b,c,d) not in (select   11, NULL, 1000, 10000);
+----
+
+
+query I nosort
+select id from (select 1, NULL, NULL, NULL, NULL) t(id, a,b,c,d) where (a,b,c,d) not in (select   10, NULL, 1001, 10000);
+----
+
+
+query I nosort
+select id from (select 1, NULL, NULL, NULL, NULL) t(id, a,b,c,d) where (a,b,c,d) not in (select   10, NULL, 1000, 10001);
+----
+
+
+query I nosort
+select id from (select 1, NULL, NULL, NULL, NULL) t(id, a,b,c,d) where (a,b,c,d) not in (select   11,  100, NULL, 10000);
+----
+
+
+query I nosort
+select id from (select 1, NULL, NULL, NULL, NULL) t(id, a,b,c,d) where (a,b,c,d) not in (select   10,  101, NULL, 10000);
+----
+
+
+query I nosort
+select id from (select 1, NULL, NULL, NULL, NULL) t(id, a,b,c,d) where (a,b,c,d) not in (select   10,  100, NULL, 10001);
+----
+
+
+query I nosort
+select id from (select 1, NULL, NULL, NULL, NULL) t(id, a,b,c,d) where (a,b,c,d) not in (select   11,  100, 1000,  NULL);
+----
+
+
+query I nosort
+select id from (select 1, NULL, NULL, NULL, NULL) t(id, a,b,c,d) where (a,b,c,d) not in (select   10,  101, 1000,  NULL);
+----
+
+
+query I nosort
+select id from (select 1, NULL, NULL, NULL, NULL) t(id, a,b,c,d) where (a,b,c,d) not in (select   10,  100, 1001,  NULL);
+----
+
+
+query I nosort
+select id from (select 1, NULL, NULL, NULL, NULL) t(id, a,b,c,d) where (a,b,c,d) not in (select NULL, NULL, 1001, 10000);
+----
+
+
+query I nosort
+select id from (select 1, NULL, NULL, NULL, NULL) t(id, a,b,c,d) where (a,b,c,d) not in (select NULL, NULL, 1000, 10001);
+----
+
+
+query I nosort
+select id from (select 1, NULL, NULL, NULL, NULL) t(id, a,b,c,d) where (a,b,c,d) not in (select NULL,  101, NULL, 10000);
+----
+
+
+query I nosort
+select id from (select 1, NULL, NULL, NULL, NULL) t(id, a,b,c,d) where (a,b,c,d) not in (select NULL,  100, NULL, 10001);
+----
+
+
+query I nosort
+select id from (select 1, NULL, NULL, NULL, NULL) t(id, a,b,c,d) where (a,b,c,d) not in (select NULL,  101, 1000,  NULL);
+----
+
+
+query I nosort
+select id from (select 1, NULL, NULL, NULL, NULL) t(id, a,b,c,d) where (a,b,c,d) not in (select NULL,  100, 1001,  NULL);
+----
+
+
+query I nosort
+select id from (select 1, NULL, NULL, NULL, NULL) t(id, a,b,c,d) where (a,b,c,d) not in (select   11, NULL, NULL, 10000);
+----
+
+
+query I nosort
+select id from (select 1, NULL, NULL, NULL, NULL) t(id, a,b,c,d) where (a,b,c,d) not in (select   10, NULL, NULL, 10001);
+----
+
+
+query I nosort
+select id from (select 1, NULL, NULL, NULL, NULL) t(id, a,b,c,d) where (a,b,c,d) not in (select   11, NULL, 1000,  NULL);
+----
+
+
+query I nosort
+select id from (select 1, NULL, NULL, NULL, NULL) t(id, a,b,c,d) where (a,b,c,d) not in (select   10, NULL, 1001,  NULL);
+----
+
+
+query I nosort
+select id from (select 1, NULL, NULL, NULL, NULL) t(id, a,b,c,d) where (a,b,c,d) not in (select   11,  100, NULL,  NULL);
+----
+
+
+query I nosort
+select id from (select 1, NULL, NULL, NULL, NULL) t(id, a,b,c,d) where (a,b,c,d) not in (select   10,  101, NULL,  NULL);
+----
+
+
+query I nosort
+select id from (select 1, NULL, NULL, NULL, NULL) t(id, a,b,c,d) where (a,b,c,d) not in (select NULL, NULL, NULL, 10001);
+----
+
+
+query I nosort
+select id from (select 1, NULL, NULL, NULL, NULL) t(id, a,b,c,d) where (a,b,c,d) not in (select NULL,  101, NULL,  NULL);
+----
+
+
+query I nosort
+select id from (select 1, NULL, NULL, NULL, NULL) t(id, a,b,c,d) where (a,b,c,d) not in (select   11, NULL, NULL,  NULL);
+----
+
+
