@@ -14,17 +14,14 @@ statement ok
 INSERT INTO t0 (c0) VALUES ('b')
 
 query ITT nosort
-SELECT * FROM v0, t0
+SELECT * FROM v0, t0 ORDER BY 1,2,3
 ----
 1
 (empty)
 0
 1
-a
-NULL
-1
-b
-NULL
+(empty)
+0
 1
 (empty)
 0
@@ -32,30 +29,33 @@ NULL
 a
 NULL
 1
+a
+NULL
+1
+a
+NULL
+1
 b
 NULL
 1
-(empty)
-0
-1
-a
+b
 NULL
 1
 b
 NULL
 
 query I nosort
-SELECT (t0.c0||true BETWEEN v0.c0 AND v0.c0) FROM v0, t0
+SELECT (t0.c0||true BETWEEN v0.c0 AND v0.c0) FROM v0, t0 ORDER BY 1
 ----
-1
+0
+0
+0
+0
 0
 0
 1
-0
-0
 1
-0
-0
+1
 
 query ITT nosort
 SELECT * FROM v0, t0 WHERE (t0.c0||true BETWEEN v0.c0 AND v0.c0)

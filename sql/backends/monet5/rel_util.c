@@ -86,8 +86,9 @@ can_join_exp(sql_rel *rel, sql_exp *e, bool anti)
 }
 
 void
-split_join_exps(sql_rel *rel, list *joinable, list *not_joinable, bool anti, bool eqonly)
+split_join_exps(sql_rel *rel, list *joinable, list *not_joinable, bool anti, bool eqonly, bool firstonly)
 {
+	bool found = 0;
 	if (!list_empty(rel->exps)) {
 		bool done = false;
 		for (node *n = rel->exps->h; n; n = n->next) {
@@ -95,9 +96,14 @@ split_join_exps(sql_rel *rel, list *joinable, list *not_joinable, bool anti, boo
 
 			/* eqonly -
 			 *   TRUE: only handle equi-join expressions, e.g. in case of pipeline hash join
-			 *   FALSE: we can (also) handle thetajoins, rangejoins and filter joins (like) */
-			if (!done && (can_join_exp(rel, e, anti) && (!eqonly || (is_equi_exp_(e) && !exp_is_atom(e->r) && !exp_is_atom(e->l))))) {
+			 *   FALSE: we can (also) handle thetajoins, rangejoins and filter joins (like)
+			 * firstonly -
+			 *   TRUE: add only the first joinable `e` to `joinable` (used by marked-manti-join)
+			 *   FALSE: add all joinable `e` to `joinable`
+			 */
+			if (!found && !done && (can_join_exp(rel, e, anti) && (!eqonly || (is_equi_exp_(e) && !exp_is_atom(e->r) && !exp_is_atom(e->l))))) {
 				append(joinable, e);
+				found = firstonly;
 				sql_exp *el = e->l, *er = e->r;
 				if (eqonly && is_innerjoin(rel->op) && (is_unique(el) || is_unique(er)))
 					done = true;
