@@ -881,7 +881,7 @@ rel_pipeline(visitor *v, sql_rel *rel, bool materialize, int pb)
 	} else if (is_semi(rel->op)) {
 		list *eq_exps = sa_list(v->sql->sa);
 		list *other = sa_list(v->sql->sa);
-		split_join_exps(rel, eq_exps, other, true /* anti */, true /* eqonly */);
+		split_join_exps(rel, eq_exps, other, true /* anti */, true /* eqonly */, false /* firstonly */);
 		bool needs_payload = (!list_empty(other));
 		bool need_all = false;
 		bool cross = list_empty(eq_exps);
@@ -1014,9 +1014,18 @@ rel_pipeline(visitor *v, sql_rel *rel, bool materialize, int pb)
 		if (do_oahash_join(rel)) {
 			list *eq_exps = sa_list(v->sql->sa);
 			list *other = sa_list(v->sql->sa);
+			/* manti: multi-column not-exist */
+			int m_any = 0;
+
+			if (list_length(rel->exps) > 1) {
+				for (node *n = rel->exps->h; n; n = n->next)
+					m_any += (int)is_any((sql_exp*)n->data);
+			}
+
+			bool manti = list_length(rel->attr) == 1 && m_any > 1 && exp_is_atom(rel->attr->h->data) && !exp_is_true(rel->attr->h->data);
 			if (!list_empty(rel->attr))
 				rel->exps = get_simple_equi_joins_first(v->sql, rel, rel->exps);
-			split_join_exps(rel, eq_exps, other, true /* anti */, true /* eqonly */);
+			split_join_exps(rel, eq_exps, other, true /* anti */, true /* eqonly */, false /* firstonly */);
 
 			sql_rel *l = rel->l, *r = rel->r;
 			sql_rel *rel_hsh = NULL, *rel_prb = NULL, *iprj = NULL, *pprj = NULL;
@@ -1036,15 +1045,15 @@ rel_pipeline(visitor *v, sql_rel *rel, bool materialize, int pb)
 			}
 
 			if (!rel_hsh) {
-				/* For both left-outer join and all single outer joins, we hash the RHS */
-				if (rel->single || rel->op == op_left)
+				// TODO make the choice below stastics based
+				if (rel->single ||
+					rel->op == op_left ||
+					rel->op == op_right ||
+				    rel_getcount(v->sql, r) < rel_getcount(v->sql, l) ||
+					manti)
 					rel->oahash = 2;
-				else if (rel->op == op_right)
-					rel->oahash = 2;
-				else if (rel_getcount(v->sql, l) < rel_getcount(v->sql, r))
-					rel->oahash = 1;
 				else
-					rel->oahash = 2;
+					rel->oahash = 1;
 
 				if (rel->oahash == 2) {
 					rel_hsh = rel->r;
@@ -1075,6 +1084,7 @@ rel_pipeline(visitor *v, sql_rel *rel, bool materialize, int pb)
 			/* get full projection list from parent */
 			assert(p);
 			list *exps_cmp_hsh = NULL, *exps_cmp_prb = NULL;
+			list *exps_hsh = sa_list(v->sql->sa), *exps_prb = sa_list(v->sql->sa);
 			if (!list_empty(eq_exps)) {
 				exps_cmp_hsh = sa_list(v->sql->sa);
 				exps_cmp_prb = sa_list(v->sql->sa);
@@ -1086,9 +1096,21 @@ rel_pipeline(visitor *v, sql_rel *rel, bool materialize, int pb)
 					rel_hsh->attr = cross?NULL:exps_cmp_hsh;
 				}
 				rel_prb->attr = cross?NULL:exps_cmp_prb;
+				if (manti) {
+					assert(exps_cmp_hsh->cnt == exps_cmp_prb->cnt);
+					set_any((sql_exp*)exps_cmp_hsh->h->data);
+					/* only hash the first join column, put the subsequent column(s) in the payload */
+					// TODO (move no_nil join columns to the front?) hash the leading no_nil join columns
+					for (node *m = exps_cmp_hsh->h->next, *n = exps_cmp_prb->h->next; m && n; m = m->next, n = n->next) {
+						append(exps_hsh, m->data);
+						append(exps_prb, n->data);
+					}
+					// TODO do we also need to do this for exps_cmp_prb?
+					exps_cmp_hsh->h->next = NULL;
+					exps_cmp_hsh->cnt = 1;
+				}
 			}
 
-			list *exps_hsh = sa_list(v->sql->sa), *exps_prb = sa_list(v->sql->sa);
 			find_payload_exps(v->sql, &exps_hsh, &exps_prb, p, rel_hsh, rel_prb);
 
 			if (found_exps_prj_hsh) {

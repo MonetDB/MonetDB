@@ -1609,7 +1609,7 @@ rel_outer2inner(visitor *v, list *exps, sql_rel *rel)
 {
 	if (!rel || rel_is_ref(rel))
 		return rel;
-	if (rel->op == op_join /*is_join(rel->op) later nested outers as well */ || is_select(rel->op)) {
+	if ((rel->op == op_join && list_empty(rel->attr)) /*is_join(rel->op) later nested outers as well */ || is_select(rel->op)) {
 		if (!list_empty(rel->exps)) {
 			list *nexps = list_dup(exps, NULL);
 			for (node *n = rel->exps->h; n; n = n->next) {
@@ -3066,7 +3066,7 @@ rel_push_select_down(visitor *v, sql_rel *rel)
 	exps = rel->exps;
 
 	/* push select through join */
-	if (is_select(rel->op) && r && is_join(r->op) && !rel_is_ref(r) && !is_single(r)){
+	if (is_select(rel->op) && r && is_join(r->op) && (!(MT_thread_get_qry_ctx()->pipeline_mode) || list_empty(r->attr)) && !rel_is_ref(r) && !is_single(r)) {
 		sql_rel *jl = r->l, *ojl = jl, *jr = r->r, *ojr = jr;
 		int left = r->op == op_join || r->op == op_left;
 		int right = r->op == op_join || r->op == op_right;
@@ -3107,8 +3107,8 @@ rel_push_select_down(visitor *v, sql_rel *rel)
 			set_processed(jr);
 	}
 
-	/* merge select and cross product ? */
-	if (is_select(rel->op) && r && r->op == op_join && !rel_is_ref(r) && !is_single(r) && !exps_have_unsafe(exps, false, true)) {
+	/* merge select and cross product ? TODO a more precies way to check if we can merge a select and a group-join than simply disable it with list_empty(r->attr) */
+	if (is_select(rel->op) && r && r->op == op_join && (!(MT_thread_get_qry_ctx()->pipeline_mode) || list_empty(r->attr)) && !rel_is_ref(r) && !is_single(r) && !exps_have_unsafe(exps, false, true)) {
 		for (n = exps->h; n;) {
 			node *next = n->next;
 			sql_exp *e = n->data;
