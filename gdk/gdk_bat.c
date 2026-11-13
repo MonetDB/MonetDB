@@ -355,7 +355,6 @@ COLnew2(oid hseq, int tt, BUN cap, role_t role, uint16_t width)
 
 	if (bn->tvheap && width == 0 && ATOMheap(tt, bn->tvheap, cap) != GDK_SUCCEED) {
 		HEAPfree(bn->theap, true);
-		HEAPfree(bn->tsketch, true);
 		goto bailout;
 	}
 
@@ -363,6 +362,8 @@ COLnew2(oid hseq, int tt, BUN cap, role_t role, uint16_t width)
 		assert(bn->tsketch);
 		if (HEAPalloc(bn->tsketch, SKETCH_SIZE, sizeof(uint8_t)) != GDK_SUCCEED) {
 			HEAPfree(bn->theap, true);
+			if (bn->tvheap)
+				HEAPfree(bn->tvheap, true);
 			goto bailout;
 		}
 		memset(bn->tsketch->base, 0, SKETCH_SIZE);
