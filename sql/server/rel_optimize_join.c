@@ -1899,6 +1899,9 @@ find_fk( mvc *sql, list *rels, list *exps)
 static sql_rel *
 rel_join_use_fk(visitor *v, sql_rel *rel)
 {
+	/* Don't look at the same relation twice */
+	if (are_fkeys_found(rel->used))
+		return rel;
 	if ((is_semi(rel->op)) && !list_empty(rel->exps)) {
 		list *exps = rel->exps;
 		list *rels = sa_list(v->sql->sa);
@@ -1929,12 +1932,10 @@ rel_join_use_fk(visitor *v, sql_rel *rel)
 		list *rels = sa_list(ta);
 		get_relations(v, rel, rels);
 		/* mark done */
-		if (v->opt > 0)
-			for (node *rn = rels->h; rn; rn = rn->next) {
-				sql_rel *r = rn->data;
-				r->opt = v->opt;
-			}
-
+		for (node *rn = rels->h; rn; rn = rn->next) {
+			sql_rel *r = rn->data;
+			r->used |= fkeys_found;
+		}
 
 		if (list_length(rels) > 1) {
 			find_fk( v->sql, rels, exps);
