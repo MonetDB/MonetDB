@@ -1049,6 +1049,7 @@ rel_pipeline(visitor *v, sql_rel *rel, bool materialize, int pb)
 				if (rel->single ||
 					rel->op == op_left ||
 					rel->op == op_right ||
+					rel->lunique || /* scan left if right is primary key */
 				    rel_getcount(v->sql, r) < rel_getcount(v->sql, l) ||
 					manti)
 					rel->oahash = 2;
