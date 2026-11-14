@@ -3652,15 +3652,16 @@ OAHASHexpand3(Client ctx, MalBlkPtr mbp, MalStkPtr s, InstrPtr p)
 	if (selcnt && (ht->empty == 0)) {
 		/* ht->last marks the maximal possible value in ht->gids, but we need
 		 * to go over all of ht->size to find the gids. */
-		allgids = GDKzalloc(ht->last * sizeof(gid));
+		allgids = GDKzalloc((size_t)ht->last * sizeof(gid));
 		if (!allgids) {
 			err = createException(SQL, "oahash.expand", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			goto error;
 		}
+		oid *hgids = (oid*)ht->gids;
 		TIMEOUT_LOOP_IDX_DECL(i, ht->size, qry_ctx) {
-			if(ht->gids[i]) {
-				assert(ht->gids[i] < ht->last);
-				allgids[hpcnt++] = ht->gids[i] -1;
+			if(hgids[i]) {
+				assert(hgids[i] < ht->last);
+				allgids[hpcnt++] = hgids[i] -1;
 			}
 		}
 

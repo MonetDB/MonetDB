@@ -1327,7 +1327,6 @@ char *monetdbe_set_autocommit(monetdbe_database dbhdl, int value);
 const char *monetdbe_version(void);
 
 # mutils
-int MT_access(const char *pathname, int mode);
 FILE *MT_fopen(const char *filename, const char *mode);
 char *MT_getcwd(char *buffer, size_t size);
 int MT_lockf(const char *filename, int mode);

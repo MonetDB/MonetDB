@@ -141,8 +141,8 @@ rel_estimate(visitor *v, sql_rel *rel)
 
 				if (find_prop(e->p, PROP_JOINIDX)) {
 					prop *lsp = find_prop(l->p, PROP_SELECTIVITY), *rsp = find_prop(r->p, PROP_SELECTIVITY);
-					dbl ls = lsp /*&& is_join(l->op)*/ ? lsp->value.dval : 1.0;
-					dbl rs = rsp /*&& is_join(r->op)*/ ? rsp->value.dval : 1.0;
+					dbl ls = lsp ? lsp->value.dval : 1.0;
+					dbl rs = rsp ? rsp->value.dval : 1.0;
 					join_idx_estimate = lv>rv?lv:rv;
 					join_idx_estimate = (BUN)(join_idx_estimate * ls * rs);
 					if (join_idx_estimate < 1)
@@ -279,6 +279,13 @@ rel_estimate(visitor *v, sql_rel *rel)
 			} else {
 				set_count_prop(v->sql->sa, rel, get_rel_count(l));
 			}
+		}
+		break;
+	case op_groupby:
+		if (!list_empty(rel->r) && rel->l) {
+			BUN current = get_rel_count(rel), lower = get_rel_count(rel->l);
+			if (lower < current)
+				set_count_prop(v->sql->sa, rel, lower);
 		}
 		break;
 	default:
@@ -897,14 +904,18 @@ order_joins_bushy( visitor *v, list *rels, list *exps)
 			if (rsingle)
 				set_single(r);
 			rel_join_add_exp(v->sql->sa, top, cje);
-			if (find_prop(cje->p, PROP_JOINIDX) != NULL) {
-				sql_exp *cjer = cje->r;
-				if (is_unique(cjer)) {
-					if (rel_find_exp(l, cjer))
-						top->runique = is_basetable(r->op) || is_select(r->op) || (r->lunique || r->runique);
-					else
-						top->lunique = is_basetable(l->op) || is_select(l->op) || (l->lunique || l->runique);
-				}
+			sql_exp *cjel = cje->l, *cjer = cje->r;
+			if (is_unique(cjer)) {
+				if (rel_find_exp(l, cjer))
+					top->runique = is_basetable(r->op) || is_select(r->op) || (r->lunique || r->runique);
+				else
+					top->lunique = is_basetable(l->op) || is_select(l->op) || (l->lunique || l->runique);
+			}
+			if (is_unique(cjel)) {
+				if (rel_find_exp(l, cjel))
+					top->runique = is_basetable(r->op) || is_select(r->op) || (r->lunique || r->runique);
+				else
+					top->lunique = is_basetable(l->op) || is_select(l->op) || (l->lunique || l->runique);
 			}
 
 			for(int i = 0; i<nr_rels+1; i++) {
@@ -1398,7 +1409,6 @@ static sql_rel * reorder_join(visitor *v, sql_rel *rel);
 static sql_rel *
 rel_join_order2_(visitor *v, sql_rel *rel, int skip)
 {
-	sql_rel *old = rel;
 	if (!rel)
 		return rel;
 
@@ -1464,11 +1474,9 @@ rel_join_order2_(visitor *v, sql_rel *rel, int skip)
 		break;
 	}
 	if (is_innerjoin(rel->op) && !is_single(rel) && !rel_is_ref(rel) && list_empty(rel->attr)) {
-		if (!skip) {
+		if (!skip)
 			rel = reorder_join(v, rel);
-			rel = rel_estimate(v, rel);
-		}
-	} else if (old != rel) {
+	} else {
 		rel = rel_estimate(v, rel);
 	}
 	if (rel && v->opt >= 0)

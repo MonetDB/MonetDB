@@ -58,13 +58,11 @@ static int lastfile = 0;
 /*
  * returns 1 if the file exists
  */
-#ifndef F_OK
-#define F_OK 0
-#endif
 static inline int
 fileexists(const char *path)
 {
-	return MT_access(path, F_OK) == 0;
+	struct stat stb;
+	return MT_stat(path, &stb) == 0;
 }
 
 /* Search for occurrence of the function in the library identified by the filename.  */

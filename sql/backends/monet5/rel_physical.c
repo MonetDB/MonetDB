@@ -760,6 +760,25 @@ rel_hash(sql_rel *r)
 	return 0;
 }
 
+static bool
+right_is_unique(sql_rel *r, list *exps)
+{
+	if (list_length(exps) >= 1) {
+		sql_exp *e = exps->h->data;
+
+		if (e->type == e_cmp && e->flag == cmp_equal) {
+			if (rel_find_exp(r, e->l)) {
+				sql_exp *el = e->l;
+				return is_unique(el);
+			} else if (rel_find_exp(r, e->r)) {
+				sql_exp *er = e->r;
+				return is_unique(er);
+			}
+		}
+	}
+	return false;
+}
+
 static int
 rel_pipeline(visitor *v, sql_rel *rel, bool materialize, int pb)
 {
@@ -1050,6 +1069,7 @@ rel_pipeline(visitor *v, sql_rel *rel, bool materialize, int pb)
 					rel->op == op_left ||
 					rel->op == op_right ||
 					rel->lunique || /* scan left if right is primary key */
+					right_is_unique(r, rel->exps) ||
 				    rel_getcount(v->sql, r) < rel_getcount(v->sql, l) ||
 					manti)
 					rel->oahash = 2;
