@@ -141,8 +141,8 @@ rel_estimate(visitor *v, sql_rel *rel)
 
 				if (find_prop(e->p, PROP_JOINIDX)) {
 					prop *lsp = find_prop(l->p, PROP_SELECTIVITY), *rsp = find_prop(r->p, PROP_SELECTIVITY);
-					dbl ls = lsp /*&& is_join(l->op)*/ ? lsp->value.dval : 1.0;
-					dbl rs = rsp /*&& is_join(r->op)*/ ? rsp->value.dval : 1.0;
+					dbl ls = lsp ? lsp->value.dval : 1.0;
+					dbl rs = rsp ? rsp->value.dval : 1.0;
 					join_idx_estimate = lv>rv?lv:rv;
 					join_idx_estimate = (BUN)(join_idx_estimate * ls * rs);
 					if (join_idx_estimate < 1)
@@ -897,14 +897,18 @@ order_joins_bushy( visitor *v, list *rels, list *exps)
 			if (rsingle)
 				set_single(r);
 			rel_join_add_exp(v->sql->sa, top, cje);
-			if (find_prop(cje->p, PROP_JOINIDX) != NULL) {
-				sql_exp *cjer = cje->r;
-				if (is_unique(cjer)) {
-					if (rel_find_exp(l, cjer))
-						top->runique = is_basetable(r->op) || is_select(r->op) || (r->lunique || r->runique);
-					else
-						top->lunique = is_basetable(l->op) || is_select(l->op) || (l->lunique || l->runique);
-				}
+			sql_exp *cjel = cje->l, *cjer = cje->r;
+			if (is_unique(cjer)) {
+				if (rel_find_exp(l, cjer))
+					top->runique = is_basetable(r->op) || is_select(r->op) || (r->lunique || r->runique);
+				else
+					top->lunique = is_basetable(l->op) || is_select(l->op) || (l->lunique || l->runique);
+			}
+			if (is_unique(cjel)) {
+				if (rel_find_exp(l, cjel))
+					top->runique = is_basetable(r->op) || is_select(r->op) || (r->lunique || r->runique);
+				else
+					top->lunique = is_basetable(l->op) || is_select(l->op) || (l->lunique || l->runique);
 			}
 
 			for(int i = 0; i<nr_rels+1; i++) {
