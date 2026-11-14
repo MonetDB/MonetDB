@@ -281,6 +281,13 @@ rel_estimate(visitor *v, sql_rel *rel)
 			}
 		}
 		break;
+	case op_groupby:
+		if (!list_empty(rel->r) && rel->l) {
+			BUN current = get_rel_count(rel), lower = get_rel_count(rel->l);
+			if (lower < current)
+				set_count_prop(v->sql->sa, rel, lower);
+		}
+		break;
 	default:
 		break;
 	}
@@ -1402,7 +1409,6 @@ static sql_rel * reorder_join(visitor *v, sql_rel *rel);
 static sql_rel *
 rel_join_order2_(visitor *v, sql_rel *rel, int skip)
 {
-	sql_rel *old = rel;
 	if (!rel)
 		return rel;
 
@@ -1468,11 +1474,9 @@ rel_join_order2_(visitor *v, sql_rel *rel, int skip)
 		break;
 	}
 	if (is_innerjoin(rel->op) && !is_single(rel) && !rel_is_ref(rel) && list_empty(rel->attr)) {
-		if (!skip) {
+		if (!skip)
 			rel = reorder_join(v, rel);
-			rel = rel_estimate(v, rel);
-		}
-	} else if (old != rel) {
+	} else {
 		rel = rel_estimate(v, rel);
 	}
 	if (rel && v->opt >= 0)
