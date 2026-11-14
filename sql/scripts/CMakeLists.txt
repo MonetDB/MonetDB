@@ -49,6 +49,7 @@ if(HAVE_HGE)
   install(FILES
     39_analytics_hge.sql
     41_json_hge.sql DESTINATION
+    80_statistics_hge.sql DESTINATION
     ${CMAKE_INSTALL_LIBDIR}/monetdb5/createdb)
 endif()
 #]]
