@@ -152,6 +152,7 @@ typedef int (*set_stats_col_fptr) (sql_trans *tr, sql_column *c, double *unique_
 typedef int (*prop_col_fptr) (sql_trans *tr, sql_column *c);
 typedef int (*prop_idx_fptr) (sql_trans *tr, sql_idx *i);
 typedef int (*proprec_col_fptr) (sql_trans *tr, sql_column *c, bool *nonil, bool *unique, double *unique_est, ValPtr min, ValPtr max);
+typedef int (*proprec_idx_fptr) (sql_trans *tr, sql_idx *i, bool *nonil, bool *unique, double *unique_est);
 typedef int (*col_set_range_fptr) (sql_trans *tr, sql_column *c, sql_part *pt, bool add_range);
 typedef int (*col_not_null_fptr) (sql_trans *tr, sql_column *c, bool not_null);
 typedef int (*col_subtype_fptr) (sql_trans *tr, sql_column *c, sql_subtype *t);
@@ -249,6 +250,7 @@ typedef struct store_functions {
 	prop_col_fptr unique_col;
 	prop_col_fptr double_elim_col; /* varsize col with double elimination */
 	proprec_col_fptr col_stats;
+	proprec_idx_fptr idx_stats;
 	col_set_range_fptr col_set_range; /* set range properties to the column low level structures */
 	col_not_null_fptr col_not_null;	/* switch not null property */
 	col_subtype_fptr col_subtype;	/* switch types */
@@ -421,6 +423,7 @@ extern int sql_trans_is_sorted_idx(sql_trans *tr, sql_idx *idx);
 extern int sql_trans_is_unique(sql_trans *tr, sql_column *col);
 extern int sql_trans_is_duplicate_eliminated(sql_trans *tr, sql_column *col);
 extern int sql_trans_col_stats(sql_trans *tr, sql_column *col, bool *nonil, bool *unique, double *unique_est, ValPtr min, ValPtr max);
+extern int sql_trans_idx_stats(sql_trans *tr, sql_idx *idx, bool *nonil, bool *unique, double *unique_est);
 extern size_t sql_trans_dist_count(sql_trans *tr, sql_column *col);
 extern int sql_trans_ranges(sql_trans *tr, sql_column *col, void **min, void **max);
 

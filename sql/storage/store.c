@@ -7004,6 +7004,15 @@ sql_trans_col_stats( sql_trans *tr, sql_column *col, bool *nonil, bool *unique, 
 	return 0;
 }
 
+int
+sql_trans_idx_stats( sql_trans *tr, sql_idx *idx, bool *nonil, bool *unique, double *unique_est)
+{
+	sqlstore *store = tr->store;
+	if (idx && isTable(idx->t) && store->storage_api.idx_stats)
+		return store->storage_api.idx_stats(tr, idx, nonil, unique, unique_est);
+	return 0;
+}
+
 size_t
 sql_trans_dist_count( sql_trans *tr, sql_column *col )
 {

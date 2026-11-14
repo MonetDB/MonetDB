@@ -528,6 +528,8 @@ rewrite_basetable(mvc *sql, sql_rel *rel, bool stats)
 			if (i->type == join_idx) {
 				p = e->p = prop_create(sa, PROP_JOINIDX, e->p);
 				p->value.pval = i;
+				if (stats)
+					sql_idx_get_statistics(sql, i, e);
 			}
 			e->nid = -(ba->basenr + j);
 			e->alias.label = e->nid;
@@ -661,6 +663,7 @@ rel_rename_part(mvc *sql, sql_rel *p, sql_rel *mt_rel, const char *mtalias)
 			} else if (ri->type == join_idx) {
 				prop *p = ne->p = prop_create(sql->sa, PROP_JOINIDX, ne->p);
 				p->value.pval = ri;
+				sql_idx_get_statistics(sql, ri, ne);
 			}
 			ne->nid = e->nid;
 			ne->alias.label = e->alias.label;
