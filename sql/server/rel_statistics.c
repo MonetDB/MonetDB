@@ -1009,26 +1009,6 @@ rel_get_statistics_(visitor *v, sql_rel *rel)
 						/* if one of the sides is unique, the cardinality will be at most the cardinality of the other side */
 						if (!is_semantics(e) || !has_nil(el) || !has_nil(er)) {
 							BUN lu = 1, ru = 1;
-							/*
-							prop *p = NULL;
-							if ((p = find_prop(el->p, PROP_NUNIQUES)))
-								lu = (BUN) p->value.dval;
-							if ((p = find_prop(er->p, PROP_NUNIQUES)))
-								ru = (BUN) p->value.dval;
-								*/
-							/*
-							if (is_unique(el) || lu > lv) {
-								BUN ncount = (is_right(rel->op) || is_full(rel->op) || !lv || lu < lv) ? MAX(lv, rv) : rv/(lu/lv);
-								if (ncount == 0)
-									ncount = MAX(lv, rv);
-								uniques_estimate = MIN(uniques_estimate, ncount);
-							} else if (is_unique(er) || ru > rv) {
-								BUN ncount = (is_left(rel->op) || is_full(rel->op) || !rv || ru < rv) ? MAX(lv, rv) : lv/(ru/rv);
-								if (ncount == 0)
-									ncount = MAX(lv, rv);
-								uniques_estimate = MIN(uniques_estimate, ncount);
-							}
-							*/
 							sql_exp *el = e->l, *er = e->r;
 							prop *up = NULL;
 							if (el->type == e_column && (is_select(l->op) || is_basetable(l->op)))
@@ -1047,9 +1027,9 @@ rel_get_statistics_(visitor *v, sql_rel *rel)
 							}
 							if ((up = find_prop(er->p, PROP_NUNIQUES)))
 								ru = MIN((BUN) up->value.dval, rv);
-							if (is_unique(el) || (is_unique(er) /*&& runique*/))
+							if (is_unique(el) || is_unique(er))
 								uniques_estimate = MIN(uniques_estimate, MAX(lv, rv));
-							if (is_unique(el) && is_unique(er) /*&& runique*/)
+							if (is_unique(el) && is_unique(er))
 								uniques_estimate = MIN(lu, ru);
 							if (uniques_estimate < BUN_MAX) {
 								if (uniques_estimate < r_uniques_estimate)
@@ -1064,11 +1044,6 @@ rel_get_statistics_(visitor *v, sql_rel *rel)
 								dbl mf = MIN(lv/mfl, rv/mfr);
 								dbl u = mf * mfl * mfr;
 								dbl s = u/(lv*rv);
-								/*
-								dbl u = (dbl)MAX(lu, ru);
-								dbl s = u/(lv*rv);
-								*/
-								//dbl s = 1/u;
 								prop *sp = prop_create(v->sql->sa, PROP_SELECTIVITY, (prop *) e->p);
 								sp->value.dval = s;
 								e->p = sp;
@@ -1173,13 +1148,7 @@ rel_get_statistics_(visitor *v, sql_rel *rel)
 			}
 			break;
 		case op_project:
-			if (l) {
-				if (need_distinct(rel)) {
-					set_count_prop(v->sql->sa, rel, rel_calc_nuniques(v->sql, l, rel->exps)+1);
-				} else {
-					set_count_prop(v->sql->sa, rel, get_rel_count(l));
-				}
-			} else {
+			if (!l) {
 				BUN card = 1;
 
 				if (!list_empty(rel->exps)) {
