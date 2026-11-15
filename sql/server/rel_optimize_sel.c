@@ -15,42 +15,163 @@
 #include "rel_rewriter.h"
 #include "rel_statistics.h"
 
-/* Split_select optimizer splits case statements in select expressions. This is a step needed for cse */
-static void select_split_exps(mvc *sql, list *exps, sql_rel *rel);
+/* Split_select optimizer splits complex sub-expressions in select and join expressions. */
+typedef struct split_select_ctx {
+	mvc *sql;
+	sql_rel *rel;		/* relation whose expressions are being split */
+	sql_rel *lp;		/* projection added on the left (or only) input */
+	sql_rel *rp;		/* projection added on the right join input */
+} split_select_ctx;
+
+static void select_split_exps(split_select_ctx *s, list *exps, bool *split, bool allow_convert);
+
+/* Determine which join input the columns of an expression come from, using the
+ * relation helpers. Returns 0 when no input is referenced, 1 for the left input
+ * only, 2 for the right input only and 3 when both inputs are referenced. */
+static int
+exp_input_side(sql_rel *rel, sql_exp *e)
+{
+	int side = 0;
+
+	if (!e || !rel->l || !rel->r)
+		return 0;
+	if (e->type == e_convert) /* the argument was already moved into a project */
+		e = e->l;
+	if (e->type == e_column) {
+		if (rel_has_exp(rel->l, e, false) == 0)
+			side |= 1;
+		if (rel_has_exp(rel->r, e, false) == 0)
+			side |= 2;
+	} else if ((e->type == e_func || e->type == e_aggr) && !list_empty(e->l)) {
+		/* all arguments (atoms are always found) must come from one input */
+		if (rel_has_all_exps(rel->l, e->l, true))
+			side |= 1;
+		if (rel_has_all_exps(rel->r, e->l, true))
+			side |= 2;
+	}
+	return side;
+}
+
+/* Add a projection on one of the join inputs (on demand), so expressions can
+ * be computed there. The extra columns are pruned later on by the projection
+ * optimizers. */
+static sql_rel *
+split_input_project(split_select_ctx *s, bool left)
+{
+	sql_rel **pe = left ? &s->lp : &s->rp;
+	sql_rel **slot = left ? (sql_rel **)&s->rel->l : (sql_rel **)&s->rel->r;
+
+	if (*pe)
+		return *pe;
+	if (!*slot)
+		return NULL;
+	sql_rel *nrel = rel_project(s->sql->sa, *slot,
+		rel_projections(s->sql, *slot, NULL, 1, 1));
+	if (!nrel || !nrel->exps)
+		return NULL;
+	*slot = nrel;
+	*pe = nrel;
+	return nrel;
+}
+
+/* Push an expression into the projection of the (single) input of a select or
+ * into the correct input of a join. Expressions using columns from both join
+ * inputs cannot be computed below the join and are left untouched. */
+static sql_exp *
+add_exp_to_project_side(split_select_ctx *s, sql_exp *e, bool *added)
+{
+	sql_rel *p = NULL;
+
+	/* Never move a fallible expression */
+	if (exp_is_fallible(e))
+		return e;
+	if (is_joinop(s->rel->op)) {
+		int side;
+
+		if (exp_has_rel(e)) /* don't move expressions with subqueries down */
+			return e;
+		side = exp_input_side(s->rel, e);
+		if (side != 1 && side != 2)
+			return e;
+		p = split_input_project(s, side == 1);
+		if (!p)
+			return e;
+	} else {
+		p = s->lp;
+	}
+	*added = true;
+	return add_exp_to_project(s->sql, e, p);
+}
+
+/* Is this expression a plain column or a chain of conversions around one.
+ * Such expressions can be computed on one join input without affecting the
+ * other side of a comparison. */
+static bool
+exp_is_column_value(sql_exp *e)
+{
+	while (e && e->type == e_convert)
+		e = e->l;
+	return e && e->type == e_column;
+}
 
 static sql_exp *
-select_split_exp(mvc *sql, sql_exp *e, sql_rel *rel)
+select_split_exp(split_select_ctx *s, sql_exp *e, bool *split, bool allow_convert)
 {
+	if (!e)
+		return NULL;
 	switch(e->type) {
 	case e_column:
 		return e;
-	case e_convert:
-		e->l = select_split_exp(sql, e->l, rel);
+	case e_convert: {
+		bool child = false;
+
+		e->l = select_split_exp(s, e->l, &child, allow_convert);
+		if (child || (allow_convert && is_joinop(s->rel->op))) {
+			bool added = false;
+			sql_exp *ne = add_exp_to_project_side(s, e, &added);
+
+			if (added)
+				*split = true;
+			return ne;
+		}
 		return e;
+	}
 	case e_aggr:
 	case e_func:
 		if (!is_analytic(e) && !exp_has_sideeffect(e)) {
 			sql_subfunc *f = e->f;
-			if (e->type == e_func && !f->func->s && is_caselike_func(f) /*is_ifthenelse_func(f)*/)
-				return add_exp_to_project(sql, e, rel);
+			if (e->type == e_func && !f->func->s && is_caselike_func(f) /*is_ifthenelse_func(f)*/) {
+				bool added = false;
+				sql_exp *ne = add_exp_to_project_side(s, e, &added);
+
+				if (added)
+					*split = true;
+				return ne;
+			}
 		}
 		return e;
-	case e_cmp:
+	case e_cmp: {
+		bool colcmp = false;
+
+		if (is_joinop(s->rel->op) && e->flag != cmp_filter && e->flag != cmp_con &&
+		    e->flag != cmp_dis && e->flag != cmp_in && e->flag != cmp_notin)
+			colcmp = exp_is_column_value(e->l) && exp_is_column_value(e->r);
 		if (e->flag == cmp_filter) {
-			select_split_exps(sql, e->l, rel);
-			select_split_exps(sql, e->r, rel);
+			select_split_exps(s, e->l, split, false);
+			select_split_exps(s, e->r, split, false);
 		} else if (e->flag == cmp_con || e->flag == cmp_dis) {
-			select_split_exps(sql, e->l, rel);
+			select_split_exps(s, e->l, split, false);
 		} else if (e->flag == cmp_in || e->flag == cmp_notin) {
-			e->l = select_split_exp(sql, e->l, rel);
-			select_split_exps(sql, e->r, rel);
+			e->l = select_split_exp(s, e->l, split, false);
+			select_split_exps(s, e->r, split, false);
 		} else {
-			e->l = select_split_exp(sql, e->l, rel);
-			e->r = select_split_exp(sql, e->r, rel);
+			e->l = select_split_exp(s, e->l, split, colcmp);
+			e->r = select_split_exp(s, e->r, split, colcmp);
 			if (e->f)
-				e->f = select_split_exp(sql, e->f, rel);
+				e->f = select_split_exp(s, e->f, split, colcmp);
 		}
 		return e;
+	}
 	case e_atom:
 	case e_psm:
 		return e;
@@ -59,7 +180,7 @@ select_split_exp(mvc *sql, sql_exp *e, sql_rel *rel)
 }
 
 static void
-select_split_exps(mvc *sql, list *exps, sql_rel *rel)
+select_split_exps(split_select_ctx *s, list *exps, bool *split, bool allow_convert)
 {
 	node *n;
 
@@ -68,7 +189,7 @@ select_split_exps(mvc *sql, list *exps, sql_rel *rel)
 	for(n=exps->h; n; n = n->next){
 		sql_exp *e = n->data;
 
-		e = select_split_exp(sql, e, rel);
+		e = select_split_exp(s, e, split, allow_convert);
 		n->data = e;
 	}
 }
@@ -76,26 +197,36 @@ select_split_exps(mvc *sql, list *exps, sql_rel *rel)
 static sql_rel *
 rel_split_select_(visitor *v, sql_rel *rel)
 {
-	if (!rel || !is_select(rel->op) || list_empty(rel->exps) || !rel->l || mvc_highwater(v->sql))
+	if (!rel || !(is_select(rel->op) || is_joinop(rel->op)) || list_empty(rel->exps) ||
+	    !rel->l || (is_joinop(rel->op) && !rel->r) || mvc_highwater(v->sql))
 		return rel;
 
-	bool funcs = false;
+	bool funcs = is_joinop(rel->op);
 
-	/* are there functions */
+	/* are there functions (join expressions can also contain conversions
+	 * which can be pushed into one of the inputs) */
 	for (node *n = rel->exps->h; n && !funcs; n = n->next)
 		funcs = exp_has_func(n->data);
+	if (!funcs)
+		return rel;
 
-	/* introduce extra project */
-	if (funcs) {
+	split_select_ctx s = { .sql = v->sql, .rel = rel };
+
+	/* introduce extra project for selects, joins get one on demand on the
+	 * input(s) their expressions refer to */
+	if (is_select(rel->op)) {
 		sql_rel *nrel = rel_project(v->sql->sa, rel->l,
 			rel_projections(v->sql, rel->l, NULL, 1, 1));
 		if (!nrel || !nrel->exps)
 			return NULL;
 		rel->l = nrel;
-		/* recursively split all functions and add those to the projection list */
-		select_split_exps(v->sql, rel->exps, nrel);
-		return rel;
+		s.lp = nrel;
 	}
+	/* recursively split all functions and add those to the projection list */
+	bool split = false;
+	select_split_exps(&s, rel->exps, &split, !is_joinop(rel->op));
+	if (split)
+		v->changes++;
 	return rel;
 }
 
@@ -111,7 +242,9 @@ bind_split_select(visitor *v, global_props *gp)
 {
 	int flag = v->sql->sql_optimizer;
 	return gp->opt_cycle == 0 && gp->opt_level == 1 && (flag & split_select)
-		   && gp->cnt[op_select] ? rel_split_select : NULL;
+		   && (gp->cnt[op_select] || gp->cnt[op_join] || gp->cnt[op_left]
+			   || gp->cnt[op_right] || gp->cnt[op_full]
+			   || gp->cnt[op_semi] || gp->cnt[op_anti]) ? rel_split_select : NULL;
 }
 
 

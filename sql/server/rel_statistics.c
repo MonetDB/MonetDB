@@ -295,6 +295,23 @@ sql_column_get_statistics(mvc *sql, sql_column *c, sql_exp *e)
 		et->digits = et->scale + 1;
 }
 
+void
+sql_idx_get_statistics(mvc *sql, sql_idx *i, sql_exp *e)
+{
+	bool nonil = false, unique = false;
+	double unique_est = 0.0;
+	(void)mvc_idx_stats(sql, i, &nonil, &unique, &unique_est);
+
+	if (has_nil(e) && nonil)
+		set_has_no_nil(e);
+	if (!is_unique(e) && unique)
+		set_unique(e);
+	if (unique_est != 0.0) {
+		prop *p = e->p = prop_create(sql->sa, PROP_NUNIQUES, e->p);
+		p->value.dval = unique_est;
+	}
+}
+
 static void
 rel_basetable_column_get_statistics(mvc *sql, sql_rel *rel, sql_exp *e)
 {

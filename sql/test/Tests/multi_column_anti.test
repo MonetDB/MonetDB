@@ -1807,6 +1807,7 @@ select id from (select 1, 10, 100, 1000, NULL) t(id, a,b,c,d) where (a,b,c,d) no
 query I nosort
 select id from (select 1, 10, 100, 1000, NULL) t(id, a,b,c,d) where (a,b,c,d) not in (select NULL,  101, NULL,  NULL);
 ----
+1
 
 
 query I nosort
@@ -2233,7 +2234,6 @@ select id from (select 1, NULL, 100, 1000, NULL) t(id, a,b,c,d) where (a,b,c,d) 
 query I nosort
 select id from (select 1, NULL, 100, 1000, NULL) t(id, a,b,c,d) where (a,b,c,d) not in (select   11, NULL, NULL,  NULL);
 ----
-1
 
 
 -- mixed res
@@ -2659,6 +2659,7 @@ select id from (select 1, 10, 100, NULL, NULL) t(id, a,b,c,d) where (a,b,c,d) no
 query I nosort
 select id from (select 1, 10, 100, NULL, NULL) t(id, a,b,c,d) where (a,b,c,d) not in (select   11, NULL, NULL,  NULL);
 ----
+1
 
 
 -- mixed res
@@ -3082,6 +3083,7 @@ select id from (select 1, 10, NULL, NULL, NULL) t(id, a,b,c,d) where (a,b,c,d) n
 query I nosort
 select id from (select 1, 10, NULL, NULL, NULL) t(id, a,b,c,d) where (a,b,c,d) not in (select   11, NULL, NULL,  NULL);
 ----
+1
 
 
 -- empty res

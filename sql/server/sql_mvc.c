@@ -1591,6 +1591,13 @@ mvc_col_stats(mvc *m, sql_column *col, bool *nonil, bool *unique, double *unique
 }
 
 int
+mvc_idx_stats(mvc *m, sql_idx *idx, bool *nonil, bool *unique, double *unique_est)
+{
+	TRC_DEBUG(SQL_TRANS, "Retrieving column stats for: %s\n", idx->base.name);
+	return sql_trans_idx_stats(m->session->tr, idx, nonil, unique, unique_est);
+}
+
+int
 mvc_copy_column(mvc *m, sql_table *t, sql_column *c, sql_column **cres)
 {
 	return sql_trans_copy_column(m->session->tr, t, c, cres);

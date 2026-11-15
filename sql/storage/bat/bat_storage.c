@@ -1022,6 +1022,19 @@ bind_idx(sql_trans *tr, sql_idx * i, int access)
 	return cs_bind_bat( &d->cs, access, cnt, true);
 }
 
+static void *					/* BAT * */
+bind_idx_no_view(sql_trans *tr, sql_idx *i)
+{
+	if (!isTable(i->t))
+		return NULL;
+	sql_delta *d = idx_timestamp_delta(tr, i);
+	if (!d)
+		return NULL;
+	BAT *b = cs_bind_bat( &d->cs, RDONLY, 0, false);
+	assert(b);
+	return b;
+}
+
 static int
 cs_real_update_bats( column_storage *cs, BAT **Ui, BAT **Uv)
 {
@@ -3015,6 +3028,42 @@ col_stats(sql_trans *tr, sql_column *c, bool *nonil, bool *unique, double *uniqu
 			bat_destroy(b);
 			if (*nonil && d->cs.ucnt > 0)
 				*nonil = false;
+		}
+	}
+	return ok;
+}
+
+static int
+idx_stats(sql_trans *tr, sql_idx *i, bool *nonil, bool *unique, double *unique_est)
+{
+	int ok = 0;
+	BAT *b = NULL;
+	sql_delta *d = NULL;
+
+	(void) tr;
+	assert(tr->active);
+	*nonil = false;
+	*unique = false;
+	*unique_est = 0.0;
+	if (!i || !isTable(i->t) || !i->t->s)
+		return ok;
+
+	if ((d = ATOMIC_PTR_GET(&i->data))) {
+		if ((b = bind_idx_no_view(tr, i))) {
+			BATiter bi = bat_iterator(b);
+			*nonil = bi.nonil && !bi.nil;
+
+			if (d->cs.ucnt == 0) {
+				*unique = bi.key;
+				*unique_est = bi.unique_est;
+				if (*unique_est == 0)
+					*unique_est = bat_guess_uniques(b, NULL, NULL);
+			}
+			bat_iterator_end(&bi);
+			bat_destroy(b);
+			if (*nonil && d->cs.ucnt > 0)
+				*nonil = false;
+			*unique = false; /* uniqueness causes issues */
 		}
 	}
 	return ok;
@@ -5401,6 +5450,7 @@ bat_storage_init( store_functions *sf)
 	sf->unique_col = &unique_col;
 	sf->double_elim_col = &double_elim_col;
 	sf->col_stats = &col_stats;
+	sf->idx_stats = &idx_stats;
 	sf->col_set_range = &col_set_range;
 	sf->col_not_null = &col_not_null;
 	sf->col_subtype = &col_subtype;
