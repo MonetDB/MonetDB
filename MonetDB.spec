@@ -86,7 +86,7 @@ Group: Applications/Databases
 License: MPL-2.0
 URL: https://www.monetdb.org/
 BugURL: https://github.com/MonetDB/MonetDB/issues
-Source: https://www.monetdb.org/downloads/sources/Dec2025-SP4/MonetDB-%{version}.tar.bz2
+Source: https://www.monetdb.org/downloads/sources/Dec2025-SP5/MonetDB-%{version}.tar.bz2
 
 BuildRequires: systemd-rpm-macros
 BuildRequires: cmake >= 3.12
@@ -1047,6 +1047,41 @@ mv "${RPM_BUILD_ROOT}"%{_libdir}/libMonetODBC*.so "${RPM_BUILD_ROOT}"%{_libdir}/
 %endif
 
 %changelog
+* Mon Nov 16 2026 Sjoerd Mullender <sjoerd@acm.org> - 11.55.11-20261116
+- Rebuilt.
+- GH#7976: Adding an unrelated composite constraint makes
+  `sys.dump_database` reverse an existing composite key, producing a dump
+  that cannot be restored
+- GH#7985: `QUALIFY` with inline `ROW_NUMBER` leaks an `ORDER BY` column
+  and filters the wrong rows
+- GH#8031: Query giving wrong result when casting is expected to fail
+- GH#8034: ORDER BY query with LIKE and string concatenation fails to
+  produce a result set
+- GH#8035: ALTER TABLE ALTER COLUMN DATE to TIMESTAMP changes an existing
+  value
+- GH#8036: Rows inserted after in-transaction `ALTER COLUMN` disappear
+  after commit
+- GH#8037: ALTER from VARCHAR to DECIMAL changes the scale or rejects
+  values accepted by CAST
+- GH#8044: GDKtracer_init_trace_file failed with in-memory mserver5 and
+  large insert
+
+* Fri Nov  6 2026 Sjoerd Mullender <sjoerd@acm.org> - 11.55.11-20261116
+- MonetDB: There was a regression in the handling of the --dbextra=in-memory option.
+  Instead of keeping the "extra" farm (i.e. all transient BATs) fully
+  in memory, they were stored in a subdirectory called in-memory.
+- MonetDB: There was a bug in handling backslash escapes in strings if the
+  backslash was immediately followed by a non-ASCII UTF-8 character.
+- MonetDB: On Fedora 45, there was a change in how the ODBC drivers are configured.
+  The MonetDB ODBC driver now follows the new way of doing things.
+- MonetDB: In Dec2025-SP4, the MonetDB-geom module was accidentally not built for
+  Fedora and RHEL 9 and 10.  This has been corrected.  The module cannot
+  be built for RHEL 8 since the required geos library is too old.
+
+* Fri Oct 23 2026 Sjoerd Mullender <sjoerd@acm.org> - 11.55.11-20261116
+- MonetDB: Added an option --relative-dir to mclient to specify the directory
+  for relative path names when using the ON CLIENT option in SQL queries.
+
 * Tue Sep 29 2026 Sjoerd Mullender <sjoerd@acm.org> - 11.55.9-20260929
 - Rebuilt.
 - GH#7922: Wrong result path split between `SUM() OVER (... RANGE ...)`
