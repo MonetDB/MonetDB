@@ -90,13 +90,14 @@ tau(double x)
 // Otmar Ertl, arXiv:1702.01284.
 // Only difference is how the multiplicity array is computed
 double
-sketch_estimate(uint8_t (*sketch)[CLZ_BUCKETS])
+sketch_estimate(void *sketch)
 {
+	uint8_t (*sk)[CLZ_BUCKETS] = sketch;
 	int8_t C[CLZ_BUCKETS + 1] = {0};
 	for (size_t bucket = 0; bucket < BUCKETS; bucket++) {
 		int K = -1;
 		for (int clz = 0; clz < CLZ_BUCKETS; clz++)
-			if (sketch[bucket][clz] > 0)
+			if (sk[bucket][clz] > 0)
 				K = clz;
 		K == -1 ? C[0]++ : C[K + 1]++;
 	}
@@ -138,11 +139,10 @@ sketch_estimate(uint8_t (*sketch)[CLZ_BUCKETS])
 	} while (0)
 
 gdk_return
-sketch_update_many(BATiter *bi, uint8_t (*sketch)[CLZ_BUCKETS],
-		   const void *values, size_t count)
+sketch_update_many(BATiter *bi, void *sketch, const void *values, size_t count)
 {
-	gdk_return rc = GDK_SUCCEED;
-	assert(sketch && (count > 0));
+	uint8_t (*sk)[CLZ_BUCKETS] = sketch;
+	assert(sk && (count > 0));
 	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
 	random_state_engine rse;
 	init_random_state_engine(rse, (uint64_t) GDKusec());
@@ -155,11 +155,6 @@ sketch_update_many(BATiter *bi, uint8_t (*sketch)[CLZ_BUCKETS],
 	var_t offset;
 
 	TIMEOUT_LOOP_IDX_DECL(i, count, qry_ctx) {
-		/* v = ATOMvarsized(values_t) ? */
-		/* 	values ? ((void **) values)[i] : */
-		/* 		 (offset = VarHeapVal(bi->base, i, bi->width)) == 0 ? */
-		/* 		 	atomnil : bi->vh->base + offset : */
-		/* 	(void *) ((char *) values + (i << values_s)); */
 		if (ATOMvarsized(values_t)) {
 			if (values)
 				v = ((void **) values)[i];
@@ -174,30 +169,33 @@ sketch_update_many(BATiter *bi, uint8_t (*sketch)[CLZ_BUCKETS],
 		if (atomeq(v, atomnil))
 			continue;
 		uint64_t hash = XXH64(v, ATOMlen(values_t, v), HLLSEED);
-		SKETCH_UPDATE_ONE(sketch, hash);
+		SKETCH_UPDATE_ONE(sk, hash);
 	}
 
-	return rc;
-}
-
-gdk_return
-sketch_merge(uint8_t (*dst)[CLZ_BUCKETS], uint8_t (*src)[CLZ_BUCKETS])
-{
-	assert(dst != NULL && src != NULL);
-	for (size_t i = 0; i < BUCKETS; i++)
-		for (size_t j = 0; j < CLZ_BUCKETS; j++)
-			if (src[i][j] > dst[i][j])
-				dst[i][j] = src[i][j];
-	/* for (size_t i = 0; i < BUCKETS; i++) */
-	/* 	for (size_t j = 0; j < CLZ_BUCKETS; j++) */
-	/* 		dst[i][j] = dst[i][j] + src[i][j]; */
 	return GDK_SUCCEED;
 }
 
 gdk_return
-bat_sketch(BATiter *bi, struct canditer *bci, uint8_t (*sketch)[CLZ_BUCKETS])
+sketch_merge(void *dest, void *src)
+{
+	uint8_t (*d)[CLZ_BUCKETS] = dest;
+	uint8_t (*s)[CLZ_BUCKETS] = src;
+	assert(d != NULL && s != NULL);
+	for (size_t i = 0; i < BUCKETS; i++)
+		for (size_t j = 0; j < CLZ_BUCKETS; j++)
+			if (s[i][j] > d[i][j])
+				d[i][j] = s[i][j];
+	/* for (size_t i = 0; i < BUCKETS; i++) */
+	/* 	for (size_t j = 0; j < CLZ_BUCKETS; j++) */
+	/* 		d[i][j] = d[i][j] + s[i][j]; */
+	return GDK_SUCCEED;
+}
+
+gdk_return
+bat_sketch(BATiter *bi, struct canditer *bci, void *sketch)
 {
 	gdk_return rc = GDK_SUCCEED;
+	uint8_t (*sk)[CLZ_BUCKETS] = sketch;
 	BAT *b = bi->b;
 
 	struct canditer n_bci;
@@ -209,7 +207,7 @@ bat_sketch(BATiter *bi, struct canditer *bci, uint8_t (*sketch)[CLZ_BUCKETS])
 	}
 
 	if (n_bci.tpe == cand_dense) {
-		rc = sketch_update_many(bi, sketch, NULL, n_bci.ncand);
+		rc = sketch_update_many(bi, sk, NULL, n_bci.ncand);
 	} else {
 		QryCtx *qry_ctx = MT_thread_get_qry_ctx();
 		random_state_engine rse;
@@ -227,7 +225,7 @@ bat_sketch(BATiter *bi, struct canditer *bci, uint8_t (*sketch)[CLZ_BUCKETS])
 			if (atomeq(v, atomnil))
 				continue;
 			uint64_t hash = XXH64(v, ATOMlen(values_t, v), HLLSEED);
-			SKETCH_UPDATE_ONE(sketch, hash);
+			SKETCH_UPDATE_ONE(sk, hash);
 		}
 	}
 

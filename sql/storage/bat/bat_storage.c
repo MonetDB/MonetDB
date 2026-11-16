@@ -3003,7 +3003,7 @@ col_stats(sql_trans *tr, sql_column *c, bool *nonil, bool *unique, double *uniqu
 					*unique_est = bi.unique_est;
 					if (*unique_est == 0 && bi.count) {
 						if (bi.b->tsketch) {
-							*unique_est = sketch_estimate((uint8_t (*)[CLZ_BUCKETS]) bi.b->tsketch->base);
+							*unique_est = sketch_estimate(bi.b->tsketch->base);
 						} else {
 							uint8_t tmp_sketch[BUCKETS][CLZ_BUCKETS] = {0};
 							if (bat_sketch(&bi, NULL, tmp_sketch) != GDK_SUCCEED)

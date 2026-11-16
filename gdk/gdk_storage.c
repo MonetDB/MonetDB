@@ -887,8 +887,7 @@ BATload_intern(bat bid, bool lock)
 					HEAPfree(b->tsketch, false);
 					return NULL;
 				}
-				b->tunique_est = sketch_estimate((uint8_t (*)[CLZ_BUCKETS]) b->tsketch->base);
-				//printf("BATload_intern estimating %f for bat id %d\n", b->tunique_est, b->batCacheid);
+				b->tunique_est = sketch_estimate(b->tsketch->base);
 			}
 			b->tsketch->free = SKETCH_SIZE;
 		} else {

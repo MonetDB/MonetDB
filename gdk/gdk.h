@@ -3504,10 +3504,10 @@ gdk_export bool BAThasstrimps(BAT *b);
 gdk_export gdk_return BATsetstrimps(BAT *b);
 
 /* Sketches exported functions */
-gdk_export gdk_return sketch_update_many(BATiter *bi, uint8_t (*sketch)[CLZ_BUCKETS], const void *values, size_t count);
-gdk_export gdk_return sketch_merge(uint8_t (*dst)[CLZ_BUCKETS], uint8_t (*src)[CLZ_BUCKETS]);
-gdk_export double sketch_estimate(uint8_t (*sketch)[CLZ_BUCKETS]);
-gdk_export gdk_return bat_sketch(BATiter *bi, struct canditer *bci, uint8_t (*sketch)[CLZ_BUCKETS]);
+gdk_export gdk_return sketch_update_many(BATiter *bi, void *sketch, const void *values, size_t count);
+gdk_export gdk_return sketch_merge(void *dest, void *src);
+gdk_export double sketch_estimate(void *sketch);
+gdk_export gdk_return bat_sketch(BATiter *bi, struct canditer *bci, void *sketch);
 
 /* Rtree structure functions */
 #ifdef HAVE_RTREE

@@ -953,7 +953,7 @@ COLcopy2(BAT *b, int tt, bool writable, bool mayshare, role_t role)
 				memcpy(bn->tsketch->base, b->tsketch->base, SKETCH_SIZE);
 				bn->tsketch->dirty = true;
 			} else {
-				if (bat_sketch(&bi, NULL, (uint8_t (*)[CLZ_BUCKETS]) bn->tsketch->base) != GDK_SUCCEED)
+				if (bat_sketch(&bi, NULL, bn->tsketch->base) != GDK_SUCCEED)
 					goto bunins_failed;
 				bn->tsketch->dirty = true;
 			}
@@ -1023,7 +1023,7 @@ COLcopy2(BAT *b, int tt, bool writable, bool mayshare, role_t role)
 			} else {
 				if (bn->tsketch) {
 					assert(bn->tsketch->base);
-					bn->tunique_est = sketch_estimate((uint8_t (*)[CLZ_BUCKETS]) bn->tsketch->base);
+					bn->tunique_est = sketch_estimate(bn->tsketch->base);
 				}
 			}
 		}
@@ -1059,7 +1059,7 @@ COLcopy2(BAT *b, int tt, bool writable, bool mayshare, role_t role)
 			} else {
 				if (bn->tsketch) {
 					assert(bn->tsketch->base);
-					bn->tunique_est = sketch_estimate((uint8_t (*)[CLZ_BUCKETS]) bn->tsketch->base);
+					bn->tunique_est = sketch_estimate(bn->tsketch->base);
 				}
 			}
 		}
@@ -1075,7 +1075,7 @@ COLcopy2(BAT *b, int tt, bool writable, bool mayshare, role_t role)
 			} else {
 				if (bn->tsketch) {
 					assert(bn->tsketch->base);
-					bn->tunique_est = sketch_estimate((uint8_t (*)[CLZ_BUCKETS]) bn->tsketch->base);
+					bn->tunique_est = sketch_estimate(bn->tsketch->base);
 				}
 			}
 		}
@@ -1293,10 +1293,8 @@ BUNappendmulti(BAT *b, const void *values, BUN count, bool force)
 				nunique = b->thash ? b->thash->nunique : 0;
 			}
 			if (b->tsketch) {
-				//printf("BUNappendmulti updating dense for bat id %d\n", b->batCacheid);
 				MT_lock_set(&b->theaplock);
-				if (sketch_update_many(&bi, (uint8_t (*)[CLZ_BUCKETS]) b->tsketch->base,
-						       values, count) != GDK_SUCCEED) {
+				if (sketch_update_many(&bi, b->tsketch->base, values, count) != GDK_SUCCEED) {
 					MT_rwlock_wrunlock(&b->thashlock);
 					MT_lock_unset(&b->theaplock);
 					return GDK_FAIL;
@@ -1350,10 +1348,8 @@ BUNappendmulti(BAT *b, const void *values, BUN count, bool force)
 			}
 			nunique = b->thash ? b->thash->nunique : 0;
 			if (b->tsketch) {
-				//printf("BUNappendmulti updating dense for bat id %d\n", b->batCacheid);
 				MT_lock_set(&b->theaplock);
-				if(sketch_update_many(&bi, (uint8_t (*)[CLZ_BUCKETS]) b->tsketch->base,
-						      values, count) != GDK_SUCCEED) {
+				if(sketch_update_many(&bi, b->tsketch->base, values, count) != GDK_SUCCEED) {
 					MT_rwlock_wrunlock(&b->thashlock);
 					MT_lock_unset(&b->theaplock);
 					return GDK_FAIL;
@@ -1518,16 +1514,10 @@ BUNappendmulti(BAT *b, const void *values, BUN count, bool force)
 		b->tsorted = b->trevsorted = b->tkey = false;
 	}
 	BATsetcount(b, p);
-	if (nunique != 0) {
-		/*
-		if (b->tsketch && b->tsketch->base)
-			printf("BUNappendmulti would be estimation %f for unique bat id %d\n", sketch_estimate((uint8_t (*)[CLZ_BUCKETS]) b->tsketch->base), b->batCacheid);
-			*/
+	if (nunique != 0)
 		b->tunique_est = (double) nunique;
-	} else if (b->tsketch) {
-		b->tunique_est = sketch_estimate((uint8_t (*)[CLZ_BUCKETS]) b->tsketch->base);
-		//printf("BUNappendmulti estimating %f for bat id %d\n", b->tunique_est, b->batCacheid);
-	}
+	else if (b->tsketch)
+		b->tunique_est = sketch_estimate(b->tsketch->base);
 	MT_lock_unset(&b->theaplock);
 	MT_rwlock_wrunlock(&b->thashlock);
 
