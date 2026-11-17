@@ -95,8 +95,9 @@ rel_push_project_down_(visitor *v, sql_rel *rel)
 						} else if (rel_has_exp(j->r, e->l, false) == 0) {
 							p = j;
 							j = j->r;
+						} else {
+							break;
 						}
-						break;
 					}
 					if (j && j != l) {
 						sql_rel *np = rel_project(v->sql->sa, j, rel_projections(v->sql, j, NULL, 0, 1));

@@ -1,3 +1,47 @@
+monetdb (11.55.11) unstable; urgency=low
+
+  * Rebuilt.
+  * GH#7976: Adding an unrelated composite constraint makes
+    `sys.dump_database` reverse an existing composite key, producing a dump
+    that cannot be restored
+  * GH#7985: `QUALIFY` with inline `ROW_NUMBER` leaks an `ORDER BY` column
+    and filters the wrong rows
+  * GH#8031: Query giving wrong result when casting is expected to fail
+  * GH#8034: ORDER BY query with LIKE and string concatenation fails to
+    produce a result set
+  * GH#8035: ALTER TABLE ALTER COLUMN DATE to TIMESTAMP changes an existing
+    value
+  * GH#8036: Rows inserted after in-transaction `ALTER COLUMN` disappear
+    after commit
+  * GH#8037: ALTER from VARCHAR to DECIMAL changes the scale or rejects
+    values accepted by CAST
+  * GH#8044: GDKtracer_init_trace_file failed with in-memory mserver5 and
+    large insert
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Mon, 16 Nov 2026 15:32:04 +0100
+
+monetdb (11.55.11) unstable; urgency=low
+
+  * MonetDB: There was a regression in the handling of the --dbextra=in-memory option.
+    Instead of keeping the "extra" farm (i.e. all transient BATs) fully
+    in memory, they were stored in a subdirectory called in-memory.
+  * MonetDB: There was a bug in handling backslash escapes in strings if the
+    backslash was immediately followed by a non-ASCII UTF-8 character.
+  * MonetDB: On Fedora 45, there was a change in how the ODBC drivers are configured.
+    The MonetDB ODBC driver now follows the new way of doing things.
+  * MonetDB: In Dec2025-SP4, the MonetDB-geom module was accidentally not built for
+    Fedora and RHEL 9 and 10.  This has been corrected.  The module cannot
+    be built for RHEL 8 since the required geos library is too old.
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Fri, 6 Nov 2026 15:32:04 +0100
+
+monetdb (11.55.11) unstable; urgency=low
+
+  * MonetDB: Added an option --relative-dir to mclient to specify the directory
+    for relative path names when using the ON CLIENT option in SQL queries.
+
+ -- Sjoerd Mullender <sjoerd@acm.org>  Fri, 23 Oct 2026 15:32:04 +0100
+
 monetdb (11.55.9) unstable; urgency=low
 
   * Rebuilt.
