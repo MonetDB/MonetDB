@@ -154,4 +154,4 @@ blob_query
 inet4
 inet6
 
-PIPELINE?multi_column_anti
+multi_column_anti
