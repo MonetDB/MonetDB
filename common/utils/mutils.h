@@ -56,7 +56,6 @@ mutils_export int MT_rename(const char *old, const char *new);
 mutils_export int MT_remove(const char *filename);
 mutils_export int MT_mkdir(const char *dirname);
 mutils_export char *MT_getcwd(char *buffer, size_t size);
-mutils_export int MT_access(const char *pathname, int mode);
 
 #else
 
@@ -114,12 +113,6 @@ static inline char *
 MT_getcwd(char *buffer, size_t size)
 {
 	return getcwd(buffer, size);
-}
-
-static inline int
-MT_access(const char *pathname, int mode)
-{
-	return access(pathname, mode);
 }
 
 #endif

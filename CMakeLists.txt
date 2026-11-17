@@ -44,6 +44,7 @@ include(TestBigEndian REQUIRED)
 
 if(WIN32)
   set(CMAKE_REQUIRED_LIBRARIES  ws2_32.lib shell32.lib advapi32.lib)
+  include_directories(BEFORE SYSTEM NT)
 endif()
 test_big_endian(IS_BIG_ENDIAN)
 
@@ -119,10 +120,6 @@ find_program(BASH NAMES bash DOC "bash interpreter fullpath")
 
 configure_file(monetdb_config.h.in
   ${CMAKE_CURRENT_BINARY_DIR}/monetdb_config.h)
-if(WIN32)
-  configure_file(unistd.h.in
-    ${CMAKE_CURRENT_BINARY_DIR}/unistd.h)
-endif()
 
 add_library(monetdb_config_header INTERFACE)
 

@@ -854,7 +854,7 @@ PPmproject(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 typedef struct part_t {
 	struct part_t *next;
 	int nr;
-	bat bats[];
+	bat bats[] ATTR_COUNTED_BY(nr);
 } part_t;
 
 typedef struct sop_t {

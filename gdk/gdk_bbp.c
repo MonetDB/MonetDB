@@ -73,9 +73,6 @@
 #include <fcntl.h>
 #endif
 
-#ifndef F_OK
-#define F_OK 0
-#endif
 #ifndef S_ISDIR
 #define S_ISDIR(mode)	(((mode) & _S_IFMT) == _S_IFDIR)
 #endif

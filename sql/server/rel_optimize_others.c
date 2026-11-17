@@ -1255,8 +1255,9 @@ rel_push_topn_and_sample_down_(visitor *v, sql_rel *rel)
 		sql_exp *op = r->r;
 		sql_subfunc *f = op->f;
 
-		if (is_func(op->type) && strcmp(f->func->base.name, "file_loader") == 0 && !sql_func_mod(f->func)[0] && !sql_func_imp(f->func)[0]) {
-			/* push limit, to arguments of file_loader */
+		if (is_func(op->type) && (strcmp(f->func->base.name, "file_loader") == 0 || strcmp(f->func->base.name, "proto_loader") == 0)
+				&& !sql_func_mod(f->func)[0] && !sql_func_imp(f->func)[0]) {
+			/* push limit, to arguments of file_loader/proto_loader */
 			list *args = op->l;
 			if (list_length(args) == 2) {
 				sql_exp *topN = rel->exps->h->data;

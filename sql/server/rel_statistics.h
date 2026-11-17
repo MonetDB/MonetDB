@@ -27,6 +27,7 @@ struct function_properties {
 #define atom_min(X,Y) atom_cmp(X, Y) > 0 ? Y : X
 
 extern void sql_column_get_statistics(mvc *sql, sql_column *c, sql_exp *e);
+extern void sql_idx_get_statistics(mvc *sql, sql_idx *i, sql_exp *e);
 
 static inline atom *
 statistics_atom_max(mvc *sql, atom *v1, atom *v2)

@@ -772,6 +772,12 @@ rel_print_rel(mvc *sql, stream  *fout, sql_rel *rel, int depth, list *refs, int 
 	default:
 		assert(0);
 	}
+	if (sql->show_all_details && decorate) {
+		if (rel->lunique)
+				mnstr_printf(fout, " LKEEPUNIQUE");
+		if (rel->runique)
+				mnstr_printf(fout, " RKEEPUNIQUE");
+	}
 	if (sql->show_details && decorate && rel->p) {
 		if ((ATOMIC_GET(&GDKdebug) & TESTINGMASK) == 0 && rel->partition)
 				mnstr_printf(fout, " %c PARTITION", rel->partition==1?'L':rel->partition == 2?'R':' ');

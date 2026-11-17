@@ -2355,8 +2355,9 @@ rewrite_anyequal(visitor *v, sql_rel *rel, sql_exp *e, int depth)
 					exp_reset_props(rewrite, le, is_left(rewrite->op));
 				}
 
-				bool tomarkjoin = (!is_anyequal(sf)) && (list_length(le->f) > 1);
-				if (tomarkjoin && is_tuple) {
+				/* rewrite a multi-column not_anyequal with NULLs into a marked (group) join */
+				bool tomarkjoin = (!is_anyequal(sf)) && (list_length(le->f) > 1) && is_tuple && (MT_thread_get_qry_ctx()->pipeline_mode);
+				if (tomarkjoin) {
 					list *t = le->f;
 					bool foundnil = 0;
 
@@ -2366,7 +2367,6 @@ rewrite_anyequal(visitor *v, sql_rel *rel, sql_exp *e, int depth)
 					tomarkjoin = tomarkjoin && foundnil;
 				}
 
-				tomarkjoin &= (MT_thread_get_qry_ctx()->pipeline_mode);
 				if (rsq) {
 					operator_type op = tomarkjoin?op_join:(is_anyequal(sf)?op_semi:op_anti);
 					(void)rewrite_inner(sql, rel, rsq, op, &rewrite, NULL);
@@ -2408,6 +2408,7 @@ rewrite_anyequal(visitor *v, sql_rel *rel, sql_exp *e, int depth)
 					v->changes++;
 					return exp_atom_bool(sql->sa, 1);
 				} else {
+					assert(!tomarkjoin);
 					if (exp_has_freevar(sql, le))
 						rel_bind_var(sql, rel, le);
 					if (!rewrite)
@@ -2417,22 +2418,6 @@ rewrite_anyequal(visitor *v, sql_rel *rel, sql_exp *e, int depth)
 					append(rewrite->exps, inexp=exp_compare(sql->sa, le, exp_ref(sql, re), cmp_equal));
 					if (inexp)
 						set_any(inexp);
-
-					if (tomarkjoin) {
-						assert("tomarkjoin && !is_tuple");
-						if (!rewrite->attr)
-							rewrite->attr = sa_list(v->sql->sa);
-						sql_exp *a = exp_atom_bool(v->sql->sa, false);
-						set_no_nil(a);
-						if (!e->alias.label)
-							exp_label(v->sql->sa, a, ++v->sql->label);
-						else
-							exp_setalias(a, e->alias.label, exp_relname(e), exp_name(e));
-						le = exp_ref(v->sql, a);
-						le->card = CARD_MULTI; /* mark as multi value, the real attribute is introduced later */
-						append(rewrite->attr, a);
-						return exp_compare(sql->sa, le, exp_atom_bool(sql->sa, 1), cmp_equal);
-					}
 
 					v->changes++;
 					return exp_atom_bool(sql->sa, 1);
