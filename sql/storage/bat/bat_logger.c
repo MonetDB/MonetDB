@@ -1439,14 +1439,14 @@ snapshot_bats(stream *plan, BAT *bats_to_omit, const char *db_dir)
 		BAT b;
 		Heap h;
 		Heap vh;
-		Heap skh;
-		skh = vh = h = (Heap) {
+		Heap sh;
+		sh = vh = h = (Heap) {
 			.free = 0,
 		};
 		b = (BAT) {
 			.theap = &h,
 			.tvheap = &vh,
-			.tsketch = &skh,
+			.tstats = &sh,
 		};
 		char filename[sizeof(BBP_physical(0))];
 		char batname[129];
@@ -1479,8 +1479,8 @@ snapshot_bats(stream *plan, BAT *bats_to_omit, const char *db_dir)
 			continue;
 		}
 
-		if (atom_sketchable(b.ttype) && b.tsketch) {
-			r = snapshot_heap(plan, db_dir, b.batCacheid, filename, "tsketch", b.tsketch->free);
+		if (atom_sketchable(b.ttype) && b.tstats) {
+			r = snapshot_heap(plan, db_dir, b.batCacheid, filename, "tstats", b.tstats->free);
 			if (r != GDK_SUCCEED)
 				goto end;
 		}

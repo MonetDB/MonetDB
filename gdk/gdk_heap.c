@@ -586,8 +586,8 @@ GDKupgradevarheap(BAT *b, var_t v, BUN cap, BUN ncopy)
 		ValPtr p = BATgetprop_nolock(b, (enum prop_t) 20);
 		HEAPdecref(old, p == NULL || strcmp(((Heap*) p->val.pval)->filename, old->filename) != 0);
 	}
-	if (b->tsketch)
-		b->tsketch->dirty = true;
+	if (b->tstats)
+		b->tstats->dirty = true;
 	return GDK_SUCCEED;
 }
 

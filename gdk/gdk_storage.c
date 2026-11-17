@@ -685,7 +685,7 @@ BATsave_iter(BAT *b, BATiter *bi, BUN size)
 	/* views cannot be saved */
 	if ((bi->h != NULL && bi->h->parentid != b->batCacheid) ||
 	    (bi->vh != NULL && bi->vh->parentid != b->batCacheid && bi->vh->parentid != b->ustr) ||
-	    (bi->skh != NULL && bi->skh->parentid != b->batCacheid)) {
+	    (bi->sh != NULL && bi->sh->parentid != b->batCacheid)) {
 		if (locked)
 			MT_rwlock_rdunlock(&b->thashlock);
 		GDKerror("%s is a view on %s; cannot be saved\n", BATgetId(b), BBP_logical(VIEWtparent(b)));
@@ -738,11 +738,11 @@ BATsave_iter(BAT *b, BATiter *bi, BUN size)
 					close(fd);
 				}
 			}
-			if (bi->skh) {
-				fd = GDKfdlocate(bi->skh->farmid, bi->skh->filename, "rb+", NULL);
+			if (bi->sh) {
+				fd = GDKfdlocate(bi->sh->farmid, bi->sh->filename, "rb+", NULL);
 				if (fd < 0) {
 					GDKsyserror("cannot open file %s for sync\n",
-						    bi->skh->filename);
+						    bi->sh->filename);
 					err = GDK_FAIL;
 				} else {
 					if (
@@ -754,19 +754,19 @@ BATsave_iter(BAT *b, BATiter *bi, BUN size)
 						fsync(fd) < 0
 #endif
 						)
-						GDKsyserror("sync failed for %s\n", bi->skh->filename);
+						GDKsyserror("sync failed for %s\n", bi->sh->filename);
 					close(fd);
 				}
 			}
 		}
 	} else {
 		const char *nme = BBP_physical(b->batCacheid);
-		if (bi->skh) {
-		       	if ((bi->hdirty || (bi->vh && bi->vhdirty)) && !bi->skhdirty) { /* TODO make sure we set tsketch->dirty correctly */
+		if (bi->sh) {
+		       	if ((bi->hdirty || (bi->vh && bi->vhdirty)) && !bi->shdirty) { /* TODO make sure we set tstats->dirty correctly */
 				//assert(0);
-				bi->skhdirty = true;
+				bi->shdirty = true;
 			}
-			assert(bi->skh->free == SKETCH_SZ);
+			assert(bi->sh->free == TSTATS_SZ);
 		}
 		if ((!bi->copiedtodisk || bi->hdirty)
 		    && (err == GDK_SUCCEED && bi->type)) {
@@ -780,9 +780,9 @@ BATsave_iter(BAT *b, BATiter *bi, BUN size)
 		    && err == GDK_SUCCEED)
 			err = HEAPsave(bi->vh, nme, "theap", dosync, bi->vhfree, bi->type == TYPE_msk ? NULL : &b->theaplock);
 		if (err == GDK_SUCCEED
-		    && bi->skh
-		    && (!bi->copiedtodisk || bi->skhdirty))
-			err = HEAPsave(bi->skh, nme, "tsketch", dosync, SKETCH_SZ, &b->theaplock);
+		    && bi->sh
+		    && (!bi->copiedtodisk || bi->shdirty))
+			err = HEAPsave(bi->sh, nme, "tstats", dosync, TSTATS_SZ, &b->theaplock);
 	}
 
 	if (err == GDK_SUCCEED) {
@@ -798,18 +798,18 @@ BATsave_iter(BAT *b, BATiter *bi, BUN size)
 			b->tvheap->wasempty = bi->vh->wasempty;
 			b->tvheap->hasfile |= bi->vh->hasfile;
 		}
-		if (b->tsketch != bi->skh) {
-			assert(b->tsketch->dirty);
-			b->tsketch->wasempty = bi->skh->wasempty;
-			b->tsketch->hasfile |= bi->skh->hasfile;
+		if (b->tstats != bi->sh) {
+			assert(b->tstats->dirty);
+			b->tstats->wasempty = bi->sh->wasempty;
+			b->tstats->hasfile |= bi->sh->hasfile;
 		}
 		if (size != b->batCount) {
 			/* if the size doesn't match, the BAT must be dirty */
 			b->theap->dirty = true;
 			if (!b->ustr && b->tvheap)
 				b->tvheap->dirty = true;
-			if (b->tsketch)
-				b->tsketch->dirty = true;
+			if (b->tstats)
+				b->tstats->dirty = true;
 		}
 		/* there is something on disk now */
 		b->batCopiedtodisk = true;
@@ -872,26 +872,27 @@ BATload_intern(bat bid, bool lock)
 			b->batCapacity = (BUN) (b->theap->size >> b->tshift);
 		}
 
-		if (b->tsketch /* TODO */ && atom_sketchable(b->ttype)) {
-			b->tsketch->storage = STORE_INVALID;
+		if (b->tstats /* TODO */ && atom_sketchable(b->ttype)) {
+			b->tstats->storage = STORE_INVALID;
 			if (b->batCount > 0) {
-				if (HEAPload(b->tsketch, nme, "tsketch", false) != GDK_SUCCEED) {
+				if (HEAPload(b->tstats, nme, "tstats", false) != GDK_SUCCEED) {
 					assert(0);
 					HEAPfree(b->theap, false);
-					HEAPfree(b->tsketch, false);
+					HEAPfree(b->tstats, false);
 					return NULL;
 				}
 			} else {
-				if (HEAPalloc(b->tsketch, SKETCH_SZ, sizeof(uint8_t)) != GDK_SUCCEED) {
+				if (HEAPalloc(b->tstats, TSTATS_SZ, sizeof(uint8_t)) != GDK_SUCCEED) {
 					HEAPfree(b->theap, false);
-					HEAPfree(b->tsketch, false);
+					HEAPfree(b->tstats, false);
 					return NULL;
 				}
-				b->tunique_est = sketch_estimate(b->tsketch->base);
+				void *sk_b = tstats_sketch(b->tstats->base);
+				b->tunique_est = sketch_estimate(sk_b);
 			}
-			b->tsketch->free = SKETCH_SZ;
+			b->tstats->free = TSTATS_SZ;
 		} else {
-			b->tsketch = NULL;
+			b->tstats = NULL;
 		}
 	} else {
 		b->theap->base = NULL;
@@ -953,8 +954,8 @@ BATdelete(BAT *b)
 	if (b->tvheap && !b->ustr) {
 		HEAPfree(b->tvheap, true);
 	}
-	if (b->tsketch) {
-		HEAPfree(b->tsketch, true);
+	if (b->tstats) {
+		HEAPfree(b->tstats, true);
 	}
 	b->batCopiedtodisk = false;
 }

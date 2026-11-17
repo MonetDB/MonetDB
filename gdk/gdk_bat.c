@@ -117,7 +117,7 @@ BATcreatedesc(oid hseq, int tt, bool heapnames, role_t role, uint16_t width)
 {
 	bat bid;
 	BAT *bn;
-	Heap *h = NULL, *vh = NULL, *skh = NULL;
+	Heap *h = NULL, *vh = NULL, *sh = NULL;
 
 	/*
 	 * Alloc space for the BAT and its dependent records.
@@ -149,12 +149,12 @@ BATcreatedesc(oid hseq, int tt, bool heapnames, role_t role, uint16_t width)
 		}
 
 		if (bat_needstats(tt, role)) {
-			if ((skh = GDKmalloc(sizeof(Heap))) == NULL) {
+			if ((sh = GDKmalloc(sizeof(Heap))) == NULL) {
 				GDKfree(h);
 				GDKfree(vh);
 				return NULL;
 			}
-			*skh = (Heap) {
+			*sh = (Heap) {
 				.farmid = BBPselectfarm(role, tt, sketchheap),
 				.dirty = true,
 				.refs = ATOMIC_VAR_INIT(1),
@@ -166,7 +166,7 @@ BATcreatedesc(oid hseq, int tt, bool heapnames, role_t role, uint16_t width)
 	if (bid == 0) {
 		GDKfree(h);
 		GDKfree(vh);
-		GDKfree(skh);
+		GDKfree(sh);
 		return NULL;
 	}
 	bn = BBP_desc(bid);
@@ -196,7 +196,7 @@ BATcreatedesc(oid hseq, int tt, bool heapnames, role_t role, uint16_t width)
 		.batRestricted = BAT_WRITE,
 		.theap = h,
 		.tvheap = vh,
-		.tsketch = skh,
+		.tstats = sh,
 		.creator_tid = MT_getpid(),
 		.qc = role == TRANSIENT ? MT_thread_get_qry_ctx() : NULL,
 	};
@@ -211,11 +211,11 @@ BATcreatedesc(oid hseq, int tt, bool heapnames, role_t role, uint16_t width)
 				   sizeof(bn->tvheap->filename),
 				   nme, ".theap", NULL);
 		}
-		if (bn->tsketch) {
-			bn->tsketch->parentid = bn->batCacheid;
-			strtconcat(bn->tsketch->filename,
-				   sizeof(bn->tsketch->filename),
-				   nme, ".tsketch", NULL);
+		if (bn->tstats) {
+			bn->tstats->parentid = bn->batCacheid;
+			strtconcat(bn->tstats->filename,
+				   sizeof(bn->tstats->filename),
+				   nme, ".tstats", NULL);
 		}
 	}
 	char name[MT_NAME_LEN];
@@ -359,15 +359,15 @@ COLnew2(oid hseq, int tt, BUN cap, role_t role, uint16_t width)
 	}
 
 	if (bat_needstats(tt, role)) {
-		assert(bn->tsketch);
-		if (HEAPalloc(bn->tsketch, SKETCH_SZ, sizeof(uint8_t)) != GDK_SUCCEED) {
+		assert(bn->tstats);
+		if (HEAPalloc(bn->tstats, TSTATS_SZ, 1) != GDK_SUCCEED) {
 			HEAPfree(bn->theap, true);
 			if (bn->tvheap)
 				HEAPfree(bn->tvheap, true);
 			goto bailout;
 		}
-		memset(bn->tsketch->base, 0, SKETCH_SZ);
-		bn->tsketch->free = SKETCH_SZ;
+		memset(bn->tstats->base, 0, TSTATS_SZ);
+		bn->tstats->free = TSTATS_SZ;
 	}
 
 	BBPcacheit(bn, true);
@@ -571,9 +571,9 @@ BATclear(BAT *b, bool force)
 		}
 	}
 
-	if (b->tsketch) {
-		memset(b->tsketch->base, 0, SKETCH_SZ);
-		b->tsketch->dirty = true;
+	if (b->tstats) {
+		memset(b->tstats->base, 0, TSTATS_SZ);
+		b->tstats->dirty = true;
 	}
 
 	b->batInserted = 0;
@@ -650,15 +650,15 @@ BATfree(BAT *b)
 	/* wait until there are no other references to the heap; a
 	 * reference is possible in e.g. BBPsync that uses a
 	 * bat_iterator directly on the BBP_desc, i.e. without fix */
-	while (b->tsketch && (ATOMIC_GET(&b->tsketch->refs) & HEAPREFS) > 1) {
+	while (b->tstats && (ATOMIC_GET(&b->tstats->refs) & HEAPREFS) > 1) {
 		MT_lock_unset(&b->theaplock);
 		MT_sleep_ms(1);
 		MT_lock_set(&b->theaplock);
 	}
-	if (b->tsketch) {
-		assert((ATOMIC_GET(&b->tsketch->refs) & HEAPREFS) == 1);
-		assert(b->tsketch->parentid == b->batCacheid);
-		HEAPfree(b->tsketch, false);
+	if (b->tstats) {
+		assert((ATOMIC_GET(&b->tstats->refs) & HEAPREFS) == 1);
+		assert(b->tstats->parentid == b->batCacheid);
+		HEAPfree(b->tstats, false);
 	}
 	MT_lock_unset(&b->theaplock);
 }
@@ -677,8 +677,8 @@ BATdestroy(BAT *b)
 	if (b->theap) {
 		GDKfree(b->theap);
 	}
-	if (b->tsketch) {
-		GDKfree(b->tsketch);
+	if (b->tstats) {
+		GDKfree(b->tstats);
 	}
 	if (b->oldtail) {
 		ATOMIC_AND(&b->oldtail->refs, ~DELAYEDREMOVE);
@@ -925,10 +925,10 @@ COLcopy2(BAT *b, int tt, bool writable, bool mayshare, role_t role)
 		memcpy(bn->theap->base, bi.base, bi.hfree);
 		bn->theap->free = bi.hfree;
 		bn->theap->dirty = true;
-		if (bn->tsketch && b->tsketch && bi.count) {
-			assert(b->tsketch->base);
-			memcpy(bn->tsketch->base, b->tsketch->base, SKETCH_SZ);
-			bn->tsketch->dirty = true;
+		if (bn->tstats && b->tstats && bi.count) {
+			assert(b->tstats->base);
+			memcpy(bn->tstats->base, b->tstats->base, TSTATS_SZ);
+			bn->tstats->dirty = true;
 		}
 
 		/* make sure we use the correct capacity */
@@ -947,15 +947,16 @@ COLcopy2(BAT *b, int tt, bool writable, bool mayshare, role_t role)
 			if (bunfastapp_nocheck(bn, t) != GDK_SUCCEED)
 				goto bunins_failed;
 		}
-		if (bn->tsketch && bi.count) {
-			if (b->tsketch) {
-				assert(b->tsketch->base);
-				memcpy(bn->tsketch->base, b->tsketch->base, SKETCH_SZ);
-				bn->tsketch->dirty = true;
+		if (bn->tstats && bi.count) {
+			if (b->tstats) {
+				assert(b->tstats->base);
+				memcpy(bn->tstats->base, b->tstats->base, TSTATS_SZ);
+				bn->tstats->dirty = true;
 			} else {
-				if (bat_sketch(&bi, NULL, bn->tsketch->base) != GDK_SUCCEED)
+				void *sketch = tstats_sketch(bn->tstats->base);
+				if (bat_sketch(&bi, NULL, sketch) != GDK_SUCCEED)
 					goto bunins_failed;
-				bn->tsketch->dirty = true;
+				bn->tstats->dirty = true;
 			}
 		}
 		TIMEOUT_CHECK(qry_ctx, GOTO_LABEL_TIMEOUT_HANDLER(bunins_failed, qry_ctx));
@@ -988,9 +989,9 @@ COLcopy2(BAT *b, int tt, bool writable, bool mayshare, role_t role)
 		memcpy(Tloc(bn, 0), bi.base, bn->theap->free);
 		bn->theap->dirty |= bi.count > 0;
 		algo = "memcpy heap";
-		if (bn->tsketch && bi.count) {
-			memcpy(bn->tsketch->base, b->tsketch->base, SKETCH_SZ);
-			bn->tsketch->dirty = true;
+		if (bn->tstats && bi.count) {
+			memcpy(bn->tstats->base, b->tstats->base, TSTATS_SZ);
+			bn->tstats->dirty = true;
 		}
 	}
 	/* copy all properties (size+other) from the source bat */
@@ -1021,9 +1022,10 @@ COLcopy2(BAT *b, int tt, bool writable, bool mayshare, role_t role)
 			if (bi.unique_est) {
 				bn->tunique_est = bi.unique_est;
 			} else {
-				if (bn->tsketch) {
-					assert(bn->tsketch->base);
-					bn->tunique_est = sketch_estimate(bn->tsketch->base);
+				if (bn->tstats) {
+					assert(bn->tstats->base);
+					void *sk_bn = tstats_sketch(bn->tstats->base);
+					bn->tunique_est = sketch_estimate(sk_bn);
 				}
 			}
 		}
@@ -1057,9 +1059,10 @@ COLcopy2(BAT *b, int tt, bool writable, bool mayshare, role_t role)
 			if (bi.unique_est) {
 				bn->tunique_est = bi.unique_est;
 			} else {
-				if (bn->tsketch) {
-					assert(bn->tsketch->base);
-					bn->tunique_est = sketch_estimate(bn->tsketch->base);
+				if (bn->tstats) {
+					assert(bn->tstats->base);
+					void *sk_bn = tstats_sketch(bn->tstats->base);
+					bn->tunique_est = sketch_estimate(sk_bn);
 				}
 			}
 		}
@@ -1073,9 +1076,10 @@ COLcopy2(BAT *b, int tt, bool writable, bool mayshare, role_t role)
 			if (bi.unique_est) {
 				bn->tunique_est = bi.unique_est;
 			} else {
-				if (bn->tsketch) {
-					assert(bn->tsketch->base);
-					bn->tunique_est = sketch_estimate(bn->tsketch->base);
+				if (bn->tstats) {
+					assert(bn->tstats->base);
+					void *sk_bn = tstats_sketch(bn->tstats->base);
+					bn->tunique_est = sketch_estimate(sk_bn);
 				}
 			}
 		}
@@ -1292,9 +1296,10 @@ BUNappendmulti(BAT *b, const void *values, BUN count, bool force)
 				}
 				nunique = b->thash ? b->thash->nunique : 0;
 			}
-			if (b->tsketch) {
+			if (b->tstats) {
 				MT_lock_set(&b->theaplock);
-				if (sketch_update_many(&bi, b->tsketch->base, values, count) != GDK_SUCCEED) {
+				void *sk_b = tstats_sketch(b->tstats->base);
+				if (sketch_update_many(&bi, sk_b, values, count) != GDK_SUCCEED) {
 					MT_rwlock_wrunlock(&b->thashlock);
 					MT_lock_unset(&b->theaplock);
 					return GDK_FAIL;
@@ -1347,9 +1352,10 @@ BUNappendmulti(BAT *b, const void *values, BUN count, bool force)
 				p++;
 			}
 			nunique = b->thash ? b->thash->nunique : 0;
-			if (b->tsketch) {
+			if (b->tstats) {
 				MT_lock_set(&b->theaplock);
-				if(sketch_update_many(&bi, b->tsketch->base, values, count) != GDK_SUCCEED) {
+				void *sk_b = tstats_sketch(b->tstats->base);
+				if(sketch_update_many(&bi, sk_b, values, count) != GDK_SUCCEED) {
 					MT_rwlock_wrunlock(&b->thashlock);
 					MT_lock_unset(&b->theaplock);
 					return GDK_FAIL;
@@ -1514,10 +1520,12 @@ BUNappendmulti(BAT *b, const void *values, BUN count, bool force)
 		b->tsorted = b->trevsorted = b->tkey = false;
 	}
 	BATsetcount(b, p);
-	if (nunique != 0)
+	if (nunique != 0) {
 		b->tunique_est = (double) nunique;
-	else if (b->tsketch)
-		b->tunique_est = sketch_estimate(b->tsketch->base);
+	} else if (b->tstats) {
+		void *sk_b = tstats_sketch(b->tstats->base);
+		b->tunique_est = sketch_estimate(sk_b);
+	}
 	MT_lock_unset(&b->theaplock);
 	MT_rwlock_wrunlock(&b->thashlock);
 
@@ -1941,8 +1949,8 @@ BUNinplacemulti(BAT *b, const oid *positions, const void *values, BUN count, boo
 	b->theap->dirty = true;
 	if (b->tvheap)
 		b->tvheap->dirty = true;
-	if (b->tsketch)
-		b->tsketch->dirty = true;
+	if (b->tstats)
+		b->tstats->dirty = true;
 	MT_lock_unset(&b->theaplock);
 
 	return GDK_SUCCEED;
@@ -2190,8 +2198,8 @@ BATsetcount(BAT *b, BUN cnt)
 		b->theap->dirty |= b->ttype != TYPE_void && cnt > 0;
 		b->theap->free = tailsize(b, cnt);
 	}
-	if (b->tsketch)
-		b->tsketch->dirty |= cnt > 0;
+	if (b->tstats)
+		b->tstats->dirty |= cnt > 0;
 	if (b->ttype == TYPE_void)
 		b->batCapacity = cnt;
 	if (cnt <= 1) {

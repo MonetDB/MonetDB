@@ -3002,14 +3002,14 @@ col_stats(sql_trans *tr, sql_column *c, bool *nonil, bool *unique, double *uniqu
 					*unique = bi.key;
 					*unique_est = bi.unique_est;
 					if (*unique_est == 0 && bi.count) {
-						if (bi.b->tsketch) {
-							*unique_est = sketch_estimate(bi.b->tsketch->base);
+						if (bi.b->tstats) {
+							void *sk_b = tstats_sketch(bi.b->tstats->base);
+							*unique_est = sketch_estimate(sk_b);
 						} else {
 							uint8_t tmp_sketch[SKETCH_BUCKETS][SKETCH_CLZ_BUCKETS] = {0};
 							if (bat_sketch(&bi, NULL, tmp_sketch) != GDK_SUCCEED)
 								*unique_est = -1;
 							else {
-								/* printf("col_stats estimating for bat id %d\n", b->batCacheid); */
 								*unique_est = sketch_estimate(tmp_sketch);
 							}
 						}

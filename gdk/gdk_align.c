@@ -190,7 +190,7 @@ VIEWcreate(oid seq, BAT *b, BUN l, BUN h)
 	bn->theap = bi.h;
 	bn->tbaseoff = bi.baseoff;
 	bn->tvheap = bi.vh;
-	bn->tsketch = bi.skh;
+	bn->tstats = bi.sh;
 
 	tp = VIEWtparent(b);
 	if (tp == 0 && b->ttype != TYPE_void)
@@ -199,8 +199,8 @@ VIEWcreate(oid seq, BAT *b, BUN l, BUN h)
 	HEAPincref(bi.h);
 	if (bi.vh)
 		HEAPincref(bi.vh);
-	if (bi.skh)
-		HEAPincref(bi.skh);
+	if (bi.sh)
+		HEAPincref(bi.sh);
 	if (l != 0 || h < bi.count)
 		VIEWboundsbi(&bi, bn, l, h);
 	MT_lock_unset(&b->theaplock);
@@ -209,8 +209,8 @@ VIEWcreate(oid seq, BAT *b, BUN l, BUN h)
 	BBPretain(bn->theap->parentid);
 	if (bn->tvheap)
 		BBPretain(bn->tvheap->parentid);
-	if (bn->tsketch)
-		BBPretain(bn->tsketch->parentid);
+	if (bn->tstats)
+		BBPretain(bn->tstats->parentid);
 	if (bn->ustr)
 		BBPfix(bn->ustr);
 	TRC_DEBUG(ALGO, ALGOBATFMT " " BUNFMT "," BUNFMT " -> " ALGOBATFMT "\n",

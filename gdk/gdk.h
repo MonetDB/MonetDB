@@ -1550,7 +1550,7 @@ typedef struct pipeline_io {
 
 #define ORDERIDXOFF		3
 
-/* tail stats */
+/* tail stats and sketch */
 #define SKETCH_BITS        6 /* choice */
 #define SKETCH_BITS_MASK   ((1ULL << SKETCH_BITS) - 1)
 #define SKETCH_MAX_CLZ     (64 - SKETCH_BITS) /* CLZ = count leading zeros */
@@ -1573,15 +1573,34 @@ atom_sketchable(int type)
 	return true;
 }
 
+#define TSTATS_VER       (uint32_t)1
+#define TSTATS_HEADER_SZ (2 * sizeof(uint32_t))
+#define TSTATS_SZ        (TSTATS_HEADER_SZ + SKETCH_SZ)
+
 static inline bool
 bat_needstats(int bat_type, int bat_role)
 {
 	return atom_sketchable(bat_type) && (bat_role == PERSISTENT);
 }
 
-#define STATS_VER (uint32_t)1
-#define STATS_SZ  (2 * sizeof(uint32_t) + SKETCH_SZ)
-/* tail stats end */
+static inline uint32_t *
+tstats_version(void *tstats)
+{
+	return (uint32_t *)tstats;
+}
+
+static inline uint32_t *
+tstats_age(void *tstats)
+{
+	return (uint32_t *)tstats + 1;
+}
+
+static inline void *
+tstats_sketch(void *tstats)
+{
+	return (uint32_t *)tstats + 2;
+}
+/* tail stats and sketch end */
 
 /* assert that atom width is power of 2, i.e., width == 1<<shift */
 #define assert_shift_width(shift,width)				\
@@ -1658,7 +1677,7 @@ typedef struct BAT {
 	Heap *theap;		/* space for the column. */
 	BUN tbaseoff;		/* offset in heap->base (in whole items) */
 	Heap *tvheap;		/* space for the varsized data. */
-	Heap *tsketch;		/* probabilistic counting sketch */
+	Heap *tstats;		/* probabilistic counting sketch */
 	Hash *thash;		/* hash table */
 #ifdef HAVE_RTREE
 	RTree *trtree;		/* rtree geometric index */
@@ -2335,7 +2354,7 @@ typedef struct BATiter {
 	Heap *h;
 	void *base;
 	Heap *vh;
-	Heap *skh;
+	Heap *sh;
 	Hash *hash;		/* if non-NULL, there's a read lock */
 	BUN count;
 	BUN baseoff;
@@ -2357,7 +2376,7 @@ typedef struct BATiter {
 		revsorted:1,
 		hdirty:1,
 		vhdirty:1,
-		skhdirty:1,
+		shdirty:1,
 		copiedtodisk:1,
 		transient:1,
 		ascii:1;
@@ -2388,7 +2407,7 @@ bat_iterator_nolock(BAT *b)
 				: NULL,
 			.baseoff = b->tbaseoff,
 			.vh = b->tvheap,
-			.skh = b->tsketch,
+			.sh = b->tstats,
 			.count = b->batCount,
 			.width = b->twidth,
 			.shift = b->tshift,
@@ -2429,10 +2448,10 @@ bat_iterator_nolock(BAT *b)
 			.vhdirty = b->tvheap &&
 				b->tvheap->parentid == b->batCacheid &&
 				b->tvheap->dirty,
-			/* also, if there is no tsketch, it's not dirty */
-			.skhdirty = b->tsketch &&
-				b->tsketch->parentid == b->batCacheid &&
-				b->tsketch->dirty,
+			/* also, if there is no stats heap, it's not dirty */
+			.shdirty = b->tstats &&
+				b->tstats->parentid == b->batCacheid &&
+				b->tstats->dirty,
 			.copiedtodisk = b->batCopiedtodisk,
 			.transient = b->batTransient,
 			.restricted = b->batRestricted,
@@ -2453,8 +2472,8 @@ bat_iterator_incref(BATiter *bi)
 	HEAPincref(bi->h);
 	if (bi->vh)
 		HEAPincref(bi->vh);
-	if (bi->skh)
-		HEAPincref(bi->skh);
+	if (bi->sh)
+		HEAPincref(bi->sh);
 }
 
 static inline BATiter
@@ -2530,8 +2549,8 @@ bat_iterator_copy(const BATiter *bip)
 		HEAPincref(bip->h);
 	if (bip->vh)
 		HEAPincref(bip->vh);
-	if (bip->skh)
-		HEAPincref(bip->skh);
+	if (bip->sh)
+		HEAPincref(bip->sh);
 	if (bip->hash)
 		MT_rwlock_rdlock(&bip->b->thashlock);
 	return *bip;
@@ -2549,8 +2568,8 @@ bat_iterator_end(BATiter *bip)
 		HEAPdecref(bip->h, false);
 	if (bip->vh)
 		HEAPdecref(bip->vh, false);
-	if (bip->skh)
-		HEAPdecref(bip->skh, false);
+	if (bip->sh)
+		HEAPdecref(bip->sh, false);
 	*bip = (BATiter) {0};
 }
 
