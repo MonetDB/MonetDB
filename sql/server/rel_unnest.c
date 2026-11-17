@@ -2356,7 +2356,7 @@ rewrite_anyequal(visitor *v, sql_rel *rel, sql_exp *e, int depth)
 				}
 
 				/* rewrite a multi-column not_anyequal with NULLs into a marked (group) join */
-				bool tomarkjoin = (!is_anyequal(sf)) && (list_length(le->f) > 1) && is_tuple && (MT_thread_get_qry_ctx()->pipeline_mode);
+				bool tomarkjoin = (!is_anyequal(sf)) && (list_length(le->f) > 1) && is_tuple;
 				if (tomarkjoin) {
 					list *t = le->f;
 					bool foundnil = 0;
