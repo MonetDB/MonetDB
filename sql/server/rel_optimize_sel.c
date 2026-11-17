@@ -3748,6 +3748,56 @@ exps_need_push_down(sql_rel *rel, list *exps )
 
 static sql_exp *exp_push_single_func_down(visitor *v, sql_rel *rel, sql_rel *ol, sql_rel *or, sql_exp *e, int depth);
 
+/* Try to compute e in a projection on one of the leaves underneath a join
+ * input, instead of wrapping the join input itself in a projection. Only
+ * inner joins and selects are traversed, as those pass all their input
+ * columns through. Returns the (unchanged) relation on success or NULL when
+ * there is no suitable place. */
+static sql_rel *
+push_func_into_join(visitor *v, sql_rel *rel, sql_exp *e)
+{
+	int mustl = 0, mustr = 0;
+
+	if (!rel || exp_is_fallible(e)) /* never evaluate an expression earlier */
+		return NULL;
+	if (is_innerjoin(rel->op)) {
+		sql_rel *l = rel->l, *r = rel->r;
+
+		if (l && can_push_func(e, l, &mustl, 1) && mustl) {
+			sql_rel *nl = push_func_into_join(v, l, e);
+			if (nl) {
+				rel->l = nl;
+				return rel;
+			}
+		}
+		if (r && can_push_func(e, r, &mustr, 1) && mustr) {
+			sql_rel *nr = push_func_into_join(v, r, e);
+			if (nr) {
+				rel->r = nr;
+				return rel;
+			}
+		}
+		return NULL;
+	}
+	if (is_select(rel->op)) {
+		sql_rel *nl = push_func_into_join(v, rel->l, e);
+		if (nl) {
+			rel->l = nl;
+			return rel;
+		}
+		return NULL;
+	}
+	if (is_joinop(rel->op) || is_set(rel->op) || is_munion(rel->op))
+		return NULL;
+
+	sql_rel *p = rel_project(v->sql->sa, rel,
+		rel_projections(v->sql, rel, NULL, 1, 1));
+	if (!p || !p->exps)
+		return NULL;
+	list_append(p->exps, e);
+	return p;
+}
+
 static list *
 exps_push_single_func_down(visitor *v, sql_rel *rel, sql_rel *ol, sql_rel *or, list *exps, int depth)
 {
@@ -3805,9 +3855,21 @@ exp_push_single_func_down(visitor *v, sql_rel *rel, sql_rel *ol, sql_rel *or, sq
 			return e;
 		if ((is_joinop(rel->op) && ((can_push_func(e, l, &mustl, depth + 1) && mustl) || (can_push_func(e, r, &mustr, depth + 1) && mustr))) ||
 			(is_select(rel->op) && can_push_func(e, l, &must, depth + 1) && must)) {
+			sql_rel *input = mustr ? r : l;
+
 			exp_label(v->sql->sa, e, ++v->sql->label);
+			/* A projection wrapped around a join input blocks that reordering
+			 * and can leave cross products behind, so compute the expression
+			 * lower down in the input instead, or keep it in the predicate. */
+			if (is_innerjoin(input->op) && push_func_into_join(v, input, e)) {
+				if (mustr)
+					rel->r = input;
+				else
+					rel->l = input;
+			} else if (is_join(input->op) || is_set(input->op)) {
+				return e;
 			/* we need a full projection, group by's and unions cannot be extended with more expressions */
-			if (mustr) {
+			} else if (mustr) {
 				if (r == or) /* don't project twice */
 					rel->r = r = rel_project(v->sql->sa, r, rel_projections(v->sql, r, NULL, 1, 1));
 				list_append(r->exps, e);
