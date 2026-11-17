@@ -607,9 +607,9 @@ heapinit(BAT *b, const char *buf,
 	} else {
 		b->tvheap = NULL;
 	}
-	if (ATOMsketchable(b->ttype) /*&& b->theap->hasfile*/) {
-		b->tsketch->free = SKETCH_SIZE;
-		b->tsketch->size = SKETCH_SIZE;
+	if (atom_sketchable(b->ttype)) {
+		b->tsketch->free = SKETCH_SZ;
+		b->tsketch->size = SKETCH_SZ;
 		b->tsketch->base = NULL;
 		strtconcat(b->tsketch->filename, sizeof(b->tsketch->filename),
 			   filename, ".tsketch", NULL);
@@ -4288,7 +4288,7 @@ BBPsync(int cnt, const bat *restrict subcommit, const BUN *restrict sizes, lng l
 				    GDKmove(0, BAKDIR, fname, "theap", SUBDIR, fname, "theap", false) == GDK_SUCCEED)
 					TRC_DEBUG(IO, "moved %s.theap from %s to %s\n",
 						  fname, BAKDIR, SUBDIR);
-				if (ATOMsketchable(b->ttype) /*&& b->theap->hasfile */ &&
+				if (atom_sketchable(b->ttype) &&
 				    GDKmove(0, BAKDIR, fname, "tsketch", SUBDIR, fname, "tsketch", false) == GDK_SUCCEED)
 					TRC_DEBUG(IO, "moved %s.tsketch from %s to %s\n",
 						  fname, BAKDIR, SUBDIR);

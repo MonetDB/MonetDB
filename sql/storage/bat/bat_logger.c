@@ -1479,7 +1479,7 @@ snapshot_bats(stream *plan, BAT *bats_to_omit, const char *db_dir)
 			continue;
 		}
 
-		if (ATOMsketchable(b.ttype) && b.tsketch) {
+		if (atom_sketchable(b.ttype) && b.tsketch) {
 			r = snapshot_heap(plan, db_dir, b.batCacheid, filename, "tsketch", b.tsketch->free);
 			if (r != GDK_SUCCEED)
 				goto end;

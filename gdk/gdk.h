@@ -1550,13 +1550,38 @@ typedef struct pipeline_io {
 
 #define ORDERIDXOFF		3
 
-#define HLL_BITS    6
-#define BITS_MASK   ((1ULL << HLL_BITS) - 1)
-#define MAX_CLZ     (64 - HLL_BITS)
-#define BUCKETS     (1U << HLL_BITS)
-#define CLZ_BUCKETS (MAX_CLZ + 1)
-#define HLLSEED     0xadc83b19ULL
-#define SKETCH_SIZE (BUCKETS * CLZ_BUCKETS)
+/* tail stats */
+#define SKETCH_BITS        6 /* choice */
+#define SKETCH_BITS_MASK   ((1ULL << SKETCH_BITS) - 1)
+#define SKETCH_MAX_CLZ     (64 - SKETCH_BITS) /* CLZ = count leading zeros */
+#define SKETCH_BUCKETS     (1U << SKETCH_BITS)
+#define SKETCH_CLZ_BUCKETS (SKETCH_MAX_CLZ + 1)
+#define SKETCH_SEED        0xadc83b19ULL
+#define SKETCH_SZ          (SKETCH_BUCKETS * SKETCH_CLZ_BUCKETS)
+
+static inline bool
+atom_sketchable(int type)
+{
+	switch (type) {
+	case TYPE_void:
+	case TYPE_bit:
+	case TYPE_msk:
+	case TYPE_oid: /* needs to be sketchable */
+	case TYPE_ptr:
+		return false;
+	}
+	return true;
+}
+
+static inline bool
+bat_needstats(int bat_type, int bat_role)
+{
+	return atom_sketchable(bat_type) && (bat_role == PERSISTENT);
+}
+
+#define STATS_VER (uint32_t)1
+#define STATS_SZ  (2 * sizeof(uint32_t) + SKETCH_SZ)
+/* tail stats end */
 
 /* assert that atom width is power of 2, i.e., width == 1<<shift */
 #define assert_shift_width(shift,width)				\
@@ -2083,20 +2108,6 @@ gdk_export const inet6 inet6_nil;
 #define ATOMlinear(t)		BATatoms[t].linear
 #define ATOMtype(t)		((t) == TYPE_void ? TYPE_oid : (t))
 #define ATOMextern(t)		(ATOMstorage(t) >= TYPE_str)
-
-static inline bool
-ATOMsketchable(int type)
-{
-	switch (type) {
-	case TYPE_void:
-	case TYPE_bit:
-	case TYPE_msk:
-	case TYPE_oid:
-	case TYPE_ptr:
-		return false;
-	}
-	return true;
-}
 
 /* The base type is the storage type if the comparison function, the
  * hash function, and the nil value are the same as those of the
@@ -3503,7 +3514,7 @@ gdk_export void STRMPdestroy(BAT *b);
 gdk_export bool BAThasstrimps(BAT *b);
 gdk_export gdk_return BATsetstrimps(BAT *b);
 
-/* Sketches exported functions */
+/* Sketches exports */
 gdk_export gdk_return sketch_update_many(BATiter *bi, void *sketch, const void *values, size_t count);
 gdk_export gdk_return sketch_merge(void *dest, void *src);
 gdk_export double sketch_estimate(void *sketch);

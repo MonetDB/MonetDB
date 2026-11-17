@@ -766,7 +766,7 @@ BATsave_iter(BAT *b, BATiter *bi, BUN size)
 				//assert(0);
 				bi->skhdirty = true;
 			}
-			assert(bi->skh->free == SKETCH_SIZE);
+			assert(bi->skh->free == SKETCH_SZ);
 		}
 		if ((!bi->copiedtodisk || bi->hdirty)
 		    && (err == GDK_SUCCEED && bi->type)) {
@@ -782,7 +782,7 @@ BATsave_iter(BAT *b, BATiter *bi, BUN size)
 		if (err == GDK_SUCCEED
 		    && bi->skh
 		    && (!bi->copiedtodisk || bi->skhdirty))
-			err = HEAPsave(bi->skh, nme, "tsketch", dosync, SKETCH_SIZE, &b->theaplock);
+			err = HEAPsave(bi->skh, nme, "tsketch", dosync, SKETCH_SZ, &b->theaplock);
 	}
 
 	if (err == GDK_SUCCEED) {
@@ -872,7 +872,7 @@ BATload_intern(bat bid, bool lock)
 			b->batCapacity = (BUN) (b->theap->size >> b->tshift);
 		}
 
-		if (b->tsketch /* TODO */ && ATOMsketchable(b->ttype)) {
+		if (b->tsketch /* TODO */ && atom_sketchable(b->ttype)) {
 			b->tsketch->storage = STORE_INVALID;
 			if (b->batCount > 0) {
 				if (HEAPload(b->tsketch, nme, "tsketch", false) != GDK_SUCCEED) {
@@ -882,14 +882,14 @@ BATload_intern(bat bid, bool lock)
 					return NULL;
 				}
 			} else {
-				if (HEAPalloc(b->tsketch, SKETCH_SIZE, sizeof(uint8_t)) != GDK_SUCCEED) {
+				if (HEAPalloc(b->tsketch, SKETCH_SZ, sizeof(uint8_t)) != GDK_SUCCEED) {
 					HEAPfree(b->theap, false);
 					HEAPfree(b->tsketch, false);
 					return NULL;
 				}
 				b->tunique_est = sketch_estimate(b->tsketch->base);
 			}
-			b->tsketch->free = SKETCH_SIZE;
+			b->tsketch->free = SKETCH_SZ;
 		} else {
 			b->tsketch = NULL;
 		}

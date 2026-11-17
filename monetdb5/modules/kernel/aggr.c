@@ -1566,7 +1566,7 @@ uniques_guess(Client c, lng *guess, const bat *bid)
 	/* printf("from the bat field struct %lld\n", llroundl(b->tunique_est)); */
 	struct canditer bci;
 	canditer_init_bi(&bci, &bi, NULL);
-	uint8_t sketch[BUCKETS][CLZ_BUCKETS] = {0};
+	uint8_t sketch[SKETCH_BUCKETS][SKETCH_CLZ_BUCKETS] = {0};
 
 	gdk_return rc = bat_sketch(&bi, &bci, sketch);
 	if (rc == GDK_SUCCEED)

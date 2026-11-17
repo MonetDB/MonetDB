@@ -92,29 +92,29 @@ tau(double x)
 double
 sketch_estimate(void *sketch)
 {
-	uint8_t (*sk)[CLZ_BUCKETS] = sketch;
-	int8_t C[CLZ_BUCKETS + 1] = {0};
-	for (size_t bucket = 0; bucket < BUCKETS; bucket++) {
+	uint8_t (*sk)[SKETCH_CLZ_BUCKETS] = sketch;
+	int8_t C[SKETCH_CLZ_BUCKETS + 1] = {0};
+	for (size_t bucket = 0; bucket < SKETCH_BUCKETS; bucket++) {
 		int K = -1;
-		for (int clz = 0; clz < CLZ_BUCKETS; clz++)
+		for (int clz = 0; clz < SKETCH_CLZ_BUCKETS; clz++)
 			if (sk[bucket][clz] > 0)
 				K = clz;
 		K == -1 ? C[0]++ : C[K + 1]++;
 	}
-	double t = tau(1.0 - ((double) C[CLZ_BUCKETS] / BUCKETS));
-	double z = (double) BUCKETS * t;
-	for (int k = CLZ_BUCKETS; k >= 1; k--)
+	double t = tau(1.0 - ((double) C[SKETCH_CLZ_BUCKETS] / SKETCH_BUCKETS));
+	double z = (double) SKETCH_BUCKETS * t;
+	for (int k = SKETCH_CLZ_BUCKETS; k >= 1; k--)
 		z = 0.5 * (z + (double) C[k]);
-	double s = sigma((double) C[0] / BUCKETS);
-	z += (double) BUCKETS * s;
+	double s = sigma((double) C[0] / SKETCH_BUCKETS);
+	z += (double) SKETCH_BUCKETS * s;
 	const double alpha = 0.7213475204444817;
-	return alpha * (double) BUCKETS * BUCKETS / z;
+	return alpha * (double) SKETCH_BUCKETS * SKETCH_BUCKETS / z;
 }
 
 #define SKETCH_UPDATE_ONE(SKETCH, HASH)					\
 	do {								\
-		uint8_t bucket = HASH & BITS_MASK;			\
-		HASH |= BITS_MASK;					\
+		uint8_t bucket = HASH & SKETCH_BITS_MASK;		\
+		HASH |= SKETCH_BITS_MASK;				\
 		uint8_t clz_bucket = leading_zeroes(hash);		\
 		assert(clz_bucket <= 58);				\
 		if (SKETCH[bucket][clz_bucket] <= 128) {		\
@@ -141,7 +141,7 @@ sketch_estimate(void *sketch)
 gdk_return
 sketch_update_many(BATiter *bi, void *sketch, const void *values, size_t count)
 {
-	uint8_t (*sk)[CLZ_BUCKETS] = sketch;
+	uint8_t (*sk)[SKETCH_CLZ_BUCKETS] = sketch;
 	assert(sk && (count > 0));
 	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
 	random_state_engine rse;
@@ -168,7 +168,7 @@ sketch_update_many(BATiter *bi, void *sketch, const void *values, size_t count)
 		}
 		if (atomeq(v, atomnil))
 			continue;
-		uint64_t hash = XXH64(v, ATOMlen(values_t, v), HLLSEED);
+		uint64_t hash = XXH64(v, ATOMlen(values_t, v), SKETCH_SEED);
 		SKETCH_UPDATE_ONE(sk, hash);
 	}
 
@@ -178,15 +178,15 @@ sketch_update_many(BATiter *bi, void *sketch, const void *values, size_t count)
 gdk_return
 sketch_merge(void *dest, void *src)
 {
-	uint8_t (*d)[CLZ_BUCKETS] = dest;
-	uint8_t (*s)[CLZ_BUCKETS] = src;
+	uint8_t (*d)[SKETCH_CLZ_BUCKETS] = dest;
+	uint8_t (*s)[SKETCH_CLZ_BUCKETS] = src;
 	assert(d != NULL && s != NULL);
-	for (size_t i = 0; i < BUCKETS; i++)
-		for (size_t j = 0; j < CLZ_BUCKETS; j++)
+	for (size_t i = 0; i < SKETCH_BUCKETS; i++)
+		for (size_t j = 0; j < SKETCH_CLZ_BUCKETS; j++)
 			if (s[i][j] > d[i][j])
 				d[i][j] = s[i][j];
-	/* for (size_t i = 0; i < BUCKETS; i++) */
-	/* 	for (size_t j = 0; j < CLZ_BUCKETS; j++) */
+	/* for (size_t i = 0; i < SKETCH_BUCKETS; i++) */
+	/* 	for (size_t j = 0; j < SKETCH_CLZ_BUCKETS; j++) */
 	/* 		d[i][j] = d[i][j] + s[i][j]; */
 	return GDK_SUCCEED;
 }
@@ -195,7 +195,7 @@ gdk_return
 bat_sketch(BATiter *bi, struct canditer *bci, void *sketch)
 {
 	gdk_return rc = GDK_SUCCEED;
-	uint8_t (*sk)[CLZ_BUCKETS] = sketch;
+	uint8_t (*sk)[SKETCH_CLZ_BUCKETS] = sketch;
 	BAT *b = bi->b;
 
 	struct canditer n_bci;
@@ -224,7 +224,7 @@ bat_sketch(BATiter *bi, struct canditer *bci, void *sketch)
 			v = ATOMvarsized(values_t) ? BUNtvar(bi, o) : BUNtloc(bi, o);
 			if (atomeq(v, atomnil))
 				continue;
-			uint64_t hash = XXH64(v, ATOMlen(values_t, v), HLLSEED);
+			uint64_t hash = XXH64(v, ATOMlen(values_t, v), SKETCH_SEED);
 			SKETCH_UPDATE_ONE(sk, hash);
 		}
 	}
@@ -233,7 +233,7 @@ bat_sketch(BATiter *bi, struct canditer *bci, void *sketch)
 }
 
 /* gdk_return */
-/* sketch_update_many(BATiter *bi, uint8_t (*sketch)[CLZ_BUCKETS], */
+/* sketch_update_many(BATiter *bi, uint8_t (*sketch)[SKETCH_CLZ_BUCKETS], */
 /* 		   const void *values, size_t count) */
 /* { */
 /* 	gdk_return rc = GDK_SUCCEED; */
@@ -275,7 +275,7 @@ bat_sketch(BATiter *bi, struct canditer *bci, void *sketch)
 /* 				break; */
 /* 			} */
 /* 		} */
-/* 		uint64_t hash = XXH64(v, ATOMlen(values_t, v), HLLSEED); */
+/* 		uint64_t hash = XXH64(v, ATOMlen(values_t, v), SKETCH_SEED); */
 /* 		printf("hash %lu\n", hash); */
 /* 		SKETCH_UPDATE_ONE(sketch, hash); */
 /* 	} */

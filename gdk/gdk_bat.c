@@ -148,7 +148,7 @@ BATcreatedesc(oid hseq, int tt, bool heapnames, role_t role, uint16_t width)
 			};
 		}
 
-		if (ATOMsketchable(tt) && role == PERSISTENT) {
+		if (bat_needstats(tt, role)) {
 			if ((skh = GDKmalloc(sizeof(Heap))) == NULL) {
 				GDKfree(h);
 				GDKfree(vh);
@@ -358,16 +358,16 @@ COLnew2(oid hseq, int tt, BUN cap, role_t role, uint16_t width)
 		goto bailout;
 	}
 
-	if (ATOMsketchable(tt) && role == PERSISTENT) {
+	if (bat_needstats(tt, role)) {
 		assert(bn->tsketch);
-		if (HEAPalloc(bn->tsketch, SKETCH_SIZE, sizeof(uint8_t)) != GDK_SUCCEED) {
+		if (HEAPalloc(bn->tsketch, SKETCH_SZ, sizeof(uint8_t)) != GDK_SUCCEED) {
 			HEAPfree(bn->theap, true);
 			if (bn->tvheap)
 				HEAPfree(bn->tvheap, true);
 			goto bailout;
 		}
-		memset(bn->tsketch->base, 0, SKETCH_SIZE);
-		bn->tsketch->free = SKETCH_SIZE;
+		memset(bn->tsketch->base, 0, SKETCH_SZ);
+		bn->tsketch->free = SKETCH_SZ;
 	}
 
 	BBPcacheit(bn, true);
@@ -572,7 +572,7 @@ BATclear(BAT *b, bool force)
 	}
 
 	if (b->tsketch) {
-		memset(b->tsketch->base, 0, SKETCH_SIZE);
+		memset(b->tsketch->base, 0, SKETCH_SZ);
 		b->tsketch->dirty = true;
 	}
 
@@ -927,7 +927,7 @@ COLcopy2(BAT *b, int tt, bool writable, bool mayshare, role_t role)
 		bn->theap->dirty = true;
 		if (bn->tsketch && b->tsketch && bi.count) {
 			assert(b->tsketch->base);
-			memcpy(bn->tsketch->base, b->tsketch->base, SKETCH_SIZE);
+			memcpy(bn->tsketch->base, b->tsketch->base, SKETCH_SZ);
 			bn->tsketch->dirty = true;
 		}
 
@@ -950,7 +950,7 @@ COLcopy2(BAT *b, int tt, bool writable, bool mayshare, role_t role)
 		if (bn->tsketch && bi.count) {
 			if (b->tsketch) {
 				assert(b->tsketch->base);
-				memcpy(bn->tsketch->base, b->tsketch->base, SKETCH_SIZE);
+				memcpy(bn->tsketch->base, b->tsketch->base, SKETCH_SZ);
 				bn->tsketch->dirty = true;
 			} else {
 				if (bat_sketch(&bi, NULL, bn->tsketch->base) != GDK_SUCCEED)
@@ -989,7 +989,7 @@ COLcopy2(BAT *b, int tt, bool writable, bool mayshare, role_t role)
 		bn->theap->dirty |= bi.count > 0;
 		algo = "memcpy heap";
 		if (bn->tsketch && bi.count) {
-			memcpy(bn->tsketch->base, b->tsketch->base, SKETCH_SIZE);
+			memcpy(bn->tsketch->base, b->tsketch->base, SKETCH_SZ);
 			bn->tsketch->dirty = true;
 		}
 	}
