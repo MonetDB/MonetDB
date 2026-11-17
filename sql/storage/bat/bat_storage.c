@@ -3067,8 +3067,19 @@ idx_stats(sql_trans *tr, sql_idx *i, bool *nonil, bool *unique, double *unique_e
 			if (d->cs.ucnt == 0) {
 				*unique = bi.key;
 				*unique_est = bi.unique_est;
-				if (*unique_est == 0)
-					*unique_est = bat_guess_uniques(b, NULL, NULL);
+				if (*unique_est == 0) {
+					if (bi.b->tstats) {
+						void *sk_b = tstats_sketch(bi.b->tstats->base);
+						*unique_est = sketch_estimate(sk_b);
+					} else {
+						uint8_t tmp_sketch[SKETCH_BUCKETS][SKETCH_CLZ_BUCKETS] = {0};
+						if (bat_sketch(&bi, NULL, tmp_sketch) != GDK_SUCCEED)
+							*unique_est = -1;
+						else {
+							*unique_est = sketch_estimate(tmp_sketch);
+						}
+					}
+				}
 			}
 			bat_iterator_end(&bi);
 			bat_destroy(b);
