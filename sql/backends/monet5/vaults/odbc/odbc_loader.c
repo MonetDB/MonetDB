@@ -357,7 +357,7 @@ odbc_cleanup(SQLHANDLE env, SQLHANDLE dbc, SQLHANDLE stmt) {
 	}
 }
 
-/* copied from monetdb5/modules/mal/tablet.c */
+/* copied from monetdb5/modules/mal/tablet.c  but with calling BATnegateprops(b); */
 static BAT *
 bat_create(int adt, BUN nr)
 {
@@ -371,16 +371,7 @@ bat_create(int adt, BUN nr)
 	}
 
 	/* disable all properties here */
-	b->tsorted = false;
-	b->trevsorted = false;
-	b->tnosorted = 0;
-	b->tnorevsorted = 0;
-	b->tseqbase = oid_nil;
-	b->tkey = false;
-	b->tnokey[0] = 0;
-	b->tnokey[1] = 0;
-	b->tnil = false;
-	b->tnonil = false;
+	BATnegateprops(b);
 	return b;
 }
 
@@ -544,12 +535,14 @@ fraction2msec(SQLUINTEGER fraction, SQLSMALLINT decimaldigits) {
  * the caller argument is ODBC_RELATION when called from odbc_relation and ODBC_LOADER when called from ODBCloader
  */
 static str
-odbc_query(int caller, mvc *sql, sql_subfunc *f, char *url, list *res_exps, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
+odbc_query(int caller, mvc *sql, sql_subfunc *f, char *url, list *res_exps, lng nrows, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
+	assert(caller == ODBC_RELATION || caller == ODBC_LOADER);
+
 	if (sql == NULL)
-		return "Missing mvc value.";
+		return "Missing mvc value";
 	if (f == NULL)
-		return "Missing sql_subfunc value.";
+		return "Missing sql_subfunc value";
 
 	/* check received url and extract the ODBC connection string and the SQL query */
 	if (!url || (url && strncasecmp("odbc:", url, 5) != 0))
@@ -668,6 +661,13 @@ odbc_query(int caller, mvc *sql, sql_subfunc *f, char *url, list *res_exps, MalB
 	}
 #endif
 
+	if (caller == ODBC_RELATION || (caller == ODBC_LOADER && nrows >= 0 && nrows <= 2147483647)) {
+		SQLULEN max_rows = (caller == ODBC_RELATION) ? 1 : nrows;
+		/* instruct connected DBMS to return max_rows */
+		ret = SQLSetStmtAttr(stmt, SQL_ATTR_MAX_ROWS, (SQLPOINTER) (uintptr_t) max_rows, 0);
+		TRC_DEBUG(LOADER, "SQLSetStmtAttr(stmt, SQL_ATTR_MAX_ROWS, %lu, 0) returned %s\n", max_rows, nameOfRetCode(ret));
+	}
+
 	uint16_t * query_Wstr = utf8toutf16(query);
 	if (query_Wstr != NULL) {
 		ret = SQLExecDirectW(stmt, (SQLWCHAR *) query_Wstr, SQL_NTS);
@@ -768,6 +768,9 @@ odbc_query(int caller, mvc *sql, sql_subfunc *f, char *url, list *res_exps, MalB
 
 	/* when called from ODBCloader() */
 	if (caller == ODBC_LOADER) {
+		assert(mb);
+		assert(pci);
+
 		rescol_t * colmetadata = (rescol_t *) GDKzalloc(nr_cols * sizeof(rescol_t));
 		if (colmetadata == NULL) {
 			errmsg = "GDKzalloc colmetadata[nr_cols] failed.";
@@ -799,6 +802,7 @@ odbc_query(int caller, mvc *sql, sql_subfunc *f, char *url, list *res_exps, MalB
 		SQLULEN largestStringSize = 0;
 		bool hasBlobCols = false;
 		SQLULEN largestBlobSize = 0;
+		BUN init_size = (nrows >= 0 ? (BUN)nrows : 4096);
 
 		/* make bats with right atom type */
 		for (SQLUSMALLINT col = 0; col < (SQLUSMALLINT) nr_cols; col++) {
@@ -1015,13 +1019,13 @@ odbc_query(int caller, mvc *sql, sql_subfunc *f, char *url, list *res_exps, MalB
 			TRC_INFO(LOADER, "ResCol %u, name: %s, type %d (%s), size %u, decdigits %d, battype %d\n",
 					 (unsigned) col+1, cname, dataType, nameofSQLtype(dataType), (unsigned int)columnSize, decimalDigits, battype);
 
-			TRC_DEBUG(LOADER, "Before create BAT %d type %d\n", col+1, battype);
-			b = bat_create(battype, 0);
+			b = bat_create(battype, init_size);
 			if (b) {
 				colmetadata[col].bat = b;
-				TRC_DEBUG(LOADER, "Created BAT %d\n", col+1);
+				TRC_DEBUG(LOADER, "Created bat %d type %d size " BUNFMT "\n", col+1, battype, init_size);
 			} else {
 				errmsg = "Failed to create bat.";
+				TRC_ERROR(LOADER, "Failed to create bat %d type %d size " BUNFMT "\n", col+1, battype, init_size);
 				/* cleanup already created bats */
 				while (col > 0) {
 					col--;
@@ -1083,6 +1087,10 @@ odbc_query(int caller, mvc *sql, sql_subfunc *f, char *url, list *res_exps, MalB
 		unsigned long row = 0;
 		ret = SQLFetch(stmt);	// TODO optimisation: use SQLExtendedFetch() to pull data array wise and use BUNappendmulti()
 		while (ret == SQL_SUCCESS || ret == SQL_SUCCESS_WITH_INFO) {
+			/* when nrows is set, stop reading when nrows is reached */
+			if (nrows >= 0 && row >= (unsigned long)nrows)
+				break;
+
 			row++;
 			TRC_DEBUG(LOADER, "Fetched row %lu\n", row);
 
@@ -1558,21 +1566,24 @@ static str
 odbc_relation(mvc *sql, sql_subfunc *f, char *url, list *res_exps, char *aname)
 {
 	(void) aname;
-	return odbc_query(ODBC_RELATION, sql, f, url, res_exps, NULL, NULL, NULL);
+	return odbc_query(ODBC_RELATION, sql, f, url, res_exps, -1, NULL, NULL, NULL);
 }
 
 static void *
 odbc_load(void *BE, sql_subfunc *f, char *url, sql_exp *topn)
 {
 	backend *be = (backend*)BE;
+	lng nrows = -1;
+
 	if (!f)
 		return NULL;
-
-	(void)topn;
 
 	InstrPtr q = newStmtArgs(be->mb, "odbc", "loader", list_length(f->coltypes) + 2);
 	if (q == NULL)
 		return NULL;
+
+	if (topn && topn->type == e_atom)
+		nrows = ((atom*)topn->l)->data.val.lval;
 
 	int col = 0;
 	list *l = sa_list(be->mvc->sa);
@@ -1592,6 +1603,7 @@ odbc_load(void *BE, sql_subfunc *f, char *url, sql_exp *topn)
 	}
 	q = pushStr(be->mb, q, url);
 	q = pushPtr(be->mb, q, f);
+	q = pushLng(be->mb, q, nrows);
 	pushInstruction(be->mb, q);
 	return stmt_list(be, l);
 }
@@ -1600,19 +1612,22 @@ static str
 ODBCloader(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
 	backend *be = NULL;
-	str msg;
-	if ((msg = getBackendContext(cntxt, &be)) != NULL)
+	str msg = getBackendContext(cntxt, &be);
+	if (msg != NULL)
 		return msg;
 	str uri = *getArgReference_str(stk, pci, pci->retc);
 	sql_subfunc *f = *(sql_subfunc**)getArgReference_ptr(stk, pci, pci->retc+1);
-
-	return odbc_query(ODBC_LOADER, be->mvc, f, uri, NULL, mb, stk, pci);
+	lng nrows = *getArgReference_lng(stk, pci, pci->retc +2);
+	return odbc_query(ODBC_LOADER, be->mvc, f, uri, NULL, nrows, mb, stk, pci);
 }
 
 static str
 ODBCprelude(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	(void)cntxt; (void)mb; (void)stk; (void)pci;
+	(void)cntxt;
+	(void)mb;
+	(void)stk;
+	(void)pci;
 	pl_register("odbc", &odbc_relation, &odbc_load);
 	return MAL_SUCCEED;
 }
@@ -1620,7 +1635,7 @@ ODBCprelude(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 static str
 ODBCepilogue(Client cntxt, void *ret)
 {
-	(void) cntxt;
+	(void)cntxt;
 	(void)ret;
 	pl_unregister("odbc");
 	return MAL_SUCCEED;
@@ -1632,7 +1647,7 @@ ODBCepilogue(Client cntxt, void *ret)
 static mel_func odbc_init_funcs[] = {
 	pattern("odbc", "prelude", ODBCprelude, false, "", noargs),
 	command("odbc", "epilogue", ODBCepilogue, false, "", noargs),
-	pattern("odbc", "loader", ODBCloader, true, "Import a query result via the odbc uri", args(1,3, batvarargany("",0),arg("uri",str),arg("func",ptr))),
+	pattern("odbc", "loader", ODBCloader, true, "Import a query result via the odbc uri", args(1, 4, batvarargany("",0), arg("uri",str), arg("func",ptr), arg("nrows", lng))),
 { .imp=NULL }
 };
 

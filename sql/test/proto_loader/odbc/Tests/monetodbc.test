@@ -37,3 +37,17 @@ select * from 'odbc:DSN=MonetDB-Test;QUERY=select ''\u019CM\u0238\u1E9E\u02AC\u0
 ----
 ƜMȸẞʬͶΘΩπ҈ڞ௵ᐂ‡‰⁂ℼ∜〈┌├┬┼
 
+query T nosort
+select name from 'odbc:DSN=MonetDB-Test;QUERY=select distinct name from sys.tables order by name' LIMIT 4
+----
+_columns
+_tables
+args
+auths
+
+query T nosort
+select name from 'odbc:DSN=MonetDB-Test;QUERY=select distinct name from sys.tables order by name' OFFSET 2 ROWS FETCH FIRST 2 ROWS ONLY
+----
+args
+auths
+
