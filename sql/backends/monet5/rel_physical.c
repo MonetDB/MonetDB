@@ -512,6 +512,8 @@ find_cmp_exps(list **exps_hsh, list **exps_prb, const list *exps, sql_rel *rel_h
 					set_any(er);
 				if (semantic)
 					set_semantics(er);
+				if (er->nid != er->alias.label)
+					er->alias.label = 0;
 				append(*exps_hsh, er);
 				append(*exps_prb, e->l);
 			} else {
@@ -526,6 +528,8 @@ find_cmp_exps(list **exps_hsh, list **exps_prb, const list *exps, sql_rel *rel_h
 					set_any(el);
 				if (semantic)
 					set_semantics(el);
+				if (el->nid != el->alias.label)
+					el->alias.label = 0;
 				append(*exps_hsh, el);
 				append(*exps_prb, e->r);
 			}
