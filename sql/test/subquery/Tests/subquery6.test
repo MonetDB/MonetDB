@@ -416,7 +416,7 @@ select 1 in (ColID), max(totalsales) from tbl_ProductSales
 statement error 42000!SELECT: cannot use non GROUP BY column 'tbl_productsales.colid' in query results without an aggregate function
 select 1 in (ColID, (select 1)), max(totalsales) from tbl_ProductSales
 
-statement error 42000!Tuple matching at projections not implemented in the backend yet
+statement error /more than one match/
 select (select (i1.i, i2.i) in (select i2.i, i1.i) from integers i2) from integers i1
 
 statement error 42000!MIN: aggregate function 'min' not allowed in GROUP BY clause

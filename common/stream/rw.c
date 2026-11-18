@@ -11,6 +11,7 @@
 #include "monetdb_config.h"
 #include "stream.h"
 #include "stream_internal.h"
+#include "mswap.h"
 
 
 
@@ -55,7 +56,7 @@ mnstr_readSht(stream *restrict s, int16_t *restrict val)
 	switch (s->read(s, val, sizeof(*val), 1)) {
 	case 1:
 		if (s->swapbytes)
-			*val = short_int_SWAP(*val);
+			*val = (int16_t) swap_int16((uint16_t) *val);
 		return 1;
 	case 0:
 		return 0;
@@ -71,7 +72,7 @@ mnstr_writeSht(stream *s, int16_t val)
 		return 0;
 	assert(s->binary);
 	if (s->swapbytes)
-		val = short_int_SWAP(val);
+		val = (int16_t) swap_int16((uint16_t) val);
 	return s->write(s, &val, sizeof(val), 1) == 1;
 }
 
@@ -84,7 +85,7 @@ mnstr_readInt(stream *restrict s, int *restrict val)
 	switch (s->read(s, val, sizeof(*val), 1)) {
 	case 1:
 		if (s->swapbytes)
-			*val = normal_int_SWAP(*val);
+			*val = (int32_t) swap_int32((uint32_t) *val);
 		return 1;
 	case 0:
 		return 0;
@@ -100,7 +101,7 @@ mnstr_writeInt(stream *s, int val)
 		return 0;
 	assert(s->binary);
 	if (s->swapbytes)
-		val = normal_int_SWAP(val);
+		val = (int32_t) swap_int32((uint32_t) val);
 	return s->write(s, &val, sizeof(val), 1) == 1;
 }
 
@@ -136,7 +137,7 @@ mnstr_readLng(stream *restrict s, int64_t *restrict val)
 	switch (s->read(s, val, sizeof(*val), 1)) {
 	case 1:
 		if (s->swapbytes)
-			*val = long_int_SWAP(*val);
+			*val = (int64_t) swap_int64((uint64_t) *val);
 		return 1;
 	case 0:
 		return 0;
@@ -152,7 +153,7 @@ mnstr_writeLng(stream *s, int64_t val)
 		return 0;
 	assert(s->binary);
 	if (s->swapbytes)
-		val = long_int_SWAP(val);
+		val = (int64_t) swap_int64((uint64_t) val);
 	return s->write(s, &val, sizeof(val), 1) == 1;
 }
 
@@ -185,7 +186,7 @@ mnstr_readHge(stream *restrict s, int128_t *restrict val)
 	switch (s->read(s, val, sizeof(*val), 1)) {
 	case 1:
 		if (s->swapbytes)
-			*val = huge_int_SWAP(*val);
+			*val = (int128_t) swap_int128((uint128_t) *val);
 		return 1;
 	case 0:
 		return 0;
@@ -201,7 +202,7 @@ mnstr_writeHge(stream *s, int128_t val)
 		return 0;
 	assert(s->binary);
 	if (s->swapbytes)
-		val = huge_int_SWAP(val);
+		val = (int128_t) swap_int128((uint128_t) val);
 	return s->write(s, &val, sizeof(val), 1) == 1;
 }
 #endif
@@ -242,7 +243,7 @@ mnstr_readShtArray(stream *restrict s, int16_t *restrict val, size_t cnt)
 	}
 	if (s->swapbytes) {
 		for (size_t i = 0; i < cnt; i++, val++)
-			*val = short_int_SWAP(*val);
+			*val = (int16_t) swap_int16((uint16_t) *val);
 	}
 	return 1;
 }
@@ -275,7 +276,7 @@ mnstr_readIntArray(stream *restrict s, int *restrict val, size_t cnt)
 	}
 	if (s->swapbytes) {
 		for (size_t i = 0; i < cnt; i++, val++)
-			*val = normal_int_SWAP(*val);
+			*val = (int32_t) swap_int32((uint32_t) *val);
 	}
 	return 1;
 }
@@ -308,7 +309,7 @@ mnstr_readLngArray(stream *restrict s, int64_t *restrict val, size_t cnt)
 	}
 	if (s->swapbytes) {
 		for (size_t i = 0; i < cnt; i++, val++)
-			*val = long_int_SWAP(*val);
+			*val = (int64_t) swap_int64((uint64_t) *val);
 	}
 	return 1;
 }
@@ -342,7 +343,7 @@ mnstr_readHgeArray(stream *restrict s, int128_t *restrict val, size_t cnt)
 	}
 	if (s->swapbytes) {
 		for (size_t i = 0; i < cnt; i++, val++)
-			*val = huge_int_SWAP(*val);
+			*val = (int128_t) swap_int128((uint128_t) *val);
 	}
 	return 1;
 }

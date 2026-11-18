@@ -90,55 +90,6 @@
 #define UTF8BOM		"\xEF\xBB\xBF"	/* UTF-8 encoding of Unicode BOM */
 #define UTF8BOMLENGTH	3		/* length of above */
 
-#ifdef _MSC_VER
-/* use intrinsic functions on Windows */
-#define short_int_SWAP(s)	((int16_t) _byteswap_ushort((uint16_t) (s)))
-/* on Windows, long is the same size as int */
-#define normal_int_SWAP(i)	((int) _byteswap_ulong((unsigned long) (i)))
-#define long_int_SWAP(l)	((int64_t) _byteswap_uint64((unsigned __int64) (l)))
-#else
-#define short_int_SWAP(s)				\
-	((int16_t) (((0x00ff & (uint16_t) (s)) << 8) |	\
-		    ((0xff00 & (uint16_t) (s)) >> 8)))
-
-#define normal_int_SWAP(i)						\
-	((int) (((((unsigned) 0xff <<  0) & (unsigned) (i)) << 24) |	\
-		((((unsigned) 0xff <<  8) & (unsigned) (i)) <<  8) |	\
-		((((unsigned) 0xff << 16) & (unsigned) (i)) >>  8) |	\
-		((((unsigned) 0xff << 24) & (unsigned) (i)) >> 24)))
-
-#define long_int_SWAP(l)						\
-	((int64_t) (((((uint64_t) 0xff <<  0) & (uint64_t) (l)) << 56) | \
-		    ((((uint64_t) 0xff <<  8) & (uint64_t) (l)) << 40) | \
-		    ((((uint64_t) 0xff << 16) & (uint64_t) (l)) << 24) | \
-		    ((((uint64_t) 0xff << 24) & (uint64_t) (l)) <<  8) | \
-		    ((((uint64_t) 0xff << 32) & (uint64_t) (l)) >>  8) | \
-		    ((((uint64_t) 0xff << 40) & (uint64_t) (l)) >> 24) | \
-		    ((((uint64_t) 0xff << 48) & (uint64_t) (l)) >> 40) | \
-		    ((((uint64_t) 0xff << 56) & (uint64_t) (l)) >> 56)))
-#endif
-
-#ifdef HAVE_HGE
-#define huge_int_SWAP(h)						\
-	((int128_t) (((((uint128_t) 0xff <<   0) & (uint128_t) (h)) << 120) | \
-		     ((((uint128_t) 0xff <<   8) & (uint128_t) (h)) << 104) | \
-		     ((((uint128_t) 0xff <<  16) & (uint128_t) (h)) <<  88) | \
-		     ((((uint128_t) 0xff <<  24) & (uint128_t) (h)) <<  72) | \
-		     ((((uint128_t) 0xff <<  32) & (uint128_t) (h)) <<  56) | \
-		     ((((uint128_t) 0xff <<  40) & (uint128_t) (h)) <<  40) | \
-		     ((((uint128_t) 0xff <<  48) & (uint128_t) (h)) <<  24) | \
-		     ((((uint128_t) 0xff <<  56) & (uint128_t) (h)) <<   8) | \
-		     ((((uint128_t) 0xff <<  64) & (uint128_t) (h)) >>   8) | \
-		     ((((uint128_t) 0xff <<  72) & (uint128_t) (h)) >>  24) | \
-		     ((((uint128_t) 0xff <<  80) & (uint128_t) (h)) >>  40) | \
-		     ((((uint128_t) 0xff <<  88) & (uint128_t) (h)) >>  56) | \
-		     ((((uint128_t) 0xff <<  96) & (uint128_t) (h)) >>  72) | \
-		     ((((uint128_t) 0xff << 104) & (uint128_t) (h)) >>  88) | \
-		     ((((uint128_t) 0xff << 112) & (uint128_t) (h)) >> 104) | \
-		     ((((uint128_t) 0xff << 120) & (uint128_t) (h)) >> 120)))
-#endif
-
-
 struct stream {
 	char *name;		/* name of the stream */
 	struct stream *inner; /* if this stream is a wrapper around another one */

@@ -1,6 +1,11 @@
 # ChangeLog file for devel
 # This file is updated with Maddlog
 
+* Wed Nov 18 2026 Ying Zhang <ying.zhang@monetdbsolutions.com>
+- Added support for tuple matching at projections, so now one can run
+  queries like 'SELECT (1, 2) IN (SELECT 1, 2)' and 'SELECT (1, 2) NOT IN
+  (SELECT 1, 2)'
+
 * Thu Oct 22 2026 Martin van Dinther <martin.van.dinther@monetdbsolutions.com>
 - Added support for reading DNA sequence alignment data from *.sam and *.bam files.
   Usage examples:

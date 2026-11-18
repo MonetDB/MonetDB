@@ -346,7 +346,7 @@ mulmod(lng a, lng b, lng c)
  * Note that the last term is only the fraction (i.e. strictly between
  * -1 and 1), so (a*b)%c is the remainder.
  */
-#ifdef HAVE___INT128
+#ifdef HAVE_INT128_T
 #define avg_aggr_comb(T, a1, r1, n1, a2, r2, n2)						\
 	do {																\
 		if (is_##T##_nil(a2)) {											\
@@ -365,8 +365,8 @@ mulmod(lng a, lng b, lng c)
 				a = 0;													\
 				r = 0;													\
 			} else {													\
-				a = (T) ((a1 / n) * N1 + ((a1 % n) * (__int128) N1) / n + \
-						 (a2 / n) * N2 + ((a2 % n) * (__int128) N2) / n + \
+				a = (T) ((a1 / n) * N1 + ((a1 % n) * (int128_t) N1) / n + \
+						 (a2 / n) * N2 + ((a2 % n) * (int128_t) N2) / n + \
 						 (r1 + r2) / n);								\
 				r = mulmod(a1, N1, n) + mulmod(a2, N2, n) + (r1 + r2) % n; \
 				while (r >= n) {										\
