@@ -109,7 +109,7 @@ pqc_dict_lookup( pqc_creader_t *cr, void *output, int64_t nrows, int64_t pos, si
 				for (; i < nrows && j < m; j++, i++) {
 					dst[i] = offset+offsets[0];
 				}
-				if (j < m) {
+				if (j < m && i < nrows) {
 					cr->is_rle = false;
 					cr->remaining = m - j;
 					cr->idx = 0;
@@ -126,7 +126,7 @@ pqc_dict_lookup( pqc_creader_t *cr, void *output, int64_t nrows, int64_t pos, si
 					assert(idx < cr->dict_num_values);
 					dst[i] = offset+offsets[idx];
 				}
-				if (j < m) {
+				if (j < m && i < nrows) {
 					cr->is_rle = false;
 					cr->remaining = m - j;
 					cr->idx = sh;
@@ -147,7 +147,7 @@ pqc_dict_lookup( pqc_creader_t *cr, void *output, int64_t nrows, int64_t pos, si
 					assert(idx < cr->dict_num_values);
 					dst[i] = offset+offsets[idx];
 				}
-				if (j < m) {
+				if (j < m && i < nrows) {
 					cr->is_rle = false;
 					cr->remaining = m - j;
 					cr->idx = sh;
@@ -168,7 +168,7 @@ pqc_dict_lookup( pqc_creader_t *cr, void *output, int64_t nrows, int64_t pos, si
 					assert(idx < cr->dict_num_values);
 					dst[i] = offset+offsets[idx];
 				}
-				if (j < m) {
+				if (j < m && i < nrows) {
 					cr->is_rle = false;
 					cr->remaining = m - j;
 					cr->idx = sh;
@@ -190,7 +190,7 @@ pqc_dict_lookup( pqc_creader_t *cr, void *output, int64_t nrows, int64_t pos, si
 					//assert(((int64_t*)cr->dict)[idx] < ((int64_t) 1 << 8*sizeof(T)));
 					dst[i] = (T) ((int64_t*)cr->dict)[idx];
 				}
-				if (j < m) {
+				if (j < m && i < nrows) {
 					cr->is_rle = false;
 					cr->remaining = m - j;
 					cr->idx = sh;
@@ -202,7 +202,7 @@ pqc_dict_lookup( pqc_creader_t *cr, void *output, int64_t nrows, int64_t pos, si
 			len>>=1;
 			for(; i < nrows && j < len; j++, i++)
 				dst[i] = offset+offsets[0];
-			if (j < len) {
+			if (j < len && i < nrows) {
 				cr->is_rle = true;
 				cr->remaining = len - j;
 				cr->idx = idx;
@@ -212,7 +212,7 @@ pqc_dict_lookup( pqc_creader_t *cr, void *output, int64_t nrows, int64_t pos, si
 			uint8_t idx = data[pos++];
 			for(; i < nrows && j < len; j++, i++)
 				dst[i] = offset+offsets[idx];
-			if (j < len) {
+			if (j < len && i < nrows) {
 				cr->is_rle = true;
 				cr->remaining = len - j;
 				cr->idx = idx;
@@ -223,7 +223,7 @@ pqc_dict_lookup( pqc_creader_t *cr, void *output, int64_t nrows, int64_t pos, si
 			pos += 2;
 			for(; i < nrows && j < len; j++, i++)
 				dst[i] = offset+offsets[idx];
-			if (j < len) {
+			if (j < len && i < nrows) {
 				cr->is_rle = true;
 				cr->remaining = len - j;
 				cr->idx = idx;
@@ -234,7 +234,7 @@ pqc_dict_lookup( pqc_creader_t *cr, void *output, int64_t nrows, int64_t pos, si
 			pos += 4;
 			for(; i < nrows && j < len; j++, i++)
 				dst[i] = offset+offsets[idx];
-			if (j < len) {
+			if (j < len && i < nrows) {
 				cr->is_rle = true;
 				cr->remaining = len - j;
 				cr->idx = idx;
