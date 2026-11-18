@@ -11,6 +11,8 @@
 #ifndef _PQC_THRIFT_H_
 #define _PQC_THRIFT_H_
 
+#include "mswap.h"
+
 /**
  * Thrift compact protocol
  * Take special note of the T_STOP type which is used specifically to mark
@@ -54,44 +56,16 @@ pqc_export int pqc_get_field( char *in, int *fieldid, int *type);
 pqc_export int pqc_get_list( char *in, int *size, int *type);
 pqc_export int pqc_get_string( char *in, char **s, int *len); /* need way to buffer 0 */
 
-#ifdef _MSC_VER
-/* use intrinsic functions on Windows */
-#define short_int_SWAP(s)	((int16_t) _byteswap_ushort((uint16_t) (s)))
-/* on Windows, long is the same size as int */
-#define normal_int_SWAP(i)	((int) _byteswap_ulong((unsigned long) (i)))
-#define long_int_SWAP(l)	((int64_t) _byteswap_uint64((unsigned __int64) (l)))
-#else
-#define short_int_SWAP(s)				\
-	(((0x00ff & (uint16_t) (s)) << 8) |	\
-	 ((0xff00 & (uint16_t) (s)) >> 8))
-
-#define normal_int_SWAP(i)						\
-	(((((uint32_t) 0xff <<  0) & (uint32_t) (i)) << 24) |	\
-	 ((((uint32_t) 0xff <<  8) & (uint32_t) (i)) <<  8) |	\
-	 ((((uint32_t) 0xff << 16) & (uint32_t) (i)) >>  8) |	\
-	 ((((uint32_t) 0xff << 24) & (uint32_t) (i)) >> 24))
-
-#define long_int_SWAP(l)						\
-	(((((uint64_t) 0xff <<  0) & (uint64_t) (l)) << 56) |	\
-	 ((((uint64_t) 0xff <<  8) & (uint64_t) (l)) << 40) |	\
-	 ((((uint64_t) 0xff << 16) & (uint64_t) (l)) << 24) |	\
-	 ((((uint64_t) 0xff << 24) & (uint64_t) (l)) <<  8) |	\
-	 ((((uint64_t) 0xff << 32) & (uint64_t) (l)) >>  8) |	\
-	 ((((uint64_t) 0xff << 40) & (uint64_t) (l)) >> 24) |	\
-	 ((((uint64_t) 0xff << 48) & (uint64_t) (l)) >> 40) |	\
-	 ((((uint64_t) 0xff << 56) & (uint64_t) (l)) >> 56))
-#endif
-
 #ifdef WORDS_BIGENDIAN
-#define pqc_sht(s) short_int_SWAP(s)
-#define pqc_int(s) normal_int_SWAP(s)
-#define pqc_lng(s) long_int_SWAP(s)
+#define pqc_sht(s) swap_int16(s)
+#define pqc_int(s) swap_int32(s)
+#define pqc_lng(s) swap_int64(s)
 #define pqc_be_sht(s) (s)
 #else
 #define pqc_sht(s) (s)
 #define pqc_int(s) (s)
 #define pqc_lng(s) (s)
-#define pqc_be_sht(s) short_int_SWAP(s)
+#define pqc_be_sht(s) swap_int16(s)
 #endif
 
 #define get_uint16(c) pqc_sht(READ_UNALIGNED(16, c))
