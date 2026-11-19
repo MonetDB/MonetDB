@@ -1680,7 +1680,7 @@ typedef struct BAT {
 	Heap *theap;		/* space for the column. */
 	BUN tbaseoff;		/* offset in heap->base (in whole items) */
 	Heap *tvheap;		/* space for the varsized data. */
-	Heap *tstats;		/* probabilistic counting sketch */
+	Heap *tstats;		/* on dsk tail stats, e.g., counting sketch */
 	Hash *thash;		/* hash table */
 #ifdef HAVE_RTREE
 	RTree *trtree;		/* rtree geometric index */
