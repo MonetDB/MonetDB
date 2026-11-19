@@ -1591,11 +1591,11 @@ exp2bin_proto_loader(backend *be, sql_exp *fe, stmt *left, stmt *right, stmt *se
 	assert(is_atom(fexp->type));
 	atom *fa = fexp->l;
 	assert(fa->data.vtype == TYPE_str);
-	char *filename = fa->data.val.sval;
+	char *uri = fa->data.val.sval;
 	sql_exp *topn = NULL;
 	if (list_length(arg_list) == 3)
 		topn = list_fetch(arg_list, 2);
-	return (stmt*)pl->load(be, f, filename, topn);
+	return (stmt*)pl->load(be, f, uri, topn);
 }
 
 stmt *
@@ -3669,47 +3669,86 @@ rel2bin_antijoin(backend *be, sql_rel *rel, list *refs)
 		if (list_length(sexps))
 			jexps = list_join(jexps, sexps);
 		en = jexps->h;
-		sql_exp *e = en->data;
-		if (e->type == e_cmp && (e->flag == cmp_equal || e->flag == cmp_notequal)) {
-			stmt *ls = exp_bin(be, e->l, left, NULL, NULL, NULL, NULL, NULL, 1, 0, 0), *rs;
-			bool constval = false;
-			if (!ls) {
-				swap = true;
-				ls = exp_bin(be, e->l, right, NULL, NULL, NULL, NULL, NULL, 1, 0, 0);
+
+		/* if possible create multi column hash using releqjoin */
+		if (list_length(jexps) > 1) {
+			bool composite = true;
+			for (node *m = jexps->h; m; m = m->next) {
+				sql_exp *ce = m->data;
+				if (ce->type != e_cmp || ce->flag != cmp_equal ||
+				    is_anti(ce) || !is_semantics(ce) || exp_has_func(ce)) {
+					composite = false;
+					break;
+				}
 			}
-			if (!ls)
-				return NULL;
-
-			if (!(rs = exp_bin(be, e->r, left, right, NULL, NULL, NULL, NULL, 1, 0, 0)))
-				return NULL;
-
-			if (swap) {
-				stmt *t = ls;
-				ls = rs;
-				rs = t;
+			if (composite) {
+				list *lje = sa_list(sql->sa), *rje = sa_list(sql->sa), *exps = sa_list(sql->sa);
+				bool valid = true;
+				for (node *m = jexps->h; m; m = m->next) {
+					sql_exp *ce = m->data;
+					stmt *ls = exp_bin(be, ce->l, left, NULL, NULL, NULL, NULL, NULL, 1, 0, 0);
+					stmt *rs = ls ? exp_bin(be, ce->r, left, right, NULL, NULL, NULL, NULL, 1, 0, 0) : NULL;
+					if (!ls || !rs) {
+						valid = false;
+						break;
+					}
+					if (!li)
+						li = ls;
+					list_append(lje, ls);
+					list_append(rje, rs);
+					list_append(exps, ce);
+				}
+				if (valid) {
+					join = releqjoin(be, lje, rje, exps, 0 /* use hash */, 0, 1 /* set semantics */);
+					/* all equalities are part of the composite key */
+					en = NULL;
+				}
 			}
-			if (ls->nrcols == 0) {
-				constval = true;
-				ls = stmt_const(be, bin_find_smallest_column(be, left), ls);
-			}
-			if (rs->nrcols == 0)
-				rs = stmt_const(be, bin_find_smallest_column(be, right), rs);
+		}
 
-			if (!li)
-				li = ls;
+		if (!join) {
+				sql_exp *e = en->data;
+				if (e->type == e_cmp && (e->flag == cmp_equal || e->flag == cmp_notequal)) {
+				stmt *ls = exp_bin(be, e->l, left, NULL, NULL, NULL, NULL, NULL, 1, 0, 0), *rs;
+				bool constval = false;
+				if (!ls) {
+					swap = true;
+					ls = exp_bin(be, e->l, right, NULL, NULL, NULL, NULL, NULL, 1, 0, 0);
+				}
+				if (!ls)
+					return NULL;
 
-			if (!en->next && !is_anti(e) && e->flag != cmp_notequal &&
-				(constval || stmt_has_null(ls) || stmt_has_null(rs))) {
-				join = stmt_tdiff2(be, ls, rs, NULL, is_semantics(e), is_any(e));
-				jexps = NULL;
+				if (!(rs = exp_bin(be, e->r, left, right, NULL, NULL, NULL, NULL, 1, 0, 0)))
+					return NULL;
+
+				if (swap) {
+					stmt *t = ls;
+					ls = rs;
+					rs = t;
+				}
+				if (ls->nrcols == 0) {
+					constval = true;
+					ls = stmt_const(be, bin_find_smallest_column(be, left), ls);
+				}
+				if (rs->nrcols == 0)
+					rs = stmt_const(be, bin_find_smallest_column(be, right), rs);
+
+				if (!li)
+					li = ls;
+
+				if (!en->next && !is_anti(e) && e->flag != cmp_notequal &&
+					(constval || stmt_has_null(ls) || stmt_has_null(rs))) {
+					join = stmt_tdiff2(be, ls, rs, NULL, is_semantics(e), is_any(e));
+					jexps = NULL;
+				} else {
+					join = stmt_join_cand(be, ls, rs, NULL, NULL, is_anti(e), (comp_type) e->flag, 0, is_semantics(e), false, true);
+				}
+				en = en->next;
 			} else {
-				join = stmt_join_cand(be, ls, rs, NULL, NULL, is_anti(e), (comp_type) e->flag, 0, is_semantics(e), false, true);
+				stmt *l = bin_find_smallest_column(be, left);
+				stmt *r = bin_find_smallest_column(be, right);
+				join = stmt_join(be, l, r, 0, cmp_all, 0, 0, false);
 			}
-			en = en->next;
-		} else {
-			stmt *l = bin_find_smallest_column(be, left);
-			stmt *r = bin_find_smallest_column(be, right);
-			join = stmt_join(be, l, r, 0, cmp_all, 0, 0, false);
 		}
 	}
 	if (en || jexps) {

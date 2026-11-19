@@ -508,16 +508,16 @@ typedef int64_t ssize_t;
 #cmakedefine HAVE___UINT128_T 1
 #cmakedefine HAVE_HGE 1
 
-#ifdef HAVE_HGE
 /* define types int128_t and uint128_t for 128 bit integers in the style
  * of stdint.h */
 #ifdef HAVE___INT128
 typedef __int128 int128_t;
 typedef unsigned __int128 uint128_t;
+#define HAVE_INT128_T 1
 #elif defined(HAVE___INT128_T) && defined(HAVE___UINT128_T)
 typedef __int128_t int128_t;
 typedef __uint128_t uint128_t;
-#endif
+#define HAVE_INT128_T 1
 #endif
 
 // End Section: monetdb configure sizes

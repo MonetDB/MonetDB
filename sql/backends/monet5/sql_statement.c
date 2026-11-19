@@ -4829,7 +4829,6 @@ stmt_aggr(backend *be, stmt *op1, stmt *grp, stmt *ext, sql_subfunc *op, int red
 static stmt *
 stmt_alias_(backend *be, stmt *op1, int label, const char *tname, const char *alias)
 {
-	assert(label);
 	stmt *s = stmt_create(be->mvc->sa, st_alias);
 	if(!s) {
 		return NULL;

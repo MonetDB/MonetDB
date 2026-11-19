@@ -10,6 +10,7 @@
 
 #include "monetdb_config.h"
 #include "rel_optimizer_private.h"
+#include "rel_rel.h"
 #include "sql_decimal.h"
 #include "rel_unnest.h"
 #include "rel_basetable.h"
@@ -2318,7 +2319,18 @@ rewrite_anyequal(visitor *v, sql_rel *rel, sql_exp *e, int depth)
 							set_any(inexp);
 						append(join->exps, inexp);
 					}
-					return sql_error(sql, 02, SQLSTATE(42000) "Tuple matching at projections not implemented in the backend yet");
+					if (!join->attr)
+						join->attr = sa_list(v->sql->sa);
+					sql_exp *a = exp_atom_bool(v->sql->sa, is_anyequal(sf));
+					set_no_nil(a);
+					if (!e->alias.label)
+						exp_label(v->sql->sa, a, ++v->sql->label);
+					else
+						exp_setalias(a, e->alias.label, exp_relname(e), exp_name(e));
+					le = exp_ref(v->sql, a);
+					le->card = CARD_MULTI; /* mark as multi value, the real attribute is introduced later */
+					append(join->attr, a);
+					return le;
 				} else {
 					use_any = true;
 					sql_exp *inexp = exp_compare(v->sql->sa, le, re, cmp_equal);
