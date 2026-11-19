@@ -114,13 +114,15 @@ tmp_schema(mvc *sql)
 
 #define DO_NOTHING(x) ((void) 0)
 
-#define search_object_on_path(CALL, EXTRA_CONDITION, EXTRA, ERROR_CODE, show_error) \
+#define search_object_on_path(CALL, EXTRA_CONDITION, EXTRA, ERROR_CODE, show_error, res) \
 	do { \
 		sql_schema *next = NULL; \
  \
 		if (sname) { /* user has explicitly typed the schema, so either the object is there or we return error */ \
-			if (!(next = mvc_bind_schema(sql, sname))) \
-				return sql_error(sql, ERR_NOTFOUND, SQLSTATE(3F000) "%s: no such schema '%s'", error, sname); \
+			if (!(next = mvc_bind_schema(sql, sname))) { \
+				(void) sql_error(sql, ERR_NOTFOUND, SQLSTATE(3F000) "%s: no such schema '%s'", error, sname); \
+				return res; \
+			} \
 			EXTRA_CONDITION(EXTRA); /* for functions without schema, 'sys' is a valid schema to bind them */ \
 			if (!res) { \
 				CALL; \
@@ -325,7 +327,7 @@ find_variable_on_scope(mvc *sql, const char *sname, const char *name, sql_var **
 	static const char objstr[] = "variable";
 	bool res = false;
 
-	search_object_on_path(var_find_on_global, DO_NOTHING, variable_extra, SQLSTATE(42000), true);
+	search_object_on_path(var_find_on_global, DO_NOTHING, variable_extra, SQLSTATE(42000), true, true);
 	return res;
 }
 
@@ -483,7 +485,7 @@ sql_find_func(mvc *sql, const char *sname, const char *name, int nrargs, sql_fty
 
 	assert(nrargs >= -1);
 
-	search_object_on_path(res = os_find_func_internal(sql, next->funcs, name, nrargs, type, private, prev), functions_without_schema, find_func_extra, "", false);
+	search_object_on_path(res = os_find_func_internal(sql, next->funcs, name, nrargs, type, private, prev), functions_without_schema, find_func_extra, "", false, NULL);
 	return res;
 }
 
@@ -790,7 +792,7 @@ sql_bind_func_(mvc *sql, const char *sname, const char *name, list *ops, sql_fty
 	FUNC_TYPE_STR(type, F, objstr);
 	(void) F; /* not used */
 
-	search_object_on_path(res = os_bind_func__(sql, next->funcs, name, ops, type, private, exact), functions_without_schema, sql_bind_func__extra, SQLSTATE(42000), true);
+	search_object_on_path(res = os_bind_func__(sql, next->funcs, name, ops, type, private, exact), functions_without_schema, sql_bind_func__extra, SQLSTATE(42000), true, NULL);
 	return res;
 }
 
@@ -904,7 +906,7 @@ sql_bind_func_result(mvc *sql, const char *sname, const char *name, sql_ftype ty
 	}
 	va_end(valist);
 
-	search_object_on_path(res = os_bind_func_result_internal(sql, next->funcs, name, type, private, ops, r_res), functions_without_schema, sql_bind_func_result_extra, SQLSTATE(42000), true);
+	search_object_on_path(res = os_bind_func_result_internal(sql, next->funcs, name, type, private, ops, r_res), functions_without_schema, sql_bind_func_result_extra, SQLSTATE(42000), true, NULL);
 	if (res) /* make sure we have the correct result type */
 		res->res->h->data = r_res;
 	return res;
@@ -986,7 +988,7 @@ sql_find_funcs_by_name(mvc *sql, const char *sname, const char *name, sql_ftype 
 	FUNC_TYPE_STR(type, F, objstr);
 	(void) F; /* not used */
 
-	search_object_on_path(res = os_find_funcs_by_name_internal(sql, next->funcs, name, type, private), functions_without_schema, sql_find_funcs_by_name_extra, "", false);
+	search_object_on_path(res = os_find_funcs_by_name_internal(sql, next->funcs, name, type, private), functions_without_schema, sql_find_funcs_by_name_extra, "", false, NULL);
 	return res;
 }
 

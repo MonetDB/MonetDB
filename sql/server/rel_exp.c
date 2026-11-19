@@ -1694,7 +1694,7 @@ rel_has_complete_exp(sql_rel *rel, sql_exp *e, bool subexp)
 			assert(e->nid);
 			ne = exps_bind_nid(l, e->nid);
 		}
-		return ne;
+		return ne != NULL;
 	case e_convert:
 		return rel_has_complete_exp(rel, e->l, subexp);
 	case e_aggr:
