@@ -662,7 +662,7 @@ odbc_query(int caller, mvc *sql, sql_subfunc *f, char *url, list *res_exps, lng 
 #endif
 
 	if (caller == ODBC_RELATION || (caller == ODBC_LOADER && nrows >= 0 && nrows <= 2147483647)) {
-		SQLULEN max_rows = (caller == ODBC_RELATION) ? 1 : nrows;
+		SQLULEN max_rows = (caller == ODBC_RELATION) ? 1 : (SQLULEN) nrows;
 		/* instruct connected DBMS to return max_rows */
 		ret = SQLSetStmtAttr(stmt, SQL_ATTR_MAX_ROWS, (SQLPOINTER) (uintptr_t) max_rows, 0);
 		TRC_DEBUG(LOADER, "SQLSetStmtAttr(stmt, SQL_ATTR_MAX_ROWS, %lu, 0) returned %s\n", max_rows, nameOfRetCode(ret));
