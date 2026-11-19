@@ -871,29 +871,6 @@ BATload_intern(bat bid, bool lock)
 			assert(b->theap->size >> b->tshift <= BUN_MAX);
 			b->batCapacity = (BUN) (b->theap->size >> b->tshift);
 		}
-
-		if (b->tstats /* TODO */ && atom_sketchable(b->ttype)) {
-			b->tstats->storage = STORE_INVALID;
-			if (b->batCount > 0) {
-				if (HEAPload(b->tstats, nme, "tstats", false) != GDK_SUCCEED) {
-					assert(0);
-					HEAPfree(b->theap, false);
-					HEAPfree(b->tstats, false);
-					return NULL;
-				}
-			} else {
-				if (HEAPalloc(b->tstats, TSTATS_SZ, sizeof(uint8_t)) != GDK_SUCCEED) {
-					HEAPfree(b->theap, false);
-					HEAPfree(b->tstats, false);
-					return NULL;
-				}
-				void *sk_b = tstats_sketch(b->tstats->base);
-				b->tunique_est = sketch_estimate(sk_b);
-			}
-			b->tstats->free = TSTATS_SZ;
-		} else {
-			b->tstats = NULL;
-		}
 	} else {
 		b->theap->base = NULL;
 	}
@@ -914,6 +891,28 @@ BATload_intern(bat bid, bool lock)
 			HEAP_recover(b->tvheap, (const var_t *) Tloc(b, 0),
 				     BATcount(b));
 		}
+	}
+
+	/* LOAD tail stats */
+	if (b->tstats) {
+		b->tstats->storage = STORE_INVALID;
+		if (b->batCount > 0) {
+			if (HEAPload(b->tstats, nme, "tstats", false) != GDK_SUCCEED) {
+				assert(0);
+				HEAPfree(b->theap, false);
+				HEAPfree(b->tstats, false);
+				return NULL;
+			}
+			void *sk_b = tstats_sketch(b->tstats);
+			b->tunique_est = sketch_estimate(sk_b);
+		} else {
+			if (HEAPalloc(b->tstats, TSTATS_SZ, 1) != GDK_SUCCEED) {
+				HEAPfree(b->theap, false);
+				HEAPfree(b->tstats, false);
+				return NULL;
+			}
+		}
+		b->tstats->free = TSTATS_SZ;
 	}
 
 	/* initialize descriptor */

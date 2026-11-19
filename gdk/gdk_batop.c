@@ -1158,23 +1158,25 @@ BATappend2(BAT *b, BAT *n, BAT *s, bool force, bool mayshare)
 
 	if (b->tstats) {
 		MT_lock_set(&b->theaplock);
-		void *sk_b = tstats_sketch(b->tstats->base);
+		void *sk_b = tstats_sketch(b->tstats);
 		if (n->tstats) {
 			if (BATcount(b) == ci.ncand) { /* b was empty */
 				memcpy(b->tstats->base, n->tstats->base, TSTATS_SZ);
 			} else {
-				void *sk_n = tstats_sketch(n->tstats->base);
+				void *sk_n = tstats_sketch(n->tstats);
 				if (sketch_merge(sk_b, sk_n) != GDK_SUCCEED)
 					goto bailout;
 			}
 		} else {
+			assert(b->batRole == PERSISTENT);
 			uint8_t tmp_sketch[SKETCH_BUCKETS][SKETCH_CLZ_BUCKETS] = {0};
 			if (bat_sketch(&ni, &ci, tmp_sketch) != GDK_SUCCEED)
 				goto bailout;
 			if (BATcount(b) == ci.ncand) { /* b was empty */
-				uint32_t *tstats_header = (uint32_t *)b->tstats->base;
-				tstats_header[0] = TSTATS_VER;
-				tstats_header[1] = 0;
+				int32_t *ver = tstats_version(b->tstats);
+				int32_t *age = tstats_age(b->tstats);
+				*ver = TSTATS_VERSION;
+				*age = -1;
 				memcpy(sk_b, tmp_sketch, SKETCH_SZ);
 			} else {
 				if (sketch_merge(sk_b, tmp_sketch) != GDK_SUCCEED)

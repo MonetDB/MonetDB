@@ -3015,8 +3015,8 @@ col_stats(sql_trans *tr, sql_column *c, bool *nonil, bool *unique, double *uniqu
 					*unique = bi.key;
 					*unique_est = bi.unique_est;
 					if (*unique_est == 0 && bi.count) {
-						if (bi.b->tstats) {
-							void *sk_b = tstats_sketch(bi.b->tstats->base);
+						if (bi.sh) {
+							void *sk_b = tstats_sketch(bi.sh);
 							*unique_est = sketch_estimate(sk_b);
 						} else {
 							uint8_t tmp_sketch[SKETCH_BUCKETS][SKETCH_CLZ_BUCKETS] = {0};
@@ -3069,15 +3069,14 @@ idx_stats(sql_trans *tr, sql_idx *i, bool *nonil, bool *unique, double *unique_e
 				*unique_est = bi.unique_est;
 				if (*unique_est == 0) {
 					if (bi.b->tstats) {
-						void *sk_b = tstats_sketch(bi.b->tstats->base);
+						void *sk_b = tstats_sketch(bi.sh);
 						*unique_est = sketch_estimate(sk_b);
-					} else {
+					} else if (atom_sketchable(bi.type)) {
 						uint8_t tmp_sketch[SKETCH_BUCKETS][SKETCH_CLZ_BUCKETS] = {0};
 						if (bat_sketch(&bi, NULL, tmp_sketch) != GDK_SUCCEED)
 							*unique_est = -1;
-						else {
+						else
 							*unique_est = sketch_estimate(tmp_sketch);
-						}
 					}
 				}
 			}

@@ -1573,8 +1573,8 @@ atom_sketchable(int type)
 	return true;
 }
 
-#define TSTATS_VER       (uint32_t)1
-#define TSTATS_HEADER_SZ (2 * sizeof(uint32_t))
+#define TSTATS_VERSION   (int32_t)1
+#define TSTATS_HEADER_SZ (2 * sizeof(int32_t))
 #define TSTATS_SZ        (TSTATS_HEADER_SZ + SKETCH_SZ)
 
 static inline bool
@@ -1583,22 +1583,25 @@ bat_needstats(int bat_type, int bat_role)
 	return atom_sketchable(bat_type) && (bat_role == PERSISTENT);
 }
 
-static inline uint32_t *
+static inline int32_t *
 tstats_version(void *tstats)
 {
-	return (uint32_t *)tstats;
+	assert(((Heap *)tstats)->base);
+	return (int32_t *)((Heap *)tstats)->base;
 }
 
-static inline uint32_t *
+static inline int32_t *
 tstats_age(void *tstats)
 {
-	return (uint32_t *)tstats + 1;
+	assert(((Heap *)tstats)->base);
+	return (int32_t *)((Heap *)tstats)->base + 1;
 }
 
 static inline void *
 tstats_sketch(void *tstats)
 {
-	return (uint32_t *)tstats + 2;
+	assert(((Heap *)tstats)->base);
+	return (uint32_t *)((Heap *)tstats)->base + 2;
 }
 /* tail stats and sketch end */
 

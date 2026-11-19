@@ -142,7 +142,8 @@ gdk_return
 sketch_update_many(BATiter *bi, void *sketch, const void *values, size_t count)
 {
 	uint8_t (*sk)[SKETCH_CLZ_BUCKETS] = sketch;
-	assert(sk && (count > 0));
+	assert(sk);
+	assert(count > 0);
 	QryCtx *qry_ctx = MT_thread_get_qry_ctx();
 	random_state_engine rse;
 	init_random_state_engine(rse, (uint64_t) GDKusec());
