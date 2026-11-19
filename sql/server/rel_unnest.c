@@ -556,7 +556,7 @@ static bool
 exp_accessing_ad(mvc *sql, sql_exp *e, list *ad, struct access_info **acc)
 {
 	if (mvc_highwater(sql))
-		return sql_error(sql, 10, SQLSTATE(42000) "Query too complex: running out of stack space");
+		return sql_error(sql, 10, SQLSTATE(42000) "Query too complex: running out of stack space") == NULL;
 
 	switch(e->type) {
 	case e_column:
@@ -598,7 +598,7 @@ exp_accessing_ad(mvc *sql, sql_exp *e, list *ad, struct access_info **acc)
 	case e_psm:
 		if (exp_is_rel(e))
 			if (rel_has_freevar(sql, e->l))
-				return rel_freevar(sql, e->l, NULL);
+				return rel_freevar(sql, e->l, NULL) != NULL;
 		break;
 	case e_atom:
 		if (e->f)
