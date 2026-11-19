@@ -887,7 +887,53 @@ sql_zero_or_one_propagate_statistics(mvc *sql, sql_exp *e)
 	}
 }
 
-static struct function_properties functions_list[38] = {
+static bool
+rank_order_keys_nuniques(sql_exp *e, dbl *nuniques)
+{
+	sql_subfunc *f = e->f;
+	list *args = e->l;
+
+	if (e->type == e_func && f && !f->func->s && strcmp(f->func->base.name, "diff") == 0 && args && !list_empty(args)) {
+		sql_exp *first = args->h->data;
+		sql_exp *second = list_length(args) == 2 ? args->h->next->data : NULL;
+		bool found = false;
+
+		if (first && rank_order_keys_nuniques(first, nuniques))
+			found = true;
+		if (second) {
+			prop *est = find_prop(second->p, PROP_NUNIQUES);
+			if (est) {
+				*nuniques *= est->value.dval;
+				found = true;
+			}
+		}
+		return found;
+	}
+	if (e->type != e_func) {
+		prop *est = find_prop(e->p, PROP_NUNIQUES);
+		if (est) {
+			*nuniques *= est->value.dval;
+			return true;
+		}
+	}
+	return false;
+}
+
+static void
+sql_rank_propagate_statistics(mvc *sql, sql_exp *e)
+{
+	/* the last argument of rank()/dense_rank() is the ORDER BY 'diff' chain */
+	list *args = e->l;
+	sql_exp *oe = (args && !list_empty(args)) ? args->t->data : NULL;
+	dbl nuniques = 1;
+
+	if (oe && rank_order_keys_nuniques(oe, &nuniques)) {
+		prop *p = e->p = prop_create(sql->sa, PROP_NUNIQUES, e->p);
+		p->value.dval = nuniques;
+	}
+}
+
+static struct function_properties functions_list[40] = {
 	/* arithmetic functions */
 	{"sql_add", &sql_add_propagate_statistics},
 	{"sql_sub", &sql_sub_propagate_statistics},
@@ -932,7 +978,11 @@ static struct function_properties functions_list[38] = {
 	{"min", &sql_min_max_propagate_statistics},
 	{"max", &sql_min_max_propagate_statistics},
 	{"avg", &sql_avg_propagate_statistics},
-	{"zero_or_one", &sql_zero_or_one_propagate_statistics}
+	{"zero_or_one", &sql_zero_or_one_propagate_statistics},
+
+	/* window functions */
+	{"rank", &sql_rank_propagate_statistics},
+	{"dense_rank", &sql_rank_propagate_statistics}
 };
 
 void
