@@ -179,12 +179,13 @@ pqc_copy(pqc_file *opq)
 	pq->filename = opq->filename;
 	pq->fd = open(opq->filename, O_RDONLY | O_BINARY);
 	if (pq->fd < 0) {
-		printf("open failed %s \n", opq->filename);
+		_DELETE(pq);
+		return pq;
 	}
 	pq->pa = create_allocator("pqc_copy", false);
 	if (!pq->pa) {
 		_DELETE(pq);
-		pq = NULL;
+		return pq;
 	}
 	MT_lock_init(&pq->lock, "pqc_file");
 	return pq;
@@ -199,10 +200,8 @@ internal_read( int fd, char *dst, size_t sz) {
 	int n = 0;
 	for (ssize_t n_expected = (ssize_t) sz; n_expected > 0; n_expected -= n) {
 		n = read(fd, dst, (unsigned) MIN(1 << 30, n_expected));
-		if (n < 0) {
-			printf("read failed %d %d\n", n, fd);
+		if (n < 0)
 			return n;
-		}
 
 		if (n <= 0)
 			break;
