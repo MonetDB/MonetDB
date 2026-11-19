@@ -182,13 +182,13 @@ sketch_merge(void *dest, void *src)
 	uint8_t (*d)[SKETCH_CLZ_BUCKETS] = dest;
 	uint8_t (*s)[SKETCH_CLZ_BUCKETS] = src;
 	assert(d != NULL && s != NULL);
-	for (size_t i = 0; i < SKETCH_BUCKETS; i++)
-		for (size_t j = 0; j < SKETCH_CLZ_BUCKETS; j++)
-			if (s[i][j] > d[i][j])
-				d[i][j] = s[i][j];
 	/* for (size_t i = 0; i < SKETCH_BUCKETS; i++) */
 	/* 	for (size_t j = 0; j < SKETCH_CLZ_BUCKETS; j++) */
-	/* 		d[i][j] = d[i][j] + s[i][j]; */
+	/* 		if (s[i][j] > d[i][j]) */
+	/* 			d[i][j] = s[i][j]; */
+	for (size_t i = 0; i < SKETCH_BUCKETS; i++)
+		for (size_t j = 0; j < SKETCH_CLZ_BUCKETS; j++)
+			d[i][j] = d[i][j] + s[i][j];
 	return GDK_SUCCEED;
 }
 
