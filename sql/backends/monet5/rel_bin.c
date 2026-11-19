@@ -1591,11 +1591,11 @@ exp2bin_proto_loader(backend *be, sql_exp *fe, stmt *left, stmt *right, stmt *se
 	assert(is_atom(fexp->type));
 	atom *fa = fexp->l;
 	assert(fa->data.vtype == TYPE_str);
-	char *filename = fa->data.val.sval;
+	char *uri = fa->data.val.sval;
 	sql_exp *topn = NULL;
 	if (list_length(arg_list) == 3)
 		topn = list_fetch(arg_list, 2);
-	return (stmt*)pl->load(be, f, filename, topn);
+	return (stmt*)pl->load(be, f, uri, topn);
 }
 
 stmt *
