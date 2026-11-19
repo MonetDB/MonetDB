@@ -91,8 +91,6 @@ typedef struct pqc_creader_t {
 	char first_repetition;	/* first repetition (alternating 0/1)  TODO handle levels */
 	int *repetition;	/* repetition lengths */
 	int repetitionsize;	/* size of repetition lengths */
-	uint32_t curpage;
-	uint32_t curpageencoding;
 	int curdef;
 	int cursubdef;
 	char *buffer;
@@ -805,12 +803,6 @@ pqc_page_header( pqc_reader_t *r, pqc_creader_t *pr, int64_t pos)
 			}
 		}
 	}
-	pr->curpage++;
-	//printf("curpage %u curpageencoding %u\n", pr->curpage, pr->curpageencoding);
-	if (pr->curpageencoding < 3 && pr->curpage >= pr->cc->pageencodings[pr->curpageencoding].page_count) {
-		pr->curpageencoding++;
-		pr->curpage = 0;
-	}
 	if (pos >= 0 && !pr->cc->dictionary_page_offset && pr->bufsize > (uint64_t)pos && page_type == DICTIONARY_PAGE)
 		pos = pqc_page_header( r, pr, pos);
 	return pos;
@@ -1053,7 +1045,8 @@ pqc_definition( pqc_reader_t *r, pqc_creader_t *cr, void *output, uint32_t num_v
 		pos += sizeof(nr_bytes);
 	uint32_t spos = pos;
 	char prv = 0;
-	for(uint32_t i = 0; i<num_values && ((pos-spos) < nr_bytes); ) {
+	uint32_t i = 0;
+	for(i = 0; i<num_values && ((pos-spos) < nr_bytes); ) {
 		pos += pqc_get_int32(data+pos, &len);
 		if (len & 1) {
 			len>>=1;
@@ -1076,6 +1069,7 @@ pqc_definition( pqc_reader_t *r, pqc_creader_t *cr, void *output, uint32_t num_v
 					}
 					if (cr->definition) {
 						if (v == prv) {
+							assert((j-1) > 0);
 							cr->definition[j-1] += nlen;
 						} else {
 							prv = v;
@@ -1083,6 +1077,10 @@ pqc_definition( pqc_reader_t *r, pqc_creader_t *cr, void *output, uint32_t num_v
 						}
 					}
 					i+=nlen;
+				    if (i > num_values) {
+						nlen -= i-num_values;
+						i = num_values;
+					 }
 					null += (!v)*nlen;
 				}
 			}
@@ -1100,6 +1098,7 @@ pqc_definition( pqc_reader_t *r, pqc_creader_t *cr, void *output, uint32_t num_v
 			}
 			if (cr->definition) {
 				if (val == prv) {
+					assert((j-1) > 0);
 					cr->definition[j-1] += len;
 				} else {
 					prv = val;
@@ -1108,9 +1107,14 @@ pqc_definition( pqc_reader_t *r, pqc_creader_t *cr, void *output, uint32_t num_v
 			}
 			assert(len);
 			i+=len;
+			if (i > num_values) {
+				len -= i-num_values;
+				i = num_values;
+			 }
 			null += (!val)*len;
 		}
 	}
+	assert(i == num_values);
 	if (cr->definition)
 		cr->definitionsize = j;
 
@@ -1339,7 +1343,7 @@ pqc_dict_lookup( pqc_reader_t *r, pqc_creader_t *cr, void *output, void *voutput
 				uint32_t j = 0;
 				for(; i < nrows && j < len; j++, i++)
 					dst[i] = ((char**)cr->dict)[0];
-				if (j < len && i < nrows) {
+				if (j < len) {
 					cr->is_rle = true;
 					cr->remaining = len - j;
 					cr->idx = idx;
@@ -1350,7 +1354,7 @@ pqc_dict_lookup( pqc_reader_t *r, pqc_creader_t *cr, void *output, void *voutput
 				uint32_t j = 0;
 				for(; i < nrows && j < len; j++, i++)
 					dst[i] = ((char**)cr->dict)[idx];
-				if (j < len && i < nrows) {
+				if (j < len) {
 					cr->is_rle = true;
 					cr->remaining = len - j;
 					cr->idx = idx;
@@ -1362,7 +1366,7 @@ pqc_dict_lookup( pqc_reader_t *r, pqc_creader_t *cr, void *output, void *voutput
 				pos += 2;
 				for(; i < nrows && j < len; j++, i++)
 					dst[i] = ((char**)cr->dict)[idx];
-				if (j < len && i < nrows) {
+				if (j < len) {
 					cr->is_rle = true;
 					cr->remaining = len - j;
 					cr->idx = idx;
@@ -1374,7 +1378,7 @@ pqc_dict_lookup( pqc_reader_t *r, pqc_creader_t *cr, void *output, void *voutput
 				pos += 4;
 				for(; i < nrows && j < len; j++, i++)
 					dst[i] = ((char**)cr->dict)[idx];
-				if (j < len && i < nrows) {
+				if (j < len) {
 					cr->is_rle = true;
 					cr->remaining = len - j;
 					cr->idx = idx;
@@ -1449,12 +1453,12 @@ string_size_chunk_withnulls( pqc_creader_t *cr, int64_t nrows, int64_t pos, size
 {
 	(void)dict;
 	/* reuse strings */
-	size_t hsz = 5; /* 5 for NULL */
+	size_t hsz = 0; /* no storage needed for NULL */
 	char *data = cr->data;
 
 	if (cr->cc->cur_page.stat.null_count == cr->cc->cur_page.num_values) { /* all null */
 		assert(cr->cc->cur_page.num_nulls == cr->cc->cur_page.num_values);
-		*ssize = 5;
+		*ssize = 0;
 		return 0;
 	}
 
@@ -1507,7 +1511,7 @@ string_size_chunk( pqc_creader_t *cr, int64_t nrows, int64_t pos, size_t *ssize,
 
 	if (cr->cc->cur_page.stat.null_count == cr->cc->cur_page.num_values) { /* all null */
 		assert(cr->cc->cur_page.num_nulls == cr->cc->cur_page.num_values);
-		*ssize = 5;
+		*ssize = 0;
 		return 0;
 	}
 
@@ -1794,6 +1798,8 @@ pqc_add_nil( pqc_reader_t *r, pqc_creader_t *cr, char *output, char *data, uint6
 	const void *nil = r->nil;
 	lng zero = 0;
 
+	if (!nrows)
+		return nrows;
 	if (!nil)
 		nil = &zero;
 	if (nils == nrows){ // all null
@@ -1829,10 +1835,6 @@ pqc_add_nil( pqc_reader_t *r, pqc_creader_t *cr, char *output, char *data, uint6
 	}
 	sdef = cr->cursubdef;
 	def = cr->first_definition; /* set by pqc_nrows at the end of this block */
-	/*
-	if (!sdef)
-		def = !def;
-		*/
 
 	if ((nrows*w) > INT32_MAX) {
 		pqc_set_error(r, "To many rows add_nil block (> INT32_MAX)");
@@ -1840,6 +1842,7 @@ pqc_add_nil( pqc_reader_t *r, pqc_creader_t *cr, char *output, char *data, uint6
 	}
 
 	uint64_t trows = nrows;
+	/* sdef isn't correct here */
 	while (trows) {
 		uint64_t len = cr->definition[cur];
 		len -= sdef;
@@ -1860,12 +1863,13 @@ pqc_add_nil( pqc_reader_t *r, pqc_creader_t *cr, char *output, char *data, uint6
 	cr->curdef = cur;
 	cr->cursubdef = sdef;
 	cr->first_definition = def;
+	if (!sdef && nrows)
+		cr->curdef++;
 	for(uint64_t i = nrows; i > 0 && cur >= 0; cur--){
 		int len = cr->definition[cur];
 		len -= sdef;
 		sdef = 0;
 		assert ((uint64_t)len <= i);
-			//len = (int)i;
 		i -= len;
 		if (def) {
 			pos -= w*len;
@@ -2004,7 +2008,9 @@ pqc_read_page_chunk( pqc_reader_t *r, pqc_creader_t *cr, void *output /*fixed si
 		orows = 0;
 	else
 		nrows = pqc_nrows(r, cr, nrows);
-	if (cr->dict) {
+	if (cr->dict &&
+		(cr->cc->cur_page.pageencodings[0].page_encoding == PLAIN_DICTIONARY ||
+		 cr->cc->cur_page.pageencodings[0].page_encoding == RLE_DICTIONARY)) {
 		if (cr->cc->cur_page.num_values - cr->cc->cur_page.num_nulls) {
 			uint64_t irows = cr->cc->cur_page.num_values - cr->cc->cur_page.num_nulls;
 			if (irows > nrows)
@@ -2153,14 +2159,20 @@ pqc_read_page_chunk( pqc_reader_t *r, pqc_creader_t *cr, void *output /*fixed si
 			cr->pos = pos;
 		} else if (r->pse->type == stringtype) {
 			/* int32 len, string (no zero) encoding */
+			uint64_t irows = cr->cc->cur_page.num_values - cr->cc->cur_page.num_nulls;
+			if (irows > nrows)
+				irows = nrows;
 			if (!ssize) {
-				string_read_chunk(cr, output, voutput, nrows, pos);
+				string_read_chunk(cr, output, voutput, irows, pos);
 				if (cr->definition)
 					(void)pqc_add_nil(r, cr, output, output, orows, cr->cc->cur_page.num_nulls, *dict);
 			} else if (!voutput) {
 				return string_size_chunk(cr, nrows, pos, ssize, dict);
-			} else
-				offset_string_read_chunk(r, cr, output, voutput, nrows, pos, *ssize, *dict);
+			} else {
+				offset_string_read_chunk(r, cr, output, voutput, irows, pos, *ssize, *dict);
+				if (cr->definition)
+					(void)pqc_add_nil(r, cr, output, output, orows, cr->cc->cur_page.num_nulls, *dict);
+			}
 		}
 	}
 	/* convert data */
@@ -2255,6 +2267,11 @@ pqc_read_chunk( pqc_reader_t *r, int wnr, void *output /*fixed sized atom storag
 		return 0;
 	if (cr->pos < 0 || cr->cc->cur_page.num_read == cr->cc->cur_page.num_values) {
 		cr->cc->cur_page.num_read = 0;
+		cr->nr_bits = -1;
+		cr->is_rle = false;
+		cr->remaining = 0;
+		cr->idx = 0;
+
 		int64_t pos = cr->bufpos;
 		if (cr->pos < 0) {
 			TRC_INFO(PARQUET, "%" PRIu64 " %" PRIu64 " %" PRIu64 " %" PRIu64 " %" PRIu64 "\n",
@@ -2275,14 +2292,14 @@ pqc_read_chunk( pqc_reader_t *r, int wnr, void *output /*fixed sized atom storag
 			int64_t offset = 0;
 			if (cr->cc->dictionary_page_offset) { /* load dictionary */
 				if ((offset = pqc_read(cr->pq, cr->cc->dictionary_page_offset, cr->buffer, (size_t)cr->cc->total_compressed_size)) < 0)
-					return -3;
+					return offset;
 
 				assert(offset == (int64_t)cr->cc->dictionary_page_offset);
 				if ((pos = (int)pqc_read_dict(r, cr)) < 0)
 					return -4;
 			} else { /* read data page */
 				if ((offset = pqc_read(cr->pq, cr->cc->data_page_offset, cr->buffer, (size_t)cr->cc->total_compressed_size)) < 0)
-					return -3;
+					return offset;
 				assert(offset == (int64_t)cr->cc->data_page_offset);
 			}
 
@@ -2296,20 +2313,6 @@ pqc_read_chunk( pqc_reader_t *r, int wnr, void *output /*fixed sized atom storag
 				_DELETE(cr->data);
 			cr->data = NULL;
 			cr->data_allocated = false;
-
-			if (cr->dict &&
-					cr->cc->pageencodings[cr->curpageencoding].page_encoding != PLAIN_DICTIONARY &&
-					cr->cc->pageencodings[cr->curpageencoding].page_encoding != RLE_DICTIONARY) { /* new dict */
-				if (cr->odict) { /* values may still be in flight */
-					_DELETE(cr->odict);
-					cr->odict = NULL;
-				}
-
-				if (cr->dict && cr->dict_allocated)
-					cr->odict = cr->dict;
-				cr->dict = NULL; /* TODO possible multi page dict usage (check encoding!) */
-				cr->dict_allocated = false;
-			}
 
 			if (cr->definition)
 				_DELETE(cr->definition);

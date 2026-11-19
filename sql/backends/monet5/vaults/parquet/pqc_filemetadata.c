@@ -178,6 +178,9 @@ pqc_copy(pqc_file *opq)
 	pq->refcnt = 1;
 	pq->filename = opq->filename;
 	pq->fd = open(opq->filename, O_RDONLY | O_BINARY);
+	if (pq->fd < 0) {
+		printf("open failed %s \n", opq->filename);
+	}
 	pq->pa = create_allocator("pqc_copy", false);
 	if (!pq->pa) {
 		_DELETE(pq);
@@ -188,8 +191,7 @@ pqc_copy(pqc_file *opq)
 }
 
 static ssize_t
-internal_read( int fd, char *dst, size_t sz)
-{
+internal_read( int fd, char *dst, size_t sz) {
 	/* read in chunks, some OSs do not
 	 * give you all at once and Windows
 	 * only accepts int */
@@ -197,8 +199,10 @@ internal_read( int fd, char *dst, size_t sz)
 	int n = 0;
 	for (ssize_t n_expected = (ssize_t) sz; n_expected > 0; n_expected -= n) {
 		n = read(fd, dst, (unsigned) MIN(1 << 30, n_expected));
-		if (n < 0)
+		if (n < 0) {
+			printf("read failed %d %d\n", n, fd);
 			return n;
+		}
 
 		if (n <= 0)
 			break;
