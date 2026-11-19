@@ -366,11 +366,11 @@ COLnew2(oid hseq, int tt, BUN cap, role_t role, uint16_t width)
 				HEAPfree(bn->tvheap, true);
 			goto bailout;
 		}
+		memset(bn->tstats->base, 0, TSTATS_SZ);
 		int32_t *ver = tstats_version(bn->tstats);
 		int32_t *age = tstats_age(bn->tstats);
 		*ver = TSTATS_VERSION;
 		*age = -1;
-		memset(bn->tstats->base, 0, TSTATS_SZ);
 		bn->tstats->free = TSTATS_SZ;
 	}
 
