@@ -114,14 +114,14 @@ tmp_schema(mvc *sql)
 
 #define DO_NOTHING(x) ((void) 0)
 
-#define search_object_on_path(CALL, EXTRA_CONDITION, EXTRA, ERROR_CODE, show_error, res) \
+#define search_object_on_path(CALL, EXTRA_CONDITION, EXTRA, ERROR_CODE, show_error, reserr) \
 	do { \
 		sql_schema *next = NULL; \
  \
 		if (sname) { /* user has explicitly typed the schema, so either the object is there or we return error */ \
 			if (!(next = mvc_bind_schema(sql, sname))) { \
 				(void) sql_error(sql, ERR_NOTFOUND, SQLSTATE(3F000) "%s: no such schema '%s'", error, sname); \
-				return res; \
+				return reserr; \
 			} \
 			EXTRA_CONDITION(EXTRA); /* for functions without schema, 'sys' is a valid schema to bind them */ \
 			if (!res) { \
@@ -327,7 +327,7 @@ find_variable_on_scope(mvc *sql, const char *sname, const char *name, sql_var **
 	static const char objstr[] = "variable";
 	bool res = false;
 
-	search_object_on_path(var_find_on_global, DO_NOTHING, variable_extra, SQLSTATE(42000), true, true);
+	search_object_on_path(var_find_on_global, DO_NOTHING, variable_extra, SQLSTATE(42000), true, false);
 	return res;
 }
 
