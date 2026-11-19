@@ -1,6 +1,23 @@
 # ChangeLog file for devel
 # This file is updated with Maddlog
 
+* Wed Nov 18 2026 Martin van Dinther <martin.van.dinther@monetdbsolutions.com>
+- Queries to a proto_loader('odbc:...') function with a limit-clause
+  will now push the limit value down to the ODBC driver via ODBC call
+   SQLSetStmtAttr(stmt, SQL_ATTR_MAX_ROWS, limit, 0). This reduces
+  the amount of rows retrieved from the connected ODBC Data Source. Example:
+  SELECT * FROM proto_loader('odbc:DRIVER=/usr/lib64/libsqlite3odbc.so;
+  Database=/home/user1/sqlite_dbs/chinook.db;
+  QUERY=SELECT * FROM tracks') LIMIT 10;
+  Note: this limit push down is only possible when there are no other
+  clauses between the FROM-clause and the LIMIT-OFFSET-clause or
+  OFFSET-FETCHFIRST-clause. If you need extra clauses specify
+  them in the QUERY= part of the string literal, example:
+  SELECT * FROM proto_loader('odbc:DRIVER=/usr/lib64/libsqlite3odbc.so;
+  Database=/home/user1/sqlite_dbs/chinook.db;
+  QUERY=SELECT * FROM tracks WHERE Name LIKE ''%Love%'' ORDER BY Name')
+  LIMIT 10;
+
 * Wed Nov 18 2026 Ying Zhang <ying.zhang@monetdbsolutions.com>
 - Added support for tuple matching at projections, so now one can run
   queries like 'SELECT (1, 2) IN (SELECT 1, 2)' and 'SELECT (1, 2) NOT IN

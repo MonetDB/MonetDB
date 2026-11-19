@@ -15,14 +15,11 @@ offset_string_read_chunk( pqc_reader_t *r, pqc_creader_t *cr, T *output, char *v
 	char *buf = voutput;
 	char *data = cr->data + pos;
 
-	if (cr->cc->cur_page.stat.null_count) {
-		memcpy(buf, r->nil, strlen(r->nil));
-		buf += strlen(r->nil);
-	}
+	(void)r;
 	if (cr->cc->cur_page.stat.null_count == cr->cc->cur_page.num_values) { /* all null */
 		assert(cr->cc->cur_page.num_nulls == cr->cc->cur_page.num_values);
 		for (int64_t i=0; i<nrows; i++)
-			rc[i] = (T)offset;
+			rc[i] = (T)0;
 		return nrows;
 	}
 	for (int64_t i=0; i<nrows; i++) {
