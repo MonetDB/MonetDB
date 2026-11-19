@@ -832,10 +832,11 @@ pqc_reader( pqc_reader_t *p, pqc_file *pq, int nrworkers, /*pqc_columnchunk *cc,
 	r->error = NULL;
 	MT_lock_init(&r->l, "pqc_reader");
 	assert(colnr < fmd->rowgroups->ncolumnchunks);
+	(void)pqc_set_nr_workers(pq, nrworkers);
 	for(int i = 0; i<nrworkers; i++) {
 		cr = r->creader+i;
 
-		cr->pq = pqc_copy(pq);
+		cr->pq = pqc_copy(pq, i);
 		cr->rowgroup = -1;
 		cr->cc = NULL;
 		cr->curnr = 0;
