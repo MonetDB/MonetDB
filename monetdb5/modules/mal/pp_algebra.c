@@ -3789,22 +3789,26 @@ bail:
 /* private (changing) heap */
 #define vamin_(cmp, opos, in, i, bp)									\
 {																		\
-	var_t off = VarHeapVal(r->theap->base, opos, r->twidth);			\
-	if (!off || (in[i] != 0 && cmp(r->tvheap->base+off, bp+in[i]) > 0)) \
-		if (tfastins_nocheckVAR( r, opos, bp+in[i]) != GDK_SUCCEED) {	\
+	var_t ooff = VarHeapVal(r->theap->base, opos, r->twidth);			\
+	var_t ioff = VarHeapVal(b->theap->base, i, b->twidth);				\
+	if (ioff && (!ooff || cmp(r->tvheap->base+ooff, bp+ioff) > 0)) {		\
+		if (ioff && tfastins_nocheckVAR( r, opos, bp+ioff) != GDK_SUCCEED) {	\
 			err = createException(MAL, "ilockedaggr.min", MAL_MALLOC_FAIL);	\
 			goto error;													\
-		}																\
+		}\
+	} \
 }
 
 #define vamax_(cmp, opos, in, i, bp)									\
 {																		\
-	var_t off = VarHeapVal(r->theap->base, opos, r->twidth);			\
-	if (!off || (in[i] != 0 && cmp(r->tvheap->base+off, bp+in[i]) < 0)) \
-		if (tfastins_nocheckVAR( r, opos, bp+in[i]) != GDK_SUCCEED) {	\
+	var_t ooff = VarHeapVal(r->theap->base, opos, r->twidth);			\
+	var_t ioff = VarHeapVal(b->theap->base, i, b->twidth);				\
+	if (ioff && (!ooff || cmp(r->tvheap->base+ooff, bp+ioff) < 0)) {		\
+		if (ioff && tfastins_nocheckVAR( r, opos, bp+ioff) != GDK_SUCCEED) {	\
 			err = createException(MAL, "ilockedaggr.max", MAL_MALLOC_FAIL);	\
 			goto error;													\
-		}																\
+		}\
+	} \
 }
 
 #define gafunc_(f)														\
@@ -3813,25 +3817,8 @@ bail:
 		BATiter ri = bat_iterator(r);									\
 		char *bp = bi.vh->base;											\
 		int (*cmp)(const void *v1,const void *v2) = ATOMcompare(tt);	\
-		if (b->twidth == 1) {											\
-			bp += GDK_VAROFFSET;										\
-			uint8_t *in = Tloc(b, 0);									\
-			TIMEOUT_LOOP_IDX_DECL(i, cnt, qry_ctx)						\
-				f##_(cmp, grp[i], in, i, bp);							\
-		} else if (b->twidth == 2) {									\
-			bp += GDK_VAROFFSET;										\
-			uint16_t *in = Tloc(b, 0);									\
-			TIMEOUT_LOOP_IDX_DECL(i, cnt, qry_ctx)						\
-				f##_(cmp, grp[i], in, i, bp);							\
-		} else if (b->twidth == 4) {									\
-			uint32_t *in = Tloc(b, 0);									\
-			TIMEOUT_LOOP_IDX_DECL(i, cnt, qry_ctx)						\
-				f##_(cmp, grp[i], in, i, bp);							\
-		} else if (b->twidth == 8) {									\
-			var_t *in = Tloc(b, 0);										\
-			TIMEOUT_LOOP_IDX_DECL(i, cnt, qry_ctx)						\
-				f##_(cmp, grp[i], in, i, bp);							\
-		}																\
+		TIMEOUT_LOOP_IDX_DECL(i, cnt, qry_ctx)						\
+			f##_(cmp, grp[i], in, i, bp);							\
 		bat_iterator_end(&bi);											\
 		bat_iterator_end(&ri);											\
 	}
