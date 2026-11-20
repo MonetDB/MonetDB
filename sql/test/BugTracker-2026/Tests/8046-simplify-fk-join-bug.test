@@ -1,0 +1,16 @@
+statement ok
+create table t(id int primary key)
+
+statement ok
+create table u(fk int references t(id))
+
+statement ok rowcount 1
+insert into t values (1)
+
+statement ok rowcount 2
+insert into u values (1),(1)
+
+query I
+select count(*) from t where exists (select 1 from u where u.fk = t.id)
+----
+1

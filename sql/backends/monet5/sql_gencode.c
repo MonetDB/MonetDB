@@ -1635,7 +1635,7 @@ backend_create_sql_func(backend *be, sql_subfunc *sf, list *restypes, list *ops)
 	Symbol symbackup = c->curprg;
 	backend bebackup = *be;		/* backup current backend */
 	sql_func *f = sf->func;
-	bool prepare = f->imp;
+	bool prepare = f->imp != NULL;
 	const char *sql_shared_module = putName(sql_shared_module_name);
 	const char *sql_private_module = putName(sql_private_module_name);
 	const char *modname = prepare?sql_private_module:sql_shared_module;

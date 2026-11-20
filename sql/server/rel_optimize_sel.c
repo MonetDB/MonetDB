@@ -2957,7 +2957,7 @@ rel_simplify_fk_joins(visitor *v, sql_rel *rel)
 	while(r && is_simple_project(r->op))
 		r = r->l;
 
-	while (is_groupby(rel->op) && !rel_is_ref(rel) && r && (is_join(r->op) || r->op == op_semi) && list_length(r->exps) == 1 && !(rel_is_ref(r)) &&
+	while (is_groupby(rel->op) && !rel_is_ref(rel) && r && (is_join(r->op)) && list_length(r->exps) == 1 && !(rel_is_ref(r)) &&
 		   /* currently only single count aggregation is handled, no other projects or aggregation */
 		   list_length(rel->exps) == 1 && exp_aggr_is_count(rel->exps->h->data)) {
 		sql_rel *or = r;

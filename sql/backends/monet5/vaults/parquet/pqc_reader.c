@@ -1849,7 +1849,7 @@ pqc_add_nil( pqc_reader_t *r, pqc_creader_t *cr, char *output, char *data, uint6
 		len -= sdef;
 		sdef = 0;
 		if (len > trows) {
-			sdef = len - trows;
+			sdef = (int)(len - trows);
 			len = trows;
 		}
 		if (def)
@@ -2196,12 +2196,14 @@ pqc_read_page_chunk( pqc_reader_t *r, pqc_creader_t *cr, void *output /*fixed si
 			}
 	} else
 #endif
+#ifdef HAVE_HGE
 	if (!swapped && r->pse->type == decimaltype && r->pse->precision == 38) { /* check should only be done once */
 		int128_t *r = output;
 		for(uint64_t i=0; i< nrows; i++) {
 			r[i] = swap_int128(r[i]);
 		}
 	}
+#endif
 	if (r->pse->precision == 32 && !r->pse->isSigned) {
 		uint32_t *l = output;
 		l += nrows-1;
