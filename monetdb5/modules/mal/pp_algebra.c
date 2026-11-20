@@ -30,8 +30,12 @@
 #define inet4_min(a,b) ((cmp((void*)&a, (void*)&b) < 0) ? a : b)
 #define inet4_max(a,b) ((cmp((void*)&a, (void*)&b) > 0) ? a : b)
 
+#define inet6_min(a,b) ((cmp((void*)&a, (void*)&b) < 0) ? a : b)
+#define inet6_max(a,b) ((cmp((void*)&a, (void*)&b) > 0) ? a : b)
+
 #define getArgReference_date(stk, pci, nr) (date*)getArgReference(stk, pci, nr)
 #define getArgReference_inet4(stk, pci, nr) (inet4*)getArgReference(stk, pci, nr)
+#define getArgReference_inet6(stk, pci, nr) (inet6*)getArgReference(stk, pci, nr)
 #define getArgReference_daytime(stk, pci, nr) (daytime*)getArgReference(stk, pci, nr)
 #define getArgReference_timestamp(stk, pci, nr) (timestamp*)getArgReference(stk, pci, nr)
 
@@ -774,7 +778,7 @@ LOCKEDAGGRmin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		type != TYPE_lng && type != TYPE_int && type != TYPE_sht && type != TYPE_bte && type != TYPE_bit &&
 		type != TYPE_flt && type != TYPE_dbl && type != TYPE_oid &&
 		type != TYPE_date && type != TYPE_daytime && type != TYPE_timestamp && type != TYPE_uuid && type != TYPE_str &&
-		type != TYPE_inet4)
+		type != TYPE_inet4 && type != TYPE_inet6)
 		return createException(SQL, "lockedaggr.min", "Wrong input type (%d)", type);
 
 	pipeline_lock(p);
@@ -785,6 +789,7 @@ LOCKEDAGGRmin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		if (!err) {
 			aggr(date,min);
 			faggr(inet4,inet4_min);
+			faggr(inet6,inet6_min);
 			aggr(daytime,min);
 			aggr(timestamp,min);
 			faggr(uuid,uuid_min);
@@ -836,7 +841,7 @@ LOCKEDAGGRmax(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		type != TYPE_lng && type != TYPE_int && type != TYPE_sht && type != TYPE_bte && type != TYPE_bit &&
 		type != TYPE_flt && type != TYPE_dbl && type != TYPE_oid &&
 		type != TYPE_date && type != TYPE_daytime && type != TYPE_timestamp && type != TYPE_uuid && type != TYPE_str &&
-		type != TYPE_inet4)
+		type != TYPE_inet4 && type != TYPE_inet6)
 		return createException(SQL, "lockedaggr.max", "Wrong input type (%d)", type);
 
 	pipeline_lock(p);
@@ -847,6 +852,7 @@ LOCKEDAGGRmax(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		if (!err) {
 			aggr(date,max);
 			faggr(inet4,inet4_max);
+			faggr(inet6,inet6_max);
 			aggr(daytime,max);
 			aggr(timestamp,max);
 			faggr(uuid,uuid_max);
@@ -2705,6 +2711,7 @@ LALGcount(Client ctx, bat *rid, bat *gid, bat *bid, bit *nonil, bat *pid)
 		gcount(int);
 		gcount(date);
 		gfcount(inet4);
+		gfcount(inet6);
 		gcount(lng);
 		gcount(oid);
 		gcount(daytime);
@@ -3947,6 +3954,7 @@ LALGmin(Client ctx, bat *rid, bat *gid, bat *bid, bat *pid)
 	gfunc(int,min);
 	gfunc(date,min);
 	gfunc2(inet4,inet4_min);
+	gfunc2(inet6,inet6_min);
 	gfunc(lng,min);
 	gfunc(daytime,min);
 	gfunc(timestamp,min);
@@ -4104,6 +4112,7 @@ LALGmax(Client ctx, bat *rid, bat *gid, bat *bid, bat *pid)
 	gfunc(int,max);
 	gfunc(date,max);
 	gfunc2(inet4,inet4_max);
+	gfunc2(inet6,inet6_max);
 	gfunc(lng,max);
 	gfunc(daytime,max);
 	gfunc(timestamp,max);
