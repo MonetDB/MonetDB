@@ -1,0 +1,7 @@
+query I
+SELECT COUNT(*) FROM generate_series(DATE '2025-03-01', DATE '2025-04-26', INTERVAL '1' MONTH)
+----
+2
+
+statement error 42000!Illegal generator range
+SELECT COUNT(*) FROM generate_series(DATE '2025-01-01', DATE '2025-01-03', INTERVAL '12' HOUR)
