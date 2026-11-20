@@ -635,8 +635,10 @@ process_blobs(bstream *bs, BAT *bat, bool byteswap, char **scratch, size_t *scra
 	static const char mal_operator[] = "sql.importColumn";
 	const blob *nil_value = ATOMnilptr(TYPE_blob);
 	const blob empty_value = (blob) {
-		.nitems = 0,
+		.nitems = 1,
 	};
+	blob *v = (blob*)&empty_value;
+	v->nitems = 0; /* resolve msvc compiler issue */
 	uint64_t header;
 
 	// long count = 0;
