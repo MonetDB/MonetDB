@@ -153,8 +153,10 @@ tmp_schema(mvc *sql)
 				CALL; \
 			} \
 		} \
-		if (!res && show_error) \
-			return sql_error(sql, ERR_NOTFOUND, ERROR_CODE "%s: no such %s %s%s%s'%s'", error, objstr, sname ? "'":"", sname ? sname : "", sname ? "'.":"", name); \
+		if (!res && show_error) { \
+			(void) sql_error(sql, ERR_NOTFOUND, ERROR_CODE "%s: no such %s %s%s%s'%s'", error, objstr, sname ? "'":"", sname ? sname : "", sname ? "'.":"", name); \
+			return reserr; \
+		} \
 	} while (0)
 
 /* more or less the above, but as a function */
