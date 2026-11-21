@@ -227,4 +227,5 @@ KNOWNFAIL?8030-inner-join-group-by-bug
 8061-session-authorization-current-user
 8066-semijoin-pushdown-after-join-order
 8067-duplicate-in-values
+8068-pipeline-limit-slice-join
 8070-sum-constant-drops-groupby-aggregates
