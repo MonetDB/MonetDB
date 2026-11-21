@@ -181,7 +181,7 @@ KNOWNFAIL?7992-window-date-range-interval-bug
 KNOWNFAIL?7995-left-join-lateral-subquery-bug
 KNOWNFAIL?7996-delete-not-exists-correlated-query-bug
 KNOWNFAIL?7997-recursive-cte-number-overflow-issue
-KNOWNFAIL?7998-scalar-subquery-error-msg-improvement
+7998-scalar-subquery-error-msg-improvement
 7999-not-not-expr-bug
 8000-select-count-distinct-assert-failure
 8001-select-count-where-having-bug

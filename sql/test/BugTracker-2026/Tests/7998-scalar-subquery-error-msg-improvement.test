@@ -15,7 +15,7 @@ INSERT INTO gb VALUES (10,100),(10,101)
 -- DuckDB:     Invalid Input Error: More than one row returned by a subquery used as an expression
 -- MySQL:      ERROR 1242: Subquery returns more than 1 row
 
-statement error More than one row returned by a subquery used as an expression
+statement error more than one match 
 SELECT ga.id, (SELECT gb.b FROM gb WHERE gb.a = ga.a) FROM ga
 
 statement ok
