@@ -12,6 +12,7 @@
  * (c) 2013 Martin Kersten
  */
 #include "monetdb_config.h"
+#include <errno.h>
 #include "gdk.h"
 #include "mal.h"
 #include "mal_client.h"
@@ -716,8 +717,9 @@ typedef struct {
 	path_token token;			/* Token kind */
 	char *name;					/* specific key */
 	size_t namelen;				/* the size of the key */
-	int index;					/* if index == INT_MAX we got [*] */
-	int first, last;
+	bool any;					/* no explicit index, or [*] */
+	lng index;					/* explicit array index */
+	lng first, last;
 } pattern;
 
 static str
@@ -729,9 +731,10 @@ JSONcompile(Client ctx, const char *expr, pattern terms[])
 
 	for (s = expr; *s; s++) {
 		terms[t].token = CHILD_STEP;
-		terms[t].index = INT_MAX;
-		terms[t].first = INT_MAX;
-		terms[t].last = INT_MAX;
+		terms[t].any = true;
+		terms[t].index = 0;
+		terms[t].first = 0;
+		terms[t].last = 0;
 		if (*s == '$') {
 			if (t && terms[t - 1].token != END_STEP)
 				throw(MAL, "json.compile", "Root node must be first");
@@ -774,8 +777,14 @@ JSONcompile(Client ctx, const char *expr, pattern terms[])
 			if (*s != '*') {
 				/* TODO: Implement [start:step:end] indexing */
 				if (isdigit((unsigned char) *s)) {
-					terms[t].index = atoi(s);
-					terms[t].first = terms[t].last = atoi(s);
+					long long val;
+
+					errno = 0;
+					val = strtoll(s, NULL, 10);
+					if (errno == ERANGE || val < (long long) GDK_lng_min || val > (long long) GDK_lng_max)
+						throw(MAL, "json.path", "index out of range");
+					terms[t].any = false;
+					terms[t].index = terms[t].first = terms[t].last = (lng) val;
 				} else
 					throw(MAL, "json.path", "'*' or digit expected");
 			}
@@ -875,7 +884,7 @@ JSONmatch(allocator *ma, JSON *jt, int ji, const pattern *terms, int ti, bool ac
 		}
 		cnt = 0;
 		for (i = jt->elm[ji].next; i && cnt >= 0; i = jt->elm[i].next, cnt++) {
-			if (terms[ti].index == INT_MAX
+			if (terms[ti].any
 				|| (cnt >= terms[ti].first && cnt <= terms[ti].last)) {
 				if (terms[ti].token == ANY_STEP) {
 					if (jt->elm[i].child)
@@ -892,7 +901,7 @@ JSONmatch(allocator *ma, JSON *jt, int ji, const pattern *terms, int ti, bool ac
 					if (r == NULL)
 						r = (str) -1;
 				} else {
-					r = JSONmatch(ma, jt, jt->elm[i].child, terms, ti + 1, terms[ti].index == INT_MAX);
+					r = JSONmatch(ma, jt, jt->elm[i].child, terms, ti + 1, terms[ti].any);
 				}
 				if (r == (str) -1 || r == (str) -2) {
 					return r;
@@ -909,7 +918,7 @@ JSONmatch(allocator *ma, JSON *jt, int ji, const pattern *terms, int ti, bool ac
 				 && strncmp(terms[ti].name, jt->elm[i].value,
 							terms[ti].namelen) == 0) || terms[ti].name == 0
 				|| terms[ti].name[0] == '*') {
-				if (terms[ti].index == INT_MAX
+				if (terms[ti].any
 					|| (cnt >= terms[ti].first && cnt <= terms[ti].last)) {
 					if (ti + 1 == MAXTERMS)
 						return NULL;
@@ -918,7 +927,7 @@ JSONmatch(allocator *ma, JSON *jt, int ji, const pattern *terms, int ti, bool ac
 						if (r == NULL)
 							r = (str) -1;
 					} else {
-						r = JSONmatch(ma, jt, jt->elm[i].child, terms, ti + 1, terms[ti].index == INT_MAX);
+						r = JSONmatch(ma, jt, jt->elm[i].child, terms, ti + 1, terms[ti].any);
 					}
 					if (r == (str) -1 || r == (str) -2) {
 						return r;
@@ -1021,8 +1030,8 @@ JSONfilterInternal(Client ctx, json *ret, const json *js, const char *const *exp
 		// pattern contains the .. operator
 		if (terms[i].token == ANY_STEP ||
 			// pattern contains the [*] operator
-			(terms[i].token == CHILD_STEP && terms[i].index == INT_MAX && terms[i].name == NULL) ||
-			(terms[i].token == CHILD_STEP && terms[i].index == INT_MAX && *terms[i].name == '*')) {
+			(terms[i].token == CHILD_STEP && terms[i].any && terms[i].name == NULL) ||
+			(terms[i].token == CHILD_STEP && terms[i].any && *terms[i].name == '*')) {
 
 			return_array = true;
 			break;
