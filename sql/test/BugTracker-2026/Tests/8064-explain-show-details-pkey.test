@@ -1,0 +1,20 @@
+statement ok
+CREATE TABLE t8064 (id INTEGER PRIMARY KEY)
+
+statement ok
+EXPLAIN SHOW DETAILS SELECT * FROM t8064
+
+statement ok
+CREATE TABLE u8064 (id INTEGER)
+
+statement ok rowcount 2
+INSERT INTO u8064 VALUES (1), (2)
+
+statement ok
+EXPLAIN SHOW DETAILS SELECT * FROM t8064, u8064 WHERE t8064.id = u8064.id
+
+statement ok
+DROP TABLE u8064
+
+statement ok
+DROP TABLE t8064

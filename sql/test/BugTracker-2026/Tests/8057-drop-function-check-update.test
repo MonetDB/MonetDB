@@ -1,0 +1,60 @@
+statement ok
+CREATE FUNCTION positive8057(x INTEGER) RETURNS BOOLEAN BEGIN RETURN x > 0; END;
+
+statement ok
+CREATE TABLE t8057 (a INTEGER, CONSTRAINT t8057_ck CHECK (positive8057(a)));
+
+statement ok
+INSERT INTO t8057 VALUES (1);
+
+# the CHECK registers a function dependency, so a plain DROP is rejected
+statement error /there are database objects dependent on/
+DROP FUNCTION positive8057(INTEGER);
+
+# the CHECK is still usable
+statement ok
+UPDATE t8057 SET a = a;
+
+# CASCADE leaves the CHECK behind, just like a legacy database that already
+# contains a CHECK whose function is gone
+statement ok
+DROP FUNCTION positive8057(INTEGER) CASCADE;
+
+# re-parsing the persisted CHECK fails cleanly, it must not crash the server
+statement error /No such function/
+UPDATE t8057 SET a = a;
+
+# compilation of PREPARE hits the same path
+statement error /No such function/
+PREPARE UPDATE t8057 SET a = ?;
+
+# the INSERT path already handled a missing function, keep it covered
+statement error /No such function/
+INSERT INTO t8057 VALUES (5);
+
+# the catalog dump helper re-parses the CHECK as well
+statement error /No such function/
+SELECT sys.check_constraint('sys', 't8057_ck');
+
+# column CHECK constraints register the dependency too
+statement ok
+CREATE FUNCTION positive8057b(x INTEGER) RETURNS BOOLEAN BEGIN RETURN x > 0; END;
+
+statement ok
+CREATE TABLE t8057b (a INTEGER CHECK (positive8057b(a)));
+
+statement error /there are database objects dependent on/
+DROP FUNCTION positive8057b(INTEGER);
+
+# dropping the constraint removes the dependency again
+statement ok
+ALTER TABLE t8057b DROP CONSTRAINT t8057b_a_check;
+
+statement ok
+DROP FUNCTION positive8057b(INTEGER);
+
+# server must still be alive after all of the above
+query I
+SELECT 1
+----
+1

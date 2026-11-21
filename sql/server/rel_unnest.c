@@ -932,8 +932,15 @@ rel_reduce2one_exp(mvc *sql, sql_rel *sq)
 
 	if (list_empty(sq->exps))
 		return NULL;
-	if (list_length(sq->exps) == 1)
+	if (list_length(sq->exps) == 1) {
+		e = sq->exps->t->data;
+		if (!is_freevar(e) && !exp_is_atom(e)) {
+			e = exp_atom_bool(sql->sa, 0);
+			sq->exps = append(sa_list(sql->sa), e);
+			return e;
+		}
 		return sq->exps->t->data;
+	}
 	for(node *n = sq->exps->h; n && !e; n = n->next) {
 		sql_exp *t = n->data;
 
@@ -943,7 +950,8 @@ rel_reduce2one_exp(mvc *sql, sql_rel *sq)
 	if (!e) {
 		list *exps = rel_projections(sql, sq->l, NULL, 0, 1);
 		e = exps->t->data;
-	}
+	} else if (!is_freevar(e) && !exp_is_atom(e))
+		e = exp_atom_bool(sql->sa, 0);
 	sq->exps = append(sa_list(sql->sa), e);
 	return e;
 }
@@ -2782,7 +2790,7 @@ rewrite_exists(visitor *v, sql_rel *rel, sql_exp *e, int depth)
 
 			sq = exp_rel_get_rel(v->sql->sa, ie); /* get subquery */
 			/* number of expressions in set relations must match the children */
-			if (!is_project(sq->op) || (is_set(sq->op) && list_length(sq->exps) > 1) || (is_simple_project(sq->op) && !list_empty(sq->r)))
+			if (!is_project(sq->op) || is_mset(sq->op) || (is_simple_project(sq->op) && !list_empty(sq->r)))
 				sq = rel_project(v->sql->sa, sq, rel_projections(v->sql, sq, NULL, 1, 1));
 			if (!sq)
 				return NULL;

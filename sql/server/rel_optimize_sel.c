@@ -2295,10 +2295,17 @@ bind_optimize_joins(visitor *v, global_props *gp)
 		   || gp->cnt[op_full] || gp->cnt[op_semi] || gp->cnt[op_anti]) && (flag & optimize_joins) ? rel_optimize_joins : NULL;
 }
 
+static sql_rel *rel_push_semijoin_down_or_up(visitor *v, sql_rel *rel);
+
 static sql_rel *
 rel_joins_(visitor *v, sql_rel *rel)
 {
 	rel = rel_join2semijoin(v, rel);
+	/* joins runs after join_order2 and can create new semijoins.  The normal
+	 * optimize_semi_and_anti pass has already run at that point, so push
+	 * these semijoins down here before they are pinned above a large join. */
+	if (rel && is_semi(rel->op))
+		rel = rel_push_semijoin_down_or_up(v, rel);
 	return rel;
 }
 

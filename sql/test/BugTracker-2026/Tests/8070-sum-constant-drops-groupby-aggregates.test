@@ -1,0 +1,48 @@
+statement ok
+CREATE TABLE t8070 (grp INTEGER, x INTEGER)
+
+statement ok rowcount 3
+INSERT INTO t8070 VALUES (1, 10), (1, 20), (1, 30)
+
+# a non-foldable constant aggregate must not stop the rewrite of later aggregates
+query IIII nosort
+SELECT grp, SUM(2), MIN(1), SUM(x) FROM t8070 GROUP BY grp
+----
+1	6	1	60
+
+# without the group key
+query III nosort
+SELECT SUM(2), MIN(1), SUM(x) FROM t8070 GROUP BY grp
+----
+6	1	60
+
+# reordered projections still work
+query IIII nosort
+SELECT grp, SUM(x), MIN(1), SUM(2) FROM t8070 GROUP BY grp
+----
+1	60	1	6
+
+# several non-foldable constant aggregates followed by a real aggregate
+query IIII nosort
+SELECT grp, SUM(2), SUM(3), SUM(x) FROM t8070 GROUP BY grp
+----
+1	6	9	60
+
+# foldable constant aggregates mixed with non-foldable ones
+query IIII nosort
+SELECT grp, SUM(0), SUM(2), SUM(x) FROM t8070 GROUP BY grp
+----
+1	0	6	60
+
+query IIII nosort
+SELECT grp, COUNT(NULL), SUM(2), SUM(x) FROM t8070 GROUP BY grp
+----
+1	0	6	60
+
+query IIII nosort
+SELECT grp, SUM(2), PROD(1), SUM(x) FROM t8070 GROUP BY grp
+----
+1	6	1	60
+
+statement ok
+DROP TABLE t8070

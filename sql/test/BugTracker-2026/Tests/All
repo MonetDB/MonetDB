@@ -197,7 +197,7 @@ KNOWNFAIL?8010-first_value-last_value-partition-range-bug
 8013-triple-same-predicate-bug
 8014-rel_bin-exp_bin-assert-failure
 8015-join-subquery-NULL-bug
-KNOWNFAIL?8017-create-where-exists-select-acos-bug
+8017-create-where-exists-select-acos-bug
 8018-rel2bin_select-assert-failure
 8019-rel_bin-exp_bin-assert-failure
 8020-correlated-subquery-bug
@@ -216,7 +216,16 @@ KNOWNFAIL?8030-inner-join-group-by-bug
 8031-simplify-count-too-simple
 8046-simplify-fk-join-bug
 8048-group-filter-function-match
+8049-alter-add-column-default-dependencies
 8054-correlated-not-notequal
 8056-date-generator
+8057-drop-function-check-update
 8059-aggr-on-pipeline-local-string-col-causes-nulls
 8062-groupby-inet6
+8064-explain-show-details-pkey
+8065-unnamed-fkeys-same-column
+8061-session-authorization-current-user
+8066-semijoin-pushdown-after-join-order
+8067-duplicate-in-values
+8068-pipeline-limit-slice-join
+8070-sum-constant-drops-groupby-aggregates
