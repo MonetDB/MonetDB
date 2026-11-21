@@ -220,3 +220,4 @@ KNOWNFAIL?8030-inner-join-group-by-bug
 8056-date-generator
 8059-aggr-on-pipeline-local-string-col-causes-nulls
 8062-groupby-inet6
+8064-explain-show-details-pkey

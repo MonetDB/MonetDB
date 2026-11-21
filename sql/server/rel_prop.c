@@ -140,12 +140,12 @@ propvalue2string(allocator *sa, prop *p)
 		list *exps = p->value.pval;
 		size_t offset = 0;
 
-		offset += snprintf(buf + offset, BUFSIZ, "[ ");
-		for(node *n = exps->h; n; n = n->next) {
+		offset += snprintf(buf + offset, sizeof(buf) - offset, "[ ");
+		for(node *n = exps->h; n && offset < sizeof(buf); n = n->next) {
 			sql_exp *e = n->data;
-			offset += snprintf(buf + offset, BUFSIZ, "%s.%s ", e->alias.rname, e->alias.name);
+			offset += snprintf(buf + offset, sizeof(buf) - offset, "%s.%s ", e->alias.rname, e->alias.name);
 		}
-		offset += snprintf(buf + offset, BUFSIZ, "]");
+		offset += snprintf(buf + offset, sizeof(buf) - offset, "]");
 		return ma_strdup(sa, buf);
 	} break;
 	case PROP_JOINIDX: {
@@ -161,10 +161,10 @@ propvalue2string(allocator *sa, prop *p)
 		list *tids_uris = p->value.pval;
 		if (!list_empty(tids_uris)) {
 			size_t offset = 0;
-			for (node *n = ((list*)p->value.pval)->h; n; n = n->next) {
+			for (node *n = ((list*)p->value.pval)->h; n && offset < sizeof(buf); n = n->next) {
 				tid_uri *tu = n->data;
 				if (tu->uri)
-					offset += snprintf(buf + offset, BUFSIZ, "%s%s",
+					offset += snprintf(buf + offset, sizeof(buf) - offset, "%s%s",
 					                   sql_escape_ident(sa, offset?" ":""),
 					                   sql_escape_ident(sa, tu->uri));
 			}

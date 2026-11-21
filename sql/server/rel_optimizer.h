@@ -15,7 +15,7 @@
 #include "sql_relation.h"
 #include "rel_rel.h"
 
-#define NSQLREWRITERS 29
+#define NSQLREWRITERS 30
 
 extern sql_rel *rel_deadcode_elimination(mvc *sql, sql_rel *rel);
 extern sql_rel *rel_optimizer(mvc *sql, sql_rel *rel, int profile, int instantiate, int value_based_opt, int storage_based_opt);
