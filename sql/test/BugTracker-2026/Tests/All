@@ -173,12 +173,12 @@ KNOWNFAIL?7982-range-current-row-bug
 KNOWNFAIL?7986-right-function-bug
 7987-where-null-bug
 KNOWNFAIL?7989-window-avg-bug
-KNOWNFAIL?7990-rank-filter-bug
+7990-rank-filter-bug
 7991-group_concat-null-separator-bug
 KNOWNFAIL?7992-window-date-range-interval-bug
 7993-query-groupby-rollup-bug
 7994-exists-groupby-rollup-bug
-KNOWNFAIL?7995-left-join-lateral-subquery-bug
+7995-left-join-lateral-subquery-bug
 KNOWNFAIL?7996-delete-not-exists-correlated-query-bug
 KNOWNFAIL?7997-recursive-cte-number-overflow-issue
 7998-scalar-subquery-error-msg-improvement
@@ -207,8 +207,6 @@ KNOWNFAIL?8010-first_value-last_value-partition-range-bug
 8027-having-expression-issue
 8028-coalesce-groupby-rollup-having-bug
 8030-inner-join-group-by-bug
-KNOWNFAIL?8028-coalesce-groupby-rollup-having-bug
-KNOWNFAIL?8030-inner-join-group-by-bug
 8034-orderby-concat
 8035-alter-type
 8036-alter+insert-in-trans
