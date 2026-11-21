@@ -254,6 +254,9 @@ exp_in(allocator *sa, sql_exp *l, list *r, int cmptype)
 	}
 	e->card = MAX(l->card, exps_card);
 	e->l = l;
+	/* duplicate values in an IN list are redundant */
+	if (exps_are_atoms(r))
+		r = list_distinct(r, (fcmp) exp_match_exp_cmp, NULL);
 	e->r = r;
 	if (cmptype == cmp_in) {
 		prop *p = e->p = prop_create(sa, PROP_NUNIQUES, (prop *) e->p);

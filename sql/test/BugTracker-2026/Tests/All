@@ -225,4 +225,5 @@ KNOWNFAIL?8030-inner-join-group-by-bug
 8064-explain-show-details-pkey
 8065-unnamed-fkeys-same-column
 8061-session-authorization-current-user
+8067-duplicate-in-values
 8070-sum-constant-drops-groupby-aggregates
