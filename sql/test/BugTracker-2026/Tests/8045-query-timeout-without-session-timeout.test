@@ -1,0 +1,8 @@
+statement ok
+call sys.setsessiontimeout(0)
+
+statement ok
+call sys.setquerytimeout(1)
+
+statement error HYT00!Query aborted due to timeout
+select count(*) from generate_series(0, 10000) a, generate_series(0, 10000) b where (a.value * b.value) % 7 = 3

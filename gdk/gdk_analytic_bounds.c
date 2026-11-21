@@ -377,51 +377,50 @@ GDKanalyticaldiff(BAT *b, BAT *p, const bit *restrict npbit, int tpe)
 
 #define DAY_MSEC			(24 * 60 * 60 * 1000)
 
-/* The limit is a lng number of milliseconds.  Check it before narrowing
- * it to an int day count or multiplying it by 1000: either operation would
- * otherwise wrap and silently produce a much smaller bound.  Return nil on
- * overflow so the caller reports it instead of treating the frame as
- * unbounded. */
-static inline date
-date_add_msec_checked(date d, lng ms)
+static inline bool
+date_msec_overflow(lng ms)
 {
 	lng days = ms / DAY_MSEC;
-	if (days < INT_MIN || days > INT_MAX)
-		return date_nil;
-	return date_add_day(d, (int) days);
+	return days < INT_MIN || days > INT_MAX;
 }
 
-static inline daytime
-daytime_add_msec_checked(daytime t, lng ms)
+static inline bool
+msec_overflow(lng ms)
 {
-	if (ms < GDK_lng_min / 1000 || ms > GDK_lng_max / 1000)
-		return daytime_nil;
-	return daytime_add_usec(t, ms * 1000);
+	return ms < GDK_lng_min / 1000 || ms > GDK_lng_max / 1000;
 }
 
-static inline timestamp
-timestamp_add_msec_checked(timestamp t, lng ms)
+static inline bool
+mtime_no_overflow(lng ms)
 {
-	if (ms < GDK_lng_min / 1000 || ms > GDK_lng_max / 1000)
-		return timestamp_nil;
-	return timestamp_add_usec(t, ms * 1000);
+	(void) ms;
+	return false;
 }
 
-#define daytime_add_msec(D, M)		daytime_add_msec_checked(D, (M))
-#define daytime_sub_msec(D, M)		daytime_add_msec_checked(D, -(M))
-#define date_add_msec(D, M)		date_add_msec_checked(D, (M))
-#define date_sub_msec(D, M)		date_add_msec_checked(D, -(M))
-#define timestamp_add_msec(T, M)	timestamp_add_msec_checked(T, (M))
-#define timestamp_sub_msec(T, M)	timestamp_add_msec_checked(T, -(M))
+/* A millisecond limit is narrowed to an int day count for DATE and multiplied
+ * by 1000 for DAYTIME/TIMESTAMP.  Check before the arithmetic, since either
+ * operation would wrap and silently produce a much smaller bound.  A nil
+ * result from the arithmetic itself is not an overflow: it remains an
+ * unbounded frame, as it was before. */
+#define daytime_add_msec(D, M)		daytime_add_usec(D, 1000*(M))
+#define daytime_sub_msec(D, M)		daytime_add_usec(D, -1000*(M))
+#define date_add_msec(D, M)		date_add_day(D, (int) ((M)/DAY_MSEC))
+#define date_sub_msec(D, M)		date_add_day(D, (int) -((M)/DAY_MSEC))
+#define timestamp_add_msec(T, M)	timestamp_add_usec(T, (M)*1000)
+#define timestamp_sub_msec(T, M)	timestamp_add_usec(T, -(M)*1000)
 
-/* a nil bound means the arithmetic overflowed, not an unbounded frame */
-#define MTIME_BOUNDS(TPE, V, VMIN, VMAX, SUB, ADD, M)		\
-	VMIN = SUB(V, M);					\
-	VMAX = ADD(V, M);					\
-	if (is_##TPE##_nil(VMIN) || is_##TPE##_nil(VMAX))	\
-		goto calc_overflow
+#define MTIME_BOUNDS(TPE, V, VMIN, VMAX, SUB, ADD, M, OVERFLOW, NIL_OVERFLOW) \
+	do {							\
+		if (OVERFLOW(M))				\
+			goto calc_overflow;			\
+		VMIN = SUB(V, M);				\
+		VMAX = ADD(V, M);				\
+		if (NIL_OVERFLOW &&				\
+		    (is_##TPE##_nil(VMIN) || is_##TPE##_nil(VMAX))) \
+			goto calc_overflow;			\
+	} while (0)
 
-#define ANALYTICAL_WINDOW_BOUNDS_RANGE_MTIME_PRECEDING(TPE1, LIMIT, TPE2, SUB, ADD) \
+#define ANALYTICAL_WINDOW_BOUNDS_RANGE_MTIME_PRECEDING(TPE1, LIMIT, TPE2, SUB, ADD, OVERFLOW, NIL_OVERFLOW) \
 	do {								\
 		BUN m = k;						\
 		TPE1 v, vmin, vmax;					\
@@ -431,7 +430,7 @@ timestamp_add_msec_checked(timestamp t, lng ms)
 				if (is_##TPE1##_nil(rlimit) || rlimit < 0) \
 					goto invalid_bound;		\
 				v = bp[k];				\
-				MTIME_BOUNDS(TPE1, v, vmin, vmax, SUB, ADD, rlimit); \
+				MTIME_BOUNDS(TPE1, v, vmin, vmax, SUB, ADD, rlimit, OVERFLOW, NIL_OVERFLOW); \
 				for (j=k; ; j--) {			\
 					if ((!is_##TPE1##_nil(vmin) && bp[j] < vmin) || (!is_##TPE1##_nil(vmax) && bp[j] > vmax)) { \
 						j++;			\
@@ -459,7 +458,7 @@ timestamp_add_msec_checked(timestamp t, lng ms)
 					}				\
 					rb[k] = j;			\
 				} else {				\
-					MTIME_BOUNDS(TPE1, v, vmin, vmax, SUB, ADD, rlimit); \
+					MTIME_BOUNDS(TPE1, v, vmin, vmax, SUB, ADD, rlimit, OVERFLOW, NIL_OVERFLOW); \
 					for (j=k; ; j--) {		\
 						if (is_##TPE1##_nil(bp[j])) { \
 							j++;		\
@@ -478,7 +477,7 @@ timestamp_add_msec_checked(timestamp t, lng ms)
 		}							\
 	} while(0)
 
-#define ANALYTICAL_WINDOW_BOUNDS_RANGE_MTIME_FOLLOWING(TPE1, LIMIT, TPE2, SUB, ADD) \
+#define ANALYTICAL_WINDOW_BOUNDS_RANGE_MTIME_FOLLOWING(TPE1, LIMIT, TPE2, SUB, ADD, OVERFLOW, NIL_OVERFLOW) \
 	do {								\
 		TPE1 v, vmin, vmax;					\
 		if (bi.nonil) {						\
@@ -487,7 +486,7 @@ timestamp_add_msec_checked(timestamp t, lng ms)
 				if (is_##TPE1##_nil(rlimit) || rlimit < 0) \
 					goto invalid_bound;		\
 				v = bp[k];				\
-				MTIME_BOUNDS(TPE1, v, vmin, vmax, SUB, ADD, rlimit); \
+				MTIME_BOUNDS(TPE1, v, vmin, vmax, SUB, ADD, rlimit, OVERFLOW, NIL_OVERFLOW); \
 				for (j=k+1; j<i; j++)			\
 					if ((!is_##TPE1##_nil(vmin) && bp[j] < vmin) ||	(!is_##TPE1##_nil(vmax) && bp[j] > vmax)) \
 						break;			\
@@ -504,7 +503,7 @@ timestamp_add_msec_checked(timestamp t, lng ms)
 						if (!is_##TPE1##_nil(bp[j])) \
 							break;		\
 				} else {				\
-					MTIME_BOUNDS(TPE1, v, vmin, vmax, SUB, ADD, rlimit); \
+					MTIME_BOUNDS(TPE1, v, vmin, vmax, SUB, ADD, rlimit, OVERFLOW, NIL_OVERFLOW); \
 					for (j=k+1; j<i; j++) {		\
 						if (is_##TPE1##_nil(bp[j]) || (!is_##TPE1##_nil(vmin) && bp[j] < vmin) || (!is_##TPE1##_nil(vmax) && bp[j] > vmax)) \
 							break;		\
@@ -515,14 +514,14 @@ timestamp_add_msec_checked(timestamp t, lng ms)
 		}							\
 	} while(0)
 
-#define ANALYTICAL_WINDOW_BOUNDS_CALC_MTIME(TPE1, IMP, CARD, LIMIT, TPE2, SUB, ADD) \
+#define ANALYTICAL_WINDOW_BOUNDS_CALC_MTIME(TPE1, IMP, CARD, LIMIT, TPE2, SUB, ADD, OVERFLOW, NIL_OVERFLOW) \
 	do {								\
 		const TPE1 *restrict bp = (TPE1*)bi.base;		\
 		if (p == NULL)						\
 			i = cnt;					\
 		for (; i <= cnt; i++) {					\
 			if (i == cnt || np[i])				\
-				IMP(TPE1, LIMIT, TPE2, SUB, ADD);	\
+				IMP(TPE1, LIMIT, TPE2, SUB, ADD, OVERFLOW, NIL_OVERFLOW); \
 		}							\
 	} while(0)
 
@@ -530,10 +529,10 @@ timestamp_add_msec_checked(timestamp t, lng ms)
 	do {								\
 		switch (tp1) {						\
 		case TYPE_date:						\
-			ANALYTICAL_WINDOW_BOUNDS_CALC_MTIME(date, ANALYTICAL_WINDOW_BOUNDS_RANGE_MTIME##IMP, CARD, LIMIT, int, date_sub_month, date_add_month); \
+			ANALYTICAL_WINDOW_BOUNDS_CALC_MTIME(date, ANALYTICAL_WINDOW_BOUNDS_RANGE_MTIME##IMP, CARD, LIMIT, int, date_sub_month, date_add_month, mtime_no_overflow, false); \
 			break;						\
 		case TYPE_timestamp:					\
-			ANALYTICAL_WINDOW_BOUNDS_CALC_MTIME(timestamp, ANALYTICAL_WINDOW_BOUNDS_RANGE_MTIME##IMP, CARD, LIMIT, int, timestamp_sub_month, timestamp_add_month); \
+			ANALYTICAL_WINDOW_BOUNDS_CALC_MTIME(timestamp, ANALYTICAL_WINDOW_BOUNDS_RANGE_MTIME##IMP, CARD, LIMIT, int, timestamp_sub_month, timestamp_add_month, mtime_no_overflow, false); \
 			break;						\
 		default:						\
 			goto type_not_supported;			\
@@ -544,13 +543,13 @@ timestamp_add_msec_checked(timestamp t, lng ms)
 	do {								\
 		switch (tp1) {						\
 		case TYPE_date:						\
-			ANALYTICAL_WINDOW_BOUNDS_CALC_MTIME(date, ANALYTICAL_WINDOW_BOUNDS_RANGE_MTIME##IMP, CARD, LIMIT, lng, date_sub_msec, date_add_msec); \
+			ANALYTICAL_WINDOW_BOUNDS_CALC_MTIME(date, ANALYTICAL_WINDOW_BOUNDS_RANGE_MTIME##IMP, CARD, LIMIT, lng, date_sub_msec, date_add_msec, date_msec_overflow, true); \
 			break;						\
 		case TYPE_daytime:					\
-			ANALYTICAL_WINDOW_BOUNDS_CALC_MTIME(daytime, ANALYTICAL_WINDOW_BOUNDS_RANGE_MTIME##IMP, CARD, LIMIT, lng, daytime_sub_msec, daytime_add_msec); \
+			ANALYTICAL_WINDOW_BOUNDS_CALC_MTIME(daytime, ANALYTICAL_WINDOW_BOUNDS_RANGE_MTIME##IMP, CARD, LIMIT, lng, daytime_sub_msec, daytime_add_msec, msec_overflow, false); \
 			break;						\
 		case TYPE_timestamp:					\
-			ANALYTICAL_WINDOW_BOUNDS_CALC_MTIME(timestamp, ANALYTICAL_WINDOW_BOUNDS_RANGE_MTIME##IMP, CARD, LIMIT, lng, timestamp_sub_msec, timestamp_add_msec); \
+			ANALYTICAL_WINDOW_BOUNDS_CALC_MTIME(timestamp, ANALYTICAL_WINDOW_BOUNDS_RANGE_MTIME##IMP, CARD, LIMIT, lng, timestamp_sub_msec, timestamp_add_msec, msec_overflow, true); \
 			break;						\
 		default:						\
 			goto type_not_supported;			\

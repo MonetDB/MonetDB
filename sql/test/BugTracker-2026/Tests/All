@@ -217,6 +217,7 @@ KNOWNFAIL?8030-inner-join-group-by-bug
 8046-simplify-fk-join-bug
 8048-group-filter-function-match
 8049-alter-add-column-default-dependencies
+8045-query-timeout-without-session-timeout
 8054-correlated-not-notequal
 8055-interval-day-overflow
 8056-date-generator
