@@ -3932,6 +3932,13 @@ rel_distinct_project2groupby_(visitor *v, sql_rel *rel)
 		set_distinct(rel);
 		v->changes++;
 	}
+	sql_rel *p = v->parent;
+	if (!rel_is_ref(rel) && is_project(rel->op) && p && is_semi(p->op) && p->r == rel) { /* drop distinct on right handside of semi */
+		set_nodistinct(rel);
+		v->changes++;
+		return rel;
+	}
+
 	/* rewrite distinct project (table) [ constant ] -> project [ constant ] */
 	if (rel->op == op_project && rel->l && !rel->r /* no order by */ && need_distinct(rel) &&
 	    exps_card(rel->exps) <= CARD_ATOM) {
