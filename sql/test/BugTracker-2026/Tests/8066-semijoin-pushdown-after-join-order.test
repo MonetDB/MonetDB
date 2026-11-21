@@ -1,0 +1,56 @@
+statement ok
+CREATE TABLE a8066 (id INTEGER NOT NULL, low_key INTEGER NOT NULL)
+
+statement ok
+CREATE TABLE b8066 (id INTEGER NOT NULL, low_key INTEGER NOT NULL)
+
+statement ok
+CREATE TABLE c8066 (id INTEGER NOT NULL)
+
+statement ok rowcount 2000
+INSERT INTO a8066 SELECT CAST(value AS INTEGER), CAST(MOD(value, 100) AS INTEGER) FROM sys.generate_series(0, 2000)
+
+statement ok rowcount 2000
+INSERT INTO b8066 SELECT CAST(value AS INTEGER), CAST(MOD(value, 100) AS INTEGER) FROM sys.generate_series(0, 2000)
+
+statement ok rowcount 100
+INSERT INTO c8066 SELECT CAST(value * 37 AS INTEGER) FROM sys.generate_series(0, 100)
+
+statement ok
+ANALYZE sys.a8066
+
+statement ok
+ANALYZE sys.b8066
+
+statement ok
+ANALYZE sys.c8066
+
+# the semijoin created after join_order must be pushed below the b/a join
+query T
+EXPLAIN SELECT COUNT(*) FROM b8066 JOIN c8066 ON b8066.id = c8066.id JOIN a8066 ON b8066.low_key = a8066.low_key
+----
+project (
+| group by (
+| | join (
+| | | semijoin (
+| | | | table("sys"."b8066") [ "b8066"."id", "b8066"."low_key" ],
+| | | | table("sys"."c8066") [ "c8066"."id" ]
+| | | ) [ ("b8066"."id") = ("c8066"."id") ],
+| | | table("sys"."a8066") [ "a8066"."low_key" ]
+| | ) [ ("b8066"."low_key") = ("a8066"."low_key") ]
+| ) [  ] [ "sys"."count"() as "%1"."%1" ]
+) [ "%1"."%1" ]
+
+query I
+SELECT COUNT(*) FROM b8066 JOIN c8066 ON b8066.id = c8066.id JOIN a8066 ON b8066.low_key = a8066.low_key
+----
+1100
+
+statement ok
+DROP TABLE c8066
+
+statement ok
+DROP TABLE b8066
+
+statement ok
+DROP TABLE a8066
