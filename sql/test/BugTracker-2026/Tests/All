@@ -221,3 +221,4 @@ KNOWNFAIL?8030-inner-join-group-by-bug
 8059-aggr-on-pipeline-local-string-col-causes-nulls
 8062-groupby-inet6
 8064-explain-show-details-pkey
+8065-unnamed-fkeys-same-column
