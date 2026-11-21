@@ -1110,7 +1110,7 @@ set_statement:
 			dlist *l = L();
 			sql_subtype t;
 			sql_find_subtype(&t, "char", UTF8_strlen($5), 0);
-			append_list(l, append_string(append_string(L(), "sys"), "current_role"));
+			append_list(l, append_string(append_string(L(), "sys"), "current_user"));
 			append_symbol(l, _newAtomNode( _atom_string(&t, $5)));
 			$$ = _symbol_create_list( SQL_SET, l);
 		}

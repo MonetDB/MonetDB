@@ -222,3 +222,4 @@ KNOWNFAIL?8030-inner-join-group-by-bug
 8062-groupby-inet6
 8064-explain-show-details-pkey
 8065-unnamed-fkeys-same-column
+8061-session-authorization-current-user
