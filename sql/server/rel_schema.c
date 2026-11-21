@@ -459,6 +459,39 @@ create_check_plan(sql_query *query, symbol *s, sql_table *t)
 	return rel;
 }
 
+/* A CHECK constraint is stored as an expression string which is re-parsed on
+ * use.  Record the functions it refers to, so they cannot simply be dropped
+ * (which would leave an unparseable CHECK behind).  rel_dependencies() also
+ * returns the table and its columns, keep only the function references. */
+static int
+create_check_dependencies(mvc *sql, sql_rel *check_rel, sql_key *k)
+{
+	list *deps, *fdeps;
+
+	/* during CREATE TABLE the table object still has SQL_DECLARED_TABLE
+	 * persistence, so use its schema to detect truly declared tables */
+	if (isDeclaredSchema(k->t->s))
+		return 0;
+	deps = rel_dependencies(sql, check_rel);
+	if (list_empty(deps))
+		return 0;
+	fdeps = sa_list(sql->sa);
+	if (!fdeps) {
+		(void) sql_error(sql, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		return -1;
+	}
+	for (node *n = deps->h; n; n = n->next) {
+		sql_base *b = n->data;
+		if (sql_trans_find_func(sql->session->tr, b->id))
+			list_append(fdeps, b);
+	}
+	if (mvc_create_dependencies(sql, fdeps, k->base.id, FUNC_DEPENDENCY, SQL_PERSIST)) {
+		(void) sql_error(sql, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		return -1;
+	}
+	return 0;
+}
+
 static int
 column_constraint_type(sql_query *query, const char *name, symbol *s, sql_schema *ss, sql_table *t, sql_column *cs, bool isDeclared, int *used)
 {
@@ -567,6 +600,8 @@ column_constraint_type(sql_query *query, const char *name, symbol *s, sql_schema
 			default:
 				break;
 		}
+		if (check && create_check_dependencies(sql, check_rel, k) < 0)
+			return SQL_ERR;
 		res = SQL_OK;
 	} 	break;
 	case SQL_FOREIGN_KEY: {
@@ -1124,6 +1159,8 @@ table_constraint_type(sql_query *query, const char *name, symbol *s, sql_schema 
 			default:
 				break;
 		}
+		if (check && create_check_dependencies(sql, check_rel, k) < 0)
+			return SQL_ERR;
 	} 	break;
 	case SQL_FOREIGN_KEY:
 		res = table_foreign_key(sql, name, s, ss, t);

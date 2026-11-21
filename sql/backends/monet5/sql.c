@@ -5615,9 +5615,16 @@ SQLcheck(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				rel_base_use_all(m, rel);
 				exp = exp_read(m, rel, NULL, NULL, ma_strdup(m->sa, k->check), &pos, 0);
 			}
-			assert(exp);
-			if (!exp)
-				throw(SQL, "SQLcheck", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+			if (!exp) {
+				/* the CHECK expression may no longer be parseable, eg when
+				 * a function referenced by it was dropped; exp_read() set
+				 * a descriptive error, propagate it instead of crashing */
+				m->sp = sp;
+				if (strlen(m->errstr) > 6 && m->errstr[5] == '!')
+					throw(SQL, "SQLcheck", "%s", m->errstr);
+				else
+					throw(SQL, "SQLcheck", SQLSTATE(42000) "%s", m->errstr);
+			}
 			if (exp->comment)
 				*r = SA_STRDUP(mb->ma, exp->comment);
 			else
