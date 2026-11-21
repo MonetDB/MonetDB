@@ -2783,7 +2783,7 @@ rel_remove_const_aggr(visitor *v, sql_rel *rel)
 							(cnt && !wa->isnull)) {
 						append(naggrs, e);
 						append(nexps, exp_ref(v->sql, e));
-						break;
+						continue;
 					}
 					if (cnt)
 						w=exp_atom_lng(v->sql->sa, 0);

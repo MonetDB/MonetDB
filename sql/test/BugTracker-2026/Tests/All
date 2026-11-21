@@ -219,9 +219,10 @@ KNOWNFAIL?8030-inner-join-group-by-bug
 8049-alter-add-column-default-dependencies
 8054-correlated-not-notequal
 8056-date-generator
+8057-drop-function-check-update
 8059-aggr-on-pipeline-local-string-col-causes-nulls
 8062-groupby-inet6
 8064-explain-show-details-pkey
 8065-unnamed-fkeys-same-column
 8061-session-authorization-current-user
-8057-drop-function-check-update
+8070-sum-constant-drops-groupby-aggregates
