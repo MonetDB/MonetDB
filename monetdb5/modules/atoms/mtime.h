@@ -17,13 +17,15 @@
 #include "mal_interpreter.h"
 #include "mal_exception.h"
 
+#define DAY_MSEC	(24 * 60 * 60 * 1000)
+
 /* TODO change dayint again into an int instead of lng */
 ATTR_CONST
 static inline lng
 date_diff_imp(const date d1, const date d2)
 {
 	int diff = date_diff(d1, d2);
-	return is_int_nil(diff) ? lng_nil : (lng) diff *(lng) (24 * 60 * 60 * 1000);
+	return is_int_nil(diff) ? lng_nil : (lng) diff * (lng) DAY_MSEC;
 }
 
 ATTR_CONST
@@ -32,7 +34,8 @@ time_sub_msec_interval(const daytime t, const lng ms)
 {
 	if (is_lng_nil(ms))
 		return daytime_nil;
-	return daytime_add_usec_modulo(t, -ms * 1000);
+	/* reduce before multiplying: ms * 1000 would overflow lng */
+	return daytime_add_usec_modulo(t, -(ms % DAY_MSEC) * 1000);
 }
 
 ATTR_CONST
@@ -41,17 +44,23 @@ time_add_msec_interval(const daytime t, const lng ms)
 {
 	if (is_lng_nil(ms))
 		return daytime_nil;
-	return daytime_add_usec_modulo(t, ms * 1000);
+	return daytime_add_usec_modulo(t, (ms % DAY_MSEC) * 1000);
 }
 
 static inline str
 date_sub_msec_interval(date *ret, date d, lng ms)
 {
+	lng days;
 	if (is_date_nil(d) || is_lng_nil(ms)) {
 		*ret = date_nil;
 		return MAL_SUCCEED;
 	}
-	if (is_date_nil((*ret = date_add_day(d, (int) (-ms / (24 * 60 * 60 * 1000))))))
+	/* date_add_day() takes an int.  Check the lng day count before
+	 * narrowing it, otherwise a large interval wraps into a small,
+	 * apparently valid day count. */
+	days = -(ms / DAY_MSEC);
+	if (days < INT_MIN || days > INT_MAX ||
+	    is_date_nil((*ret = date_add_day(d, (int) days))))
 		throw(MAL, "mtime.date_sub_msec_interval",
 			  SQLSTATE(22003) "overflow in calculation");
 	return MAL_SUCCEED;
@@ -60,11 +69,14 @@ date_sub_msec_interval(date *ret, date d, lng ms)
 static inline str
 date_add_msec_interval(date *ret, date d, lng ms)
 {
+	lng days;
 	if (is_date_nil(d) || is_lng_nil(ms)) {
 		*ret = date_nil;
 		return MAL_SUCCEED;
 	}
-	if (is_date_nil((*ret = date_add_day(d, (int) (ms / (24 * 60 * 60 * 1000))))))
+	days = ms / DAY_MSEC;
+	if (days < INT_MIN || days > INT_MAX ||
+	    is_date_nil((*ret = date_add_day(d, (int) days))))
 		throw(MAL, "mtime.date_add_msec_interval",
 			  SQLSTATE(22003) "overflow in calculation");
 	return MAL_SUCCEED;
@@ -77,7 +89,9 @@ timestamp_sub_msec_interval(timestamp *ret, timestamp ts, lng ms)
 		*ret = timestamp_nil;
 		return MAL_SUCCEED;
 	}
-	if (is_timestamp_nil((*ret = timestamp_add_usec(ts, -ms * 1000))))
+	/* check before multiplying: ms * 1000 must fit in lng */
+	if (ms < GDK_lng_min / 1000 || ms > GDK_lng_max / 1000 ||
+	    is_timestamp_nil((*ret = timestamp_add_usec(ts, -(ms * 1000)))))
 		throw(MAL, "mtime.timestamp_sub_msec_interval",
 			  SQLSTATE(22003) "overflow in calculation");
 	return MAL_SUCCEED;
@@ -116,7 +130,9 @@ timestamp_add_msec_interval(timestamp *ret, timestamp ts, lng ms)
 		*ret = timestamp_nil;
 		return MAL_SUCCEED;
 	}
-	if (is_timestamp_nil((*ret = timestamp_add_usec(ts, ms * 1000))))
+	/* check before multiplying: ms * 1000 must fit in lng */
+	if (ms < GDK_lng_min / 1000 || ms > GDK_lng_max / 1000 ||
+	    is_timestamp_nil((*ret = timestamp_add_usec(ts, ms * 1000))))
 		throw(MAL, "mtime.timestamp_add_msec_interval",
 			  SQLSTATE(22003) "overflow in calculation");
 	return MAL_SUCCEED;
@@ -128,7 +144,8 @@ odbc_timestamp_add_msec_interval_time(timestamp *ret, daytime t, lng ms)
 {
 	date today = timestamp_date(timestamp_current());
 	timestamp ts = timestamp_create(today, t);
-	if (is_timestamp_nil((*ret = timestamp_add_usec(ts, ms * 1000))))
+	if (is_lng_nil(ms) || ms < GDK_lng_min / 1000 || ms > GDK_lng_max / 1000 ||
+	    is_timestamp_nil((*ret = timestamp_add_usec(ts, ms * 1000))))
 		throw(MAL, "mtime.odbc_timestamp_add_msec_interval_time",
 			  SQLSTATE(22003) "overflow in calculation");
 	return MAL_SUCCEED;
@@ -151,7 +168,8 @@ static inline str
 odbc_timestamp_add_msec_interval_date(timestamp *ret, date d, lng ms)
 {
 	timestamp ts = timestamp_fromdate(d);
-	if (is_timestamp_nil((*ret = timestamp_add_usec(ts, ms * 1000))))
+	if (is_lng_nil(ms) || ms < GDK_lng_min / 1000 || ms > GDK_lng_max / 1000 ||
+	    is_timestamp_nil((*ret = timestamp_add_usec(ts, ms * 1000))))
 		throw(MAL, "mtime.odbc_timestamp_add_msec_interval_date",
 			  SQLSTATE(22003) "overflow in calculation");
 	return MAL_SUCCEED;

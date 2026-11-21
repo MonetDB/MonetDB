@@ -218,6 +218,7 @@ KNOWNFAIL?8030-inner-join-group-by-bug
 8048-group-filter-function-match
 8049-alter-add-column-default-dependencies
 8054-correlated-not-notequal
+8055-interval-day-overflow
 8056-date-generator
 8057-drop-function-check-update
 8059-aggr-on-pipeline-local-string-col-causes-nulls

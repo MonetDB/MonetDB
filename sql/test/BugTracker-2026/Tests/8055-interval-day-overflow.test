@@ -1,0 +1,61 @@
+query T
+SELECT CAST(date '2020-09-28' + interval '7' day AS VARCHAR(32))
+----
+2020-10-05
+
+query T
+SELECT CAST(date '2020-09-28' - interval '1' day AS VARCHAR(32))
+----
+2020-09-27
+
+query T
+SELECT CAST(date '2020-09-28' + interval '61000000' day AS VARCHAR(32))
+----
+169033-01-26
+
+query T
+SELECT CAST(timestamp '2020-09-28 12:34:56.789012' + interval '1' day AS VARCHAR(64))
+----
+2020-09-29 12:34:56.789012
+
+query T
+SELECT CAST(time '12:00:00' + interval '4294967303' day AS VARCHAR(32))
+----
+12:00:00.000000
+
+query T
+SELECT CAST(time '12:00:00' - interval '4294967303' day AS VARCHAR(32))
+----
+12:00:00.000000
+
+query T
+SELECT CAST(time '12:00:00' + interval '25' hour AS VARCHAR(32))
+----
+13:00:00.000000
+
+statement error 22003!overflow in calculation
+SELECT date '2020-09-28' + interval '4294967303' day
+
+statement error 22003!overflow in calculation
+SELECT date '2020-09-28' + interval '4294967296' day
+
+statement error 22003!overflow in calculation
+SELECT date '2020-09-28' - interval '4294967303' day
+
+statement error 22003!overflow in calculation
+SELECT date '2020-09-28' + (interval '1' second * (4294967303 * 24 * 60 * 60))
+
+statement error 22003!overflow in calculation
+SELECT d + n * interval '1' day FROM (VALUES (date '2020-09-28', 4294967303)) AS t(d, n)
+
+statement error 22003!overflow in calculation
+SELECT date '2020-09-28' + interval '100000000' day
+
+statement error 22003!overflow in calculation
+SELECT timestamp '2020-09-28 00:00:00' + interval '4294967303' day
+
+statement error 22003!overflow in calculation
+SELECT timestamp '2020-09-28 00:00:00' - interval '4294967303' day
+
+statement error 22003!overflow in calculation
+SELECT timestamp '2020-09-28 00:00:00' + interval '106751992' day
