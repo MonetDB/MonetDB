@@ -21,63 +21,63 @@
  * to easily trace their performance.
  */
 extern int isSimpleSQL(MalBlkPtr mb)
-	__attribute__((__visibility__("hidden")));
+	ATTR_VISIBILITY_HIDDEN;
 extern int optimizerIsApplied(MalBlkPtr mb, const char *opt)
-	__attribute__((__visibility__("hidden")));
+	ATTR_VISIBILITY_HIDDEN;
 extern int isUnsafeInstruction(InstrPtr q)
-	__attribute__((__visibility__("hidden")));
+	ATTR_VISIBILITY_HIDDEN;
 extern int isUnsafeFunction(InstrPtr q)
-	__attribute__((__visibility__("hidden")));
+	ATTR_VISIBILITY_HIDDEN;
 extern int safetyBarrier(InstrPtr p, InstrPtr q)
-	__attribute__((__visibility__("hidden")));
+	ATTR_VISIBILITY_HIDDEN;
 extern int hasSameSignature(MalBlkPtr mb, InstrPtr p, InstrPtr q)
-	__attribute__((__visibility__("hidden")));
+	ATTR_VISIBILITY_HIDDEN;
 extern int hasSameArguments(MalBlkPtr mb, InstrPtr p, InstrPtr q)
-	__attribute__((__visibility__("hidden")));
+	ATTR_VISIBILITY_HIDDEN;
 extern int hasCommonResults(InstrPtr p, InstrPtr q)
-	__attribute__((__visibility__("hidden")));
+	ATTR_VISIBILITY_HIDDEN;
 extern int isUpdateInstruction(InstrPtr p)
-	__attribute__((__visibility__("hidden")));
+	ATTR_VISIBILITY_HIDDEN;
 mal_export int hasSideEffects(MalBlkPtr mb, InstrPtr p, int strict);
 extern int mayhaveSideEffects(Client cntxt, MalBlkPtr mb, InstrPtr p,
 							  int strict)
-	__attribute__((__visibility__("hidden")));
+	ATTR_VISIBILITY_HIDDEN;
 extern int isSideEffectFree(MalBlkPtr mb)
-	__attribute__((__visibility__("hidden")));
+	ATTR_VISIBILITY_HIDDEN;
 extern int isFragmentGroup(InstrPtr q)
-	__attribute__((__visibility__("hidden")));
+	ATTR_VISIBILITY_HIDDEN;
 extern int isFragmentGroup2(InstrPtr q)
-	__attribute__((__visibility__("hidden")));
+	ATTR_VISIBILITY_HIDDEN;
 extern int isDelta(InstrPtr q)
-	__attribute__((__visibility__("hidden")));
+	ATTR_VISIBILITY_HIDDEN;
 extern int isMatJoinOp(InstrPtr q)
-	__attribute__((__visibility__("hidden")));
+	ATTR_VISIBILITY_HIDDEN;
 extern int isMatLeftJoinOp(InstrPtr q)
-	__attribute__((__visibility__("hidden")));
+	ATTR_VISIBILITY_HIDDEN;
 extern int isMapOp(InstrPtr q)
-	__attribute__((__visibility__("hidden")));
+	ATTR_VISIBILITY_HIDDEN;
 extern int isMap2Op(InstrPtr q)
-	__attribute__((__visibility__("hidden")));
+	ATTR_VISIBILITY_HIDDEN;
 extern int isLikeOp(InstrPtr q)
-	__attribute__((__visibility__("hidden")));
+	ATTR_VISIBILITY_HIDDEN;
 extern int isTopn(InstrPtr q)
-	__attribute__((__visibility__("hidden")));
+	ATTR_VISIBILITY_HIDDEN;
 extern int isSlice(InstrPtr q)
-	__attribute__((__visibility__("hidden")));
+	ATTR_VISIBILITY_HIDDEN;
 extern int isSample(InstrPtr q)
-	__attribute__((__visibility__("hidden")));
+	ATTR_VISIBILITY_HIDDEN;
 extern int isOrderby(InstrPtr q)
-	__attribute__((__visibility__("hidden")));
+	ATTR_VISIBILITY_HIDDEN;
 extern int isSelect(InstrPtr q)
-	__attribute__((__visibility__("hidden")));
+	ATTR_VISIBILITY_HIDDEN;
 extern int isSubJoin(InstrPtr q)
-	__attribute__((__visibility__("hidden")));
+	ATTR_VISIBILITY_HIDDEN;
 extern int isMultiplex(InstrPtr q)
-	__attribute__((__visibility__("hidden")));
+	ATTR_VISIBILITY_HIDDEN;
 extern int isUnion(InstrPtr q)
-	__attribute__((__visibility__("hidden")));
+	ATTR_VISIBILITY_HIDDEN;
 extern int isOptimizerEnabled(MalBlkPtr mb, const char *opt)
-	__attribute__((__visibility__("hidden")));
+	ATTR_VISIBILITY_HIDDEN;
 
 #define MB_LARGE(mb) (mb->vtop > 2048000)
 #endif /* _OPT_SUPPORT_H */

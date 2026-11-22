@@ -191,7 +191,8 @@ tabins(logger *lg, ...)
 	BAT *b;
 
 	va_start(va, lg);
-	BATiter cni = bat_iterator(lg->catalog_id);
+	(void) BAThash(lg->catalog_id);
+	BATiter cni = bat_iterator_hash(lg->catalog_id);
 	while ((cid = va_arg(va, int)) != 0) {
 		cval = va_arg(va, void *);
 		if ((b = log_temp_descriptor(log_find_bat(lg, cid))) == NULL) {
@@ -201,14 +202,12 @@ tabins(logger *lg, ...)
 		rc = BUNappend(b, cval, true);
 		if (rc == GDK_SUCCEED) {
 			BUN p;
-			MT_rwlock_rdlock(&cni.b->thashlock);
-			HASHloop_int(&cni, cni.b->thash, p, &cid) {
+			HASHloop_int(&cni, cni.hash, p, &cid) {
 				if (BUNfnd(lg->dcatalog, &(oid){p}) == BUN_NONE) {
 					rc = BUNreplace(lg->catalog_cnt, p, &(lng){BATcount(b)}, false);
 					break;
 				}
 			}
-			MT_rwlock_rdunlock(&cni.b->thashlock);
 		}
 		bat_destroy(b);
 		if (rc != GDK_SUCCEED)
@@ -344,8 +343,8 @@ bl_postversion(void *Store, logger *lg)
 			return GDK_FAIL;
 		}
 		struct canditer ci;
-		canditer_init(&ci, func_func, cands);
 		BATiter ffi = bat_iterator_nolock(func_func);
+		canditer_init_bi(&ci, &ffi, cands);
 		for (BUN p = 0; p < ci.ncand; p++) {
 			oid o = canditer_next(&ci);
 			const char *f = BUNtvar(&ffi, o - func_func->hseqbase);
@@ -707,7 +706,7 @@ bl_postversion(void *Store, logger *lg)
 			bat_destroy(del_cols);
 			return GDK_FAIL;
 		}
-		oid dbpos = BUNtoid(b, 0);
+		oid dbpos = fetchtoid(b, 0);
 		bat_destroy(b);
 		b = BATselect(tabnme, cands, "privileges", NULL, true, true, false, false);
 		bat_destroy(tabnme);
@@ -720,7 +719,7 @@ bl_postversion(void *Store, logger *lg)
 			return GDK_FAIL;
 		}
 		int dbid = ((int *) tabid->theap->base)[dbpos];
-		int prid = ((int *) tabid->theap->base)[BUNtoid(b, 0)];
+		int prid = ((int *) tabid->theap->base)[fetchtoid(b, 0)];
 		BAT *coltid = log_temp_descriptor(log_find_bat(lg, 2082)); /* sys._columns.table_id */
 		if (coltid == NULL) {
 			bat_destroy(b);
@@ -745,7 +744,7 @@ bl_postversion(void *Store, logger *lg)
 		}
 		int privids[5];
 		for (int i = 0; i < 5; i++) {
-			oid p = BUNtoid(b1, i);
+			oid p = fetchtoid(b1, i);
 			privids[((int *) colnr->theap->base)[p]] = ((int *) colid->theap->base)[p];
 		}
 		bat_destroy(b1);
@@ -919,7 +918,7 @@ bl_postversion(void *Store, logger *lg)
 			 * output arg for sys.st_interiorrings and the function
 			 * itself) */
 			for (BUN p = 0, q = r1->batCount; p < q; p++) {
-				oid o = BUNtoid(r1, p);
+				oid o = fetchtoid(r1, p);
 				if (BUNreplace(b, o, &(bool) {true}, false) != GDK_SUCCEED) {
 					bat_destroy(funcs);
 					bat_destroy(r1);
@@ -928,7 +927,7 @@ bl_postversion(void *Store, logger *lg)
 					bat_destroy(a);
 					return GDK_FAIL;
 				}
-				o = BUNtoid(r2, p);
+				o = fetchtoid(r2, p);
 				if (BUNreplace(a, o, &(bool) {true}, false) != GDK_SUCCEED) {
 					bat_destroy(funcs);
 					bat_destroy(r1);
@@ -1424,7 +1423,7 @@ bl_sequence(sqlstore *store, int seq, lng id)
 /* Write a plan entry to copy part of the given file.
  * That part of the file must remain unchanged until the plan is executed.
  */
-__attribute__((__warn_unused_result__))
+ATTR_WARN_UNUSED_RESULT
 static gdk_return
 snapshot_lazy_copy_file(stream *plan, const char *name, uint64_t extent)
 {
@@ -1439,7 +1438,7 @@ snapshot_lazy_copy_file(stream *plan, const char *name, uint64_t extent)
  * The contents are included in the plan so the source file is allowed to
  * change in the mean time.
  */
-__attribute__((__warn_unused_result__))
+ATTR_WARN_UNUSED_RESULT
 static gdk_return
 snapshot_immediate_copy_file(stream *plan, const char *path, const char *name)
 {
@@ -1506,7 +1505,7 @@ end:
 }
 
 /* Add plan entries for all relevant files in the Write Ahead Log */
-__attribute__((__warn_unused_result__))
+ATTR_WARN_UNUSED_RESULT
 static gdk_return
 snapshot_wal(logger *bat_logger, stream *plan, const char *db_dir)
 {
@@ -1540,7 +1539,7 @@ snapshot_wal(logger *bat_logger, stream *plan, const char *db_dir)
 	return GDK_SUCCEED;
 }
 
-__attribute__((__warn_unused_result__))
+ATTR_WARN_UNUSED_RESULT
 static gdk_return
 snapshot_heap(stream *plan, const char *db_dir, bat batid, const char *filename, const char *suffix, uint64_t extent)
 {
@@ -1646,7 +1645,7 @@ end:
 /* Add plan entries for all persistent BATs by looping over the BBP.dir.
  * Also include the BBP.dir itself.
  */
-__attribute__((__warn_unused_result__))
+ATTR_WARN_UNUSED_RESULT
 static gdk_return
 snapshot_bats(stream *plan, BAT *bats_to_omit, const char *db_dir)
 {
@@ -1747,7 +1746,7 @@ end:
 	return ret;
 }
 
-__attribute__((__warn_unused_result__))
+ATTR_WARN_UNUSED_RESULT
 static gdk_return
 snapshot_vaultkey(stream *plan, const char *db_dir)
 {

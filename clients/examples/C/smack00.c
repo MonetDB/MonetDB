@@ -18,15 +18,16 @@
 #include <string.h>
 #include <mapi.h>
 
-#define die(dbh,hdl)	do {						\
-				if (hdl)				\
-					mapi_explain_result(hdl,stderr); \
-				else if (dbh)				\
-					mapi_explain(dbh,stderr);	\
-				else					\
-					fprintf(stderr,"command failed\n"); \
-				exit(-1);				\
-			} while (0)
+#define die(dbh,hdl)						\
+	do {							\
+		if (hdl)					\
+			mapi_explain_result(hdl,stderr);	\
+		else if (dbh)					\
+			mapi_explain(dbh,stderr);		\
+		else						\
+			fprintf(stderr,"command failed\n");	\
+		exit(-1);					\
+	} while (0)
 
 int
 main(int argc, char **argv)

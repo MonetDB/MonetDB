@@ -17,65 +17,66 @@
 #ifdef _MAL_CLIENT_H_
 /* _MAL_CLIENT_H_ is defined in the same file as Client */
 bool MCinit(void)
-	__attribute__((__visibility__("hidden")));
+	ATTR_VISIBILITY_HIDDEN;
 void MCpopClientInput(Client c)
-	__attribute__((__visibility__("hidden")));
+	ATTR_VISIBILITY_HIDDEN;
 int MCreadClient(Client c)
-	__attribute__((__visibility__("hidden")));
+	ATTR_VISIBILITY_HIDDEN;
 #endif
 
 str malAtomDefinition(const char *name,int tpe)
-	__attribute__((__visibility__("hidden")));
+	ATTR_VISIBILITY_HIDDEN;
 str malAtomProperty(mel_func *f)
-	__attribute__((__visibility__("hidden")));
+	ATTR_VISIBILITY_HIDDEN;
 
 #ifdef MAXSCOPE
 /* MAXSCOPE is defined in the same file as Module */
 Symbol cloneFunction(Module scope, Symbol proc, MalBlkPtr mb, InstrPtr p)
-	__attribute__((__visibility__("hidden")));
+	ATTR_VISIBILITY_HIDDEN;
 #endif
 int getBarrierEnvelop(MalBlkPtr mb)
-	__attribute__((__visibility__("hidden")));
+	ATTR_VISIBILITY_HIDDEN;
 void listFunction(stream *fd, MalBlkPtr mb, MalStkPtr stk, int flg, int first, int step)
-	__attribute__((__visibility__("hidden")));
+	ATTR_VISIBILITY_HIDDEN;
 MALfcn findFunctionImplementation(const char *cname)
-	__attribute__((__visibility__("hidden")));
+	ATTR_VISIBILITY_HIDDEN;
 
 /* mal_linker.h */
 char *MSP_locate_script(allocator *ma, const char *mod_name)
-	__attribute__((__visibility__("hidden")));
+	ATTR_VISIBILITY_HIDDEN;
 
 /* Reset primitives */
 void AUTHreset(void)
-	__attribute__((__visibility__("hidden")));
+	ATTR_VISIBILITY_HIDDEN;
 
 void mal_client_reset(void)
-	__attribute__((__visibility__("hidden")));
+	ATTR_VISIBILITY_HIDDEN;
 
 void mal_dataflow_reset(void)
-	__attribute__((__visibility__("hidden")));
+	ATTR_VISIBILITY_HIDDEN;
 
 void mal_pipelines_reset(void)
-	__attribute__((__visibility__("hidden")));
+	ATTR_VISIBILITY_HIDDEN;
 
 void mal_linker_reset(void)
-	__attribute__((__visibility__("hidden")));
+	ATTR_VISIBILITY_HIDDEN;
 
 void mal_module_reset(void)
-	__attribute__((__visibility__("hidden")));
+	ATTR_VISIBILITY_HIDDEN;
 
 void mal_namespace_reset(void)
-	__attribute__((__visibility__("hidden")));
+	ATTR_VISIBILITY_HIDDEN;
 
 void mal_resource_reset(void)
-	__attribute__((__visibility__("hidden")));
+	ATTR_VISIBILITY_HIDDEN;
 
 void mal_runtime_reset(void)
-	__attribute__((__visibility__("hidden")));
+	ATTR_VISIBILITY_HIDDEN;
 
 char *dupError(const char *err)
-	__attribute__((__visibility__("hidden"), __returns_nonnull__));
+	ATTR_VISIBILITY_HIDDEN
+	ATTR_RETURNS_NONNULL;
 
 void
 setPoly(mel_func *f, malType tpe)
-	__attribute__((__visibility__("hidden")));
+	ATTR_VISIBILITY_HIDDEN;

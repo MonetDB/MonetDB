@@ -216,8 +216,8 @@ setConfVal(confkeyval *ckv, const char *val) {
 	case INVALID: {
 		char buf[256];
 		snprintf(buf, sizeof(buf),
-				 "key '%s' is uninitialised (invalid value), internal error",
-				 ckv->key);
+			 "key '%s' is uninitialised (invalid value), internal error",
+			 ckv->key);
 		return(strdup(buf));
 	}
 	case SINT:
@@ -233,8 +233,8 @@ setConfVal(confkeyval *ckv, const char *val) {
 		if (*p != '\0') {
 			char buf[256];
 			snprintf(buf, sizeof(buf),
-					 "key '%s' requires an integer-type value, got: %s",
-					 ckv->key, val);
+				 "key '%s' requires an integer-type value, got: %s",
+				 ckv->key, val);
 			return(strdup(buf));
 		}
 		ival = sign * atoi(val);
@@ -242,49 +242,49 @@ setConfVal(confkeyval *ckv, const char *val) {
 	}
 	case BOOLEAN:
 		if (strcasecmp(val, "true") == 0 ||
-			strcasecmp(val, "yes") == 0 ||
-			strcmp(val, "1") == 0)
+		    strcasecmp(val, "yes") == 0 ||
+		    strcmp(val, "1") == 0)
 		{
 			val = "yes";
 			ival = 1;
 		} else if (strcasecmp(val, "false") == 0 ||
-				   strcasecmp(val, "no") == 0 ||
-				   strcmp(val, "0") == 0)
+			   strcasecmp(val, "no") == 0 ||
+			   strcmp(val, "0") == 0)
 		{
 			val = "no";
 			ival = 0;
 		} else {
 			char buf[256];
 			snprintf(buf, sizeof(buf),
-					 "key '%s' requires a boolean-type value, got: %s",
-					 ckv->key, val);
+				 "key '%s' requires a boolean-type value, got: %s",
+				 ckv->key, val);
 			return(strdup(buf));
 		}
 		break;
 	case MURI:
 		if (strncmp(val, "mapi:monetdb://",
-					sizeof("mapi:monetdb://") -1) != 0)
+			    sizeof("mapi:monetdb://") -1) != 0)
 		{
 			char buf[256];
 			snprintf(buf, sizeof(buf),
-					 "key '%s' requires a mapi:monetdb:// URI value, got: %s",
-					 ckv->key, val);
+				 "key '%s' requires a mapi:monetdb:// URI value, got: %s",
+				 ckv->key, val);
 			return(strdup(buf));
 		}
 		/* TODO: check full URL? */
 		break;
 	case LADDR:
 		if (strncmp(val, "127.0.0.1", strlen("127.0.0.1")) != 0 &&
-			strncmp(val, "0.0.0.0", strlen("0.0.0.0")) != 0 &&
-			strncmp(val, "::", 2) != 0 &&
-			strncmp(val, "::1", 3) != 0 &&
-			strncmp(val, "localhost", strlen("localhost")) != 0 &&
-			strncmp(val, "all", strlen("all")) != 0
+		    strncmp(val, "0.0.0.0", strlen("0.0.0.0")) != 0 &&
+		    strncmp(val, "::", 2) != 0 &&
+		    strncmp(val, "::1", 3) != 0 &&
+		    strncmp(val, "localhost", strlen("localhost")) != 0 &&
+		    strncmp(val, "all", strlen("all")) != 0
 			) {
 			char buf[256];
 			snprintf(buf, sizeof(buf),
-					 "only valid values for %s are \"127.0.0.1\", \"0.0.0.0\", \"::1\", \"::\", \"localhost\" or \"all\"\n",
-					 ckv->key);
+				 "only valid values for %s are \"127.0.0.1\", \"0.0.0.0\", \"::1\", \"::\", \"localhost\" or \"all\"\n",
+				 ckv->key);
 			return(strdup(buf));
 		}
 		break;
@@ -479,13 +479,13 @@ generatePassphraseFile(const char *path)
 	if (remove(path) == -1 && errno != ENOENT) {
 		char err[512];
 		snprintf(err, sizeof(err), "unable to remove '%s': %s",
-				path, strerror(errno));
+			 path, strerror(errno));
 		return(strdup(err));
 	}
 	if ((fd = open(path, O_CREAT | O_WRONLY | O_CLOEXEC, S_IRUSR | S_IWUSR)) == -1) {
 		char err[512];
 		snprintf(err, sizeof(err), "unable to open '%s': %s",
-				path, strerror(errno));
+			 path, strerror(errno));
 		return(strdup(err));
 	}
 
@@ -493,14 +493,14 @@ generatePassphraseFile(const char *path)
 	if ((f = fdopen(fd, "w")) == NULL) {
 		char err[512];
 		snprintf(err, sizeof(err), "unable to open '%s': %s",
-				path, strerror(errno));
+			 path, strerror(errno));
 		close(fd);
 		return(strdup(err));
 	}
 	if (fwrite(buf, 1, len, f) < len) {
 		char err[512];
 		snprintf(err, sizeof(err), "cannot write secret: %s",
-				strerror(errno));
+			 strerror(errno));
 		fclose(f);
 		return(strdup(err));
 	}
@@ -544,7 +544,7 @@ deletedir(const char *dir)
 			return NULL;
 		}
 		snprintf(buf, sizeof(buf), "unable to open dir %s: %s",
-				dir, strerror(errno));
+			 dir, strerror(errno));
 		return(strdup(buf));
 	}
 	while ((e = readdir(d)) != NULL) {
@@ -562,7 +562,7 @@ deletedir(const char *dir)
 	closedir(d);
 	if (rmdir(dir) == -1 && errno != ENOENT) {
 		snprintf(buf, sizeof(buf), "unable to remove directory %s: %s",
-				dir, strerror(errno));
+			 dir, strerror(errno));
 		return(strdup(buf));
 	}
 

@@ -106,8 +106,8 @@ check_impl(int line, int expected_sum_ticks, int expected_max_ticks, int expecte
 	}
 
 	fprintf(stderr, "On line %d: (sum_ticks, max_ticks, sum_permits) = (%d, %d, %d)\n",
-			line,
-			sum_ticks, max_ticks, sum_permits);
+		line,
+		sum_ticks, max_ticks, sum_permits);
 
 	bool good = true;
 	good &= (sum_ticks == expected_sum_ticks);

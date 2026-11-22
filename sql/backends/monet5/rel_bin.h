@@ -17,7 +17,7 @@
 
 sql_export stmt * exp_bin(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, stmt *cnt, stmt *sel, int depth, int reduce, int push);
 extern stmt *output_rel_bin(backend *be, sql_rel *rel, int top)
-	__attribute__((__visibility__("hidden")));
+	ATTR_VISIBILITY_HIDDEN;
 
 extern stmt * column(backend *be, stmt *val);
 extern stmt * rel2bin_materialize(backend *be, sql_rel *rel, list *refs, bool top);

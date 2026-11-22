@@ -478,6 +478,91 @@ ALGmarkselect(Client ctx, bat *r1, bat *r2, const bat *gid, const bat *mid, cons
 }
 
 static str
+ALGselectNotFalse(Client ctx, bat *r1, bat *r2, const bat *gid, const bat *mark, const bat *pred, const bit *Aggr)
+{
+	(void) ctx;
+	BAT *g = BATdescriptor(*gid); /* oid */
+	BAT *m = BATdescriptor(*mark); /* bit */
+	BAT *p = BATdescriptor(*pred); /* bit */
+	BAT *res1 = NULL, *res2 = NULL;
+	bit aggr = *Aggr;
+
+	if (!g || !m || !p)
+		goto error;
+	BUN nr = BATcount(g), q = 0;
+	assert (nr == BATcount(m) && nr == BATcount(p));
+
+	if ((res1 = COLnew(0, TYPE_oid, nr, TRANSIENT)) == NULL || (res2 = COLnew(0, TYPE_bit, nr, TRANSIENT)) == NULL)
+		goto error;
+	assert(g->tsorted);
+	oid *ri1 = Tloc(res1, 0);
+	bit *ri2 = Tloc(res2, 0);
+	bit *mi = Tloc(m, 0);
+	bit *pi = Tloc(p, 0);
+	oid c = g->hseqbase;
+
+	if (nr) {
+		if (!aggr || g->ttype == TYPE_void) { /* void case ? */
+			for (BUN n = 0; n < nr; n++, c++) {
+				ri1[q] = c;
+				ri2[q] = (mi[n] == FALSE || pi[n] == FALSE)?FALSE:(mi[n] == bit_nil || pi[n] == bit_nil)?bit_nil:TRUE;
+				q += (ri2[q] != FALSE); /* filter out the rows that are surely FALSE */
+			}
+		} else { /* the aggregated variant */
+			oid *gi = Tloc(g, 0);
+			oid cur = gi[0];
+			bit m = (mi[0] == FALSE || pi[0] == FALSE)?FALSE:(mi[0] == bit_nil || pi[0] == bit_nil)?bit_nil:TRUE;
+			bool all_unequal = (m == FALSE)?TRUE:FALSE;
+			for (BUN n = 1; n < nr; n++, c++) {
+				if (cur != gi[n] && !all_unequal) {
+					ri1[q] = c;
+					ri2[q] = m;
+					q++;
+					cur = gi[n];
+					m = (mi[n] == FALSE || pi[n] == FALSE)?FALSE:(mi[n] == bit_nil || pi[n] == bit_nil)?bit_nil:TRUE;
+					all_unequal = (m == FALSE)?TRUE:FALSE;
+				}
+				m = (m == FALSE && (mi[n] == FALSE || pi[n] == FALSE))?FALSE:(m == bit_nil || mi[n] == bit_nil || pi[n] == bit_nil)?bit_nil:TRUE;
+				all_unequal = all_unequal & (m == FALSE);
+			}
+			if (!all_unequal) {
+				ri1[q] = c;
+				ri2[q] = m;
+				q++;
+			}
+		}
+	}
+	BATsetcount(res1, q);
+	BATsetcount(res2, q);
+	res1->tsorted = true;
+	res1->tkey = true;
+	res1->trevsorted = false;
+	res2->tsorted = false;
+	res2->trevsorted = false;
+	res1->tnil = false;
+	res1->tnonil = true;
+	res2->tnonil = false;
+	res2->tkey = false;
+
+	BBPreclaim(g);
+	BBPreclaim(m);
+	BBPreclaim(p);
+
+	BBPkeepref(res1);
+	BBPkeepref(res2);
+	*r1 = res1->batCacheid;
+	*r2 = res2->batCacheid;
+	return MAL_SUCCEED;
+error:
+	BBPreclaim(g);
+	BBPreclaim(m);
+	BBPreclaim(p);
+	BBPreclaim(res1);
+	BBPreclaim(res2);
+	throw(MAL, "algebra.selectNotFalse", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
+}
+
+static str
 ALGsingle(Client ctx, bat *r, bat *cands, bat *ids)
 {
 	(void)ctx;
@@ -515,9 +600,9 @@ ALGouterselect(Client ctx, bat *r1, bat *r2, const bat *gid, const bat *mid, con
 	bit any = *Any, single = *Single; /* any or normal comparison semantics */
 
 	if (!g || !m || !p) {
-		if (g) BBPreclaim(g);
-		if (m) BBPreclaim(m);
-		if (p) BBPreclaim(p);
+		BBPreclaim(g);
+		BBPreclaim(m);
+		BBPreclaim(p);
 		throw(MAL, "algebra.outerselect", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	}
 	BUN nr = BATcount(g), q = 0;
@@ -526,7 +611,7 @@ ALGouterselect(Client ctx, bat *r1, bat *r2, const bat *gid, const bat *mid, con
 		BBPreclaim(g);
 		BBPreclaim(m);
 		BBPreclaim(p);
-		if (res1) BBPreclaim(res1);
+		BBPreclaim(res1);
 		throw(MAL, "algebra.outerselect", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 	}
 	assert(g->tsorted);
@@ -534,10 +619,9 @@ ALGouterselect(Client ctx, bat *r1, bat *r2, const bat *gid, const bat *mid, con
 	bit *ri2 = Tloc(res2, 0);
 	bit *mi = Tloc(m, 0);
 	bit *pi = Tloc(p, 0);
-	oid cur = oid_nil;
+	oid c = g->hseqbase;
 
 	if (g->ttype == TYPE_void) { /* void case ? */
-		oid c = g->hseqbase;
 		for (BUN n = 0; n < nr; n++, c++) {
 			ri1[q] = c;
 			ri2[q] = (any && (mi[n] == bit_nil || pi[n] == bit_nil))?bit_nil:(mi[n] == TRUE && pi[n] == TRUE)?TRUE:FALSE;
@@ -545,7 +629,7 @@ ALGouterselect(Client ctx, bat *r1, bat *r2, const bat *gid, const bat *mid, con
 		}
 	} else {
 		oid *gi = Tloc(g, 0);
-		oid c = g->hseqbase;
+		oid cur = oid_nil;
 		if (nr)
 			cur = gi[0];
 		bool used = false;
@@ -617,7 +701,6 @@ error:
 	BBPreclaim(res2);
 	throw(MAL, "algebra.outerselect", SQLSTATE(HY002) "more than one match");
 }
-
 
 static str
 ALGselectNotNil(Client ctx, bat *result, const bat *bid)
@@ -2009,6 +2092,7 @@ static mel_func algebra_init_funcs[] = {
  command("algebra", "markselect", ALGmarkselect, false, "Group on group-ids, return aggregated anyequal or allnotequal", args(2,6, batarg("",oid), batarg("", bit), batarg("gid",oid), batarg("m", bit), batarg("p", bit), arg("any", bit))),
  command("algebra", "single", ALGsingle, false, "Check for single result ids.", args(1,3, batarg("r",oid), batarg("cands", oid), batarg("i", oid))),
  command("algebra", "outerselect", ALGouterselect, false, "Per input lid return at least one row, if none of the predicates (p) hold, return a nil, else 'all' true cases.", args(2,7, batarg("",oid), batarg("", bit), batarg("lid", oid), batarg("rid", bit), batarg("predicate", bit), arg("any", bit), arg("single", bit))),
+ command("algebra", "selectNotFalse", ALGselectNotFalse, false, "Return (gid, mark&&pred), if mark&&pred != FALSE. If 'aggr', group on gid, return aggregated (gid, mark&&pred)", args(2,6, batarg("",oid), batarg("", bit), batarg("gid", oid), batarg("mark", bit), batarg("pred", bit), arg('aggr',bit))),
  command("algebra", "selectNotNil", ALGselectNotNil, false, "Select all not-nil values", args(1,2, batargany("",1),batargany("b",1))),
  command("algebra", "sort", ALGsort11, false, "Returns a copy of the BAT sorted on tail values. The order is descending if the reverse bit is set. This is a stable sort if the stable bit is set.", args(1,5, batargany("",1),batargany("b",1),arg("reverse",bit),arg("nilslast",bit),arg("stable",bit))),
  command("algebra", "sort", ALGsort12, false, "Returns a copy of the BAT sorted on tail values and a BAT that specifies how the input was reordered. The order is descending if the reverse bit is set. This is a stable sort if the stable bit is set.", args(2,6, batargany("",1),batarg("",oid),batargany("b",1),arg("reverse",bit),arg("nilslast",bit),arg("stable",bit))),

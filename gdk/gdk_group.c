@@ -430,7 +430,7 @@ rev(oid x)
 }
 
 /* count trailing zeros, also see candmask_lobit in gdk_cand.h */
-__attribute__((__const__))
+ATTR_CONST
 static inline int
 ctz(oid x)
 {
@@ -664,8 +664,8 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 		return GDK_FAIL;
 	}
 	assert(s == NULL || BATttype(s) == TYPE_oid);
-	canditer_init(&ci, b, s);
 	bi = bat_iterator(b);
+	canditer_init_bi(&ci, &bi, s);
 
 	allocator *ta = MT_thread_getallocator();
 	allocator_state ta_state = ma_open(ta);
@@ -732,7 +732,7 @@ BATgroup_internal(BAT **groups, BAT **extents, BAT **histo,
 			/* group bats are not modified in parallel, so
 			 * no need for locks */
 			if (g->tmaxpos != BUN_NONE)
-				maxgrp = BUNtoid(g, g->tmaxpos);
+				maxgrp = fetchtoid(g, g->tmaxpos);
 			if (is_oid_nil(maxgrp) /* && BATcount(g) < 10240 */) {
 				BATmax(g, &maxgrp);
 			}

@@ -88,7 +88,7 @@ static str master_password = NULL;
 #include "mal.h"
 #include "mal_client.h"
 
-__attribute__((__nonnull__(1)))
+ATTR_NONNULL(1)
 static void
 CLIENTprintinfo(FILE *outf)
 {
@@ -203,7 +203,7 @@ CLIENTprintinfo(FILE *outf)
 			nrun, nfinish, nblock, MAL_MAXCLIENTS);
 }
 
-__attribute__((__nonnull__(1)))
+ATTR_NONNULL(1)
 static void
 SQLprintinfo(FILE *outf)
 {
@@ -1732,7 +1732,7 @@ SQLparser(Client c, backend *be)
 
 	c->qryctx.starttime = GDKusec();
 	c->qryctx.endtime = c->querytimeout ? c->qryctx.starttime + c->querytimeout : 0;
-	if (c->qryctx.endtime == 0 || c->sessiontimeout < c->qryctx.endtime)
+	if (c->sessiontimeout && (c->qryctx.endtime == 0 || c->sessiontimeout < c->qryctx.endtime))
 		c->qryctx.endtime = c->sessiontimeout;
 
 	if ((msg = SQLtrans(m)) != MAL_SUCCEED) {

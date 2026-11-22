@@ -190,7 +190,7 @@ parsemonthinterval(bignum_t *nval, SQL_INTERVAL_STRUCT *ival, int type)
 	ival->intval.year_month.month = (SQLUINTEGER) (nval->val % 12);
 }
 
-static short monthlengths[] = {
+static const short monthlengths[] = {
 	0,			/* dummy */
 	31,			/* Jan */
 	29,			/* Feb */

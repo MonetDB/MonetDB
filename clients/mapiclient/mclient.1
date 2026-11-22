@@ -342,6 +342,14 @@ dumping the data of a table.
 This option can be used when trying to load data from MonetDB into
 another database, or when e.g. JDBC applications are used to reload
 the dump.
+.TP
+\fB\-\-relative\-dir=\fP\fIdirectory\fP (\fB\-/\fP \fIdirectory\fP)
+Directory used to find files specified using a relative path name when
+using the \fBON CLIENT\fP option in SQL queries that support them.
+Normally when a file is given as command line argument, such files are
+located relative to the directory of the input file.
+This option overrides that, and also specifies a directory for when
+queries are read from standard input.
 .SH BACKSLASH COMMANDS
 .SS
 General Commands

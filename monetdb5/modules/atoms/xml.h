@@ -27,44 +27,44 @@ typedef str xml;
 mal_export int TYPE_xml;
 
 extern str XMLxml2str(Client ctx, str *s, const xml *x)
-	__attribute__((__visibility__("hidden")));
+	ATTR_VISIBILITY_HIDDEN;
 extern str XMLstr2xml(Client ctx, xml *x, const char *const*s)
-	__attribute__((__visibility__("hidden")));
+	ATTR_VISIBILITY_HIDDEN;
 extern str XMLxmltext(Client ctx, str *s, const xml *x)
-	__attribute__((__visibility__("hidden")));
+	ATTR_VISIBILITY_HIDDEN;
 extern str XMLxml2xml(Client ctx, xml *x, const xml *s)
-	__attribute__((__visibility__("hidden")));
+	ATTR_VISIBILITY_HIDDEN;
 extern str XMLdocument(Client ctx, xml *x, const char * const *s)
-	__attribute__((__visibility__("hidden")));
+	ATTR_VISIBILITY_HIDDEN;
 extern str XMLcontent(Client ctx, xml *x, const char * const *s)
-	__attribute__((__visibility__("hidden")));
+	ATTR_VISIBILITY_HIDDEN;
 extern str XMLisdocument(Client ctx, bit *x, const char * const *s)
-	__attribute__((__visibility__("hidden")));
+	ATTR_VISIBILITY_HIDDEN;
 extern str XMLcomment(Client ctx, xml *x, const char * const *s)
-	__attribute__((__visibility__("hidden")));
+	ATTR_VISIBILITY_HIDDEN;
 extern str XMLpi(Client ctx, xml *x, const char * const *target, const char * const *s)
-	__attribute__((__visibility__("hidden")));
+	ATTR_VISIBILITY_HIDDEN;
 extern str XMLroot(Client ctx, xml *x, const xml *v, const char * const *version, const char * const *standalone)
-	__attribute__((__visibility__("hidden")));
+	ATTR_VISIBILITY_HIDDEN;
 extern str XMLparse(Client ctx, xml *x, const char * const *doccont, const char * const *s, const char * const *option)
-	__attribute__((__visibility__("hidden")));
+	ATTR_VISIBILITY_HIDDEN;
 extern str XMLattribute(Client ctx, xml *ret, const char * const *name, const char * const *val)
-	__attribute__((__visibility__("hidden")));
+	ATTR_VISIBILITY_HIDDEN;
 extern str XMLelement(Client ctx, xml *ret, const char * const *name, const xml *nspace, const xml *attr, const xml *val)
-	__attribute__((__visibility__("hidden")));
+	ATTR_VISIBILITY_HIDDEN;
 extern str XMLelementSmall(Client ctx, xml *ret, const char * const *name, const xml *val)
-	__attribute__((__visibility__("hidden")));
+	ATTR_VISIBILITY_HIDDEN;
 extern str XMLconcat(Client ctx, xml *ret, const xml *left, const xml *right)
-	__attribute__((__visibility__("hidden")));
+	ATTR_VISIBILITY_HIDDEN;
 extern str XMLforest(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr p)
-	__attribute__((__visibility__("hidden")));
+	ATTR_VISIBILITY_HIDDEN;
 
 extern size_t XMLquotestring(const char *s, char *buf, size_t len)
-	__attribute__((__visibility__("hidden")));
+	ATTR_VISIBILITY_HIDDEN;
 extern size_t XMLunquotestring(const char **p, char q, char *buf)
-	__attribute__((__visibility__("hidden")));
+	ATTR_VISIBILITY_HIDDEN;
 
 extern str XMLepilogue(Client ctx, void *ret)
-	__attribute__((__visibility__("hidden")));
+	ATTR_VISIBILITY_HIDDEN;
 
 #endif /* XML_H */

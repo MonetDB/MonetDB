@@ -1141,14 +1141,15 @@ resolve_func(mvc *sql, const char *sname, const char *name, dlist *typelist, sql
 		sql_subfunc *sub_func;
 
 		type_list = create_type_list(sql, typelist, 0);
-		sub_func = sql_bind_func_(sql, sname, name, type_list, type, false, true, true);
+		sql_ftype ftype = type == F_GROUPFILT ? F_FILT : type;
+		sub_func = sql_bind_func_(sql, sname, name, type_list, ftype, false, true, true);
 		if (!sub_func && type == F_FUNC) {
 			sql->session->status = 0; /* if the function was not found clean the error */
 			sql->errstr[0] = '\0';
 			sub_func = sql_bind_func_(sql, sname, name, type_list, F_UNION, false, true, true);
-			type = sub_func?F_UNION:F_FUNC;
+			ftype = type = sub_func?F_UNION:F_FUNC;
 		}
-		if ( sub_func && sub_func->func->type == type)
+		if ( sub_func && sub_func->func->type == ftype && (ftype != F_FILT || (type != F_GROUPFILT || sub_func->func->group)))
 			func = sub_func->func;
 	} else {
 		list_func = sql_find_funcs_by_name(sql, sname, name, type, false);

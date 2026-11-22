@@ -268,6 +268,39 @@ mvc_create_remote_as_subquery(mvc *sql, sql_rel *sq, sql_schema *s, const char *
 	return t;
 }
 
+static bool
+constraint_name_in_use(mvc *sql, sql_schema *ss, sql_table *t, const char *name)
+{
+	return ol_find_name(t->keys, name) || ol_find_name(t->idxs, name) ||
+		mvc_bind_key(sql, ss, name) || mvc_bind_idx(sql, ss, name);
+}
+
+static char *
+unique_constraint_name(allocator *ta, mvc *sql, sql_schema *ss, sql_table *t, const char *name)
+{
+	size_t len = strlen(name), buflen = len + 1;
+	char *buf = SA_NEW_ARRAY(ta, char, buflen);
+	unsigned int nr = 0;
+
+	strcpy(buf, name);
+	while (constraint_name_in_use(sql, ss, t, buf)) {
+		char suffix[32];
+		size_t suffix_len, old_buflen = buflen;
+
+		snprintf(suffix, sizeof(suffix), "_%u", ++nr);
+		suffix_len = strlen(suffix);
+		if (len + suffix_len + 1 > buflen)
+			buflen = len + suffix_len + 1;
+		if (buflen > old_buflen) {
+			char *nbuf = SA_RENEW_ARRAY(ta, char, buf, buflen, old_buflen);
+
+			buf = nbuf;
+		}
+		snprintf(buf + len, buflen - len, "%s", suffix);
+	}
+	return buf;
+}
+
 static char *
 table_constraint_name(allocator *ta, mvc *sql, symbol *s, sql_schema *ss, sql_table *t)
 {
@@ -299,7 +332,7 @@ table_constraint_name(allocator *ta, mvc *sql, symbol *s, sql_schema *ss, sql_ta
 			char name[512], name2[512], *nme, *nme2;
 			bool found;
 			do {
-				nme = number2name(name, sizeof(name), ++sql->label);
+				nme = number2name(name, sizeof(name), ol_length(t->keys));
 				buflen = snprintf(name2, sizeof(name2), "%s_%s_%s", t->base.name, nme, suffix);
 				nme2 = name2;
 				found = ol_find_name(t->keys, nme2) || mvc_bind_key(sql, ss, nme2);
@@ -343,11 +376,11 @@ table_constraint_name(allocator *ta, mvc *sql, symbol *s, sql_schema *ss, sql_ta
 		buflen = nbuflen;
 	}
 	snprintf(buf + len, buflen - len, "_%s", suffix);
-	return buf;
+	return unique_constraint_name(ta, sql, ss, t, buf);
 }
 
 static char *
-column_constraint_name(allocator *ta, symbol *s, sql_column *sc, sql_table *t)
+column_constraint_name(allocator *ta, mvc *sql, sql_schema *ss, symbol *s, sql_column *sc, sql_table *t)
 {
 	/* create a descriptive name like table_col_pkey */
 	char *suffix /* stores the type of this constraint */, *buf;
@@ -376,7 +409,7 @@ column_constraint_name(allocator *ta, symbol *s, sql_column *sc, sql_table *t)
 	buflen = strlen(t->base.name) + strlen(sc->base.name) + strlen(suffix) + 3;
 	buf = SA_NEW_ARRAY(ta, char, buflen);
 	snprintf(buf, buflen, "%s_%s_%s", t->base.name, sc->base.name, suffix);
-	return buf;
+	return unique_constraint_name(ta, sql, ss, t, buf);
 }
 
 #define COL_NULL	0
@@ -424,6 +457,39 @@ create_check_plan(sql_query *query, symbol *s, sql_table *t)
 	pexps = append(pexps, e);
 	rel = rel_project(sql->sa, rel, pexps);
 	return rel;
+}
+
+/* A CHECK constraint is stored as an expression string which is re-parsed on
+ * use.  Record the functions it refers to, so they cannot simply be dropped
+ * (which would leave an unparseable CHECK behind).  rel_dependencies() also
+ * returns the table and its columns, keep only the function references. */
+static int
+create_check_dependencies(mvc *sql, sql_rel *check_rel, sql_key *k)
+{
+	list *deps, *fdeps;
+
+	/* during CREATE TABLE the table object still has SQL_DECLARED_TABLE
+	 * persistence, so use its schema to detect truly declared tables */
+	if (isDeclaredSchema(k->t->s))
+		return 0;
+	deps = rel_dependencies(sql, check_rel);
+	if (list_empty(deps))
+		return 0;
+	fdeps = sa_list(sql->sa);
+	if (!fdeps) {
+		(void) sql_error(sql, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		return -1;
+	}
+	for (node *n = deps->h; n; n = n->next) {
+		sql_base *b = n->data;
+		if (sql_trans_find_func(sql->session->tr, b->id))
+			list_append(fdeps, b);
+	}
+	if (mvc_create_dependencies(sql, fdeps, k->base.id, FUNC_DEPENDENCY, SQL_PERSIST)) {
+		(void) sql_error(sql, 02, SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		return -1;
+	}
+	return 0;
 }
 
 static int
@@ -538,6 +604,8 @@ column_constraint_type(sql_query *query, const char *name, symbol *s, sql_schema
 			default:
 				break;
 		}
+		if (check && create_check_dependencies(sql, check_rel, k) < 0)
+			return SQL_ERR;
 		res = SQL_OK;
 	} 	break;
 	case SQL_FOREIGN_KEY: {
@@ -708,7 +776,7 @@ column_options(sql_query *query, dlist *opt_list, sql_schema *ss, sql_table *t, 
 				allocator *ta = MT_thread_getallocator();
 				allocator_state ta_state = ma_open(ta);
 
-				if (!opt_name && !(default_name = column_constraint_name(ta, sym, cs, t))) {
+				if (!opt_name && !(default_name = column_constraint_name(ta, sql, ss, sym, cs, t))) {
 					ma_close(&ta_state);
 					return SQL_ERR;
 				}
@@ -1095,6 +1163,8 @@ table_constraint_type(sql_query *query, const char *name, symbol *s, sql_schema 
 			default:
 				break;
 		}
+		if (check && create_check_dependencies(sql, check_rel, k) < 0)
+			return SQL_ERR;
 	} 	break;
 	case SQL_FOREIGN_KEY:
 		res = table_foreign_key(sql, name, s, ss, t);

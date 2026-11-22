@@ -22,7 +22,27 @@ AllowShortIfStatementsOnASingleLine: Never
 AllowShortLoopsOnASingleLine: false
 # clang-format 23: AllowShortRecordOnASingleLine: Never
 AlwaysBreakBeforeMultilineStrings: false
-AttributeMacros: [_In_z_, _Printf_format_string_]
+AttributeMacros:
+  - _Printf_format_string_
+  - ATTR_ACCESS
+  - ATTR_ALIGNED
+  - ATTR_ALLOC_SIZE
+  - ATTR_COLD
+  - ATTR_CONST
+  - ATTR_COUNTED_BY
+  - ATTR_DESIGNATED_INIT
+  - ATTR_FORMAT
+  - ATTR_MALLOC
+  - ATTR_MALLOC_ARGS
+  - ATTR_NOINLINE
+  - ATTR_NONNULL
+  - ATTR_NONNULL_IF_NONZERO
+  - ATTR_NONSTRING
+  - ATTR_PURE
+  - ATTR_RETURNS_NONNULL
+  - ATTR_SENTINEL
+  - ATTR_VISIBILITY_HIDDEN
+  - ATTR_WARN_UNUSED_RESULT
 BinPackArguments: true
 BinPackParameters: BinPack
 BitFieldColonSpacing: None

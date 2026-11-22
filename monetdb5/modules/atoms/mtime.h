@@ -17,41 +17,50 @@
 #include "mal_interpreter.h"
 #include "mal_exception.h"
 
+#define DAY_MSEC	(24 * 60 * 60 * 1000)
+
 /* TODO change dayint again into an int instead of lng */
-__attribute__((__const__))
+ATTR_CONST
 static inline lng
 date_diff_imp(const date d1, const date d2)
 {
 	int diff = date_diff(d1, d2);
-	return is_int_nil(diff) ? lng_nil : (lng) diff *(lng) (24 * 60 * 60 * 1000);
+	return is_int_nil(diff) ? lng_nil : (lng) diff * (lng) DAY_MSEC;
 }
 
-__attribute__((__const__))
+ATTR_CONST
 static inline daytime
 time_sub_msec_interval(const daytime t, const lng ms)
 {
 	if (is_lng_nil(ms))
 		return daytime_nil;
-	return daytime_add_usec_modulo(t, -ms * 1000);
+	/* reduce before multiplying: ms * 1000 would overflow lng */
+	return daytime_add_usec_modulo(t, -(ms % DAY_MSEC) * 1000);
 }
 
-__attribute__((__const__))
+ATTR_CONST
 static inline daytime
 time_add_msec_interval(const daytime t, const lng ms)
 {
 	if (is_lng_nil(ms))
 		return daytime_nil;
-	return daytime_add_usec_modulo(t, ms * 1000);
+	return daytime_add_usec_modulo(t, (ms % DAY_MSEC) * 1000);
 }
 
 static inline str
 date_sub_msec_interval(date *ret, date d, lng ms)
 {
+	lng days;
 	if (is_date_nil(d) || is_lng_nil(ms)) {
 		*ret = date_nil;
 		return MAL_SUCCEED;
 	}
-	if (is_date_nil((*ret = date_add_day(d, (int) (-ms / (24 * 60 * 60 * 1000))))))
+	/* date_add_day() takes an int.  Check the lng day count before
+	 * narrowing it, otherwise a large interval wraps into a small,
+	 * apparently valid day count. */
+	days = -(ms / DAY_MSEC);
+	if (days < INT_MIN || days > INT_MAX ||
+	    is_date_nil((*ret = date_add_day(d, (int) days))))
 		throw(MAL, "mtime.date_sub_msec_interval",
 			  SQLSTATE(22003) "overflow in calculation");
 	return MAL_SUCCEED;
@@ -60,11 +69,14 @@ date_sub_msec_interval(date *ret, date d, lng ms)
 static inline str
 date_add_msec_interval(date *ret, date d, lng ms)
 {
+	lng days;
 	if (is_date_nil(d) || is_lng_nil(ms)) {
 		*ret = date_nil;
 		return MAL_SUCCEED;
 	}
-	if (is_date_nil((*ret = date_add_day(d, (int) (ms / (24 * 60 * 60 * 1000))))))
+	days = ms / DAY_MSEC;
+	if (days < INT_MIN || days > INT_MAX ||
+	    is_date_nil((*ret = date_add_day(d, (int) days))))
 		throw(MAL, "mtime.date_add_msec_interval",
 			  SQLSTATE(22003) "overflow in calculation");
 	return MAL_SUCCEED;
@@ -77,7 +89,9 @@ timestamp_sub_msec_interval(timestamp *ret, timestamp ts, lng ms)
 		*ret = timestamp_nil;
 		return MAL_SUCCEED;
 	}
-	if (is_timestamp_nil((*ret = timestamp_add_usec(ts, -ms * 1000))))
+	/* check before multiplying: ms * 1000 must fit in lng */
+	if (ms < GDK_lng_min / 1000 || ms > GDK_lng_max / 1000 ||
+	    is_timestamp_nil((*ret = timestamp_add_usec(ts, -(ms * 1000)))))
 		throw(MAL, "mtime.timestamp_sub_msec_interval",
 			  SQLSTATE(22003) "overflow in calculation");
 	return MAL_SUCCEED;
@@ -116,7 +130,9 @@ timestamp_add_msec_interval(timestamp *ret, timestamp ts, lng ms)
 		*ret = timestamp_nil;
 		return MAL_SUCCEED;
 	}
-	if (is_timestamp_nil((*ret = timestamp_add_usec(ts, ms * 1000))))
+	/* check before multiplying: ms * 1000 must fit in lng */
+	if (ms < GDK_lng_min / 1000 || ms > GDK_lng_max / 1000 ||
+	    is_timestamp_nil((*ret = timestamp_add_usec(ts, ms * 1000))))
 		throw(MAL, "mtime.timestamp_add_msec_interval",
 			  SQLSTATE(22003) "overflow in calculation");
 	return MAL_SUCCEED;
@@ -128,7 +144,8 @@ odbc_timestamp_add_msec_interval_time(timestamp *ret, daytime t, lng ms)
 {
 	date today = timestamp_date(timestamp_current());
 	timestamp ts = timestamp_create(today, t);
-	if (is_timestamp_nil((*ret = timestamp_add_usec(ts, ms * 1000))))
+	if (is_lng_nil(ms) || ms < GDK_lng_min / 1000 || ms > GDK_lng_max / 1000 ||
+	    is_timestamp_nil((*ret = timestamp_add_usec(ts, ms * 1000))))
 		throw(MAL, "mtime.odbc_timestamp_add_msec_interval_time",
 			  SQLSTATE(22003) "overflow in calculation");
 	return MAL_SUCCEED;
@@ -151,7 +168,8 @@ static inline str
 odbc_timestamp_add_msec_interval_date(timestamp *ret, date d, lng ms)
 {
 	timestamp ts = timestamp_fromdate(d);
-	if (is_timestamp_nil((*ret = timestamp_add_usec(ts, ms * 1000))))
+	if (is_lng_nil(ms) || ms < GDK_lng_min / 1000 || ms > GDK_lng_max / 1000 ||
+	    is_timestamp_nil((*ret = timestamp_add_usec(ts, ms * 1000))))
 		throw(MAL, "mtime.odbc_timestamp_add_msec_interval_date",
 			  SQLSTATE(22003) "overflow in calculation");
 	return MAL_SUCCEED;
@@ -184,7 +202,7 @@ date_addmonths(date *ret, date d, int m)
 	return MAL_SUCCEED;
 }
 
-__attribute__((__const__))
+ATTR_CONST
 static inline lng
 date_to_msec_since_epoch(date t)
 {
@@ -195,7 +213,7 @@ date_to_msec_since_epoch(date t)
 		   / 1000);
 }
 
-__attribute__((__const__))
+ATTR_CONST
 static inline lng
 daytime_to_msec_since_epoch(daytime t)
 {
@@ -216,7 +234,7 @@ daytime_to_msec_since_epoch(daytime t)
 											   / (div)))))
 #endif
 
-__attribute__((__const__))
+ATTR_CONST
 static inline lng
 timestamp_diff_msec(timestamp t1, timestamp t2)
 {
@@ -224,7 +242,7 @@ timestamp_diff_msec(timestamp t1, timestamp t2)
 	return DIVIDE(diff, 1000, lng);
 }
 
-__attribute__((__const__))
+ATTR_CONST
 static inline int
 timestamp_century(const timestamp t)
 {
@@ -237,112 +255,112 @@ timestamp_century(const timestamp t)
 		return -((-y - 1) / 100 + 1);
 }
 
-__attribute__((__const__))
+ATTR_CONST
 static inline int
 timestamp_decade(timestamp t)
 {
 	return is_timestamp_nil(t) ? int_nil : date_year(timestamp_date(t)) / 10;
 }
 
-__attribute__((__const__))
+ATTR_CONST
 static inline int
 timestamp_year(timestamp t)
 {
 	return date_year(timestamp_date(t));
 }
 
-__attribute__((__const__))
+ATTR_CONST
 static inline int
 timestamp_quarter(timestamp t)
 {
 	return is_timestamp_nil(t) ? bte_nil : (date_month(timestamp_date(t)) - 1) / 3 + 1;
 }
 
-__attribute__((__const__))
+ATTR_CONST
 static inline int
 timestamp_month(timestamp t)
 {
 	return date_month(timestamp_date(t));
 }
 
-__attribute__((__const__))
+ATTR_CONST
 static inline int
 timestamp_day(timestamp t)
 {
 	return date_day(timestamp_date(t));
 }
 
-__attribute__((__const__))
+ATTR_CONST
 static inline int
 timestamp_hours(timestamp t)
 {
 	return daytime_hour(timestamp_daytime(t));
 }
 
-__attribute__((__const__))
+ATTR_CONST
 static inline int
 timestamp_minutes(timestamp t)
 {
 	return daytime_min(timestamp_daytime(t));
 }
 
-__attribute__((__const__))
+ATTR_CONST
 static inline int
 timestamp_extract_usecond(timestamp ts)
 {
 	return daytime_sec_usec(timestamp_daytime(ts));
 }
 
-__attribute__((__const__))
+ATTR_CONST
 static inline lng
 timestamp_to_msec_since_epoch(timestamp t)
 {
 	return is_timestamp_nil(t) ? lng_nil : (timestamp_diff(t, unixepoch) / 1000);
 }
 
-__attribute__((__const__))
+ATTR_CONST
 static inline int
 sql_year(int m)
 {
 	return is_int_nil(m) ? int_nil : m / 12;
 }
 
-__attribute__((__const__))
+ATTR_CONST
 static inline int
 sql_month(int m)
 {
 	return is_int_nil(m) ? int_nil : m % 12;
 }
 
-__attribute__((__const__))
+ATTR_CONST
 static inline lng
 sql_day(lng m)
 {
 	return is_lng_nil(m) ? lng_nil : m / (24*60*60*1000);
 }
 
-__attribute__((__const__))
+ATTR_CONST
 static inline int
 sql_hours(lng m)
 {
 	return is_lng_nil(m) ? int_nil : (int) ((m % (24*60*60*1000)) / (60*60*1000));
 }
 
-__attribute__((__const__))
+ATTR_CONST
 static inline int
 sql_minutes(lng m)
 {
 	return is_lng_nil(m) ? int_nil : (int) ((m % (60*60*1000)) / (60*1000));
 }
 
-__attribute__((__const__))
+ATTR_CONST
 static inline int
 sql_seconds(lng m)
 {
 	return is_lng_nil(m) ? int_nil : (int) ((m % (60*1000)) / 1000);
 }
 
-__attribute__((__const__))
+ATTR_CONST
 static inline lng
 msec_since_epoch(lng ts)
 {

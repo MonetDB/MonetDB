@@ -251,7 +251,7 @@ setProp(const char *path, const char *key, const char *val)
 		if (strcmp(key, "forward") == 0) {
 			if (strcmp(val, "proxy") != 0 && strcmp(val, "redirect") != 0) {
 				snprintf(buf, sizeof(buf), "expected 'proxy' or 'redirect' "
-						"for property 'forward', got: %s", val);
+					 "for property 'forward', got: %s", val);
 				freeConfFile(props);
 				free(props);
 				return(strdup(buf));
@@ -266,16 +266,16 @@ setProp(const char *path, const char *key, const char *val)
 			}
 			while (*value != '\0') {
 				if (!(
-							(*value >= 'A' && *value <= 'Z') ||
-							(*value >= 'a' && *value <= 'z') ||
-							isdigit((unsigned char) *value) ||
-							(*value == '.' || *value == '/')
-					 ))
+					    (*value >= 'A' && *value <= 'Z') ||
+					    (*value >= 'a' && *value <= 'z') ||
+					    isdigit((unsigned char) *value) ||
+					    (*value == '.' || *value == '/')
+					    ))
 				{
 					snprintf(buf, sizeof(buf),
-							"invalid character '%c' at %d "
-							"in tag name '%s'\n",
-							*value, (int)(value - val), val);
+						 "invalid character '%c' at %d "
+						 "in tag name '%s'\n",
+						 *value, (int)(value - val), val);
 					freeConfFile(props);
 					free(props);
 					return(strdup(buf));

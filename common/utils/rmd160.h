@@ -129,20 +129,20 @@ typedef int the_correct_size_was_chosen [sizeof (dword) == 4? 1: -1];
 /* function prototypes */
 
 void MDinit(dword *MDbuf)
-	__attribute__((__visibility__("hidden")));
+	ATTR_VISIBILITY_HIDDEN;
 /*
  *  initializes MDbuffer to "magic constants"
  */
 
 void MDcompress(dword *MDbuf, dword *X)
-	__attribute__((__visibility__("hidden")));
+	ATTR_VISIBILITY_HIDDEN;
 /*
  *  the compression function.
  *  transforms MDbuf using message bytes X[0] through X[15]
  */
 
 void MDfinish(dword *MDbuf, byte *strptr, dword lswlen, dword mswlen)
-	__attribute__((__visibility__("hidden")));
+	ATTR_VISIBILITY_HIDDEN;
 /*
  *  puts bytes from strptr into X and pad out; appends length
  *  and finally, compresses the last block(s)

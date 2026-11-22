@@ -1142,6 +1142,55 @@ create_func(mvc *sql, char *sname, char *fname, sql_func *f, int replace)
 	return MAL_SUCCEED;
 }
 
+/* Register the depending objects referenced by a column DEFAULT expression as
+ * created with alter table .. add column .. default. */
+static str
+create_default_dependencies(mvc *sql, sql_schema *s, sql_column *c, sql_table *nt)
+{
+	static const char next_value_for[] = "next value for \"sys\".\"seq_";
+	allocator *osa = sql->sa, *nsa = NULL;
+	allocator *ta = MT_thread_getallocator();
+	sql_rel *r = NULL;
+	str msg = MAL_SUCCEED;
+
+	if (!c->def)
+		return MAL_SUCCEED;
+	/* AUTO_INCREMENT sequences already get a BEDROPPED_DEPENDENCY */
+	if (strncmp(c->def, next_value_for, strlen(next_value_for)) == 0)
+		return MAL_SUCCEED;
+
+	if (!(nsa = create_allocator("MA_mvc", false))) {
+		msg = createException(SQL, "sql.alter_table", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		goto cleanup;
+	}
+	sql->sa = nsa;
+
+	r = rel_parse(sql, s, sa_message(ta, "select %s;", c->def), m_deps);
+	if (!r || !is_project(r->op) || !r->exps || list_length(r->exps) != 1 ||
+		exp_check_type(sql, &c->type, r, r->exps->h->data, type_equal) == NULL) {
+		if (r)
+			rel_destroy(sql, r);
+		if (strlen(sql->errstr) > 6 && sql->errstr[5] == '!')
+			msg = createException(SQL, "sql.alter_table", "%s", sql->errstr);
+		else
+			msg = createException(SQL, "sql.alter_table", SQLSTATE(42000) "%s", sql->errstr);
+		goto cleanup;
+	}
+
+	if (mvc_create_dependencies(sql, rel_dependencies(sql, r), nt->base.id,
+								FUNC_DEPENDENCY, nt->persistence))
+		msg = createException(SQL, "sql.alter_table", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+	if (r)
+		rel_destroy(sql, r);
+
+cleanup:
+	if (nsa) {
+		ma_destroy(nsa);
+		sql->sa = osa;
+	}
+	return msg;
+}
+
 str
 alter_table(Client cntxt, mvc *sql, char *sname, sql_table *t)
 {
@@ -1286,9 +1335,13 @@ alter_table(Client cntxt, mvc *sql, char *sname, sql_table *t)
 	for (; n; n = n->next) {
 		/* propagate alter table .. add column */
 		sql_column *c = n->data;
+		str err;
 
 		if (c->base.deleted) /* skip */
 			continue;
+		/* register any functions/sequences used by the column DEFAULT */
+		if ((err = create_default_dependencies(sql, s, c, nt)) != MAL_SUCCEED)
+			return err;
 		switch (mvc_copy_column(sql, nt, c, NULL)) {
 			case -1:
 				throw(SQL,"sql.alter_table", SQLSTATE(HY013) MAL_MALLOC_FAIL);

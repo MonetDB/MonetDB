@@ -1958,15 +1958,15 @@ BATcalcdivcst(BAT *b, const ValRecord *v, BAT *s, int tp)
 
 	BATcheck(b, NULL);
 
-	canditer_init(&ci, b, s);
+	BATiter bi = bat_iterator(b);
+	canditer_init_bi(&ci, &bi, s);
 
 	bn = COLnew(ci.hseq, tp, ci.ncand, TRANSIENT);
-	if (bn == NULL)
-		return NULL;
-	if (ci.ncand == 0)
+	if (bn == NULL || ci.ncand == 0) {
+		bat_iterator_end(&bi);
 		return bn;
+	}
 
-	BATiter bi = bat_iterator(b);
 	nils = div_typeswitchloop(bi.base, bi.type, true,
 				  VALptr(v), v->vtype, false,
 				  Tloc(bn, 0), tp,
@@ -2021,16 +2021,20 @@ BATcalccstdiv(const ValRecord *v, BAT *b, BAT *s, int tp)
 
 	BATcheck(b, NULL);
 
-	canditer_init(&ci, b, s);
-	if (ci.ncand == 0)
+	BATiter bi = bat_iterator(b);
+	canditer_init_bi(&ci, &bi, s);
+	if (ci.ncand == 0) {
+		bat_iterator_end(&bi);
 		return BATconstant(ci.hseq, tp, ATOMnilptr(tp),
 				   ci.ncand, TRANSIENT);
+	}
 
 	bn = COLnew(ci.hseq, tp, ci.ncand, TRANSIENT);
-	if (bn == NULL)
+	if (bn == NULL) {
+		bat_iterator_end(&bi);
 		return NULL;
+	}
 
-	BATiter bi = bat_iterator(b);
 	nils = div_typeswitchloop(VALptr(v), v->vtype, false,
 				  bi.base, bi.type, true,
 				  Tloc(bn, 0), tp,

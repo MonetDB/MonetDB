@@ -138,6 +138,8 @@ extern sql_rel *rel_parent(sql_rel *rel);
 extern sql_exp *lastexp(sql_rel *rel);
 extern sql_rel *rel_return_zero_or_one(mvc *sql, sql_rel *rel, exp_kind ek);
 extern sql_rel *rel_zero_or_one(mvc *sql, sql_rel *rel, exp_kind ek);
+extern BUN get_rel_count(sql_rel *rel);
+extern void set_count_prop(allocator *sa, sql_rel *rel, BUN val);
 
 extern list *rel_dependencies(mvc *sql, sql_rel *r);
 

@@ -295,6 +295,23 @@ sql_column_get_statistics(mvc *sql, sql_column *c, sql_exp *e)
 		et->digits = et->scale + 1;
 }
 
+void
+sql_idx_get_statistics(mvc *sql, sql_idx *i, sql_exp *e)
+{
+	bool nonil = false, unique = false;
+	double unique_est = 0.0;
+	(void)mvc_idx_stats(sql, i, &nonil, &unique, &unique_est);
+
+	if (has_nil(e) && nonil)
+		set_has_no_nil(e);
+	if (!is_unique(e) && unique)
+		set_unique(e);
+	if (unique_est != 0.0) {
+		prop *p = e->p = prop_create(sql->sa, PROP_NUNIQUES, e->p);
+		p->value.dval = unique_est;
+	}
+}
+
 static void
 rel_basetable_column_get_statistics(mvc *sql, sql_rel *rel, sql_exp *e)
 {
@@ -396,7 +413,7 @@ rel_munion_get_statistics(mvc *sql, sql_rel *rel, list *rels, sql_exp *e, int i)
 }
 
 
-static sql_exp *
+sql_exp *
 rel_propagate_statistics(visitor *v, sql_rel *rel, sql_exp *e, int depth)
 {
 	mvc *sql = v->sql;
@@ -625,16 +642,20 @@ rel_prune_predicates(visitor *v, sql_rel *rel)
 					always_false |= !is_anti(e) && ((exp_is_not_null(le) && exp_is_null(re)) || (exp_is_null(le) && exp_is_not_null(re)));
 				switch (e->flag) {
 				case cmp_equal:
-					if (lval_min && lval_max && rval_min && rval_max && (!is_semantics(e) || !has_nil(le) || !has_nil(re)))
-						always_false |= (is_anti(e) ? (atom_cmp(lval_min, rval_min) == 0 && atom_cmp(lval_max, rval_max) <= 0) : (atom_cmp(rval_max, lval_min) < 0 || atom_cmp(rval_min, lval_max) > 0));
+					if (lval_min && lval_max && rval_min && rval_max && (!is_semantics(e) || !has_nil(le) || !has_nil(re))) {
+						always_false |= (!is_anti(e) && (atom_cmp(rval_max, lval_min) < 0 || atom_cmp(rval_min, lval_max) > 0));
+						always_true |= (is_anti(e) && (atom_cmp(rval_max, lval_min) < 0 || atom_cmp(rval_min, lval_max) > 0));
+					}
 					if (is_semantics(e)) { /* prune *= NULL cases */
 						always_false |= (is_anti(e) ? (exp_is_null(le) && exp_is_null(re)) : ((exp_is_not_null(le) && exp_is_null(re)) || (exp_is_null(le) && exp_is_not_null(re))));
 						always_true |= (is_anti(e) ? ((exp_is_not_null(le) && exp_is_null(re)) || (exp_is_null(le) && exp_is_not_null(re))) : (exp_is_null(le) && exp_is_null(re)));
 					}
 					break;
 				case cmp_notequal:
-					if (lval_min && lval_max && rval_min && rval_max)
-						always_true |= !has_nil(le) && !has_nil(re) && (is_anti(e) ? (atom_cmp(lval_min, rval_min) == 0 && atom_cmp(lval_max, rval_max) <= 0) : (atom_cmp(rval_max, lval_min) < 0 || atom_cmp(rval_min, lval_max) > 0));
+					if (lval_min && lval_max && rval_min && rval_max) {
+						always_true |= !has_nil(le) && !has_nil(re) && (!is_anti(e) && (atom_cmp(rval_max, lval_min) < 0 || atom_cmp(rval_min, lval_max) > 0));
+						always_false |= !has_nil(le) && !has_nil(re) && (is_anti(e) && (atom_cmp(rval_max, lval_min) < 0 || atom_cmp(rval_min, lval_max) > 0));
+					}
 					if (is_semantics(e)) {
 						always_true |= (is_anti(e) ? (exp_is_null(le) && exp_is_null(re)) : ((exp_is_not_null(le) && exp_is_null(re)) || (exp_is_null(le) && exp_is_not_null(re))));
 						always_false |= (is_anti(e) ? ((exp_is_not_null(le) && exp_is_null(re)) || (exp_is_null(le) && exp_is_not_null(re))) : (exp_is_null(le) && exp_is_null(re)));
@@ -992,6 +1013,7 @@ rel_get_statistics_(visitor *v, sql_rel *rel)
 					sql_exp *e = n->data, *el = e->l, *er = e->r;
 					BUN uniques_estimate = BUN_MAX;
 
+					/* TODO replace by exp_selectivity */
 					if (find_prop(e->p, PROP_JOINIDX)) {
 						prop *lsp = find_prop(l->p, PROP_SELECTIVITY), *rsp = find_prop(r->p, PROP_SELECTIVITY);
 						dbl ls = lsp && is_join(l->op) ? lsp->value.dval : 1.0;
@@ -1007,23 +1029,29 @@ rel_get_statistics_(visitor *v, sql_rel *rel)
 					} else if (e->type == e_cmp && e->flag == cmp_equal) {
 						/* if one of the sides is unique, the cardinality will be at most the cardinality of the other side */
 						if (!is_semantics(e) || !has_nil(el) || !has_nil(er)) {
-							BUN lu = lv, ru = rv;
-							prop *p = NULL;
-							if ((p = find_prop(el->p, PROP_NUNIQUES)))
-								lu = (BUN) p->value.dval;
-							if ((p = find_prop(er->p, PROP_NUNIQUES)))
-								ru = (BUN) p->value.dval;
-							if (is_unique(el) || lu > lv) {
-								BUN ncount = (is_right(rel->op) || is_full(rel->op) || !lv || lu < lv) ? MAX(lv, rv) : rv/(lu/lv);
-								if (ncount == 0)
-									ncount = MAX(lv, rv);
-								uniques_estimate = MIN(uniques_estimate, ncount);
-							} else if (is_unique(er) || ru > rv) {
-								BUN ncount = (is_left(rel->op) || is_full(rel->op) || !rv || ru < rv) ? MAX(lv, rv) : lv/(ru/rv);
-								if (ncount == 0)
-									ncount = MAX(lv, rv);
-								uniques_estimate = MIN(uniques_estimate, ncount);
+							BUN lu = 1, ru = 1;
+							sql_exp *el = e->l, *er = e->r;
+							prop *up = NULL;
+							if (el->type == e_column && (is_select(l->op) || is_basetable(l->op)))
+								el = rel_find_exp(l, el);
+							if (!el) {
+								el = e->l;
+								el = rel_find_exp(r, el);
 							}
+							if ((up = find_prop(el->p, PROP_NUNIQUES)))
+								lu = MIN((BUN) up->value.dval, lv);
+							if (er->type == e_column && (is_select(r->op) || is_basetable(r->op)))
+								er = rel_find_exp(r, er);
+							if (!er) {
+								er = e->r;
+								er = rel_find_exp(l, er);
+							}
+							if ((up = find_prop(er->p, PROP_NUNIQUES)))
+								ru = MIN((BUN) up->value.dval, rv);
+							if (is_unique(el) || is_unique(er))
+								uniques_estimate = MIN(uniques_estimate, MAX(lv, rv));
+							if (is_unique(el) && is_unique(er))
+								uniques_estimate = MIN(lu, ru);
 							if (uniques_estimate < BUN_MAX) {
 								if (uniques_estimate < r_uniques_estimate)
 									r_uniques_estimate = uniques_estimate;
@@ -1032,9 +1060,11 @@ rel_get_statistics_(visitor *v, sql_rel *rel)
 								sp->value.dval = s;
 								e->p = sp;
 							} else {
-								dbl u = (dbl)MAX(lu, ru);
+								dbl mfl = (dbl)lv/lu;
+								dbl mfr = (dbl)rv/ru;
+								dbl mf = MIN(lv/mfl, rv/mfr);
+								dbl u = mf * mfl * mfr;
 								dbl s = u/(lv*rv);
-								//dbl s = 1/u;
 								prop *sp = prop_create(v->sql->sa, PROP_SELECTIVITY, (prop *) e->p);
 								sp->value.dval = s;
 								e->p = sp;
@@ -1075,7 +1105,7 @@ rel_get_statistics_(visitor *v, sql_rel *rel)
 						sql_exp *e = n->data;
 						prop *sp = NULL;
 						if ((sp = find_prop(e->p, PROP_SELECTIVITY)) == NULL) {
-							dbl s = exp_estimate_selectivity(v->sql, e);
+							dbl s = exp_estimate_selectivity(v->sql, e, rel);
 							/* store selectivity on predicate for later use */
 							sp = prop_create(v->sql->sa, PROP_SELECTIVITY, e->p);
 							sp->value.dval = s;
@@ -1085,8 +1115,8 @@ rel_get_statistics_(visitor *v, sql_rel *rel)
 					}
 				}
 				dbl est = (dbl)lv * (dbl)rv * sel;
-				if (est < 1)
-					est = 1;
+				if (est <= 1)
+					est = 2;
 				set_count_prop(v->sql->sa, rel, est > (dbl)BUN_MAX ? BUN_MAX : (BUN)est);
 				prop *sp = NULL;
 				if ((sp = find_prop(rel->p, PROP_SELECTIVITY)) == NULL) {
@@ -1110,7 +1140,7 @@ rel_get_statistics_(visitor *v, sql_rel *rel)
 					dbl sel = 1.0;
 					for (node *n = rel->exps->h ; n ; n = n->next) {
 						sql_exp *e = n->data;
-						dbl s = exp_estimate_selectivity(v->sql, e);
+						dbl s = exp_estimate_selectivity(v->sql, e, rel);
 						/* store selectivity on predicate for later use */
 						prop *sp = prop_create(v->sql->sa, PROP_SELECTIVITY, (prop *) e->p);
 						sp->value.dval = s;
@@ -1120,8 +1150,8 @@ rel_get_statistics_(visitor *v, sql_rel *rel)
 					BUN est = cnt == 0 ? 0 : (BUN)((dbl)cnt * sel);
 					if (est > cnt)
 						est = cnt;
-					if (est < 1 && cnt > 0)
-						est = 1;
+					if (est <= 1 && cnt > 0)
+						est = 2;
 					set_count_prop(v->sql->sa, rel, est);
 					prop *sp = NULL;
 					if ((sp = find_prop(rel->p, PROP_SELECTIVITY)) == NULL) {
@@ -1139,13 +1169,7 @@ rel_get_statistics_(visitor *v, sql_rel *rel)
 			}
 			break;
 		case op_project:
-			if (l) {
-				if (need_distinct(rel)) {
-					set_count_prop(v->sql->sa, rel, rel_calc_nuniques(v->sql, l, rel->exps)+1);
-				} else {
-					set_count_prop(v->sql->sa, rel, get_rel_count(l));
-				}
-			} else {
+			if (!l) {
 				BUN card = 1;
 
 				if (!list_empty(rel->exps)) {
@@ -1297,9 +1321,8 @@ rel_get_statistics(visitor *v, global_props *gp, sql_rel *rel)
 run_optimizer
 bind_get_statistics(visitor *v, global_props *gp)
 {
-	bool pipeline_mode = MT_thread_get_qry_ctx()->pipeline_mode;
 	(void) v;
-	return (!pipeline_mode && gp->opt_level == 1 /*&& !gp->cnt[op_insert]*/) ? rel_get_statistics : NULL;
+	return (gp->opt_level == 1) ? rel_get_statistics : NULL;
 }
 
 
@@ -1588,113 +1611,4 @@ bind_final_optimization_loop(visitor *v, global_props *gp)
 	/* At the moment, this optimizer has dependency on 3 flags */
 	return gp->opt_level == 1 && (gp->cnt[op_groupby] || gp->cnt[op_select]) &&
 		(flag & push_select_up) && (flag & optimize_select_and_joins_topdown) && (flag & optimize_projections) ? rel_final_optimization_loop : NULL;
-}
-
-/* join order2: reorder joins using statistical information (selectivity/cardinality).
- * Runs after the main statistics pass, ensuring up-to-date cardinality estimates
- * are available for cost-based join ordering decisions.
- * For hash-based joins, cost ~ sum of input/output cardinalities. */
-
-static sql_rel *
-rel_join_order2_(visitor *v, sql_rel *rel, int skip)
-{
-	if (!rel)
-		return rel;
-
-	if (v->opt >= 0 && rel->opt >= v->opt) /* only once */
-		return rel;
-
-	switch (rel->op) {
-	case op_basetable:
-		break;
-	case op_table:
-		if (IS_TABLE_PROD_FUNC(rel->flag) || rel->flag == TABLE_FROM_RELATION)
-			rel->l = rel_join_order2_(v, rel->l, false);
-		break;
-	case op_join:
-		rel->l = rel_join_order2_(v, rel->l, true);
-		rel->r = rel_join_order2_(v, rel->r, true);
-		break;
-
-	case op_left:
-	case op_right:
-	case op_full:
-		rel->l = rel_join_order2_(v, rel->l, false);
-		rel->r = rel_join_order2_(v, rel->r, false);
-		break;
-
-	case op_semi:
-	case op_anti:
-
-	case op_inter:
-	case op_except:
-		rel->l = rel_join_order2_(v, rel->l, false);
-		rel->r = rel_join_order2_(v, rel->r, false);
-		break;
-	case op_munion:
-		assert(rel->l);
-		for (node *n = ((list*)rel->l)->h; n; n = n->next)
-			n->data = rel_join_order2_(v, n->data, false);
-		break;
-	case op_project:
-	case op_select:
-	case op_groupby:
-	case op_topn:
-	case op_sample:
-		rel->l = rel_join_order2_(v, rel->l, false);
-		break;
-	case op_ddl:
-		if (rel->flag == ddl_output || rel->flag == ddl_create_seq || rel->flag == ddl_alter_seq || rel->flag == ddl_alter_table || rel->flag == ddl_create_table || rel->flag == ddl_create_view) {
-			rel->l = rel_join_order2_(v, rel->l, false);
-		} else if (rel->flag == ddl_list || rel->flag == ddl_exception) {
-			rel->l = rel_join_order2_(v, rel->l, false);
-			rel->r = rel_join_order2_(v, rel->r, false);
-		}
-		break;
-	case op_insert:
-	case op_update:
-	case op_delete:
-		rel->r = rel_join_order2_(v, rel->r, false);
-		break;
-	case op_truncate:
-	case op_buildhash:
-	case op_probehash:
-	case op_partition:
-		break;
-	}
-	if (is_innerjoin(rel->op) && !is_single(rel) && !rel_is_ref(rel) && list_empty(rel->attr)) {
-		if (!skip) {
-			rel = reorder_join(v, rel);
-			rel = rel_get_statistics_(v, rel);
-		}
-	} else {
-		if (is_join(rel->op) || is_semi(rel->op))
-			rel->used = 0;
-		rel = rel_get_statistics_(v, rel);
-	}
-	if (rel && v->opt >= 0)
-		rel->opt = v->opt;
-	return rel;
-}
-
-static sql_rel *
-rel_join_order2(visitor *v, global_props *gp, sql_rel *rel)
-{
-	(void)gp;
-	v->data = NULL;
-	if (v->opt >= 0 && rel)
-		v->opt = rel->opt+1;
-	/* propagate statistics first to get up-to-date cardinality and selectivity */
-	allocator *ta = MT_thread_getallocator();
-	allocator_state ta_state = ma_open(ta);
-	sql_rel *r = rel_join_order2_(v, rel, false);
-	ma_close(&ta_state);
-	return r;
-}
-
-run_optimizer
-bind_join_order2(visitor *v, global_props *gp)
-{
-	int flag = v->sql->sql_optimizer;
-	return gp->opt_level == 1 && (flag & join_order) ? rel_join_order2 : NULL;
 }

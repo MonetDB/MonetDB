@@ -62,7 +62,7 @@ BATall_grp(BAT *l, BAT *g, BAT *e, BAT *s)
 
 	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
 
-	if ((err = BATgroupaggrinit(l, g, e, s, &min, &max, &ngrp, &ci)) != NULL) {
+	if ((err = BATgroupaggrinit(l, g, e, s, &min, &max, &ngrp, &ci, NULL)) != NULL) {
 		GDKerror("%s\n", err);
 		return NULL;
 	}
@@ -232,7 +232,7 @@ BATnil_grp(BAT *l, BAT *g, BAT *e, BAT *s)
 
 	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
 
-	if ((err = BATgroupaggrinit(l, g, e, s, &min, &max, &ngrp, &ci)) != NULL) {
+	if ((err = BATgroupaggrinit(l, g, e, s, &min, &max, &ngrp, &ci, NULL)) != NULL) {
 		GDKerror("%s\n", err);
 		return NULL;
 	}
@@ -365,7 +365,7 @@ BATanyequal_grp(BAT *l, BAT *r, BAT *g, BAT *e, BAT *s)
 
 	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
 
-	if ((err = BATgroupaggrinit(l, g, e, s, &min, &max, &ngrp, &ci)) != NULL) {
+	if ((err = BATgroupaggrinit(l, g, e, s, &min, &max, &ngrp, &ci, NULL)) != NULL) {
 		GDKerror("%s\n", err);
 		return NULL;
 	}
@@ -482,7 +482,7 @@ BATallnotequal_grp(BAT *l, BAT *r, BAT *g, BAT *e, BAT *s)
 
 	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
 
-	if ((err = BATgroupaggrinit(l, g, e, s, &min, &max, &ngrp, &ci)) != NULL) {
+	if ((err = BATgroupaggrinit(l, g, e, s, &min, &max, &ngrp, &ci, NULL)) != NULL) {
 		GDKerror("%s\n", err);
 		return NULL;
 	}
@@ -623,7 +623,7 @@ BATanyequal_grp2(BAT *l, BAT *r, BAT *rid, BAT *g, BAT *e, BAT *s)
 
 	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
 
-	if ((err = BATgroupaggrinit(l, g, e, s, &min, &max, &ngrp, &ci)) != NULL) {
+	if ((err = BATgroupaggrinit(l, g, e, s, &min, &max, &ngrp, &ci, NULL)) != NULL) {
 		GDKerror("%s\n", err);
 		return NULL;
 	}
@@ -747,7 +747,7 @@ BATallnotequal_grp2(BAT *l, BAT *r, BAT *rid, BAT *g, BAT *e, BAT *s)
 
 	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
 
-	if ((err = BATgroupaggrinit(l, g, e, s, &min, &max, &ngrp, &ci)) != NULL) {
+	if ((err = BATgroupaggrinit(l, g, e, s, &min, &max, &ngrp, &ci, NULL)) != NULL) {
 		GDKerror("%s\n", err);
 		return NULL;
 	}
@@ -869,7 +869,7 @@ BATsubexist(BAT *b, BAT *g, BAT *e, BAT *s)
 
 	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
 
-	if ((err = BATgroupaggrinit(b, g, e, s, &min, &max, &ngrp, &ci)) != NULL) {
+	if ((err = BATgroupaggrinit(b, g, e, s, &min, &max, &ngrp, &ci, NULL)) != NULL) {
 		GDKerror("%s\n", err);
 		return NULL;
 	}
@@ -942,7 +942,7 @@ BATsubnot_exist(BAT *b, BAT *g, BAT *e, BAT *s)
 
 	TRC_DEBUG_IF(ALGO) t0 = GDKusec();
 
-	if ((err = BATgroupaggrinit(b, g, e, s, &min, &max, &ngrp, &ci)) != NULL) {
+	if ((err = BATgroupaggrinit(b, g, e, s, &min, &max, &ngrp, &ci, NULL)) != NULL) {
 		GDKerror("%s\n", err);
 		return NULL;
 	}

@@ -43,10 +43,12 @@ CMDscienceUNARY(MalStkPtr stk, InstrPtr pci,
 		}
 	}
 
-	canditer_init(&ci, b, s);
+	bi = bat_iterator(b);
+	canditer_init_bi(&ci, &bi, s);
 	off = b->hseqbase;
 	bn = COLnew(ci.hseq, b->ttype, ci.ncand, TRANSIENT);
 	if (bn == NULL || ci.ncand == 0) {
+		bat_iterator_end(&bi);
 		BBPunfix(b->batCacheid);
 		BBPreclaim(s);
 		if (bn == NULL)
@@ -56,7 +58,6 @@ CMDscienceUNARY(MalStkPtr stk, InstrPtr pci,
 
 	errno = 0;
 	feclearexcept(FE_ALL_EXCEPT);
-	bi = bat_iterator(b);
 	switch (b->ttype) {
 	case TYPE_flt:{
 		const flt *restrict fsrc = (const flt *) bi.base;
@@ -203,10 +204,12 @@ CMDscienceBINARY(MalStkPtr stk, InstrPtr pci,
 		}
 	}
 
+	b1i = bat_iterator(b1);
+	b2i = bat_iterator(b2);
 	if (b1)
-		canditer_init(&ci1, b1, s1);
+		canditer_init_bi(&ci1, &b1i, s1);
 	if (b2)
-		canditer_init(&ci2, b2, s2);
+		canditer_init_bi(&ci2, &b2i, s2);
 	ncand = b1 ? ci1.ncand : ci2.ncand;
 	off1 = b1 ? b1->hseqbase : 0;
 	off2 = b2 ? b2->hseqbase : 0;
@@ -215,6 +218,8 @@ CMDscienceBINARY(MalStkPtr stk, InstrPtr pci,
 		(tp1 == TYPE_flt ?
 		 is_flt_nil(stk->stk[getArg(pci, 1)].val.fval) :
 		 is_dbl_nil(stk->stk[getArg(pci, 1)].val.dval))) {
+		bat_iterator_end(&b1i);
+		bat_iterator_end(&b2i);
 		bn = BATconstant(ci2.hseq, tp1, ATOMnilptr(tp1), ncand, TRANSIENT);
 		goto doreturn;
 	}
@@ -222,6 +227,8 @@ CMDscienceBINARY(MalStkPtr stk, InstrPtr pci,
 		(tp1 == TYPE_flt ?
 		 is_flt_nil(stk->stk[getArg(pci, 2)].val.fval) :
 		 is_dbl_nil(stk->stk[getArg(pci, 2)].val.dval))) {
+		bat_iterator_end(&b1i);
+		bat_iterator_end(&b2i);
 		bn = BATconstant(ci1.hseq, tp1, ATOMnilptr(tp1), ncand, TRANSIENT);
 		goto doreturn;
 	}
@@ -229,11 +236,12 @@ CMDscienceBINARY(MalStkPtr stk, InstrPtr pci,
 		bn = COLnew(ci1.hseq, tp1, ncand, TRANSIENT);
 	else
 		bn = COLnew(ci2.hseq, tp1, ncand, TRANSIENT);
-	if (bn == NULL || ncand == 0)
+	if (bn == NULL || ncand == 0) {
+		bat_iterator_end(&b1i);
+		bat_iterator_end(&b2i);
 		goto doreturn;
+	}
 
-	b1i = bat_iterator(b1);
-	b2i = bat_iterator(b2);
 	errno = 0;
 	feclearexcept(FE_ALL_EXCEPT);
 	switch (tp1) {

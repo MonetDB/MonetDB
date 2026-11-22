@@ -73,9 +73,9 @@ upload_read(stream *restrict s, void *restrict buf, size_t elmsize, size_t cnt)
 
 	// before returning the 0 we send the prompt and make another attempt.
 	if (
-			mnstr_write(state->to_client, PROMPT2, strlen(PROMPT2), 1) != 1
+		mnstr_write(state->to_client, PROMPT2, strlen(PROMPT2), 1) != 1
 		||	mnstr_flush(state->to_client, MNSTR_FLUSH_ALL) < 0
-	) {
+		) {
 		state->bs->pos = state->bs->len;
 		mnstr_copy_error(s, state->to_client);
 		return -1;
@@ -216,7 +216,7 @@ setup_transfer(const char *req, const char *filename, bstream *bs, stream *ws)
 	state->to_client = ws;
 	state->bs = bs;
 	s->stream_data.p = state;
-end:
+  end:
 	if (msg) {
 		mnstr_destroy(s);
 		mnstr_set_open_error(filename, 0, "ON CLIENT: %s", msg);

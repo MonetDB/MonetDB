@@ -121,44 +121,44 @@ compr(inner_state_t *inner_state, pump_action action)
 
 	switch (action) {
 
-		case PUMP_NO_FLUSH:
-			produced = LZ4F_compressUpdate(
-				inner_state->ctx.c,
-				inner_state->dst_win.start,
-				inner_state->dst_win.count,
-				inner_state->src_win.start,
-				chunk,
-				&opts);
-			consumed = chunk;
-			intended_result = PUMP_OK;
-			break;
+	case PUMP_NO_FLUSH:
+		produced = LZ4F_compressUpdate(
+			inner_state->ctx.c,
+			inner_state->dst_win.start,
+			inner_state->dst_win.count,
+			inner_state->src_win.start,
+			chunk,
+			&opts);
+		consumed = chunk;
+		intended_result = PUMP_OK;
+		break;
 
-		case PUMP_FLUSH_ALL:
-		case PUMP_FLUSH_DATA:
-			// FLUSH_ALL not supported yet, just flush the data
-			produced = LZ4F_flush(
-				inner_state->ctx.c,
-				inner_state->dst_win.start,
-				inner_state->dst_win.count,
-				&opts);
-			consumed = 0;
-			intended_result = PUMP_END;
-			break;
+	case PUMP_FLUSH_ALL:
+	case PUMP_FLUSH_DATA:
+		// FLUSH_ALL not supported yet, just flush the data
+		produced = LZ4F_flush(
+			inner_state->ctx.c,
+			inner_state->dst_win.start,
+			inner_state->dst_win.count,
+			&opts);
+		consumed = 0;
+		intended_result = PUMP_END;
+		break;
 
-		case PUMP_FINISH:
-			produced = LZ4F_compressEnd(
-				inner_state->ctx.c,
-				inner_state->dst_win.start,
-				inner_state->dst_win.count,
-				&opts);
-			consumed = 0;
-			inner_state->finished = true;
-			intended_result = PUMP_END;
-			break;
+	case PUMP_FINISH:
+		produced = LZ4F_compressEnd(
+			inner_state->ctx.c,
+			inner_state->dst_win.start,
+			inner_state->dst_win.count,
+			&opts);
+		consumed = 0;
+		inner_state->finished = true;
+		intended_result = PUMP_END;
+		break;
 
-		default:
-			assert(0); // shut up, compiler!
-			return PUMP_ERROR;
+	default:
+		assert(0); // shut up, compiler!
+		return PUMP_ERROR;
 	}
 
 	if (LZ4F_isError(produced)) {
@@ -259,7 +259,7 @@ setup_compression(stream *inner, pump_state *state, int level)
 		inner_state->dst_win.start,
 		inner_state->dst_win.count,
 		&inner_state->compression_prefs
-	);
+		);
 	if (LZ4F_isError(nwritten)) {
 		LZ4F_freeCompressionContext(inner_state->ctx.c);
 		free(buffer);

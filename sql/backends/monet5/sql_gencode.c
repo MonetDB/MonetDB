@@ -972,7 +972,7 @@ sql_relation2stmt(backend *be, sql_rel *r, int top)
 /* bug on CentOS 7 (gnuc 4.8.5) where this function gets inlined and
  * the compiler then complains about query getting modified after the
  * setjmp call; fix is to explicitly prevent inlining */
-__attribute__((__noinline__))
+ATTR_NOINLINE
 #endif
 static int
 backend_dumpstmt_body(backend *be, MalBlkPtr mb, sql_rel *r, int top, int add_end, const char *query)
@@ -1635,7 +1635,7 @@ backend_create_sql_func(backend *be, sql_subfunc *sf, list *restypes, list *ops)
 	Symbol symbackup = c->curprg;
 	backend bebackup = *be;		/* backup current backend */
 	sql_func *f = sf->func;
-	bool prepare = f->imp;
+	bool prepare = f->imp != NULL;
 	const char *sql_shared_module = putName(sql_shared_module_name);
 	const char *sql_private_module = putName(sql_private_module_name);
 	const char *modname = prepare?sql_private_module:sql_shared_module;

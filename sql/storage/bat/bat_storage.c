@@ -78,16 +78,16 @@ transfer_to_systrans(BAT *b)
 		BBPreclaim(b);
 		return bn;
 	}
-	if (b->theap->farmid == TRANSIENT ||
-		(b->tvheap && b->tvheap->farmid == TRANSIENT)) {
+	if (b->theap->role == TRANSIENT ||
+		(b->tvheap && b->tvheap->role == TRANSIENT)) {
 		QryCtx *qc = MT_thread_get_qry_ctx();
 		if (qc) {
-			if (b->theap->farmid == TRANSIENT && b->theap->parentid == b->batCacheid) {
+			if (b->theap->role == TRANSIENT && b->theap->parentid == b->batCacheid) {
 				ATOMIC_SUB(&qc->datasize, b->theap->size);
 				b->theap->role = SYSTRANS;
 				b->batRole = SYSTRANS;
 			}
-			if (b->tvheap && b->tvheap->farmid == TRANSIENT && b->tvheap->parentid == b->batCacheid) {
+			if (b->tvheap && b->tvheap->role == TRANSIENT && b->tvheap->parentid == b->batCacheid) {
 				ATOMIC_SUB(&qc->datasize, b->tvheap->size);
 				b->tvheap->role = SYSTRANS;
 			}
@@ -232,6 +232,7 @@ split_segment(segments *segs, segment *o, segment *p, sql_trans *tr, size_t star
 {
 	assert(tr);
 	if (o->start == start && o->end == start+cnt) {
+		assert(deleted);
 		assert(o->deleted != deleted || o->ts < TRANSACTION_ID_BASE);
 		o->oldts = o->ts;
 		o->ts = tr->tid;
@@ -454,11 +455,11 @@ segments2cs(sql_trans *tr, segments *segs, column_storage *cs)
 	return LOG_OK;
 }
 
-/* TODO return LOG_OK/ERR */
 static void
 merge_segments(storage *s, sql_trans *tr, sql_change *change, ulng commit_ts, ulng oldest)
 {
-	sqlstore* store = tr->store;
+	if (commit_ts == oldest && !tr->parent) /* we are the only active transaction */
+		oldest++;
 	segment *cur = s->segs->h, *seg = NULL;
 	for (; cur; cur = ATOMIC_PTR_GET(&cur->next)) {
 		if (cur->ts == tr->tid) {
@@ -467,46 +468,24 @@ merge_segments(storage *s, sql_trans *tr, sql_change *change, ulng commit_ts, ul
 			cur->ts = commit_ts;
 			cur->cnr = 0;
 		}
-		if (!seg) {
-			/* first segment */
-			seg = cur;
-		}
-		else if (seg->ts < TRANSACTION_ID_BASE) {
-			/* possible merge since both deleted flags are equal */
-			if (seg->deleted == cur->deleted && cur->ts < TRANSACTION_ID_BASE) {
-				int merge = 1;
-				node *n = store->active->h;
-				for (int i = 0; i < store->active->cnt; i++, n = n->next) {
-					sql_trans* other = ((sql_trans*)n->data);
-					ulng active = other->ts;
-					if(other->active == 2)
-						continue; /* pretend that another recently committed transaction is no longer active */
-					if (active == tr->ts)
-						continue; /* pretend that committing transaction has already committed and is no longer active */
-					if (seg->ts < active && cur->ts < active)
-						break;
-					if (seg->ts > active && cur->ts > active)
-						continue;
-
-					assert((active > seg->ts && active < cur->ts) || (active < seg->ts && active > cur->ts));
-					/* cannot safely merge since there is an active transaction between the segments */
-					merge = false;
-					break;
-				}
-				/* merge segments */
-				if (merge) {
-					seg->end = cur->end;
-					ATOMIC_PTR_SET(&seg->next, ATOMIC_PTR_GET(&cur->next));
-					if (cur == s->segs->t)
-						s->segs->t = seg;
-					if (commit_ts == oldest) {
-						_DELETE(cur);
-					} else
-						mark4destroy(cur, change, commit_ts);
-					cur = seg;
-					continue;
-				}
-			}
+		/* possible merge since both deleted flags are equal */
+		if (seg && seg->deleted == cur->deleted &&
+				((seg->ts < oldest && cur->ts < oldest) ||
+				(seg->ts == cur->ts && cur->ts == tr->tid) ||
+				(seg->ts == cur->ts && cur->ts == tr->ts) ||
+				(seg->ts == cur->ts && cur->ts == commit_ts))) {
+			/* merge segments */
+			seg->end = cur->end;
+			ATOMIC_PTR_SET(&seg->next, ATOMIC_PTR_GET(&cur->next));
+			if (cur == s->segs->t)
+				s->segs->t = seg;
+			if (commit_ts == oldest) {
+				_DELETE(cur);
+			} else
+				mark4destroy(cur, change, commit_ts);
+			cur = seg;
+			seg = NULL;
+			continue;
 		}
 		seg = cur;
 	}
@@ -730,33 +709,61 @@ count_idx(sql_trans *tr, sql_idx *i, int access)
 static BAT *
 cs_bind_ubat( column_storage *cs, int access, int type, BUN l, BUN h /* ie max position < cnt */)
 {
-	BAT *b;
+	BAT *b, *ids = NULL, *sel = NULL;
 
 	assert(access == RD_UPD_ID || access == RD_UPD_VAL);
 	/* returns the updates for cs */
-	if (cs->uibid && cs->uvbid && cs->ucnt) {
-		if (access == RD_UPD_ID) {
-			if (!(b = temp_descriptor(cs->uibid)))
-				return NULL;
-			if (!b->tsorted || ((BATtdense2(b) && (b->tseqbase + BATcount(b)) >= h) ||
-			   (!BATtdense2(b) && BATcount(b) && ((oid*)b->theap->base)[BATcount(b)-1] >= h))) {
-					BAT *s = BATselect(b, NULL, &l, &h, true, false, false, false);
-					if (!s) {
-						bat_destroy(b);
-						return NULL;
-					}
+	if (!(cs->uibid && cs->uvbid && cs->ucnt))
+		return e_BAT(access == RD_UPD_ID ? TYPE_oid : type);
 
-					BAT *nb = BATproject(s, b);
-					bat_destroy(s);
-					bat_destroy(b);
-					b = nb;
-			}
+	if (!(ids = temp_descriptor(cs->uibid)))
+		return NULL;
+	/* Slice the update ids when they extend beyond this segment.  The
+	 * update values must use exactly the same selection, otherwise the
+	 * id/value BATs passed to sql.delta have different sizes.  Both the
+	 * lower and upper bound matter: a segment can start above all ids
+	 * even though its end is beyond them. */
+	bool need_slice = !ids->tsorted;
+	if (!need_slice && BATcount(ids)) {
+		oid first, last;
+		if (BATtdense2(ids)) {
+			first = ids->tseqbase;
+			last = ids->tseqbase + BATcount(ids) - 1;
 		} else {
-			b = temp_descriptor(cs->uvbid);
+			first = ((oid*)ids->theap->base)[0];
+			last = ((oid*)ids->theap->base)[BATcount(ids)-1];
+		}
+		need_slice = first < l || (h != BUN_NONE && last >= h);
+	}
+	if (need_slice) {
+		sel = BATselect(ids, NULL, &l, &h, true, false, false, false);
+		if (!sel) {
+			bat_destroy(ids);
+			return NULL;
+		}
+	}
+
+	if (access == RD_UPD_ID) {
+		if (sel) {
+			b = BATproject(sel, ids);
+		} else {
+			b = ids;
+			ids = NULL;
 		}
 	} else {
-		b = e_BAT(access == RD_UPD_ID?TYPE_oid:type);
+		if (!(b = temp_descriptor(cs->uvbid))) {
+			bat_destroy(sel);
+			bat_destroy(ids);
+			return NULL;
+		}
+		if (sel) {
+			BAT *nb = BATproject(sel, b);
+			bat_destroy(b);
+			b = nb;
+		}
 	}
+	bat_destroy(sel);
+	bat_destroy(ids);
 	return b;
 }
 
@@ -1042,6 +1049,19 @@ bind_idx(sql_trans *tr, sql_idx * i, int access)
 	size_t cnt = count_idx(tr, i, 0);
 	assert (access != RD_UPD_ID && access != RD_UPD_VAL);
 	return cs_bind_bat( &d->cs, access, cnt, true);
+}
+
+static void *					/* BAT * */
+bind_idx_no_view(sql_trans *tr, sql_idx *i)
+{
+	if (!isTable(i->t))
+		return NULL;
+	sql_delta *d = idx_timestamp_delta(tr, i);
+	if (!d)
+		return NULL;
+	BAT *b = cs_bind_bat( &d->cs, RDONLY, 0, false);
+	assert(b);
+	return b;
 }
 
 static int
@@ -3025,13 +3045,8 @@ col_stats(sql_trans *tr, sql_column *c, bool *nonil, bool *unique, double *uniqu
 				if (d->cs.st == ST_DEFAULT || d->cs.st == ST_USTR) {
 					*unique = bi.key;
 					*unique_est = bi.unique_est;
-					if (*unique_est == 0) {
-						if (BATcount(b) > GDKL3_size)
-							*unique_est = bat_guess_uniques(b, NULL, NULL);
-						else
-							*unique_est = (double)BATguess_uniques(b,NULL);
-						//printf("estimates %s %s %f\n", c->base.name, c->type.type->base.name, *unique_est);
-					}
+					if (*unique_est == 0)
+						*unique_est = bat_guess_uniques(b, NULL, NULL);
 				} else if (d->cs.st == ST_DICT && (off = bind_col_no_view(tr, c, QUICK))) {
 					/* for dict, check the offsets bat for uniqueness */
 					MT_lock_set(&off->theaplock);
@@ -3044,6 +3059,42 @@ col_stats(sql_trans *tr, sql_column *c, bool *nonil, bool *unique, double *uniqu
 			bat_destroy(b);
 			if (*nonil && d->cs.ucnt > 0)
 				*nonil = false;
+		}
+	}
+	return ok;
+}
+
+static int
+idx_stats(sql_trans *tr, sql_idx *i, bool *nonil, bool *unique, double *unique_est)
+{
+	int ok = 0;
+	BAT *b = NULL;
+	sql_delta *d = NULL;
+
+	(void) tr;
+	assert(tr->active);
+	*nonil = false;
+	*unique = false;
+	*unique_est = 0.0;
+	if (!i || !isTable(i->t) || !i->t->s)
+		return ok;
+
+	if ((d = ATOMIC_PTR_GET(&i->data))) {
+		if ((b = bind_idx_no_view(tr, i))) {
+			BATiter bi = bat_iterator(b);
+			*nonil = bi.nonil && !bi.nil;
+
+			if (d->cs.ucnt == 0) {
+				*unique = bi.key;
+				*unique_est = bi.unique_est;
+				if (*unique_est == 0)
+					*unique_est = bat_guess_uniques(b, NULL, NULL);
+			}
+			bat_iterator_end(&bi);
+			bat_destroy(b);
+			if (*nonil && d->cs.ucnt > 0)
+				*nonil = false;
+			*unique = false; /* uniqueness causes issues */
 		}
 	}
 	return ok;
@@ -4849,7 +4900,7 @@ claim_segmentsV2(sql_trans *tr, sql_table *t, storage *s, size_t cnt, BUN *offse
 	if (ATOMIC_GET(&s->segs->deleted) != 0)
 	for (segment *seg = s->segs->h, *p = NULL; seg && cnt && ok == LOG_OK; p = seg, seg = ATOMIC_PTR_GET(&seg->next)) {
 		if (seg->deleted && seg->ts < oldest && seg->end > seg->start) { /* reuse old deleted or rolled back append */
-			if ((seg->end - seg->start) >= cnt) {
+			if ((seg->end - seg->start) > cnt) {
 				/* if previous is claimed before we could simply adjust the end/start */
 				if (p && p->ts == tr->tid && p->cnr == tr->cnr && !p->deleted) {
 					slot = p->end;
@@ -4944,7 +4995,7 @@ claim_segments(sql_trans *tr, sql_table *t, storage *s, size_t cnt, BUN *offset,
 	for (segment *seg = s->segs->h, *p = NULL; seg && ok == LOG_OK; p = seg, seg = ATOMIC_PTR_GET(&seg->next)) {
 		if (seg->deleted && seg->ts < oldest && (seg->end-seg->start) >= cnt) { /* reuse old deleted or rolled back append */
 
-			if ((seg->end - seg->start) >= cnt) {
+			if ((seg->end - seg->start) > cnt) {
 
 				/* if previous is claimed before we could simply adjust the end/start */
 				if (p && p->ts == tr->tid && p->cnr == tr->cnr && !p->deleted) {
@@ -5442,6 +5493,7 @@ bat_storage_init( store_functions *sf)
 	sf->unique_col = &unique_col;
 	sf->double_elim_col = &double_elim_col;
 	sf->col_stats = &col_stats;
+	sf->idx_stats = &idx_stats;
 	sf->col_set_range = &col_set_range;
 	sf->col_not_null = &col_not_null;
 	sf->col_subtype = &col_subtype;

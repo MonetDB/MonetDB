@@ -1490,21 +1490,24 @@ BATcalcadd(BAT *b1, BAT *b2, BAT *s1, BAT *s2, int tp)
 	BATcheck(b1, NULL);
 	BATcheck(b2, NULL);
 
-	canditer_init(&ci1, b1, s1);
-	canditer_init(&ci2, b2, s2);
+	BATiter b1i = bat_iterator(b1);
+	BATiter b2i = bat_iterator(b2);
+	canditer_init_bi(&ci1, &b1i, s1);
+	canditer_init_bi(&ci2, &b2i, s2);
 	if (ci1.ncand != ci2.ncand || ci1.hseq != ci2.hseq) {
+		bat_iterator_end(&b1i);
+		bat_iterator_end(&b2i);
 		GDKerror("inputs not the same size.\n");
 		return NULL;
 	}
 
 	bn = COLnew(ci1.hseq, tp, ci1.ncand, TRANSIENT);
-	if (bn == NULL)
-		return NULL;
-	if (ci1.ncand == 0)
+	if (bn == NULL || ci1.ncand == 0) {
+		bat_iterator_end(&b1i);
+		bat_iterator_end(&b2i);
 		return bn;
+	}
 
-	BATiter b1i = bat_iterator(b1);
-	BATiter b2i = bat_iterator(b2);
 	if (b1i.type == TYPE_str && b2i.type == TYPE_str && tp == TYPE_str) {
 		nils = addstr_loop(b1, NULL, b2, NULL, bn, &b1i, &b2i, &ci1, &ci2);
 	} else {
@@ -1558,15 +1561,15 @@ BATcalcaddcst(BAT *b, const ValRecord *v, BAT *s, int tp)
 
 	BATcheck(b, NULL);
 
-	canditer_init(&ci, b, s);
+	BATiter bi = bat_iterator(b);
+	canditer_init_bi(&ci, &bi, s);
 
 	bn = COLnew(ci.hseq, tp, ci.ncand, TRANSIENT);
-	if (bn == NULL)
-		return NULL;
-	if (ci.ncand == 0)
+	if (bn == NULL || ci.ncand == 0) {
+		bat_iterator_end(&bi);
 		return bn;
+	}
 
-	BATiter bi = bat_iterator(b);
 	if (bi.type == TYPE_str && v->vtype == TYPE_str && tp == TYPE_str) {
 		nils = addstr_loop(b, NULL, NULL, v->val.sval, bn, &bi, &(BATiter){0}, &ci, &(struct canditer){.tpe=cand_dense, .ncand=ci.ncand});
 	} else {
@@ -1617,15 +1620,15 @@ BATcalccstadd(const ValRecord *v, BAT *b, BAT *s, int tp)
 
 	BATcheck(b, NULL);
 
-	canditer_init(&ci, b, s);
+	BATiter bi = bat_iterator(b);
+	canditer_init_bi(&ci, &bi, s);
 
 	bn = COLnew(ci.hseq, tp, ci.ncand, TRANSIENT);
-	if (bn == NULL)
-		return NULL;
-	if (ci.ncand == 0)
+	if (bn == NULL || ci.ncand == 0) {
+		bat_iterator_end(&bi);
 		return bn;
+	}
 
-	BATiter bi = bat_iterator(b);
 	if (bi.type == TYPE_str && v->vtype == TYPE_str && tp == TYPE_str) {
 		nils = addstr_loop(NULL, v->val.sval, b, NULL, bn, &(BATiter){0}, &bi, &(struct canditer){.tpe=cand_dense, .ncand=ci.ncand}, &ci);
 	} else {
@@ -1698,15 +1701,15 @@ BATcalcincrdecr(BAT *b, BAT *s,
 
 	BATcheck(b, NULL);
 
-	canditer_init(&ci, b, s);
-
-	bn = COLnew(ci.hseq, b->ttype, ci.ncand, TRANSIENT);
-	if (bn == NULL)
-		return NULL;
-	if (ci.ncand == 0)
-		return bn;
-
 	BATiter bi = bat_iterator(b);
+	canditer_init_bi(&ci, &bi, s);
+
+	bn = COLnew(ci.hseq, bi.type, ci.ncand, TRANSIENT);
+	if (bn == NULL || ci.ncand == 0) {
+		bat_iterator_end(&bi);
+		return bn;
+	}
+
 	nils = (*typeswitchloop)(bi.base, bi.type, true,
 				 &(bte){1}, TYPE_bte, false,
 				 Tloc(bn, 0), bn->ttype,
@@ -3178,21 +3181,24 @@ BATcalcsub(BAT *b1, BAT *b2, BAT *s1, BAT *s2, int tp)
 	BATcheck(b1, NULL);
 	BATcheck(b2, NULL);
 
-	canditer_init(&ci1, b1, s1);
-	canditer_init(&ci2, b2, s2);
+	BATiter b1i = bat_iterator(b1);
+	BATiter b2i = bat_iterator(b2);
+	canditer_init_bi(&ci1, &b1i, s1);
+	canditer_init_bi(&ci2, &b2i, s2);
 	if (ci1.ncand != ci2.ncand || ci1.hseq != ci2.hseq) {
+		bat_iterator_end(&b1i);
+		bat_iterator_end(&b2i);
 		GDKerror("inputs not the same size.\n");
 		return NULL;
 	}
 
 	bn = COLnew(ci1.hseq, tp, ci1.ncand, TRANSIENT);
-	if (bn == NULL)
-		return NULL;
-	if (ci1.ncand == 0)
+	if (bn == NULL || ci1.ncand == 0) {
+		bat_iterator_end(&b1i);
+		bat_iterator_end(&b2i);
 		return bn;
+	}
 
-	BATiter b1i = bat_iterator(b1);
-	BATiter b2i = bat_iterator(b2);
 	nils = sub_typeswitchloop(b1i.base, b1i.type, true,
 				  b2i.base, b2i.type, true,
 				  Tloc(bn, 0), tp,
@@ -3236,15 +3242,15 @@ BATcalcsubcst(BAT *b, const ValRecord *v, BAT *s, int tp)
 
 	BATcheck(b, NULL);
 
-	canditer_init(&ci, b, s);
+	BATiter bi = bat_iterator(b);
+	canditer_init_bi(&ci, &bi, s);
 
 	bn = COLnew(ci.hseq, tp, ci.ncand, TRANSIENT);
-	if (bn == NULL)
-		return NULL;
-	if (ci.ncand == 0)
+	if (bn == NULL || ci.ncand == 0) {
+		bat_iterator_end(&bi);
 		return bn;
+	}
 
-	BATiter bi = bat_iterator(b);
 	nils = sub_typeswitchloop(bi.base, bi.type, true,
 				  VALptr(v), v->vtype, false,
 				  Tloc(bn, 0), tp,
@@ -3291,15 +3297,15 @@ BATcalccstsub(const ValRecord *v, BAT *b, BAT *s, int tp)
 
 	BATcheck(b, NULL);
 
-	canditer_init(&ci, b, s);
+	BATiter bi = bat_iterator(b);
+	canditer_init_bi(&ci, &bi, s);
 
 	bn = COLnew(ci.hseq, tp, ci.ncand, TRANSIENT);
-	if (bn == NULL)
-		return NULL;
-	if (ci.ncand == 0)
+	if (bn == NULL || ci.ncand == 0) {
+		bat_iterator_end(&bi);
 		return bn;
+	}
 
-	BATiter bi = bat_iterator(b);
 	nils = sub_typeswitchloop(VALptr(v), v->vtype, false,
 				  bi.base, bi.type, true,
 				  Tloc(bn, 0), tp,

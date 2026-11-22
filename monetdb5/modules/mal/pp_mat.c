@@ -346,12 +346,14 @@ MATproject(Client ctx, bat *mat, const bat *pos, const bat *lid, const bat *gid,
 	BAT *l = BATdescriptor(*lid);
 	BAT *g = BATdescriptor(*gid);
 	BAT *d = BATdescriptor(*data);
+	allocator *ma = MT_thread_getallocator();
+	allocator_state ma_state = ma_open(ma);
 	oid *curpos = NULL;
 	if (!m || !p || !l || !g || !d) {
 		err = createException(MAL, "mat.project", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		goto error;
 	}
-	curpos = GDKmalloc(sizeof(oid) * BATcount(p));
+	curpos = ma_alloc(ma, sizeof(oid) * BATcount(p));
 	for (BUN i = 0; i < BATcount(p); i++)
 		curpos[i] = *(oid*)Tloc(p, i);
 	oid *lp = (oid*)Tloc(l, 0);
@@ -436,7 +438,7 @@ MATproject(Client ctx, bat *mat, const bat *pos, const bat *lid, const bat *gid,
 		mat_deactivate(mt);
 	if (err)
 		goto error;
-	GDKfree(curpos);
+	ma_close(&ma_state);
 	BBPkeepref(m);
 	BBPunfix(p->batCacheid);
 	BBPunfix(l->batCacheid);
@@ -444,7 +446,7 @@ MATproject(Client ctx, bat *mat, const bat *pos, const bat *lid, const bat *gid,
 	BBPunfix(d->batCacheid);
 	return MAL_SUCCEED;
 error:
-	GDKfree(curpos);
+	ma_close(&ma_state);
 	BBPreclaim(m);
 	BBPreclaim(p);
 	BBPreclaim(l);

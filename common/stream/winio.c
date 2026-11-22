@@ -64,7 +64,7 @@ mnstr_set_error_lasterror(stream *s, mnstr_error_kind kind, const char *fmt, ...
 			/* result buffer */ start,
 			/* buffer size */ (DWORD)(end - start - 1),
 			/* no arguments */ NULL
-		);
+			);
 	}
 }
 
@@ -293,7 +293,7 @@ pipe_read(stream *restrict s, void *restrict buf, size_t elmsize, size_t cnt)
 	DWORD nread;
 
 	if (h == NULL) {
-				mnstr_set_error(s, MNSTR_READ_ERROR, "closed");
+		mnstr_set_error(s, MNSTR_READ_ERROR, "closed");
 		return -1;
 	}
 	if (elmsize == 0 || cnt == 0)

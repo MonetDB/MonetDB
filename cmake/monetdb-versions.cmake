@@ -42,7 +42,7 @@ set(MONETDB_VERSION "${MONETDB_VERSION_MAJOR}.${MONETDB_VERSION_MINOR}.${MONETDB
 # common/options and common/utils)
 set(GDK_VERSION_MAJOR "31")
 set(GDK_VERSION_MINOR "1")
-set(GDK_VERSION_PATCH "2")
+set(GDK_VERSION_PATCH "3")
 set(GDK_VERSION "${GDK_VERSION_MAJOR}.${GDK_VERSION_MINOR}.${GDK_VERSION_PATCH}")
 
 # version of the MAPI library (subdirectory clients/mapilib)
@@ -73,7 +73,7 @@ set(MUTILS_VERSION "${MUTILS_VERSION_MAJOR}.${MUTILS_VERSION_MINOR}.${MUTILS_VER
 # version of the SQL library (subdirectory sql)
 set(SQL_VERSION_MAJOR "17")
 set(SQL_VERSION_MINOR "1")
-set(SQL_VERSION_PATCH "3")
+set(SQL_VERSION_PATCH "4")
 set(SQL_VERSION "${SQL_VERSION_MAJOR}.${SQL_VERSION_MINOR}.${SQL_VERSION_PATCH}")
 
 # version of the STREAM library (subdirectory common/stream)

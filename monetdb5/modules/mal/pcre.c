@@ -1610,11 +1610,11 @@ pcrejoin(BAT *r1, BAT *r2, BAT *l, BAT *r, BAT *sl, BAT *sr, const char *esc,
 		}
 	}
 
-	canditer_init(&lci, l, sl);
-	canditer_init(&rci, r, sr);
-
 	BATiter li = bat_iterator(l);
 	BATiter ri = bat_iterator(r);
+	canditer_init_bi(&lci, &li, sl);
+	canditer_init_bi(&rci, &ri, sr);
+
 	lbase = l->hseqbase;
 	rbase = r->hseqbase;
 	lvals = (const char *) li.base;

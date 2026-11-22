@@ -26,27 +26,6 @@
 #define llabs(x)	((x) < 0 ? -(x) : (x))
 #endif
 
-#ifdef _MSC_VER
-/* use intrinsic functions on Windows */
-#define short_int_SWAP(s)	((short) _byteswap_ushort((unsigned short) (s)))
-/* on Windows, long is the same size as int */
-#define normal_int_SWAP(s)	((int) _byteswap_ulong((unsigned long) (s)))
-#define long_long_SWAP(s)	((lng) _byteswap_uint64((unsigned __int64) (s)))
-#else
-#define short_int_SWAP(s) ((short)(((0x00ff&(s))<<8) | ((0xff00&(s))>>8)))
-
-#define normal_int_SWAP(i) (((0x000000ff&(i))<<24) | ((0x0000ff00&(i))<<8) | \
-			    ((0x00ff0000&(i))>>8)  | ((0xff000000&(i))>>24))
-#define long_long_SWAP(l)						\
-		((((lng)normal_int_SWAP(l))<<32) |		\
-		 (0xffffffff&normal_int_SWAP(l>>32)))
-#endif
-
-#ifdef HAVE_HGE
-#define huge_int_SWAP(h)								\
-		((((hge)long_long_SWAP(h))<<64) |				\
-		 (0xffffffffffffffff&long_long_SWAP(h>>64)))
-#endif
 #define DEC_TOSTR(TYPE)								\
 	do {											\
 		char buf[64];								\

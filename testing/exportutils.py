@@ -159,7 +159,7 @@ def preprocess(f, printdef=False, include=True):
 spcre = re.compile(r'\s+')
 strre = re.compile(r'([^ *])\*')
 comre = re.compile(r',\s*')
-attrre = re.compile(r' *__attribute__\(\([^()]*(\([^()]*\)[^()]*)*\)\)')
+attrre = re.compile(r' *(__attribute__\(\([^()]*(\([^()]*\)[^()]*)*\)\)|\bATTR_[A-Z][A-Z_]*[A-Z](\([^()]*\))?)')
 
 def normalize(decl):
     decl = spcre.sub(' ', decl) \
@@ -170,7 +170,8 @@ def normalize(decl):
                 .replace(') ', ')') \
                 .replace('* ', '*') \
                 .replace(' ,', ',') \
-                .replace(')__attribute__', ') __attribute__')
+                .replace(')__attribute__', ') __attribute__') \
+                .replace(')ATTR_', ') ATTR_')
     decl = attrre.sub('', decl)
     decl = strre.sub(r'\1 *', decl)
     decl = comre.sub(', ', decl)

@@ -24,7 +24,7 @@
  * Speed up simple insert operations by skipping the common terms.
 */
 
-__attribute__((__pure__))
+ATTR_PURE
 static int
 hashInstruction(const MalBlkRecord *mb, const InstrRecord *p)
 {

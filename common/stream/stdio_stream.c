@@ -112,7 +112,7 @@ file_flush(stream *s, mnstr_flush_level flush_level)
 	FILE *fp = (FILE *) s->stream_data.p;
 
 	if (fp == NULL || (!s->readonly && fflush(fp) < 0)) {
-			mnstr_set_error_errno(s, MNSTR_WRITE_ERROR, "flush error");
+		mnstr_set_error_errno(s, MNSTR_WRITE_ERROR, "flush error");
 		return -1;
 	}
 	(void) flush_level;

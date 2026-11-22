@@ -70,17 +70,13 @@ bs_write(stream *restrict ss, const void *restrict buf, size_t elmsize, size_t c
 		if (s->nr == sizeof(s->buf)) {
 			/* block is full, write it to the stream */
 #ifdef BSTREAM_DEBUG
-			{
-				unsigned i;
-
-				fprintf(stderr, "W %s %u \"", ss->name, s->nr);
-				for (i = 0; i < s->nr; i++)
-					if (' ' <= s->buf[i] && s->buf[i] < 127)
-						putc(s->buf[i], stderr);
-					else
-						fprintf(stderr, "\\%03o", (unsigned char) s->buf[i]);
-				fprintf(stderr, "\"\n");
-			}
+			fprintf(stderr, "W %s %u \"", ss->name, s->nr);
+			for (unsigned i = 0; i < s->nr; i++)
+				if (' ' <= s->buf[i] && s->buf[i] < 127)
+					putc(s->buf[i], stderr);
+				else
+					fprintf(stderr, "\\%03o", (unsigned char) s->buf[i]);
+			fprintf(stderr, "\"\n");
 #endif
 			/* since the block is at max BLOCK (8K) - 2 size we can
 			 * store it in a two byte integer */
@@ -92,7 +88,7 @@ bs_write(stream *restrict ss, const void *restrict buf, size_t elmsize, size_t c
 			blksize <<= 1;
 			if (!mnstr_writeSht(ss->inner, (int16_t) blksize) ||
 			    ss->inner->write(ss->inner, s->buf, 1, s->nr) != (ssize_t) s->nr
-			) {
+				) {
 				if (mnstr_errnr(ss->inner) != MNSTR_NO__ERROR) {
 					mnstr_copy_error(ss, ss->inner);
 				} else {
@@ -173,7 +169,7 @@ bs_putoob(stream *ss, char val)
 		uint16_t blksize = (uint16_t) (s->nr << 1);
 		s->bytes += s->nr;
 		if (!mnstr_writeSht(ss->inner, (int16_t) blksize) ||
-			ss->inner->write(ss->inner, s->buf, 1, s->nr) != (ssize_t) s->nr) {
+		    ss->inner->write(ss->inner, s->buf, 1, s->nr) != (ssize_t) s->nr) {
 			mnstr_copy_error(ss, ss->inner);
 			s->nr = 0; /* data is lost due to error */
 			return -1;
@@ -271,7 +267,7 @@ bs_read(stream *restrict ss, void *restrict buf, size_t elmsize, size_t cnt)
 		}
 		if (blksize > (BLOCK << 1 | 1)) {
 			mnstr_set_error(ss, MNSTR_READ_ERROR, "invalid block size %"PRIu16,
-							blksize);
+					blksize);
 			return -1;
 		}
 		assert(s->nr == 0);

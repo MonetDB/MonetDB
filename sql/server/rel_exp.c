@@ -176,7 +176,7 @@ exp_compare(allocator *sa, sql_exp *l, sql_exp *r, int cmptype)
 	e->l = l;
 	e->r = r;
 	e->flag = cmptype;
-	if (cmptype == cmp_equal) {
+	if (cmptype == cmp_equal && r->card <= CARD_AGGR) {
 		prop *p = e->p = prop_create(sa, PROP_NUNIQUES, (prop *) e->p);
 		p->value.dval = 1;
 	}
@@ -197,7 +197,7 @@ exp_compare2(allocator *sa, sql_exp *l, sql_exp *r, sql_exp *f, int cmptype, int
 	e->r = r;
 	e->f = f;
 	e->flag = cmptype;
-	if (cmptype == cmp_equal) {
+	if (cmptype == cmp_equal && r->card <= CARD_AGGR) {
 		prop *p = e->p = prop_create(sa, PROP_NUNIQUES, (prop *) e->p);
 		p->value.dval = 1;
 	}
@@ -258,6 +258,9 @@ exp_in(allocator *sa, sql_exp *l, list *r, int cmptype)
 	}
 	e->card = MAX(l->card, exps_card);
 	e->l = l;
+	/* duplicate values in an IN list are redundant */
+	if (exps_are_atoms(r))
+		r = list_distinct(r, (fcmp) exp_match_exp_cmp, NULL);
 	e->r = r;
 	if (cmptype == cmp_in) {
 		prop *p = e->p = prop_create(sa, PROP_NUNIQUES, (prop *) e->p);
@@ -1768,7 +1771,7 @@ rel_has_complete_exp(sql_rel *rel, sql_exp *e, bool subexp)
 			assert(e->nid);
 			ne = exps_bind_nid(l, e->nid);
 		}
-		return ne;
+		return ne != NULL;
 	case e_convert:
 		return rel_has_complete_exp(rel, e->l, subexp);
 	case e_aggr:
@@ -4683,11 +4686,156 @@ free_exp(allocator *sa, sql_exp *e)
 	_free_exp_internal(sa, e);
 }
 
+static atom *
+range_stat_atom(prop *p)
+{
+	return p ? (atom *) p->value.pval : NULL;
+}
+
+static sql_exp *
+range_stat_exp(sql_exp *e)
+{
+	while (e && e->type == e_convert) {
+		if (find_prop(e->p, PROP_MIN) && find_prop(e->p, PROP_MAX))
+			return e;
+		e = (sql_exp *) e->l;
+	}
+	return e;
+}
+
+static atom *
+range_bound_atom(mvc *sql, sql_exp *e)
+{
+	sql_exp *outer = e;
+	atom *a;
+
+	while (e && e->type == e_convert)
+		e = (sql_exp *) e->l;
+	if (!e || e->type != e_atom || !(a = (atom *) e->l))
+		return NULL;
+	if (outer->type == e_convert) {
+		a = atom_copy(sql->sa, a);
+		if (!a || !(a = atom_cast(sql->sa, a, &outer->tpe)))
+			return NULL;
+	}
+	return a;
+}
+
+static bool
+range_atom_to_dbl(mvc *sql, atom *a, dbl *v)
+{
+	sql_subtype *dbltype;
+	atom *d;
+
+	if (!a || a->isnull)
+		return false;
+	if (a->tpe.type->eclass == EC_DEC) {
+		/* decimals are integer-encoded with a scale, let atom_cast
+		 * apply the scale before converting to a double */
+		dbltype = sql_fetch_localtype(TYPE_dbl);
+		if (!dbltype)
+			return false;
+		d = atom_cast(sql->sa, atom_copy(sql->sa, a), dbltype);
+		if (!d || d->isnull)
+			return false;
+		*v = d->data.val.dval;
+		return true;
+	}
+	switch (ATOMstorage(a->data.vtype)) {
+	case TYPE_bte:
+		*v = (dbl) a->data.val.btval;
+		return true;
+	case TYPE_sht:
+		*v = (dbl) a->data.val.shval;
+		return true;
+	case TYPE_int: /* includes TYPE_date */
+		*v = (dbl) a->data.val.ival;
+		return true;
+	case TYPE_oid:
+		*v = (dbl) a->data.val.oval;
+		return true;
+	case TYPE_lng: /* includes TYPE_daytime and TYPE_timestamp */
+		*v = (dbl) a->data.val.lval;
+		return true;
+#ifdef HAVE_HGE
+	case TYPE_hge:
+		*v = (dbl) a->data.val.hval;
+		return true;
+#endif
+	case TYPE_flt:
+		*v = (dbl) a->data.val.fval;
+		return true;
+	case TYPE_dbl:
+		*v = (dbl) a->data.val.dval;
+		return true;
+	default:
+		return false;
+	}
+}
+
+static dbl
+exp_range_selectivity(mvc *sql, sql_exp *l, sql_exp *r, comp_type flag)
+{
+	sql_exp *col = l, *bound = r;
+	comp_type cmp = flag;
+	prop *pn;
+	atom *min, *max, *batom;
+	dbl minv, maxv, bv, span, sel;
+
+	if (exp_is_atom(l) && !exp_is_atom(r)) {
+		col = r;
+		bound = l;
+		cmp = swap_compare(flag);
+	} else if (!exp_is_atom(r) || exp_is_atom(l)) {
+		/* only column/atom comparisons can use column min/max */
+		return -1.0;
+	}
+	col = range_stat_exp(col);
+	if (!col || exp_is_atom(col))
+		return -1.0;
+	pn = find_prop(col->p, PROP_NUNIQUES);
+	if (pn && pn->value.dval < 20)
+		return -1.0;
+	min = range_stat_atom(find_prop(col->p, PROP_MIN));
+	max = range_stat_atom(find_prop(col->p, PROP_MAX));
+	batom = range_bound_atom(sql, bound);
+	if (!min || !max || !batom)
+		return -1.0;
+	if (!range_atom_to_dbl(sql, min, &minv) ||
+	    !range_atom_to_dbl(sql, max, &maxv) ||
+	    !range_atom_to_dbl(sql, batom, &bv))
+		return -1.0;
+	if (!isfinite(minv) || !isfinite(maxv) || !isfinite(bv) || !(maxv > minv))
+		return -1.0;
+	span = maxv - minv;
+	if (cmp == cmp_gt || cmp == cmp_gte) {
+		if (bv <= minv)
+			sel = 1.0;
+		else if (bv >= maxv)
+			sel = 0.0;
+		else
+			sel = (maxv - bv) / span;
+	} else {
+		if (bv <= minv)
+			sel = 0.0;
+		else if (bv >= maxv)
+			sel = 1.0;
+		else
+			sel = (bv - minv) / span;
+	}
+	/* never under-estimate an uncertain range to zero, and never go below
+	 * a small floor for skew we cannot see from min/max alone */
+	if (sel < 0.05)
+		sel = 0.05;
+	if (sel > 1.0)
+		sel = 1.0;
+	return sel;
+}
+
 dbl
-exp_estimate_selectivity(mvc *sql, sql_exp *e)
+exp_estimate_selectivity(mvc *sql, sql_exp *e, sql_rel *rel)
 {
 	dbl sel = 0.1;
-	(void)sql;
 	if (!e)
 		return 1.0;
 	switch (e->type) {
@@ -4700,7 +4848,7 @@ exp_estimate_selectivity(mvc *sql, sql_exp *e)
 	case e_column:
 		return 0.1;
 	case e_convert:
-		return exp_estimate_selectivity(sql, (sql_exp *) e->l);
+		return exp_estimate_selectivity(sql, (sql_exp *) e->l, rel);
 	case e_func:
 		return 0.1;
 	case e_aggr:
@@ -4713,11 +4861,21 @@ exp_estimate_selectivity(mvc *sql, sql_exp *e)
 			switch (e->flag) {
 			case cmp_equal:
 				if (exp_is_atom(r) && !exp_is_atom(l)) {
-					prop *p = find_prop(l->p, PROP_NUNIQUES);
-					if (p && p->value.dval > 1)
-						sel = 1.0 / p->value.dval;
-					else
-						sel = 0.1;
+					/* assumes select over left outer */
+					sql_rel *i  = rel->l;
+					if (is_select(rel->op) && i && is_left(i->op) && exp_is_null(r)) {
+						BUN v = (get_rel_count(i->l) - get_rel_count(i->r));
+						if (v)
+							sel = (dbl) get_rel_count(i->l) / v;
+						else
+							sel = 0.1;
+					} else {
+						prop *p = find_prop(l->p, PROP_NUNIQUES);
+						if (p && p->value.dval > 1)
+							sel = 1.0 / p->value.dval;
+						else
+							sel = 0.1;
+					}
 				} else if (exp_is_atom(l) && !exp_is_atom(r)) {
 					prop *p = find_prop(r->p, PROP_NUNIQUES);
 					if (p && p->value.dval > 1)
@@ -4758,9 +4916,11 @@ exp_estimate_selectivity(mvc *sql, sql_exp *e)
 			case cmp_gt:
 			case cmp_gte:
 			case cmp_lt:
-			case cmp_lte:
-				sel = 0.50;
+			case cmp_lte: {
+				dbl rsel = exp_range_selectivity(sql, l, r, e->flag);
+				sel = rsel >= 0.0 ? rsel : 0.50;
 				break;
+			}
 			case cmp_in:
 			case cmp_notin: {
 				list *vals = (list *) e->r;
@@ -4781,14 +4941,14 @@ exp_estimate_selectivity(mvc *sql, sql_exp *e)
 				  list *lst = (list *) e->l;
 				  sel = 1.0;
 				  for (node *n = lst->h; n; n = n->next)
-					  sel *= exp_estimate_selectivity(sql, (sql_exp *) n->data);
+					  sel *= exp_estimate_selectivity(sql, (sql_exp *) n->data, rel);
 				  break;
 			}
 			case cmp_dis: {
 				  list *lst = (list *) e->l;
 				  sel = 0.0;
 				  for (node *n = lst->h; n; n = n->next)
-				  sel += exp_estimate_selectivity(sql, (sql_exp *) n->data);
+				  sel += exp_estimate_selectivity(sql, (sql_exp *) n->data, rel);
 				  if (sel > 1.0)
 					  sel = 1.0;
 				  break;

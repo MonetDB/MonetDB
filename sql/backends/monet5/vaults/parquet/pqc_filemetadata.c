@@ -56,16 +56,18 @@ struct pqc_file {
 	size_t bsz;
 	char *buffer;
 	char *error;
+	int nr_workers;
+	struct pqc_file **workers;
 	MT_Lock lock;
 };
 
 #define PQC_MAGIC(c) ((c)[0] == 'P' && (c)[1] == 'A' && (c)[2] == 'R' && (c)[3] == '1')
 
 #define ERRSIZE 1024
-__attribute__((__format__(__printf__, 2, 3)))
+ATTR_FORMAT(__printf__, 2, 3)
 static void
 pq_set_error(pqc_file *pq,
-			 _In_z_ _Printf_format_string_ const char *format, ... )
+			 _Printf_format_string_ const char *format, ... )
 {
 	va_list	ap;
 
@@ -169,27 +171,43 @@ mylseek(int fd, int64_t offset, int whence)
 #endif
 
 pqc_file *
-pqc_copy(pqc_file *opq)
+pqc_copy(pqc_file *opq, int wid)
 {
-	//return pqc_dup(opq);
-	pqc_file *pq = ZNEW(pqc_file);
-	if (!pq)
-		return pq;
-	pq->refcnt = 1;
-	pq->filename = opq->filename;
-	pq->fd = open(opq->filename, O_RDONLY | O_BINARY);
-	pq->pa = create_allocator("pqc_copy", false);
-	if (!pq->pa) {
-		_DELETE(pq);
-		pq = NULL;
+	assert(wid < opq->nr_workers);
+	pqc_file *pq = NULL;
+	MT_lock_set(&opq->lock);
+	pq = opq->workers[wid];
+	if (!pq) {
+		pq = ZNEW(pqc_file);
+		if (!pq) {
+			MT_lock_unset(&opq->lock);
+			return pq;
+		}
+		pq->refcnt = 1;
+		pq->filename = opq->filename;
+		pq->fd = open(opq->filename, O_RDONLY | O_BINARY);
+		if (pq->fd < 0) {
+			MT_lock_unset(&opq->lock);
+			_DELETE(pq);
+			return pq;
+		}
+		pq->pa = create_allocator("pqc_copy", false);
+		if (!pq->pa) {
+			_DELETE(pq);
+			MT_lock_unset(&opq->lock);
+			return pq;
+		}
+		MT_lock_init(&pq->lock, "pqc_file");
+		opq->workers[wid] = pq;
+	} else {
+		pq = pqc_dup(pq);
 	}
-	MT_lock_init(&pq->lock, "pqc_file");
+	MT_lock_unset(&opq->lock);
 	return pq;
 }
 
 static ssize_t
-internal_read( int fd, char *dst, size_t sz)
-{
+internal_read( int fd, char *dst, size_t sz) {
 	/* read in chunks, some OSs do not
 	 * give you all at once and Windows
 	 * only accepts int */
@@ -212,7 +230,6 @@ internal_read( int fd, char *dst, size_t sz)
 int64_t
 pqc_read( pqc_file *pq, int64_t offset, char *buffer, size_t sz)
 {
-	MT_lock_set(&pq->lock);
 	if (offset == 0 && sz < PQC_SMALL) {
 		if (mylseek(pq->fd, offset, SEEK_SET) != offset)
 			offset = -3;
@@ -224,7 +241,6 @@ pqc_read( pqc_file *pq, int64_t offset, char *buffer, size_t sz)
 		if (internal_read(pq->fd, buffer, sz) != (ssize_t)sz)
 			offset = -4;
 	}
-	MT_lock_unset(&pq->lock);
 	return offset;
 }
 
@@ -1488,4 +1504,16 @@ pqc_get_filemetadata( pqc_file *pq )
 {
 	assert(pq);
 	return pq->fmd;
+}
+
+int
+pqc_set_nr_workers( pqc_file *pq, int nr_workers )
+{
+	MT_lock_set(&pq->lock);
+	if (pq->nr_workers == 0) {
+		pq->workers = SA_ZNEW_ARRAY(pq->pa, struct pqc_file *, nr_workers);
+		pq->nr_workers = nr_workers;
+	}
+	MT_lock_unset(&pq->lock);
+	return 0;
 }

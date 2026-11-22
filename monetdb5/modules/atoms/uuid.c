@@ -245,14 +245,15 @@ UUIDuuid2uuid_bulk(Client ctx, bat *res, const bat *bid, const bat *sid)
 		goto bailout;
 	}
 	off = b->hseqbase;
-	canditer_init(&ci, b, s);
+	bi = bat_iterator(b);
+	canditer_init_bi(&ci, &bi, s);
 	if (!(dst = COLnew(ci.hseq, TYPE_uuid, ci.ncand, TRANSIENT))) {
+		bat_iterator_end(&bi);
 		msg = createException(SQL, "batcalc.uuid2uuidbulk",
 							  SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto bailout;
 	}
 
-	bi = bat_iterator(b);
 	bv = bi.base;
 	dv = Tloc(dst, 0);
 	if (ci.tpe == cand_dense) {
@@ -330,14 +331,15 @@ UUIDstr2uuid_bulk(Client ctx, bat *res, const bat *bid, const bat *sid)
 		goto bailout;
 	}
 	off = b->hseqbase;
-	canditer_init(&ci, b, s);
+	bi = bat_iterator(b);
+	canditer_init_bi(&ci, &bi, s);
 	if (!(dst = COLnew(ci.hseq, TYPE_uuid, ci.ncand, TRANSIENT))) {
+		bat_iterator_end(&bi);
 		msg = createException(SQL, "batcalc.str2uuidbulk",
 							  SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto bailout;
 	}
 
-	bi = bat_iterator(b);
 	vals = Tloc(dst, 0);
 	if (ci.tpe == cand_dense) {
 		for (BUN i = 0; i < ci.ncand; i++) {

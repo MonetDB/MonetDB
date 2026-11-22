@@ -101,7 +101,7 @@ column_find_row(sql_trans *tr, sql_column *c, const void *value, ...)
 	}
 	va_end(va);
 	if (BATcount(s) == 1) {
-		rid = BUNtoid(s, 0);
+		rid = fetchtoid(s, 0);
 	}
 	bat_destroy(s);
 	return rid;
@@ -568,7 +568,7 @@ rids_next(rids *r)
 			}
 			bat_destroy(t);
 		}
-		return BUNtoid((BAT *) r->data, r->cur++);
+		return fetchtoid((BAT *) r->data, r->cur++);
 	}
 	return oid_nil;
 }
@@ -742,7 +742,7 @@ subrids_next(subrids *r)
 		sqlid id = *(sqlid*)BUNtloc(&ii, r->pos);
 		bat_iterator_end(&ii);
 		if (id == r->id)
-			return BUNtoid((BAT *) r->rids, r->pos++);
+			return fetchtoid((BAT *) r->rids, r->pos++);
 	}
 	return oid_nil;
 }

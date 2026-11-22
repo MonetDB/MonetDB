@@ -76,15 +76,16 @@ BLOBnitems_bulk(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 							  SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		goto bailout;
 	}
-	canditer_init(&ci1, b, bs);
+	bi = bat_iterator(b);
+	canditer_init_bi(&ci1, &bi, bs);
 	if (!(bn = COLnew(ci1.hseq, TYPE_int, ci1.ncand, TRANSIENT))) {
+		bat_iterator_end(&bi);
 		msg = createException(MAL, "blob.nitems_bulk",
 							  SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto bailout;
 	}
 
 	off1 = b->hseqbase;
-	bi = bat_iterator(b);
 	vals = Tloc(bn, 0);
 	if (ci1.tpe == cand_dense) {
 		for (BUN i = 0; i < ci1.ncand; i++) {
@@ -189,14 +190,15 @@ BLOBblob_blob_bulk(Client ctx, bat *res, const bat *bid, const bat *sid)
 		goto bailout;
 	}
 	off = b->hseqbase;
-	canditer_init(&ci, b, s);
+	bi = bat_iterator(b);
+	canditer_init_bi(&ci, &bi, s);
 	if (!(dst = COLnew(ci.hseq, TYPE_blob, ci.ncand, TRANSIENT))) {
+		bat_iterator_end(&bi);
 		msg = createException(SQL, "batcalc.blob_blob_bulk",
 							  SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto bailout;
 	}
 
-	bi = bat_iterator(b);
 	if (ci.tpe == cand_dense) {
 		for (BUN i = 0; i < ci.ncand; i++) {
 			oid p = (canditer_next_dense(&ci) - off);

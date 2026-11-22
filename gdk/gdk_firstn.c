@@ -222,7 +222,7 @@ BATfirstn_unique(BATiter *bi, BAT *s, BUN n, bool asc, bool nilslast, oid *lastp
 	BUN pos, childpos;
 
 	MT_thread_setalgorithm(__func__, NULL);
-	canditer_init(&ci, bi->b, s);
+	canditer_init_bi(&ci, bi, s);
 
 	if (n >= ci.ncand) {
 		/* trivial: return all candidates */
@@ -245,7 +245,7 @@ BATfirstn_unique(BATiter *bi, BAT *s, BUN n, bool asc, bool nilslast, oid *lastp
 			 * or of the BAT itself */
 			bn = canditer_slice(&ci, 0, n);
 			if (bn && lastp)
-				*lastp = BUNtoid(bn, n - 1);
+				*lastp = fetchtoid(bn, n - 1);
 			TRC_DEBUG(ALGO, "b=" ALGOBATFMT ",s=" ALGOOPTBATFMT
 				  ",n=" BUNFMT " -> " ALGOOPTBATFMT
 				  " (initial slice -- " LLFMT " usec)\n",
@@ -257,7 +257,7 @@ BATfirstn_unique(BATiter *bi, BAT *s, BUN n, bool asc, bool nilslast, oid *lastp
 		 * the BAT itself */
 		bn = canditer_slice(&ci, ci.ncand - n, ci.ncand);
 		if (bn && lastp)
-			*lastp = BUNtoid(bn, 0);
+			*lastp = fetchtoid(bn, 0);
 		TRC_DEBUG(ALGO, "b=" ALGOBATFMT ",s=" ALGOOPTBATFMT
 			  ",n=" BUNFMT " -> " ALGOOPTBATFMT
 			  " (final slice -- " LLFMT " usec)\n",
@@ -347,7 +347,7 @@ BATfirstn_unique(BATiter *bi, BAT *s, BUN n, bool asc, bool nilslast, oid *lastp
 			}
 		}
 		if (bn && lastp)
-			*lastp = BUNtoid(bn, pos);
+			*lastp = fetchtoid(bn, pos);
 		TRC_DEBUG(ALGO, "b=" ALGOBATFMT ",s=" ALGOOPTBATFMT
 			  ",n=" BUNFMT " -> " ALGOOPTBATFMT
 			  " (ordered -- " LLFMT " usec)\n",
@@ -730,7 +730,7 @@ BATfirstn_unique_with_groups(BATiter *bi, BAT *s, BAT *g, BUN n, bool asc, bool 
 	BUN pos, childpos;
 
 	MT_thread_setalgorithm(__func__, NULL);
-	canditer_init(&ci, bi->b, s);
+	canditer_init_bi(&ci, bi, s);
 
 	if (n > ci.ncand)
 		n = ci.ncand;
@@ -758,7 +758,7 @@ BATfirstn_unique_with_groups(BATiter *bi, BAT *s, BAT *g, BUN n, bool asc, bool 
 			*lastgp = g->tseqbase + n - 1;
 		bn = canditer_slice(&ci, 0, n);
 		if (bn && lastp)
-			*lastp = BUNtoid(bn, n - 1);
+			*lastp = fetchtoid(bn, n - 1);
 		TRC_DEBUG(ALGO, "b=" ALGOBATFMT ",s=" ALGOOPTBATFMT
 			  ",g=" ALGOBATFMT ",n=" BUNFMT " -> " ALGOOPTBATFMT
 			  " (dense group -- " LLFMT " usec)\n",
@@ -1417,7 +1417,7 @@ BATgroupedfirstn(BUN n, BAT *s, BAT *g, int nbats, BAT **bats, bool *asc, bool *
 	if (n > BATcount(bats[0]))
 		n = BATcount(bats[0]);
 
-	if ((err = BATgroupaggrinit(bats[0], g, NULL /* e */, s, &min, &max, &ngrp, &ci)) != NULL) {
+	if ((err = BATgroupaggrinit(bats[0], g, NULL /* e */, s, &min, &max, &ngrp, &ci, NULL)) != NULL) {
 		GDKerror("%s\n", err);
 		return NULL;
 	}
@@ -1442,14 +1442,15 @@ BATgroupedfirstn(BUN n, BAT *s, BAT *g, int nbats, BAT **bats, bool *asc, bool *
 	bn->tnonil = false;
 
 	for (int i = 0; i < nbats; i++) {
+		BATiter bi = bat_iterator(bats[i]);
 		batinfo[i] = (struct batinfo) {
-			.bi1 = bat_iterator(bats[i]),
-			.bi2 = bat_iterator(bats[i]),
+			.bi1 = bi,
+			.bi2 = bat_iterator_copy(&bi),
 			.asc = asc ? asc[i] : false,
 			.nilslast = nilslast ? nilslast[i] : true,
-			.cmp = ATOMcompare(bats[i]->ttype),
-			.hseq = bats[i]->hseqbase,
-			.nil = ATOMnilptr(bats[i]->ttype),
+			.cmp = ATOMcompare(bi.type),
+			.hseq = bi.hseq,
+			.nil = ATOMnilptr(bi.type),
 		};
 	}
 
@@ -1460,7 +1461,7 @@ BATgroupedfirstn(BUN n, BAT *s, BAT *g, int nbats, BAT **bats, bool *asc, bool *
 	oid *oids = Tloc(bn, 0);
 	TIMEOUT_LOOP(ci.ncand, qry_ctx) {
 		oid o = canditer_next(&ci);
-		oid grp = g ? BUNtoid(g, o - g->hseqbase) : 0;
+		oid grp = g ? fetchtoid(g, o - g->hseqbase) : 0;
 		BUN goff = grp * n;
 		int comp = -1;
 		/* compare new value with root of heap to see if we must
@@ -1620,7 +1621,7 @@ BATgroupedfirstn_offset(BUN n, BUN o, BAT *s, BAT *g, int nbats, BAT **bats, boo
 			return NULL;
 		}
 		for (BUN i = 0; i < BATcount(d); i++)
-			roids[i] = BUNtoid(topno, (BUN) BUNtoid(d, i));
+			roids[i] = fetchtoid(topno, (BUN) fetchtoid(d, i));
 		BBPreclaim(d);
 		roids += n;
 		cand1->tseqbase += no;

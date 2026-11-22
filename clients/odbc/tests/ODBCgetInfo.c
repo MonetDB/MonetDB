@@ -395,7 +395,7 @@ const struct {
 		.info = SQL_CREATE_VIEW,
 		.name = "SQL_CREATE_VIEW",
 		.type = INTEGER,
-		.i = SQL_CV_CREATE_VIEW | SQL_CV_CHECK_OPTION,
+		.i = SQL_CV_CREATE_VIEW | SQL_CV_CHECK_OPTION | SQL_CV_LOCAL,
 	},
 	{
 		.info = SQL_CURSOR_COMMIT_BEHAVIOR,

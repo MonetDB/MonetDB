@@ -53,9 +53,9 @@ leavedb(char *name)
 	/* receiver uses 512 byte buffers, so if it doesn't fit, forget about it */
 	char buf[512];
 	if (snprintf(buf, sizeof(buf),
-				 "LEAV %s mapi:monetdb://%s:%u/",
-				 name, _mero_hostname,
-				 (unsigned int)getConfNum(_mero_props, "port")) < (int) sizeof(buf))
+		     "LEAV %s mapi:monetdb://%s:%u/",
+		     name, _mero_hostname,
+		     (unsigned int)getConfNum(_mero_props, "port")) < (int) sizeof(buf))
 		broadcast(buf);
 }
 
@@ -82,12 +82,12 @@ setURI(sabdb *stats)
 	shared = getConfVal(props, "shared");
 	if (!stats->locked && (shared == NULL || strcmp(shared, "no") != 0)) {
 		snprintf(_internal_uri_buf, sizeof(_internal_uri_buf),
-				"mapi:monetdb://%s:%u/%s%s%s",
-				_mero_hostname,
-				(unsigned int)getConfNum(_mero_props, "port"),
-				stats->dbname,
-				shared == NULL ? "" : "/",
-				shared == NULL ? "" : shared);
+			 "mapi:monetdb://%s:%u/%s%s%s",
+			 _mero_hostname,
+			 (unsigned int)getConfNum(_mero_props, "port"),
+			 stats->dbname,
+			 shared == NULL ? "" : "/",
+			 shared == NULL ? "" : shared);
 		stats->uri = _internal_uri_buf;
 	}
 	freeConfFile(props);
@@ -104,13 +104,13 @@ anncdbS(sabdb *stats)
 	shared = getConfVal(props, "shared");
 	if (!stats->locked && (shared == NULL || strcmp(shared, "no") != 0)) {
 		snprintf(buf, sizeof(buf),
-				"ANNC %s%s%s mapi:monetdb://%s:%u/ %d",
-				stats->dbname,
-				shared == NULL ? "" : "/",
-				shared == NULL ? "" : shared,
-				_mero_hostname,
-				(unsigned int)getConfNum(_mero_props, "port"),
-				getConfNum(_mero_props, "discoveryttl") + 60);
+			 "ANNC %s%s%s mapi:monetdb://%s:%u/ %d",
+			 stats->dbname,
+			 shared == NULL ? "" : "/",
+			 shared == NULL ? "" : shared,
+			 _mero_hostname,
+			 (unsigned int)getConfNum(_mero_props, "port"),
+			 getConfNum(_mero_props, "discoveryttl") + 60);
 		broadcast(buf);
 	}
 	freeConfFile(props);
@@ -155,16 +155,16 @@ recvWithTimeout(int msgsock, stream *fdin, char *buf, size_t buflen)
 
 bool
 control_authorise(
-		const char *host,
-		const char *chal,
-		const char *algo,
-		const char *passwd,
-		stream *fout)
+	const char *host,
+	const char *chal,
+	const char *algo,
+	const char *passwd,
+	stream *fout)
 {
 	char *pwd;
 
 	if (getConfNum(_mero_props, "control") == 0 ||
-			getConfVal(_mero_props, "passphrase") == NULL)
+	    getConfVal(_mero_props, "passphrase") == NULL)
 	{
 		Mlevelfprintf(INFORMATION, _mero_ctlout, "%s: remote control disabled\n", host);
 		mnstr_printf(fout, "!access denied\n");
@@ -173,7 +173,7 @@ control_authorise(
 	}
 
 	pwd = mcrypt_hashPassword(algo,
-			getConfVal(_mero_props, "passphrase"), chal);
+				  getConfVal(_mero_props, "passphrase"), chal);
 	if (!pwd) {
 		Mlevelfprintf(ERROR, _mero_ctlout, "%s: Allocation failure during authentication\n", host);
 		mnstr_printf(fout, "!allocation failure\n");
@@ -183,7 +183,7 @@ control_authorise(
 	if (strcmp(pwd, passwd) != 0) {
 		free(pwd);
 		Mlevelfprintf(ERROR, _mero_ctlout, "%s: permission denied "
-				"(bad passphrase)\n", host);
+			      "(bad passphrase)\n", host);
 		mnstr_printf(fout, "!access denied\n");
 		mnstr_flush(fout, MNSTR_FLUSH_DATA);
 		return false;
@@ -196,43 +196,43 @@ control_authorise(
 	return true;
 }
 
-#define send_client(P)								\
-	do {											\
-		if (fout != NULL) {							\
-			mnstr_printf(fout, P "%s", buf2);		\
-			mnstr_flush(fout, MNSTR_FLUSH_DATA);						\
-		} else {									\
+#define send_client(P)						\
+	do {							\
+		if (fout != NULL) {				\
+			mnstr_printf(fout, P "%s", buf2);	\
+			mnstr_flush(fout, MNSTR_FLUSH_DATA);	\
+		} else {					\
 			if (send(msgsock, buf2, len, 0) < 0)	\
-				senderror = errno;					\
-		}											\
+				senderror = errno;		\
+		}						\
 	} while (0)
 
-#define send_list()											\
-	do {													\
-		len = snprintf(buf2, sizeof(buf2), "OK\n");			\
-		if (fout == NULL) {									\
+#define send_list()							\
+	do {								\
+		len = snprintf(buf2, sizeof(buf2), "OK\n");		\
+		if (fout == NULL) {					\
 			if (send(msgsock, buf2, strlen(buf2), 0) < 0 ||	\
-				send(msgsock, pbuf, strlen(pbuf), 0) < 0)	\
-				senderror = errno;							\
-		} else {											\
-			char *p, *q = pbuf;								\
-			mnstr_printf(fout, "=OK\n");					\
-			while ((p = strchr(q, '\n')) != NULL) {			\
-				*p++ = '\0';								\
-				mnstr_printf(fout, "=%s\n", q);				\
-				q = p;										\
-			}												\
-			if (*q != '\0')									\
-				mnstr_printf(fout, "=%s\n", q);				\
-			mnstr_flush(fout, MNSTR_FLUSH_DATA);								\
-		}													\
+			    send(msgsock, pbuf, strlen(pbuf), 0) < 0)	\
+				senderror = errno;			\
+		} else {						\
+			char *p, *q = pbuf;				\
+			mnstr_printf(fout, "=OK\n");			\
+			while ((p = strchr(q, '\n')) != NULL) {		\
+				*p++ = '\0';				\
+				mnstr_printf(fout, "=%s\n", q);		\
+				q = p;					\
+			}						\
+			if (*q != '\0')					\
+				mnstr_printf(fout, "=%s\n", q);		\
+			mnstr_flush(fout, MNSTR_FLUSH_DATA);		\
+		}							\
 	} while (0)
 
 static void ctl_handle_client(
-		const char *origin,
-		int msgsock,
-		stream *fdin,
-		stream *fout)
+	const char *origin,
+	int msgsock,
+	stream *fdin,
+	stream *fout)
 {
 	/* TODO: this function may actually stall the entire client
 	 * handler, so we should probably at some point implement a take
@@ -261,11 +261,11 @@ static void ctl_handle_client(
 				}
 				/* hmmm error ... give up */
 				Mlevelfprintf(ERROR, _mero_ctlerr, "%s: error reading from control "
-						"channel: %s\n", origin, strerror(errno));
+					      "channel: %s\n", origin, strerror(errno));
 				break;
 			} else if (pos == -2) {
 				Mlevelfprintf(ERROR, _mero_ctlerr, "%s: time-out reading from "
-						"control channel, disconnecting client\n", origin);
+					      "control channel, disconnecting client\n", origin);
 				break;
 			} else {
 				buf[pos] = '\0';
@@ -277,7 +277,7 @@ static void ctl_handle_client(
 		if (p == NULL) {
 			/* skip, must be garbage */
 			Mlevelfprintf(WARNING, _mero_ctlerr, "%s: skipping garbage on control "
-					"channel: %s\n", origin, buf);
+				      "channel: %s\n", origin, buf);
 			pos = 0;
 			continue;
 		}
@@ -291,7 +291,7 @@ static void ctl_handle_client(
 		/* format is simple: database<space>command */
 		if ((p = strchr(q, ' ')) == NULL) {
 			Mlevelfprintf(ERROR, _mero_ctlerr, "%s: malformed control signal: %s\n",
-					origin, q);
+				      origin, q);
 		} else {
 			*p++ = '\0';
 			if (strcmp(p, "ping") == 0) {
@@ -301,29 +301,29 @@ static void ctl_handle_client(
 				err e;
 				if ((e = msab_getStatus(&stats, q)) != NULL) {
 					len = snprintf(buf2, sizeof(buf2),
-							"internal error, please review the logs\n");
+						       "internal error, please review the logs\n");
 					send_client("!");
 					Mlevelfprintf(ERROR, _mero_ctlerr, "%s: start: msab_getStatus: "
-							"%s\n", origin, e);
+						      "%s\n", origin, e);
 					freeErr(e);
 					continue;
 				} else {
 					if (stats == NULL) {
 						Mlevelfprintf(ERROR, _mero_ctlerr, "%s: received start signal "
-								"for database not under merovingian "
-								"control: %s\n", origin, q);
+							      "for database not under merovingian "
+							      "control: %s\n", origin, q);
 						len = snprintf(buf2, sizeof(buf2),
-								"no such database: %s\n", q);
+							       "no such database: %s\n", q);
 						send_client("!");
 						continue;
 					}
 
 					if (stats->state == SABdbRunning) {
 						Mlevelfprintf(ERROR, _mero_ctlerr, "%s: received start signal "
-								"for already running database: %s\n",
-								origin, q);
+							      "for already running database: %s\n",
+							      origin, q);
 						len = snprintf(buf2, sizeof(buf2),
-								"database is already running: %s\n", q);
+							       "database is already running: %s\n", q);
 						send_client("!");
 						msab_freeStatus(&stats);
 						continue;
@@ -333,10 +333,10 @@ static void ctl_handle_client(
 				}
 				if ((e = forkMserver(q, &stats, true)) != NO_ERR) {
 					Mlevelfprintf(ERROR, _mero_ctlerr, "%s: failed to fork mserver: "
-							"%s\n", origin, getErrMsg(e));
+						      "%s\n", origin, getErrMsg(e));
 					len = snprintf(buf2, sizeof(buf2),
-							"starting '%s' failed: %s\n",
-							q, getErrMsg(e));
+						       "starting '%s' failed: %s\n",
+						       q, getErrMsg(e));
 					send_client("!");
 					freeErr(e);
 					stats = NULL;
@@ -344,13 +344,13 @@ static void ctl_handle_client(
 					len = snprintf(buf2, sizeof(buf2), "OK\n");
 					send_client("=");
 					Mlevelfprintf(INFORMATION, _mero_ctlout, "%s: started '%s'\n",
-							origin, q);
+						      origin, q);
 				}
 
 				if (stats != NULL)
 					msab_freeStatus(&stats);
 			} else if (strcmp(p, "stop") == 0 ||
-					strcmp(p, "kill") == 0)
+				   strcmp(p, "kill") == 0)
 			{
 				mtype mtype = 0;
 				pid_t pid = 0;
@@ -379,10 +379,10 @@ static void ctl_handle_client(
 				if (dp == NULL) {
 					if ((e = msab_getStatus(&stats, q)) != NULL) {
 						len = snprintf(buf2, sizeof(buf2),
-								"internal error, please review the logs\n");
+							       "internal error, please review the logs\n");
 						send_client("!");
 						Mlevelfprintf(ERROR, _mero_ctlerr, "%s: start: msab_getStatus: "
-								"%s\n", origin, e);
+							      "%s\n", origin, e);
 						freeErr(e);
 						continue;
 					}
@@ -396,9 +396,9 @@ static void ctl_handle_client(
 				// At this point pid may have been set from a dpair or from msab_getStatus()
 				if (pid <= 0) {
 					Mlevelfprintf(ERROR, _mero_ctlerr, "%s: received stop signal for "
-							"non running database: %s\n", origin, q);
+						      "non running database: %s\n", origin, q);
 					len = snprintf(buf2, sizeof(buf2),
-							"database is not running: %s\n", q);
+						       "database is not running: %s\n", q);
 					send_client("!");
 					break;
 				}
@@ -414,25 +414,25 @@ static void ctl_handle_client(
 					if (dp)
 						pthread_mutex_unlock(&dp->fork_lock);
 					Mlevelfprintf(INFORMATION, _mero_ctlout, "%s: stopped "
-							"database '%s'\n", origin, q);
+						      "database '%s'\n", origin, q);
 				} else {
 					terminated = kill(pid, SIGKILL) == 0;
 					Mlevelfprintf(INFORMATION, _mero_ctlout, "%s: killed "
-							"database '%s'\n", origin, q);
+						      "database '%s'\n", origin, q);
 				}
 				if (terminated) {
 					len = snprintf(buf2, sizeof(buf2), "OK\n");
 					send_client("=");
 				} else {
 					Mlevelfprintf(ERROR, _mero_ctlerr, "%s: received stop signal for "
-							"non running database: %s\n", origin, q);
+						      "non running database: %s\n", origin, q);
 					len = snprintf(buf2, sizeof(buf2),
-							"database is not running: %s\n", q);
+						       "database is not running: %s\n", q);
 					send_client("!");
 					break;
 				}
 			} else if (strcmp(p, "create") == 0 ||
-					strncmp(p, "create password=", strlen("create password=")) == 0) {
+				   strncmp(p, "create password=", strlen("create password=")) == 0) {
 				err e;
 
 				p += strlen("create");
@@ -442,9 +442,9 @@ static void ctl_handle_client(
 				e = db_create(q);
 				if (e != NO_ERR) {
 					Mlevelfprintf(ERROR, _mero_ctlerr, "%s: failed to create "
-							"database '%s': %s\n", origin, q, getErrMsg(e));
+						      "database '%s': %s\n", origin, q, getErrMsg(e));
 					len = snprintf(buf2, sizeof(buf2),
-							"%s\n", getErrMsg(e));
+						       "%s\n", getErrMsg(e));
 					send_client("!");
 					free(e);
 				} else {
@@ -453,7 +453,7 @@ static void ctl_handle_client(
 						int pipes[2];
 						if (pipe(pipes) == -1) {
 							Mlevelfprintf(ERROR, _mero_ctlerr, "%s: creating pipe failed\n",
-									 origin);
+								      origin);
 						} else if ((child = fork()) == 0) {
 							/* this is the child process; exit non-zero
 							 * on failure */
@@ -467,25 +467,25 @@ static void ctl_handle_client(
 
 							if ((err = msab_getDBfarm(&sadbfarm)) != NULL) {
 								Mlevelfprintf(ERROR, _mero_ctlerr,
-										 "%s: internal error: %s\n",
-										 origin, err);
+									      "%s: internal error: %s\n",
+									      origin, err);
 								exit(EXIT_FAILURE);
 							}
 							snprintf(buf2, sizeof(buf2),
-									 "monet_vault_key=%s/%s/.vaultkey",
-									 sadbfarm, q);
+								 "monet_vault_key=%s/%s/.vaultkey",
+								 sadbfarm, q);
 							snprintf(buf3, sizeof(buf3), "--dbpath=%s/%s",
-									 sadbfarm, q);
+								 sadbfarm, q);
 							free(sadbfarm);
 							execl(_mero_mserver,
-								  _mero_mserver,
-								  "--set",
-								  buf2,
-								  buf3,
-								  "--read-password-initialize-and-exit",
-								  NULL);
+							      _mero_mserver,
+							      "--set",
+							      buf2,
+							      buf3,
+							      "--read-password-initialize-and-exit",
+							      NULL);
 							Mlevelfprintf(ERROR, _mero_ctlerr,
-									 "%s: cannot start mserver5\n", origin);
+								      "%s: cannot start mserver5\n", origin);
 							exit(EXIT_FAILURE);
 						} else if (child > 0) {
 							/* this is the parent process */
@@ -497,30 +497,30 @@ static void ctl_handle_client(
 							waitpid(child, &status, 0);
 							if (error || !WIFEXITED(status) || WEXITSTATUS(status) != 0) {
 								Mlevelfprintf(ERROR, _mero_ctlerr,
-										 "%s: initialization of database '%s' failed\n",
-										 origin, q);
+									      "%s: initialization of database '%s' failed\n",
+									      origin, q);
 								len = snprintf(buf2, sizeof(buf2),
-											   "initialization of database '%s' failed\n", q);
+									       "initialization of database '%s' failed\n", q);
 								send_client("!");
 								continue;
 							}
 							e = db_release(q);
 							if (e != NO_ERR) {
 								Mlevelfprintf(ERROR, _mero_ctlerr,
-										 "%s: could not release database '%s': %sd\n",
-										 origin, q, e);
+									      "%s: could not release database '%s': %sd\n",
+									      origin, q, e);
 								free(e);
 							}
 						} else {
 							close(pipes[0]);
 							close(pipes[1]);
 							Mlevelfprintf(ERROR, _mero_ctlerr, "%s: forking failed\n",
-									 origin);
+								      origin);
 						}
 					}
 
 					Mlevelfprintf(INFORMATION, _mero_ctlout, "%s: created database '%s'\n",
-							origin, q);
+						      origin, q);
 					len = snprintf(buf2, sizeof(buf2), "OK\n");
 					send_client("=");
 				}
@@ -557,17 +557,17 @@ static void ctl_handle_client(
 				} while(1);
 				if (e != NO_ERR) {
 					Mlevelfprintf(ERROR, _mero_ctlerr, "%s: invalid multiplex-funnel "
-							"specification '%s': %s at char %zu\n",
-							origin, p, getErrMsg(e), (size_t)(r - p));
+						      "specification '%s': %s at char %zu\n",
+						      origin, p, getErrMsg(e), (size_t)(r - p));
 					len = snprintf(buf2, sizeof(buf2),
-							"invalid pattern: %s\n", getErrMsg(e));
+						       "invalid pattern: %s\n", getErrMsg(e));
 					send_client("!");
 				} else if ((e = db_create(q)) != NO_ERR) {
 					Mlevelfprintf(ERROR, _mero_ctlerr, "%s: failed to create "
-							"multiplex-funnel '%s': %s\n",
-							origin, q, getErrMsg(e));
+						      "multiplex-funnel '%s': %s\n",
+						      origin, q, getErrMsg(e));
 					len = snprintf(buf2, sizeof(buf2),
-							"%s\n", getErrMsg(e));
+						       "%s\n", getErrMsg(e));
 					send_client("!");
 					free(e);
 				} else {
@@ -581,24 +581,24 @@ static void ctl_handle_client(
 					setConfVal(kv, p);
 					if ((e = msab_getDBfarm(&dbfarm)) != NULL) {
 						Mlevelfprintf(ERROR, _mero_ctlerr, "%s: failed to retrieve "
-								"dbfarm: %s\n", origin, e);
+							      "dbfarm: %s\n", origin, e);
 						free(e);
 						/* try, hopefully this succeeds */
 						if ((e = db_destroy(q)) != NO_ERR) {
 							Mlevelfprintf(ERROR, _mero_ctlerr, "%s: could not destroy: "
-									"%s\n", origin, getErrMsg(e));
+								      "%s\n", origin, getErrMsg(e));
 							free(e);
 						}
 						len = snprintf(buf2, sizeof(buf2),
-								"failed to prepare multiplex-funnel\n");
+							       "failed to prepare multiplex-funnel\n");
 						send_client("!");
 					} else {
 						snprintf(buf2, sizeof(buf2), "%s/%s", dbfarm, q);
 						free(dbfarm);
 						writeProps(props, buf2);
 						Mlevelfprintf(INFORMATION, _mero_ctlout,
-								"%s: created multiplex-funnel '%s'\n",
-								origin, q);
+							      "%s: created multiplex-funnel '%s'\n",
+							      origin, q);
 						len = snprintf(buf2, sizeof(buf2), "OK\n");
 						send_client("!");
 					}
@@ -609,9 +609,9 @@ static void ctl_handle_client(
 				err e = db_destroy(q);
 				if (e != NO_ERR) {
 					Mlevelfprintf(ERROR, _mero_ctlerr, "%s: failed to destroy "
-							"database '%s': %s\n", origin, q, getErrMsg(e));
+						      "database '%s': %s\n", origin, q, getErrMsg(e));
 					len = snprintf(buf2, sizeof(buf2),
-							"%s\n", getErrMsg(e));
+						       "%s\n", getErrMsg(e));
 					send_client("!");
 					free(e);
 				} else {
@@ -621,7 +621,7 @@ static void ctl_handle_client(
 					 * maintenance) */
 					leavedb(q);
 					Mlevelfprintf(INFORMATION, _mero_ctlout, "%s: destroyed database '%s'\n",
-							origin, q);
+						      origin, q);
 					len = snprintf(buf2, sizeof(buf2), "OK\n");
 					send_client("=");
 				}
@@ -629,9 +629,9 @@ static void ctl_handle_client(
 				char *e = db_lock(q);
 				if (e != NULL) {
 					Mlevelfprintf(ERROR, _mero_ctlerr, "%s: failed to lock "
-							"database '%s': %s\n", origin, q, getErrMsg(e));
+						      "database '%s': %s\n", origin, q, getErrMsg(e));
 					len = snprintf(buf2, sizeof(buf2),
-							"%s\n", getErrMsg(e));
+						       "%s\n", getErrMsg(e));
 					send_client("!");
 					free(e);
 				} else {
@@ -640,7 +640,7 @@ static void ctl_handle_client(
 					 * love" */
 					leavedb(q);
 					Mlevelfprintf(INFORMATION, _mero_ctlout, "%s: locked database '%s'\n",
-							origin, q);
+						      origin, q);
 					len = snprintf(buf2, sizeof(buf2), "OK\n");
 					send_client("=");
 				}
@@ -648,9 +648,9 @@ static void ctl_handle_client(
 				char *e = db_release(q);
 				if (e != NULL) {
 					Mlevelfprintf(ERROR, _mero_ctlerr, "%s: failed to release "
-							"database '%s': %s\n", origin, q, getErrMsg(e));
+						      "database '%s': %s\n", origin, q, getErrMsg(e));
 					len = snprintf(buf2, sizeof(buf2),
-							"%s\n", getErrMsg(e));
+						       "%s\n", getErrMsg(e));
 					send_client("!");
 					free(e);
 				} else {
@@ -659,10 +659,10 @@ static void ctl_handle_client(
 					 * an unshared database */
 					if ((e = msab_getStatus(&stats, q)) != NULL) {
 						len = snprintf(buf2, sizeof(buf2),
-								"internal error, please review the logs\n");
+							       "internal error, please review the logs\n");
 						send_client("!");
 						Mlevelfprintf(ERROR, _mero_ctlerr, "%s: release: "
-								"msab_getStatus: %s\n", origin, e);
+							      "msab_getStatus: %s\n", origin, e);
 						freeErr(e);
 						/* we need to OK regardless, as releasing
 						 * succeed */
@@ -671,7 +671,7 @@ static void ctl_handle_client(
 						msab_freeStatus(&stats);
 					}
 					Mlevelfprintf(INFORMATION, _mero_ctlout, "%s: released database '%s'\n",
-							origin, q);
+						      origin, q);
 					len = snprintf(buf2, sizeof(buf2), "OK\n");
 					send_client("=");
 				}
@@ -681,7 +681,7 @@ static void ctl_handle_client(
 				char *e = snapshot_database_to(q, dest);
 				if (e != NULL) {
 					Mlevelfprintf(ERROR, _mero_ctlerr, "%s: snapshot database '%s' to %s failed: %s\n",
-						origin, q, dest, getErrMsg(e));
+						      origin, q, dest, getErrMsg(e));
 					len = snprintf(buf2, sizeof(buf2), "%s\n", getErrMsg(e));
 					send_client("!");
 					freeErr(e);
@@ -689,14 +689,14 @@ static void ctl_handle_client(
 					len = snprintf(buf2, sizeof(buf2), "OK\n");
 					send_client("=");
 					Mlevelfprintf(INFORMATION, _mero_ctlout, "%s: completed snapshot of database '%s' to '%s'\n",
-						origin, q, dest);
+						      origin, q, dest);
 				}
 			} else if (strcmp(p, "snapshot create automatic") == 0) {
 				char *dest = NULL;
 				char *e = snapshot_default_filename(&dest, q);
 				if (e != NULL) {
 					Mlevelfprintf(INFORMATION, _mero_ctlerr, "%s: snapshot database '%s': %s\n",
-						origin, q, getErrMsg(e));
+						      origin, q, getErrMsg(e));
 					len = snprintf(buf2, sizeof(buf2), "%s\n", getErrMsg(e));
 					send_client("!");
 					freeErr(e);
@@ -705,7 +705,7 @@ static void ctl_handle_client(
 					e = snapshot_database_to(q, dest);
 					if (e != NULL) {
 						Mlevelfprintf(ERROR, _mero_ctlerr, "%s: snapshot database '%s' to %s failed: %s\n",
-							origin, q, dest, getErrMsg(e));
+							      origin, q, dest, getErrMsg(e));
 						len = snprintf(buf2, sizeof(buf2), "%s\n", getErrMsg(e));
 						send_client("!");
 						freeErr(e);
@@ -713,7 +713,7 @@ static void ctl_handle_client(
 						len = snprintf(buf2, sizeof(buf2), "OK\n");
 						send_client("=");
 						Mlevelfprintf(INFORMATION, _mero_ctlout, "%s: completed snapshot of database '%s' to '%s'\n",
-							origin, q, dest);
+							      origin, q, dest);
 					}
 					free(dest);
 				}
@@ -755,7 +755,7 @@ static void ctl_handle_client(
 					mnstr_destroy(wrapper);
 				if (e != NULL) {
 					Mlevelfprintf(ERROR, _mero_ctlerr, "%s: streaming snapshot database '%s' failed: %s\n",
-						origin, q, getErrMsg(e));
+						      origin, q, getErrMsg(e));
 					len = snprintf(buf2, sizeof(buf2), "%s\n", getErrMsg(e));
 					send_client("!");
 					freeErr(e);
@@ -763,7 +763,7 @@ static void ctl_handle_client(
 					len = snprintf(buf2, sizeof(buf2), "OK\n");
 					send_client("=");
 					Mlevelfprintf(INFORMATION, _mero_ctlout, "%s: completed streaming snapshot of database '%s'\n",
-						origin, q);
+						      origin, q);
 				}
 				break;
 			} else if (strncmp(p, "snapshot restore adhoc ", strlen("snapshot restore adhoc ")) == 0) {
@@ -772,7 +772,7 @@ static void ctl_handle_client(
 				char *e = snapshot_restore_from(q, source);
 				if (e != NULL) {
 					Mlevelfprintf(ERROR, _mero_ctlerr, "%s: restore  database '%s' from snapshot %s failed: %s\n",
-						origin, q, source, getErrMsg(e));
+						      origin, q, source, getErrMsg(e));
 					len = snprintf(buf2, sizeof(buf2), "%s\n", getErrMsg(e));
 					send_client("!");
 					freeErr(e);
@@ -780,7 +780,7 @@ static void ctl_handle_client(
 					len = snprintf(buf2, sizeof(buf2), "OK\n");
 					send_client("=");
 					Mlevelfprintf(INFORMATION, _mero_ctlout, "%s: restored database '%s' from snapshot '%s'\n",
-						origin, q, source);
+						      origin, q, source);
 				}
 			} else if (strncmp(p, "snapshot destroy ", strlen("snapshot destroy ")) == 0) {
 				char *path = p + strlen("snapshot destroy ");
@@ -816,10 +816,10 @@ static void ctl_handle_client(
 					gmtime_r(&snap->time, &tm);
 					strftime(datebuf, sizeof(datebuf), "%Y%m%dT%H%M%S", &tm);
 					len = snprintf(buf2, sizeof(buf2), "%s %" PRIu64 " %s %s\n",
-						datebuf,
-						(uint64_t)snap->size,
-						snap->dbname,
-						snap->path != NULL ? snap->path : "");
+						       datebuf,
+						       (uint64_t)snap->size,
+						       snap->dbname,
+						       snap->path != NULL ? snap->path : "");
 					send_client("=");
 				}
 				free_snapshots(snaps, nsnaps);
@@ -838,7 +838,7 @@ static void ctl_handle_client(
 				} else {
 					if ((e = msab_getStatus(&stats, p)) != NULL) {
 						Mlevelfprintf(ERROR, _mero_ctlerr, "%s: name: msab_getStatus:"
-								" %s\n", origin, e);
+							      " %s\n", origin, e);
 						freeErr(e);
 						/* should not fail, since the rename was
 						 * already successful */
@@ -848,7 +848,7 @@ static void ctl_handle_client(
 						msab_freeStatus(&stats);
 					}
 					Mlevelfprintf(INFORMATION, _mero_ctlout, "%s: renamed database '%s' "
-							"to '%s'\n", origin, q, p);
+						      "to '%s'\n", origin, q, p);
 					len = snprintf(buf2, sizeof(buf2), "OK\n");
 					send_client("=");
 				}
@@ -858,18 +858,18 @@ static void ctl_handle_client(
 
 				if ((e = msab_getStatus(&stats, q)) != NULL) {
 					len = snprintf(buf2, sizeof(buf2),
-							"internal error, please review the logs\n");
+						       "internal error, please review the logs\n");
 					send_client("!");
 					Mlevelfprintf(ERROR, _mero_ctlerr, "%s: set: msab_getStatus: "
-							"%s\n", origin, e);
+						      "%s\n", origin, e);
 					freeErr(e);
 					continue;
 				}
 				if (stats == NULL) {
 					Mlevelfprintf(ERROR, _mero_ctlerr, "%s: received property signal "
-							"for unknown database: %s\n", origin, q);
+						      "for unknown database: %s\n", origin, q);
 					len = snprintf(buf2, sizeof(buf2),
-							"unknown database: %s\n", q);
+						       "unknown database: %s\n", q);
 					send_client("!");
 					continue;
 				}
@@ -884,12 +884,12 @@ static void ctl_handle_client(
 					/* bail out if we don't do discovery at all */
 					if (getConfNum(_mero_props, "discovery") == 0) {
 						len = snprintf(buf2, sizeof(buf2),
-								"discovery service is globally disabled, "
-								"enable it first\n");
+							       "discovery service is globally disabled, "
+							       "enable it first\n");
 						send_client("!");
 						Mlevelfprintf(ERROR, _mero_ctlerr, "%s: set: cannot perform "
-								"client share request: discovery service "
-								"is globally disabled\n", origin);
+							      "client share request: discovery service "
+							      "is globally disabled\n", origin);
 						msab_freeStatus(&stats);
 						continue;
 					}
@@ -899,10 +899,10 @@ static void ctl_handle_client(
 					leavedbS(stats);
 				} else if (stats->state == SABdbRunning) {
 					Mlevelfprintf(ERROR, _mero_ctlerr, "%s: cannot set property '%s' "
-							"on running database\n", origin, p);
+						      "on running database\n", origin, p);
 					len = snprintf(buf2, sizeof(buf2),
-							"cannot set property '%s' on running "
-							"database\n", p);
+						       "cannot set property '%s' on running "
+						       "database\n", p);
 					send_client("!");
 					msab_freeStatus(&stats);
 					continue;
@@ -913,9 +913,9 @@ static void ctl_handle_client(
 						/* reannounce again, there was an error */
 						anncdbS(stats);
 					Mlevelfprintf(ERROR, _mero_ctlerr, "%s: setting property failed: "
-							"%s\n", origin, e);
+						      "%s\n", origin, e);
 					len = snprintf(buf2, sizeof(buf2),
-							"%s\n", e);
+						       "%s\n", e);
 					send_client("!");
 					free(e);
 					msab_freeStatus(&stats);
@@ -929,26 +929,26 @@ static void ctl_handle_client(
 
 				if (val != NULL) {
 					Mlevelfprintf(INFORMATION, _mero_ctlout, "%s: set property '%s' for "
-							"database '%s' to '%s'\n", origin, p, q, val);
+						      "database '%s' to '%s'\n", origin, p, q, val);
 				} else {
 					Mlevelfprintf(INFORMATION, _mero_ctlout, "%s: inherited property '%s' "
-							"for database '%s'\n", origin, p, q);
+						      "for database '%s'\n", origin, p, q);
 				}
 				len = snprintf(buf2, sizeof(buf2), "OK\n");
 				send_client("=");
 
-	/* commands below this point are multi line and hence you can't
-	 * combine them, so they disconnect the client afterwards */
+				/* commands below this point are multi line and hence you can't
+				 * combine them, so they disconnect the client afterwards */
 
 			} else if (strcmp(p, "version") == 0) {
 				len = snprintf(buf2, sizeof(buf2), "OK\n");
 				send_client("=");
 				len = snprintf(buf2, sizeof(buf2), "%s (%s)\n",
-							   MONETDB_VERSION,
+					       MONETDB_VERSION,
 #ifdef MONETDB_RELEASE
-							   MONETDB_RELEASE
+					       MONETDB_RELEASE
 #else
-							   "unreleased"
+					       "unreleased"
 #endif
 					);
 				send_client("=");
@@ -969,7 +969,7 @@ static void ctl_handle_client(
 					send_list();
 
 					Mlevelfprintf(INFORMATION, _mero_ctlout, "%s: served default property "
-							"list\n", origin);
+						      "list\n", origin);
 					freeConfFile(props);
 					free(props);
 					free(pbuf);
@@ -978,10 +978,10 @@ static void ctl_handle_client(
 
 				if ((e = msab_getStatus(&stats, q)) != NULL) {
 					len = snprintf(buf2, sizeof(buf2),
-							"internal error, please review the logs\n");
+						       "internal error, please review the logs\n");
 					send_client("!");
 					Mlevelfprintf(ERROR, _mero_ctlerr, "%s: get: msab_getStatus: "
-							"%s\n", origin, e);
+						      "%s\n", origin, e);
 					freeErr(e);
 					freeConfFile(props);
 					free(props);
@@ -989,9 +989,9 @@ static void ctl_handle_client(
 				}
 				if (stats == NULL) {
 					Mlevelfprintf(ERROR, _mero_ctlerr, "%s: received get signal for "
-							"unknown database: %s\n", origin, q);
+						      "unknown database: %s\n", origin, q);
 					len = snprintf(buf2, sizeof(buf2),
-							"unknown database: %s\n", q);
+						       "unknown database: %s\n", q);
 					send_client("!");
 					freeConfFile(props);
 					free(props);
@@ -1009,7 +1009,7 @@ static void ctl_handle_client(
 				msab_freeStatus(&stats);
 
 				Mlevelfprintf(INFORMATION, _mero_ctlout, "%s: served property list for "
-						"database '%s'\n", origin, q);
+					      "database '%s'\n", origin, q);
 				break;
 			} else if (strcmp(p, "status") == 0) {
 				sabdb *stats;
@@ -1024,19 +1024,19 @@ static void ctl_handle_client(
 				 * databases */
 				if ((e = msab_getStatus(&stats, q)) != NULL) {
 					len = snprintf(buf2, sizeof(buf2),
-							"internal error, please review the logs\n");
+						       "internal error, please review the logs\n");
 					send_client("!");
 					Mlevelfprintf(ERROR, _mero_ctlerr, "%s: status: msab_getStatus: "
-							"%s\n", origin, e);
+						      "%s\n", origin, e);
 					freeErr(e);
 					break;
 				}
 
 				if (stats == NULL && q != NULL) {
 					Mlevelfprintf(ERROR, _mero_ctlerr, "%s: received status signal for "
-							"unknown database: %s\n", origin, q);
+						      "unknown database: %s\n", origin, q);
 					len = snprintf(buf2, sizeof(buf2),
-							"unknown database: %s\n", q);
+						       "unknown database: %s\n", q);
 					len = snprintf(buf2, sizeof(buf2), "no such database '%s'\n", q);
 					send_client("!");
 					break;
@@ -1068,10 +1068,10 @@ static void ctl_handle_client(
 				}
 				if (e != NULL) {
 					len = snprintf(buf2, sizeof(buf2),
-							"internal error, please review the logs\n");
+						       "internal error, please review the logs\n");
 					send_client("!");
 					Mlevelfprintf(ERROR, _mero_ctlerr, "%s: status: msab_getStatus: "
-							"%s\n", origin, e);
+						      "%s\n", origin, e);
 					msab_freeStatus(&topdb);
 					freeErr(e);
 					break;
@@ -1082,16 +1082,16 @@ static void ctl_handle_client(
 
 				if (q == NULL) {
 					Mlevelfprintf(INFORMATION, _mero_ctlout, "%s: served status list\n",
-							origin);
+						      origin);
 				} else {
 					Mlevelfprintf(INFORMATION, _mero_ctlout, "%s: returned status for "
-							"'%s'\n", origin, q);
+						      "'%s'\n", origin, q);
 				}
 
 				msab_freeStatus(&topdb);
 				break;
 			} else if (strcmp(q, "anelosimus") == 0 &&
-					strcmp(p, "eximius") == 0)
+				   strcmp(p, "eximius") == 0)
 			{
 				/* return a list of remote databases from our Aranita */
 				remotedb rdb;
@@ -1110,8 +1110,8 @@ static void ctl_handle_client(
 				rdb = _mero_remotedbs;
 				while (rdb != NULL && !senderror) {
 					len = snprintf(buf2, sizeof(buf2), "%s\t%s\n",
-							rdb->fullname,
-							rdb->conn);
+						       rdb->fullname,
+						       rdb->conn);
 					if (fout == NULL) {
 						if (send(msgsock, buf2, len, 0) < 0)
 							senderror = errno;
@@ -1127,13 +1127,13 @@ static void ctl_handle_client(
 				pthread_mutex_unlock(&_mero_remotedb_lock);
 
 				Mlevelfprintf(INFORMATION, _mero_ctlout, "%s: served neighbour list\n",
-						origin);
+					      origin);
 				break;
 			} else {
 				Mlevelfprintf(ERROR, _mero_ctlerr, "%s: unknown control command: %s\n",
-						origin, p);
+					      origin, p);
 				len = snprintf(buf2, sizeof(buf2),
-						"unknown command: %s\n", p);
+					       "unknown command: %s\n", p);
 				send_client("!");
 				break;
 			}
@@ -1141,7 +1141,7 @@ static void ctl_handle_client(
 	}
 	if (senderror)
 		Mlevelfprintf(ERROR, _mero_ctlerr, "%s: error sending to control "
-				 "channel: %s\n", origin, strerror(senderror));
+			      "channel: %s\n", origin, strerror(senderror));
 }
 
 void
@@ -1241,7 +1241,7 @@ controlRunner(void *d)
 			case ENOMEM:
 				/* transient failure, wait a little and continue */
 				Mlevelfprintf(ERROR, _mero_ctlerr, "error during accept: %s\n",
-						strerror(errno));
+					      strerror(errno));
 				sleep_ms(500);
 				break;
 			case EINTR:
@@ -1250,7 +1250,7 @@ controlRunner(void *d)
 			default:
 				/* anything else */
 				Mlevelfprintf(ERROR, _mero_ctlerr, "error during accept: %s\n",
-						strerror(errno));
+					      strerror(errno));
 				break;
 			}
 			continue;

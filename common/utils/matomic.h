@@ -69,19 +69,19 @@
 #if ATOMIC_LONG_LOCK_FREE != 2
 #error "we need _Atomic(unsigned long) to be lock free"
 #endif
-typedef volatile atomic_ulong ATOMIC_TYPE __attribute__((__aligned__(8)));
+typedef volatile atomic_ulong ATOMIC_TYPE ATTR_ALIGNED(8);
 typedef unsigned long ATOMIC_BASE_TYPE;
 #elif SIZEOF_LONG_LONG == 8
 #if ATOMIC_LLONG_LOCK_FREE != 2
 #if SIZEOF_SIZE_T == 4 && ATOMIC_LONG_LOCK_FREE == 2
 /* on 32 bit arch, fall back to 32 bit atomics if 64 bit is not lock free */
-typedef volatile atomic_ulong ATOMIC_TYPE __attribute__((__aligned__(4)));
+typedef volatile atomic_ulong ATOMIC_TYPE ATTR_ALIGNED(4);
 typedef unsigned long ATOMIC_BASE_TYPE;
 #else
 #error "we need _Atomic(unsigned [long] long) to be lock free"
 #endif
 #else
-typedef volatile atomic_ullong ATOMIC_TYPE __attribute__((__aligned__(8)));
+typedef volatile atomic_ullong ATOMIC_TYPE ATTR_ALIGNED(8);
 typedef unsigned long long ATOMIC_BASE_TYPE;
 #endif
 #else
@@ -96,19 +96,19 @@ typedef unsigned long long ATOMIC_BASE_TYPE;
 #if ATOMIC_LONG_LOCK_FREE != 2
 #error "we need _Atomic(unsigned long) to be lock free"
 #endif
-typedef volatile atomic_ulong ATOMIC_TYPE __attribute__((__aligned__(8)));
+typedef volatile atomic_ulong ATOMIC_TYPE ATTR_ALIGNED(8);
 typedef unsigned long ATOMIC_BASE_TYPE;
 #elif SIZEOF_LONG_LONG == 8
 #if ATOMIC_LLONG_LOCK_FREE != 2
 #if SIZEOF_SIZE_T == 4 && ATOMIC_LONG_LOCK_FREE == 2
 /* on 32 bit arch, fall back to 32 bit atomics */
-typedef volatile atomic_ulong ATOMIC_TYPE __attribute__((__aligned__(4)));
+typedef volatile atomic_ulong ATOMIC_TYPE ATTR_ALIGNED(4);
 typedef unsigned long ATOMIC_BASE_TYPE;
 #else
 #error "we need _Atomic(unsigned [long] long) to be lock free"
 #endif
 #else
-typedef volatile atomic_ullong ATOMIC_TYPE __attribute__((__aligned__(8)));
+typedef volatile atomic_ullong ATOMIC_TYPE ATTR_ALIGNED(8);
 typedef unsigned long long ATOMIC_BASE_TYPE;
 #endif
 #else
@@ -270,7 +270,7 @@ typedef volatile int ATOMIC_FLAG;
  * __sync_* primitives is not supported) */
 
 typedef uint64_t ATOMIC_BASE_TYPE;
-typedef volatile ATOMIC_BASE_TYPE ATOMIC_TYPE __attribute__((__aligned__ (8)));
+typedef volatile ATOMIC_BASE_TYPE ATOMIC_TYPE ATTR_ALIGNED(8);
 
 #define ATOMIC_VAR_INIT(val)	(val)
 #define ATOMIC_INIT(var, val)	(*(var) = (val))

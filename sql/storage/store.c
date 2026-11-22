@@ -62,14 +62,13 @@ store_transaction_id(sqlstore *store)
 ulng
 store_oldest(sqlstore *store, sql_trans *tr)
 {
-	if (tr && tr->ts == (ulng) ATOMIC_GET(&store->oldest)) {
-		sql_trans *otr = store->active->h->data;
-		if (otr == tr && store->active->h->next) {
-			otr = store->active->h->next->data;
-			return otr->ts;
-		}
+	ulng oldest = (ulng) ATOMIC_GET(&store->oldest);
+
+	if (tr && oldest == tr->ts && store->active->h && store->active->h->next) {
+		sql_trans *otr = store->active->h->next->data;
+		oldest = otr->ts;
 	}
-	return (ulng) ATOMIC_GET(&store->oldest);
+	return oldest;
 }
 
 static ulng
@@ -2626,7 +2625,7 @@ store_manager(sqlstore *store)
 			MT_lock_unset(&store->flush);
 			store_lock(store);
 			if (ATOMIC_GET(&store->nr_active) == 0) {
-				ulng oldest = store_timestamp(store)+1;
+				ulng oldest = store_get_timestamp(store)+1;
 				store_pending_changes(store, oldest, NULL);
 			}
 			store_unlock(store);
@@ -2898,9 +2897,9 @@ end:
 
 // Helper function for tar_write_header.
 // Our stream.h makes sure __attribute__ exists.
-__attribute__((__format__(__printf__, 3, 4)))
+ATTR_FORMAT(__printf__, 3, 4)
 static void
-tar_write_header_field(char **cursor_ptr, size_t size, _In_z_ _Printf_format_string_ const char *fmt, ...)
+tar_write_header_field(char **cursor_ptr, size_t size, _Printf_format_string_ const char *fmt, ...)
 {
 	va_list ap;
 
@@ -2919,7 +2918,7 @@ tar_write_header_field(char **cursor_ptr, size_t size, _In_z_ _Printf_format_str
 #define TAR_BLOCK_SIZE (512)
 
 // Write a tar header to the given stream.
-__attribute__((__warn_unused_result__))
+ATTR_WARN_UNUSED_RESULT
 static gdk_return
 tar_write_header(stream *tarfile, const char *path, time_t mtime, uint64_t size)
 {
@@ -2987,7 +2986,7 @@ tar_write_header(stream *tarfile, const char *path, time_t mtime, uint64_t size)
  * multiple of TAR_BLOCK_SIZE.  Make sure all writes are in multiples
  * of TAR_BLOCK_SIZE.
  */
-__attribute__((__warn_unused_result__))
+ATTR_WARN_UNUSED_RESULT
 static gdk_return
 tar_write(stream *outfile, const char *path,  const char *data, size_t size)
 {
@@ -3021,7 +3020,7 @@ tar_write(stream *outfile, const char *path,  const char *data, size_t size)
 	return GDK_SUCCEED;
 }
 
-__attribute__((__warn_unused_result__))
+ATTR_WARN_UNUSED_RESULT
 static gdk_return
 tar_write_data(stream *tarfile, const char *path, time_t mtime, const char *data, size_t size)
 {
@@ -3034,7 +3033,7 @@ tar_write_data(stream *tarfile, const char *path, time_t mtime, const char *data
 	return tar_write(tarfile, path, data, size);
 }
 
-__attribute__((__warn_unused_result__))
+ATTR_WARN_UNUSED_RESULT
 static gdk_return
 tar_copy_stream(stream *tarfile, const char *path, time_t mtime, stream *contents, uint64_t size, char *buf, size_t bufsize)
 {
@@ -3069,7 +3068,7 @@ tar_copy_stream(stream *tarfile, const char *path, time_t mtime, stream *content
 	return GDK_SUCCEED;
 }
 
-__attribute__((__warn_unused_result__))
+ATTR_WARN_UNUSED_RESULT
 static gdk_return
 hot_snapshot_write_tar(stream *out, const char *prefix, const char *plan)
 {
@@ -3170,7 +3169,7 @@ end:
  *
  * This function is not entirely safe as compared to for example mkstemp.
  */
-__attribute__((__warn_unused_result__))
+ATTR_WARN_UNUSED_RESULT
 static str
 pick_tmp_name(str filename)
 {
@@ -4808,8 +4807,6 @@ sql_trans_commit(sql_trans *tr)
 			}
 			n = next;
 		}
-		tr->active = 2; /* small hack enabling to signal that this transaction has committed */
-		tr->ts = commit_ts; /* fix profiler output */
 		store_unlock(store);
 		/* flush the log structure */
 		if (log) {
@@ -7294,6 +7291,15 @@ sql_trans_col_stats( sql_trans *tr, sql_column *col, bool *nonil, bool *unique, 
 	return 0;
 }
 
+int
+sql_trans_idx_stats( sql_trans *tr, sql_idx *idx, bool *nonil, bool *unique, double *unique_est)
+{
+	sqlstore *store = tr->store;
+	if (idx && isTable(idx->t) && store->storage_api.idx_stats)
+		return store->storage_api.idx_stats(tr, idx, nonil, unique, unique_est);
+	return 0;
+}
+
 size_t
 sql_trans_dist_count( sql_trans *tr, sql_column *col )
 {
@@ -8048,6 +8054,7 @@ sql_trans_create_ustr(sql_trans *tr, sql_schema *s, const char *uname)
 	sqlid ustr_id = store_next_oid(store);
 	int res;
 	base_init(NULL, &u->base, ustr_id, true, uname);
+	u->s = s;
 	if ((res = os_add(s->ustrs, tr, u->base.name, &u->base)))
 		return res;
 	if ((res = store->table_api.table_insert(tr, sysobs, &ustr_id, &uname,

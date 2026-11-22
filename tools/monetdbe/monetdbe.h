@@ -121,17 +121,16 @@ typedef struct {
 	const char *trace_file;		// file to which log output should be written
 } monetdbe_options;
 
-#define DEFAULT_STRUCT_DEFINITION(ctype, typename)         \
-	typedef struct                                     \
-	{                                                  \
-		monetdbe_types type;                        \
-		monetdbe_sql_type sql_type;                \
-		ctype *data;                               \
-		size_t count;                              \
-		char *name;				   \
-		ctype null_value;                          \
-		double scale;                              \
-		int (*is_null)(ctype *value);               \
+#define DEFAULT_STRUCT_DEFINITION(ctype, typename)	\
+	typedef struct {				\
+		monetdbe_types type;			\
+		monetdbe_sql_type sql_type;		\
+		ctype *data;				\
+		size_t count;				\
+		char *name;				\
+		ctype null_value;			\
+		double scale;				\
+		int (*is_null)(ctype *value);		\
 	} monetdbe_column_##typename
 
 DEFAULT_STRUCT_DEFINITION(int8_t, bool);

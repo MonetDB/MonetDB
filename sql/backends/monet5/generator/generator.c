@@ -282,13 +282,13 @@ VLTgenerator_table_(BAT **result, Client cntxt, MalBlkPtr mb, MalStkPtr stk, Ins
 			f = *getArgReference_TYPE(stk, pci, 1, date);
 			l = *getArgReference_TYPE(stk, pci, 2, date);
 			s = *getArgReference_lng(stk, pci, 3);
+			s /= 24*60*60*1000;
 			if (s == 0 ||
 			    (s > 0 && ret.val.btval > 0) ||
 			    (s < 0 && ret.val.btval < 0) ||
 				is_date_nil(f) || is_date_nil(l))
 				throw(MAL, "generator.table",
 				      SQLSTATE(42000) "Illegal generator range");
-			s /= 24*60*60*1000;
 			/* check if s is really in nr of days or usecs */
 			n = (BUN) (date_diff(l, f) / s) + 1; /* n maybe too large now */
 			bn = COLnew(0, TYPE_date, n + 1, TRANSIENT);
@@ -1233,7 +1233,7 @@ VLTgenerator_thetasubselect(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr 
 		}																\
 		v = (TPE*) Tloc(bn,0);											\
 		for(; cnt-- > 0; o++){											\
-			oid oi = BUNtoid(b, o);										\
+			oid oi = fetchtoid(b, o);										\
 			if (is_oid_nil(oi)) {										\
 				val = TPE##_nil;										\
 			} else {													\
@@ -1331,7 +1331,7 @@ VLTgenerator_projection(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			v = (date*) Tloc(bn,0);
 
 			for(; cnt-- > 0; o++){
-				t = ((int) BUNtoid(b, o)) * s;
+				t = ((int) fetchtoid(b, o)) * s;
 				val = date_add_month(f, t);
 				if (is_date_nil(val)) {
 					BBPunfix(b->batCacheid);
@@ -1372,7 +1372,7 @@ VLTgenerator_projection(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			v = (date*) Tloc(bn,0);
 
 			for(; cnt-- > 0; o++){
-				t = ((int) BUNtoid(b, o)) * s;
+				t = ((int) fetchtoid(b, o)) * s;
 				val = date_add_day(f, (int) t);
 				if (is_date_nil(val)) {
 					BBPunfix(b->batCacheid);
@@ -1417,7 +1417,7 @@ VLTgenerator_projection(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			v = (timestamp*) Tloc(bn,0);
 
 			for(; cnt-- > 0; o++){
-				t = ((lng) BUNtoid(b, o)) * s;
+				t = ((lng) fetchtoid(b, o)) * s;
 				val = timestamp_add_usec(f, t);
 				if (is_timestamp_nil(val)) {
 					BBPunfix(b->batCacheid);
@@ -2100,12 +2100,12 @@ VLTgenerator_get_limits(generator *g, Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 					throw(MAL, "generator.new", SQLSTATE(42000) "Illegal generator expression range");
 				VLTgetlimits_temporal(date, int, lng);
 				lng s = g->step.val.lval;
+				s /= 24*60*60*1000;
 				if (s == 0 ||
 					(s > 0 && ret.val.btval > 0) ||
 					(s < 0 && ret.val.btval < 0) ||
 						is_date_nil(g->first.val.ival) || is_date_nil(g->limit.val.ival))
 					throw(MAL, "generator.new", SQLSTATE(42000) "Illegal generator range");
-				s /= 24*60*60*1000;
 				/* check if s is really in nr of days or usecs */
 				g->cnt = (BUN) (date_diff(g->limit.val.ival, g->first.val.ival) / s) + 1; /* n maybe too large now */
 			}

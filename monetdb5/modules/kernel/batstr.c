@@ -98,14 +98,15 @@ do_batstr_int(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 							  SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		goto bailout;
 	}
-	canditer_init(&ci1, b, bs);
+	bi = bat_iterator(b);
+	canditer_init_bi(&ci1, &bi, bs);
 	if (!(bn = COLnew(ci1.hseq, TYPE_int, ci1.ncand, TRANSIENT))) {
+		bat_iterator_end(&bi);
 		msg = createException(MAL, name, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto bailout;
 	}
 
 	off1 = b->hseqbase;
-	bi = bat_iterator(b);
 	vals = Tloc(bn, 0);
 	if (ci1.tpe == cand_dense) {
 		for (BUN i = 0; i < ci1.ncand; i++) {
@@ -193,15 +194,16 @@ STRbatAscii(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 							  SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		goto bailout;
 	}
-	canditer_init(&ci1, b, bs);
+	bi = bat_iterator(b);
+	canditer_init_bi(&ci1, &bi, bs);
 	if (!(bn = COLnew(ci1.hseq, TYPE_int, ci1.ncand, TRANSIENT))) {
+		bat_iterator_end(&bi);
 		msg = createException(MAL, "batstr.unicodeAt",
 							  SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto bailout;
 	}
 
 	off1 = b->hseqbase;
-	bi = bat_iterator(b);
 	vals = Tloc(bn, 0);
 	if (ci1.tpe == cand_dense) {
 		for (BUN i = 0; i < ci1.ncand; i++) {
@@ -266,14 +268,15 @@ STRbatFromWChr(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 							  SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		goto bailout;
 	}
-	canditer_init(&ci1, b, bs);
+	bi = bat_iterator(b);
+	canditer_init_bi(&ci1, &bi, bs);
 	if (!(bn = COLnew(ci1.hseq, TYPE_str, ci1.ncand, TRANSIENT))) {
+		bat_iterator_end(&bi);
 		msg = createException(MAL, "batstr.unicode",
 							  SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto bailout;
 	}
 
-	bi = bat_iterator(b);
 	off1 = b->hseqbase;
 	vals = bi.base;
 	if (ci1.tpe == cand_dense) {
@@ -368,15 +371,16 @@ STRbatSpace(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 							  SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		goto bailout;
 	}
-	canditer_init(&ci1, b, bs);
+	bi = bat_iterator(b);
+	canditer_init_bi(&ci1, &bi, bs);
 	if (!(bn = COLnew(ci1.hseq, TYPE_str, ci1.ncand, TRANSIENT))) {
+		bat_iterator_end(&bi);
 		msg = createException(MAL, "batstr.space",
 							  SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto bailout;
 	}
 
 	off1 = b->hseqbase;
-	bi = bat_iterator(b);
 	vals = bi.base;
 	if (ci1.tpe == cand_dense) {
 		for (BUN i = 0; i < ci1.ncand; i++) {
@@ -465,14 +469,15 @@ do_batstr_str(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 							  SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		goto bailout;
 	}
-	canditer_init(&ci1, b, bs);
+	bi = bat_iterator(b);
+	canditer_init_bi(&ci1, &bi, bs);
 	if (!(bn = COLnew(ci1.hseq, TYPE_str, ci1.ncand, TRANSIENT))) {
+		bat_iterator_end(&bi);
 		msg = createException(MAL, name, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto bailout;
 	}
 
 	off1 = b->hseqbase;
-	bi = bat_iterator(b);
 	if (ci1.tpe == cand_dense) {
 		for (BUN i = 0; i < ci1.ncand; i++) {
 			oid p1 = (canditer_next_dense(&ci1) - off1);
@@ -564,14 +569,15 @@ do_batstr_conststr_str(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 							  SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		goto bailout;
 	}
-	canditer_init(&ci1, b, bs);
+	bi = bat_iterator(b);
+	canditer_init_bi(&ci1, &bi, bs);
 	if (!(bn = COLnew(ci1.hseq, TYPE_str, ci1.ncand, TRANSIENT))) {
+		bat_iterator_end(&bi);
 		msg = createException(MAL, name, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto bailout;
 	}
 
 	off1 = b->hseqbase;
-	bi = bat_iterator(b);
 	if (ci1.tpe == cand_dense) {
 		for (BUN i = 0; i < ci1.ncand; i++) {
 			oid p1 = (canditer_next_dense(&ci1) - off1);
@@ -663,14 +669,15 @@ do_batstr_str_conststr(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 							  SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		goto bailout;
 	}
-	canditer_init(&ci1, b, bs);
+	bi = bat_iterator(b);
+	canditer_init_bi(&ci1, &bi, bs);
 	if (!(bn = COLnew(ci1.hseq, TYPE_str, ci1.ncand, TRANSIENT))) {
+		bat_iterator_end(&bi);
 		msg = createException(MAL, name, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto bailout;
 	}
 
 	off1 = b->hseqbase;
-	bi = bat_iterator(b);
 	if (ci1.tpe == cand_dense) {
 		for (BUN i = 0; i < ci1.ncand; i++) {
 			oid p1 = (canditer_next_dense(&ci1) - off1);
@@ -764,23 +771,27 @@ do_batstr_batstr_str(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 							  SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		goto bailout;
 	}
-	canditer_init(&ci1, left, lefts);
-	canditer_init(&ci2, right, rights);
+	lefti = bat_iterator(left);
+	canditer_init_bi(&ci1, &lefti, lefts);
+	righti = bat_iterator(right);
+	canditer_init_bi(&ci2, &righti, rights);
 	if (ci2.ncand != ci1.ncand || ci1.hseq != ci2.hseq) {
+		bat_iterator_end(&lefti);
+		bat_iterator_end(&righti);
 		msg = createException(MAL, name,
 							  ILLEGAL_ARGUMENT
 							  " Requires bats of identical size");
 		goto bailout;
 	}
 	if (!(bn = COLnew(ci1.hseq, TYPE_str, ci1.ncand, TRANSIENT))) {
+		bat_iterator_end(&lefti);
+		bat_iterator_end(&righti);
 		msg = createException(MAL, name, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto bailout;
 	}
 
 	off1 = left->hseqbase;
 	off2 = right->hseqbase;
-	lefti = bat_iterator(left);
-	righti = bat_iterator(right);
 	if (ci1.tpe == cand_dense && ci2.tpe == cand_dense) {
 		for (BUN i = 0; i < ci1.ncand; i++) {
 			oid p1 = (canditer_next_dense(&ci1) - off1),
@@ -878,14 +889,15 @@ do_batstr_constint_str(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 							  SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		goto bailout;
 	}
-	canditer_init(&ci1, b, bs);
+	bi = bat_iterator(b);
+	canditer_init_bi(&ci1, &bi, bs);
 	if (!(bn = COLnew(ci1.hseq, TYPE_str, ci1.ncand, TRANSIENT))) {
+		bat_iterator_end(&bi);
 		msg = createException(MAL, name, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto bailout;
 	}
 
 	off1 = b->hseqbase;
-	bi = bat_iterator(b);
 	if (ci1.tpe == cand_dense) {
 		for (BUN i = 0; i < ci1.ncand; i++) {
 			oid p1 = (canditer_next_dense(&ci1) - off1);
@@ -979,14 +991,15 @@ do_batstr_int_conststr(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 							  SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		goto bailout;
 	}
-	canditer_init(&ci1, b, bs);
+	bi = bat_iterator(b);
+	canditer_init_bi(&ci1, &bi, bs);
 	if (!(bn = COLnew(ci1.hseq, TYPE_str, ci1.ncand, TRANSIENT))) {
+		bat_iterator_end(&bi);
 		msg = createException(MAL, name, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto bailout;
 	}
 
 	off1 = b->hseqbase;
-	bi = bat_iterator(b);
 	inputs = bi.base;
 	if (ci1.tpe == cand_dense) {
 		for (BUN i = 0; i < ci1.ncand; i++) {
@@ -1084,23 +1097,27 @@ do_batstr_batint_str(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 							  SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		goto bailout;
 	}
-	canditer_init(&ci1, left, ls);
-	canditer_init(&ci2, right, rs);
+	lefti = bat_iterator(left);
+	bi = bat_iterator(right);
+	canditer_init_bi(&ci1, &lefti, ls);
+	canditer_init_bi(&ci2, &bi, rs);
 	if (ci2.ncand != ci1.ncand || ci1.hseq != ci2.hseq) {
+		bat_iterator_end(&lefti);
+		bat_iterator_end(&bi);
 		msg = createException(MAL, name,
 							  ILLEGAL_ARGUMENT
 							  " Requires bats of identical size");
 		goto bailout;
 	}
 	if (!(bn = COLnew(ci1.hseq, TYPE_str, ci1.ncand, TRANSIENT))) {
+		bat_iterator_end(&lefti);
+		bat_iterator_end(&bi);
 		msg = createException(MAL, name, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto bailout;
 	}
 
 	off1 = left->hseqbase;
 	off2 = right->hseqbase;
-	lefti = bat_iterator(left);
-	bi = bat_iterator(right);
 	righti = bi.base;
 	if (ci1.tpe == cand_dense && ci2.tpe == cand_dense) {
 		for (BUN i = 0; i < ci1.ncand; i++) {
@@ -1200,14 +1217,15 @@ do_batstr_constint_conststr_str(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 							  SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		goto bailout;
 	}
-	canditer_init(&ci1, b, bs);
+	bi = bat_iterator(b);
+	canditer_init_bi(&ci1, &bi, bs);
 	if (!(bn = COLnew(ci1.hseq, TYPE_str, ci1.ncand, TRANSIENT))) {
+		bat_iterator_end(&bi);
 		msg = createException(MAL, name, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto bailout;
 	}
 
 	off1 = b->hseqbase;
-	bi = bat_iterator(b);
 	if (ci1.tpe == cand_dense) {
 		for (BUN i = 0; i < ci1.ncand; i++) {
 			oid p1 = (canditer_next_dense(&ci1) - off1);
@@ -1306,23 +1324,27 @@ do_batstr_batint_conststr_str(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 							  SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		goto bailout;
 	}
-	canditer_init(&ci1, left, ls);
-	canditer_init(&ci2, right, rs);
+	lefti = bat_iterator(left);
+	bi = bat_iterator(right);
+	canditer_init_bi(&ci1, &lefti, ls);
+	canditer_init_bi(&ci2, &bi, rs);
 	if (ci2.ncand != ci1.ncand || ci1.hseq != ci2.hseq) {
+		bat_iterator_end(&lefti);
+		bat_iterator_end(&bi);
 		msg = createException(MAL, name,
 							  ILLEGAL_ARGUMENT
 							  " Requires bats of identical size");
 		goto bailout;
 	}
 	if (!(bn = COLnew(ci1.hseq, TYPE_str, ci1.ncand, TRANSIENT))) {
+		bat_iterator_end(&lefti);
+		bat_iterator_end(&bi);
 		msg = createException(MAL, name, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto bailout;
 	}
 
 	off1 = left->hseqbase;
 	off2 = right->hseqbase;
-	lefti = bat_iterator(left);
-	bi = bat_iterator(right);
 	righti = bi.base;
 	if (ci1.tpe == cand_dense && ci2.tpe == cand_dense) {
 		for (BUN i = 0; i < ci1.ncand; i++) {
@@ -1425,23 +1447,27 @@ do_batstr_constint_batstr_str(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 							  SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		goto bailout;
 	}
-	canditer_init(&ci1, left, ls);
-	canditer_init(&ci2, right, rs);
+	lefti = bat_iterator(left);
+	righti = bat_iterator(right);
+	canditer_init_bi(&ci1, &lefti, ls);
+	canditer_init_bi(&ci2, &righti, rs);
 	if (ci2.ncand != ci1.ncand || ci1.hseq != ci2.hseq) {
+		bat_iterator_end(&lefti);
+		bat_iterator_end(&righti);
 		msg = createException(MAL, name,
 							  ILLEGAL_ARGUMENT
 							  " Requires bats of identical size");
 		goto bailout;
 	}
 	if (!(bn = COLnew(ci1.hseq, TYPE_str, ci1.ncand, TRANSIENT))) {
+		bat_iterator_end(&lefti);
+		bat_iterator_end(&righti);
 		msg = createException(MAL, name, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto bailout;
 	}
 
 	off1 = left->hseqbase;
 	off2 = right->hseqbase;
-	lefti = bat_iterator(left);
-	righti = bat_iterator(right);
 	if (ci1.tpe == cand_dense && ci2.tpe == cand_dense) {
 		for (BUN i = 0; i < ci1.ncand; i++) {
 			oid p1 = (canditer_next_dense(&ci1) - off1),
@@ -1548,17 +1574,26 @@ do_batstr_batint_batstr_str(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 							  SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		goto bailout;
 	}
-	canditer_init(&ci1, arg1, arg1s);
-	canditer_init(&ci2, arg2, arg2s);
-	canditer_init(&ci3, arg3, arg3s);
+	arg1i = bat_iterator(arg1);
+	bi = bat_iterator(arg2);
+	arg3i = bat_iterator(arg3);
+	canditer_init_bi(&ci1, &arg1i, arg1s);
+	canditer_init_bi(&ci2, &bi, arg2s);
+	canditer_init_bi(&ci3, &arg3i, arg3s);
 	if (ci2.ncand != ci1.ncand || ci1.hseq != ci2.hseq || ci3.ncand != ci1.ncand
 		|| ci2.hseq != ci3.hseq) {
+		bat_iterator_end(&arg1i);
+		bat_iterator_end(&bi);
+		bat_iterator_end(&arg3i);
 		msg = createException(MAL, name,
 							  ILLEGAL_ARGUMENT
 							  " Requires bats of identical size");
 		goto bailout;
 	}
 	if (!(bn = COLnew(ci1.hseq, TYPE_str, ci1.ncand, TRANSIENT))) {
+		bat_iterator_end(&arg1i);
+		bat_iterator_end(&bi);
+		bat_iterator_end(&arg3i);
 		msg = createException(MAL, name, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto bailout;
 	}
@@ -1566,10 +1601,7 @@ do_batstr_batint_batstr_str(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 	off1 = arg1->hseqbase;
 	off2 = arg2->hseqbase;
 	off3 = arg3->hseqbase;
-	arg1i = bat_iterator(arg1);
-	bi = bat_iterator(arg2);
 	arg2i = bi.base;
-	arg3i = bat_iterator(arg3);
 	if (ci1.tpe == cand_dense && ci2.tpe == cand_dense && ci3.tpe == cand_dense) {
 		for (BUN i = 0; i < ci1.ncand; i++) {
 			oid p1 = (canditer_next_dense(&ci1) - off1),
@@ -1898,23 +1930,27 @@ prefix_or_suffix(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 							  SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		goto exit2;
 	}
-	canditer_init(&ci1, left, lefts);
-	canditer_init(&ci2, right, rights);
+	lefti = bat_iterator(left);
+	righti = bat_iterator(right);
+	canditer_init_bi(&ci1, &lefti, lefts);
+	canditer_init_bi(&ci2, &righti, rights);
 	if (ci2.ncand != ci1.ncand || ci1.hseq != ci2.hseq) {
+		bat_iterator_end(&lefti);
+		bat_iterator_end(&righti);
 		msg = createException(MAL, name,
 							  ILLEGAL_ARGUMENT
 							  " Requires bats of identical size");
 		goto exit2;
 	}
 	if (!(bn = COLnew(ci1.hseq, TYPE_bit, ci1.ncand, TRANSIENT))) {
+		bat_iterator_end(&lefti);
+		bat_iterator_end(&righti);
 		msg = createException(MAL, name, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto exit2;
 	}
 
 	off1 = left->hseqbase;
 	off2 = right->hseqbase;
-	lefti = bat_iterator(left);
-	righti = bat_iterator(right);
 	vals = Tloc(bn, 0);
 	if (ci1.tpe == cand_dense && ci2.tpe == cand_dense) {
 		for (BUN i = 0; i < ci1.ncand; i++) {
@@ -2030,14 +2066,15 @@ prefix_or_suffix_cst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 							  SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		goto exit2;
 	}
-	canditer_init(&ci1, b, bs);
+	bi = bat_iterator(b);
+	canditer_init_bi(&ci1, &bi, bs);
 	if (!(bn = COLnew(ci1.hseq, TYPE_bit, ci1.ncand, TRANSIENT))) {
+		bat_iterator_end(&bi);
 		msg = createException(MAL, name, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto exit2;
 	}
 
 	off1 = b->hseqbase;
-	bi = bat_iterator(b);
 	vals = Tloc(bn, 0);
 	ynil = strNil(y);
 	ylen = ynil ? 0 : strlen(y); /* not used if nil */
@@ -2154,14 +2191,15 @@ prefix_or_suffix_strcst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 							  SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		goto exit2;
 	}
-	canditer_init(&ci1, b, bs);
+	bi = bat_iterator(b);
+	canditer_init_bi(&ci1, &bi, bs);
 	if (!(bn = COLnew(ci1.hseq, TYPE_bit, ci1.ncand, TRANSIENT))) {
+		bat_iterator_end(&bi);
 		msg = createException(MAL, name, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto exit2;
 	}
 
 	off1 = b->hseqbase;
-	bi = bat_iterator(b);
 	vals = Tloc(bn, 0);
 	xnil = strNil(x);
 	if (ci1.tpe == cand_dense) {
@@ -2274,23 +2312,27 @@ search_string_bat(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 							  SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		goto exit2;
 	}
-	canditer_init(&ci1, left, lefts);
-	canditer_init(&ci2, right, rights);
+	lefti = bat_iterator(left);
+	righti = bat_iterator(right);
+	canditer_init_bi(&ci1, &lefti, lefts);
+	canditer_init_bi(&ci2, &righti, rights);
 	if (ci2.ncand != ci1.ncand || ci1.hseq != ci2.hseq) {
+		bat_iterator_end(&lefti);
+		bat_iterator_end(&righti);
 		msg = createException(MAL, name,
 							  ILLEGAL_ARGUMENT
 							  " Requires bats of identical size");
 		goto exit2;
 	}
 	if (!(bn = COLnew(ci1.hseq, TYPE_int, ci1.ncand, TRANSIENT))) {
+		bat_iterator_end(&lefti);
+		bat_iterator_end(&righti);
 		msg = createException(MAL, name, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto exit2;
 	}
 
 	off1 = left->hseqbase;
 	off2 = right->hseqbase;
-	lefti = bat_iterator(left);
-	righti = bat_iterator(right);
 	vals = Tloc(bn, 0);
 	if (ci1.tpe == cand_dense && ci2.tpe == cand_dense) {
 		for (BUN i = 0; i < ci1.ncand; i++) {
@@ -2404,14 +2446,15 @@ search_string_bat_cst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 							  SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		goto exit2;
 	}
-	canditer_init(&ci1, b, bs);
+	bi = bat_iterator(b);
+	canditer_init_bi(&ci1, &bi, bs);
 	if (!(bn = COLnew(ci1.hseq, TYPE_int, ci1.ncand, TRANSIENT))) {
+		bat_iterator_end(&bi);
 		msg = createException(MAL, name, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto exit2;
 	}
 
 	off1 = b->hseqbase;
-	bi = bat_iterator(b);
 	vals = Tloc(bn, 0);
 	ynil = strNil(y);
 	if (ci1.tpe == cand_dense) {
@@ -2521,14 +2564,15 @@ search_string_bat_strcst(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 							  SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		goto exit2;
 	}
-	canditer_init(&ci1, b, bs);
+	bi = bat_iterator(b);
+	canditer_init_bi(&ci1, &bi, bs);
 	if (!(bn = COLnew(ci1.hseq, TYPE_int, ci1.ncand, TRANSIENT))) {
+		bat_iterator_end(&bi);
 		msg = createException(MAL, name, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto exit2;
 	}
 
 	off1 = b->hseqbase;
-	bi = bat_iterator(b);
 	vals = Tloc(bn, 0);
 	xnil = strNil(x);
 	if (ci1.tpe == cand_dense) {
@@ -2641,15 +2685,21 @@ STRbatWChrAt(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 							  SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		goto bailout;
 	}
-	canditer_init(&ci1, left, lefts);
-	canditer_init(&ci2, right, rights);
+	lefti = bat_iterator(left);
+	bi = bat_iterator(right);
+	canditer_init_bi(&ci1, &lefti, lefts);
+	canditer_init_bi(&ci2, &bi, rights);
 	if (ci2.ncand != ci1.ncand || ci1.hseq != ci2.hseq) {
+		bat_iterator_end(&lefti);
+		bat_iterator_end(&bi);
 		msg = createException(MAL, "batstr.unicodeAt",
 							  ILLEGAL_ARGUMENT
 							  " Requires bats of identical size");
 		goto bailout;
 	}
 	if (!(bn = COLnew(ci1.hseq, TYPE_int, ci1.ncand, TRANSIENT))) {
+		bat_iterator_end(&lefti);
+		bat_iterator_end(&bi);
 		msg = createException(MAL, "batstr.unicodeAt",
 							  SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto bailout;
@@ -2657,8 +2707,6 @@ STRbatWChrAt(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	off1 = left->hseqbase;
 	off2 = right->hseqbase;
-	lefti = bat_iterator(left);
-	bi = bat_iterator(right);
 	righti = bi.base;
 	vals = Tloc(bn, 0);
 	if (ci1.tpe == cand_dense && ci2.tpe == cand_dense) {
@@ -2730,15 +2778,16 @@ STRbatWChrAtcst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 							  SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		goto bailout;
 	}
-	canditer_init(&ci1, b, bs);
+	bi = bat_iterator(b);
+	canditer_init_bi(&ci1, &bi, bs);
 	if (!(bn = COLnew(ci1.hseq, TYPE_int, ci1.ncand, TRANSIENT))) {
+		bat_iterator_end(&bi);
 		msg = createException(MAL, "batstr.unicodeAt",
 							  SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto bailout;
 	}
 
 	off1 = b->hseqbase;
-	bi = bat_iterator(b);
 	vals = Tloc(bn, 0);
 	if (ci1.tpe == cand_dense) {
 		for (BUN i = 0; i < ci1.ncand; i++) {
@@ -2805,15 +2854,16 @@ STRbatWChrAt_strcst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 							  SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		goto bailout;
 	}
-	canditer_init(&ci1, b, bs);
+	bi = bat_iterator(b);
+	canditer_init_bi(&ci1, &bi, bs);
 	if (!(bn = COLnew(ci1.hseq, TYPE_int, ci1.ncand, TRANSIENT))) {
+		bat_iterator_end(&bi);
 		msg = createException(MAL, "batstr.unicodeAt",
 							  SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto bailout;
 	}
 
 	off1 = b->hseqbase;
-	bi = bat_iterator(b);
 	input = bi.base;
 	vals = Tloc(bn, 0);
 	if (ci1.tpe == cand_dense) {
@@ -2881,14 +2931,15 @@ do_batstr_str_int_cst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 							  SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		goto bailout;
 	}
-	canditer_init(&ci1, b, bs);
+	bi = bat_iterator(b);
+	canditer_init_bi(&ci1, &bi, bs);
 	if (!(bn = COLnew(ci1.hseq, TYPE_str, ci1.ncand, TRANSIENT))) {
+		bat_iterator_end(&bi);
 		msg = createException(MAL, name, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto bailout;
 	}
 
 	off1 = b->hseqbase;
-	bi = bat_iterator(b);
 	if (ci1.tpe == cand_dense) {
 		for (BUN i = 0; i < ci1.ncand; i++) {
 			oid p1 = (canditer_next_dense(&ci1) - off1);
@@ -3004,15 +3055,16 @@ STRbatrepeatcst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 							  SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		goto bailout;
 	}
-	canditer_init(&ci1, b, bs);
+	bi = bat_iterator(b);
+	canditer_init_bi(&ci1, &bi, bs);
 	if (!(bn = COLnew(ci1.hseq, TYPE_str, ci1.ncand, TRANSIENT))) {
+		bat_iterator_end(&bi);
 		msg = createException(MAL, "batstr.repeat",
 							  SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto bailout;
 	}
 
 	off1 = b->hseqbase;
-	bi = bat_iterator(b);
 	if (ci1.tpe == cand_dense) {
 		for (BUN i = 0; i < ci1.ncand; i++) {
 			oid p1 = (canditer_next_dense(&ci1) - off1);
@@ -3103,14 +3155,15 @@ do_batstr_strcst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 							  SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		goto bailout;
 	}
-	canditer_init(&ci1, b, bs);
+	bi = bat_iterator(b);
+	canditer_init_bi(&ci1, &bi, bs);
 	if (!(bn = COLnew(ci1.hseq, TYPE_str, ci1.ncand, TRANSIENT))) {
+		bat_iterator_end(&bi);
 		msg = createException(MAL, name, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto bailout;
 	}
 
 	off1 = b->hseqbase;
-	bi = bat_iterator(b);
 	vals = bi.base;
 	if (ci1.tpe == cand_dense) {
 		for (BUN i = 0; i < ci1.ncand; i++) {
@@ -3227,15 +3280,16 @@ STRbatrepeat_strcst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 							  SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		goto bailout;
 	}
-	canditer_init(&ci1, b, bs);
+	bi = bat_iterator(b);
+	canditer_init_bi(&ci1, &bi, bs);
 	if (!(bn = COLnew(ci1.hseq, TYPE_str, ci1.ncand, TRANSIENT))) {
+		bat_iterator_end(&bi);
 		msg = createException(MAL, "batstr.repeat",
 							  SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto bailout;
 	}
 
 	off1 = b->hseqbase;
-	bi = bat_iterator(b);
 	vals = bi.base;
 	if (ci1.tpe == cand_dense) {
 		for (BUN i = 0; i < ci1.ncand; i++) {
@@ -3330,23 +3384,27 @@ do_batstr_str_int(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 							  SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		goto bailout;
 	}
-	canditer_init(&ci1, left, lefts);
-	canditer_init(&ci2, right, rights);
+	lefti = bat_iterator(left);
+	bi = bat_iterator(right);
+	canditer_init_bi(&ci1, &lefti, lefts);
+	canditer_init_bi(&ci2, &bi, rights);
 	if (ci2.ncand != ci1.ncand || ci1.hseq != ci2.hseq) {
+		bat_iterator_end(&lefti);
+		bat_iterator_end(&bi);
 		msg = createException(MAL, name,
 							  ILLEGAL_ARGUMENT
 							  " Requires bats of identical size");
 		goto bailout;
 	}
 	if (!(bn = COLnew(ci1.hseq, TYPE_str, ci1.ncand, TRANSIENT))) {
+		bat_iterator_end(&lefti);
+		bat_iterator_end(&bi);
 		msg = createException(MAL, name, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto bailout;
 	}
 
 	off1 = left->hseqbase;
 	off2 = right->hseqbase;
-	lefti = bat_iterator(left);
-	bi = bat_iterator(right);
 	righti = bi.base;
 	if (ci1.tpe == cand_dense && ci2.tpe == cand_dense) {
 		for (BUN i = 0; i < ci1.ncand; i++) {
@@ -3470,15 +3528,21 @@ STRbatrepeat(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 							  SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		goto bailout;
 	}
-	canditer_init(&ci1, left, lefts);
-	canditer_init(&ci2, right, rights);
+	lefti = bat_iterator(left);
+	bi = bat_iterator(right);
+	canditer_init_bi(&ci1, &lefti, lefts);
+	canditer_init_bi(&ci2, &bi, rights);
 	if (ci2.ncand != ci1.ncand || ci1.hseq != ci2.hseq) {
+		bat_iterator_end(&lefti);
+		bat_iterator_end(&bi);
 		msg = createException(MAL, "batstr.repeat",
 							  ILLEGAL_ARGUMENT
 							  " Requires bats of identical size");
 		goto bailout;
 	}
 	if (!(bn = COLnew(ci1.hseq, TYPE_str, ci1.ncand, TRANSIENT))) {
+		bat_iterator_end(&lefti);
+		bat_iterator_end(&bi);
 		msg = createException(MAL, "batstr.repeat",
 							  SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto bailout;
@@ -3486,8 +3550,6 @@ STRbatrepeat(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	off1 = left->hseqbase;
 	off2 = right->hseqbase;
-	lefti = bat_iterator(left);
-	bi = bat_iterator(right);
 	righti = bi.base;
 	if (ci1.tpe == cand_dense && ci2.tpe == cand_dense) {
 		for (BUN i = 0; i < ci1.ncand; i++) {
@@ -3583,8 +3645,10 @@ STRbatSubstitutecst_imp(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 							  SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		goto bailout;
 	}
-	canditer_init(&ci1, b, bs);
+	bi = bat_iterator(b);
+	canditer_init_bi(&ci1, &bi, bs);
 	if (!(bn = COLnew(ci1.hseq, TYPE_str, ci1.ncand, TRANSIENT))) {
+		bat_iterator_end(&bi);
 		msg = createException(MAL, "batstr.substritute",
 							  SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto bailout;
@@ -3593,7 +3657,6 @@ STRbatSubstitutecst_imp(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci,
 	(void) cntxt;
 	(void) mb;
 	off1 = b->hseqbase;
-	bi = bat_iterator(b);
 	if (ci1.tpe == cand_dense) {
 		for (BUN i = 0; i < ci1.ncand; i++) {
 			oid p1 = (canditer_next_dense(&ci1) - off1);
@@ -3699,19 +3762,31 @@ STRbatSubstitute(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 							  SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		goto bailout;
 	}
-	canditer_init(&ci1, arg1, arg1s);
-	canditer_init(&ci2, arg2, arg2s);
-	canditer_init(&ci3, arg3, arg3s);
-	canditer_init(&ci4, arg4, arg4s);
+	arg1i = bat_iterator(arg1);
+	arg2i = bat_iterator(arg2);
+	arg3i = bat_iterator(arg3);
+	bi = bat_iterator(arg4);
+	canditer_init_bi(&ci1, &arg1i, arg1s);
+	canditer_init_bi(&ci2, &arg2i, arg2s);
+	canditer_init_bi(&ci3, &arg3i, arg3s);
+	canditer_init_bi(&ci4, &bi, arg4s);
 	if (ci2.ncand != ci1.ncand || ci1.hseq != ci2.hseq || ci3.ncand != ci1.ncand
 		|| ci2.hseq != ci3.hseq || ci4.ncand != ci1.ncand
 		|| ci3.hseq != ci4.hseq) {
+		bat_iterator_end(&arg1i);
+		bat_iterator_end(&arg2i);
+		bat_iterator_end(&arg3i);
+		bat_iterator_end(&bi);
 		msg = createException(MAL, "batstr.substritute",
 							  ILLEGAL_ARGUMENT
 							  " Requires bats of identical size");
 		goto bailout;
 	}
 	if (!(bn = COLnew(ci1.hseq, TYPE_str, ci1.ncand, TRANSIENT))) {
+		bat_iterator_end(&arg1i);
+		bat_iterator_end(&arg2i);
+		bat_iterator_end(&arg3i);
+		bat_iterator_end(&bi);
 		msg = createException(MAL, "batstr.substritute",
 							  SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto bailout;
@@ -3723,10 +3798,6 @@ STRbatSubstitute(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	off2 = arg2->hseqbase;
 	off3 = arg3->hseqbase;
 	off4 = arg4->hseqbase;
-	arg1i = bat_iterator(arg1);
-	arg2i = bat_iterator(arg2);
-	arg3i = bat_iterator(arg3);
-	bi = bat_iterator(arg4);
 	arg4i = bi.base;
 	if (ci1.tpe == cand_dense && ci2.tpe == cand_dense && ci3.tpe == cand_dense
 		&& ci4.tpe == cand_dense) {
@@ -3833,15 +3904,16 @@ STRbatsplitpartcst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 							  SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		goto bailout;
 	}
-	canditer_init(&ci1, b, bs);
+	bi = bat_iterator(b);
+	canditer_init_bi(&ci1, &bi, bs);
 	if (!(bn = COLnew(ci1.hseq, TYPE_str, ci1.ncand, TRANSIENT))) {
+		bat_iterator_end(&bi);
 		msg = createException(MAL, "batstr.splitpart",
 							  SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto bailout;
 	}
 
 	off1 = b->hseqbase;
-	bi = bat_iterator(b);
 	if (ci1.tpe == cand_dense) {
 		for (BUN i = 0; i < ci1.ncand; i++) {
 			oid p1 = (canditer_next_dense(&ci1) - off1);
@@ -3933,15 +4005,21 @@ STRbatsplitpart_needlecst(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 							  SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		goto bailout;
 	}
-	canditer_init(&ci1, b, bs);
-	canditer_init(&ci2, f, fs);
+	bi = bat_iterator(b);
+	fi = bat_iterator(f);
+	canditer_init_bi(&ci1, &bi, bs);
+	canditer_init_bi(&ci2, &fi, fs);
 	if (ci2.ncand != ci1.ncand || ci1.hseq != ci2.hseq) {
+		bat_iterator_end(&bi);
+		bat_iterator_end(&fi);
 		msg = createException(MAL, "batstr.splitpart",
 							  ILLEGAL_ARGUMENT
 							  " Requires bats of identical size");
 		goto bailout;
 	}
 	if (!(bn = COLnew(ci1.hseq, TYPE_str, ci1.ncand, TRANSIENT))) {
+		bat_iterator_end(&bi);
+		bat_iterator_end(&fi);
 		msg = createException(MAL, "batstr.splitpart",
 							  SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto bailout;
@@ -3951,8 +4029,6 @@ STRbatsplitpart_needlecst(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 	(void) mb;
 	off1 = b->hseqbase;
 	off2 = f->hseqbase;
-	bi = bat_iterator(b);
-	fi = bat_iterator(f);
 	field = fi.base;
 	if (ci1.tpe == cand_dense && ci2.tpe == cand_dense) {
 		for (BUN i = 0; i < ci1.ncand; i++) {
@@ -4051,15 +4127,21 @@ STRbatsplitpart_fieldcst(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 							  SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		goto bailout;
 	}
-	canditer_init(&ci1, b, bs);
-	canditer_init(&ci2, n, ns);
+	bi = bat_iterator(b);
+	ni = bat_iterator(n);
+	canditer_init_bi(&ci1, &bi, bs);
+	canditer_init_bi(&ci2, &ni, ns);
 	if (ci2.ncand != ci1.ncand || ci1.hseq != ci2.hseq) {
+		bat_iterator_end(&bi);
+		bat_iterator_end(&ni);
 		msg = createException(MAL, "batstr.splitpart",
 							  ILLEGAL_ARGUMENT
 							  " Requires bats of identical size");
 		goto bailout;
 	}
 	if (!(bn = COLnew(ci1.hseq, TYPE_str, ci1.ncand, TRANSIENT))) {
+		bat_iterator_end(&bi);
+		bat_iterator_end(&ni);
 		msg = createException(MAL, "batstr.splitpart",
 							  SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto bailout;
@@ -4067,8 +4149,6 @@ STRbatsplitpart_fieldcst(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 
 	off1 = b->hseqbase;
 	off2 = n->hseqbase;
-	bi = bat_iterator(b);
-	ni = bat_iterator(n);
 	if (ci1.tpe == cand_dense && ci2.tpe == cand_dense) {
 		for (BUN i = 0; i < ci1.ncand; i++) {
 			oid p1 = (canditer_next_dense(&ci1) - off1),
@@ -4172,17 +4252,26 @@ STRbatsplitpart(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 							  SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		goto bailout;
 	}
-	canditer_init(&ci1, arg1, arg1s);
-	canditer_init(&ci2, arg2, arg2s);
-	canditer_init(&ci3, arg3, arg3s);
+	arg1i = bat_iterator(arg1);
+	arg2i = bat_iterator(arg2);
+	bi = bat_iterator(arg3);
+	canditer_init_bi(&ci1, &arg1i, arg1s);
+	canditer_init_bi(&ci2, &arg2i, arg2s);
+	canditer_init_bi(&ci3, &bi, arg3s);
 	if (ci2.ncand != ci1.ncand || ci1.hseq != ci2.hseq || ci3.ncand != ci1.ncand
 		|| ci2.hseq != ci3.hseq) {
+		bat_iterator_end(&arg1i);
+		bat_iterator_end(&arg2i);
+		bat_iterator_end(&bi);
 		msg = createException(MAL, "batstr.splitpart",
 							  ILLEGAL_ARGUMENT
 							  " Requires bats of identical size");
 		goto bailout;
 	}
 	if (!(bn = COLnew(ci1.hseq, TYPE_str, ci1.ncand, TRANSIENT))) {
+		bat_iterator_end(&arg1i);
+		bat_iterator_end(&arg2i);
+		bat_iterator_end(&bi);
 		msg = createException(MAL, "batstr.splitpart",
 							  SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto bailout;
@@ -4191,9 +4280,6 @@ STRbatsplitpart(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	off1 = arg1->hseqbase;
 	off2 = arg2->hseqbase;
 	off3 = arg3->hseqbase;
-	arg1i = bat_iterator(arg1);
-	arg2i = bat_iterator(arg2);
-	bi = bat_iterator(arg3);
 	arg3i = bi.base;
 	if (ci1.tpe == cand_dense && ci2.tpe == cand_dense && ci3.tpe == cand_dense) {
 		for (BUN i = 0; i < ci1.ncand; i++) {
@@ -4309,17 +4395,26 @@ STRbatReplace(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 							  SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		goto bailout;
 	}
-	canditer_init(&ci1, arg1, arg1s);
-	canditer_init(&ci2, arg2, arg2s);
-	canditer_init(&ci3, arg3, arg3s);
+	arg1i = bat_iterator(arg1);
+	arg2i = bat_iterator(arg2);
+	arg3i = bat_iterator(arg3);
+	canditer_init_bi(&ci1, &arg1i, arg1s);
+	canditer_init_bi(&ci2, &arg2i, arg2s);
+	canditer_init_bi(&ci3, &arg3i, arg3s);
 	if (ci2.ncand != ci1.ncand || ci1.hseq != ci2.hseq || ci3.ncand != ci1.ncand
 		|| ci2.hseq != ci3.hseq) {
+		bat_iterator_end(&arg1i);
+		bat_iterator_end(&arg2i);
+		bat_iterator_end(&arg3i);
 		msg = createException(MAL, "batstr.replace",
 							  ILLEGAL_ARGUMENT
 							  " Requires bats of identical size");
 		goto bailout;
 	}
 	if (!(bn = COLnew(ci1.hseq, TYPE_str, ci1.ncand, TRANSIENT))) {
+		bat_iterator_end(&arg1i);
+		bat_iterator_end(&arg2i);
+		bat_iterator_end(&arg3i);
 		msg = createException(MAL, "batstr.replace",
 							  SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto bailout;
@@ -4328,9 +4423,6 @@ STRbatReplace(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	off1 = arg1->hseqbase;
 	off2 = arg2->hseqbase;
 	off3 = arg3->hseqbase;
-	arg1i = bat_iterator(arg1);
-	arg2i = bat_iterator(arg2);
-	arg3i = bat_iterator(arg3);
 	if (ci1.tpe == cand_dense && ci2.tpe == cand_dense && ci3.tpe == cand_dense) {
 		for (BUN i = 0; i < ci1.ncand; i++) {
 			oid p1 = (canditer_next_dense(&ci1) - off1),
@@ -4440,19 +4532,31 @@ STRbatInsert(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 							  SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		goto bailout;
 	}
-	canditer_init(&ci1, left, ls);
-	canditer_init(&ci2, start, ss);
-	canditer_init(&ci3, nchars, ns);
-	canditer_init(&ci4, right, rs);
+	lefti = bat_iterator(left);
+	starti = bat_iterator(start);
+	ncharsi = bat_iterator(nchars);
+	righti = bat_iterator(right);
+	canditer_init_bi(&ci1, &lefti, ls);
+	canditer_init_bi(&ci2, &starti, ss);
+	canditer_init_bi(&ci3, &ncharsi, ns);
+	canditer_init_bi(&ci4, &righti, rs);
 	if (ci2.ncand != ci1.ncand || ci1.hseq != ci2.hseq || ci3.ncand != ci1.ncand
 		|| ci2.hseq != ci3.hseq || ci4.ncand != ci1.ncand
 		|| ci3.hseq != ci4.hseq) {
+		bat_iterator_end(&starti);
+		bat_iterator_end(&ncharsi);
+		bat_iterator_end(&lefti);
+		bat_iterator_end(&righti);
 		msg = createException(MAL, "batstr.insert",
 							  ILLEGAL_ARGUMENT
 							  " Requires bats of identical size");
 		goto bailout;
 	}
 	if (!(bn = COLnew(ci1.hseq, TYPE_str, ci1.ncand, TRANSIENT))) {
+		bat_iterator_end(&starti);
+		bat_iterator_end(&ncharsi);
+		bat_iterator_end(&lefti);
+		bat_iterator_end(&righti);
 		msg = createException(MAL, "batstr.insert",
 							  SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto bailout;
@@ -4462,12 +4566,8 @@ STRbatInsert(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	off2 = start->hseqbase;
 	off3 = nchars->hseqbase;
 	off4 = right->hseqbase;
-	lefti = bat_iterator(left);
-	starti = bat_iterator(start);
-	ncharsi = bat_iterator(nchars);
 	sval = starti.base;
 	lval = ncharsi.base;
-	righti = bat_iterator(right);
 	if (ci1.tpe == cand_dense && ci2.tpe == cand_dense && ci3.tpe == cand_dense
 		&& ci4.tpe == cand_dense) {
 		for (BUN i = 0; i < ci1.ncand; i++) {
@@ -4574,15 +4674,16 @@ STRbatInsertcst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 							  SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		goto bailout;
 	}
-	canditer_init(&ci1, b, bs);
+	bi = bat_iterator(b);
+	canditer_init_bi(&ci1, &bi, bs);
 	if (!(bn = COLnew(ci1.hseq, TYPE_str, ci1.ncand, TRANSIENT))) {
+		bat_iterator_end(&bi);
 		msg = createException(MAL, "batstr.insert",
 							  SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto bailout;
 	}
 
 	off1 = b->hseqbase;
-	bi = bat_iterator(b);
 	if (ci1.tpe == cand_dense) {
 		for (BUN i = 0; i < ci1.ncand; i++) {
 			oid p1 = (canditer_next_dense(&ci1) - off1);
@@ -4676,15 +4777,16 @@ STRbatsubstring_2nd_3rd_cst(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 							  SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		goto bailout;
 	}
-	canditer_init(&ci1, b, bs);
+	bi = bat_iterator(b);
+	canditer_init_bi(&ci1, &bi, bs);
 	if (!(bn = COLnew(ci1.hseq, TYPE_str, ci1.ncand, TRANSIENT))) {
+		bat_iterator_end(&bi);
 		msg = createException(MAL, "batstr.substring",
 							  SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto bailout;
 	}
 
 	off1 = b->hseqbase;
-	bi = bat_iterator(b);
 	if (ci1.tpe == cand_dense) {
 		for (BUN i = 0; i < ci1.ncand; i++) {
 			oid p1 = (canditer_next_dense(&ci1) - off1);
@@ -4775,15 +4877,16 @@ STRbatsubstring_1st_2nd_cst(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 							  SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		goto bailout;
 	}
-	canditer_init(&ci1, b, bs);
+	bi = bat_iterator(b);
+	canditer_init_bi(&ci1, &bi, bs);
 	if (!(bn = COLnew(ci1.hseq, TYPE_str, ci1.ncand, TRANSIENT))) {
+		bat_iterator_end(&bi);
 		msg = createException(MAL, "batstr.substring",
 							  SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto bailout;
 	}
 
 	off1 = b->hseqbase;
-	bi = bat_iterator(b);
 	input = bi.base;
 	if (ci1.tpe == cand_dense) {
 		for (BUN i = 0; i < ci1.ncand; i++) {
@@ -4875,15 +4978,16 @@ STRbatsubstring_1st_3rd_cst(Client cntxt, MalBlkPtr mb, MalStkPtr stk,
 							  SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		goto bailout;
 	}
-	canditer_init(&ci1, b, bs);
+	bi = bat_iterator(b);
+	canditer_init_bi(&ci1, &bi, bs);
 	if (!(bn = COLnew(ci1.hseq, TYPE_str, ci1.ncand, TRANSIENT))) {
+		bat_iterator_end(&bi);
 		msg = createException(MAL, "batstr.substring",
 							  SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto bailout;
 	}
 
 	off1 = b->hseqbase;
-	bi = bat_iterator(b);
 	input = bi.base;
 	if (ci1.tpe == cand_dense) {
 		for (BUN i = 0; i < ci1.ncand; i++) {
@@ -4978,15 +5082,21 @@ STRbatsubstring_1st_cst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 							  SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		goto bailout;
 	}
-	canditer_init(&ci1, b, bs);
-	canditer_init(&ci2, lb, lbs);
+	bi = bat_iterator(b);
+	lbi = bat_iterator(lb);
+	canditer_init_bi(&ci1, &bi, bs);
+	canditer_init_bi(&ci2, &lbi, lbs);
 	if (ci2.ncand != ci1.ncand || ci1.hseq != ci2.hseq) {
+		bat_iterator_end(&bi);
+		bat_iterator_end(&lbi);
 		msg = createException(MAL, "batstr.substring",
 							  ILLEGAL_ARGUMENT
 							  " Requires bats of identical size");
 		goto bailout;
 	}
 	if (!(bn = COLnew(ci1.hseq, TYPE_str, ci1.ncand, TRANSIENT))) {
+		bat_iterator_end(&bi);
+		bat_iterator_end(&lbi);
 		msg = createException(MAL, "batstr.substring",
 							  SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto bailout;
@@ -4994,8 +5104,6 @@ STRbatsubstring_1st_cst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	off1 = b->hseqbase;
 	off2 = lb->hseqbase;
-	bi = bat_iterator(b);
-	lbi = bat_iterator(lb);
 	vals1 = bi.base;
 	vals2 = lbi.base;
 	if (ci1.tpe == cand_dense && ci2.tpe == cand_dense) {
@@ -5095,15 +5203,21 @@ STRbatsubstring_2nd_cst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 							  SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		goto bailout;
 	}
-	canditer_init(&ci1, b, bs);
-	canditer_init(&ci2, lb, lbs);
+	bi = bat_iterator(b);
+	lbi = bat_iterator(lb);
+	canditer_init_bi(&ci1, &bi, bs);
+	canditer_init_bi(&ci2, &lbi, lbs);
 	if (ci2.ncand != ci1.ncand || ci1.hseq != ci2.hseq) {
+		bat_iterator_end(&bi);
+		bat_iterator_end(&lbi);
 		msg = createException(MAL, "batstr.substring",
 							  ILLEGAL_ARGUMENT
 							  " Requires bats of identical size");
 		goto bailout;
 	}
 	if (!(bn = COLnew(ci1.hseq, TYPE_str, ci1.ncand, TRANSIENT))) {
+		bat_iterator_end(&bi);
+		bat_iterator_end(&lbi);
 		msg = createException(MAL, "batstr.substring",
 							  SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto bailout;
@@ -5111,8 +5225,6 @@ STRbatsubstring_2nd_cst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	off1 = b->hseqbase;
 	off2 = lb->hseqbase;
-	bi = bat_iterator(b);
-	lbi = bat_iterator(lb);
 	len = lbi.base;
 	if (ci1.tpe == cand_dense && ci2.tpe == cand_dense) {
 		for (BUN i = 0; i < ci1.ncand; i++) {
@@ -5210,15 +5322,21 @@ STRbatsubstring_3rd_cst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 							  SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		goto bailout;
 	}
-	canditer_init(&ci1, b, bs);
-	canditer_init(&ci2, lb, lbs);
+	bi = bat_iterator(b);
+	lbi = bat_iterator(lb);
+	canditer_init_bi(&ci1, &bi, bs);
+	canditer_init_bi(&ci2, &lbi, lbs);
 	if (ci2.ncand != ci1.ncand || ci1.hseq != ci2.hseq) {
+		bat_iterator_end(&bi);
+		bat_iterator_end(&lbi);
 		msg = createException(MAL, "batstr.substring",
 							  ILLEGAL_ARGUMENT
 							  " Requires bats of identical size");
 		goto bailout;
 	}
 	if (!(bn = COLnew(ci1.hseq, TYPE_str, ci1.ncand, TRANSIENT))) {
+		bat_iterator_end(&bi);
+		bat_iterator_end(&lbi);
 		msg = createException(MAL, "batstr.substring",
 							  SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto bailout;
@@ -5226,8 +5344,6 @@ STRbatsubstring_3rd_cst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	off1 = b->hseqbase;
 	off2 = lb->hseqbase;
-	bi = bat_iterator(b);
-	lbi = bat_iterator(lb);
 	start = lbi.base;
 	if (ci1.tpe == cand_dense && ci2.tpe == cand_dense) {
 		for (BUN i = 0; i < ci1.ncand; i++) {
@@ -5330,17 +5446,26 @@ STRbatsubstring(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 							  SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		goto bailout;
 	}
-	canditer_init(&ci1, left, ls);
-	canditer_init(&ci2, start, ss);
-	canditer_init(&ci3, length, lens);
+	lefti = bat_iterator(left);
+	starti = bat_iterator(start);
+	lengthi = bat_iterator(length);
+	canditer_init_bi(&ci1, &lefti, ls);
+	canditer_init_bi(&ci2, &starti, ss);
+	canditer_init_bi(&ci3, &lengthi, lens);
 	if (ci2.ncand != ci1.ncand || ci1.hseq != ci2.hseq || ci3.ncand != ci1.ncand
 		|| ci2.hseq != ci3.hseq) {
+		bat_iterator_end(&lefti);
+		bat_iterator_end(&starti);
+		bat_iterator_end(&lengthi);
 		msg = createException(MAL, "batstr.substring",
 							  ILLEGAL_ARGUMENT
 							  " Requires bats of identical size");
 		goto bailout;
 	}
 	if (!(bn = COLnew(ci1.hseq, TYPE_str, ci1.ncand, TRANSIENT))) {
+		bat_iterator_end(&lefti);
+		bat_iterator_end(&starti);
+		bat_iterator_end(&lengthi);
 		msg = createException(MAL, "batstr.substring",
 							  SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto bailout;
@@ -5349,9 +5474,6 @@ STRbatsubstring(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	off1 = left->hseqbase;
 	off2 = start->hseqbase;
 	off3 = length->hseqbase;
-	lefti = bat_iterator(left);
-	starti = bat_iterator(start);
-	lengthi = bat_iterator(length);
 	svals = starti.base;
 	lvals = lengthi.base;
 	if (ci1.tpe == cand_dense && ci2.tpe == cand_dense && ci3.tpe == cand_dense) {
@@ -5445,15 +5567,16 @@ STRbatstrLocatecst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 							  SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		goto bailout;
 	}
-	canditer_init(&ci1, b, bs);
+	bi = bat_iterator(b);
+	canditer_init_bi(&ci1, &bi, bs);
 	if (!(bn = COLnew(ci1.hseq, TYPE_int, ci1.ncand, TRANSIENT))) {
+		bat_iterator_end(&bi);
 		msg = createException(MAL, "batstr.locate",
 							  SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto bailout;
 	}
 
 	off1 = b->hseqbase;
-	bi = bat_iterator(b);
 	vals = Tloc(bn, 0);
 	if (ci1.tpe == cand_dense) {
 		for (BUN i = 0; i < ci1.ncand; i++) {
@@ -5514,15 +5637,16 @@ STRbatstrLocate_strcst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 							  SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		goto bailout;
 	}
-	canditer_init(&ci1, b, bs);
+	bi = bat_iterator(b);
+	canditer_init_bi(&ci1, &bi, bs);
 	if (!(bn = COLnew(ci1.hseq, TYPE_int, ci1.ncand, TRANSIENT))) {
+		bat_iterator_end(&bi);
 		msg = createException(MAL, "batstr.locate",
 							  SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto bailout;
 	}
 
 	off1 = b->hseqbase;
-	bi = bat_iterator(b);
 	vals = Tloc(bn, 0);
 	if (ci1.tpe == cand_dense) {
 		for (BUN i = 0; i < ci1.ncand; i++) {
@@ -5585,15 +5709,21 @@ STRbatstrLocate(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 							  SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		goto bailout;
 	}
-	canditer_init(&ci1, left, ls);
-	canditer_init(&ci2, right, rs);
+	lefti = bat_iterator(left);
+	righti = bat_iterator(right);
+	canditer_init_bi(&ci1, &lefti, ls);
+	canditer_init_bi(&ci2, &righti, rs);
 	if (ci2.ncand != ci1.ncand || ci1.hseq != ci2.hseq) {
+		bat_iterator_end(&lefti);
+		bat_iterator_end(&righti);
 		msg = createException(MAL, "batstr.locate",
 							  ILLEGAL_ARGUMENT
 							  " Requires bats of identical size");
 		goto bailout;
 	}
 	if (!(bn = COLnew(ci1.hseq, TYPE_int, ci1.ncand, TRANSIENT))) {
+		bat_iterator_end(&lefti);
+		bat_iterator_end(&righti);
 		msg = createException(MAL, "batstr.locate",
 							  SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto bailout;
@@ -5601,8 +5731,6 @@ STRbatstrLocate(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 
 	off1 = left->hseqbase;
 	off2 = right->hseqbase;
-	lefti = bat_iterator(left);
-	righti = bat_iterator(right);
 	vals = Tloc(bn, 0);
 	if (ci1.tpe == cand_dense && ci2.tpe == cand_dense) {
 		for (BUN i = 0; i < ci1.ncand; i++) {
@@ -5668,15 +5796,16 @@ STRbatstrLocate3cst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 							  SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		goto bailout;
 	}
-	canditer_init(&ci1, b, bs);
+	bi = bat_iterator(b);
+	canditer_init_bi(&ci1, &bi, bs);
 	if (!(bn = COLnew(ci1.hseq, TYPE_int, ci1.ncand, TRANSIENT))) {
+		bat_iterator_end(&bi);
 		msg = createException(MAL, "batstr.locate2",
 							  SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto bailout;
 	}
 
 	off1 = b->hseqbase;
-	bi = bat_iterator(b);
 	vals = Tloc(bn, 0);
 	if (ci1.tpe == cand_dense) {
 		for (BUN i = 0; i < ci1.ncand; i++) {
@@ -5744,17 +5873,26 @@ STRbatstrLocate3(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 							  SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		goto bailout;
 	}
-	canditer_init(&ci1, left, ls);
-	canditer_init(&ci2, right, rs);
-	canditer_init(&ci3, start, ss);
+	lefti = bat_iterator(left);
+	righti = bat_iterator(right);
+	starti = bat_iterator(start);
+	canditer_init_bi(&ci1, &lefti, ls);
+	canditer_init_bi(&ci2, &righti, rs);
+	canditer_init_bi(&ci3, &starti, ss);
 	if (ci2.ncand != ci1.ncand || ci1.hseq != ci2.hseq || ci3.ncand != ci1.ncand
 		|| ci2.hseq != ci3.hseq) {
+		bat_iterator_end(&lefti);
+		bat_iterator_end(&righti);
+		bat_iterator_end(&starti);
 		msg = createException(MAL, "batstr.locate2",
 							  ILLEGAL_ARGUMENT
 							  " Requires bats of identical size");
 		goto bailout;
 	}
 	if (!(bn = COLnew(ci1.hseq, TYPE_int, ci1.ncand, TRANSIENT))) {
+		bat_iterator_end(&lefti);
+		bat_iterator_end(&righti);
+		bat_iterator_end(&starti);
 		msg = createException(MAL, "batstr.locate2",
 							  SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto bailout;
@@ -5763,9 +5901,6 @@ STRbatstrLocate3(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	off1 = left->hseqbase;
 	off2 = right->hseqbase;
 	off3 = start->hseqbase;
-	lefti = bat_iterator(left);
-	righti = bat_iterator(right);
-	starti = bat_iterator(start);
 	svals = starti.base;
 	vals = Tloc(bn, 0);
 	if (ci1.tpe == cand_dense && ci2.tpe == cand_dense && ci3.tpe == cand_dense) {

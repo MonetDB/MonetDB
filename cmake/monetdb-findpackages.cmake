@@ -138,6 +138,10 @@ if(WITH_OPENSSL)
   find_package(OpenSSL 1.1.1)
 endif()
 
+if(WITH_HTSLIB)
+  find_package(HTSLIB)
+endif()
+
 find_package(Sphinx)
 find_package(Semodule)
 find_package(Awk)

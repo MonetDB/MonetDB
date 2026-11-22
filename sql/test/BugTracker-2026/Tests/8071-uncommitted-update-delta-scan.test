@@ -1,0 +1,56 @@
+statement ok
+DROP TABLE IF EXISTS t
+
+statement ok
+CREATE TABLE t(id INT PRIMARY KEY, v BIGINT)
+
+statement ok rowcount 300000
+INSERT INTO t
+SELECT value AS generated_id, CAST(value AS BIGINT) AS generated_v
+FROM sys.generate_series(0, 300000)
+
+statement ok
+START TRANSACTION
+
+statement ok
+UPDATE t
+SET v = v + 100000
+WHERE id IN (10, 1100, 2100, 10100, 100100, 200100, 299100)
+
+query TIII
+SELECT CASE
+         WHEN COUNT(*) = 300000
+          AND SUM(v) = 45000550000
+          AND SUM(CASE WHEN id IN (10, 1100, 2100, 10100, 100100, 200100, 299100)
+                            AND v = id + 100000
+                       THEN 1 ELSE 0 END) = 7
+         THEN 'PASS' ELSE 'FAIL'
+       END AS oracle,
+       COUNT(*) AS row_count,
+       SUM(v) AS value_sum,
+       SUM(CASE WHEN id IN (10, 1100, 2100, 10100, 100100, 200100, 299100)
+                     AND v = id + 100000
+                THEN 1 ELSE 0 END) AS correct_updated_rows
+FROM t
+----
+PASS	300000	45000550000	7
+
+query II nosort
+SELECT id, v
+FROM t
+WHERE id IN (10, 1100, 2100, 10100, 100100, 200100, 299100)
+ORDER BY id
+----
+10	100010
+1100	101100
+2100	102100
+10100	110100
+100100	200100
+200100	300100
+299100	399100
+
+statement ok
+ROLLBACK
+
+statement ok
+DROP TABLE t

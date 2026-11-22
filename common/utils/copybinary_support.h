@@ -13,6 +13,7 @@
 
 #include <stdint.h>
 #include "copybinary.h"
+#include "mswap.h"
 
 // According to Godbolt, these code sequences are recognized by
 // GCC at least back to 6.2 and Clang at least back to 6.0.0.
@@ -25,87 +26,11 @@
 //    uint16_t swapped = copy_binary_byteswap16(value);
 
 
-#ifdef _MSC_VER
-
-static inline uint16_t
-copy_binary_byteswap16(uint16_t value)
-{
-	return _byteswap_ushort(value);
-}
-
-static inline uint32_t
-copy_binary_byteswap32(uint32_t value)
-{
-	return _byteswap_ulong(value);
-}
-
-static inline uint64_t
-copy_binary_byteswap64(uint64_t value)
-{
-	return _byteswap_uint64(value);
-}
-
-#else
-
-static inline uint16_t
-copy_binary_byteswap16(uint16_t value)
-{
-	return
-		((value & (UINT16_C(0xFF) << 8)) >>  8) |
-		((value & (UINT16_C(0xFF) << 0)) <<  8)
-		;
-}
-
-static inline uint32_t
-copy_binary_byteswap32(uint32_t value)
-{
-	return
-		((value & (UINT32_C(0xFF) << 24)) >> 24) |
-		((value & (UINT32_C(0xFF) << 16)) >>  8) |
-		((value & (UINT32_C(0xFF) <<  8)) <<  8) |
-		((value & (UINT32_C(0xFF) <<  0)) << 24)
-		;
-}
-
-static inline uint64_t
-copy_binary_byteswap64(uint64_t value)
-{
-	return
-		((value & (UINT64_C(0xFF) << 56)) >> 56) |
-		((value & (UINT64_C(0xFF) << 48)) >> 40) |
-		((value & (UINT64_C(0xFF) << 40)) >> 24) |
-		((value & (UINT64_C(0xFF) << 32)) >>  8) |
-		((value & (UINT64_C(0xFF) << 24)) <<  8) |
-		((value & (UINT64_C(0xFF) << 16)) << 24) |
-		((value & (UINT64_C(0xFF) <<  8)) << 40) |
-		((value & (UINT64_C(0xFF) <<  0)) << 56)
-		;
-}
-
-#endif
-
+#define copy_binary_byteswap16(v)	swap_int16(v)
+#define copy_binary_byteswap32(v)	swap_int32(v)
+#define copy_binary_byteswap64(v)	swap_int64(v)
 #ifdef HAVE_HGE
-static inline uint128_t
-copy_binary_byteswap128(uint128_t value)
-{
-	return
-		((value & ((uint128_t) 0xFF << 120)) >> 120) |
-		((value & ((uint128_t) 0xFF << 112)) >> 104) |
-		((value & ((uint128_t) 0xFF << 104)) >>  88) |
-		((value & ((uint128_t) 0xFF <<  96)) >>  72) |
-		((value & ((uint128_t) 0xFF <<  88)) >>  56) |
-		((value & ((uint128_t) 0xFF <<  80)) >>  40) |
-		((value & ((uint128_t) 0xFF <<  72)) >>  24) |
-		((value & ((uint128_t) 0xFF <<  64)) >>   8) |
-		((value & ((uint128_t) 0xFF <<  56)) <<   8) |
-		((value & ((uint128_t) 0xFF <<  48)) <<  24) |
-		((value & ((uint128_t) 0xFF <<  40)) <<  40) |
-		((value & ((uint128_t) 0xFF <<  32)) <<  56) |
-		((value & ((uint128_t) 0xFF <<  24)) <<  72) |
-		((value & ((uint128_t) 0xFF <<  16)) <<  88) |
-		((value & ((uint128_t) 0xFF <<   8)) << 104) |
-		((value & ((uint128_t) 0xFF <<   0)) << 120);
-}
+#define copy_binary_byteswap128(v)	swap_int128(v)
 #endif
 
 static inline copy_binary_date

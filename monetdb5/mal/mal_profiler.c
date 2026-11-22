@@ -77,8 +77,8 @@ struct logbuf {
 	allocator *ma;
 };
 
-__attribute__((__format__(__printf__, 2, 3)))
-__attribute__((__warn_unused_result__))
+ATTR_FORMAT(__printf__, 2, 3)
+ATTR_WARN_UNUSED_RESULT
 static bool
 logadd(struct logbuf *logbuf, const char *fmt, ...)
 {

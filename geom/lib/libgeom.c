@@ -18,9 +18,9 @@
 #include "monetdb_config.h"
 #include "libgeom.h"
 
-__attribute__((__format__(__printf__, 1, 2)))
+ATTR_FORMAT(__printf__, 1, 2)
 static void
-geomerror(_In_z_ _Printf_format_string_ const char *fmt, ...)
+geomerror(_Printf_format_string_ const char *fmt, ...)
 {
 	va_list va;
 	char err[256];
@@ -99,7 +99,7 @@ geom_type2str(int t, int flag)
 	if (flag == 0) {
 		switch (t) {
 		//case wkbGeometry:
-		//      return "GEOMETRY";
+		//	return "GEOMETRY";
 		case wkbPoint_mdb:
 			return "POINT";
 		case wkbLineString_mdb:
@@ -120,7 +120,7 @@ geom_type2str(int t, int flag)
 	} else if (flag == 1) {
 		switch (t) {
 		//case wkbGeometry:
-		//      return "ST_Geometry";
+		//	return "ST_Geometry";
 		case wkbPoint_mdb:
 			return "ST_Point";
 		case wkbLineString_mdb:

@@ -107,10 +107,10 @@ bool verify_roundtrip(const char *location)
 			return false;
 		} else if (strncmp(buffer2, buffer, shorter - 1) != 0) {
 			fprintf(stderr,
-			"%s: truncated <%zu> msettings_write_url wrote <%s> which isn't a prefix of <%s>",
-			location, shorter,
-			buffer2, buffer
-			);
+				"%s: truncated <%zu> msettings_write_url wrote <%s> which isn't a prefix of <%s>",
+				location, shorter,
+				buffer2, buffer
+				);
 			return false;
 		}
 		for (size_t i = shorter + 1; i < sizeof(buffer); i++) {
@@ -276,17 +276,17 @@ stringify_tls_verify(const msettings *mp)
 {
 	enum msetting_tls_verify verify = msettings_connect_tls_verify(mp);
 	switch (verify) {
-		case verify_none:
-			return "";
-		case verify_system:
-			return "system";
-		case verify_cert:
-			return "cert";
-		case verify_hash:
-			return "hash";
-		default:
-			assert(0 && "unknown msetting_tls_verify value");
-			return NULL;
+	case verify_none:
+		return "";
+	case verify_system:
+		return "system";
+	case verify_cert:
+		return "cert";
+	case verify_hash:
+		return "hash";
+	default:
+		assert(0 && "unknown msetting_tls_verify value");
+		return NULL;
 	}
 	assert(0 && "unreachable");
 }
@@ -308,7 +308,7 @@ handle_expect_command(const char *location, char *key, char *value)
 				location,
 				expected_valid ? "true" : "false",
 				actually_valid ? "true" : "false"
-			);
+				);
 			return false;
 		}
 		return true;
@@ -347,15 +347,15 @@ handle_expect_command(const char *location, char *key, char *value)
 	}
 
 	switch (mparm_classify(parm)) {
-		case MPCLASS_BOOL:
-			return expect_bool(location, parm, NULL, value);
-		case MPCLASS_LONG:
-			return expect_long(location, parm, NULL, value);
-		case MPCLASS_STRING:
-			return expect_string(location, parm, NULL, value);
-		default:
-			fprintf(stderr, "%s: internal error: unclassified parameter %d\n", location, (int)parm);
-			return false;
+	case MPCLASS_BOOL:
+		return expect_bool(location, parm, NULL, value);
+	case MPCLASS_LONG:
+		return expect_long(location, parm, NULL, value);
+	case MPCLASS_STRING:
+		return expect_string(location, parm, NULL, value);
+	default:
+		fprintf(stderr, "%s: internal error: unclassified parameter %d\n", location, (int)parm);
+		return false;
 	}
 }
 

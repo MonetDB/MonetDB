@@ -105,8 +105,8 @@ EXPLAIN SHOW DETAILS SELECT i FROM split_test WHERE CASE WHEN j IS NULL THEN k E
 project (
 | select (
 | | project (
-| | | table("sys"."split_test") [ "split_test"."i", "split_test"."j", "split_test"."k" NOT NULL UNIQUE ]
-| | ) [ "split_test"."i", "sys"."case"(("split_test"."j") * = (int(6) NULL), varchar["split_test"."k" NOT NULL UNIQUE] NOT NULL, varchar["split_test"."j"]) as "%2"."%2" ]
+| | | table("sys"."split_test") [ "split_test"."i", "split_test"."j", "split_test"."k" NOT NULL ]
+| | ) [ "split_test"."i", "sys"."case"(("split_test"."j") * = (int(6) NULL), varchar["split_test"."k" NOT NULL] NOT NULL, varchar["split_test"."j"]) as "%2"."%2" ]
 | ) [ ("%2"."%2") = (varchar "10") ]
 ) [ "split_test"."i" ]
 
@@ -155,5 +155,283 @@ SELECT i FROM split_test WHERE CASE WHEN i > 3 THEN 1 ELSE 0 END = 1 AND CASE WH
 ----
 4
 
+# =============================================
+# CASE wrapped in CAST: the e_convert must be pushed
+# out of the SELECT expression into the project
+# =============================================
+
+query T python .explain.filter
+EXPLAIN SHOW DETAILS SELECT i FROM split_test WHERE CAST(CASE WHEN i > 2 THEN i ELSE 0 END AS BIGINT) > 1
+----
+project (
+| select (
+| | project (
+| | | table("sys"."split_test") [ "split_test"."i" ]
+| | ) [ "split_test"."i", "sys"."case"(("split_test"."i") > (int(3) "2"), "split_test"."i", int(3) "0") as "%2"."%2", bigint(63)["%2"."%2"] as "%3"."%3" ]
+| ) [ ("%3"."%3") > (bigint(63) "1") ]
+) [ "split_test"."i" ]
+
+query I rowsort
+SELECT i FROM split_test WHERE CAST(CASE WHEN i > 2 THEN i ELSE 0 END AS BIGINT) > 1
+----
+4
+5
+
+# =============================================
+# COALESCE wrapped in CAST
+# =============================================
+
+query T python .explain.filter
+EXPLAIN SHOW DETAILS SELECT i FROM split_test WHERE CAST(COALESCE(j, 0) AS BIGINT) >= 20
+----
+project (
+| select (
+| | project (
+| | | table("sys"."split_test") [ "split_test"."i", "split_test"."j" ]
+| | ) [ "split_test"."i", "sys"."coalesce"("split_test"."j", int(6) "0") as "%2"."%2", bigint(63)["%2"."%2"] as "%3"."%3" ]
+| ) [ ("%3"."%3") >= (bigint(63) "20") ]
+) [ "split_test"."i" ]
+
+query I rowsort
+SELECT i FROM split_test WHERE CAST(COALESCE(j, 0) AS BIGINT) >= 20
+----
+2
+5
+NULL
+
+# =============================================
+# CASE in JOIN predicates: the expression is
+# pushed into the input it references
+# =============================================
+
+statement ok
+CREATE TABLE split_join (i INT, j INT)
+
+statement ok
+INSERT INTO split_join VALUES (1, 100), (2, 200), (4, 400), (4, 401)
+
+# LEFT OUTER JOIN: the CASE references the right input
+query T python .explain.filter
+EXPLAIN SHOW DETAILS SELECT t.i, j.i FROM split_test t LEFT JOIN split_join j ON t.i = j.i AND CASE WHEN j.j > 150 THEN 1 ELSE 0 END = 1
+----
+project (
+| left outer join (
+| | table("sys"."split_test") [ "split_test"."i" as "t"."i" ],
+| | select (
+| | | project (
+| | | | table("sys"."split_join") [ "split_join"."i" NOT NULL as "j"."i", "split_join"."j" NOT NULL as "j"."j" ]
+| | | ) [ "j"."i" NOT NULL, "sys"."case"(("j"."j" NOT NULL) > (int(9) "150"), tinyint(1) "1", tinyint(1) "0") as "%1"."%1" ]
+| | ) [ ("%1"."%1") = (tinyint(1) "1") ]
+| ) [ ("t"."i") = ("j"."i" NOT NULL) ]
+) [ "t"."i", "j"."i" ]
+
+query II rowsort
+SELECT t.i, j.i FROM split_test t LEFT JOIN split_join j ON t.i = j.i AND CASE WHEN j.j > 150 THEN 1 ELSE 0 END = 1
+----
+1	NULL
+2	2
+4	4
+4	4
+5	NULL
+NULL	NULL
+
+# LEFT OUTER JOIN with a cast around the CASE: the conversion is
+# pushed into the same input as the CASE expression
+query T python .explain.filter
+EXPLAIN SHOW DETAILS SELECT t.i, j.i FROM split_test t LEFT JOIN split_join j ON t.i = j.i AND CAST(CASE WHEN j.j > 150 THEN 1 ELSE 0 END AS BIGINT) = 1
+----
+project (
+| left outer join (
+| | table("sys"."split_test") [ "split_test"."i" as "t"."i" ],
+| | select (
+| | | project (
+| | | | table("sys"."split_join") [ "split_join"."i" NOT NULL as "j"."i", "split_join"."j" NOT NULL as "j"."j" ]
+| | | ) [ "j"."i" NOT NULL, "sys"."case"(("j"."j" NOT NULL) > (int(9) "150"), tinyint(1) "1", tinyint(1) "0") as "%2"."%2", bigint(63)["%2"."%2"] as "%3"."%3" ]
+| | ) [ ("%3"."%3") = (bigint(63) "1") ]
+| ) [ ("t"."i") = ("j"."i" NOT NULL) ]
+) [ "t"."i", "j"."i" ]
+
+query II rowsort
+SELECT t.i, j.i FROM split_test t LEFT JOIN split_join j ON t.i = j.i AND CAST(CASE WHEN j.j > 150 THEN 1 ELSE 0 END AS BIGINT) = 1
+----
+1	NULL
+2	2
+4	4
+4	4
+5	NULL
+NULL	NULL
+
+# RIGHT OUTER JOIN: the CASE references the left input
+query T python .explain.filter
+EXPLAIN SHOW DETAILS SELECT t.i, j.i FROM split_test t RIGHT JOIN split_join j ON t.i = j.i AND CASE WHEN t.j > 15 THEN 1 ELSE 0 END = 1
+----
+project (
+| right outer join (
+| | select (
+| | | project (
+| | | | table("sys"."split_test") [ "split_test"."i" as "t"."i", "split_test"."j" as "t"."j" ]
+| | | ) [ "t"."i", "sys"."case"(("t"."j") > (int(6) "15"), tinyint(1) "1", tinyint(1) "0") as "%1"."%1" ]
+| | ) [ ("%1"."%1") = (tinyint(1) "1") ],
+| | table("sys"."split_join") [ "split_join"."i" NOT NULL as "j"."i" ]
+| ) [ ("t"."i") = ("j"."i" NOT NULL) ]
+) [ "t"."i", "j"."i" NOT NULL ]
+
+query II rowsort
+SELECT t.i, j.i FROM split_test t RIGHT JOIN split_join j ON t.i = j.i AND CASE WHEN t.j > 15 THEN 1 ELSE 0 END = 1
+----
+2	2
+NULL	1
+NULL	4
+NULL	4
+
+# FULL OUTER JOIN: the CASE references the right input
+query T python .explain.filter
+EXPLAIN SHOW DETAILS SELECT t.i, j.i FROM split_test t FULL JOIN split_join j ON t.i = j.i AND CASE WHEN j.j > 150 THEN 1 ELSE 0 END = 1
+----
+project (
+| full outer join (
+| | table("sys"."split_test") [ "split_test"."i" as "t"."i" ],
+| | project (
+| | | table("sys"."split_join") [ "split_join"."i" NOT NULL as "j"."i", "split_join"."j" NOT NULL as "j"."j" ]
+| | ) [ "j"."i" NOT NULL, "sys"."case"(("j"."j" NOT NULL) > (int(9) "150"), tinyint(1) "1", tinyint(1) "0") as "%1"."%1" ]
+| ) [ ("t"."i") = ("j"."i" NOT NULL), ("%1"."%1") = (tinyint(1) "1") ]
+) [ "t"."i", "j"."i" ]
+
+query II rowsort
+SELECT t.i, j.i FROM split_test t FULL JOIN split_join j ON t.i = j.i AND CASE WHEN j.j > 150 THEN 1 ELSE 0 END = 1
+----
+1	NULL
+2	2
+4	4
+4	4
+5	NULL
+NULL	1
+NULL	NULL
+
+# SEMI JOIN: the CASE references the left (outer) input
+query T python .explain.filter
+EXPLAIN SHOW DETAILS SELECT t.i FROM split_test t WHERE EXISTS (SELECT 1 FROM split_join j WHERE t.i = j.i AND CASE WHEN t.j > 15 THEN 1 ELSE 0 END = 1)
+----
+project (
+| semijoin (
+| | select (
+| | | project (
+| | | | table("sys"."split_test") [ "split_test"."i" as "t"."i", "split_test"."j" as "t"."j" ]
+| | | ) [ "t"."i", "sys"."case"(("t"."j") > (int(6) "15"), tinyint(1) "1", tinyint(1) "0") as "%3"."%3" ]
+| | ) [ ("%3"."%3") = (tinyint(1) "1") ],
+| | table("sys"."split_join") [ "split_join"."i" NOT NULL as "j"."i" ]
+| ) [ ("j"."i" NOT NULL) = ("t"."i") ]
+) [ "t"."i" NOT NULL ]
+
+query I rowsort
+SELECT t.i FROM split_test t WHERE EXISTS (SELECT 1 FROM split_join j WHERE t.i = j.i AND CASE WHEN t.j > 15 THEN 1 ELSE 0 END = 1)
+----
+2
+
+# SEMI JOIN with a CASE referencing both inputs: it can't be
+# computed below the join and must stay in the join predicate
+query T python .explain.filter
+EXPLAIN SHOW DETAILS SELECT t.i FROM split_test t WHERE EXISTS (SELECT 1 FROM split_join j WHERE t.i = j.i AND CASE WHEN t.j < j.j THEN 1 ELSE 0 END = 1)
+----
+project (
+| semijoin (
+| | table("sys"."split_test") [ "split_test"."i" as "t"."i", "split_test"."j" as "t"."j" ],
+| | table("sys"."split_join") [ "split_join"."i" NOT NULL as "j"."i", "split_join"."j" NOT NULL as "j"."j" ]
+| ) [ ("j"."i" NOT NULL) = ("t"."i"), ("sys"."case"(("j"."j" NOT NULL) > ("t"."j"), tinyint(1) "1", tinyint(1) "0")) = (tinyint(1) "1") ]
+) [ "t"."i" NOT NULL ]
+
+query I rowsort
+SELECT t.i FROM split_test t WHERE EXISTS (SELECT 1 FROM split_join j WHERE t.i = j.i AND CASE WHEN t.j < j.j THEN 1 ELSE 0 END = 1)
+----
+1
+2
+
+# ANTI JOIN: the CASE references the right (subquery) input
+query T python .explain.filter
+EXPLAIN SHOW DETAILS SELECT t.i FROM split_test t WHERE t.i IS NOT NULL AND NOT EXISTS (SELECT 1 FROM split_join j WHERE t.i = j.i AND CASE WHEN j.j > 150 THEN 1 ELSE 0 END = 1)
+----
+project (
+| antijoin (
+| | select (
+| | | table("sys"."split_test") [ "split_test"."i" as "t"."i" ]
+| | ) [ ("t"."i") ! * = (int(3) NULL) ],
+| | select (
+| | | project (
+| | | | table("sys"."split_join") [ "split_join"."i" NOT NULL as "j"."i", "split_join"."j" NOT NULL as "j"."j" ]
+| | | ) [ "j"."i" NOT NULL, "sys"."case"(("j"."j" NOT NULL) > (int(9) "150"), tinyint(1) "1", tinyint(1) "0") as "%3"."%3" ]
+| | ) [ ("%3"."%3") = (tinyint(1) "1") ]
+| ) [ ("j"."i" NOT NULL) = ("t"."i" NOT NULL) ]
+) [ "t"."i" NOT NULL ]
+
+query I rowsort
+SELECT t.i FROM split_test t WHERE t.i IS NOT NULL AND NOT EXISTS (SELECT 1 FROM split_join j WHERE t.i = j.i AND CASE WHEN j.j > 150 THEN 1 ELSE 0 END = 1)
+----
+1
+5
+
+# =============================================
+# Conversions in JOIN predicates: a conversion
+# of a single input column is pushed into that
+# input, leaving simple column comparisons in
+# the join predicate
+# =============================================
+
+statement ok
+CREATE TABLE split_conv (i INT, j SMALLINT)
+
+statement ok
+INSERT INTO split_conv VALUES (1, 10), (2, 20), (4, 40)
+
+query T python .explain.filter
+EXPLAIN SHOW DETAILS SELECT t.i, c.j FROM split_test t JOIN split_conv c ON t.i = c.i AND CAST(c.j AS BIGINT) = t.j
+----
+project (
+| join (
+| | project (
+| | | table("sys"."split_test") [ "split_test"."i" as "t"."i", "split_test"."j" as "t"."j" ]
+| | ) [ "t"."i", bigint(63)["t"."j"] as "%3"."%3" ],
+| | project (
+| | | table("sys"."split_conv") [ "split_conv"."i" NOT NULL as "c"."i", "split_conv"."j" NOT NULL as "c"."j" ]
+| | ) [ "c"."i" NOT NULL, "c"."j" NOT NULL, bigint(63)["c"."j" NOT NULL] NOT NULL as "%2"."%2" ]
+| ) [ ("t"."i") = ("c"."i" NOT NULL), ("%3"."%3") = ("%2"."%2" NOT NULL) ]
+) [ "t"."i" NOT NULL, "c"."j" NOT NULL ]
+
+query II rowsort
+SELECT t.i, c.j FROM split_test t JOIN split_conv c ON t.i = c.i AND CAST(c.j AS BIGINT) = t.j
+----
+1	10
+2	20
+
+# A conversion which can fail (varchar -> int) must NOT be pushed into a
+# join input, while the harmless widening of c.j still is. Pushing the
+# fallible conversion would evaluate it for rows which do not satisfy the
+# join condition (SQL lazy evaluation), which could turn a working query
+# into a failing one.
+query T python .explain.filter
+EXPLAIN SHOW DETAILS SELECT t.i, c.j FROM split_test t JOIN split_conv c ON t.i = c.i AND CAST(t.k AS INT) = c.j
+----
+project (
+| join (
+| | table("sys"."split_test") [ "split_test"."i" as "t"."i", "split_test"."k" NOT NULL as "t"."k" ],
+| | project (
+| | | table("sys"."split_conv") [ "split_conv"."i" NOT NULL as "c"."i", "split_conv"."j" NOT NULL as "c"."j" ]
+| | ) [ "c"."i" NOT NULL, "c"."j" NOT NULL, int(31)["c"."j" NOT NULL] NOT NULL as "%2"."%2" ]
+| ) [ ("t"."i") = ("c"."i" NOT NULL), (int(31)["t"."k" NOT NULL] NOT NULL) = ("%2"."%2" NOT NULL) ]
+) [ "t"."i" NOT NULL, "c"."j" NOT NULL ]
+
+# Multi-column NOT IN: conversions of the probe columns are pushed
+# below the join, so the join can be compiled (this used to crash in
+# the anti join code for columns which need a conversion)
+query I nosort
+SELECT id FROM (SELECT 1, 10, NULL, 1000, 10000) t(id, a, b, c, d) WHERE (a, b, c, d) NOT IN (SELECT 10, 100, 1000, 10000)
+----
+
+statement ok
+DROP TABLE split_conv
+
+statement ok
+DROP TABLE split_join
+
 statement ok
 DROP TABLE split_test
+

@@ -91,12 +91,12 @@ xz_work(inner_state_t *xz, pump_action action)
 	xz->error_code = ret;
 
 	switch (ret) {
-		case LZMA_OK:
-			return PUMP_OK;
-		case LZMA_STREAM_END:
-			return PUMP_END;
-		default:
-			return PUMP_ERROR;
+	case LZMA_OK:
+		return PUMP_OK;
+	case LZMA_STREAM_END:
+		return PUMP_END;
+	default:
+		return PUMP_ERROR;
 	}
 }
 

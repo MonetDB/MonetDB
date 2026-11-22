@@ -99,13 +99,13 @@ MFconnectionManager(void *d)
 			continue;
 		if (i == -1 && errno != EINTR) {
 			Mlevelfprintf(ERROR, stderr, "failed to select on mfpipe: %s\n",
-					strerror(errno));
+				      strerror(errno));
 			break;
 		}
 		/* coverity[string_null_argument] */
 		if ((i = (int) read(mfpipe[0], &msg, sizeof(msg))) < 0) {
 			Mlevelfprintf(ERROR, stderr, "failed reading from notification pipe: %s\n",
-					strerror(errno));
+				      strerror(errno));
 			break;
 		}
 		assert(i == (int) sizeof(msg));
@@ -124,16 +124,16 @@ MFconnectionManager(void *d)
 				for (i = 0; i < m->dbcc; i++) {
 					if (m->dbcv[i]->conn == NULL) {
 						len = snprintf(buf, sizeof(buf), "%s/*",
-								m->dbcv[i]->database);
+							       m->dbcv[i]->database);
 						if (len >= sizeof(buf)) {
 							Mlevelfprintf(ERROR, stderr, "buffer buf too small, "
-									"increase size in %s:%d\n",
-									__FILE__, __LINE__);
+								      "increase size in %s:%d\n",
+								      __FILE__, __LINE__);
 							continue;
 						}
 						/* avoid double /'*'/'* (no ') */
 						if (len >= 4 &&
-								buf[len - 3] == '*' && buf[len - 4] == '/')
+						    buf[len - 3] == '*' && buf[len - 4] == '/')
 							buf[len - 2] = '\0';
 						if (db_glob(buf, msg + 1)) {
 							sabdb *stats;
@@ -143,24 +143,24 @@ MFconnectionManager(void *d)
 							stats = getRemoteDB(msg + 1);
 							if (stats == NULL) {
 								Mlevelfprintf(ERROR, stderr, "target %s cannot be resolved "
-										"despite being just discovered as %s\n",
-										m->dbcv[i]->database, msg + 1);
+									      "despite being just discovered as %s\n",
+									      m->dbcv[i]->database, msg + 1);
 								continue;
 							}
 							snprintf(buf, sizeof(buf), "%s%s",
-									stats->conns->val, stats->dbname);
+								 stats->conns->val, stats->dbname);
 							msab_freeStatus(&stats);
 							Mlevelfprintf(INFORMATION, stdout, "setting up multiplexer "
-									"target %s->%s\n",
-									m->dbcv[i]->database, buf);
+								      "target %s->%s\n",
+								      m->dbcv[i]->database, buf);
 							tm = mapi_mapiuri(buf,
-									m->dbcv[i]->user, m->dbcv[i]->pass, "sql");
+									  m->dbcv[i]->user, m->dbcv[i]->pass, "sql");
 							if (mapi_reconnect(tm) == MOK) {
 								m->dbcv[i]->conn = tm;
 								mapi_cache_limit(tm, -1); /* don't page */
 							} else {
 								Mlevelfprintf(ERROR, stdout, "failed to connect to %s: %s\n",
-										buf, mapi_error_str(tm));
+									      buf, mapi_error_str(tm));
 								mapi_destroy(tm);
 							}
 						}
@@ -173,16 +173,16 @@ MFconnectionManager(void *d)
 				for (i = 0; i < m->dbcc; i++) {
 					if (m->dbcv[i]->conn != NULL) {
 						len = snprintf(buf, sizeof(buf), "%s/*",
-								m->dbcv[i]->database);
+							       m->dbcv[i]->database);
 						if (len >= sizeof(buf)) {
 							Mlevelfprintf(ERROR, stderr, "buffer buf too small, "
-									"increase size in %s:%d\n",
-									__FILE__, __LINE__);
+								      "increase size in %s:%d\n",
+								      __FILE__, __LINE__);
 							continue;
 						}
 						/* avoid double /'*'/'* (no ') */
 						if (len >= 4 &&
-								buf[len - 3] == '*' && buf[len - 4] == '/')
+						    buf[len - 3] == '*' && buf[len - 4] == '/')
 							buf[len - 2] = '\0';
 						if (db_glob(buf, msg + 1)) {
 							/* reevaluate, to see if connection is still
@@ -193,8 +193,8 @@ MFconnectionManager(void *d)
 							const char *uri = mapi_get_uri(tm);
 							if (stats == NULL) {
 								Mlevelfprintf(ERROR, stderr, "target %s can no longer "
-										"be resolved\n",
-										m->dbcv[i]->database);
+									      "be resolved\n",
+									      m->dbcv[i]->database);
 								/* schedule to drop connection */
 								m->dbcv[i]->newconn = NULL;
 								m->dbcv[i]->connupdate = true;
@@ -206,23 +206,23 @@ MFconnectionManager(void *d)
 							 * server we got a message for */
 							for (walk = stats; walk != NULL; walk = walk->next) {
 								snprintf(buf, sizeof(buf), "%s%s",
-										walk->conns->val, walk->dbname);
+									 walk->conns->val, walk->dbname);
 								if (strcmp(uri, buf) == 0)
 									break;
 							}
 							if (walk == NULL) {
 								snprintf(buf, sizeof(buf), "%s%s",
-										stats->conns->val, stats->dbname);
+									 stats->conns->val, stats->dbname);
 								Mlevelfprintf(INFORMATION, stdout, "changing multiplexer target %s: %s->%s\n",
-										m->dbcv[i]->database, uri, buf);
+									      m->dbcv[i]->database, uri, buf);
 								tm = mapi_mapiuri(buf,
-										m->dbcv[i]->user, m->dbcv[i]->pass,
-										"sql");
+										  m->dbcv[i]->user, m->dbcv[i]->pass,
+										  "sql");
 								if (mapi_reconnect(tm) != MOK) {
 									Mlevelfprintf(ERROR, stderr, "mapi_reconnect for %s "
-											"failed: %s\n",
-											m->dbcv[i]->database,
-											mapi_error_str(tm));
+										      "failed: %s\n",
+										      m->dbcv[i]->database,
+										      mapi_error_str(tm));
 									mapi_destroy(tm);
 									/* schedule connection for removal */
 									m->dbcv[i]->newconn = NULL;
@@ -338,7 +338,7 @@ multiplexInit(const char *name, const char *pattern, FILE *sout, FILE *serr)
 		m->dbcv[i]->pass = p + 1;
 		if ((p = strchr(m->dbcv[i]->pass, '@')) == NULL) {
 			err e = newErr("illegal target %s+%s: missing '@'",
-					m->dbcv[i]->user, m->dbcv[i]->pass);
+				       m->dbcv[i]->user, m->dbcv[i]->pass);
 			for (; i >= 0; i--) {
 				free(m->dbcv[i]->user);
 				free(m->dbcv[i]);
@@ -378,7 +378,7 @@ multiplexInit(const char *name, const char *pattern, FILE *sout, FILE *serr)
 		m->dbcv[i]->pass = p + 1;
 		if ((p = strchr(m->dbcv[i]->pass, '@')) == NULL) {
 			err e = newErr("illegal target %s+%s: missing '@'",
-					m->dbcv[i]->user, m->dbcv[i]->pass);
+				       m->dbcv[i]->user, m->dbcv[i]->pass);
 			for (; i >= 0; i--) {
 				free(m->dbcv[i]->user);
 				free(m->dbcv[i]);
@@ -415,9 +415,9 @@ multiplexInit(const char *name, const char *pattern, FILE *sout, FILE *serr)
 #endif
 			Mlevelfprintf(INFORMATION, stdout, "starting multiplex-funnel connection manager\n");
 			if ((i = pthread_create(&mfmanager, &detach,
-									MFconnectionManager, NULL)) != 0) {
+						MFconnectionManager, NULL)) != 0) {
 				Mlevelfprintf(ERROR, stderr, "failed to start MFconnectionManager: %s\n",
-						 strerror(i));
+					      strerror(i));
 				mfmanager = 0;
 			}
 		}
@@ -427,14 +427,14 @@ multiplexInit(const char *name, const char *pattern, FILE *sout, FILE *serr)
 		sabdb *stats = getRemoteDB(m->dbcv[i]->database);
 		if (stats == NULL) {
 			Mlevelfprintf(ERROR, serr, "mfunnel: target %s cannot be resolved\n",
-					m->dbcv[i]->database);
+				      m->dbcv[i]->database);
 			continue;
 		}
 		snprintf(buf, sizeof(buf), "%s%s", stats->conns->val, stats->dbname);
 		Mlevelfprintf(INFORMATION, sout, "mfunnel: setting up multiplexer target %s->%s\n",
-				m->dbcv[i]->database, buf);
+			      m->dbcv[i]->database, buf);
 		m->dbcv[i]->conn = mapi_mapiuri(buf,
-				m->dbcv[i]->user, m->dbcv[i]->pass, "sql");
+						m->dbcv[i]->user, m->dbcv[i]->pass, "sql");
 		msab_freeStatus(&stats);
 	}
 
@@ -446,11 +446,11 @@ multiplexInit(const char *name, const char *pattern, FILE *sout, FILE *serr)
 	pthread_mutex_unlock(&mpl_lock);
 
 	if ((i = pthread_create(&m->tid, NULL,
-					multiplexThread, (void *)m)) != 0)
+				multiplexThread, (void *)m)) != 0)
 	{
 		/* FIXME: we don't cleanup here */
 		return(newErr("starting thread for multiplex-funnel %s failed: %s",
-					name, strerror(i)));
+			      name, strerror(i)));
 	}
 
 	/* fake lock such that sabaoth believes we are (still) running, we
@@ -463,7 +463,7 @@ multiplexInit(const char *name, const char *pattern, FILE *sout, FILE *serr)
 	} else if (m->gdklock == -2) {
 		/* directory or something doesn't exist, FIXME: cleanup */
 		Mlevelfprintf(ERROR, serr, "mfunnel: unable to create %s file: %s\n",
-				buf, strerror(errno));
+			      buf, strerror(errno));
 		return(newErr("cannot create lock for %s", name));
 	}
 
@@ -473,14 +473,14 @@ multiplexInit(const char *name, const char *pattern, FILE *sout, FILE *serr)
 	 * function */
 	msab_dbnameinit(name);
 	if ((p = msab_registerStarting()) != NULL ||
-			(p = msab_registerStarted()) != NULL ||
-			(p = msab_marchScenario("mfunnel")) != NULL)
+	    (p = msab_registerStarted()) != NULL ||
+	    (p = msab_marchScenario("mfunnel")) != NULL)
 	{
 		err em;
 
-	    msab_dbnameinit(NULL);
+		msab_dbnameinit(NULL);
 		Mlevelfprintf(ERROR, serr, "mfunnel: unable to startup %s: %s\n",
-				name, p);
+			      name, p);
 		em = newErr("cannot create funnel %s due to sabaoth: %s", name, p);
 		free(p);
 
@@ -516,14 +516,14 @@ multiplexDestroy(const char *mp)
 
 	if (m == NULL) {
 		Mlevelfprintf(ERROR, stderr, "request to remove non-existing "
-				"multiplex-funnel: %s\n", mp);
+			      "multiplex-funnel: %s\n", mp);
 		return;
 	}
 
 	/* deregister from sabaoth, same hack alert as at Init */
 	msab_dbnameinit(m->name);
 	if ((msg = msab_registerStop()) != NULL ||
-		(msg = msab_wildRetreat()) != NULL) {
+	    (msg = msab_wildRetreat()) != NULL) {
 		Mlevelfprintf(ERROR, stderr, "mfunnel: %s\n", msg);
 		free(msg);
 	}
@@ -550,21 +550,21 @@ multiplexQuery(multiplex *m, char *buf, stream *fout)
 	for (i = 0; i < m->dbcc; i++) {
 		if (m->dbcv[i]->conn == NULL) {
 			mnstr_printf(fout, "!connection for %s is currently unresolved\n",
-					m->dbcv[i]->database);
+				     m->dbcv[i]->database);
 			mnstr_flush(fout, MNSTR_FLUSH_DATA);
 			Mlevelfprintf(ERROR, m->serr, "failed to find a provider for %s\n",
-					m->dbcv[i]->database);
+				      m->dbcv[i]->database);
 			return;
 		}
 		if (!mapi_is_connected(m->dbcv[i]->conn)) {
 			if (mapi_reconnect(m->dbcv[i]->conn) != MOK) {
 				mnstr_printf(fout, "!failed to establish connection "
-						"for %s: %s\n", m->dbcv[i]->database,
-						mapi_error_str(m->dbcv[i]->conn));
+					     "for %s: %s\n", m->dbcv[i]->database,
+					     mapi_error_str(m->dbcv[i]->conn));
 				mnstr_flush(fout, MNSTR_FLUSH_DATA);
 				Mlevelfprintf(ERROR, m->serr, "mapi_reconnect for %s failed: %s\n",
-						m->dbcv[i]->database,
-						mapi_error_str(m->dbcv[i]->conn));
+					      m->dbcv[i]->database,
+					      mapi_error_str(m->dbcv[i]->conn));
 				return;
 			}
 			mapi_cache_limit(m->dbcv[i]->conn, -1); /* don't page */
@@ -583,17 +583,17 @@ multiplexQuery(multiplex *m, char *buf, stream *fout)
 		if (mapi_read_response(h) != MOK) {
 			t = mapi_result_error(h);
 			mnstr_printf(fout, "!node %s failed: %s\n",
-					m->dbcv[i]->database, t ? t : "no response");
+				     m->dbcv[i]->database, t ? t : "no response");
 			Mlevelfprintf(ERROR, m->serr, "mapi_read_response for %s failed: %s\n",
-					m->dbcv[i]->database, t ? t : "(no error)");
+				      m->dbcv[i]->database, t ? t : "(no error)");
 			break;
 		}
 		/* check for errors */
 		if ((t = mapi_result_error(h)) != NULL) {
 			mnstr_printf(fout, "!node %s failed: %s\n",
-					m->dbcv[i]->database, t);
+				     m->dbcv[i]->database, t);
 			Mlevelfprintf(ERROR, m->serr, "mapi_result_error for %s: %s\n",
-					m->dbcv[i]->database, t);
+				      m->dbcv[i]->database, t);
 			break;
 		}
 		/* check for result type consistency */
@@ -602,60 +602,60 @@ multiplexQuery(multiplex *m, char *buf, stream *fout)
 		} else if (qtype != mapi_get_querytype(h)) {
 			t = "err"; /* for cleanup code below */
 			mnstr_printf(fout, "!node %s returned a different type of result "
-					"than the previous node\n", m->dbcv[i]->database);
+				     "than the previous node\n", m->dbcv[i]->database);
 			Mlevelfprintf(ERROR, m->serr, "encountered mix of result types, "
-					"got %d, expected %d\n", mapi_get_querytype(h), qtype);
+				      "got %d, expected %d\n", mapi_get_querytype(h), qtype);
 			break;
 		}
 
 		/* determine correctness based on headers */
 		switch (qtype) {
-			case Q_PARSE:
-				/* mapi returns Q_PARSE for empty results */
-				continue;
-			case Q_TABLE:
-				/* prepare easily appending of all results */
-				rlen += mapi_get_row_count(h);
-				if (fcnt == -1) {
-					fcnt = mapi_get_field_count(h);
-				} else if (mapi_get_field_count(h) != fcnt) {
-					t = "err"; /* for cleanup code below */
-					mnstr_printf(fout, "!node %s has mismatch in result fields\n",
-							m->dbcv[i]->database);
-					Mlevelfprintf(ERROR, m->serr, "mapi_get_field_count inconsistent for %s: "
-							"got %d, expected %d\n",
-							m->dbcv[i]->database,
-							mapi_get_field_count(h), fcnt);
-				}
-				break;
-			case Q_UPDATE:
-				/* just pile up the update counts */
-				rlen += mapi_rows_affected(h);
-				break;
-			case Q_SCHEMA:
-				/* accept, just write ok later on */
-				break;
-			case Q_TRANS:
-				/* just check all servers end up in the same state */
-				if (fcnt == -1) {
-					fcnt = mapi_get_autocommit(m->dbcv[i]->conn);
-				} else if (fcnt != mapi_get_autocommit(m->dbcv[i]->conn)) {
-					t = "err"; /* for cleanup code below */
-					mnstr_printf(fout, "!node %s has mismatch in transaction state\n",
-							m->dbcv[i]->database);
-					Mlevelfprintf(ERROR, m->serr, "mapi_get_autocommit inconsistent for %s: "
-							"got %d, expected %d\n",
-							m->dbcv[i]->database,
-							mapi_get_autocommit(m->dbcv[i]->conn), fcnt);
-				}
-				break;
-			default:
+		case Q_PARSE:
+			/* mapi returns Q_PARSE for empty results */
+			continue;
+		case Q_TABLE:
+			/* prepare easily appending of all results */
+			rlen += mapi_get_row_count(h);
+			if (fcnt == -1) {
+				fcnt = mapi_get_field_count(h);
+			} else if (mapi_get_field_count(h) != fcnt) {
 				t = "err"; /* for cleanup code below */
-				mnstr_printf(fout, "!node %s returned unhandled result type\n",
-						m->dbcv[i]->database);
-				Mlevelfprintf(ERROR, m->serr, "unhandled querytype for %s: %d\n",
-						m->dbcv[i]->database, mapi_get_querytype(h));
-				break;
+				mnstr_printf(fout, "!node %s has mismatch in result fields\n",
+					     m->dbcv[i]->database);
+				Mlevelfprintf(ERROR, m->serr, "mapi_get_field_count inconsistent for %s: "
+					      "got %d, expected %d\n",
+					      m->dbcv[i]->database,
+					      mapi_get_field_count(h), fcnt);
+			}
+			break;
+		case Q_UPDATE:
+			/* just pile up the update counts */
+			rlen += mapi_rows_affected(h);
+			break;
+		case Q_SCHEMA:
+			/* accept, just write ok later on */
+			break;
+		case Q_TRANS:
+			/* just check all servers end up in the same state */
+			if (fcnt == -1) {
+				fcnt = mapi_get_autocommit(m->dbcv[i]->conn);
+			} else if (fcnt != mapi_get_autocommit(m->dbcv[i]->conn)) {
+				t = "err"; /* for cleanup code below */
+				mnstr_printf(fout, "!node %s has mismatch in transaction state\n",
+					     m->dbcv[i]->database);
+				Mlevelfprintf(ERROR, m->serr, "mapi_get_autocommit inconsistent for %s: "
+					      "got %d, expected %d\n",
+					      m->dbcv[i]->database,
+					      mapi_get_autocommit(m->dbcv[i]->conn), fcnt);
+			}
+			break;
+		default:
+			t = "err"; /* for cleanup code below */
+			mnstr_printf(fout, "!node %s returned unhandled result type\n",
+				     m->dbcv[i]->database);
+			Mlevelfprintf(ERROR, m->serr, "unhandled querytype for %s: %d\n",
+				      m->dbcv[i]->database, mapi_get_querytype(h));
+			break;
 		}
 		if (t != NULL)
 			break;
@@ -671,33 +671,33 @@ multiplexQuery(multiplex *m, char *buf, stream *fout)
 
 	/* write output to client */
 	switch (qtype) {
-		case Q_TABLE:
-			/* Compose the header.  For the table id, we just send 0,
-			 * such that we never get a close request.  Steal headers
-			 * from the first node. */
-			mnstr_printf(fout, "&%d 0 %" PRId64 " %d %" PRId64 "\n",
-					Q_TABLE, rlen, fcnt, rlen);
-			/* now read the answers, and write them directly to the client */
-			for (i = 0; i < m->dbcc; i++) {
-				h = m->dbcv[i]->hdl;
-				while ((t = mapi_fetch_line(h)) != NULL)
-					if (i == 0 || *t != '%') /* skip other server's headers */
-						mnstr_printf(fout, "%s\n", t);
-			}
-			break;
-		case Q_UPDATE:
-			/* Write a single header for all update counts, to sort of
-			 * complement the transparency created for Q_TABLE results,
-			 * but forget about last id data (wouldn't make sense if
-			 * we'd emit multiple update counts either) */
-			mnstr_printf(fout, "&%d %" PRId64 " -1\n", Q_UPDATE, rlen);
-			break;
-		case Q_SCHEMA:
-			mnstr_printf(fout, "&%d\n", Q_SCHEMA);
-			break;
-		case Q_TRANS:
-			mnstr_printf(fout, "&%d %c\n", Q_TRANS, fcnt ? 't' : 'f');
-			break;
+	case Q_TABLE:
+		/* Compose the header.  For the table id, we just send 0,
+		 * such that we never get a close request.  Steal headers
+		 * from the first node. */
+		mnstr_printf(fout, "&%d 0 %" PRId64 " %d %" PRId64 "\n",
+			     Q_TABLE, rlen, fcnt, rlen);
+		/* now read the answers, and write them directly to the client */
+		for (i = 0; i < m->dbcc; i++) {
+			h = m->dbcv[i]->hdl;
+			while ((t = mapi_fetch_line(h)) != NULL)
+				if (i == 0 || *t != '%') /* skip other server's headers */
+					mnstr_printf(fout, "%s\n", t);
+		}
+		break;
+	case Q_UPDATE:
+		/* Write a single header for all update counts, to sort of
+		 * complement the transparency created for Q_TABLE results,
+		 * but forget about last id data (wouldn't make sense if
+		 * we'd emit multiple update counts either) */
+		mnstr_printf(fout, "&%d %" PRId64 " -1\n", Q_UPDATE, rlen);
+		break;
+	case Q_SCHEMA:
+		mnstr_printf(fout, "&%d\n", Q_SCHEMA);
+		break;
+	case Q_TRANS:
+		mnstr_printf(fout, "&%d %c\n", Q_TRANS, fcnt ? 't' : 'f');
+		break;
 	}
 	mnstr_flush(fout, MNSTR_FLUSH_DATA);
 	/* finish up */
@@ -765,12 +765,12 @@ multiplexThread(void *d)
 				if (m->dbcv[i]->newconn != NULL) {
 					/* put new connection live */
 					Mlevelfprintf(INFORMATION, m->sout, "performing deferred connection cycle "
-							"for %s from %s to %s\n",
-							m->dbcv[i]->database,
-							m->dbcv[i]->conn != NULL ?
-								mapi_get_uri(m->dbcv[i]->conn) :
-								"<unconnected>",
-							mapi_get_uri(m->dbcv[i]->newconn));
+						      "for %s from %s to %s\n",
+						      m->dbcv[i]->database,
+						      m->dbcv[i]->conn != NULL ?
+						      mapi_get_uri(m->dbcv[i]->conn) :
+						      "<unconnected>",
+						      mapi_get_uri(m->dbcv[i]->newconn));
 					mapi_disconnect(m->dbcv[i]->conn);
 					mapi_destroy(m->dbcv[i]->conn);
 					m->dbcv[i]->conn = m->dbcv[i]->newconn;
@@ -779,11 +779,11 @@ multiplexThread(void *d)
 				} else {
 					/* put new connection live */
 					Mlevelfprintf(INFORMATION, m->sout, "performing deferred connection drop "
-							"for %s from %s\n",
-							m->dbcv[i]->database,
-							m->dbcv[i]->conn != NULL ?
-								mapi_get_uri(m->dbcv[i]->conn) :
-								"<unconnected>");
+						      "for %s from %s\n",
+						      m->dbcv[i]->database,
+						      m->dbcv[i]->conn != NULL ?
+						      mapi_get_uri(m->dbcv[i]->conn) :
+						      "<unconnected>");
 					mapi_disconnect(m->dbcv[i]->conn);
 					mapi_destroy(m->dbcv[i]->conn);
 					m->dbcv[i]->conn = NULL;
@@ -823,22 +823,22 @@ multiplexThread(void *d)
 
 			buf[len] = '\0';
 			switch (*buf) {
-				case 's':
-				case 'S':
-					/* accepted, just SQL queries */
-					break;
-				case 'X':
-					/* ignored, some clients just really insist on using
-					 * these */
-					mnstr_flush(c->fout, MNSTR_FLUSH_DATA);
-					continue;
-				default:
-					mnstr_printf(c->fout, "!modifier %c not supported by "
-							"multiplex-funnel\n", *buf);
-					mnstr_flush(c->fout, MNSTR_FLUSH_DATA);
-					Mlevelfprintf(ERROR, m->serr, "client attempted to perform %c "
-							"type query: %s\n", *buf, buf);
-					continue;
+			case 's':
+			case 'S':
+				/* accepted, just SQL queries */
+				break;
+			case 'X':
+				/* ignored, some clients just really insist on using
+				 * these */
+				mnstr_flush(c->fout, MNSTR_FLUSH_DATA);
+				continue;
+			default:
+				mnstr_printf(c->fout, "!modifier %c not supported by "
+					     "multiplex-funnel\n", *buf);
+				mnstr_flush(c->fout, MNSTR_FLUSH_DATA);
+				Mlevelfprintf(ERROR, m->serr, "client attempted to perform %c "
+					      "type query: %s\n", *buf, buf);
+				continue;
 			}
 			/* we assume (and require) the query to fit in one block,
 			 * that is, we only forward the first block, without having
@@ -929,7 +929,7 @@ multiplexAddClient(const char *mp, int sock, stream *fout, stream *fdin, char *n
 	if (ml == NULL) {
 		pthread_mutex_unlock(&mpl_lock);
 		Mlevelfprintf(ERROR, stderr, "failed to find multiplex-funnel '%s' for client %s\n",
-				mp, name);
+			      mp, name);
 		mnstr_printf(fout, "!monetdbd: internal error: could not find multiplex-funnel '%s'\n", mp);
 		mnstr_flush(fout, MNSTR_FLUSH_DATA);
 		close_stream(fdin);

@@ -839,6 +839,12 @@ setVariable(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 					throw(SQL, "sql.setVariable", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			} else if (!sqlvar_set_string(m->session->sa, find_global_var(m, s, varname), newopt))
 				throw(SQL, "sql.setVariable", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+		} else if (strcmp(s->base.name, "sys") == 0 &&
+				   strcmp(varname, "pipeline") == 0) {
+			bit val = *getArgReference_bit(stk, pci, 4);
+			if (is_bit_nil(val))
+				throw(SQL, "sql.setVariable", SQLSTATE(42000) "Variable '%s.%s' cannot be NULL", sname, varname);
+			cntxt->qryctx.pipeline_mode = (bool) val;
 		} else {
 			ValPtr ptr = &stk->stk[getArg(pci, 4)];
 
@@ -1309,21 +1315,25 @@ mvc_get_value_bulk(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		msg = createException(SQL, "sql.get_value", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		goto bailout;
 	}
-	canditer_init(&ci1, scheb, sches);
-	canditer_init(&ci2, seqb, seqs);
+	schi = bat_iterator(scheb);
+	seqi = bat_iterator(seqb);
+	canditer_init_bi(&ci1, &schi, sches);
+	canditer_init_bi(&ci2, &seqi, seqs);
 	if (ci2.ncand != ci1.ncand || ci1.hseq != ci2.hseq) {
+		bat_iterator_end(&schi);
+		bat_iterator_end(&seqi);
 		msg = createException(SQL, "sql.get_value", ILLEGAL_ARGUMENT " Requires bats of identical size");
 		goto bailout;
 	}
 	if (!(bn = COLnew(ci1.hseq, TYPE_lng, ci1.ncand, TRANSIENT))) {
+		bat_iterator_end(&schi);
+		bat_iterator_end(&seqi);
 		msg = createException(SQL, "sql.get_value", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto bailout;
 	}
 
 	off1 = scheb->hseqbase;
 	off2 = seqb->hseqbase;
-	schi = bat_iterator(scheb);
-	seqi = bat_iterator(seqb);
 	vals = Tloc(bn, 0);
 	for (BUN i = 0; i < ci1.ncand; i++) {
 		oid p1 = canditer_next(&ci1) - off1, p2 = canditer_next(&ci2) - off2;
@@ -5813,9 +5823,16 @@ SQLcheck(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 				rel_base_use_all(m, rel);
 				exp = exp_read(m, rel, NULL, NULL, ma_strdup(m->sa, k->check), &pos, 0);
 			}
-			assert(exp);
-			if (!exp)
-				throw(SQL, "SQLcheck", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+			if (!exp) {
+				/* the CHECK expression may no longer be parseable, eg when
+				 * a function referenced by it was dropped; exp_read() set
+				 * a descriptive error, propagate it instead of crashing */
+				m->sp = sp;
+				if (strlen(m->errstr) > 6 && m->errstr[5] == '!')
+					throw(SQL, "SQLcheck", "%s", m->errstr);
+				else
+					throw(SQL, "SQLcheck", SQLSTATE(42000) "%s", m->errstr);
+			}
 			if (exp->comment)
 				*r = SA_STRDUP(mb->ma, exp->comment);
 			else

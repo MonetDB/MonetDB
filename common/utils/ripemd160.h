@@ -21,12 +21,12 @@ typedef struct RIPEMD160Context {
 #define RIPEMD160_DIGEST_LENGTH 20
 
 void RIPEMD160Reset(RIPEMD160Context *ctxt)
-	__attribute__((__visibility__("hidden")));
+	ATTR_VISIBILITY_HIDDEN;
 void RIPEMD160Input(RIPEMD160Context *ctxt,
 					const uint8_t *bytes, unsigned bytecount)
-	__attribute__((__visibility__("hidden")));
+	ATTR_VISIBILITY_HIDDEN;
 void RIPEMD160Result(RIPEMD160Context *ctxt,
 					 uint8_t digest[RIPEMD160_DIGEST_LENGTH])
-	__attribute__((__visibility__("hidden")));
+	ATTR_VISIBILITY_HIDDEN;
 
 #endif

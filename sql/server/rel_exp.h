@@ -212,20 +212,7 @@ extern sql_exp *exps_bind_column2(list *exps, sql_alias *rname, const char *cnam
 extern sql_exp * list_find_exp(const list *exps, sql_exp *e);
 extern sql_exp *predicates_find_nid(const list *exps, int nid);
 
-extern dbl exp_estimate_selectivity(mvc *sql, sql_exp *e);
-
-sql_export sql_alias *a_create(allocator *sa, const char *name);
-extern sql_alias *schema_alias(allocator *sa, sql_schema *s);
-extern sql_alias *table_alias(allocator *sa, sql_table *t, sql_alias *p);
-#define a_no_name(a) ((a)->name == NULL)
-#define a_obj_name(a) ((a)->name)
-#define a_parent(a) ((a)->parent)
-extern bool a_cmp_obj_name(sql_alias *n, const char *name);
-extern bool a_cmp_obj_names(sql_alias *n, sql_alias *n2);
-extern bool a_match_obj(sql_alias *l, sql_alias *r);
-extern bool a_match(sql_alias *l, sql_alias *r);
-extern bool a_cmp(sql_alias *l, sql_alias *r);
-
+extern dbl exp_estimate_selectivity(mvc *sql, sql_exp *e, sql_rel *rel);
 extern unsigned int exps_card( list *l );
 extern void exps_fix_card( list *exps, unsigned int card);
 extern void exps_setcard( list *exps, unsigned int card);
@@ -246,6 +233,18 @@ extern void exps_largest_int(sql_subfunc *f, list *exps, lng cnt);
 extern int exp_aggr_is_count(sql_exp *e);
 extern int exp_aggr_is_countstar(sql_exp *e);
 extern list *check_distinct_exp_names(mvc *sql, list *exps);
+
+sql_export sql_alias *a_create(allocator *sa, const char *name);
+extern sql_alias *schema_alias(allocator *sa, sql_schema *s);
+extern sql_alias *table_alias(allocator *sa, sql_table *t, sql_alias *p);
+#define a_no_name(a) ((a)->name == NULL)
+#define a_obj_name(a) ((a)->name)
+#define a_parent(a) ((a)->parent)
+extern bool a_cmp_obj_name(sql_alias *n, const char *name);
+extern bool a_cmp_obj_names(sql_alias *n, sql_alias *n2);
+extern bool a_match_obj(sql_alias *l, sql_alias *r);
+extern bool a_match(sql_alias *l, sql_alias *r);
+extern bool a_cmp(sql_alias *l, sql_alias *r);
 
 extern sql_exp *exp_check_type(mvc *sql, sql_subtype *t, sql_rel *rel, sql_exp *exp, check_type tpe);
 extern list *exps_check_type(mvc *sql, sql_subtype *t, list *exps);

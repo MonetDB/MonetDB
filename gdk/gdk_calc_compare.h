@@ -841,18 +841,27 @@ BATcalcop(BAT *b1, BAT *b2, BAT *s1, BAT *s2
 	BATcheck(b1, NULL);
 	BATcheck(b2, NULL);
 
-	canditer_init(&ci1, b1, s1);
-	canditer_init(&ci2, b2, s2);
+	BATiter b1i = bat_iterator(b1);
+	BATiter b2i = bat_iterator(b2);
+	canditer_init_bi(&ci1, &b1i, s1);
+	canditer_init_bi(&ci2, &b2i, s2);
 	if (ci1.ncand != ci2.ncand || ci1.hseq != ci2.hseq) {
+		bat_iterator_end(&b1i);
+		bat_iterator_end(&b2i);
 		GDKerror("inputs not the same size.\n");
 		return NULL;
 	}
-	if (ci1.ncand == 0)
+	if (ci1.ncand == 0) {
+		bat_iterator_end(&b1i);
+		bat_iterator_end(&b2i);
 		return COLnew(ci1.hseq, TYPE_TPE, 0, TRANSIENT);
+	}
 
 	if (BATtvoid(b1) && BATtvoid(b2) && ci1.tpe == cand_dense && ci2.tpe == cand_dense) {
 		TPE res;
 
+		bat_iterator_end(&b1i);
+		bat_iterator_end(&b2i);
 		if ((is_oid_nil(b1->tseqbase) || is_oid_nil(b2->tseqbase))
 #ifdef NIL_MATCHES_FLAG
 		    && !nil_matches
@@ -865,8 +874,6 @@ BATcalcop(BAT *b1, BAT *b2, BAT *s1, BAT *s2
 		return BATconstant(b1->hseqbase, TYPE_TPE, &res, ci1.ncand, TRANSIENT);
 	}
 
-	BATiter b1i = bat_iterator(b1);
-	BATiter b2i = bat_iterator(b2);
 	BAT *bn = BATcalcop_intern(b1i.type == TYPE_void ? (const void *) &b1->tseqbase : (const void *) b1i.base,
 				ATOMtype(b1i.type) == TYPE_oid ? b1i.type : ATOMbasetype(b1i.type),
 				true,
@@ -901,11 +908,13 @@ BATcalcopcst(BAT *b, const ValRecord *v, BAT *s
 
 	BATcheck(b, NULL);
 
-	canditer_init(&ci, b, s);
-	if (ci.ncand == 0)
-		return COLnew(ci.hseq, TYPE_TPE, 0, TRANSIENT);
-
 	BATiter bi = bat_iterator(b);
+	canditer_init_bi(&ci, &bi, s);
+	if (ci.ncand == 0) {
+		bat_iterator_end(&bi);
+		return COLnew(ci.hseq, TYPE_TPE, 0, TRANSIENT);
+	}
+
 	BAT *bn = BATcalcop_intern(bi.type == TYPE_void ? (const void *) &b->tseqbase : (const void *) bi.base,
 				ATOMtype(bi.type) == TYPE_oid ? bi.type : ATOMbasetype(bi.type),
 				true,
@@ -940,11 +949,13 @@ BATcalccstop(const ValRecord *v, BAT *b, BAT *s
 
 	BATcheck(b, NULL);
 
-	canditer_init(&ci, b, s);
-	if (ci.ncand == 0)
-		return COLnew(ci.hseq, TYPE_TPE, 0, TRANSIENT);
-
 	BATiter bi = bat_iterator(b);
+	canditer_init_bi(&ci, &bi, s);
+	if (ci.ncand == 0) {
+		bat_iterator_end(&bi);
+		return COLnew(ci.hseq, TYPE_TPE, 0, TRANSIENT);
+	}
+
 	BAT *bn = BATcalcop_intern(VALptr(v),
 				ATOMtype(v->vtype) == TYPE_oid ? v->vtype : ATOMbasetype(v->vtype),
 				false,

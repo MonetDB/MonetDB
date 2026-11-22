@@ -1736,7 +1736,7 @@ fcnHeader(Client ctx, int kind)
 	} else if (keyphrase1(ctx, "(")) {	/* deal with compound return */
 		int retc = curInstr->argc, i1, i2 = 0;
 		int max;
-		short *newarg;
+		int *newarg;
 		/* parse multi-target result */
 		/* skipSpace(ctx); */
 		ch = currChar(ctx);
@@ -1761,12 +1761,17 @@ fcnHeader(Client ctx, int kind)
 			ch = currChar(ctx);
 		}
 		/* re-arrange the parameters, results first */
+		allocator *ma = MT_thread_getallocator();
+		allocator_state ma_state = ma_open(ma);
 		max = curInstr->maxarg;
-		newarg = (short *) GDKmalloc(max * sizeof(curInstr->argv[0]));
+		newarg = ma_alloc(ma, max * sizeof(newarg[0]));
+		static_assert(sizeof(newarg[0]) == sizeof(curInstr->argv[0]),
+					  "size mismatch");
 		if (newarg == NULL) {
 			parseError(ctx, SQLSTATE(HY013) MAL_MALLOC_FAIL);
 			if (ctx->backup)
 				curBlk = NULL;
+			ma_close(&ma_state);
 			return curBlk;
 		}
 		for (i1 = retc; i1 < curInstr->argc; i1++)
@@ -1779,7 +1784,7 @@ fcnHeader(Client ctx, int kind)
 			newarg[i2] = 0;
 		for (i1 = 0; i1 < max; i1++)
 			curInstr->argv[i1] = newarg[i1];
-		GDKfree(newarg);
+		ma_close(&ma_state);
 		if (currChar(ctx) != ')') {
 			freeInstruction(curBlk, curInstr);
 			if (ctx->backup)

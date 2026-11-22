@@ -102,21 +102,21 @@ work(inner_state_t *inner_state, pump_action action)
 
 	inner_state->prev_was_stream_end = false;
 	switch (ret) {
-		case Z_OK:
+	case Z_OK:
+		return PUMP_OK;
+	case Z_STREAM_END:
+		inner_state->prev_was_stream_end = true;
+		if (action == PUMP_NO_FLUSH && inner_state->reset != NULL) {
+			// zlib returns end, but maybe the input consists of multiple
+			// gzipped files.
+			inner_state->reset(inner_state);
 			return PUMP_OK;
-		case Z_STREAM_END:
-			inner_state->prev_was_stream_end = true;
-			if (action == PUMP_NO_FLUSH && inner_state->reset != NULL) {
-				// zlib returns end, but maybe the input consists of multiple
-				// gzipped files.
-				inner_state->reset(inner_state);
-				return PUMP_OK;
-			} else {
-				// no more incoming data
-				return PUMP_END;
-			}
-		default:
-			return PUMP_ERROR;
+		} else {
+			// no more incoming data
+			return PUMP_END;
+		}
+	default:
+		return PUMP_ERROR;
 	}
 }
 

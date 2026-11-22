@@ -667,17 +667,6 @@ MT_getcwd(char *buffer, size_t size)
 	return len == -1 ? NULL : buffer;
 }
 
-int
-MT_access(const char *pathname, int mode)
-{
-	wchar_t *wpathname = utf8toutf16(pathname);
-	if (wpathname == NULL)
-		return -1;
-	int ret = _waccess(wpathname, mode);
-	free(wpathname);
-	return ret;
-}
-
 #else
 
 #if defined(HAVE_LOCKF) && defined(__MACH__)

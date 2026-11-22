@@ -19,57 +19,57 @@
 #include "gdk.h"
 
 gdk_export BAT *GDKanalyticaldiff(BAT *b, BAT *p, const bit *restrict npbit, int tpe)
-	__attribute__((__warn_unused_result__));
+	ATTR_WARN_UNUSED_RESULT;
 
 gdk_export BAT *GDKanalyticalntile(BAT *b, BAT *p, BAT *n, int tpe, const void *restrict ntile)
-	__attribute__((__warn_unused_result__));
+	ATTR_WARN_UNUSED_RESULT;
 gdk_export BAT *GDKanalyticallag(BAT *b, BAT *p, BUN lag, const void *restrict default_value, int tpe)
-	__attribute__((__warn_unused_result__));
+	ATTR_WARN_UNUSED_RESULT;
 gdk_export BAT *GDKanalyticallead(BAT *b, BAT *p, BUN lead, const void *restrict default_value, int tpe)
-	__attribute__((__warn_unused_result__));
+	ATTR_WARN_UNUSED_RESULT;
 
 gdk_export BAT *GDKanalyticalwindowbounds(BAT *b, BAT *p, BAT *l,
 					  const void *restrict bound,
 					  int tp1, int tp2, int unit,
 					  bool preceding, oid first_half)
-	__attribute__((__warn_unused_result__));
+	ATTR_WARN_UNUSED_RESULT;
 
 gdk_export BAT *GDKanalyticalfirst(BAT *b, BAT *s, BAT *e, int tpe)
-	__attribute__((__warn_unused_result__));
+	ATTR_WARN_UNUSED_RESULT;
 gdk_export BAT *GDKanalyticallast(BAT *b, BAT *s, BAT *e, int tpe)
-	__attribute__((__warn_unused_result__));
+	ATTR_WARN_UNUSED_RESULT;
 gdk_export BAT *GDKanalyticalnthvalue(BAT *b, BAT *s, BAT *e, BAT *l, lng nth, int tp1)
-	__attribute__((__warn_unused_result__));
+	ATTR_WARN_UNUSED_RESULT;
 
 gdk_export BAT *GDKanalyticalmin(BAT *p, BAT *o, BAT *b, BAT *s, BAT *e, int tpe, int frame_type)
-	__attribute__((__warn_unused_result__));
+	ATTR_WARN_UNUSED_RESULT;
 gdk_export BAT *GDKanalyticalmax(BAT *p, BAT *o, BAT *b, BAT *s, BAT *e, int tpe, int frame_type)
-	__attribute__((__warn_unused_result__));
+	ATTR_WARN_UNUSED_RESULT;
 gdk_export BAT *GDKanalyticalcount(BAT *p, BAT *o, BAT *b, BAT *s, BAT *e, bit ignore_nils, int tpe, int frame_type)
-	__attribute__((__warn_unused_result__));
+	ATTR_WARN_UNUSED_RESULT;
 gdk_export BAT *GDKanalyticalsum(BAT *p, BAT *o, BAT *b, BAT *s, BAT *e, int tp1, int tp2, int frame_type)
-	__attribute__((__warn_unused_result__));
+	ATTR_WARN_UNUSED_RESULT;
 gdk_export BAT *GDKanalyticalprod(BAT *p, BAT *o, BAT *b, BAT *s, BAT *e, int tp1, int tp2, int frame_type)
-	__attribute__((__warn_unused_result__));
+	ATTR_WARN_UNUSED_RESULT;
 gdk_export BAT *GDKanalyticalavg(BAT *p, BAT *o, BAT *b, BAT *s, BAT *e, int tpe, int frame_type)
-	__attribute__((__warn_unused_result__));
+	ATTR_WARN_UNUSED_RESULT;
 gdk_export BAT *GDKanalyticalavginteger(BAT *p, BAT *o, BAT *b, BAT *s, BAT *e, int tpe, int frame_type)
-	__attribute__((__warn_unused_result__));
+	ATTR_WARN_UNUSED_RESULT;
 
 gdk_export BAT *GDKanalytical_stddev_samp(BAT *p, BAT *o, BAT *b, BAT *s, BAT *e, int tpe, int frame_type)
-	__attribute__((__warn_unused_result__));
+	ATTR_WARN_UNUSED_RESULT;
 gdk_export BAT *GDKanalytical_stddev_pop(BAT *p, BAT *o, BAT *b, BAT *s, BAT *e, int tpe, int frame_type)
-	__attribute__((__warn_unused_result__));
+	ATTR_WARN_UNUSED_RESULT;
 gdk_export BAT *GDKanalytical_variance_samp(BAT *p, BAT *o, BAT *b, BAT *s, BAT *e, int tpe, int frame_type)
-	__attribute__((__warn_unused_result__));
+	ATTR_WARN_UNUSED_RESULT;
 gdk_export BAT *GDKanalytical_variance_pop(BAT *p, BAT *o, BAT *b, BAT *s, BAT *e, int tpe, int frame_type)
-	__attribute__((__warn_unused_result__));
+	ATTR_WARN_UNUSED_RESULT;
 gdk_export BAT *GDKanalytical_covariance_pop(BAT *p, BAT *o, BAT *b1, BAT *b2, BAT *s, BAT *e, int tpe, int frame_type)
-	__attribute__((__warn_unused_result__));
+	ATTR_WARN_UNUSED_RESULT;
 gdk_export BAT *GDKanalytical_covariance_samp(BAT *p, BAT *o, BAT *b1, BAT *b2, BAT *s, BAT *e, int tpe, int frame_type)
-	__attribute__((__warn_unused_result__));
+	ATTR_WARN_UNUSED_RESULT;
 gdk_export BAT *GDKanalytical_correlation(BAT *p, BAT *o, BAT *b1, BAT *b2, BAT *s, BAT *e, int tpe, int frame_type)
-	__attribute__((__warn_unused_result__));
+	ATTR_WARN_UNUSED_RESULT;
 
 /* Segment tree fanout size. Later we could do experiments from it */
 #define SEGMENT_TREE_FANOUT 16
@@ -84,7 +84,7 @@ gdk_export BAT *GDKanalytical_correlation(BAT *p, BAT *o, BAT *b1, BAT *b2, BAT 
  * 'levels_offset' are allocated after the segment tree.  The beginning
  * pointers for both are returned. */
 gdk_export Heap *GDKinitialize_segment_tree(void)
-	__attribute__((__warn_unused_result__));
+	ATTR_WARN_UNUSED_RESULT;
 gdk_export gdk_return GDKrebuild_segment_tree(oid ncount, oid data_size, Heap *st, void **segment_tree, oid **levels_offset, oid *nlevels);
 
 /* segment_tree, levels_offset and nlevels must be already

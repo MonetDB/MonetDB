@@ -1,0 +1,25 @@
+statement ok
+CREATE TABLE t(g INTEGER, v VARCHAR(20))
+
+statement ok
+CREATE TABLE expected(g INTEGER, mn VARCHAR(20), mx VARCHAR(20))
+
+statement ok
+CREATE TABLE actual(g INTEGER, mn VARCHAR(20), mx VARCHAR(20))
+
+statement ok rowcount 7
+INSERT INTO t VALUES
+    (1, NULL), (1, 'z'), (1, 'a'),
+    (2, NULL), (2, NULL),
+    (3, 'm'), (3, NULL)
+
+statement ok rowcount 3
+INSERT INTO expected VALUES
+    (1, 'a', 'z'), (2, NULL, NULL), (3, 'm', 'm')
+
+query ITT
+SELECT g, MIN(v || '') AS mn, MAX(v || '') AS mx FROM t GROUP BY g ORDER BY g
+----
+1	a	z
+2	NULL	NULL
+3	m	m

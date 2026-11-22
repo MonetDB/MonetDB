@@ -151,81 +151,81 @@ mal_export int str_strlen(const char *s);
  * the responsibility of the caller */
 
 extern str str_from_wchr(str *buf, size_t *buflen, int c)
-	__attribute__((__visibility__("hidden")));
+	ATTR_VISIBILITY_HIDDEN;
 extern str str_wchr_at(int *res, const char *s, int at)
-	__attribute__((__visibility__("hidden")));
+	ATTR_VISIBILITY_HIDDEN;
 
 extern int str_is_prefix(const char *s, const char *prefix, size_t plen)
-	__attribute__((__visibility__("hidden")));
+	ATTR_VISIBILITY_HIDDEN;
 extern int str_is_iprefix(const char *s, const char *prefix, size_t plen)
-	__attribute__((__visibility__("hidden")));
+	ATTR_VISIBILITY_HIDDEN;
 extern int str_is_suffix(const char *s, const char *suffix, size_t sul)
-	__attribute__((__visibility__("hidden")));
+	ATTR_VISIBILITY_HIDDEN;
 extern int str_is_isuffix(const char *s, const char *suffix, size_t sul)
-	__attribute__((__visibility__("hidden")));
+	ATTR_VISIBILITY_HIDDEN;
 extern int str_contains(const char *h, const char *n, size_t nlen)
-	__attribute__((__visibility__("hidden")));
+	ATTR_VISIBILITY_HIDDEN;
 extern int str_icontains(const char *h, const char *n, size_t nlen)
-	__attribute__((__visibility__("hidden")));
+	ATTR_VISIBILITY_HIDDEN;
 
 extern str str_tail(str *buf, size_t *buflen, const char *s, int off)
-	__attribute__((__visibility__("hidden")));
+	ATTR_VISIBILITY_HIDDEN;
 extern str str_Sub_String(str *buf, size_t *buflen, const char *s, int off,
 						  int l)
-	__attribute__((__visibility__("hidden")));
+	ATTR_VISIBILITY_HIDDEN;
 extern str str_substring_tail(str *buf, size_t *buflen, const char *s,
 							  int start)
-	__attribute__((__visibility__("hidden")));
+	ATTR_VISIBILITY_HIDDEN;
 extern str str_sub_string(str *buf, size_t *buflen, const char *s, int start,
 						  int l)
-	__attribute__((__visibility__("hidden")));
+	ATTR_VISIBILITY_HIDDEN;
 extern str str_suffix(str *buf, size_t *buflen, const char *s, int l)
-	__attribute__((__visibility__("hidden")));
+	ATTR_VISIBILITY_HIDDEN;
 extern str str_repeat(str *buf, size_t *buflen, const char *s, int c)
-	__attribute__((__visibility__("hidden")));
+	ATTR_VISIBILITY_HIDDEN;
 
 extern str str_strip(str *buf, size_t *buflen, const char *s)
-	__attribute__((__visibility__("hidden")));
+	ATTR_VISIBILITY_HIDDEN;
 extern str str_ltrim(str *buf, size_t *buflen, const char *s)
-	__attribute__((__visibility__("hidden")));
+	ATTR_VISIBILITY_HIDDEN;
 extern str str_rtrim(str *buf, size_t *buflen, const char *s)
-	__attribute__((__visibility__("hidden")));
+	ATTR_VISIBILITY_HIDDEN;
 extern str str_strip2(str *buf, size_t *buflen, const char *s, const char *s2)
-	__attribute__((__visibility__("hidden")));
+	ATTR_VISIBILITY_HIDDEN;
 extern str str_ltrim2(str *buf, size_t *buflen, const char *s, const char *s2)
-	__attribute__((__visibility__("hidden")));
+	ATTR_VISIBILITY_HIDDEN;
 extern str str_rtrim2(str *buf, size_t *buflen, const char *s, const char *s2)
-	__attribute__((__visibility__("hidden")));
+	ATTR_VISIBILITY_HIDDEN;
 extern str str_lpad(str *buf, size_t *buflen, const char *s, int len)
-	__attribute__((__visibility__("hidden")));
+	ATTR_VISIBILITY_HIDDEN;
 extern str str_rpad(str *buf, size_t *buflen, const char *s, int len)
-	__attribute__((__visibility__("hidden")));
+	ATTR_VISIBILITY_HIDDEN;
 extern str str_lpad3(str *buf, size_t *buflen, const char *s, int len,
 					 const char *s2)
-	__attribute__((__visibility__("hidden")));
+	ATTR_VISIBILITY_HIDDEN;
 extern str str_rpad3(str *buf, size_t *buflen, const char *s, int len,
 					 const char *s2)
-	__attribute__((__visibility__("hidden")));
+	ATTR_VISIBILITY_HIDDEN;
 
 extern int str_search(const char *s, const char *needle)
-	__attribute__((__visibility__("hidden")));
+	ATTR_VISIBILITY_HIDDEN;
 extern int str_isearch(const char *s, const char *needle)
-	__attribute__((__visibility__("hidden")));
+	ATTR_VISIBILITY_HIDDEN;
 extern int str_reverse_str_search(const char *s, const char *needle)
-	__attribute__((__visibility__("hidden")));
+	ATTR_VISIBILITY_HIDDEN;
 extern int str_reverse_str_isearch(const char *s, const char *needle)
-	__attribute__((__visibility__("hidden")));
+	ATTR_VISIBILITY_HIDDEN;
 extern int str_locate2(const char *needle, const char *haystack, int start)
-	__attribute__((__visibility__("hidden")));
+	ATTR_VISIBILITY_HIDDEN;
 
 extern str str_splitpart(str *buf, size_t *buflen, const char *s,
 						 const char *s2, int f)
-	__attribute__((__visibility__("hidden")));
+	ATTR_VISIBILITY_HIDDEN;
 extern str str_insert(str *buf, size_t *buflen, const char *s, int strt, int l,
 					  const char *s2)
-	__attribute__((__visibility__("hidden")));
+	ATTR_VISIBILITY_HIDDEN;
 extern str str_substitute(str *buf, size_t *buflen, const char *s,
 						  const char *src, const char *dst, bit repeat)
-	__attribute__((__visibility__("hidden")));
+	ATTR_VISIBILITY_HIDDEN;
 
 #endif /* __string_H__ */

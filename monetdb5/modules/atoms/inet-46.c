@@ -168,14 +168,15 @@ INETstr2inet4_bulk(Client ctx, bat *ret, const bat *bid, const bat *sid)
 		goto bailout;
 	}
 	off = b->hseqbase;
-	canditer_init(&ci, b, s);
+	bi = bat_iterator(b);
+	canditer_init_bi(&ci, &bi, s);
 	if (!(dst = COLnew(ci.hseq, TYPE_inet4, ci.ncand, TRANSIENT))) {
+		bat_iterator_end(&bi);
 		msg = createException(SQL, "batcalc.inet4",
 							  SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto bailout;
 	}
 
-	bi = bat_iterator(b);
 	vals = Tloc(dst, 0);
 	if (ci.tpe == cand_dense) {
 		for (BUN i = 0; i < ci.ncand; i++) {
@@ -253,14 +254,15 @@ INETinet42inet4_bulk(Client ctx, bat *ret, const bat *bid, const bat *sid)
 		goto bailout;
 	}
 	off = b->hseqbase;
-	canditer_init(&ci, b, s);
+	bi = bat_iterator(b);
+	canditer_init_bi(&ci, &bi, s);
 	if (!(dst = COLnew(ci.hseq, TYPE_inet4, ci.ncand, TRANSIENT))) {
+		bat_iterator_end(&bi);
 		msg = createException(SQL, "batcalc.inet4",
 							  SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto bailout;
 	}
 
-	bi = bat_iterator(b);
 	bv = bi.base;
 	dv = Tloc(dst, 0);
 	if (ci.tpe == cand_dense) {
@@ -351,22 +353,26 @@ inet4containsinet4_bulk(bat *ret, const bat *bip1, const bat *bmsk1, const bat *
 		goto bailout;
 	}
 
-	canditer_init(&c1, ip1, s1);
-	canditer_init(&c2, ip2, s2);
+	BATiter ip1i = bat_iterator(ip1);
+	BATiter ip2i = bat_iterator(ip2);
+	canditer_init_bi(&c1, &ip1i, s1);
+	canditer_init_bi(&c2, &ip2i, s2);
 
 	if (c1.ncand != c2.ncand) {
+		bat_iterator_end(&ip1i);
+		bat_iterator_end(&ip2i);
 		msg = createException(MAL, "batinet46.contains", "Alignment error");
 		goto bailout;
 	}
 
 	if ((dst = COLnew(c1.hseq, TYPE_bit, c1.ncand, TRANSIENT)) == NULL) {
+		bat_iterator_end(&ip1i);
+		bat_iterator_end(&ip2i);
 		msg = createException(MAL, "batinet46.contains",
 							  SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto bailout;
 	}
 
-	BATiter ip1i = bat_iterator(ip1);
-	BATiter ip2i = bat_iterator(ip2);
 	BATiter msk2i = bat_iterator(msk2);
 	bit *dstp = Tloc(dst, 0);
 	bool nils = false;
@@ -720,14 +726,15 @@ INETstr2inet6_bulk(Client ctx, bat *ret, const bat *bid, const bat *sid)
 		goto bailout;
 	}
 	off = b->hseqbase;
-	canditer_init(&ci, b, s);
+	bi = bat_iterator(b);
+	canditer_init_bi(&ci, &bi, s);
 	if (!(dst = COLnew(ci.hseq, TYPE_inet6, ci.ncand, TRANSIENT))) {
+		bat_iterator_end(&bi);
 		msg = createException(SQL, "batcalc.inet6",
 							  SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto bailout;
 	}
 
-	bi = bat_iterator(b);
 	vals = Tloc(dst, 0);
 	if (ci.tpe == cand_dense) {
 		for (BUN i = 0; i < ci.ncand; i++) {
@@ -805,14 +812,15 @@ INETinet62inet6_bulk(Client ctx, bat *ret, const bat *bid, const bat *sid)
 		goto bailout;
 	}
 	off = b->hseqbase;
-	canditer_init(&ci, b, s);
+	bi = bat_iterator(b);
+	canditer_init_bi(&ci, &bi, s);
 	if (!(dst = COLnew(ci.hseq, TYPE_inet6, ci.ncand, TRANSIENT))) {
+		bat_iterator_end(&bi);
 		msg = createException(SQL, "batcalc.inet6",
 							  SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto bailout;
 	}
 
-	bi = bat_iterator(b);
 	bv = bi.base;
 	dv = Tloc(dst, 0);
 	if (ci.tpe == cand_dense) {
@@ -903,22 +911,26 @@ inet6containsinet6_bulk(bat *ret, const bat *bip1, const bat *bmsk1, const bat *
 		goto bailout;
 	}
 
-	canditer_init(&c1, ip1, s1);
-	canditer_init(&c2, ip2, s2);
+	BATiter ip1i = bat_iterator(ip1);
+	BATiter ip2i = bat_iterator(ip2);
+	canditer_init_bi(&c1, &ip1i, s1);
+	canditer_init_bi(&c2, &ip2i, s2);
 
 	if (c1.ncand != c2.ncand) {
+		bat_iterator_end(&ip1i);
+		bat_iterator_end(&ip2i);
 		msg = createException(MAL, "batinet46.contains", "Alignment error");
 		goto bailout;
 	}
 
 	if ((dst = COLnew(c1.hseq, TYPE_bit, c1.ncand, TRANSIENT)) == NULL) {
+		bat_iterator_end(&ip1i);
+		bat_iterator_end(&ip2i);
 		msg = createException(MAL, "batinet46.contains",
 							  SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto bailout;
 	}
 
-	BATiter ip1i = bat_iterator(ip1);
-	BATiter ip2i = bat_iterator(ip2);
 	BATiter msk2i = bat_iterator(msk2);
 	bit *dstp = Tloc(dst, 0);
 	bool nils = false;

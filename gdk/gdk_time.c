@@ -44,84 +44,84 @@ static const int cumdays[13] = { /* cumulative days in non leap year */
 	0, 31, 59, 90, 120, 151, 181, 212, 243, 273, 304, 334, 365
 };
 
-__attribute__((__const__))
+ATTR_CONST
 static inline bool
 isleapyear(int y)
 {
 	return y % 4 == 0 && (y % 100 != 0 || y % 400 == 0);
 }
 
-__attribute__((__const__))
+ATTR_CONST
 static inline int
 monthdays(int y, int m)
 {
 	return leapdays[m] - (m == 2 && !isleapyear(y));
 }
 
-__attribute__((__const__))
+ATTR_CONST
 static inline bool
 isdate(int y, int m, int d)
 {
 	return m > 0 && m <= 12 && d > 0 && y >= YEAR_MIN && y <= YEAR_MAX && d <= monthdays(y, m);
 }
 
-__attribute__((__const__))
+ATTR_CONST
 static inline date
 mkdate(int y, int m, int d)
 {
 	return (date) (((uint32_t) ((y + YEAR_OFFSET) * 12 + m - 1) << DTMONTH_SHIFT) | ((uint32_t) d << DTDAY_SHIFT));
 }
 
-__attribute__((__const__))
+ATTR_CONST
 static inline int
 date_extract_day(date dt)
 {
 	return (int) (((uint32_t) dt >> DTDAY_SHIFT) & ((1 << DTDAY_WIDTH) - 1));
 }
 
-__attribute__((__const__))
+ATTR_CONST
 static inline int
 date_extract_month(date dt)
 {
 	return (int) ((((uint32_t) dt >> DTMONTH_SHIFT) & ((1 << DTMONTH_WIDTH) - 1)) % 12 + 1);
 }
 
-__attribute__((__const__))
+ATTR_CONST
 static inline int
 date_extract_year(date dt)
 {
 	return (int) ((((uint32_t) dt >> DTMONTH_SHIFT) & ((1 << DTMONTH_WIDTH) - 1)) / 12 - YEAR_OFFSET);
 }
 
-__attribute__((__const__))
+ATTR_CONST
 static inline bool
 istime(int h, int m, int s, int u)
 {
 	return h >= 0 && h < 24 && m >= 0 && m < 60 && s >= 0 && s <= 60 && u >= 0 && u < 1000000;
 }
 
-__attribute__((__const__))
+ATTR_CONST
 static inline daytime
 mkdaytime(int h, int m, int s, int u)
 {
 	return ((((daytime) h * 60 + m) * 60) + s) * LL_CONSTANT(1000000) + u;
 }
 
-__attribute__((__const__))
+ATTR_CONST
 static inline int
 daytime_extract_hour(daytime tm)
 {
 	return (int) (tm / HOUR_USEC);
 }
 
-__attribute__((__const__))
+ATTR_CONST
 static inline int
 daytime_extract_minute(daytime tm)
 {
 	return (int) ((tm / 60000000) % 60);
 }
 
-__attribute__((__const__))
+ATTR_CONST
 static inline int
 daytime_extract_usecond(daytime tm)
 {
@@ -133,7 +133,7 @@ daytime_extract_usecond(daytime tm)
 #define TSDATE_WIDTH	(DTDAY_WIDTH+DTMONTH_WIDTH)
 #define TSDATE_SHIFT	(TSTIME_SHIFT+TSTIME_WIDTH)
 
-__attribute__((__const__))
+ATTR_CONST
 static inline daytime
 ts_time(timestamp ts)
 {
@@ -141,7 +141,7 @@ ts_time(timestamp ts)
 			  & ((LL_CONSTANT(1) << TSTIME_WIDTH) - 1));
 }
 
-__attribute__((__const__))
+ATTR_CONST
 static inline date
 ts_date(timestamp ts)
 {
@@ -149,7 +149,7 @@ ts_date(timestamp ts)
 		       & ((1 << TSDATE_WIDTH) - 1));
 }
 
-__attribute__((__const__))
+ATTR_CONST
 static inline timestamp
 mktimestamp(date d, daytime t)
 {
@@ -287,7 +287,7 @@ date_add_month(date dt, int months)
 
 /* count days (including leap days) since some time before YEAR_MIN */
 #define CNT_OFF		(((YEAR_OFFSET+399)/400)*400)
-__attribute__((__const__))
+ATTR_CONST
 static inline int
 date_countdays(date dt)
 {
@@ -601,7 +601,7 @@ timestamp_diff(timestamp t1, timestamp t2)
 }
 
 /* GDK level atom functions with some helpers */
-__attribute__((__pure__))
+ATTR_PURE
 static ssize_t
 fleximatch(const char *s, const char *pat, size_t min)
 {

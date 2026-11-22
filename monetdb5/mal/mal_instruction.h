@@ -67,7 +67,7 @@ setFunctionId(InstrPtr p, const char *s)
 #define getVar(M,I)			(&(M)->var[I])
 #define getVarType(M,I)		((M)->var[I].type)
 mal_export char *getVarNameIntoBuffer(MalBlkPtr mb, int idx, char *buf)
-	__attribute__((__access__(write_only, 3)));
+	ATTR_ACCESS(write_only, 3);
 
 #define getVarKind(M,I)		((M)->var[I].kind)
 #define getVarGDKType(M,I)	getGDKType((M)->var[I].type)

@@ -17,7 +17,7 @@
 #define is_equi_exp_(e) ((e)->flag == cmp_equal)
 
 extern bool can_join_exp(sql_rel *rel, sql_exp *e, bool anti);
-extern void split_join_exps(sql_rel *rel, list *joinable, list *not_joinable, bool anti, bool eqonly);
+extern void split_join_exps(sql_rel *rel, list *joinable, list *not_joinable, bool anti, bool eqonly, bool firstonly);
 
 extern list *get_simple_equi_joins_first(mvc *sql, sql_rel *rel, list *exps);
 

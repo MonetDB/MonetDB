@@ -99,27 +99,27 @@ work(inner_state_t *inner_state, pump_action action)
 	int ret = inner_state->work(&inner_state->strm, a);
 
 	switch (ret) {
-		case BZ_OK:
-		case BZ_RUN_OK:
-			if (a == PUMP_NO_FLUSH)
-				return PUMP_OK;
-			else
-				/* when flushing or finishing, done */
-				return PUMP_END;
-		case BZ_FLUSH_OK:
-		case BZ_FINISH_OK:
-			/* flushing and finishing is not yet done */
+	case BZ_OK:
+	case BZ_RUN_OK:
+		if (a == PUMP_NO_FLUSH)
 			return PUMP_OK;
-		case BZ_STREAM_END:
-			if (action == PUMP_NO_FLUSH && inner_state->reset != NULL) {
-				// attempt to read concatenated additional bz2 stream
-				inner_state->reset(inner_state);
-				return PUMP_OK;
-			}
-			inner_state->eof_reached = true;
+		else
+			/* when flushing or finishing, done */
 			return PUMP_END;
-		default:
-			return PUMP_ERROR;
+	case BZ_FLUSH_OK:
+	case BZ_FINISH_OK:
+		/* flushing and finishing is not yet done */
+		return PUMP_OK;
+	case BZ_STREAM_END:
+		if (action == PUMP_NO_FLUSH && inner_state->reset != NULL) {
+			// attempt to read concatenated additional bz2 stream
+			inner_state->reset(inner_state);
+			return PUMP_OK;
+		}
+		inner_state->eof_reached = true;
+		return PUMP_END;
+	default:
+		return PUMP_ERROR;
 	}
 }
 

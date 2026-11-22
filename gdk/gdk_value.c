@@ -47,7 +47,7 @@
 ValPtr
 VALset(ValPtr v, int t, ptr p)
 {
-	assert(t < TYPE_any);
+	assert(t < MAXATOMS && t >= 0);
 	*v = (ValRecord) {
 		.vtype = t,
 	};

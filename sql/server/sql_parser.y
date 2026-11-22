@@ -691,8 +691,7 @@ SQLCODE SQLERROR UNDER WHENEVER
 %token TYPE PROCEDURE FUNCTION sqlLOADER AGGREGATE RETURNS EXTERNAL sqlNAME DECLARE
 %token CALL
 %token ANALYZE SQL_EXPLAIN SQL_TRACE PREP PREPARE EXEC EXECUTE DEALLOCATE
-%token LOGICAL PHYSICAL SHOW DETAILS
-%token UNNEST REWRITE
+%token LOGICAL UNNEST REWRITE PHYSICAL SHOW DETAILS
 %token DEFAULT DISTINCT DROP TRUNCATE
 %token FOREIGN
 %token RENAME ENCRYPTED UNENCRYPTED PASSWORD GRANT REVOKE ROLE ADMIN INTO
@@ -1128,7 +1127,7 @@ set_statement:
 			dlist *l = L();
 			sql_subtype t;
 			sql_find_subtype(&t, "char", UTF8_strlen($5), 0);
-			append_list(l, append_string(append_string(L(), "sys"), "current_role"));
+			append_list(l, append_string(append_string(L(), "sys"), "current_user"));
 			append_symbol(l, _newAtomNode( _atom_string(&t, $5)));
 			$$ = _symbol_create_list( SQL_SET, l);
 		}

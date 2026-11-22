@@ -1708,11 +1708,11 @@ exp2bin_proto_loader(backend *be, sql_exp *fe, stmt *left, stmt *right, stmt *se
 	assert(is_atom(fexp->type));
 	atom *fa = fexp->l;
 	assert(fa->data.vtype == TYPE_str);
-	char *filename = fa->data.val.sval;
+	char *uri = fa->data.val.sval;
 	sql_exp *topn = NULL;
 	if (list_length(arg_list) == 3)
 		topn = list_fetch(arg_list, 2);
-	return (stmt*)pl->load(be, f, filename, arg_list, topn);
+	return (stmt*)pl->load(be, f, uri, arg_list, topn);
 }
 
 static stmt *
@@ -3690,7 +3690,7 @@ rel2bin_join(backend *be, sql_rel *rel, list *refs)
 		list *jexps = sa_list(sql->sa);
 		sexps = sa_list(sql->sa);
 
-		split_join_exps(rel, jexps, sexps, false /* anti */, false /* eqonly */);
+		split_join_exps(rel, jexps, sexps, false /* anti */, false /* eqonly */, false /* firstonly */);
 		if (list_empty(jexps)) { /* cross product and continue after project */
 			stmt *l = bin_find_smallest_column(be, left);
 			stmt *r = bin_find_smallest_column(be, right);
@@ -3941,7 +3941,7 @@ rel2bin_antijoin(backend *be, sql_rel *rel, list *refs)
 	jexps = sa_list(sql->sa);
 	sexps = sa_list(sql->sa);
 
-	split_join_exps(rel, jexps, sexps, true /* anti */, false /* eqonly */);
+	split_join_exps(rel, jexps, sexps, true /* anti */, false /* eqonly */, false /* firstonly */);
 	if (list_empty(jexps)) {
 		stmt *l = bin_find_smallest_column(be, left);
 		stmt *r = bin_find_smallest_column(be, right);
@@ -3954,47 +3954,86 @@ rel2bin_antijoin(backend *be, sql_rel *rel, list *refs)
 		if (list_length(sexps))
 			jexps = list_join(jexps, sexps);
 		en = jexps->h;
-		sql_exp *e = en->data;
-		if (e->type == e_cmp && (e->flag == cmp_equal || e->flag == cmp_notequal)) {
-			stmt *ls = exp_bin(be, e->l, left, NULL, NULL, NULL, NULL, NULL, 1, 0, 0), *rs;
-			bool constval = false;
-			if (!ls) {
-				swap = true;
-				ls = exp_bin(be, e->l, right, NULL, NULL, NULL, NULL, NULL, 1, 0, 0);
+
+		/* if possible create multi column hash using releqjoin */
+		if (list_length(jexps) > 1) {
+			bool composite = true;
+			for (node *m = jexps->h; m; m = m->next) {
+				sql_exp *ce = m->data;
+				if (ce->type != e_cmp || ce->flag != cmp_equal ||
+				    is_anti(ce) || !is_semantics(ce) || exp_has_func(ce)) {
+					composite = false;
+					break;
+				}
 			}
-			if (!ls)
-				return NULL;
-
-			if (!(rs = exp_bin(be, e->r, left, right, NULL, NULL, NULL, NULL, 1, 0, 0)))
-				return NULL;
-
-			if (swap) {
-				stmt *t = ls;
-				ls = rs;
-				rs = t;
+			if (composite) {
+				list *lje = sa_list(sql->sa), *rje = sa_list(sql->sa), *exps = sa_list(sql->sa);
+				bool valid = true;
+				for (node *m = jexps->h; m; m = m->next) {
+					sql_exp *ce = m->data;
+					stmt *ls = exp_bin(be, ce->l, left, NULL, NULL, NULL, NULL, NULL, 1, 0, 0);
+					stmt *rs = ls ? exp_bin(be, ce->r, left, right, NULL, NULL, NULL, NULL, 1, 0, 0) : NULL;
+					if (!ls || !rs) {
+						valid = false;
+						break;
+					}
+					if (!li)
+						li = ls;
+					list_append(lje, ls);
+					list_append(rje, rs);
+					list_append(exps, ce);
+				}
+				if (valid) {
+					join = releqjoin(be, lje, rje, exps, 0 /* use hash */, 0, 1 /* set semantics */);
+					/* all equalities are part of the composite key */
+					en = NULL;
+				}
 			}
-			if (ls->nrcols == 0) {
-				constval = true;
-				ls = stmt_const(be, bin_find_smallest_column(be, left), ls);
-			}
-			if (rs->nrcols == 0)
-				rs = stmt_const(be, bin_find_smallest_column(be, right), rs);
+		}
 
-			if (!li)
-				li = ls;
+		if (!join) {
+				sql_exp *e = en->data;
+				if (e->type == e_cmp && (e->flag == cmp_equal || e->flag == cmp_notequal)) {
+				stmt *ls = exp_bin(be, e->l, left, NULL, NULL, NULL, NULL, NULL, 1, 0, 0), *rs;
+				bool constval = false;
+				if (!ls) {
+					swap = true;
+					ls = exp_bin(be, e->l, right, NULL, NULL, NULL, NULL, NULL, 1, 0, 0);
+				}
+				if (!ls)
+					return NULL;
 
-			if (!en->next && !is_anti(e) && e->flag != cmp_notequal &&
-				(constval || stmt_has_null(ls) || stmt_has_null(rs))) {
-				join = stmt_tdiff2(be, ls, rs, NULL, is_semantics(e), is_any(e));
-				jexps = NULL;
+				if (!(rs = exp_bin(be, e->r, left, right, NULL, NULL, NULL, NULL, 1, 0, 0)))
+					return NULL;
+
+				if (swap) {
+					stmt *t = ls;
+					ls = rs;
+					rs = t;
+				}
+				if (ls->nrcols == 0) {
+					constval = true;
+					ls = stmt_const(be, bin_find_smallest_column(be, left), ls);
+				}
+				if (rs->nrcols == 0)
+					rs = stmt_const(be, bin_find_smallest_column(be, right), rs);
+
+				if (!li)
+					li = ls;
+
+				if (!en->next && !is_anti(e) && e->flag != cmp_notequal &&
+					(constval || stmt_has_null(ls) || stmt_has_null(rs))) {
+					join = stmt_tdiff2(be, ls, rs, NULL, is_semantics(e), is_any(e));
+					jexps = NULL;
+				} else {
+					join = stmt_join_cand(be, ls, rs, NULL, NULL, is_anti(e), (comp_type) e->flag, 0, is_semantics(e), false, true);
+				}
+				en = en->next;
 			} else {
-				join = stmt_join_cand(be, ls, rs, NULL, NULL, is_anti(e), (comp_type) e->flag, 0, is_semantics(e), false, true);
+				stmt *l = bin_find_smallest_column(be, left);
+				stmt *r = bin_find_smallest_column(be, right);
+				join = stmt_join(be, l, r, 0, cmp_all, 0, 0, false);
 			}
-			en = en->next;
-		} else {
-			stmt *l = bin_find_smallest_column(be, left);
-			stmt *r = bin_find_smallest_column(be, right);
-			join = stmt_join(be, l, r, 0, cmp_all, 0, 0, false);
 		}
 	}
 	if (en || jexps) {
@@ -4167,7 +4206,7 @@ rel2bin_semijoin(backend *be, sql_rel *rel, list *refs)
 		list *jexps = sa_list(sql->sa);
 		sexps = sa_list(sql->sa);
 
-		split_join_exps(rel, jexps, sexps, false /* anti */, false /* eqonly */);
+		split_join_exps(rel, jexps, sexps, false /* anti */, false /* eqonly */, false /* firstonly */);
 		if (list_empty(jexps)) { /* cross product and continue after project */
 			right = subrel_project(be, right, refs, rel->r);
 			stmt *l = bin_find_smallest_column(be, left);
@@ -5935,11 +5974,11 @@ insert_check_ukey(backend *be, list *inserts, sql_key *k, stmt *idx_inserts)
 			s = stmt_join(be, s, h, 0, cmp_equal, 0, k->type == unndkey? 1: 0, false);
 			/* s should be empty */
 			s = stmt_result(be, s, 0);
-			s = stmt_aggr(be, s, NULL, NULL, cnt, 1, 0, 1);
+			s = stmt_aggr_nopp(be, s, NULL, NULL, cnt, 1, 0, 1);
 		} else {
 			s = stmt_uselect(be, s, h, cmp_equal, NULL, 0, k->type == unndkey? 1: 0);
 			/* s should be empty */
-			s = stmt_aggr(be, s, NULL, NULL, cnt, 1, 0, 1);
+			s = stmt_aggr_nopp(be, s, NULL, NULL, cnt, 1, 0, 1);
 		}
 		/* s should be empty */
 		s = stmt_binop(be, s, stmt_atom_lng(be, 0), NULL, ne);
@@ -6177,7 +6216,7 @@ sql_insert_check_null(backend *be, sql_table *t, list *inserts)
 				s = stmt_selectnil(be, column(be, i), NULL);
 				if (!cnt)
 					cnt = sql_bind_func(sql, "sys", "count", sql_fetch_localtype(TYPE_void), NULL, F_AGGR, true, true);
-				s = stmt_aggr(be, s, NULL, NULL, cnt, 1, 0, 1);
+				s = stmt_aggr_nopp(be, s, NULL, NULL, cnt, 1, 0, 1);
 			} else {
 				sql_subfunc *isnil = sql_bind_func(sql, "sys", "isnull", &c->type, NULL, F_FUNC, true, true);
 
@@ -7507,13 +7546,17 @@ sql_update_triggers(backend *be, sql_table *t, stmt *tids, stmt **updates, int t
 	return res;
 }
 
-static void
+static int
 sql_update_check(backend *be, stmt **updates, sql_key *key, stmt *u_tids)
 {
 	mvc *sql = be->mvc;
 	int pos = 0;
 	sql_rel *rel = rel_basetable(sql, key->t, a_create(be->mvc->sa, key->t->base.name));
 	sql_exp *exp = exp_read(sql, rel, NULL, NULL, ma_strdup(sql->sa, key->check), &pos, 0);
+	/* the CHECK expression may no longer be parseable, eg when a function
+	 * referenced by it was dropped; exp_read() already set an error */
+	if (!exp)
+		return -1;
 	rel->exps = rel_base_projection(sql, rel, 0);
 
 	/* create sub stmt with needed updates (or projected col from to be updated table) */
@@ -7534,12 +7577,15 @@ sql_update_check(backend *be, stmt **updates, sql_key *key, stmt *u_tids)
 
 	stmt *sub = stmt_list(be, ups);
 	stmt *s = exp_bin(be, exp, sub, NULL, NULL, NULL, NULL, NULL, 0, 0, 0);
+	if (!s)
+		return -1;
 
 	sql_subfunc *cnt = sql_bind_func(sql, "sys", "count", sql_fetch_localtype(TYPE_void), NULL, F_AGGR, true, true);
 	s = stmt_uselect(be, column(be, s), stmt_bool(be, 0), cmp_equal, NULL, 0, 1);
 	s = stmt_aggr(be, s, NULL, NULL, cnt, 1, 0, 1);
 	char *msg = sa_message(sql->sa, SQLSTATE(40002) "UPDATE: violated constraint '%s.%s' CHECK(%s)", key->t->s->base.name, key->base.name, exp->comment);
 	(void)stmt_exception(be, s, msg, 00001);
+	return 0;
 }
 
 static void
@@ -7645,8 +7691,9 @@ rel2bin_update(backend *be, sql_rel *rel, list *refs)
 			stmt *tids = stmt_tid(be, t, 0);
 			for (m = ol_first_node(t->keys); m; m = m->next) {
 				sql_key * key = m->data;
-				if (key->type == ckey && key->base.new)
-					sql_update_check(be, NULL, key, tids);
+				if (key->type == ckey && key->base.new &&
+				    sql_update_check(be, NULL, key, tids) < 0)
+					return NULL;
 			}
 			return ddl;
 		}
@@ -7674,8 +7721,9 @@ rel2bin_update(backend *be, sql_rel *rel, list *refs)
 
 	for (m = ol_first_node(t->keys); m; m = m->next) {
 		sql_key * key = m->data;
-		if (key->type == ckey && is_check_updated(key, updates))
-			sql_update_check(be, updates, key, tids);
+		if (key->type == ckey && is_check_updated(key, updates) &&
+		    sql_update_check(be, updates, key, tids) < 0)
+			return NULL;
 	}
 	sql_update_check_null(be, t, updates);
 
@@ -9016,13 +9064,19 @@ exp_remap(sql_exp *le, sql_exp *re, list *remapped)
 	case e_column:
 		if (exp_pair_match(remapped, le->nid, re->nid))
 			return 0;
-		break;
+		return -1;
 	case e_convert:
 		ll = le->r;
 		rl = re->r;
 		return (subtype_cmp(ll->h->data, rl->h->data) == 0 &&
 			    subtype_cmp(ll->h->next->data, rl->h->next->data) == 0 &&
 				exp_remap(le->l , re->l, remapped) == 0)?0:-1;
+	case e_func: {
+		sql_subfunc *lf = le->f, *rf = re->f;
+		list *lexps = le->l, *rexps = re->l;
+		if (subfunc_cmp(lf, rf) == 0 && list_length(lexps) == list_length(rexps))
+			return exps_remap(lexps, rexps, remapped);
+	} break;
 	case e_cmp:
 		if (le->flag != re->flag)
 			return -1;
@@ -9116,8 +9170,7 @@ deduplicate_refs(mvc *sql, allocator *ta, list *refs, sql_rel *rel)
 	for(node *n = refs->h; n; n = n->next) {
 		sql_rel *or = n->data, *nr = or;
 		prop *op = find_prop(or->p, PROP_HASH);
-		if (or->op == op_buildhash &&
-				op && op->value.lval) {
+		if (or->op == op_buildhash && op && op->value.lval) {
 			BUN h = op->value.lval;
 			for(node *m = prefs->h; m; m = m->next->next) {
 				sql_rel *ir = m->data;

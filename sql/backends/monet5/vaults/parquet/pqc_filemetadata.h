@@ -522,7 +522,7 @@ typedef struct pqc_file pqc_file;
 
 pqc_export int pqc_open( pqc_file **pq, char *fn);
 pqc_export pqc_file *pqc_dup( pqc_file *pq);
-pqc_export pqc_file *pqc_copy( pqc_file *pq);
+pqc_export pqc_file *pqc_copy( pqc_file *pq, int wid);
 pqc_export void pqc_close( pqc_file *pq);
 pqc_export int pqc_read_schema( pqc_file *pq);
 pqc_export const pqc_schema_element *pqc_get_schema_elements( pqc_file *pq, int *nr); /* returns (after call to pqc_read_filemetadata) arraywith schema_elements and number of elements */
@@ -534,5 +534,7 @@ pqc_export int64_t pqc_read( pqc_file *pq, int64_t offset, char *buffer, size_t 
 extern char *pq_get_error( pqc_file *pq);
 
 extern ssize_t pqc_binary2string(pqc_schema_element *pse, char *bindata, char *buf, size_t sz);
+
+extern int pqc_set_nr_workers(pqc_file *pq, int nr_workers);
 
 #endif /*_PQC_FILEMETADATA_H_*/

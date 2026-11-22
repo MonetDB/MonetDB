@@ -81,14 +81,15 @@ bat_dec_round_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		msg = createException(MAL, "round", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		goto bailout;
 	}
-	canditer_init(&ci1, b, bs);
+	bi = bat_iterator(b);
+	canditer_init_bi(&ci1, &bi, bs);
 	if (!(bn = COLnew(ci1.hseq, TPE(TYPE), ci1.ncand, TRANSIENT))) {
+		bat_iterator_end(&bi);
 		msg = createException(MAL, "round", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto bailout;
 	}
 
 	off1 = b->hseqbase;
-	bi = bat_iterator(b);
 	src = (TYPE *) bi.base;
 	dst = (TYPE *) Tloc(bn, 0);
 	if (ci1.tpe == cand_dense) {
@@ -161,14 +162,15 @@ bat_dec_round_wrap_cst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		msg = createException(MAL, "round", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		goto bailout;
 	}
-	canditer_init(&ci1, b, bs);
+	bi = bat_iterator(b);
+	canditer_init_bi(&ci1, &bi, bs);
 	if (!(bn = COLnew(ci1.hseq, TPE(TYPE), ci1.ncand, TRANSIENT))) {
+		bat_iterator_end(&bi);
 		msg = createException(MAL, "round", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto bailout;
 	}
 
 	off1 = b->hseqbase;
-	bi = bat_iterator(b);
 	src = (TYPE *) bi.base;
 	dst = (TYPE *) Tloc(bn, 0);
 	if (ci1.tpe == cand_dense) {
@@ -254,21 +256,25 @@ bat_dec_round_wrap_nocst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci
 		msg = createException(MAL, "round", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		goto bailout;
 	}
-	canditer_init(&ci1, left, lefts);
-	canditer_init(&ci2, right, rights);
+	lefti = bat_iterator(left);
+	righti = bat_iterator(right);
+	canditer_init_bi(&ci1, &lefti, lefts);
+	canditer_init_bi(&ci2, &righti, rights);
 	if (ci2.ncand != ci1.ncand || ci1.hseq != ci2.hseq) {
+		bat_iterator_end(&lefti);
+		bat_iterator_end(&righti);
 		msg = createException(MAL, "round", ILLEGAL_ARGUMENT " Requires bats of identical size");
 		goto bailout;
 	}
 	if (!(bn = COLnew(ci1.hseq, TPE(TYPE), ci1.ncand, TRANSIENT))) {
+		bat_iterator_end(&lefti);
+		bat_iterator_end(&righti);
 		msg = createException(MAL, "round", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto bailout;
 	}
 
 	off1 = left->hseqbase;
 	off2 = right->hseqbase;
-	lefti = bat_iterator(left);
-	righti = bat_iterator(right);
 	src1 = (TYPE *) lefti.base;
 	src2 = (TYPE *) righti.base;
 	dst = (TYPE *) Tloc(bn, 0);
@@ -405,14 +411,15 @@ bat_round_wrap(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		msg = createException(MAL, "round", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		goto bailout;
 	}
-	canditer_init(&ci1, b, bs);
+	bi = bat_iterator(b);
+	canditer_init_bi(&ci1, &bi, bs);
 	if (!(bn = COLnew(ci1.hseq, TPE(TYPE), ci1.ncand, TRANSIENT))) {
+		bat_iterator_end(&bi);
 		msg = createException(MAL, "round", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto bailout;
 	}
 
 	off1 = b->hseqbase;
-	bi = bat_iterator(b);
 	src = (TYPE *) bi.base;
 	dst = (TYPE *) Tloc(bn, 0);
 	if (ci1.tpe == cand_dense) {
@@ -486,14 +493,15 @@ bat_round_wrap_cst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		msg = createException(MAL, "round", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		goto bailout;
 	}
-	canditer_init(&ci1, b, bs);
+	bi = bat_iterator(b);
+	canditer_init_bi(&ci1, &bi, bs);
 	if (!(bn = COLnew(ci1.hseq, TPE(TYPE), ci1.ncand, TRANSIENT))) {
+		bat_iterator_end(&bi);
 		msg = createException(MAL, "round", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto bailout;
 	}
 
 	off1 = b->hseqbase;
-	bi = bat_iterator(b);
 	src = (bte *) bi.base;
 	dst = (TYPE *) Tloc(bn, 0);
 	if (ci1.tpe == cand_dense) {
@@ -584,21 +592,25 @@ bat_round_wrap_nocst(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		msg = createException(MAL, "round", SQLSTATE(HY002) RUNTIME_OBJECT_MISSING);
 		goto bailout;
 	}
-	canditer_init(&ci1, left, lefts);
-	canditer_init(&ci2, right, rights);
+	lefti = bat_iterator(left);
+	righti = bat_iterator(right);
+	canditer_init_bi(&ci1, &lefti, lefts);
+	canditer_init_bi(&ci2, &righti, rights);
 	if (ci2.ncand != ci1.ncand || ci1.hseq != ci2.hseq) {
+		bat_iterator_end(&lefti);
+		bat_iterator_end(&righti);
 		msg = createException(MAL, "round", ILLEGAL_ARGUMENT " Requires bats of identical size");
 		goto bailout;
 	}
 	if (!(bn = COLnew(ci1.hseq, TPE(TYPE), ci1.ncand, TRANSIENT))) {
+		bat_iterator_end(&lefti);
+		bat_iterator_end(&righti);
 		msg = createException(MAL, "round", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 		goto bailout;
 	}
 
 	off1 = left->hseqbase;
 	off2 = right->hseqbase;
-	lefti = bat_iterator(left);
-	righti = bat_iterator(right);
 	src1 = (TYPE *) lefti.base;
 	src2 = (bte *) righti.base;
 	dst = (TYPE *) Tloc(bn, 0);

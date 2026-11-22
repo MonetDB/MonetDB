@@ -452,6 +452,8 @@ find_payload_exps(mvc *sql, list **exps_hsh, list **exps_prb, sql_rel *p, sql_re
 		else
 			exps = list_merge(list_dup(exps, NULL), p->attr, NULL);
 	}
+	if (is_topn(p->op) && p->l)
+		p = p->l;
 	if (is_select(p->op) || is_join(p->op))
 		exps = NULL;
 	if (exps_hsh) {
@@ -503,24 +505,32 @@ find_cmp_exps(list **exps_hsh, list **exps_prb, const list *exps, sql_rel *rel_h
 			sql_exp *ne = NULL;
 			if ((ne = rel_find_exp(rel_hsh, e->r)) != NULL) {
 				sql_exp *er = e->r;
+				/*
 				if (is_unique(ne))
 					set_unique(er);
+					*/
 				if (any)
 					set_any(er);
 				if (semantic)
 					set_semantics(er);
+				if (er->nid != er->alias.label)
+					er->alias.label = 0;
 				append(*exps_hsh, er);
 				append(*exps_prb, e->l);
 			} else {
 			    ne = rel_find_exp(rel_hsh, e->l);
 				assert(ne);
 				sql_exp *el = e->l;
+				/*
 				if (is_unique(ne))
 					set_unique(el);
+					*/
 				if (any)
 					set_any(el);
 				if (semantic)
 					set_semantics(el);
+				if (el->nid != el->alias.label)
+					el->alias.label = 0;
 				append(*exps_hsh, el);
 				append(*exps_prb, e->r);
 			}
@@ -548,6 +558,8 @@ rel_probehash(visitor *v, sql_rel *rel, sql_rel **iprj)
 {
 	/* todo inplace for hash sharing */
 	sql_rel *r = rel_create(v->sql->sa);
+	r->lunique = rel->lunique;
+	r->runique = rel->runique;
 	if (0 && rel_is_ref(rel)) {
 		sql_rel *l = r;
 		*l = *rel;
@@ -583,6 +595,8 @@ rel_buildhash(visitor *v, sql_rel *rel, sql_rel **iprj, bool crossproduct)
 	}
 	/* Inplace for hash sharing */
 	sql_rel *r = rel_create(v->sql->sa);
+	r->lunique = rel->lunique;
+	r->runique = rel->runique;
 	if (0 && rel_is_ref(rel)) {
 		sql_rel *l = r;
 		*l = *rel;
@@ -751,6 +765,25 @@ rel_hash(sql_rel *r)
 	return 0;
 }
 
+static bool
+right_is_unique(sql_rel *r, list *exps)
+{
+	if (list_length(exps) >= 1) {
+		sql_exp *e = exps->h->data;
+
+		if (e->type == e_cmp && e->flag == cmp_equal) {
+			if (rel_find_exp(r, e->l)) {
+				sql_exp *el = e->l;
+				return is_unique(el);
+			} else if (rel_find_exp(r, e->r)) {
+				sql_exp *er = e->r;
+				return is_unique(er);
+			}
+		}
+	}
+	return false;
+}
+
 static int
 rel_pipeline(visitor *v, sql_rel *rel, bool materialize, int pb)
 {
@@ -801,7 +834,9 @@ rel_pipeline(visitor *v, sql_rel *rel, bool materialize, int pb)
 		}
 	} else if (is_topn(rel->op)) {
 		/* e.g. pp is not useful for "SELECT 42 LIMIT 2" */
-		bool pp_useful = (get_rel_count(rel->l) > 1) && topn_limit(rel) /* no offset */;
+		/* a topn directly on a basetable should be pushed into the scan operator */
+		bool pp_useful = (get_rel_count(rel->l) > 1) && topn_limit(rel) &&
+			!is_basetable(((sql_rel*) rel->l)->op);
 		/* op_topn always has rel->l */
 		res = rel_pipeline(v, rel->l, pp_useful, pp_useful?SPB:0);
 		if (pp_useful && res) { /* topn is blocking */
@@ -872,7 +907,7 @@ rel_pipeline(visitor *v, sql_rel *rel, bool materialize, int pb)
 	} else if (is_semi(rel->op)) {
 		list *eq_exps = sa_list(v->sql->sa);
 		list *other = sa_list(v->sql->sa);
-		split_join_exps(rel, eq_exps, other, true /* anti */, true /* eqonly */);
+		split_join_exps(rel, eq_exps, other, true /* anti */, true /* eqonly */, false /* firstonly */);
 		bool needs_payload = (!list_empty(other));
 		bool need_all = false;
 		bool cross = list_empty(eq_exps);
@@ -1005,9 +1040,18 @@ rel_pipeline(visitor *v, sql_rel *rel, bool materialize, int pb)
 		if (do_oahash_join(rel)) {
 			list *eq_exps = sa_list(v->sql->sa);
 			list *other = sa_list(v->sql->sa);
+			/* manti: multi-column not-exist */
+			int m_any = 0;
+
+			if (list_length(rel->exps) > 1) {
+				for (node *n = rel->exps->h; n; n = n->next)
+					m_any += (int)is_any((sql_exp*)n->data);
+			}
+
+			bool manti = list_length(rel->attr) == 1 && m_any > 1 && exp_is_atom(rel->attr->h->data) && !exp_is_true(rel->attr->h->data);
 			if (!list_empty(rel->attr))
 				rel->exps = get_simple_equi_joins_first(v->sql, rel, rel->exps);
-			split_join_exps(rel, eq_exps, other, true /* anti */, true /* eqonly */);
+			split_join_exps(rel, eq_exps, other, true /* anti */, true /* eqonly */, false /* firstonly */);
 
 			sql_rel *l = rel->l, *r = rel->r;
 			sql_rel *rel_hsh = NULL, *rel_prb = NULL, *iprj = NULL, *pprj = NULL;
@@ -1027,15 +1071,17 @@ rel_pipeline(visitor *v, sql_rel *rel, bool materialize, int pb)
 			}
 
 			if (!rel_hsh) {
-				/* For both left-outer join and all single outer joins, we hash the RHS */
-				if (rel->single || rel->op == op_left)
+				// TODO make the choice below stastics based
+				if (rel->single ||
+					rel->op == op_left ||
+					rel->op == op_right ||
+					rel->lunique || /* scan left if right is primary key */
+					right_is_unique(r, rel->exps) ||
+				    rel_getcount(v->sql, r) < rel_getcount(v->sql, l) ||
+					manti)
 					rel->oahash = 2;
-				else if (rel->op == op_right)
-					rel->oahash = 2;
-				else if (rel_getcount(v->sql, l) < rel_getcount(v->sql, r))
-					rel->oahash = 1;
 				else
-					rel->oahash = 2;
+					rel->oahash = 1;
 
 				if (rel->oahash == 2) {
 					rel_hsh = rel->r;
@@ -1066,6 +1112,7 @@ rel_pipeline(visitor *v, sql_rel *rel, bool materialize, int pb)
 			/* get full projection list from parent */
 			assert(p);
 			list *exps_cmp_hsh = NULL, *exps_cmp_prb = NULL;
+			list *exps_hsh = sa_list(v->sql->sa), *exps_prb = sa_list(v->sql->sa);
 			if (!list_empty(eq_exps)) {
 				exps_cmp_hsh = sa_list(v->sql->sa);
 				exps_cmp_prb = sa_list(v->sql->sa);
@@ -1077,9 +1124,21 @@ rel_pipeline(visitor *v, sql_rel *rel, bool materialize, int pb)
 					rel_hsh->attr = cross?NULL:exps_cmp_hsh;
 				}
 				rel_prb->attr = cross?NULL:exps_cmp_prb;
+				if (manti) {
+					assert(exps_cmp_hsh->cnt == exps_cmp_prb->cnt);
+					set_any((sql_exp*)exps_cmp_hsh->h->data);
+					/* only hash the first join column, put the subsequent column(s) in the payload */
+					// TODO (move no_nil join columns to the front?) hash the leading no_nil join columns
+					for (node *m = exps_cmp_hsh->h->next, *n = exps_cmp_prb->h->next; m && n; m = m->next, n = n->next) {
+						append(exps_hsh, m->data);
+						append(exps_prb, n->data);
+					}
+					// TODO do we also need to do this for exps_cmp_prb?
+					exps_cmp_hsh->h->next = NULL;
+					exps_cmp_hsh->cnt = 1;
+				}
 			}
 
-			list *exps_hsh = sa_list(v->sql->sa), *exps_prb = sa_list(v->sql->sa);
 			find_payload_exps(v->sql, &exps_hsh, &exps_prb, p, rel_hsh, rel_prb);
 
 			if (found_exps_prj_hsh) {

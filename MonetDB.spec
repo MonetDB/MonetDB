@@ -62,7 +62,7 @@
 # derivatives (CentOS, Scientific Linux), the geos library is not
 # available.  However, the geos library is available in the Extra
 # Packages for Enterprise Linux (EPEL).
-%if 0%{?fedpkgs} && (0%{?rhel} > 8)
+%if 0%{?fedpkgs} && (%{!?rhel:10}%{?rhel} > 8)
 # By default create the MonetDB-geom package on Fedora
 %bcond_without geos
 %endif
@@ -86,7 +86,7 @@ Group: Applications/Databases
 License: MPL-2.0
 URL: https://www.monetdb.org/
 BugURL: https://github.com/MonetDB/MonetDB/issues
-Source: https://www.monetdb.org/downloads/sources/Dec2025-SP4/MonetDB-%{version}.tar.bz2
+Source: https://www.monetdb.org/downloads/sources/Dec2025-SP5/MonetDB-%{version}.tar.bz2
 
 BuildRequires: systemd-rpm-macros
 BuildRequires: cmake >= 3.12
@@ -356,8 +356,10 @@ This package contains the files needed to develop with the
 Summary: MonetDB ODBC driver
 Group: Applications/Databases
 Requires: %{name}-client-lib%{?_isa} = %{version}-%{release}
+%if (0%{?fedora} < 45)
 Requires(post): %{_bindir}/odbcinst
 Requires(postun): %{_bindir}/odbcinst
+%endif
 
 %description client-odbc
 MonetDB is a database management system that is developed from a
@@ -367,6 +369,7 @@ accelerators.  It also has an SQL front end.
 
 This package contains the MonetDB ODBC driver.
 
+%if (0%{?fedora} < 45)
 %post client-odbc
 # install driver if first install of package or if driver not installed yet
 if [ "$1" -eq 1 ] || ! odbcinst -d -q -n MonetDB >& /dev/null; then
@@ -384,12 +387,21 @@ fi
 if [ "$1" -eq 0 ]; then
     odbcinst -u -d -n MonetDB
 fi
+%endif
 
 %files client-odbc
 %license LICENSE
 %defattr(-,root,root)
+%if (0%{?fedora} >= 45)
+%dir %{_prefix}/lib/odbc
+%dir %{_prefix}/lib/odbc/odbcinst.d
+%{_prefix}/lib/odbc/odbcinst.d/30-monetdb.ini
+%{_libdir}/odbc/libMonetODBC.so
+%{_libdir}/odbc/libMonetODBCs.so
+%else
 %{_libdir}/libMonetODBC.so
 %{_libdir}/libMonetODBCs.so
+%endif
 %endif
 
 %if %{without compat}
@@ -448,6 +460,7 @@ Requires: %{name}-server%{?_isa} = %{version}-%{release}
 Obsoletes: MonetDB-geom-MonetDB5 < 11.50.0
 Provides: %{name}-geom-MonetDB5 = %{version}-%{release}
 Provides: %{name}-geom-MonetDB5%{?_isa} = %{version}-%{release}
+# BuildRequires: pkgconfig(geos) >= 3.10.0
 BuildRequires: geos-devel >= 3.10.0
 
 %description geom
@@ -1019,9 +1032,56 @@ rm "${RPM_BUILD_ROOT}"%{_sysconfdir}/logrotate.d/monetdbd
 rm "${RPM_BUILD_ROOT}"%{_sysusersdir}/monetdb.conf
 rm "${RPM_BUILD_ROOT}"%{_tmpfilesdir}/monetdbd.conf
 rm "${RPM_BUILD_ROOT}"%{_unitdir}/monetdbd.service
+%else
+%if (0%{?fedora} >= 45)
+mkdir -p "${RPM_BUILD_ROOT}"%{_prefix}/lib/odbc/odbcinst.d
+mkdir -p "${RPM_BUILD_ROOT}"%{_libdir}/odbc
+cat > "${RPM_BUILD_ROOT}"%{_prefix}/lib/odbc/odbcinst.d/30-monetdb.ini <<\EOF
+[MonetDB]
+Description = ODBC for MonetDB
+Driver = libMonetODBC.so
+Setup = libMonetODBCs.so
+EOF
+mv "${RPM_BUILD_ROOT}"%{_libdir}/libMonetODBC*.so "${RPM_BUILD_ROOT}"%{_libdir}/odbc
+%endif
 %endif
 
 %changelog
+* Mon Nov 16 2026 Sjoerd Mullender <sjoerd@acm.org> - 11.55.11-20261116
+- Rebuilt.
+- GH#7976: Adding an unrelated composite constraint makes
+  `sys.dump_database` reverse an existing composite key, producing a dump
+  that cannot be restored
+- GH#7985: `QUALIFY` with inline `ROW_NUMBER` leaks an `ORDER BY` column
+  and filters the wrong rows
+- GH#8031: Query giving wrong result when casting is expected to fail
+- GH#8034: ORDER BY query with LIKE and string concatenation fails to
+  produce a result set
+- GH#8035: ALTER TABLE ALTER COLUMN DATE to TIMESTAMP changes an existing
+  value
+- GH#8036: Rows inserted after in-transaction `ALTER COLUMN` disappear
+  after commit
+- GH#8037: ALTER from VARCHAR to DECIMAL changes the scale or rejects
+  values accepted by CAST
+- GH#8044: GDKtracer_init_trace_file failed with in-memory mserver5 and
+  large insert
+
+* Fri Nov  6 2026 Sjoerd Mullender <sjoerd@acm.org> - 11.55.11-20261116
+- MonetDB: There was a regression in the handling of the --dbextra=in-memory option.
+  Instead of keeping the "extra" farm (i.e. all transient BATs) fully
+  in memory, they were stored in a subdirectory called in-memory.
+- MonetDB: There was a bug in handling backslash escapes in strings if the
+  backslash was immediately followed by a non-ASCII UTF-8 character.
+- MonetDB: On Fedora 45, there was a change in how the ODBC drivers are configured.
+  The MonetDB ODBC driver now follows the new way of doing things.
+- MonetDB: In Dec2025-SP4, the MonetDB-geom module was accidentally not built for
+  Fedora and RHEL 9 and 10.  This has been corrected.  The module cannot
+  be built for RHEL 8 since the required geos library is too old.
+
+* Fri Oct 23 2026 Sjoerd Mullender <sjoerd@acm.org> - 11.55.11-20261116
+- MonetDB: Added an option --relative-dir to mclient to specify the directory
+  for relative path names when using the ON CLIENT option in SQL queries.
+
 * Tue Sep 29 2026 Sjoerd Mullender <sjoerd@acm.org> - 11.55.9-20260929
 - Rebuilt.
 - GH#7922: Wrong result path split between `SUM() OVER (... RANGE ...)`

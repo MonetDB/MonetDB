@@ -6,3 +6,4 @@ smart-segment-merge
 many-concurrent-client-connections
 truncate-insert-flood
 KNOWNFAIL?7881-concurrent-ddl
+duplicate-key-segment-merge

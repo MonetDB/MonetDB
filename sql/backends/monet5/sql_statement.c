@@ -9,6 +9,7 @@
  */
 
 #include "monetdb_config.h"
+#include "mal_type.h"
 #include "sql_mem.h"
 #include "sql_stack.h"
 #include "sql_statement.h"
@@ -21,8 +22,6 @@
 
 #include "mal_namespace.h"
 #include "mal_builder.h"
-
-static stmt * stmt_aggr_(backend *be, stmt *op1, stmt *grp, stmt *ext, sql_subfunc *op, int reduce, int no_nil, int nil_if_empty);
 
 /*
  * Some utility routines to generate code
@@ -2318,6 +2317,38 @@ stmt_markselect(backend *be, stmt *g, stmt *m, stmt *p, bool any)
 }
 
 stmt *
+stmt_selectNotFalse(backend *be, stmt *g, stmt *m, stmt *p, bool aggr)
+{
+	MalBlkPtr mb = be->mb;
+	InstrPtr q;
+
+	q = newStmtArgs(mb, algebraRef, putName("selectNotFalse"), 6);
+	q = pushReturn(mb, q, newTmpVariable(mb, newBatType(TYPE_bit)));
+	q = pushArgument(mb, q, g->nr); /* group ids */
+	q = pushArgument(mb, q, m->nr); /* mark flag */
+	q = pushArgument(mb, q, p->nr); /* predicate */
+	q = pushBit(mb, q, (aggr)?TRUE:FALSE);
+	pushInstruction(mb, q);
+
+	if (!q)
+		return NULL;
+	stmt *s = stmt_create(be->mvc->sa, st_uselect2);
+	if (s == NULL) {
+		freeInstruction(be->mb, q);
+		return NULL;
+	}
+
+	s->op1 = g;
+	s->op2 = m;
+	s->flag = MARKJOIN;
+	s->key = 0;
+	s->nrcols = g->nrcols;
+	s->nr = getDestVar(q);
+	s->q = q;
+	return s;
+}
+
+stmt *
 stmt_markjoin(backend *be, stmt *l, stmt *r, bool nil_matches, bool final)
 {
 	MalBlkPtr mb = be->mb;
@@ -2478,6 +2509,50 @@ stmt_tdiff2(backend *be, stmt *op1, stmt *op2, stmt *lcand, bool is_semantics, b
 	q = pushNilBat(mb, q); /* right candidate */
 	q = pushBit(mb, q, is_semantics);     /* nil matches */
 	q = pushBit(mb, q, any);     /* not in */
+	q = pushNil(mb, q, TYPE_lng); /* estimate */
+
+	bool enabled = ma_get_eb(be->mvc->sa)->enabled;
+	ma_get_eb(be->mvc->sa)->enabled = false;
+	stmt *s = stmt_create(be->mvc->sa, st_tdiff);
+	ma_get_eb(be->mvc->sa)->enabled = enabled;
+	if (s == NULL) {
+		freeInstruction(be->mb, q);
+		goto bailout;
+	}
+
+	s->op1 = op1;
+	s->op2 = op2;
+	s->nrcols = op1->nrcols;
+	s->key = op1->key;
+	s->aggr = op1->aggr;
+	s->nr = getDestVar(q);
+	s->q = q;
+	pushInstruction(mb, q);
+	return s;
+
+  bailout:
+	if (ma_get_eb(be->mvc->sa)->enabled)
+		eb_error(ma_get_eb(be->mvc->sa), be->mvc->errstr[0] ? be->mvc->errstr : mb->errors ? mb->errors : *GDKerrbuf ? GDKerrbuf : "out of memory", 1000);
+	return NULL;
+}
+
+stmt *
+stmt_tdiff4(backend *be, stmt *op1, stmt *op2, stmt *lcand, stmt *rcand)
+{
+	InstrPtr q = NULL;
+	MalBlkPtr mb = be->mb;
+
+	if (op1 == NULL || op2 == NULL || op1->nr < 0 || op2->nr < 0 || lcand == NULL || rcand == NULL)
+		goto bailout;
+	q = newStmt(mb, algebraRef, differenceRef);
+	if (q == NULL)
+		goto bailout;
+	q = pushArgument(mb, q, op1->nr); /* left */
+	q = pushArgument(mb, q, op2->nr); /* right */
+	q = pushArgument(mb, q, lcand->nr); /* left candicate */
+	q = pushArgument(mb, q, rcand->nr); /* right candicate */
+	q = pushBit(mb, q, FALSE);    /* nil matches */
+	q = pushBit(mb, q, FALSE);    /* do not clear nils */
 	q = pushNil(mb, q, TYPE_lng); /* estimate */
 
 	bool enabled = ma_get_eb(be->mvc->sa)->enabled;
@@ -4962,7 +5037,7 @@ stmt_Nop(backend *be, stmt *ops, stmt *sel, sql_subfunc *f, stmt* rows)
 		push_cands = f->func->type == F_FUNC && can_push_cands(sel, mod, fimp);
 		default_nargs = (f->res && list_length(f->res) ? list_length(f->res) : 1) + list_length(args) + (o && o->nrcols > 0 ? 6 : 4);
 		if (rows) {
-			card = stmt_aggr_(be, rows, NULL, NULL, sql_bind_func(be->mvc, "sys", "count", sql_fetch_localtype(TYPE_void), NULL, F_AGGR, true, true), 1, 0, 1);
+			card = stmt_aggr_nopp(be, rows, NULL, NULL, sql_bind_func(be->mvc, "sys", "count", sql_fetch_localtype(TYPE_void), NULL, F_AGGR, true, true), 1, 0, 1);
 			default_nargs++;
 		}
 
@@ -5179,8 +5254,8 @@ stmt_func(backend *be, stmt *ops, const char *name, sql_rel *rel, int f_union)
 	return NULL;
 }
 
-static stmt *
-stmt_aggr_(backend *be, stmt *op1, stmt *grp, stmt *ext, sql_subfunc *op, int reduce, int no_nil, int nil_if_empty)
+stmt *
+stmt_aggr_nopp(backend *be, stmt *op1, stmt *grp, stmt *ext, sql_subfunc *op, int reduce, int no_nil, int nil_if_empty)
 {
 	MalBlkPtr mb = be->mb;
 	InstrPtr q = NULL;
@@ -5323,13 +5398,12 @@ stmt_aggr(backend *be, stmt *op1, stmt *grp, stmt *ext, sql_subfunc *op, int red
 	if (be->pipeline)
 		return stmt_pp_aggr(be, op1, grp, ext, op, reduce, no_nil, nil_if_empty);
 	else
-		return stmt_aggr_(be, op1, grp, ext, op, reduce, no_nil, nil_if_empty);
+		return stmt_aggr_nopp(be, op1, grp, ext, op, reduce, no_nil, nil_if_empty);
 }
 
 static stmt *
 stmt_alias_(backend *be, stmt *op1, int label, sql_alias *tname, const char *alias)
 {
-	assert(label);
 	stmt *s = stmt_create(be->mvc->sa, st_alias);
 	if(!s) {
 		return NULL;

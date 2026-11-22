@@ -20,8 +20,8 @@ sql_export char *sa_msettings_to_string(const msettings *mp, allocator *sa, size
 sql_export int mapiuri_valid( const char *uri, allocator *sa);
 sql_export const char *mapiuri_uri(const char *uri, allocator *sa);
 extern const char *mapiuri_schema(const char *uri, allocator *sa, const char *fallback)
-	__attribute__((__visibility__("hidden")));
+	ATTR_VISIBILITY_HIDDEN;
 extern const char *mapiuri_table(const char *uri, allocator *sa, const char *fallback)
-	__attribute__((__visibility__("hidden")));
+	ATTR_VISIBILITY_HIDDEN;
 
 #endif /*_REL_REMOTE_H_*/

@@ -260,6 +260,7 @@ extern int mvc_is_sorted_idx(mvc *c, sql_idx *idx);
 extern int mvc_is_unique(mvc *m, sql_column *col);
 extern int mvc_is_duplicate_eliminated(mvc *c, sql_column *col);
 extern int mvc_col_stats(mvc *m, sql_column *col, bool *nonil, bool *unique, double *unique_est, ValPtr min, ValPtr max);
+extern int mvc_idx_stats(mvc *m, sql_idx *i, bool *nonil, bool *unique, double *unique_est);
 
 extern int mvc_create_ukey(sql_key **kres, mvc *m, sql_table *t, const char *name, key_type kt, const char* check);
 extern int mvc_create_fkey(sql_fkey **kres, mvc *m, sql_table *t, const char *name, key_type kt, sql_key *rkey, int on_delete, int on_update);
@@ -341,10 +342,10 @@ extern int mvc_copy_trigger(mvc *m, sql_table *t, sql_trigger *tr, sql_trigger *
 
 extern sql_rel *sql_processrelation(mvc *sql, sql_rel *rel, int profile, int instantiate, int value_based_opt, int storage_based_opt);
 
-extern void *sql_error(mvc *sql, int error_code, _In_z_ _Printf_format_string_ const char *format, ...)
-	__attribute__((__format__(__printf__, 3, 4)));
-extern int sqlformaterror(mvc * sql, _In_z_ _Printf_format_string_ const char *format, ...)
-	__attribute__((__format__(__printf__, 2, 3)));
+extern void *sql_error(mvc *sql, int error_code, _Printf_format_string_ const char *format, ...)
+	ATTR_FORMAT(__printf__, 3, 4);
+extern int sqlformaterror(mvc * sql, _Printf_format_string_ const char *format, ...)
+	ATTR_FORMAT(__printf__, 2, 3);
 
 extern int symbol_cmp(mvc* sql, symbol *s1, symbol *s2);
 

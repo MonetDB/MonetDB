@@ -52,7 +52,7 @@ ODBCExecDirect(ODBCStmt *stmt, const SQLCHAR *StatementText, SQLINTEGER TextLeng
 	if (stmt->qtimeout != stmt->Dbc->qtimeout) {
 		char buf[48];
 		snprintf(buf, sizeof(buf), "call sys.%s(%" PRIu64 ")",
-			 (stmt->Dbc->major == 11 && stmt->Dbc->minor >= 37)
+			 ((stmt->Dbc->major >= 56) || (stmt->Dbc->major == 11 && stmt->Dbc->minor >= 37))
 			 ? "setquerytimeout" : "settimeout",
 			 (uint64_t) stmt->qtimeout);
 		if (mapi_query_handle(hdl, buf) == MOK)

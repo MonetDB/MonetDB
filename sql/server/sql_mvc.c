@@ -342,7 +342,7 @@ mvc_init(int debug, store_type store_tpe, int ro, int su, const char *initpasswd
 				mvc_destroy(m);
 				mvc_exit(store);
 				TRC_CRITICAL(SQL_TRANS,
-					     "Initialization: creation of sys.tables column %s failed\n", cview[i].name);
+					     "Initialization: creation of sys.columns column %s failed\n", cview[i].name);
 				return NULL;
 			}
 			cview[i].newid = col->base.id;
@@ -1512,9 +1512,11 @@ mvc_ustr(mvc *m, sql_schema *s, sql_column *col, dlist *l)
 	TRC_DEBUG(SQL_TRANS, "Ustr: %s %s.%s\n", col->base.name, s->base.name, uname);
 	if (!EC_VARCHAR(col->type.type->eclass))
 		return -5;
-	sql_ustr *u = find_sql_ustr(m->session->tr, s, uname);
+	sql_ustr *u = find_ustr_on_scope(m, sname, uname, "CREATE TABLE");
 	if (u == NULL)
 		return -6;
+	if (u->s)
+		s = u->s;
 	char buf[32];	   /* max 2 times 10 digits, 2 spaces, "USTR", \0 */
 	int len = snprintf(buf, sizeof(buf), "USTR %d %d", s->base.id, u->base.id);
 	assert(len < (int) sizeof(buf) && len > 5);
@@ -1586,6 +1588,13 @@ mvc_col_stats(mvc *m, sql_column *col, bool *nonil, bool *unique, double *unique
 {
 	TRC_DEBUG(SQL_TRANS, "Retrieving column stats for: %s\n", col->base.name);
 	return sql_trans_col_stats(m->session->tr, col, nonil, unique, unique_est, min, max);
+}
+
+int
+mvc_idx_stats(mvc *m, sql_idx *idx, bool *nonil, bool *unique, double *unique_est)
+{
+	TRC_DEBUG(SQL_TRANS, "Retrieving column stats for: %s\n", idx->base.name);
+	return sql_trans_idx_stats(m->session->tr, idx, nonil, unique, unique_est);
 }
 
 int

@@ -1275,6 +1275,7 @@ extern void BATswap_heaps(BAT *u, BAT *b, Pipeline *p);
 								\
 		for(; i<cnt; i++)		\
 			ri[pi[i]] = bi[si[i]];	\
+		handled = true;			\
 	}
 
 #define aproject(T,w,Toff) \
@@ -1284,6 +1285,7 @@ extern void BATswap_heaps(BAT *u, BAT *b, Pipeline *p);
 								\
 		for(; i<cnt; i++)		\
 			ri[pi[i]] = bi[si[i]];	\
+		handled = true;			\
 	}
 
 #define aproject_(T) \
@@ -1300,6 +1302,7 @@ extern void BATswap_heaps(BAT *u, BAT *b, Pipeline *p);
 					err = 1; \
 		} \
 		bat_iterator_end(&bi); \
+		handled = true;			\
 	}
 
 static str
@@ -1402,6 +1405,7 @@ HEAPproject(Client ctx, bat *rid, bat *pos, bat *sel, bat *in)
 		oid *si = Tloc(S, 0);
 		size_t i = 0;
 		BUN cnt = BATcount(P);
+		bool handled = false;
 
 		project(bte)
 		project(sht)
@@ -1415,7 +1419,7 @@ HEAPproject(Client ctx, bat *rid, bat *pos, bat *sel, bat *in)
 		project(flt)
 		project(dbl)
 		project(uuid)
-		if (local_storage) {
+		if (local_storage && !handled) {
 	//		aproject_(str)
 	if (ATOMstorage(tt) == TYPE_str) { \
 		BATiter bi = bat_iterator(b); \
@@ -1433,13 +1437,15 @@ HEAPproject(Client ctx, bat *rid, bat *pos, bat *sel, bat *in)
 				err = 1; \
 		} \
 		bat_iterator_end(&bi); \
+		handled = true;			\
 	}
-		} else {
+		} else if(!handled) {
 			aproject(str,1,uint8_t)
 			aproject(str,2,uint16_t)
 			aproject(str,4,uint32_t)
 			aproject(str,8,var_t)
 		}
+		assert(handled);
 		if (!err) {
 			if (!private)
 				pipeline_lock2(r);

@@ -124,7 +124,7 @@ handleClient(void *data)
 	} else {
 		char ghost[512];
 		if (getnameinfo((struct sockaddr *) &saddr, saddrlen, ghost, sizeof(ghost), port, sizeof(port),
-			NI_NUMERICSERV | NI_NUMERICHOST) == 0) {
+				NI_NUMERICSERV | NI_NUMERICHOST) == 0) {
 			snprintf(host, sizeof(host), "%s:%s", ghost, port);
 		} else {
 			snprintf(host, sizeof(host), "(unknown):%s", port);
@@ -133,15 +133,15 @@ handleClient(void *data)
 
 	/* note: since Jan2012 we speak proto 9 for control connections */
 	mnstr_printf(fout, "%s:merovingian:9:%s:%s:%s:",
-			chal,
-			mcrypt_getHashAlgorithms(),
+		     chal,
+		     mcrypt_getHashAlgorithms(),
 #ifdef WORDS_BIGENDIAN
-			"BIG",
+		     "BIG",
 #else
-			"LIT",
+		     "LIT",
 #endif
-			MONETDB5_PASSWDHASH
-			);
+		     MONETDB5_PASSWDHASH
+		);
 	if (mnstr_flush(fout, MNSTR_FLUSH_DATA) != 0) {
 		/* We succesfully accepted a connection but writing to it failed
 		 * immediately. This is likely to be a TCP-based health check that
@@ -157,9 +157,9 @@ handleClient(void *data)
 	if (mnstr_read_block(fdin, buf, sizeof(buf) - 1, 1) < 0) {
 		/* we didn't get a terminated block :/ */
 		e = newErr("client %s sent challenge in incomplete block: %s",
-				host, buf);
+			   host, buf);
 		mnstr_printf(fout, "!monetdbd: client sent something this "
-				"server could not understand, sorry\n");
+			     "server could not understand, sorry\n");
 		mnstr_flush(fout, MNSTR_FLUSH_DATA);
 		close_stream(fout);
 		close_stream(fdin);
@@ -292,8 +292,8 @@ handleClient(void *data)
 		 * available */
 		size_t len = strlen(database);
 		if (len > 2 &&
-				database[len - 2] != '/' &&
-				database[len - 1] != '*')
+		    database[len - 2] != '/' &&
+		    database[len - 1] != '*')
 		{
 			snprintf(dbmod, sizeof(dbmod), "%s/*", database);
 			database = dbmod;
@@ -318,7 +318,7 @@ handleClient(void *data)
 	/* a multiplex-funnel is a database which has no connections, but a
 	 * scenario "mfunnel" */
 	if ((top->conns == NULL || top->conns->val == NULL) &&
-			top->scens != NULL && strcmp(top->scens->val, "mfunnel") == 0)
+	    top->scens != NULL && strcmp(top->scens->val, "mfunnel") == 0)
 	{
 		multiplexAddClient(top->dbname, sock, fout, fdin, host);
 		msab_freeStatus(&top);
@@ -330,10 +330,10 @@ handleClient(void *data)
 	for (stat = top; stat != NULL; stat = stat->next) {
 		if (stat->conns == NULL || stat->conns->val == NULL) {
 			Mlevelfprintf(ERROR, stdout, "dropping database without available "
-					"connections: '%s'\n", stat->dbname);
+				      "connections: '%s'\n", stat->dbname);
 		} else if (r == 24) {
 			Mlevelfprintf(ERROR, stdout, "dropping database connection because of "
-					"too many already: %s\n", stat->conns->val);
+				      "too many already: %s\n", stat->conns->val);
 		} else {
 			redirs[r++] = *stat;
 		}
@@ -383,13 +383,13 @@ handleClient(void *data)
 
 	if (mydoproxy == 0) {
 		fprintf(stdout, "redirecting client %s for database '%s' to",
-				host, database);
+			host, database);
 		/* client is in control, send all redirects */
 		while (--r >= 0) {
 			fprintf(stdout, " %s%s",
-					redirs[r].conns->val, redirs[r].dbname);
+				redirs[r].conns->val, redirs[r].dbname);
 			mnstr_printf(fout, "^%s%s\n",
-					redirs[r].conns->val, redirs[r].dbname);
+				     redirs[r].conns->val, redirs[r].dbname);
 		}
 		/* flush redirect */
 		fprintf(stdout, "\n");
@@ -399,23 +399,23 @@ handleClient(void *data)
 		close_stream(fdin);
 	} else {
 		Mlevelfprintf(DEBUG, stdout, "proxying client %s for database '%s' to "
-				"%s?database=%s\n",
-				host, database, redirs[0].conns->val, redirs[0].dbname);
+			      "%s?database=%s\n",
+			      host, database, redirs[0].conns->val, redirs[0].dbname);
 
 		/* merovingian is in control, only consider the first redirect */
 		mnstr_printf(fout, "^mapi:merovingian://proxy?database=%s\n",
-				redirs[0].dbname);
+			     redirs[0].dbname);
 		/* flush redirect */
 		mnstr_flush(fout, MNSTR_FLUSH_DATA);
 
 		/* wait for input, or disconnect in a proxy runner */
 		if ((e = startProxy(sock, fdin, fout,
-						redirs[0].conns->val, host)) != NO_ERR)
+				    redirs[0].conns->val, host)) != NO_ERR)
 		{
 			/* we need to let the client login in order not to violate
 			 * the protocol */
 			mnstr_printf(fout, "void:merovingian:9:%s:BIG:%s:",
-					mcrypt_getHashAlgorithms(), MONETDB5_PASSWDHASH);
+				     mcrypt_getHashAlgorithms(), MONETDB5_PASSWDHASH);
 			mnstr_flush(fout, MNSTR_FLUSH_DATA);
 			mnstr_read_block(fdin, buf, 8095, 1); /* eat away client response */
 			mnstr_printf(fout, "!monetdbd: an internal error has occurred '%s', refer to the logs for details, please try again later\n",e);
@@ -457,7 +457,7 @@ acceptConnections(int socks[3])
 		for (i = 0; i < 3; i++) {
 			if (socks[i] >= 0)
 				pfd[npoll++] = (struct pollfd) {.fd = socks[i],
-												.events = POLLIN};
+					.events = POLLIN};
 		}
 
 		/* Wait up to 5 seconds */
@@ -484,13 +484,13 @@ acceptConnections(int socks[3])
 		 * have finished by now */
 		for (threadp = &threads; *threadp; threadp = &(*threadp)->next) {
 			if ((*threadp)->dead &&
-				pthread_join((*threadp)->tid, &e) == 0) {
+			    pthread_join((*threadp)->tid, &e) == 0) {
 				p = *threadp;
 				*threadp = p->next;
 				free(p);
 				if (e != NO_ERR) {
 					Mlevelfprintf(ERROR, stderr, "client error: %s\n",
-							 getErrMsg((char *) e));
+						      getErrMsg((char *) e));
 					freeErr(e);
 				}
 				if (*threadp == NULL)
@@ -664,7 +664,7 @@ acceptConnections(int socks[3])
 	}
 	return(NO_ERR);
 
-error:
+  error:
 	_mero_keep_listening = 0;
 	if (socks[0] >= 0) {
 		shutdown(socks[0], SHUT_RDWR);
@@ -683,11 +683,11 @@ configureKeepAlive(int sock, const int keepalive)
 	// It seems that on MacOS, TCP_KEEPIDLE is called TCP_KEEPALIVE.
 	// (Not to be confused with SO_KEEPALIVE).
 	int flag;
-	#if !defined(TCP_KEEPIDLE) && defined(TCP_KEEPALIVE)
+#if !defined(TCP_KEEPIDLE) && defined(TCP_KEEPALIVE)
 	flag = TCP_KEEPALIVE;
-	#else
+#else
 	flag = TCP_KEEPIDLE;
-	#endif
+#endif
 	if (setsockopt(sock, IPPROTO_TCP, flag, &keepalive, sizeof(keepalive)) < 0) {
 		Mlevelfprintf(WARNING, _mero_ctlerr, "could not set TCP_KEEPIDLE on socket: %s\n", strerror(errno));
 		return;

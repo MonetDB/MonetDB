@@ -41,10 +41,10 @@ broadcast(char *msg)
 	if (_mero_broadcastsock < 0)
 		return;
 	if (sendto(_mero_broadcastsock, msg, len, 0,
-				(struct sockaddr *)&_mero_broadcastaddr,
-				sizeof(_mero_broadcastaddr)) != len)
+		   (struct sockaddr *)&_mero_broadcastaddr,
+		   sizeof(_mero_broadcastaddr)) != len)
 		Mlevelfprintf(ERROR, _mero_discerr, "error while sending broadcast "
-				"message: %s\n", strerror(errno));
+			      "message: %s\n", strerror(errno));
 }
 
 static bool
@@ -62,7 +62,7 @@ removeRemoteDB(const char *dbname, const char *conn)
 		/* look for the database, and verify that its "conn"
 		 * (merovingian) is the same */
 		if (strcmp(dbname, rdb->dbname) == 0 &&
-				strcmp(conn, rdb->conn) == 0)
+		    strcmp(conn, rdb->conn) == 0)
 		{
 			/* found, let's remove */
 			if (prv == NULL) {
@@ -75,8 +75,8 @@ removeRemoteDB(const char *dbname, const char *conn)
 			multiplexNotifyRemovedDB(rdb->fullname);
 
 			Mlevelfprintf(INFORMATION, _mero_discout,
-					"removed neighbour database %s%s\n",
-					conn, rdb->fullname);
+				      "removed neighbour database %s%s\n",
+				      conn, rdb->fullname);
 			free(rdb->dbname);
 			free(rdb->conn);
 			free(rdb->fullname);
@@ -113,7 +113,7 @@ addRemoteDB(const char *dbname, const char *conn, const int ttl) {
 		rdb = _mero_remotedbs;
 		while (rdb != NULL) {
 			if (strcmp(dbname, rdb->fullname) == 0 &&
-					strcmp(conn, rdb->conn) == 0)
+			    strcmp(conn, rdb->conn) == 0)
 			{
 				/* refresh ttl */
 				rdb->ttl = time(NULL) + ttl;
@@ -164,8 +164,8 @@ getRemoteDB(const char *database)
 	 * will return X/level1/level2/... */
 	memcpy(mdatabase, database, dbsize + 1);
 	if (dbsize <= 2 ||
-			mdatabase[dbsize - 2] != '/' ||
-			mdatabase[dbsize - 1] != '*')
+	    mdatabase[dbsize - 2] != '/' ||
+	    mdatabase[dbsize - 1] != '*')
 	{
 		mdatabase[dbsize++] = '/';
 		mdatabase[dbsize++] = '*';
@@ -347,7 +347,7 @@ discoveryRunner(void *d)
 			/* list all known databases */
 			if ((e = msab_getStatus(&stats, NULL)) != NULL) {
 				Mlevelfprintf(ERROR, _mero_discerr, "msab_getStatus error: %s, "
-						"discovery services disabled\n", e);
+					      "discovery services disabled\n", e);
 				free(e);
 				free(ckv);
 				if (socks[0] >= 0)
@@ -367,9 +367,9 @@ discoveryRunner(void *d)
 					if (strcmp(val, "yes") == 0)
 						val = "";
 					snprintf(buf, sizeof(buf), "ANNC %s%s%s mapi:monetdb://%s:%u/ %d",
-							stats->dbname, val[0] == '\0' ? "" : "/", val,
-							_mero_hostname, (unsigned int)getConfNum(_mero_props, "port"),
-							discttl->ival + 60);
+						 stats->dbname, val[0] == '\0' ? "" : "/", val,
+						 _mero_hostname, (unsigned int)getConfNum(_mero_props, "port"),
+						 discttl->ival + 60);
 					broadcast(buf);
 				}
 				freeConfFile(ckv);
@@ -381,8 +381,8 @@ discoveryRunner(void *d)
 			if (getConfNum(_mero_props, "control") != 0) {
 				/* announce control port */
 				snprintf(buf, sizeof(buf), "ANNC * %s:%u %d",
-						_mero_hostname, (unsigned int)getConfNum(_mero_props, "port"),
-						discttl->ival + 60);
+					 _mero_hostname, (unsigned int)getConfNum(_mero_props, "port"),
+					 discttl->ival + 60);
 				/* coverity[string_null] */
 				broadcast(buf);
 			}
@@ -403,7 +403,7 @@ discoveryRunner(void *d)
 					prv->next = rdb->next;
 				}
 				Mlevelfprintf(WARNING, _mero_discout, "neighbour database %s%s "
-						"has expired\n", rdb->conn, rdb->fullname);
+					      "has expired\n", rdb->conn, rdb->fullname);
 				free(rdb->dbname);
 				free(rdb->conn);
 				free(rdb->fullname);
@@ -424,10 +424,10 @@ discoveryRunner(void *d)
 			int npoll = 0;
 			if (socks[0] >= 0)
 				pfd[npoll++] = (struct pollfd) {.fd = socks[0],
-												.events = POLLIN};
+					.events = POLLIN};
 			if (socks[1] >= 0)
 				pfd[npoll++] = (struct pollfd) {.fd = socks[1],
-												.events = POLLIN};
+					.events = POLLIN};
 			nread = poll(pfd, npoll, 1000);
 			if (nread > 0) {
 				for (int i = 0; i < npoll; i++) {
@@ -446,7 +446,7 @@ discoveryRunner(void *d)
 				FD_SET(socks[1], &fds);
 			tv = (struct timeval) {.tv_sec = 1};
 			nread = select((socks[0] > socks[1] ? socks[0] : socks[1]) + 1,
-						   &fds, NULL, NULL, &tv);
+				       &fds, NULL, NULL, &tv);
 			if (nread > 0) {
 				sock = socks[0] >= 0 && FD_ISSET(socks[0], &fds) ? socks[0] : socks[1];
 				break;
@@ -463,7 +463,7 @@ discoveryRunner(void *d)
 			continue;
 		}
 		nread = recvfrom(sock, buf, 512, 0,
-				(struct sockaddr *)&peer_addr, &peer_addr_len);
+				 (struct sockaddr *)&peer_addr, &peer_addr_len);
 		if (nread == -1) {
 			buf[0] = '\0';
 			continue; /* ignore failed request */
@@ -474,7 +474,7 @@ discoveryRunner(void *d)
 				service, 8, NI_NUMERICSERV);
 		if (s != 0) {
 			Mlevelfprintf(ERROR, _mero_discerr, "cannot retrieve name info: %s\n",
-					gai_strerror(s));
+				      gai_strerror(s));
 			continue; /* skip this message */
 		}
 
@@ -520,8 +520,8 @@ discoveryRunner(void *d)
 
 			if (!removeRemoteDB(dbname, conn))
 				Mlevelfprintf(WARNING, _mero_discout,
-						"received leave request for unknown database "
-						"%s%s from %s\n", conn, dbname, host);
+					      "received leave request for unknown database "
+					      "%s%s from %s\n", conn, dbname, host);
 		} else if (strncmp(buf, "ANNC ", 5) == 0) {
 			/* ANNOUNCE message, register database */
 			char *sp = NULL;
@@ -540,16 +540,16 @@ discoveryRunner(void *d)
 			if (addRemoteDB(dbname, conn, atoi(ttl)) == 1) {
 				if (strcmp(dbname, "*") == 0) {
 					Mlevelfprintf(INFORMATION, _mero_discout, "registered neighbour %s\n",
-							conn);
+						      conn);
 				} else {
 					Mlevelfprintf(INFORMATION, _mero_discout, "new database "
-							"%s%s (ttl=%ss)\n",
-							conn, dbname, ttl);
+						      "%s%s (ttl=%ss)\n",
+						      conn, dbname, ttl);
 				}
 			}
 		} else {
 			Mlevelfprintf(WARNING, _mero_discout, "ignoring unknown message from "
-					"%s:%s: '%s'\n", host, service, buf);
+				      "%s:%s: '%s'\n", host, service, buf);
 		}
 	}
   breakout:
@@ -568,7 +568,7 @@ discoveryRunner(void *d)
 	/* list all known databases */
 	if ((e = msab_getStatus(&stats, NULL)) != NULL) {
 		Mlevelfprintf(ERROR, _mero_discerr, "msab_getStatus error: %s, "
-				"discovery services disabled\n", e);
+			      "discovery services disabled\n", e);
 		free(e);
 		free(ckv);
 		return NULL;
@@ -581,8 +581,8 @@ discoveryRunner(void *d)
 		kv = findConfKey(ckv, "shared");
 		if (kv->val != NULL && strcmp(kv->val, "no") != 0) {
 			snprintf(buf, sizeof(buf), "LEAV %s mapi:monetdb://%s:%u/",
-					stats->dbname, _mero_hostname,
-					(unsigned int)getConfNum(_mero_props, "port"));
+				 stats->dbname, _mero_hostname,
+				 (unsigned int)getConfNum(_mero_props, "port"));
 			broadcast(buf);
 		}
 		freeConfFile(ckv);
@@ -595,7 +595,7 @@ discoveryRunner(void *d)
 	/* deregister this merovingian, so it doesn't remain a stale entry */
 	if (getConfNum(_mero_props, "control") != 0) {
 		snprintf(buf, sizeof(buf), "LEAV * %s:%u",
-				_mero_hostname, (unsigned int)getConfNum(_mero_props, "port"));
+			 _mero_hostname, (unsigned int)getConfNum(_mero_props, "port"));
 		broadcast(buf);
 	}
 

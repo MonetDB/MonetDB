@@ -1232,7 +1232,7 @@ ODBCParsePV(const char *tab, const char *col, const char *arg, size_t len, const
 		res[i++] = *s;
 	}
 	/* raw strings prefix syntax is only supported by servers since Jun2020 (11.37) */
-	if (dbc->major == 11 && dbc->minor >= 37) {
+	if ((dbc->major >= 56) || (dbc->major == 11 && dbc->minor >= 37)){
 		s = "' escape r'\\'";
 	} else {
 		s = "' escape '\\\\'";

@@ -56,8 +56,8 @@ typedef struct _dpair {
 	struct _dpair* next;
 }* dpair;
 
-char *newErr(_In_z_ _Printf_format_string_ const char *fmt, ...)
-	__attribute__((__format__(__printf__, 1, 2)));
+char *newErr(_Printf_format_string_ const char *fmt, ...)
+	ATTR_FORMAT(__printf__, 1, 2);
 bool terminateProcess(char *dbname, pid_t pid, mtype type);
 void logFD(dpair dp, int fd, const char *type, const char *dbname, long long pid, FILE *stream, bool rest);
 
@@ -68,11 +68,11 @@ void setLogLevel(loglevel level);
 /* DEBUG (4) is greater than INFORMATION (3) is greater than WARNING (2) is greater than ERROR (1) */
 /* when not writing to stderr, one has to flush, make it easy to do so */
 #define Mlevelfprintf(msgtype, S, ...)			\
-	do {										\
+	do {						\
 		if (S && (msgtype <= getLogLevel())) {	\
-			fprintf(S, __VA_ARGS__);			\
-			fflush(S);							\
-		}										\
+			fprintf(S, __VA_ARGS__);	\
+			fflush(S);			\
+		}					\
 	} while (0)
 
 extern char _mero_mserver[];

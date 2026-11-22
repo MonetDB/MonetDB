@@ -31,16 +31,16 @@ char* db_validname(const char *dbname) {
 		return(strdup("database name should not be an empty string"));
 	for (c = 0; dbname[c] != '\0'; c++) {
 		if (
-				!(dbname[c] >= 'A' && dbname[c] <= 'Z') &&
-				!(dbname[c] >= 'a' && dbname[c] <= 'z') &&
-				!isdigit((unsigned char) dbname[c]) &&
-				!(dbname[c] == '-') &&
-				!(dbname[c] == '_')
-		   )
+			!(dbname[c] >= 'A' && dbname[c] <= 'Z') &&
+			!(dbname[c] >= 'a' && dbname[c] <= 'z') &&
+			!isdigit((unsigned char) dbname[c]) &&
+			!(dbname[c] == '-') &&
+			!(dbname[c] == '_')
+			)
 		{
 			snprintf(buf, sizeof(buf), "invalid character "
-					"'%c' at %zu in database name '%s'",
-					dbname[c], c, dbname);
+				 "'%c' at %zu in database name '%s'",
+				 dbname[c], c, dbname);
 			return(strdup(buf));
 		}
 	}
@@ -86,11 +86,11 @@ char* db_create(const char* dbname) {
 	if (c >= sizeof(path)) {
 		free(dbfarm);
 		return(strdup("path/dbname combination too long, "
-				"path would get truncated"));
+			      "path would get truncated"));
 	}
 	if (mkdir(path, 0755) == -1) {
 		snprintf(buf, sizeof(buf), "unable to create %s: %s",
-				dbname, strerror(errno));
+			 dbname, strerror(errno));
 		free(dbfarm);
 		return(strdup(buf));
 	}
@@ -98,14 +98,14 @@ char* db_create(const char* dbname) {
 	/* perform another length check, with the .maintenance file,
 	 * which happens to be the longest */
 	c = snprintf(path, sizeof(path), "%s/%s/.maintenance",
-			dbfarm, dbname);
+		     dbfarm, dbname);
 	if (c >= sizeof(path)) {
 		/* try to cleanup */
 		snprintf(path, sizeof(path), "%s/%s", dbfarm, dbname);
 		rmdir(path);
 		free(dbfarm);
 		return(strdup("path/dbname combination too long, "
-				"filenames inside would get truncated"));
+			      "filenames inside would get truncated"));
 	}
 
 	/* put this database under maintenance, make sure no race condition
@@ -118,7 +118,7 @@ char* db_create(const char* dbname) {
 	snprintf(path, sizeof(path), "%s/%s/.gdk_lock", dbfarm, dbname);
 	if ((f = fopen(path, "w")) == NULL) {
 		snprintf(buf, sizeof(buf), "cannot write lock file: %s",
-				strerror(errno));
+			 strerror(errno));
 		free(dbfarm);
 		return(strdup(buf));
 	}
@@ -136,7 +136,7 @@ char* db_create(const char* dbname) {
 	snprintf(path, sizeof(path), "%s/%s/.uplog", dbfarm, dbname);
 	if ((f = fopen(path, "w")) == NULL) {
 		snprintf(buf, sizeof(buf), "cannot create uplog file: %s",
-				strerror(errno));
+			 strerror(errno));
 		free(dbfarm);
 		return(strdup(buf));
 	}
@@ -169,7 +169,7 @@ char* db_destroy(const char* dbname) {
 
 	if (stats->state == SABdbRunning) {
 		snprintf(buf, sizeof(buf), "database '%s' is still running, "
-				"please stop database first", dbname);
+			 "please stop database first", dbname);
 		msab_freeStatus(&stats);
 		return(strdup(buf));
 	}
@@ -178,7 +178,7 @@ char* db_destroy(const char* dbname) {
 	 * directories recursively... */
 	if ((e = deletedir(stats->path)) != NULL) {
 		snprintf(buf, sizeof(buf), "failed to destroy '%s': %s",
-				dbname, e);
+			 dbname, e);
 		free(e);
 		msab_freeStatus(&stats);
 		return(strdup(buf));
@@ -209,7 +209,7 @@ char* db_rename(const char *olddb, const char *newdb) {
 	if (stats != NULL) {
 		msab_freeStatus(&stats);
 		snprintf(buf, sizeof(buf), "a database with the same name "
-				"already exists: %s", newdb);
+			 "already exists: %s", newdb);
 		return(strdup(buf));
 	}
 
@@ -226,7 +226,7 @@ char* db_rename(const char *olddb, const char *newdb) {
 
 	if (stats->state == SABdbRunning) {
 		snprintf(buf, sizeof(buf), "database '%s' is still running, "
-				"please stop database first", olddb);
+			 "please stop database first", olddb);
 		msab_freeStatus(&stats);
 		return(strdup(buf));
 	}
@@ -236,7 +236,7 @@ char* db_rename(const char *olddb, const char *newdb) {
 	p = strrchr(new, '/');
 	if (p == NULL) {
 		snprintf(buf, sizeof(buf), "non-absolute database path? '%s'",
-				stats->path);
+			 stats->path);
 		msab_freeStatus(&stats);
 		return(strdup(buf));
 	}
@@ -246,7 +246,7 @@ char* db_rename(const char *olddb, const char *newdb) {
 	 * logdir is below it, we don't need to bother about that either. */
 	if (rename(stats->path, new) != 0) {
 		snprintf(buf, sizeof(buf), "failed to rename database from "
-				"'%s' to '%s': %s\n", stats->path, new, strerror(errno));
+			 "'%s' to '%s': %s\n", stats->path, new, strerror(errno));
 		msab_freeStatus(&stats);
 		return(strdup(buf));
 	}
@@ -278,7 +278,7 @@ char* db_lock(const char *dbname) {
 	if (stats->locked) {
 		msab_freeStatus(&stats);
 		snprintf(buf, sizeof(buf), "database '%s' already is "
-				"under maintenance", dbname);
+			 "under maintenance", dbname);
 		return(strdup(buf));
 	}
 
@@ -287,7 +287,7 @@ char* db_lock(const char *dbname) {
 	msab_freeStatus(&stats);
 	if ((f = fopen(path, "w")) == NULL) {
 		snprintf(buf, sizeof(buf), "could not create '%s' for '%s': %s",
-				path, dbname, strerror(errno));
+			 path, dbname, strerror(errno));
 		return(strdup(buf));
 	}
 	fclose(f); /* no biggie if it fails, file is already there */
@@ -317,7 +317,7 @@ char *db_release(const char *dbname) {
 	if (!stats->locked) {
 		msab_freeStatus(&stats);
 		snprintf(buf, sizeof(buf), "database '%s' is not "
-				"under maintenance", dbname);
+			 "under maintenance", dbname);
 		return(strdup(buf));
 	}
 
@@ -326,7 +326,7 @@ char *db_release(const char *dbname) {
 	msab_freeStatus(&stats);
 	if (remove(path) != 0) {
 		snprintf(buf, sizeof(buf), "could not remove '%s' for '%s': %s",
-				path, dbname, strerror(errno));
+			 path, dbname, strerror(errno));
 		return(strdup(buf));
 	}
 

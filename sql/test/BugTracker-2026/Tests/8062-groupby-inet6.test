@@ -1,0 +1,15 @@
+statement ok
+CREATE TABLE t(g INT, ip INET6)
+
+statement ok rowcount 4
+INSERT INTO t VALUES
+  (1, CAST('2001:db8::2' AS INET6)),
+  (1, CAST('2001:db8::1' AS INET6)),
+  (2, CAST('2001:db8::4' AS INET6)),
+  (2, CAST('2001:db8::3' AS INET6))
+
+query IT
+SELECT g, MIN(ip) AS m FROM t GROUP BY g ORDER BY g
+----
+1	2001:db8::1
+2	2001:db8::3

@@ -1848,8 +1848,8 @@ BATconvert(BAT *b, BAT *s, int tp,
 		tp = TYPE_oid;
 
 	BATiter bi = bat_iterator(b);
-	cnt = BATcount(b);
-	canditer_init(&ci, b, s);
+	cnt = bi.count;
+	canditer_init_bi(&ci, &bi, s);
 	if (ci.ncand == 0 || (bi.type == TYPE_void && is_oid_nil(b->tseqbase))) {
 		bat_iterator_end(&bi);
 		return BATconstant(ci.hseq, tp,

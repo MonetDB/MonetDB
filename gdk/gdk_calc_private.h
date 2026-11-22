@@ -149,9 +149,9 @@
 #ifdef HAVE_HGE
 #define LNGMUL_CHECK(lft, rgt, dst, max, on_overflow)			\
 	MULI4_WITH_CHECK(lft, rgt, lng, dst, max, hge, on_overflow)
-#elif defined(HAVE___INT128)
+#elif defined(HAVE_INT128_T)
 #define LNGMUL_CHECK(lft, rgt, dst, max, on_overflow)			\
-	MULI4_WITH_CHECK(lft, rgt, lng, dst, max, __int128, on_overflow)
+	MULI4_WITH_CHECK(lft, rgt, lng, dst, max, int128_t, on_overflow)
 #elif defined(_MSC_VER) && defined(_M_AMD64) && !defined(__INTEL_COMPILER)
 #include <intrin.h>
 #pragma intrinsic(_mul128)
@@ -302,7 +302,7 @@ BUN dofsum(const void *restrict values, oid seqb,
 		    void *restrict results, BUN ngrp, int tp1, int tp2,
 		    const oid *restrict gids,
 		    oid min, oid max, bool skip_nils, bool nil_if_empty)
-	__attribute__((__visibility__("hidden")));
+	ATTR_VISIBILITY_HIDDEN;
 
 /* format strings for the seven/eight basic types we deal with
  * these are only used in error messages */

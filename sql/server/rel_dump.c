@@ -75,7 +75,7 @@ cmp_print(mvc *sql, stream *fout, int cmp)
 	mnstr_printf(fout, " %s ", r);
 }
 
-__attribute__((__nonnull__(2)))
+ATTR_NONNULL(2)
 static const char *
 dump_escape_ident(allocator *sa, const char *s)
 {
@@ -411,12 +411,12 @@ exp_print(mvc *sql, stream *fout, sql_exp *e, int depth, list *refs, int comma, 
 			mnstr_printf(fout, " NULLS LAST");
 		if (e->type != e_atom && e->type != e_cmp && !has_nil(e))
 			mnstr_printf(fout, " NOT NULL");
-		if (e->type != e_atom && e->type != e_cmp && is_unique(e))
+		if (e->type != e_atom && (sql->show_all_details || e->type != e_cmp) && is_unique(e))
 			mnstr_printf(fout, " UNIQUE");
 		/* don't show properties on value lists */
 		if (decorate && e->p && e->type != e_atom && !exp_is_atom(e)) {
 			for (prop *p = e->p; p; p = p->p) {
-				if (p->kind != PROP_MIN && p->kind != PROP_MAX && p->kind != PROP_NUNIQUES && p->kind != PROP_SELECTIVITY) {
+				if (sql->show_all_details || (p->kind != PROP_MIN && p->kind != PROP_MAX && p->kind != PROP_NUNIQUES && p->kind != PROP_SELECTIVITY)) {
 					char *pv = propvalue2string(ta, p);
 					mnstr_printf(fout, " %s %s", propkind2string(p), pv);
 				}
@@ -804,6 +804,12 @@ rel_print_rel(mvc *sql, stream  *fout, sql_rel *rel, int depth, list *refs, int 
 		break;
 	default:
 		assert(0);
+	}
+	if (sql->show_all_details && decorate) {
+		if (rel->lunique)
+				mnstr_printf(fout, " LKEEPUNIQUE");
+		if (rel->runique)
+				mnstr_printf(fout, " RKEEPUNIQUE");
 	}
 	if (sql->show_details && decorate && rel->p) {
 		if ((ATOMIC_GET(&GDKdebug) & TESTINGMASK) == 0 && rel->partition)

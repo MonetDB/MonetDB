@@ -1,0 +1,19 @@
+statement ok
+CREATE USER u8061 WITH PASSWORD 'u8061_password' NAME 'u8061'
+
+statement ok
+SET SESSION AUTHORIZATION u8061
+
+query TT nosort
+SELECT current_user, current_role
+----
+u8061	u8061
+
+# SET ROLE continues to change only the current role
+statement error HY009!Role (monetdb) missing
+SET ROLE monetdb
+
+query TT nosort
+SELECT current_user, current_role
+----
+u8061	u8061

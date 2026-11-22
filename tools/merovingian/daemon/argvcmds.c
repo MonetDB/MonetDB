@@ -103,15 +103,15 @@ command_create(int argc, char *argv[])
 		*p = '\0';
 		if (mkdir(path, 0755) == -1 && errno != EEXIST) {
 			fprintf(stderr,
-					"unable to create directory '%s': %s\n",
-					path, strerror(errno));
+				"unable to create directory '%s': %s\n",
+				path, strerror(errno));
 			return(1);
 		}
 		*p = '/';
 	}
 	if (mkdir(dbfarm, 0755) == -1 && errno != EEXIST) {
 		fprintf(stderr, "unable to create directory '%s': %s\n",
-				dbfarm, strerror(errno));
+			dbfarm, strerror(errno));
 		return(1);
 	}
 
@@ -126,7 +126,7 @@ command_create(int argc, char *argv[])
 	/* phrase[1].key = NULL; */
 	if (writeProps(phrase, dbfarm) != 0) {
 		fprintf(stderr, "unable to create file in directory '%s': %s\n",
-				dbfarm, strerror(errno));
+			dbfarm, strerror(errno));
 		return(1);
 	}
 
@@ -155,7 +155,7 @@ command_get(confkeyval *ckv, int argc, char *argv[])
 	/* read the merovingian properties from the dbfarm */
 	if (readProps(ckv, dbfarm) != 0) {
 		fprintf(stderr, "unable to read properties from %s: %s\n",
-				dbfarm, strerror(errno));
+			dbfarm, strerror(errno));
 		return(1);
 	}
 
@@ -180,12 +180,12 @@ command_get(confkeyval *ckv, int argc, char *argv[])
 	/* chdir to dbfarm so we can open relative files (like pidfile) */
 	if (chdir(dbfarm) < 0) {
 		fprintf(stderr, "could not move to dbfarm '%s': %s\n",
-				dbfarm, strerror(errno));
+			dbfarm, strerror(errno));
 		return(1);
 	}
 
 	if (strstr(property, "status") != NULL ||
-			strstr(property, "mserver") != NULL)
+	    strstr(property, "mserver") != NULL)
 	{
 		/* check if there is a merovingian serving this dbfarm */
 		int ret;
@@ -222,7 +222,7 @@ command_get(confkeyval *ckv, int argc, char *argv[])
 				value = kv->val;
 				kv = findConfKey(ckv, "port");
 				snprintf(buf, sizeof(buf), "%s/" CONTROL_SOCK "%d",
-						value, kv->ival);
+					 value, kv->ival);
 				value = control_send(&res, buf, -1, "", "mserver", true, NULL);
 				if (value != NULL) {
 					free(value);
@@ -245,14 +245,14 @@ command_get(confkeyval *ckv, int argc, char *argv[])
 			value = kv->val;
 			kv = findConfKey(ckv, "port");
 			snprintf(buf, sizeof(buf), "%s/" MERO_SOCK "%d",
-					value, kv->ival);
+				 value, kv->ival);
 			value = buf;
 		} else if (strcmp(p, "controlsock") == 0) {
 			kv = findConfKey(ckv, "sockdir");
 			value = kv->val;
 			kv = findConfKey(ckv, "port");
 			snprintf(buf, sizeof(buf), "%s/" CONTROL_SOCK "%d",
-					value, kv->ival);
+				 value, kv->ival);
 			value = buf;
 		} else if (strcmp(p, "status") == 0) {
 			if (meropid > 0) {
@@ -266,7 +266,7 @@ command_get(confkeyval *ckv, int argc, char *argv[])
 				 * what's available (backwards compatibility) */
 				if (readProps(cport, ".") != 0) {
 					fprintf(stderr, "unable to read properties from %s: %s\n",
-							dbfarm, strerror(errno));
+						dbfarm, strerror(errno));
 					return(1);
 				}
 
@@ -277,7 +277,7 @@ command_get(confkeyval *ckv, int argc, char *argv[])
 				if (kv->ival == -1)
 					kv = findConfKey(ckv, "port");
 				snprintf(buf, sizeof(buf), "%s/" CONTROL_SOCK "%d",
-						value, kv->ival);
+					 value, kv->ival);
 				freeConfFile(cport);
 				value = control_send(&res, buf, -1, "", "version", true, NULL);
 				if (value != NULL) {
@@ -292,8 +292,8 @@ command_get(confkeyval *ckv, int argc, char *argv[])
 				}
 
 				snprintf(buf, sizeof(buf),
-						"monetdbd[%d] %s is serving this dbfarm",
-						meropid, value == NULL ? "(unknown version)" : value);
+					 "monetdbd[%d] %s is serving this dbfarm",
+					 meropid, value == NULL ? "(unknown version)" : value);
 				if (value != NULL)
 					free(res);
 				value = buf;
@@ -351,7 +351,7 @@ command_set(confkeyval *ckv, int argc, char *argv[])
 	/* read the merovingian properties from the dbfarm */
 	if (readProps(ckv, dbfarm) != 0) {
 		fprintf(stderr, "unable to read properties from %s: %s\n",
-				dbfarm, strerror(errno));
+			dbfarm, strerror(errno));
 		return(1);
 	}
 
@@ -366,17 +366,17 @@ command_set(confkeyval *ckv, int argc, char *argv[])
 
 	/* handle pseudo properties returned by get */
 	if (strcmp(property, "hostname") == 0 ||
-			strcmp(property, "dbfarm") == 0 ||
-			strcmp(property, "mserver") == 0)
+	    strcmp(property, "dbfarm") == 0 ||
+	    strcmp(property, "mserver") == 0)
 	{
 		fprintf(stderr, "set: %s is read-only for monetdbd\n", property);
 		return(1);
 	}
 	if (strcmp(property, "mapisock") == 0 ||
-			strcmp(property, "controlsock") == 0)
+	    strcmp(property, "controlsock") == 0)
 	{
 		fprintf(stderr, "set: mapisock and controlsock are deduced from "
-				"sockdir and port, change those instead\n");
+			"sockdir and port, change those instead\n");
 		return(1);
 	}
 
@@ -394,8 +394,8 @@ command_set(confkeyval *ckv, int argc, char *argv[])
 				*q = '\0';
 				if (strcmp(p + 1, MONETDB5_PASSWDHASH) != 0) {
 					fprintf(stderr, "set: passphrase hash '%s' incompatible, "
-							"expected '%s'\n",
-							p + 1, MONETDB5_PASSWDHASH);
+						"expected '%s'\n",
+						p + 1, MONETDB5_PASSWDHASH);
 					return(1);
 				}
 				*q = '}';
@@ -421,7 +421,7 @@ command_set(confkeyval *ckv, int argc, char *argv[])
 	}
 	if (writeProps(ckv, dbfarm) != 0) {
 		fprintf(stderr, "set: failed to write properties: %s\n",
-				strerror(errno));
+			strerror(errno));
 		return(1);
 	}
 
@@ -430,18 +430,18 @@ command_set(confkeyval *ckv, int argc, char *argv[])
 	/* chdir to dbfarm so we can open relative files (like pidfile) */
 	if (chdir(dbfarm) < 0) {
 		fprintf(stderr, "could not move to dbfarm '%s': %s\n",
-				dbfarm, strerror(errno));
+			dbfarm, strerror(errno));
 		return(1);
 	}
 
 	if ((pfile = fopen(property, "r")) != NULL) {
 		if (fgets(buf, sizeof(buf), pfile) != NULL &&
-			(meropid = atoi(buf)) != 0 &&
-			kill(meropid, SIGHUP) == -1)
+		    (meropid = atoi(buf)) != 0 &&
+		    kill(meropid, SIGHUP) == -1)
 		{
 			/* maybe monetdbd crashed and did not get the chance to clean up */
 			fprintf(stderr, "WARNING: sending SIGHUP to monetdbd[%d] failed: %s\n",
-					(int)meropid, strerror(errno));
+				(int)meropid, strerror(errno));
 		}
 		fclose(pfile);
 	}
@@ -470,7 +470,7 @@ command_stop(confkeyval *ckv, int argc, char *argv[])
 	/* read the merovingian properties from the dbfarm */
 	if (readProps(ckv, dbfarm) != 0) {
 		fprintf(stderr, "unable to read properties from %s: %s\n",
-				dbfarm, strerror(errno));
+			dbfarm, strerror(errno));
 		return(1);
 	}
 
@@ -479,19 +479,19 @@ command_stop(confkeyval *ckv, int argc, char *argv[])
 	/* chdir to dbfarm so we can open relative files (like pidfile) */
 	if (chdir(dbfarm) < 0) {
 		fprintf(stderr, "could not move to dbfarm '%s': %s\n",
-				dbfarm, strerror(errno));
+			dbfarm, strerror(errno));
 		return(1);
 	}
 
 	if ((pfile = fopen(pidfilename, "r")) == NULL) {
 		fprintf(stderr, "unable to open %s: %s\n",
-				pidfilename, strerror(errno));
+			pidfilename, strerror(errno));
 		return(1);
 	}
 
 	if (fgets(buf, sizeof(buf), pfile) == NULL) {
 		fprintf(stderr, "unable to read from %s: %s\n",
-				pidfilename, strerror(errno));
+			pidfilename, strerror(errno));
 		fclose(pfile);
 		return(1);
 	}
@@ -500,13 +500,13 @@ command_stop(confkeyval *ckv, int argc, char *argv[])
 	daemon = atoi(buf);
 	if (daemon == 0) {
 		fprintf(stderr, "invalid pid in pidfile %s: %s\n",
-				pidfilename, buf);
+			pidfilename, buf);
 		return(1);
 	}
 
 	if (kill(daemon, SIGTERM) == -1) {
 		fprintf(stderr, "unable to shut down monetdbd[%d]: %s\n",
-				(int)daemon, strerror(errno));
+			(int)daemon, strerror(errno));
 		return(1);
 	}
 

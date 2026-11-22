@@ -1550,7 +1550,7 @@ uniques_guess(Client c, lng *guess, const bat *bid)
 
 	BATiter bi = bat_iterator(b);
 	struct canditer bci;
-	canditer_init(&bci, b, NULL);
+	canditer_init_bi(&bci, &bi, NULL);
 
 	*guess = llroundl(bat_guess_uniques(b, &bi, &bci));
 

@@ -42,6 +42,19 @@ rel_used_projections(mvc *sql, list *exps, list *users)
 	return nexps;
 }
 
+static bool
+exp_is_useless_rename_or_convert(sql_exp *e)
+{
+	if (e->type == e_column && e->alias.label == e->nid)
+		return true;
+	if (e->type == e_convert && has_label(e) && e->card > CARD_ATOM) {
+		sql_exp *l = e->l;
+		if (l && l->type == e_column)
+			return true;
+	}
+	return false;
+}
+
 /* move projects down with the goal of removing them completely (ie push renames/reduced lists into basetable)
  * for some cases we can directly remove if renames rename into same alias
  * */
@@ -63,6 +76,43 @@ rel_push_project_down_(visitor *v, sql_rel *rel)
 				return l;
 			}
 			return rel;
+	}
+
+	if (v->depth > 1 && is_simple_project(rel->op) && !need_distinct(rel) && !rel_is_ref(rel) && rel->l && !rel->r &&
+			is_join(l->op) && list_empty(l->attr) && !rel_is_ref(l) &&
+			v->parent && (is_select(v->parent->op) || is_join(v->parent->op)) &&
+			list_check_prop_all(rel->exps, (prop_check_func)&exp_is_useless_rename_or_convert)) {
+
+			/* push converts down */
+			for (node *n = rel->exps->h; n; n = n->next) {
+				sql_exp *e = n->data;
+				if (e->type == e_convert) {
+					sql_rel *j = l, *p = rel;
+					while(is_join(j->op) && list_empty(l->attr)) {
+						if (rel_has_exp(j->l, e->l, false) == 0) {
+							p = j;
+							j = j->l;
+						} else if (rel_has_exp(j->r, e->l, false) == 0) {
+							p = j;
+							j = j->r;
+						} else {
+							break;
+						}
+					}
+					if (j && j != l) {
+						sql_rel *np = rel_project(v->sql->sa, j, rel_projections(v->sql, j, NULL, 0, 1));
+						rel_project_add_exp(v->sql, np, exp_copy(v->sql, e));
+						if (p->l == j)
+							p->l = np;
+						else if (p->r == j)
+							p->r = np;
+					}
+				}
+			}
+			rel->l = NULL;
+			rel_destroy(v->sql, rel);
+			v->changes++;
+			return l;
 	}
 
 	if (v->depth > 1 && is_simple_project(rel->op) && !need_distinct(rel) && !rel_is_ref(rel) && rel->l && !rel->r &&
@@ -2734,7 +2784,7 @@ rel_remove_const_aggr(visitor *v, sql_rel *rel)
 							(cnt && !wa->isnull)) {
 						append(naggrs, e);
 						append(nexps, exp_ref(v->sql, e));
-						break;
+						continue;
 					}
 					if (cnt)
 						w=exp_atom_lng(v->sql->sa, 0);
@@ -3883,6 +3933,13 @@ rel_distinct_project2groupby_(visitor *v, sql_rel *rel)
 		set_distinct(rel);
 		v->changes++;
 	}
+	sql_rel *p = v->parent;
+	if (!rel_is_ref(rel) && is_project(rel->op) && p && is_semi(p->op) && p->r == rel) { /* drop distinct on right handside of semi */
+		set_nodistinct(rel);
+		v->changes++;
+		return rel;
+	}
+
 	/* rewrite distinct project (table) [ constant ] -> project [ constant ] */
 	if (rel->op == op_project && rel->l && !rel->r /* no order by */ && need_distinct(rel) &&
 	    exps_card(rel->exps) <= CARD_ATOM) {

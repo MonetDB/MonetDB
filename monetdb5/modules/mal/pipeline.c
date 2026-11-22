@@ -250,8 +250,8 @@ PPcounter(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		else
 			nr = (int)((cnt+SLICE_SIZE-1)/SLICE_SIZE);
 		FORCEMITODEBUG
-		if (nr < GDKnr_threads)
-			nr = MIN((int)GDKnr_threads,(int)cnt);
+		if (nr < GDKnr_pipeline_threads)
+			nr = MIN((int)GDKnr_pipeline_threads,(int)cnt);
 	} else { /* get nparts */
 		nr = *getArgReference_int(stk, pci, 1);
 	}

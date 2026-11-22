@@ -378,7 +378,10 @@ MNDBGetInfo(ODBCDbc *dbc,
 		break;
 	case SQL_CREATE_VIEW:
 		nValue = SQL_CV_CREATE_VIEW | SQL_CV_CHECK_OPTION;
-		/* SQL_CV_CASCADE | SQL_CV_LOCAL */
+		/* CREATE LOCAL TEMPORARY VIEW is supported since 11.53 (Mar2025) */
+		if ((dbc->major >= 56) || (dbc->major == 11 && dbc->minor >= 53))
+			nValue = nValue | SQL_CV_LOCAL;
+		/* SQL_CV_CASCADE */
 		break;
 	case SQL_CURSOR_COMMIT_BEHAVIOR:
 	case SQL_CURSOR_ROLLBACK_BEHAVIOR:

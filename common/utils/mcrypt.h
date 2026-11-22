@@ -24,7 +24,7 @@
 #endif
 
 mutils_export const char *mcrypt_getHashAlgorithms(void)
-	__attribute__((__const__));
+	ATTR_CONST;
 mutils_export char *mcrypt_MD5Sum(const char *string, size_t len);
 mutils_export char *mcrypt_SHA1Sum(const char *string, size_t len);
 mutils_export char *mcrypt_SHA224Sum(const char *string, size_t len);
