@@ -2661,10 +2661,9 @@ rel_push_semijoin_down_or_up(visitor *v, sql_rel *rel)
 			return rel;
 		if (right && is_left(lop))
 			return rel;
-		/* only push down if the chosen side is not reducing */
-		if (left && rel_has_select_tree(ll))
-			return rel;
-		if (right && rel_has_select_tree(lr))
+		/* Only push down if neither join side is reducing.  A select on the
+		 * non-chosen side would make the push-up rule immediately undo this rewrite. */
+		if (rel_has_select_tree(ll) || rel_has_select_tree(lr))
 			return rel;
 		list *nsexps = exps_copy(v->sql, rel->exps);
 		list *nsattr = exps_copy(v->sql, rel->attr);
