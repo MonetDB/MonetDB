@@ -6596,8 +6596,8 @@ rel2bin_insert(backend *be, sql_rel *rel, list *refs)
 
 	for (n = ol_first_node(t->keys); n; n = n->next) {
 		sql_key * key = n->data;
-		if (key->type == ckey)
-			sql_insert_check(be, key, inserts->op4.lval);
+		if (key->type == ckey && sql_insert_check(be, key, inserts->op4.lval) < 0)
+			return NULL;
 	}
 
 	if (!sql_insert_check_null(be, t, inserts->op4.lval))
