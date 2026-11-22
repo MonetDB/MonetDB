@@ -161,6 +161,7 @@ PIPELINE?7966-optimize-select-distinct-from-union-queries
 7973-groupby-list-null-row-bug
 PIPELINE?7974-multi-column-not-in-subquery-bug
 7975-cleanup-join-exps
+7363-double-alias-natural-join
 7976-dump_database-composite-key-order-bug
 7977-prepare-optimize
 7978-name-leak-prepare-error-recompile
@@ -226,6 +227,7 @@ KNOWNFAIL?8010-first_value-last_value-partition-range-bug
 8065-unnamed-fkeys-same-column
 8061-session-authorization-current-user
 8066-semijoin-pushdown-after-join-order
+8066-semijoin-reducing-nested-select
 8067-duplicate-in-values
 8068-pipeline-limit-slice-join
 8070-sum-constant-drops-groupby-aggregates
