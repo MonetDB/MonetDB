@@ -74,7 +74,7 @@ dameraulevenshtein(int *res, const char *s, const char *t, int insdel_cost,
 	lng left;					/* contents of cell immediately to left */
 	lng diag;					/* contents of cell immediately above and to left */
 	lng sz;						/* number of bytes in matrix */
-	int diag2 = 0, cost2 = 0;
+	lng diag2 = 0, cost2 = 0;
 	lng distance;
 
 	if (strNil(s) || strNil(t)) {
