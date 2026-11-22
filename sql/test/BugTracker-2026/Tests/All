@@ -233,3 +233,4 @@ KNOWNFAIL?8010-first_value-last_value-partition-range-bug
 8070-sum-constant-drops-groupby-aggregates
 8071-uncommitted-update-delta-scan
 8072-insert-nr-overflow
+8073-editdistance-cost-overflow
