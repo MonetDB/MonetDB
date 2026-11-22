@@ -66,6 +66,6 @@ SELECT levenshtein('abcd', 'wxyz', 2147483647, 2147483647)
 
 # the BAT/filter path uses the same cost arithmetic
 query I
-SELECT COUNT(*) FROM (VALUES ('abcd', 'wxyz'), ('abc', 'abc')) AS t(a, b) WHERE maxlevenshtein(a, b, 10, 2147483646, 2147483646)
+SELECT COUNT(*) FROM (VALUES ('abcd', 'wxyz'), ('abc', 'abc')) AS t(a, b) WHERE maxlevenshtein(a, b, 10, 2147483646, 2147483646) = true
 ----
 1
