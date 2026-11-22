@@ -1,0 +1,42 @@
+# insert(s1, pos, nr, s2) must not overflow while computing pos + nr
+
+query T
+SELECT insert('abcdef', 2, 2147483645, 'XY')
+----
+abXY
+
+query T
+SELECT insert('abcdef', 2, 2147483646, 'XY')
+----
+abXY
+
+query T
+SELECT insert('abcdef', 1, 2147483647, 'XY')
+----
+aXY
+
+query T
+SELECT insert('abcdef', 2147483647, 2147483647, 'XY')
+----
+abcdefXY
+
+query T rowsort
+SELECT insert(s, 2, n, 'XY') FROM (VALUES ('abcdef', 2147483646), ('abcdef', 2147483647)) AS t(s, n)
+----
+abXY
+abXY
+
+query T
+SELECT insert('abcdef', 2, 100, 'XY')
+----
+abXY
+
+query T
+SELECT insert('abcdef', -2, 2147483647, 'XY')
+----
+abcdXY
+
+query T
+SELECT insert('abcdef', -7, 1, 'XY')
+----
+XYbcdef
