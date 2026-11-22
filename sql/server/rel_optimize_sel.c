@@ -1184,6 +1184,69 @@ merge_cmp_or_null(mvc *sql, sql_rel *rel, list *exps, int *changes)
 	return exps;
 }
 
+/* Resolve a join column reference to the first alias in its input's
+ * projection.  Two differently named aliases of the same base column have
+ * different labels, but their projection entries point at the same nid. */
+static sql_exp *
+canonical_join_ref(sql_rel *rel, sql_exp *e)
+{
+	sql_rel *side = NULL;
+	sql_exp *ce = NULL;
+
+	if (!rel || !e || e->type != e_column)
+		return NULL;
+	if (rel->l) {
+		ce = rel_find_exp(rel->l, e);
+		if (ce)
+			side = rel->l;
+	}
+	if (!ce && rel->r) {
+		ce = rel_find_exp(rel->r, e);
+		if (ce)
+			side = rel->r;
+	}
+	if (!ce || !side || !is_simple_project(side->op) || list_empty(side->exps))
+		return ce;
+	/* Follow alias chains, eg n1 -> n2 -> n3, to the first entry. */
+	int guard = list_length(side->exps);
+	while (ce && guard-- > 0) {
+		sql_exp *next = exps_bind_nid(side->exps, ce->nid);
+
+		if (!next || next == ce)
+			break;
+		ce = next;
+	}
+	return ce;
+}
+
+static void
+canonicalize_join_equal_exps(sql_rel *rel, list *exps, int *changes)
+{
+	if (!is_join(rel->op) || !rel->l || !rel->r)
+		return;
+	for (node *n = exps->h; n; n = n->next) {
+		sql_exp *e = n->data;
+
+		if (e->type != e_cmp || e->flag != cmp_equal || e->f)
+			continue;
+		void **operands[2] = {&e->l, &e->r};
+		for (int i = 0; i < 2; i++) {
+			sql_exp *op = *operands[i], *ce;
+
+			if (!op || op->type != e_column)
+				continue;
+			ce = canonical_join_ref(rel, op);
+			if (!ce || !ce->alias.label ||
+				(ce->alias.label == op->alias.label && ce->alias.label == op->nid))
+				continue;
+			exp_setalias(op, ce->alias.label, exp_relname(ce), exp_name(ce));
+			op->nid = ce->alias.label;
+			*operands[i] = op;
+			(*changes)++;
+		}
+	}
+}
+
 static list *
 cleanup_equal_exps(mvc *sql, sql_rel *rel, list *exps, int *changes)
 {
@@ -1198,6 +1261,7 @@ cleanup_equal_exps(mvc *sql, sql_rel *rel, list *exps, int *changes)
 				exp_swap(e);
 			}
 		}
+		canonicalize_join_equal_exps(rel, exps, changes);
 	}
 	bool needed = false;
 	for(node *n = exps->h; !needed && n; n = n->next) {
@@ -2457,6 +2521,34 @@ rel_rewrite_semijoin(visitor *v, sql_rel *rel)
 	return rel;
 }
 
+static bool
+rel_has_select_tree(sql_rel *rel)
+{
+	if (!rel || rel_is_ref(rel))
+		return false;
+	if (is_select(rel->op))
+		return true;
+	/* Only walk operators whose children are sql_rel pointers, not lists. */
+	switch (rel->op) {
+	case op_join:
+	case op_left:
+	case op_right:
+	case op_full:
+	case op_semi:
+	case op_anti:
+	case op_inter:
+	case op_except:
+		return rel_has_select_tree(rel->l) || rel_has_select_tree(rel->r);
+	case op_project:
+	case op_groupby:
+	case op_topn:
+	case op_sample:
+		return rel_has_select_tree(rel->l);
+	default:
+		return false;
+	}
+}
+
 /*
  * Push semijoins down, pushes the semijoin through a join (if join doesn't have any selects).
  *
@@ -2540,10 +2632,6 @@ rel_push_semijoin_down_or_up(visitor *v, sql_rel *rel)
 		sql_rel *ll = l->l;
 		sql_rel *lr = l->r;
 
-		/* only push down is join is not reducing */
-		if (is_select(ll->op) || is_select(lr->op))
-			return rel;
-
 		/* check which side is used and other exps are atoms or from right of semijoin */
 		for(n = exps->h; n; n = n->next) {
 			sql_exp *sje = n->data;
@@ -2572,6 +2660,10 @@ rel_push_semijoin_down_or_up(visitor *v, sql_rel *rel)
 		if (left && is_right(lop))
 			return rel;
 		if (right && is_left(lop))
+			return rel;
+		/* Only push down if neither join side is reducing.  A select on the
+		 * non-chosen side would make the push-up rule immediately undo this rewrite. */
+		if (rel_has_select_tree(ll) || rel_has_select_tree(lr))
 			return rel;
 		list *nsexps = exps_copy(v->sql, rel->exps);
 		list *nsattr = exps_copy(v->sql, rel->attr);

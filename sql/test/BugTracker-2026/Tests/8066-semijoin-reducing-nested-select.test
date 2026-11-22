@@ -1,0 +1,134 @@
+statement ok
+CREATE TABLE a8066b (low_key INTEGER NOT NULL)
+
+statement ok
+CREATE TABLE b8066b (id INTEGER NOT NULL, low_key INTEGER NOT NULL, skey INTEGER NOT NULL)
+
+statement ok
+CREATE TABLE c8066b (id INTEGER NOT NULL)
+
+statement ok
+CREATE TABLE s8066b (id INTEGER NOT NULL)
+
+statement ok rowcount 20
+INSERT INTO a8066b SELECT CAST(value AS INTEGER) FROM sys.generate_series(0, 20)
+
+statement ok rowcount 2000
+INSERT INTO b8066b SELECT CAST(value AS INTEGER), CAST(MOD(value, 100) AS INTEGER), CAST(MOD(value, 10) AS INTEGER) FROM sys.generate_series(0, 2000)
+
+statement ok rowcount 2000
+INSERT INTO c8066b SELECT CAST(value AS INTEGER) FROM sys.generate_series(0, 2000)
+
+statement ok rowcount 10
+INSERT INTO s8066b SELECT CAST(value AS INTEGER) FROM sys.generate_series(0, 10)
+
+statement ok
+ANALYZE sys.a8066b
+
+statement ok
+ANALYZE sys.b8066b
+
+statement ok
+ANALYZE sys.c8066b
+
+statement ok
+ANALYZE sys.s8066b
+
+statement ok
+CREATE TABLE su8066b (id INTEGER NOT NULL, fk INTEGER NOT NULL)
+
+statement ok
+CREATE TABLE na8066b (id INTEGER NOT NULL)
+
+statement ok
+CREATE TABLE ps8066b (id INTEGER NOT NULL)
+
+statement ok rowcount 2000
+INSERT INTO su8066b SELECT CAST(value AS INTEGER), CAST(MOD(value, 10) AS INTEGER) FROM sys.generate_series(0, 2000)
+
+statement ok rowcount 10
+INSERT INTO na8066b SELECT CAST(value AS INTEGER) FROM sys.generate_series(0, 10)
+
+statement ok rowcount 2000
+INSERT INTO ps8066b SELECT CAST(value AS INTEGER) FROM sys.generate_series(0, 2000)
+
+statement ok
+ANALYZE sys.su8066b
+
+statement ok
+ANALYZE sys.na8066b
+
+statement ok
+ANALYZE sys.ps8066b
+
+# a semijoin must not be pushed through a reducing join whose child selects
+# are nested below another join (TPCH q21)
+query T nosort
+EXPLAIN SELECT COUNT(*) FROM s8066b s JOIN (SELECT * FROM b8066b WHERE low_key < 10) b ON s.id = b.skey JOIN a8066b a ON b.low_key = a.low_key JOIN c8066b c ON b.id = c.id
+----
+project (
+| group by (
+| | semijoin (
+| | | join (
+| | | | join (
+| | | | | table("sys"."s8066b") [ "s8066b"."id" as "s"."id" ],
+| | | | | select (
+| | | | | | table("sys"."b8066b") [ "b8066b"."id", "b8066b"."low_key", "b8066b"."skey" ]
+| | | | | ) [ ("b8066b"."low_key") < (int(7) "10") ]
+| | | | ) [ ("s"."id") = ("b8066b"."skey") ],
+| | | | table("sys"."a8066b") [ "a8066b"."low_key" as "a"."low_key" ]
+| | | ) [ ("b8066b"."low_key") = ("a"."low_key") ],
+| | | table("sys"."c8066b") [ "c8066b"."id" as "c"."id" ]
+| | ) [ ("b8066b"."id") = ("c"."id") ]
+| ) [  ] [ "sys"."count"() as "%1"."%1" ]
+) [ "%1"."%1" ]
+
+query I
+SELECT COUNT(*) FROM s8066b s JOIN (SELECT * FROM b8066b WHERE low_key < 10) b ON s.id = b.skey JOIN a8066b a ON b.low_key = a.low_key JOIN c8066b c ON b.id = c.id
+----
+200
+
+# a semijoin must not be pushed below a join whose other side is reducing,
+# otherwise the push-up rule undoes the rewrite forever (TPCH q20)
+query T nosort
+EXPLAIN SELECT COUNT(*) FROM su8066b JOIN (SELECT * FROM na8066b WHERE id < 5) n ON su8066b.fk = n.id JOIN ps8066b ON su8066b.id = ps8066b.id
+----
+project (
+| group by (
+| | semijoin (
+| | | join (
+| | | | table("sys"."su8066b") [ "su8066b"."id", "su8066b"."fk" ],
+| | | | select (
+| | | | | table("sys"."na8066b") [ "na8066b"."id" ]
+| | | | ) [ ("na8066b"."id") < (int(4) "5") ]
+| | | ) [ ("su8066b"."fk") = ("na8066b"."id") ],
+| | | table("sys"."ps8066b") [ "ps8066b"."id" ]
+| | ) [ ("su8066b"."id") = ("ps8066b"."id") ]
+| ) [  ] [ "sys"."count"() as "%1"."%1" ]
+) [ "%1"."%1" ]
+
+query I
+SELECT COUNT(*) FROM su8066b JOIN (SELECT * FROM na8066b WHERE id < 5) n ON su8066b.fk = n.id JOIN ps8066b ON su8066b.id = ps8066b.id
+----
+1000
+
+statement ok
+DROP TABLE c8066b
+
+statement ok
+DROP TABLE s8066b
+
+statement ok
+DROP TABLE b8066b
+
+statement ok
+DROP TABLE a8066b
+
+statement ok
+DROP TABLE ps8066b
+
+statement ok
+DROP TABLE na8066b
+
+statement ok
+DROP TABLE su8066b

@@ -873,7 +873,7 @@ monetdbe_open_remote(monetdbe_database_internal *mdbe, monetdbe_options *opts) {
 	stk->keepAlive = TRUE;
 	c->qryctx.starttime = GDKusec();
 	c->qryctx.endtime = c->querytimeout ? c->qryctx.starttime + c->querytimeout : 0;
-	if (c->qryctx.endtime == 0 || c->sessiontimeout < c->qryctx.endtime)
+	if (c->sessiontimeout && (c->qryctx.endtime == 0 || c->sessiontimeout < c->qryctx.endtime))
 		c->qryctx.endtime = c->sessiontimeout;
 	if ( (mdbe->msg = runMALsequence(c, mb, 1, 0, stk, 0, 0)) != MAL_SUCCEED ) {
 		freeStack(stk);
