@@ -134,7 +134,7 @@ makeNulTerminated(const SQLCHAR **argument, ssize_t argument_len, void **scratch
 		*scratch = value;
 	}
 
-	return value;
+	return value != NULL;
 }
 
 char*

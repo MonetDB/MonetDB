@@ -1732,7 +1732,7 @@ SQLparser(Client c, backend *be)
 
 	c->qryctx.starttime = GDKusec();
 	c->qryctx.endtime = c->querytimeout ? c->qryctx.starttime + c->querytimeout : 0;
-	if (c->qryctx.endtime == 0 || c->sessiontimeout < c->qryctx.endtime)
+	if (c->sessiontimeout && (c->qryctx.endtime == 0 || c->sessiontimeout < c->qryctx.endtime))
 		c->qryctx.endtime = c->sessiontimeout;
 
 	if ((msg = SQLtrans(m)) != MAL_SUCCEED) {

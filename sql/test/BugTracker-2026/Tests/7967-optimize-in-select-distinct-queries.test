@@ -34,11 +34,9 @@ project (
 | group by (
 | | semijoin (
 | | | table("sys"."probe") [ "probe"."v" as "p"."v" ],
-| | | group by (
-| | | | project (
-| | | | | table("sys"."rhs") [ "rhs"."v" as "r"."v" ]
-| | | | ) [ "r"."v" as "%1"."%1" ]
-| | | ) [ "%1"."%1" ] [ "%1"."%1" ]
+| | | project (
+| | | | table("sys"."rhs") [ "rhs"."v" as "r"."v" ]
+| | | ) [ "r"."v" as "%1"."%1" ]
 | | ) [ ("p"."v") + = ("%1"."%1") ]
 | ) [  ] [ "sys"."count"() as "%3"."%3" ]
 ) [ "%3"."%3" ]

@@ -1,0 +1,41 @@
+statement ok
+CREATE TABLE t8067 (x INTEGER)
+
+statement ok rowcount 3
+INSERT INTO t8067 VALUES (1), (2), (3)
+
+# duplicate IN values must be reduced to a distinct list so that statistics
+# and join costs are not skewed (issue #8067)
+query T
+EXPLAIN SELECT * FROM t8067 WHERE x IN (1, 1, 1, 1, 1, 1, 1, 1, 1, 1)
+----
+project (
+| select (
+| | table("sys"."t8067") [ "t8067"."x" ]
+| ) [ ("t8067"."x") in (int(2) "1") ]
+) [ "t8067"."x" ]
+
+query I
+SELECT * FROM t8067 WHERE x IN (1, 1, 1, 1, 1)
+----
+1
+
+# mixed distinct and duplicate values
+query T
+EXPLAIN SELECT * FROM t8067 WHERE x IN (1, 2, 1, 2, 3, 1)
+----
+project (
+| select (
+| | table("sys"."t8067") [ "t8067"."x" ]
+| ) [ ("t8067"."x") in (int(2) "1", int(2) "2", int(2) "3") ]
+) [ "t8067"."x" ]
+
+query I rowsort
+SELECT * FROM t8067 WHERE x IN (1, 2, 1, 2, 3, 1)
+----
+1
+2
+3
+
+statement ok
+DROP TABLE t8067

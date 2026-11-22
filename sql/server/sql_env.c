@@ -92,9 +92,14 @@ sql_update_var(mvc *m, sql_schema *s, const char *name, const ValRecord *ptr)
 			else if (strcmp(name, "current_role") == 0 && !mvc_set_role(m, ptr->val.sval))
 				throw(SQL,"sql.update_var", SQLSTATE(HY009)
 					  "Role (%s) missing\n", ptr->val.sval);
-			else if (strcmp(name, "current_user") == 0 && !mvc_set_user(m, ptr->val.sval))
-				throw(SQL,"sql.update_var", SQLSTATE(HY009)
-					  "Switching to user %s not allowed\n", ptr->val.sval);
+			else if (strcmp(name, "current_user") == 0) {
+				if (!mvc_set_user(m, ptr->val.sval))
+					throw(SQL,"sql.update_var", SQLSTATE(HY009)
+						  "Switching to user %s not allowed\n", ptr->val.sval);
+				/* switching user also switches the current role */
+				if (!sqlvar_set_string(m->session->sa, find_global_var(m, s, "current_role"), ptr->val.sval))
+					throw(SQL,"sql.update_var", SQLSTATE(HY013) MAL_MALLOC_FAIL);
+			}
 		}
 	}
 	return NULL;

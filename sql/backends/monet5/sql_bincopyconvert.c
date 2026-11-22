@@ -8,6 +8,9 @@
  * For copyright information, see the file debian/copyright.
  */
 
+#ifdef _MSC_VER
+#pragma warning(disable : 4815)
+#endif
 #include "monetdb_config.h"
 
 #include "copybinary.h"

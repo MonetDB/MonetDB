@@ -709,33 +709,61 @@ count_idx(sql_trans *tr, sql_idx *i, int access)
 static BAT *
 cs_bind_ubat( column_storage *cs, int access, int type, BUN l, BUN h /* ie max position < cnt */)
 {
-	BAT *b;
+	BAT *b, *ids = NULL, *sel = NULL;
 
 	assert(access == RD_UPD_ID || access == RD_UPD_VAL);
 	/* returns the updates for cs */
-	if (cs->uibid && cs->uvbid && cs->ucnt) {
-		if (access == RD_UPD_ID) {
-			if (!(b = temp_descriptor(cs->uibid)))
-				return NULL;
-			if (!b->tsorted || ((BATtdense2(b) && (b->tseqbase + BATcount(b)) >= h) ||
-			   (!BATtdense2(b) && BATcount(b) && ((oid*)b->theap->base)[BATcount(b)-1] >= h))) {
-					BAT *s = BATselect(b, NULL, &l, &h, true, false, false, false);
-					if (!s) {
-						bat_destroy(b);
-						return NULL;
-					}
+	if (!(cs->uibid && cs->uvbid && cs->ucnt))
+		return e_BAT(access == RD_UPD_ID ? TYPE_oid : type);
 
-					BAT *nb = BATproject(s, b);
-					bat_destroy(s);
-					bat_destroy(b);
-					b = nb;
-			}
+	if (!(ids = temp_descriptor(cs->uibid)))
+		return NULL;
+	/* Slice the update ids when they extend beyond this segment.  The
+	 * update values must use exactly the same selection, otherwise the
+	 * id/value BATs passed to sql.delta have different sizes.  Both the
+	 * lower and upper bound matter: a segment can start above all ids
+	 * even though its end is beyond them. */
+	bool need_slice = !ids->tsorted;
+	if (!need_slice && BATcount(ids)) {
+		oid first, last;
+		if (BATtdense2(ids)) {
+			first = ids->tseqbase;
+			last = ids->tseqbase + BATcount(ids) - 1;
 		} else {
-			b = temp_descriptor(cs->uvbid);
+			first = ((oid*)ids->theap->base)[0];
+			last = ((oid*)ids->theap->base)[BATcount(ids)-1];
+		}
+		need_slice = first < l || (h != BUN_NONE && last >= h);
+	}
+	if (need_slice) {
+		sel = BATselect(ids, NULL, &l, &h, true, false, false, false);
+		if (!sel) {
+			bat_destroy(ids);
+			return NULL;
+		}
+	}
+
+	if (access == RD_UPD_ID) {
+		if (sel) {
+			b = BATproject(sel, ids);
+		} else {
+			b = ids;
+			ids = NULL;
 		}
 	} else {
-		b = e_BAT(access == RD_UPD_ID?TYPE_oid:type);
+		if (!(b = temp_descriptor(cs->uvbid))) {
+			bat_destroy(sel);
+			bat_destroy(ids);
+			return NULL;
+		}
+		if (sel) {
+			BAT *nb = BATproject(sel, b);
+			bat_destroy(b);
+			b = nb;
+		}
 	}
+	bat_destroy(sel);
+	bat_destroy(ids);
 	return b;
 }
 

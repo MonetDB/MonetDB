@@ -6,7 +6,7 @@ statement error M1M05!Insufficient privileges to change user 'monetdb'
 ALTER USER monetdb MAX_WORKERS 10
 
 @connection(id=test)
-statement error HY009!Role (monetdb) missing
+statement error HY009!Switching to user monetdb not allowed
 SET SESSION AUTHORIZATION monetdb
 
 @connection(id=test)

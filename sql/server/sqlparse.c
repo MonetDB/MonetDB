@@ -211,7 +211,7 @@ dlist2string(allocator *ta, mvc *sql, dlist *l, char *sep, char *lb, char *rb, i
 
 	size_t seplen = strlen(sep);
 
-	bool first_el = lb;
+	bool first_el = (lb != NULL);
 	for (n=l->h; n; n = n->next) {
 		char *s = dnode2string(ta, sql, n, expression, err, depth, indent);
 

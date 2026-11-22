@@ -6825,13 +6825,17 @@ sql_update_triggers(backend *be, sql_table *t, stmt *tids, stmt **updates, int t
 	return res;
 }
 
-static void
+static int
 sql_update_check(backend *be, stmt **updates, sql_key *key, stmt *u_tids)
 {
 	mvc *sql = be->mvc;
 	int pos = 0;
 	sql_rel *rel = rel_basetable(sql, key->t, key->t->base.name);
 	sql_exp *exp = exp_read(sql, rel, NULL, NULL, ma_strdup(sql->sa, key->check), &pos, 0);
+	/* the CHECK expression may no longer be parseable, eg when a function
+	 * referenced by it was dropped; exp_read() already set an error */
+	if (!exp)
+		return -1;
 	rel->exps = rel_base_projection(sql, rel, 0);
 
 	/* create sub stmt with needed updates (or projected col from to be updated table) */
@@ -6852,12 +6856,15 @@ sql_update_check(backend *be, stmt **updates, sql_key *key, stmt *u_tids)
 
 	stmt *sub = stmt_list(be, ups);
 	stmt *s = exp_bin(be, exp, sub, NULL, NULL, NULL, NULL, NULL, 0, 0, 0);
+	if (!s)
+		return -1;
 
 	sql_subfunc *cnt = sql_bind_func(sql, "sys", "count", sql_fetch_localtype(TYPE_void), NULL, F_AGGR, true, true);
 	s = stmt_uselect(be, column(be, s), stmt_bool(be, 0), cmp_equal, NULL, 0, 1);
 	s = stmt_aggr(be, s, NULL, NULL, cnt, 1, 0, 1);
 	char *msg = sa_message(sql->sa, SQLSTATE(40002) "UPDATE: violated constraint '%s.%s' CHECK(%s)", key->t->s->base.name, key->base.name, exp->comment);
 	(void)stmt_exception(be, s, msg, 00001);
+	return 0;
 }
 
 static void
@@ -6963,8 +6970,9 @@ rel2bin_update(backend *be, sql_rel *rel, list *refs)
 			stmt *tids = stmt_tid(be, t, 0);
 			for (m = ol_first_node(t->keys); m; m = m->next) {
 				sql_key * key = m->data;
-				if (key->type == ckey && key->base.new)
-					sql_update_check(be, NULL, key, tids);
+				if (key->type == ckey && key->base.new &&
+				    sql_update_check(be, NULL, key, tids) < 0)
+					return NULL;
 			}
 			return ddl;
 		}
@@ -6992,8 +7000,9 @@ rel2bin_update(backend *be, sql_rel *rel, list *refs)
 
 	for (m = ol_first_node(t->keys); m; m = m->next) {
 		sql_key * key = m->data;
-		if (key->type == ckey && is_check_updated(key, updates))
-			sql_update_check(be, updates, key, tids);
+		if (key->type == ckey && is_check_updated(key, updates) &&
+		    sql_update_check(be, updates, key, tids) < 0)
+			return NULL;
 	}
 	sql_update_check_null(be, t, updates);
 

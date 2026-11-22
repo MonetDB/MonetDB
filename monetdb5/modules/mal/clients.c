@@ -505,7 +505,7 @@ CLTqueryTimeoutMicro(Client ctx, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		QryCtx *qry_ctx = MT_thread_get_qry_ctx();
 		if (qry_ctx) {
 			qry_ctx->endtime = qry_ctx->starttime && qto ? qry_ctx->starttime + qto : 0;
-			if (qry_ctx->endtime == 0 || ctx->sessiontimeout < qry_ctx->endtime)
+			if (ctx->sessiontimeout && (qry_ctx->endtime == 0 || ctx->sessiontimeout < qry_ctx->endtime))
 				qry_ctx->endtime = ctx->sessiontimeout;
 		}
 	}
