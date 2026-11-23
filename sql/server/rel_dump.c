@@ -1457,6 +1457,8 @@ exp_read(mvc *sql, sql_rel *lrel, sql_rel *rrel, list *top_exps, char *r, int *p
 						}
 						exp = exp_compare2(sql->sa, rexps->h->data, lexps->h->data, fexps->h->data, compare2range(swap_compare(ctype), ctype2), sym);
 					} else {
+						if (list_length(lexps) != 1 || list_length(rexps) != 1)
+							return sql_error(sql, -1, SQLSTATE(42000) "Comparison: missing expression\n");
 						exp = exp_compare(sql->sa, lexps->h->data, rexps->h->data, ctype);
 						if (semantics)
 							set_semantics(exp);

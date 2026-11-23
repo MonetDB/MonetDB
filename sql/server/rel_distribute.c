@@ -422,7 +422,7 @@ rel_rewrite_remote_(visitor *v, sql_rel *rel)
 					r->p = prop_remove(v->sql->sa, r->p, pr);
 				if (!find_prop(rel->p, PROP_REMOTE)) {
 					/* remove local tid ONLY if no subtree has local parts */
-					if (pl->id == 0 || pr->id == 0)
+					if (pl && (pl->id == 0 || (pr && pr->id == 0)))
 						pl->id = 0;
 					/* set the new (matching) uris */
 					pl->value.pval = uris;
@@ -455,7 +455,7 @@ rel_rewrite_remote_(visitor *v, sql_rel *rel)
 				r->p = prop_remove(v->sql->sa, r->p, pr);
 				if (!find_prop(rel->p, PROP_REMOTE)) {
 					/* remove local tid ONLY if no subtree has local parts */
-					if (pl->id == 0 || pr->id == 0)
+					if (pl && (pl->id == 0 || (pr && pr->id == 0)))
 						pl->id = 0;
 					/* set the new (matching) uris */
 					pl->value.pval = uris;
@@ -510,7 +510,7 @@ rel_rewrite_remote_(visitor *v, sql_rel *rel)
 					r->p = prop_remove(v->sql->sa, r->p, pr);
 					if (!find_prop(rel->p, PROP_REMOTE)) {
 						/* remove local tid ONLY if no subtree has local parts */
-						if (pl->id == 0 || pr->id == 0)
+						if (pl && (pl->id == 0 || (pr && pr->id == 0)))
 							pl->id = 0;
 						/* set the new (matching) uris */
 						pl->value.pval = uris;
