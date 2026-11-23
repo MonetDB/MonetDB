@@ -3065,10 +3065,11 @@ BATdirty(const BAT *b)
 {
 	return !b->batCopiedtodisk ||
 		b->theap->dirty ||
-		(b->tvheap != NULL && b->tvheap->dirty);
+		(b->tvheap != NULL && b->tvheap->dirty) ||
+		(b->tstats != NULL && b->tstats->dirty);
 }
 
-#define BATdirtybi(bi)	(!(bi).copiedtodisk || (bi).hdirty || (bi).vhdirty)
+#define BATdirtybi(bi)	(!(bi).copiedtodisk || (bi).hdirty || (bi).vhdirty || (bi).shdirty)
 
 ATTR_PURE
 static inline BUN
