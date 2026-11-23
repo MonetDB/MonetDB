@@ -236,3 +236,4 @@ KNOWNFAIL?8010-first_value-last_value-partition-range-bug
 8073-editdistance-cost-overflow
 8076-crash-in-firstvalue-on-values
 8077-read-rel-crash
+8079-maxmemory-overflow
