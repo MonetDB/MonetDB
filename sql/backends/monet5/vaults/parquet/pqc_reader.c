@@ -1874,10 +1874,10 @@ pqc_add_nil( pqc_reader_t *r, pqc_creader_t *cr, char *output, char *data, uint6
 		i -= len;
 		if (def) {
 			pos -= w*len;
-			memcpy(output+w*i, data+pos, len*w);
+			memmove(output+w*i, data+pos, len*w);
 		} else {
 			for(int j = 0; j<len; j++)
-				memcpy(output+w*(i+j), nil, w);
+				memmove(output+w*(i+j), nil, w);
 		}
 		def = !def;
 	}
