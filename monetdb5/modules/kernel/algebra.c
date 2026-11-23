@@ -478,7 +478,7 @@ ALGmarkselect(Client ctx, bat *r1, bat *r2, const bat *gid, const bat *mid, cons
 }
 
 static str
-ALGselectNotFalse(Client ctx, bat *r1, bat *r2, const bat *gid, const bat *mark, const bat *pred, const bit *Aggr)
+ALGmarkselect2(Client ctx, bat *r1, bat *r2, const bat *gid, const bat *mark, const bat *pred, const bit *Aggr, const bit *Outer)
 {
 	(void) ctx;
 	BAT *g = BATdescriptor(*gid); /* oid */
@@ -486,6 +486,7 @@ ALGselectNotFalse(Client ctx, bat *r1, bat *r2, const bat *gid, const bat *mark,
 	BAT *p = BATdescriptor(*pred); /* bit */
 	BAT *res1 = NULL, *res2 = NULL;
 	bit aggr = *Aggr;
+	bit outer = *Outer;
 
 	if (!g || !m || !p)
 		goto error;
@@ -506,7 +507,7 @@ ALGselectNotFalse(Client ctx, bat *r1, bat *r2, const bat *gid, const bat *mark,
 			for (BUN n = 0; n < nr; n++, c++) {
 				ri1[q] = c;
 				ri2[q] = (mi[n] == FALSE || pi[n] == FALSE)?FALSE:(mi[n] == bit_nil || pi[n] == bit_nil)?bit_nil:TRUE;
-				q += (ri2[q] != FALSE); /* filter out the rows that are surely FALSE */
+				q += ((ri2[q] != FALSE) /* filter out the rows that are surely FALSE for !outer */ || outer);
 			}
 		} else { /* the aggregated variant */
 			oid *gi = Tloc(g, 0);
@@ -514,7 +515,7 @@ ALGselectNotFalse(Client ctx, bat *r1, bat *r2, const bat *gid, const bat *mark,
 			bit m = (mi[0] == FALSE || pi[0] == FALSE)?FALSE:(mi[0] == bit_nil || pi[0] == bit_nil)?bit_nil:TRUE;
 			bool all_unequal = (m == FALSE)?TRUE:FALSE;
 			for (BUN n = 1; n < nr; n++, c++) {
-				if (cur != gi[n] && !all_unequal) {
+				if (cur != gi[n] && (!all_unequal || outer)) {
 					ri1[q] = c;
 					ri2[q] = m;
 					q++;
@@ -525,7 +526,7 @@ ALGselectNotFalse(Client ctx, bat *r1, bat *r2, const bat *gid, const bat *mark,
 				m = (m == FALSE && (mi[n] == FALSE || pi[n] == FALSE))?FALSE:(m == bit_nil || mi[n] == bit_nil || pi[n] == bit_nil)?bit_nil:TRUE;
 				all_unequal = all_unequal & (m == FALSE);
 			}
-			if (!all_unequal) {
+			if (!all_unequal || outer) {
 				ri1[q] = c;
 				ri2[q] = m;
 				q++;
@@ -2090,9 +2091,9 @@ static mel_func algebra_init_funcs[] = {
  command("algebra", "select", ALGselect2nil, false, "With unknown set, each nil != nil", args(1,9, batarg("",oid),batargany("b",1),batarg("s",oid),argany("low",1),argany("high",1),arg("li",bit),arg("hi",bit),arg("anti",bit),arg("unknown",bit))),
  command("algebra", "thetaselect", ALGthetaselect2, false, "Select all head values of the first input BAT for which the tail value obeys the relation value OP VAL and for which the head value occurs in the tail of the second input BAT. Input is a dense-headed BAT, output is a dense-headed BAT with in the tail the head value of the input BAT for which the relationship holds.  The output BAT is sorted on the tail value.", args(1,5, batarg("",oid),batargany("b",1),batarg("s",oid),argany("val",1),arg("op",str))),
  command("algebra", "markselect", ALGmarkselect, false, "Group on group-ids, return aggregated anyequal or allnotequal", args(2,6, batarg("",oid), batarg("", bit), batarg("gid",oid), batarg("m", bit), batarg("p", bit), arg("any", bit))),
+ command("algebra", "markselect", ALGmarkselect2, false, "Return (gid, mark&&pred). If 'aggr', group on gid, return aggregated (gid, mark&&pred). If 'outer', return a row for each (grouped) gid; otherwise, return only the rows where mark&&pred != FALSE.", args(2,7, batarg("",oid), batarg("", bit), batarg("gid", oid), batarg("mark", bit), batarg("pred", bit), arg('aggr',bit), arg('outer',bit))),
  command("algebra", "single", ALGsingle, false, "Check for single result ids.", args(1,3, batarg("r",oid), batarg("cands", oid), batarg("i", oid))),
  command("algebra", "outerselect", ALGouterselect, false, "Per input lid return at least one row, if none of the predicates (p) hold, return a nil, else 'all' true cases.", args(2,7, batarg("",oid), batarg("", bit), batarg("lid", oid), batarg("rid", bit), batarg("predicate", bit), arg("any", bit), arg("single", bit))),
- command("algebra", "selectNotFalse", ALGselectNotFalse, false, "Return (gid, mark&&pred), if mark&&pred != FALSE. If 'aggr', group on gid, return aggregated (gid, mark&&pred)", args(2,6, batarg("",oid), batarg("", bit), batarg("gid", oid), batarg("mark", bit), batarg("pred", bit), arg('aggr',bit))),
  command("algebra", "selectNotNil", ALGselectNotNil, false, "Select all not-nil values", args(1,2, batargany("",1),batargany("b",1))),
  command("algebra", "sort", ALGsort11, false, "Returns a copy of the BAT sorted on tail values. The order is descending if the reverse bit is set. This is a stable sort if the stable bit is set.", args(1,5, batargany("",1),batargany("b",1),arg("reverse",bit),arg("nilslast",bit),arg("stable",bit))),
  command("algebra", "sort", ALGsort12, false, "Returns a copy of the BAT sorted on tail values and a BAT that specifies how the input was reordered. The order is descending if the reverse bit is set. This is a stable sort if the stable bit is set.", args(2,6, batargany("",1),batarg("",oid),batargany("b",1),arg("reverse",bit),arg("nilslast",bit),arg("stable",bit))),
