@@ -574,7 +574,7 @@ BATclear(BAT *b, bool force)
 	}
 
 	if (b->tstats) {
-		memset(b->tstats->base, 0, TSTATS_SZ);
+		memset(tstats_sketch(b->tstats), 0, SKETCH_SZ);
 		b->tstats->dirty = true;
 	}
 
