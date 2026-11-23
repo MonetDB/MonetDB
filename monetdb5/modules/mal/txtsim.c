@@ -35,24 +35,24 @@ reclaim_bats(int nargs, ...)
 	va_end(valist);
 }
 
-static inline int *
-damerau_get_cellpointer(int *pOrigin, int col, int row, int nCols)
+static inline lng *
+damerau_get_cellpointer(lng *pOrigin, int col, int row, int nCols)
 {
 	return pOrigin + col + (row * (nCols + 1));
 }
 
-static inline int
-damerau_getat(int *pOrigin, int col, int row, int nCols)
+static inline lng
+damerau_getat(lng *pOrigin, int col, int row, int nCols)
 {
-	int *pCell;
+	lng *pCell;
 	pCell = damerau_get_cellpointer(pOrigin, col, row, nCols);
 	return *pCell;
 }
 
 static inline void
-damerau_putat(int *pOrigin, int col, int row, int nCols, int x)
+damerau_putat(lng *pOrigin, int col, int row, int nCols, lng x)
 {
-	int *pCell;
+	lng *pCell;
 	pCell = damerau_get_cellpointer(pOrigin, col, row, nCols);
 	*pCell = x;
 }
@@ -61,7 +61,7 @@ static str
 dameraulevenshtein(int *res, const char *s, const char *t, int insdel_cost,
 				   int replace_cost, int transpose_cost)
 {
-	int *d;						/* pointer to matrix */
+	lng *d;						/* pointer to matrix */
 	int n;						/* length of s */
 	int m;						/* length of t */
 	int i;						/* iterates through s */
@@ -69,12 +69,13 @@ dameraulevenshtein(int *res, const char *s, const char *t, int insdel_cost,
 	char s_i;					/* ith character of s */
 	char t_j;					/* jth character of t */
 	int cost;					/* cost */
-	int cell;					/* contents of target cell */
-	int above;					/* contents of cell immediately above */
-	int left;					/* contents of cell immediately to left */
-	int diag;					/* contents of cell immediately above and to left */
-	lng sz;					/* number of cells in matrix */
-	int diag2 = 0, cost2 = 0;
+	lng cell;					/* contents of target cell */
+	lng above;					/* contents of cell immediately above */
+	lng left;					/* contents of cell immediately to left */
+	lng diag;					/* contents of cell immediately above and to left */
+	lng sz;						/* number of bytes in matrix */
+	lng diag2 = 0, cost2 = 0;
+	lng distance;
 
 	if (strNil(s) || strNil(t)) {
 		*res = int_nil;
@@ -93,14 +94,17 @@ dameraulevenshtein(int *res, const char *s, const char *t, int insdel_cost,
 		return MAL_SUCCEED;
 	}
 
-	sz = (((lng)n) + 1) * (((lng)m) + 1) * sizeof(int);
+	/* Use lng cells so candidate costs cannot wrap before the minimum is
+	 * known; an intermediate cell may exceed INT_MAX while the final
+	 * distance is still representable via a cheaper path. */
+	sz = (((lng)n) + 1) * (((lng)m) + 1) * sizeof(lng);
 	if (sz > (LL_CONSTANT(1)<<28))
 		throw(MAL, "dameraulevenshtein", SQLSTATE(HY013) MAL_MALLOC_FAIL);
 
 	allocator *ma = MT_thread_getallocator();
 	allocator_state ma_state = ma_open(ma);
 
-	d = (int *) ma_alloc(ma, (size_t)sz);
+	d = (lng *) ma_alloc(ma, (size_t)sz);
 	if (d == NULL) {
 		ma_close(&ma_state);
 		throw(MAL, "dameraulevenshtein", SQLSTATE(HY013) MAL_MALLOC_FAIL);
@@ -147,8 +151,11 @@ dameraulevenshtein(int *res, const char *s, const char *t, int insdel_cost,
 		}
 	}
 	/* Step 7 */
-	*res = damerau_getat(d, n, m, n);
+	distance = damerau_getat(d, n, m, n);
 	ma_close(&ma_state);
+	if (distance > INT_MAX || distance < INT_MIN)
+		throw(MAL, "dameraulevenshtein", SQLSTATE(22003) "overflow in calculation");
+	*res = (int) distance;
 	return MAL_SUCCEED;
 }
 
@@ -193,14 +200,59 @@ TXTSIMdameraulevenshtein(Client ctx, MalBlkPtr mb, MalStkPtr stk,
 							  transpose_cost);
 }
 
-static inline str
+/* Levenshtein OP but with column externally allocated.  The result is
+ * INT_MAX when the cutoff max was exceeded and LLONG_MAX for illegal UTF-8.
+ * lng cells prevent large costs from wrapping before the minimum is known. */
+static lng
+levenshtein2(const char *x, const char *y, const size_t xlen, const size_t ylen,
+			 lng *column, const int insdel_cost,
+			 const int replace_cost, const int max)
+{
+	size_t i = 0, j = 0;
+	lng min;
+	lng last_diagonal, old_diagonal;
+	uint32_t cx, cy;
+
+	if (strNil(x) || strNil(y))
+		return int_nil;
+
+	if (xlen == ylen && (strcmp(x, y) == 0))
+		return 0;
+
+	for (i = 1; i <= xlen; i++)
+		column[i] = (lng) i;
+
+	for (j = 1; j <= ylen; j++) {
+		column[0] = (lng) j;
+		min = LLONG_MAX;
+		const char *x_iter = x;
+		y = nextchar(y, &cy);
+		if (y == NULL)
+			return LLONG_MAX;
+		for (i = 1, last_diagonal = (lng) j - 1; i <= xlen; i++) {
+			x_iter = nextchar(x_iter, &cx);
+			if (x_iter == NULL)
+				return LLONG_MAX;
+			old_diagonal = column[i];
+			column[i] = MIN3(column[i] + insdel_cost,
+							 column[i - 1] + insdel_cost,
+							 last_diagonal + (cx == cy ? 0 : replace_cost));
+			last_diagonal = old_diagonal;
+			if (last_diagonal < min)
+				min = last_diagonal;
+		}
+		if (max != -1 && min > (lng) max)
+			return INT_MAX;
+	}
+	return column[xlen];
+}
+
+static str
 levenshtein(int *res, const char *x, const char *y, int insdel_cost,
 			int replace_cost, int max)
 {
-	unsigned int xlen, ylen, i = 0, j = 0;
-	unsigned int last_diagonal, old_diagonal;
-	uint32_t cx, cy;
-	unsigned int *column, min;
+	size_t xlen, ylen;
+	lng *column, distance;
 
 	if (strNil(x) || strNil(y)) {
 		*res = int_nil;
@@ -218,93 +270,22 @@ levenshtein(int *res, const char *x, const char *y, int insdel_cost,
 	allocator *ma = MT_thread_getallocator();
 	allocator_state ma_state = ma_open(ma);
 
-	column = ma_alloc(ma, (xlen + 1) * sizeof(unsigned int));
+	column = ma_alloc(ma, (xlen + 1) * sizeof(lng));
 	if (column == NULL) {
 		ma_close(&ma_state);
 		throw(MAL, "levenshtein", MAL_MALLOC_FAIL);
 	}
 
-	for (i = 1; i <= xlen; i++)
-		column[i] = i;
-
-	for (j = 1; j <= ylen; j++) {
-		column[0] = j;
-		min = INT_MAX;
-		const char *x_iter = x;
-		y = nextchar(y, &cy);
-		if (y == NULL)
-			goto illegal;
-		for (i = 1, last_diagonal = j - 1; i <= xlen; i++) {
-			x_iter = nextchar(x_iter, &cx);
-			if (x_iter == NULL)
-				goto illegal;
-			old_diagonal = column[i];
-			column[i] = MIN3(column[i] + insdel_cost,
-							 column[i - 1] + insdel_cost,
-							 last_diagonal + (cx == cy ? 0 : replace_cost));
-			last_diagonal = old_diagonal;
-			if (last_diagonal < min)
-				min = last_diagonal;
-		}
-		if (max != -1 && min > (unsigned int) max) {
-			*res = INT_MAX;
-			ma_close(&ma_state);
-			return MAL_SUCCEED;
-		}
-	}
-
-	*res = column[xlen];
+	distance = levenshtein2(x, y, xlen, ylen, column, insdel_cost,
+							replace_cost, max);
 	ma_close(&ma_state);
+
+	if (distance == LLONG_MAX)
+		throw(MAL, "txtsim.levenshtein", "Illegal unicode code point");
+	if (distance > INT_MAX || distance < INT_MIN)
+		throw(MAL, "levenshtein", SQLSTATE(22003) "overflow in calculation");
+	*res = (int) distance;
 	return MAL_SUCCEED;
-  illegal:
-	ma_close(&ma_state);
-	throw(MAL, "txtsim.levenshtein", "Illegal unicode code point");
-}
-
-/* Levenshtein OP but with column externally allocated */
-static inline int
-levenshtein2(const char *x, const char *y, const size_t xlen, const size_t ylen,
-			 unsigned int *column, const int insdel_cost,
-			 const int replace_cost, const int max)
-{
-	unsigned int i = 0, j = 0, min;;
-	unsigned int last_diagonal, old_diagonal;
-	uint32_t cx, cy;
-
-	if (strNil(x) || strNil(y))
-		return int_nil;
-
-	if (xlen == ylen && (strcmp(x, y) == 0))
-		return 0;
-
-	for (i = 1; i <= xlen; i++)
-		column[i] = i;
-
-	for (j = 1; j <= ylen; j++) {
-		column[0] = j;
-		min = INT_MAX;
-		const char *x_iter = x;
-		y = nextchar(y, &cy);
-		if (y == NULL)
-			goto illegal;
-		for (i = 1, last_diagonal = j - 1; i <= xlen; i++) {
-			x_iter = nextchar(x_iter, &cx);
-			if (x_iter == NULL)
-				goto illegal;
-			old_diagonal = column[i];
-			column[i] = MIN3(column[i] + insdel_cost,
-							 column[i - 1] + insdel_cost,
-							 last_diagonal + (cx == cy ? 0 : replace_cost));
-			last_diagonal = old_diagonal;
-			if (last_diagonal < min)
-				min = last_diagonal;
-		}
-		if (max != -1 && min > (unsigned int) max)
-			return INT_MAX;
-	}
-	return column[xlen];
-  illegal:
-	return INT_MAX;
 }
 
 static str
@@ -374,11 +355,11 @@ BATTXTSIMmaxlevenshtein(Client ctx, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	BAT *left = NULL, *right = NULL, *bn = NULL;
 	BUN p, q;
 	BATiter li, ri;
-	unsigned int *buffer = NULL;
+	lng *buffer = NULL;
 	const char *lv, *rv;
 	str msg = MAL_SUCCEED;
 	size_t llen = 0, rlen = 0, maxlen = 0;
-	int d;
+	lng d;
 	bit v;
 	allocator *ma = NULL;
 
@@ -418,9 +399,9 @@ BATTXTSIMmaxlevenshtein(Client ctx, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			v = false;
 		else {
 			if (llen > maxlen) {
-				size_t osz = maxlen * sizeof(unsigned int);
+				size_t osz = maxlen * sizeof(lng);
 				maxlen = llen;
-				buffer = ma_realloc(ma, buffer, (maxlen + 1) * sizeof(unsigned int), osz);
+				buffer = ma_realloc(ma, buffer, (maxlen + 1) * sizeof(lng), osz);
 				if (buffer == NULL) {
 					bat_iterator_end(&li);
 					bat_iterator_end(&ri);
@@ -431,7 +412,7 @@ BATTXTSIMmaxlevenshtein(Client ctx, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			}
 			d = levenshtein2(lv, rv, llen, rlen, buffer, insdel_cost,
 							 replace_cost, (int) *k);
-			v = (bit) (d <= (int) *k);
+			v = (bit) (d <= (lng) *k);
 		}
 		if (BUNappend(bn, (const void *) &v, false) != GDK_SUCCEED) {
 			bat_iterator_end(&li);

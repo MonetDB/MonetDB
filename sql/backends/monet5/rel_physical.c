@@ -512,6 +512,8 @@ find_cmp_exps(list **exps_hsh, list **exps_prb, const list *exps, sql_rel *rel_h
 					set_any(er);
 				if (semantic)
 					set_semantics(er);
+				if (er->nid != er->alias.label)
+					er->alias.label = 0;
 				append(*exps_hsh, er);
 				append(*exps_prb, e->l);
 			} else {
@@ -526,6 +528,8 @@ find_cmp_exps(list **exps_hsh, list **exps_prb, const list *exps, sql_rel *rel_h
 					set_any(el);
 				if (semantic)
 					set_semantics(el);
+				if (el->nid != el->alias.label)
+					el->alias.label = 0;
 				append(*exps_hsh, el);
 				append(*exps_prb, e->r);
 			}
@@ -829,7 +833,9 @@ rel_pipeline(visitor *v, sql_rel *rel, bool materialize, int pb)
 		}
 	} else if (is_topn(rel->op)) {
 		/* e.g. pp is not useful for "SELECT 42 LIMIT 2" */
-		bool pp_useful = (get_rel_count(rel->l) > 1) && topn_limit(rel) /* no offset */;
+		/* a topn directly on a basetable should be pushed into the scan operator */
+		bool pp_useful = (get_rel_count(rel->l) > 1) && topn_limit(rel) &&
+			!is_basetable(((sql_rel*) rel->l)->op);
 		/* op_topn always has rel->l */
 		res = rel_pipeline(v, rel->l, pp_useful, pp_useful?SPB:0);
 		if (pp_useful && res) { /* topn is blocking */

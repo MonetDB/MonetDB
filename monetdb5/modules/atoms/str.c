@@ -1751,10 +1751,8 @@ str_insert(str *buf, size_t *buflen, const char *s, int strt, int l,
 			  SQLSTATE(42000)
 			  "The number of characters for insert function must be non negative");
 	if (strt < 0) {
-		if (-strt <= l1)
-			strt = l1 + strt;
-		else
-			strt = 0;
+		lng pos = (lng) l1 + strt;
+		strt = pos > 0 ? (int) pos : 0;
 	}
 	if (strt > l1)
 		strt = l1;
@@ -1765,7 +1763,9 @@ str_insert(str *buf, size_t *buflen, const char *s, int strt, int l,
 	if (strt > 0)
 		v = UTF8_strncpy(v, s, strt);
 	v = stpcpy(v, s2);
-	if (strt + l < l1)
+	/* l may be INT_MAX, so avoid computing strt + l before checking
+	 * whether the requested range reaches past the end of the string */
+	if (l < l1 - strt)
 		strcpy(v, UTF8_strtail(s, strt + l));
 	return MAL_SUCCEED;
 }

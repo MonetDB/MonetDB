@@ -1618,7 +1618,7 @@ int pl_register(const char *name, pl_add_types_fptr add_types, pl_load_fptr pl_l
 void pl_unregister(const char *name);
 void pp_cleanup(backend *ba, int var);
 void pqc_close(pqc_file *pq);
-pqc_file *pqc_copy(pqc_file *pq);
+pqc_file *pqc_copy(pqc_file *pq, int wid);
 pqc_file *pqc_dup(pqc_file *pq);
 const char *pqc_get_error(pqc_reader_t *r);
 int pqc_get_field(char *in, int *fieldid, int *type);

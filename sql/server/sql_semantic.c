@@ -114,13 +114,15 @@ tmp_schema(mvc *sql)
 
 #define DO_NOTHING(x) ((void) 0)
 
-#define search_object_on_path(CALL, EXTRA_CONDITION, EXTRA, ERROR_CODE, show_error) \
+#define search_object_on_path(CALL, EXTRA_CONDITION, EXTRA, ERROR_CODE, show_error, reserr) \
 	do { \
 		sql_schema *next = NULL; \
  \
 		if (sname) { /* user has explicitly typed the schema, so either the object is there or we return error */ \
-			if (!(next = mvc_bind_schema(sql, sname))) \
-				return sql_error(sql, ERR_NOTFOUND, SQLSTATE(3F000) "%s: no such schema '%s'", error, sname); \
+			if (!(next = mvc_bind_schema(sql, sname))) { \
+				(void) sql_error(sql, ERR_NOTFOUND, SQLSTATE(3F000) "%s: no such schema '%s'", error, sname); \
+				return reserr; \
+			} \
 			EXTRA_CONDITION(EXTRA); /* for functions without schema, 'sys' is a valid schema to bind them */ \
 			if (!res) { \
 				CALL; \
@@ -151,8 +153,10 @@ tmp_schema(mvc *sql)
 				CALL; \
 			} \
 		} \
-		if (!res && show_error) \
-			return sql_error(sql, ERR_NOTFOUND, ERROR_CODE "%s: no such %s %s%s%s'%s'", error, objstr, sname ? "'":"", sname ? sname : "", sname ? "'.":"", name); \
+		if (!res && show_error) { \
+			(void) sql_error(sql, ERR_NOTFOUND, ERROR_CODE "%s: no such %s %s%s%s'%s'", error, objstr, sname ? "'":"", sname ? sname : "", sname ? "'.":"", name); \
+			return reserr; \
+		} \
 	} while (0)
 
 /* more or less the above, but as a function */
@@ -325,7 +329,7 @@ find_variable_on_scope(mvc *sql, const char *sname, const char *name, sql_var **
 	static const char objstr[] = "variable";
 	bool res = false;
 
-	search_object_on_path(var_find_on_global, DO_NOTHING, variable_extra, SQLSTATE(42000), true);
+	search_object_on_path(var_find_on_global, DO_NOTHING, variable_extra, SQLSTATE(42000), true, false);
 	return res;
 }
 
@@ -398,7 +402,7 @@ sql_find_func_internal(mvc *sql, list *ff, const char *fname, int nrargs, sql_ft
 	int key = hash_key(fname);
 	sql_subfunc *res = NULL;
 	int found = 0;
-	sql_ftype filt = (type == F_FUNC)?F_FILT:type;
+	sql_ftype filt = (type == F_FUNC || type == F_GROUPFILT)?F_FILT:type;
 
 	if (ff) {
 		if (ff->ht) {
@@ -440,7 +444,7 @@ static sql_subfunc *
 os_find_func_internal(mvc *sql, struct objectset *ff, const char *fname, int nrargs, sql_ftype type, bool private, sql_subfunc *prev)
 {
 	sql_subfunc *res = NULL;
-	sql_ftype filt = (type == F_FUNC)?F_FILT:type;
+	sql_ftype filt = (type == F_FUNC || type == F_GROUPFILT)?F_FILT:type;
 
 	if (ff) {
 		struct os_iter oi;
@@ -483,7 +487,7 @@ sql_find_func(mvc *sql, const char *sname, const char *name, int nrargs, sql_fty
 
 	assert(nrargs >= -1);
 
-	search_object_on_path(res = os_find_func_internal(sql, next->funcs, name, nrargs, type, private, prev), functions_without_schema, find_func_extra, "", false);
+	search_object_on_path(res = os_find_func_internal(sql, next->funcs, name, nrargs, type, private, prev), functions_without_schema, find_func_extra, "", false, NULL);
 	return res;
 }
 
@@ -651,7 +655,7 @@ score_func( sql_func *f, list *tl, bool exact, bool *downcast)
 static sql_subfunc *
 sql_bind_func__(mvc *sql, list *ff, const char *fname, list *ops, sql_ftype type, bool private, bool exact)
 {
-	sql_ftype filt = (type == F_FUNC)?F_FILT:type;
+	sql_ftype filt = (type == F_FUNC || type == F_GROUPFILT)?F_FILT:type;
 	sql_subtype *input_type = NULL;
 	sql_func *cand = NULL, *dcand = NULL;
 	int points = 0, dpoints = 0;
@@ -731,7 +735,7 @@ sql_bind_func__(mvc *sql, list *ff, const char *fname, list *ops, sql_ftype type
 static sql_subfunc *
 os_bind_func__(mvc *sql, struct objectset *ff, const char *fname, list *ops, sql_ftype type, bool private, bool exact)
 {
-	sql_ftype filt = (type == F_FUNC)?F_FILT:type;
+	sql_ftype filt = (type == F_FUNC || type == F_GROUPFILT)?F_FILT:type;
 	sql_subtype *input_type = NULL;
 	sql_func *cand = NULL, *dcand = NULL;
 	int points = 0, dpoints = 0;
@@ -790,7 +794,7 @@ sql_bind_func_(mvc *sql, const char *sname, const char *name, list *ops, sql_fty
 	FUNC_TYPE_STR(type, F, objstr);
 	(void) F; /* not used */
 
-	search_object_on_path(res = os_bind_func__(sql, next->funcs, name, ops, type, private, exact), functions_without_schema, sql_bind_func__extra, SQLSTATE(42000), true);
+	search_object_on_path(res = os_bind_func__(sql, next->funcs, name, ops, type, private, exact), functions_without_schema, sql_bind_func__extra, SQLSTATE(42000), true, NULL);
 	return res;
 }
 
@@ -904,7 +908,7 @@ sql_bind_func_result(mvc *sql, const char *sname, const char *name, sql_ftype ty
 	}
 	va_end(valist);
 
-	search_object_on_path(res = os_bind_func_result_internal(sql, next->funcs, name, type, private, ops, r_res), functions_without_schema, sql_bind_func_result_extra, SQLSTATE(42000), true);
+	search_object_on_path(res = os_bind_func_result_internal(sql, next->funcs, name, type, private, ops, r_res), functions_without_schema, sql_bind_func_result_extra, SQLSTATE(42000), true, NULL);
 	if (res) /* make sure we have the correct result type */
 		res->res->h->data = r_res;
 	return res;
@@ -916,14 +920,15 @@ sql_find_funcs_by_name_internal(mvc *sql, list *ff, const char *fname, sql_ftype
 	int key = hash_key(fname);
 	list *res = NULL;
 
+	sql_ftype ftype = type == F_GROUPFILT ? F_FILT : type;
 	if (ff) {
 		if (ff->ht) {
 			for (sql_hash_e *he = ff->ht->buckets[key&(ff->ht->size-1)]; he; he = he->chain) {
 				sql_func *f = he->value;
 
-				if (f->type != type || (f->private && !private))
+				if (f->type != ftype || (f->private && !private))
 					continue;
-				if (strcmp(f->base.name, fname) == 0) {
+				if (strcmp(f->base.name, fname) == 0 && (type != F_GROUPFILT || f->group)) {
 					if (!res)
 						res = sa_list(sql->sa);
 					list_append(res, f);
@@ -934,9 +939,9 @@ sql_find_funcs_by_name_internal(mvc *sql, list *ff, const char *fname, sql_ftype
 			sql_base_loop( ff, n) {
 				sql_func *f = n->data;
 
-				if (f->type != type || (f->private && !private))
+				if (f->type != ftype || (f->private && !private))
 					continue;
-				if (strcmp(f->base.name, fname) == 0) {
+				if (strcmp(f->base.name, fname) == 0 && (type != F_GROUPFILT || f->group)) {
 					if (!res)
 						res = sa_list(sql->sa);
 					list_append(res, f);
@@ -952,15 +957,16 @@ os_find_funcs_by_name_internal(mvc *sql, struct objectset *ff, const char *fname
 {
 	list *res = NULL;
 
+	sql_ftype ftype = type == F_GROUPFILT ? F_FILT : type;
 	if (ff) {
 		struct os_iter oi;
 		os_iterator(&oi, ff, sql->session->tr, fname);
 		for (sql_base *b = oi_next(&oi); b; b=oi_next(&oi)) {
 			sql_func *f = (sql_func*)b;
 
-			if (f->type != type || (f->private && !private))
+			if (f->type != ftype || (f->private && !private))
 				continue;
-			if (strcmp(f->base.name, fname) == 0) {
+			if (strcmp(f->base.name, fname) == 0 && (type != F_GROUPFILT || f->group)) {
 				if (!res)
 					res = sa_list(sql->sa);
 				list_append(res, f);
@@ -986,7 +992,7 @@ sql_find_funcs_by_name(mvc *sql, const char *sname, const char *name, sql_ftype 
 	FUNC_TYPE_STR(type, F, objstr);
 	(void) F; /* not used */
 
-	search_object_on_path(res = os_find_funcs_by_name_internal(sql, next->funcs, name, type, private), functions_without_schema, sql_find_funcs_by_name_extra, "", false);
+	search_object_on_path(res = os_find_funcs_by_name_internal(sql, next->funcs, name, type, private), functions_without_schema, sql_find_funcs_by_name_extra, "", false, NULL);
 	return res;
 }
 

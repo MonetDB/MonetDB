@@ -1,0 +1,6 @@
+statement error /Invalid size in:/
+CREATE USER overflow_user
+  WITH PASSWORD 'overflow_password'
+  NAME 'overflow user'
+  SCHEMA sys
+  MAX_MEMORY '9223372037G'

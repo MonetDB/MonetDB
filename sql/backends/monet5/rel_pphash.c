@@ -651,8 +651,10 @@ rel2bin_oahash_select(backend *be, stmt *sub, list *sexps, sql_rel *rel, bool ha
 static stmt *
 rel2bin_oahash_outerselect(backend *be, stmt *sub, list *sexps, sql_rel *rel, stmt *probed_ids, stmt *hash_ids, stmt **prb_mrk, bool cart, bool mark, bool manti)
 {
-	assert (is_outerjoin(rel->op) || !list_empty(rel->attr));
 	stmt *sel = NULL, *m = prb_mrk?*prb_mrk:NULL;
+	bool is_outerj = is_outerjoin(rel->op);
+
+	assert (is_outerj || !list_empty(rel->attr));
 
 	if (hash_ids && cart) {
 		/* 0 == empty (no matches possible), nil - no match (but has nil), 1 match */
@@ -673,9 +675,9 @@ rel2bin_oahash_outerselect(backend *be, stmt *sub, list *sexps, sql_rel *rel, st
 		if (sel)
 			lgids = stmt_project(be, sel, lgids);
 		stmt *outer = NULL;
-		if (manti) {
+		if (manti) {// && !is_outerj) {
 			assert(m); assert(p);
-			outer = stmt_selectNotFalse(be, lgids, m, p, !en->next);
+			outer = stmt_markselect2(be, lgids, m, p, !en->next, is_outerj);
 		}
 		else if (en->next || !mark)
 			outer = stmt_outerselect(be, lgids, m, p, is_any(e), !en->next && is_single(rel));
@@ -693,14 +695,28 @@ rel2bin_oahash_outerselect(backend *be, stmt *sub, list *sexps, sql_rel *rel, st
 		if (prb_mrk)
 			*prb_mrk = m;
 	}
-	if (manti) { /* do the reverse selection for the anti-joins */
-		stmt *u = stmt_unique(be, probed_ids);
-		if (!u) return NULL;
-		stmt *asel = stmt_tdiff4(be, probed_ids, probed_ids, u, sel);
-		if (!asel) return NULL;
-		sel = asel;
-		stmt *amrk = stmt_const(be, asel, stmt_bool(be, 1));
-		*prb_mrk = amrk;
+	if (manti) {
+		if (is_outerj) { /* reverse prb_mrk for outer joins, retain all probed_ids */
+			assert(prb_mrk && *prb_mrk);
+			InstrPtr q = newStmtArgs(be->mb, batcalcRef, notRef, 1);
+			if (!q) return NULL;
+			q = pushArgument(be->mb, q, (*prb_mrk)->nr);
+			pushInstruction(be->mb, q);
+			stmt *rmrk = stmt_none(be);
+			rmrk->op4.typeval = *sql_fetch_localtype(TYPE_bit);
+			rmrk->nrcols = 2;
+			rmrk->nr = q->argv[0];
+			rmrk->q = q;
+			*prb_mrk = rmrk;
+		} else { /* do the reverse selection for the anti-joins */
+			stmt *u = stmt_unique(be, probed_ids);
+			if (!u) return NULL;
+			stmt *asel = stmt_tdiff4(be, probed_ids, probed_ids, u, sel);
+			if (!asel) return NULL;
+			sel = asel;
+			stmt *amrk = stmt_const(be, asel, stmt_bool(be, 1));
+			*prb_mrk = amrk;
+		}
 	}
 	return sel;
 }

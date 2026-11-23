@@ -328,7 +328,7 @@ MALparser(Client c)
 	c->yycur = 0;
 	c->qryctx.starttime = GDKusec();
 	c->qryctx.endtime = c->querytimeout ? c->qryctx.starttime + c->querytimeout : 0;
-	if (c->qryctx.endtime == 0 || c->sessiontimeout < c->qryctx.endtime)
+	if (c->sessiontimeout && (c->qryctx.endtime == 0 || c->sessiontimeout < c->qryctx.endtime))
 		c->qryctx.endtime = c->sessiontimeout;
 
 	/* check for unfinished blocks */

@@ -873,7 +873,7 @@ monetdbe_open_remote(monetdbe_database_internal *mdbe, monetdbe_options *opts) {
 	stk->keepAlive = TRUE;
 	c->qryctx.starttime = GDKusec();
 	c->qryctx.endtime = c->querytimeout ? c->qryctx.starttime + c->querytimeout : 0;
-	if (c->qryctx.endtime == 0 || c->sessiontimeout < c->qryctx.endtime)
+	if (c->sessiontimeout && (c->qryctx.endtime == 0 || c->sessiontimeout < c->qryctx.endtime))
 		c->qryctx.endtime = c->sessiontimeout;
 	if ( (mdbe->msg = runMALsequence(c, mb, 1, 0, stk, 0, 0)) != MAL_SUCCEED ) {
 		freeStack(stk);
@@ -2004,7 +2004,7 @@ GENERATE_BASE_FUNCTIONS(int8_t, bool, bit)
 	GENERATE_BASE_FUNCTIONS(int32_t, int32_t, int)
 	GENERATE_BASE_FUNCTIONS(int64_t, int64_t, lng)
 #ifdef HAVE_HGE
-	GENERATE_BASE_FUNCTIONS(__int128, int128_t, hge)
+	GENERATE_BASE_FUNCTIONS(int128_t, int128_t, hge)
 #endif
 GENERATE_BASE_FUNCTIONS(size_t, size_t, oid)
 
@@ -2718,7 +2718,7 @@ monetdbe_result_fetch(monetdbe_result* mres, monetdbe_column** res, size_t colum
 		GENERATE_BAT_INPUT(b, int64_t, int64_t, lng);
 #ifdef HAVE_HGE
 	} else if (bat_type == TYPE_hge) {
-		GENERATE_BAT_INPUT(b, __int128, int128_t, hge);
+		GENERATE_BAT_INPUT(b, int128_t, int128_t, hge);
 #endif
 	} else if (bat_type == TYPE_flt) {
 		GENERATE_BAT_INPUT(b, float, float, flt);

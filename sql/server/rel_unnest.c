@@ -10,6 +10,7 @@
 
 #include "monetdb_config.h"
 #include "rel_optimizer_private.h"
+#include "rel_rel.h"
 #include "sql_decimal.h"
 #include "rel_unnest.h"
 #include "rel_basetable.h"
@@ -555,7 +556,7 @@ static bool
 exp_accessing_ad(mvc *sql, sql_exp *e, list *ad, struct access_info **acc)
 {
 	if (mvc_highwater(sql))
-		return sql_error(sql, 10, SQLSTATE(42000) "Query too complex: running out of stack space");
+		return sql_error(sql, 10, SQLSTATE(42000) "Query too complex: running out of stack space") == NULL;
 
 	switch(e->type) {
 	case e_column:
@@ -597,7 +598,7 @@ exp_accessing_ad(mvc *sql, sql_exp *e, list *ad, struct access_info **acc)
 	case e_psm:
 		if (exp_is_rel(e))
 			if (rel_has_freevar(sql, e->l))
-				return rel_freevar(sql, e->l, NULL);
+				return rel_freevar(sql, e->l, NULL) != NULL;
 		break;
 	case e_atom:
 		if (e->f)
@@ -931,8 +932,15 @@ rel_reduce2one_exp(mvc *sql, sql_rel *sq)
 
 	if (list_empty(sq->exps))
 		return NULL;
-	if (list_length(sq->exps) == 1)
+	if (list_length(sq->exps) == 1) {
+		e = sq->exps->t->data;
+		if (!is_freevar(e) && !exp_is_atom(e)) {
+			e = exp_atom_bool(sql->sa, 0);
+			sq->exps = append(sa_list(sql->sa), e);
+			return e;
+		}
 		return sq->exps->t->data;
+	}
 	for(node *n = sq->exps->h; n && !e; n = n->next) {
 		sql_exp *t = n->data;
 
@@ -942,7 +950,8 @@ rel_reduce2one_exp(mvc *sql, sql_rel *sq)
 	if (!e) {
 		list *exps = rel_projections(sql, sq->l, NULL, 0, 1);
 		e = exps->t->data;
-	}
+	} else if (!is_freevar(e) && !exp_is_atom(e))
+		e = exp_atom_bool(sql->sa, 0);
 	sq->exps = append(sa_list(sql->sa), e);
 	return e;
 }
@@ -2318,7 +2327,18 @@ rewrite_anyequal(visitor *v, sql_rel *rel, sql_exp *e, int depth)
 							set_any(inexp);
 						append(join->exps, inexp);
 					}
-					return sql_error(sql, 02, SQLSTATE(42000) "Tuple matching at projections not implemented in the backend yet");
+					if (!join->attr)
+						join->attr = sa_list(v->sql->sa);
+					sql_exp *a = exp_atom_bool(v->sql->sa, is_anyequal(sf));
+					set_no_nil(a);
+					if (!e->alias.label)
+						exp_label(v->sql->sa, a, ++v->sql->label);
+					else
+						exp_setalias(a, e->alias.label, exp_relname(e), exp_name(e));
+					le = exp_ref(v->sql, a);
+					le->card = CARD_MULTI; /* mark as multi value, the real attribute is introduced later */
+					append(join->attr, a);
+					return le;
 				} else {
 					use_any = true;
 					sql_exp *inexp = exp_compare(v->sql->sa, le, re, cmp_equal);
@@ -2770,7 +2790,7 @@ rewrite_exists(visitor *v, sql_rel *rel, sql_exp *e, int depth)
 
 			sq = exp_rel_get_rel(v->sql->sa, ie); /* get subquery */
 			/* number of expressions in set relations must match the children */
-			if (!is_project(sq->op) || (is_set(sq->op) && list_length(sq->exps) > 1) || (is_simple_project(sq->op) && !list_empty(sq->r)))
+			if (!is_project(sq->op) || is_mset(sq->op) || (is_simple_project(sq->op) && !list_empty(sq->r)))
 				sq = rel_project(v->sql->sa, sq, rel_projections(v->sql, sq, NULL, 1, 1));
 			if (!sq)
 				return NULL;

@@ -1,0 +1,46 @@
+statement ok
+DROP TABLE IF EXISTS f7363
+
+statement ok
+DROP TABLE IF EXISTS b7363
+
+statement ok
+CREATE TABLE f7363(n INT, c INT)
+
+statement ok
+CREATE TABLE b7363(n INT, c INT)
+
+statement ok
+INSERT INTO f7363 VALUES (1, 10), (1, 10), (2, 20)
+
+statement ok
+INSERT INTO b7363 VALUES (1, 10), (2, 20), (2, 20)
+
+# The duplicate aliases must not produce a duplicate join equality.
+query T nosort
+EXPLAIN SELECT * FROM (SELECT n n1, n n2, c FROM f7363) AS fs NATURAL JOIN (SELECT n n1, n n2, c FROM b7363) AS bs
+----
+project (
+| join (
+| | project (
+| | | table("sys"."f7363") [ "f7363"."n", "f7363"."c" ]
+| | ) [ "f7363"."n" as "fs"."n1", "fs"."n1" as "fs"."n2", "f7363"."c" as "fs"."c" ],
+| | project (
+| | | table("sys"."b7363") [ "b7363"."n", "b7363"."c" ]
+| | ) [ "b7363"."n" as "bs"."n1", "b7363"."c" as "bs"."c" ]
+| ) [ ("fs"."n1") = ("bs"."n1"), ("fs"."c") = ("bs"."c") ]
+) [ "fs"."n1", "fs"."n2", "fs"."c" ]
+
+query III nosort
+SELECT * FROM (SELECT n n1, n n2, c FROM f7363) AS fs NATURAL JOIN (SELECT n n1, n n2, c FROM b7363) AS bs ORDER BY 1, 2, 3
+----
+1	1	10
+1	1	10
+2	2	20
+2	2	20
+
+statement ok
+DROP TABLE f7363
+
+statement ok
+DROP TABLE b7363

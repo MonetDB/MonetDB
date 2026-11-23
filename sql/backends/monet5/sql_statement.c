@@ -2308,17 +2308,18 @@ stmt_markselect(backend *be, stmt *g, stmt *m, stmt *p, bool any)
 }
 
 stmt *
-stmt_selectNotFalse(backend *be, stmt *g, stmt *m, stmt *p, bool aggr)
+stmt_markselect2(backend *be, stmt *g, stmt *m, stmt *p, bool aggr, bool outer)
 {
 	MalBlkPtr mb = be->mb;
 	InstrPtr q;
 
-	q = newStmtArgs(mb, algebraRef, putName("selectNotFalse"), 6);
+	q = newStmtArgs(mb, algebraRef, putName("markselect"), 7);
 	q = pushReturn(mb, q, newTmpVariable(mb, newBatType(TYPE_bit)));
 	q = pushArgument(mb, q, g->nr); /* group ids */
 	q = pushArgument(mb, q, m->nr); /* mark flag */
 	q = pushArgument(mb, q, p->nr); /* predicate */
 	q = pushBit(mb, q, (aggr)?TRUE:FALSE);
+	q = pushBit(mb, q, (outer)?TRUE:FALSE);
 	pushInstruction(mb, q);
 
 	if (!q)
@@ -4829,7 +4830,6 @@ stmt_aggr(backend *be, stmt *op1, stmt *grp, stmt *ext, sql_subfunc *op, int red
 static stmt *
 stmt_alias_(backend *be, stmt *op1, int label, const char *tname, const char *alias)
 {
-	assert(label);
 	stmt *s = stmt_create(be->mvc->sa, st_alias);
 	if(!s) {
 		return NULL;

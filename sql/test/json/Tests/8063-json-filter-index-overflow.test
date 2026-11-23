@@ -1,0 +1,39 @@
+query T
+SELECT json.filter(JSON '[10,20,30]', 1)
+----
+20
+
+# indexes that do not fit in a 32-bit int must not wrap around
+query T
+SELECT json.filter(JSON '[10,20,30]', 4294967297)
+----
+[]
+
+query T
+SELECT json.filter(JSON '[10,20,30]', 4294967296)
+----
+[]
+
+# INT_MAX is a valid array index, not the [*] wildcard
+query T
+SELECT json.filter(JSON '[10,20,30]', 2147483647)
+----
+[]
+
+query T
+SELECT json.filter(JSON '[10,20,30]', '$[4294967297]')
+----
+[]
+
+query T
+SELECT json.filter(JSON '{"book":[{"author":"Nigel Rees"},{"author":"Evelyn Waugh"}]}', '.book.[4294967296]')
+----
+[]
+
+query T
+SELECT json.filter(JSON '[10,20,30]', '$[*]')
+----
+[10,20,30]
+
+statement error /index out of range/
+SELECT json.filter(JSON '[10,20,30]', '$[9223372036854775808]')

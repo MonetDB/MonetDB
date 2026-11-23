@@ -30,8 +30,12 @@
 #define inet4_min(a,b) ((cmp((void*)&a, (void*)&b) < 0) ? a : b)
 #define inet4_max(a,b) ((cmp((void*)&a, (void*)&b) > 0) ? a : b)
 
+#define inet6_min(a,b) ((cmp((void*)&a, (void*)&b) < 0) ? a : b)
+#define inet6_max(a,b) ((cmp((void*)&a, (void*)&b) > 0) ? a : b)
+
 #define getArgReference_date(stk, pci, nr) (date*)getArgReference(stk, pci, nr)
 #define getArgReference_inet4(stk, pci, nr) (inet4*)getArgReference(stk, pci, nr)
+#define getArgReference_inet6(stk, pci, nr) (inet6*)getArgReference(stk, pci, nr)
 #define getArgReference_daytime(stk, pci, nr) (daytime*)getArgReference(stk, pci, nr)
 #define getArgReference_timestamp(stk, pci, nr) (timestamp*)getArgReference(stk, pci, nr)
 
@@ -346,7 +350,7 @@ mulmod(lng a, lng b, lng c)
  * Note that the last term is only the fraction (i.e. strictly between
  * -1 and 1), so (a*b)%c is the remainder.
  */
-#ifdef HAVE___INT128
+#ifdef HAVE_INT128_T
 #define avg_aggr_comb(T, a1, r1, n1, a2, r2, n2)						\
 	do {																\
 		if (is_##T##_nil(a2)) {											\
@@ -365,8 +369,8 @@ mulmod(lng a, lng b, lng c)
 				a = 0;													\
 				r = 0;													\
 			} else {													\
-				a = (T) ((a1 / n) * N1 + ((a1 % n) * (__int128) N1) / n + \
-						 (a2 / n) * N2 + ((a2 % n) * (__int128) N2) / n + \
+				a = (T) ((a1 / n) * N1 + ((a1 % n) * (int128_t) N1) / n + \
+						 (a2 / n) * N2 + ((a2 % n) * (int128_t) N2) / n + \
 						 (r1 + r2) / n);								\
 				r = mulmod(a1, N1, n) + mulmod(a2, N2, n) + (r1 + r2) % n; \
 				while (r >= n) {										\
@@ -774,7 +778,7 @@ LOCKEDAGGRmin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		type != TYPE_lng && type != TYPE_int && type != TYPE_sht && type != TYPE_bte && type != TYPE_bit &&
 		type != TYPE_flt && type != TYPE_dbl && type != TYPE_oid &&
 		type != TYPE_date && type != TYPE_daytime && type != TYPE_timestamp && type != TYPE_uuid && type != TYPE_str &&
-		type != TYPE_inet4)
+		type != TYPE_inet4 && type != TYPE_inet6)
 		return createException(SQL, "lockedaggr.min", "Wrong input type (%d)", type);
 
 	pipeline_lock(p);
@@ -785,6 +789,7 @@ LOCKEDAGGRmin(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		if (!err) {
 			aggr(date,min);
 			faggr(inet4,inet4_min);
+			faggr(inet6,inet6_min);
 			aggr(daytime,min);
 			aggr(timestamp,min);
 			faggr(uuid,uuid_min);
@@ -836,7 +841,7 @@ LOCKEDAGGRmax(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		type != TYPE_lng && type != TYPE_int && type != TYPE_sht && type != TYPE_bte && type != TYPE_bit &&
 		type != TYPE_flt && type != TYPE_dbl && type != TYPE_oid &&
 		type != TYPE_date && type != TYPE_daytime && type != TYPE_timestamp && type != TYPE_uuid && type != TYPE_str &&
-		type != TYPE_inet4)
+		type != TYPE_inet4 && type != TYPE_inet6)
 		return createException(SQL, "lockedaggr.max", "Wrong input type (%d)", type);
 
 	pipeline_lock(p);
@@ -847,6 +852,7 @@ LOCKEDAGGRmax(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 		if (!err) {
 			aggr(date,max);
 			faggr(inet4,inet4_max);
+			faggr(inet6,inet6_max);
 			aggr(daytime,max);
 			aggr(timestamp,max);
 			faggr(uuid,uuid_max);
@@ -2187,9 +2193,11 @@ LALGconstant(Client ctx, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			goto error;
 		}
 		if (BATupdate(r, g, v, false) != GDK_SUCCEED) {
+			BBPreclaim(v);
 			err = createException(MAL, "ialgebra.project", SQLSTATE(HY002) OPERATION_FAILED);
 			goto error;
 		}
+		BBPreclaim(v);
 
 		if (!err)
 			TIMEOUT_CHECK(qry_ctx, err = createException(SQL, "ialgebra.project", RUNTIME_QRY_TIMEOUT));
@@ -2705,6 +2713,7 @@ LALGcount(Client ctx, bat *rid, bat *gid, bat *bid, bit *nonil, bat *pid)
 		gcount(int);
 		gcount(date);
 		gfcount(inet4);
+		gfcount(inet6);
 		gcount(lng);
 		gcount(oid);
 		gcount(daytime);
@@ -3782,22 +3791,26 @@ bail:
 /* private (changing) heap */
 #define vamin_(cmp, opos, in, i, bp)									\
 {																		\
-	var_t off = VarHeapVal(r->theap->base, opos, r->twidth);			\
-	if (!off || (in[i] != 0 && cmp(r->tvheap->base+off, bp+in[i]) > 0)) \
-		if (tfastins_nocheckVAR( r, opos, bp+in[i]) != GDK_SUCCEED) {	\
+	var_t ooff = VarHeapVal(r->theap->base, opos, r->twidth);			\
+	var_t ioff = VarHeapVal(b->theap->base, i, b->twidth);				\
+	if (ioff && (!ooff || cmp(r->tvheap->base+ooff, bp+ioff) > 0)) {		\
+		if (ioff && tfastins_nocheckVAR( r, opos, bp+ioff) != GDK_SUCCEED) {	\
 			err = createException(MAL, "ilockedaggr.min", MAL_MALLOC_FAIL);	\
 			goto error;													\
-		}																\
+		}\
+	} \
 }
 
 #define vamax_(cmp, opos, in, i, bp)									\
 {																		\
-	var_t off = VarHeapVal(r->theap->base, opos, r->twidth);			\
-	if (!off || (in[i] != 0 && cmp(r->tvheap->base+off, bp+in[i]) < 0)) \
-		if (tfastins_nocheckVAR( r, opos, bp+in[i]) != GDK_SUCCEED) {	\
+	var_t ooff = VarHeapVal(r->theap->base, opos, r->twidth);			\
+	var_t ioff = VarHeapVal(b->theap->base, i, b->twidth);				\
+	if (ioff && (!ooff || cmp(r->tvheap->base+ooff, bp+ioff) < 0)) {		\
+		if (ioff && tfastins_nocheckVAR( r, opos, bp+ioff) != GDK_SUCCEED) {	\
 			err = createException(MAL, "ilockedaggr.max", MAL_MALLOC_FAIL);	\
 			goto error;													\
-		}																\
+		}\
+	} \
 }
 
 #define gafunc_(f)														\
@@ -3806,25 +3819,8 @@ bail:
 		BATiter ri = bat_iterator(r);									\
 		char *bp = bi.vh->base;											\
 		int (*cmp)(const void *v1,const void *v2) = ATOMcompare(tt);	\
-		if (b->twidth == 1) {											\
-			bp += GDK_VAROFFSET;										\
-			uint8_t *in = Tloc(b, 0);									\
-			TIMEOUT_LOOP_IDX_DECL(i, cnt, qry_ctx)						\
-				f##_(cmp, grp[i], in, i, bp);							\
-		} else if (b->twidth == 2) {									\
-			bp += GDK_VAROFFSET;										\
-			uint16_t *in = Tloc(b, 0);									\
-			TIMEOUT_LOOP_IDX_DECL(i, cnt, qry_ctx)						\
-				f##_(cmp, grp[i], in, i, bp);							\
-		} else if (b->twidth == 4) {									\
-			uint32_t *in = Tloc(b, 0);									\
-			TIMEOUT_LOOP_IDX_DECL(i, cnt, qry_ctx)						\
-				f##_(cmp, grp[i], in, i, bp);							\
-		} else if (b->twidth == 8) {									\
-			var_t *in = Tloc(b, 0);										\
-			TIMEOUT_LOOP_IDX_DECL(i, cnt, qry_ctx)						\
-				f##_(cmp, grp[i], in, i, bp);							\
-		}																\
+		TIMEOUT_LOOP_IDX_DECL(i, cnt, qry_ctx)						\
+			f##_(cmp, grp[i], in, i, bp);							\
 		bat_iterator_end(&bi);											\
 		bat_iterator_end(&ri);											\
 	}
@@ -3947,6 +3943,7 @@ LALGmin(Client ctx, bat *rid, bat *gid, bat *bid, bat *pid)
 	gfunc(int,min);
 	gfunc(date,min);
 	gfunc2(inet4,inet4_min);
+	gfunc2(inet6,inet6_min);
 	gfunc(lng,min);
 	gfunc(daytime,min);
 	gfunc(timestamp,min);
@@ -4104,6 +4101,7 @@ LALGmax(Client ctx, bat *rid, bat *gid, bat *bid, bat *pid)
 	gfunc(int,max);
 	gfunc(date,max);
 	gfunc2(inet4,inet4_max);
+	gfunc2(inet6,inet6_max);
 	gfunc(lng,max);
 	gfunc(daytime,max);
 	gfunc(timestamp,max);

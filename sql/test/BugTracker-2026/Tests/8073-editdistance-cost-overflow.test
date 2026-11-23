@@ -1,0 +1,71 @@
+# large edit-operation costs must not wrap while computing distances
+
+query I
+SELECT dameraulevenshtein('MonetDB', 'DB3', 4, 2, 1)
+----
+8
+
+query I
+SELECT dameraulevenshtein('MonetDB', 'DB3', 2147483641, 2, 1)
+----
+8
+
+query I
+SELECT dameraulevenshtein('MonetDB', 'DB3', 2147483642, 2, 1)
+----
+8
+
+query I
+SELECT dameraulevenshtein('MonetDB', 'DB3', 2147483646, 2, 1)
+----
+8
+
+query I
+SELECT dameraulevenshtein('MonetDB', 'DB3', 4, 2147483638, 1)
+----
+9
+
+query I
+SELECT dameraulevenshtein('MonetDB', 'DB3', 4, 2147483639, 1)
+----
+9
+
+query I
+SELECT dameraulevenshtein('ab', 'xy', 1, 1000, 1)
+----
+2
+
+query I
+SELECT dameraulevenshtein('ab', 'xy', 1, 2147483646, 1)
+----
+2
+
+query I
+SELECT levenshtein('MonetDB', 'DB3', 2147483646, 2, 1)
+----
+8
+
+query I
+SELECT levenshtein('MonetDB', 'DB3', 4, 2147483646, 1)
+----
+9
+
+query I
+SELECT levenshtein('abcd', 'wxyz', 1000, 1000)
+----
+4000
+
+statement error 22003!overflow in calculation
+SELECT dameraulevenshtein('ab', 'x', 2147483647, 2147483647, 2147483647)
+
+statement error 22003!overflow in calculation
+SELECT levenshtein('abcd', 'wxyz', 1073741824, 1073741824)
+
+statement error 22003!overflow in calculation
+SELECT levenshtein('abcd', 'wxyz', 2147483647, 2147483647)
+
+# the BAT/filter path uses the same cost arithmetic
+query I
+SELECT COUNT(*) FROM (VALUES ('abcd', 'wxyz'), ('abc', 'abc')) AS t(a, b) WHERE maxlevenshtein(a, b, 10, 2147483646, 2147483646)
+----
+1

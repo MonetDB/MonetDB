@@ -1,0 +1,57 @@
+statement ok
+CREATE TABLE a (
+    id BIGINT NOT NULL,
+    semi_key INTEGER NOT NULL,
+    join_key BIGINT NOT NULL
+)
+
+statement ok
+CREATE TABLE b (
+    id BIGINT NOT NULL,
+    keep INTEGER NOT NULL
+)
+
+statement ok
+CREATE TABLE c (
+    semi_key INTEGER NOT NULL PRIMARY KEY,
+    payload BIGINT NOT NULL
+)
+
+statement ok rowcount 10000
+INSERT INTO a
+SELECT value AS id,
+       CAST(value % 1000 AS INTEGER) AS semi_key,
+       value % 1000 AS join_key
+FROM sys.generate_series(1, 10001)
+
+statement ok rowcount 1000
+INSERT INTO b
+SELECT value % 1000 AS id, 1 AS keep
+FROM sys.generate_series(1, 1001)
+
+statement ok rowcount 1
+INSERT INTO c VALUES (7, 1)
+
+query T
+explain
+SELECT SUM(CAST(1 AS BIGINT)) AS matching_rows
+FROM a
+JOIN b ON b.id = a.join_key
+WHERE b.keep = 1
+  AND a.semi_key IN (SELECT c.semi_key FROM c)
+-----
+project (
+| group by (
+| | join (
+| | | select (
+| | | | table("sys"."b") [ "b"."id", "b"."keep" ]
+| | | ) [ ("b"."keep") = (int(31) "1") ],
+| | | semijoin (
+| | | | table("sys"."a") [ "a"."semi_key", "a"."join_key" ],
+| | | | project (
+| | | | | table("sys"."c") [ "c"."semi_key" ]
+| | | | ) [ "c"."semi_key" as "%1"."%1" ]
+| | | ) [ ("a"."semi_key") + = ("%1"."%1") ]
+| | ) [ ("b"."id") = ("a"."join_key") ]
+| ) [  ] [ "sys"."sum" no nil (bigint(63) "1") as "%3"."%3" ]
+) [ "%3"."%3" as "matching_rows" ]

@@ -19,3 +19,4 @@ jsontext.Bug-6859
 jsonnumber.Bug-6932
 jsonparser.Bug-6943
 jsonutf16.Bug-7576
+8063-json-filter-index-overflow

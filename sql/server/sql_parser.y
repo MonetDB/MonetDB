@@ -1110,7 +1110,7 @@ set_statement:
 			dlist *l = L();
 			sql_subtype t;
 			sql_find_subtype(&t, "char", UTF8_strlen($5), 0);
-			append_list(l, append_string(append_string(L(), "sys"), "current_role"));
+			append_list(l, append_string(append_string(L(), "sys"), "current_user"));
 			append_symbol(l, _newAtomNode( _atom_string(&t, $5)));
 			$$ = _symbol_create_list( SQL_SET, l);
 		}
@@ -1855,7 +1855,7 @@ max_memory:
 			errno = 0;
 			lng size = strtoll($2, &end, 10);
 			lng unit;
-			if (errno == ERANGE || size < 0 || (unit = size_unit(end)) < 0) {
+			if (errno == ERANGE || size < 0 || (unit = size_unit(end)) < 0 || (size * unit) < 0) {
 				$$ = -1;
 				yyerror(m, "Invalid size");
 				YYABORT;

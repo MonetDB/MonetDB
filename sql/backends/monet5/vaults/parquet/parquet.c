@@ -392,7 +392,16 @@ pqc_find_localtype(const pqc_schema_element *pse)
 			break;
 		case decimaltype:
 			if (pse->size == 0) {
-				return TYPE_sht;
+				if (pse->precision <= 4)
+					return TYPE_sht;
+				if (pse->precision <= 9)
+					return TYPE_int;
+				if (pse->precision <= 18)
+					return TYPE_lng;
+#ifdef HAVE_HGE
+				if (pse->precision <= 38)
+					return TYPE_hge;
+#endif
 			}
 			if (pse->size == 32)
 				return TYPE_int;
@@ -656,7 +665,8 @@ PARQUETread_large(BAT **R, pqc_creader *r, int colno, Pipeline *p, int wnr)
 	if (!r->c[pse->ccnr]) {
 		pipeline_lock(p);
 		if (!r->c[pse->ccnr])
-			r->c[pse->ccnr] = pqc_reader(NULL, pqc_dup(r->b), r->nrworkers, r->fmd, colno, r->nrows, ATOMnilptr(localtype));
+			r->c[pse->ccnr] = pqc_reader(NULL, pqc_dup(r->b), r->nrworkers, r->fmd, colno, r->nrows,
+					ATOMvarsized(localtype) ? NULL : ATOMnilptr(localtype));
 		pipeline_unlock(p);
 	}
 	pqc_mark_chunk(r->c[pse->ccnr], r->nrworkers, wnr, sz);
