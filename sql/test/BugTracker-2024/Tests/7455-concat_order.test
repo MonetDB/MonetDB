@@ -45,30 +45,31 @@ b
 NULL
 
 query I nosort
-SELECT (t0.c0||true BETWEEN v0.c0 AND v0.c0) FROM v0, t0 ORDER BY 1
+SELECT (true BETWEEN v0.c0 AND v0.c0) FROM v0, t0 ORDER BY 1
 ----
-0
-0
-0
-0
-0
-0
+1
+1
+1
+1
+1
+1
 1
 1
 1
 
 query ITT nosort
-SELECT * FROM v0, t0 WHERE (t0.c0||true BETWEEN v0.c0 AND v0.c0)
+SELECT * FROM v0, t0 WHERE (true BETWEEN v0.c0 AND v0.c0) ORDER BY 1,2
 ----
-1
-(empty)
-0
-1
-(empty)
-0
-1
-(empty)
-0
+1	(empty)	0
+1	(empty)	0
+1	(empty)	0
+1	a	NULL
+1	a	NULL
+1	a	NULL
+1	b	NULL
+1	b	NULL
+1	b	NULL
+
 
 statement ok
 DROP VIEW v0

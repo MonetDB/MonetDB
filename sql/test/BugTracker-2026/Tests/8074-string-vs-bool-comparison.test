@@ -1,0 +1,16 @@
+statement ok
+CREATE TABLE t(c1 VARCHAR)
+
+statement ok rowcount 1
+INSERT INTO t VALUES ('0')
+
+query I
+SELECT 1
+FROM t AS l
+LEFT JOIN (SELECT 1 AS x) AS r
+  ON (false <= l.c1)
+WHERE NOT EXISTS (
+  SELECT 1
+  WHERE (false <= l.c1)
+)
+----

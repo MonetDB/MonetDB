@@ -1,0 +1,28 @@
+statement ok
+CREATE TABLE t_local (n INTEGER)
+
+statement ok
+CREATE REMOTE TABLE t_remote (n INTEGER) ON 'mapi:monetdb://localhost:59999/unreachable'
+
+statement ok
+CREATE REPLICA TABLE t_replica (n INTEGER)
+
+statement ok
+ALTER TABLE t_replica ADD TABLE t_local
+
+statement ok
+ALTER TABLE t_replica ADD TABLE t_remote
+
+query T
+EXPLAIN
+SELECT r.n
+FROM t_replica AS r
+WHERE EXISTS (
+    SELECT 1
+    FROM (VALUES (1)) AS one(n)
+    WHERE one.n = r.n
+)
+----
+project (
+| table("sys"."t_local") [ "t_local"."n" as "r"."n", "t_local"."%TID%" as "r"."%TID%" ]
+) [ "r"."n" ]

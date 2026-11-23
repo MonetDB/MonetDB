@@ -1,0 +1,5 @@
+statement ok
+CREATE TABLE t (v1 REAL)
+
+statement error conversion of string '<js>null</js>' to type bte failed.
+SELECT (NULL IN ((SELECT MEDIAN(1)), FIRST_VALUE('<js>null</js>') OVER ())) AS new_column FROM t
