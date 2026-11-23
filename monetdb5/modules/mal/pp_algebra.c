@@ -2193,9 +2193,11 @@ LALGconstant(Client ctx, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			goto error;
 		}
 		if (BATupdate(r, g, v, false) != GDK_SUCCEED) {
+			BBPreclaim(v);
 			err = createException(MAL, "ialgebra.project", SQLSTATE(HY002) OPERATION_FAILED);
 			goto error;
 		}
+		BBPreclaim(v);
 
 		if (!err)
 			TIMEOUT_CHECK(qry_ctx, err = createException(SQL, "ialgebra.project", RUNTIME_QRY_TIMEOUT));
