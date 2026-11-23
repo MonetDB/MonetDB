@@ -607,7 +607,7 @@ select coalesce(1 = true, t0.c0 > 0) from t0
 
 query I rowsort
 select count(all coalesce ((case coalesce (1, 2) when case cast(t0.c0 as double) when sql_max('', null)
-then ((12)/(23)) end then cast("truncate"('1', 54) as boolean) else (coalesce (true, true, '1', true)) = false end) = true, (t0.c0) not in (t0.c0))) from t0
+then ((12)/(23)) end then cast("truncate"('1', 54) as boolean) else (coalesce (true, true, 1, true)) = false end) = true, (t0.c0) not in (t0.c0))) from t0
 ----
 5
 
