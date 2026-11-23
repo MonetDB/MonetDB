@@ -2661,10 +2661,19 @@ rel_push_semijoin_down_or_up(visitor *v, sql_rel *rel)
 			return rel;
 		if (right && is_left(lop))
 			return rel;
-		/* Only push down if neither join side is reducing.  A select on the
-		 * non-chosen side would make the push-up rule immediately undo this rewrite. */
-		if (rel_has_select_tree(ll) || rel_has_select_tree(lr))
-			return rel;
+		BUN sj_cnt = get_rel_count(rel), l_cnt = get_rel_count(l);
+		if (sj_cnt != BUN_NONE && l_cnt != BUN_NONE) {
+			/* count-based: only push down when semijoin reduces the join input. */
+			if (sj_cnt >= l_cnt)
+				return rel;
+			/* A left push with a reducing right side is undone by the push-up rule. */
+			if (left && rel_has_select_tree(lr))
+				return rel;
+		} else {
+			if (left ? (rel_has_select_tree(ll) || rel_has_select_tree(lr))
+					: rel_has_select_tree(lr))
+				return rel;
+		}
 		list *nsexps = exps_copy(v->sql, rel->exps);
 		list *nsattr = exps_copy(v->sql, rel->attr);
 		list *njexps = exps_copy(v->sql, l->exps);
