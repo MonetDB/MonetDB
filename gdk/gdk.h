@@ -1601,7 +1601,7 @@ static inline void *
 tstats_sketch(void *tstats)
 {
 	assert(((Heap *)tstats)->base);
-	return (uint32_t *)((Heap *)tstats)->base + 2;
+	return (int32_t *)((Heap *)tstats)->base + 2;
 }
 /* tail stats and sketch end */
 

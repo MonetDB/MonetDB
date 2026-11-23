@@ -367,10 +367,8 @@ COLnew2(oid hseq, int tt, BUN cap, role_t role, uint16_t width)
 			goto bailout;
 		}
 		memset(bn->tstats->base, 0, TSTATS_SZ);
-		int32_t *ver = tstats_version(bn->tstats);
-		int32_t *age = tstats_age(bn->tstats);
-		*ver = TSTATS_VERSION;
-		*age = -1;
+		*tstats_version(bn->tstats) = TSTATS_VERSION;
+		*tstats_age(bn->tstats) = -1;
 		bn->tstats->free = TSTATS_SZ;
 	}
 
@@ -938,12 +936,9 @@ COLcopy2(BAT *b, int tt, bool writable, bool mayshare, role_t role)
 			uint8_t tmp_sk[SKETCH_BUCKETS][SKETCH_CLZ_BUCKETS] = {0};
 			if (bi.count && bat_sketch(&bi, NULL, tmp_sk) != GDK_SUCCEED)
 				goto bunins_failed;
-			int32_t *ver = tstats_version(bn->tstats);
-			int32_t *age = tstats_age(bn->tstats);
-			void *sk_bn = tstats_sketch(bn->tstats);
-			*ver = TSTATS_VERSION;
-			*age = -1;
-			memcpy(sk_bn, tmp_sk, SKETCH_SZ);
+			*tstats_version(bn->tstats) = TSTATS_VERSION;
+			*tstats_age(bn->tstats) = -1;
+			memcpy(tstats_sketch(bn->tstats), tmp_sk, SKETCH_SZ);
 			bn->tstats->dirty = true;
 		}
 
