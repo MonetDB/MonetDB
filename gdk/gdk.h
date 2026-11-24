@@ -1603,6 +1603,17 @@ tstats_sketch(void *tstats)
 	assert(((Heap *)tstats)->base);
 	return (int32_t *)((Heap *)tstats)->base + 2;
 }
+
+static inline void
+tstats_init(void *tstats)
+{
+	Heap *sh = tstats;
+	assert(sh->base);
+	memset(sh->base, 0, TSTATS_SZ);
+	*tstats_version(sh) = TSTATS_VERSION;
+	*tstats_age(sh) = -1;
+	sh->free = TSTATS_SZ;
+}
 /* tail stats and sketch end */
 
 /* assert that atom width is power of 2, i.e., width == 1<<shift */
