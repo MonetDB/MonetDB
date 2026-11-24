@@ -61,3 +61,27 @@ select a from unnest(Array['11','2']) a(a);
 ----
 11
 2
+
+query TI nosort
+select a.f1, count(m.elements) from arr_tbl a left outer join unnest(a.f1) m on m.elements > 100 group by a.f1
+----
+{1,2,3}
+0
+{2,3,4}
+0
+
+#query TI nosort
+#select a.f1, count(*) from arr_tbl a left outer join unnest(a.f1) m on m.elements > 100 group by a.f1
+#----
+#{1,2,3}
+#1
+#{2,3,4}
+#1
+
+query TI nosort
+select a.f1, sum(m.elements) from arr_tbl a left outer join unnest(a.f1) m on m.elements > 100 group by a.f1
+----
+{1,2,3}
+NULL
+{2,3,4}
+NULL

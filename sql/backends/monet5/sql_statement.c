@@ -5422,6 +5422,8 @@ stmt_alias_(backend *be, stmt *op1, int label, sql_alias *tname, const char *ali
 	s->cname = alias;
 	s->nr = op1->nr;
 	s->q = op1->q;
+	if (op1->flag & OUTER_ZERO)
+		s->flag |= OUTER_ZERO;
 	return s;
 }
 

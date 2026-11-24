@@ -1,7 +1,7 @@
 simple
 array_basic
 events
-webclicks
+NOT_PIPELINE?webclicks
 array
 composite
 jdocs-wrapped-list

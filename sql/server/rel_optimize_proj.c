@@ -2271,6 +2271,143 @@ gen_push_groupby_down(mvc *sql, sql_rel *rel, int *changes)
 	return rel;
 }
 
+/* Push groupby on MS_ARRAY column down to the subtable (ms) side.
+ * groupby(join(L, R)[L.f1(MS_ARRAY)=R.ms_id], [L.f1], [L.f1, aggr(R.*)])
+ * ->
+ * project(join(L, groupby(R)[R.ms_id][R.ms_id,aggr(R.*)])[L.f1=gb.ms_id], [L.f1, aggr])
+ * For left joins, ms must be on the right (null-padded) side and pushed count
+ * aggregates carry PROP_COUNT so the outer join substitutes 0 for non-matching
+ * (empty array) tuples.
+ */
+static sql_rel *
+push_groupby_array_down(mvc *sql, sql_rel *rel, int *changes)
+{
+	sql_rel *j = rel->l;
+	list *gbe = rel->r;
+
+	if (rel->op != op_groupby || !gbe || list_length(gbe) != 1 || !j || !(j->op == op_join || is_left(j->op)))
+		return rel;
+	sql_exp *gb = gbe->h->data;
+	if (gb->type != e_column)
+		return rel;
+	sql_subtype *et = exp_subtype(gb);
+	if (!et || et->multiset != MS_ARRAY)
+		return rel;
+
+	/* the rewrite below reconstructs a single equality, so do not drop other
+	 * join conditions */
+	if (!j->exps || list_length(j->exps) != 1)
+		return rel;
+	sql_rel *jl = j->l, *jr = j->r;
+	sql_exp *ms = NULL, *je = NULL;
+	int ms_right = 0;
+	/* find join condition: gb == R.ms_id */
+	for (node *n = j->exps->h; n; n = n->next) {
+		sql_exp *ce = n->data, *l = ce->l, *r = ce->r;
+		if (ce->type != e_cmp || ce->flag != cmp_equal)
+			continue;
+		if (exp_match_exp(gb, l) && (ms = rel_find_exp(jr, r))) {
+			je = ce; ms_right = 1; break;
+		}
+		if (exp_match_exp(gb, r) && (ms = rel_find_exp(jr, l))) {
+			je = ce; ms_right = 1; break;
+		}
+		if (exp_match_exp(gb, l) && (ms = rel_find_exp(jl, r))) {
+			je = ce; ms_right = 0; break;
+		}
+		if (exp_match_exp(gb, r) && (ms = rel_find_exp(jl, l))) {
+			je = ce; ms_right = 0; break;
+		}
+	}
+	if (!ms || !je || !exp_name(ms) || strcmp(exp_name(ms), "ms_id") != 0)
+		return rel;
+	if (is_left(j->op) && !ms_right)
+		return rel;
+	sql_rel *cr = ms_right ? jr : jl; /* subtable side */
+	sql_rel *cl = ms_right ? jl : jr; /* array side */
+
+	/* all aggrs/outputs must be from cr or be the gb key */
+	list *aggrs = sa_list(sql->sa);
+	for (node *n = rel->exps ? rel->exps->h : NULL; n; n = n->next) {
+		sql_exp *ce = n->data;
+		if (exp_is_atom(ce)) {
+			continue;
+		} else if (ce->type == e_column) {
+			if (exp_match_exp(gb, ce) || rel_find_exp(cl, ce))
+				continue; /* comes from array side, project after join */
+			else if (rel_find_exp(cr, ce))
+				list_append(aggrs, ce);
+			else
+				return rel;
+		} else if (ce->type == e_aggr) {
+			list *args = ce->l;
+			if (!list_empty(args) && rel_has_exps(cr, args, false) != 0)
+				return rel;
+			if (is_left(j->op) && exp_aggr_is_count(ce) &&
+			    (list_empty(args) || rel_has_exps(cr, args, false) != 0))
+				return rel; /* count(*) and count(const) count the null-padded row */
+			list_append(aggrs, ce);
+		} else
+			return rel;
+	}
+
+	/* build groupby on subtable side, keyed by ms_id */
+	list *ngbe = sa_list(sql->sa);
+	list_append(ngbe, exp_ref(sql, ms));
+	sql_rel *gbrel = rel_groupby(sql, cr, ngbe);
+	gbrel->exps = sa_list(sql->sa);
+	list_append(gbrel->exps, exp_ref(sql, ms));
+	for (node *n = aggrs->h; n; n = n->next) {
+		sql_exp *ce = exp_copy(sql, n->data);
+		if (is_left(j->op) && ce->type == e_aggr && exp_aggr_is_count(ce))
+			ce->p = prop_create(sql->sa, PROP_COUNT, ce->p);
+		ce->used = 1;
+		list_append(gbrel->exps, ce);
+	}
+
+	/* join array side back to grouped subtable on same condition */
+	sql_exp *nms = rel_find_exp(gbrel, ms);
+	if (!nms)
+		nms = gbrel->exps->h->data;
+	if (is_left(j->op))
+		set_has_nil(nms);
+	sql_exp *ncond = exp_compare(sql->sa, exp_ref(sql, gb), exp_ref(sql, nms), cmp_equal);
+	sql_rel *nj = rel_crossproduct(sql->sa, cl, gbrel, j->op);
+	rel_join_add_exp(sql->sa, nj, ncond);
+
+	/* project: array side aliases/gb + aggrs from grouped subtable */
+	list *nexps = sa_list(sql->sa);
+	for (node *n = rel->exps->h; n; n = n->next) {
+		sql_exp *ce = n->data;
+		if (exp_is_atom(ce)) {
+			list_append(nexps, exp_copy(sql, ce));
+		} else if (exp_match_exp(gb, ce) || rel_find_exp(cl, ce)) {
+			sql_exp *ne = rel_find_exp(nj, ce);
+			list_append(nexps, ne ? exp_ref(sql, ne) : exp_ref(sql, ce));
+		} else {
+			sql_exp *ne = NULL;
+			if (ce->type == e_aggr && gbrel->exps) {
+				const char *nme = exp_name(ce);
+				sql_alias *rnme = exp_relname(ce);
+				for (node *m = gbrel->exps->h; m && !ne; m = m->next) {
+					sql_exp *e = m->data;
+					sql_alias *er = exp_relname(e);
+					if (e->type == e_aggr && exp_name(e) && nme && strcmp(exp_name(e), nme) == 0 &&
+					    ((!rnme && !er) || (rnme && er && rnme->name && er->name && strcmp(rnme->name, er->name) == 0)))
+						ne = e;
+				}
+			}
+			if (!ne)
+				ne = rel_find_exp(gbrel, ce);
+			list_append(nexps, ne ? exp_ref(sql, ne) : exp_ref(sql, ce));
+		}
+	}
+	sql_rel *pr = rel_project(sql->sa, nj, nexps);
+	pr->nrcols = list_length(nexps);
+	*changes = 1;
+	return pr;
+}
+
 /*
  * Rewrite group(project(join(A,Dict)[a.i==dict.i])[...dict.n])[dict.n][ ... dict.n ]
  * into
@@ -2283,8 +2420,12 @@ rel_push_groupby_down(visitor *v, sql_rel *rel)
 	sql_rel *p = rel->l;
 	list *gbe = rel->r;
 
-	if (rel->op == op_groupby && gbe && p && is_join(p->op))
+	if (rel->op == op_groupby && gbe && p && is_join(p->op)) {
+		sql_rel *r = push_groupby_array_down(v->sql, rel, &v->changes);
+		if (r != rel)
+			return r;
 		return gen_push_groupby_down(v->sql, rel, &v->changes);
+	}
 	if (rel->op == op_groupby && gbe && p && p->op == op_project) {
 		sql_rel *j = p->l;
 		sql_rel *jl, *jr;

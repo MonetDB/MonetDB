@@ -2591,9 +2591,14 @@ SQLno_slices(Client cntxt, int *nrslices, str *sname, str *tname)
 	if (t == NULL)
 		throw(SQL, "sql.no_slices", SQLSTATE(42S02) "Table missing %s.%s", *sname, *tname);
 	sqlstore *store = be->mvc->store;
-	if (!ol_first_node(t->columns))
+	sql_column *c = NULL;
+	for (node *n = ol_first_node(t->columns); n && !c; n = n->next) {
+		sql_column *cur = n->data;
+		if (!cur->type.type->composite || cur->type.multiset)
+			c = cur;
+	}
+	if (!c)
 		throw(SQL, "sql.no_slices", SQLSTATE(42S22) "Column missing %s.%s", *sname, *tname);
-	sql_column *c = ol_first_node(t->columns)->data;
 	BUN cnt = store->storage_api.count_col(be->mvc->session->tr, c, 0);
 	BUN psz = DEFAULT_PARTSIZE;
 	FORCEMITODEBUG

@@ -468,9 +468,12 @@ subrel_project(backend *be, stmt *s, list *refs, sql_rel *rel)
 	if (!l)
 		return NULL;
 	for (node *n = s->op4.lval->h; n; n = n->next) {
+		bool outer_zero = false;
 		stmt *c = n->data;
 
 		assert(c->type == st_alias || (c->type == st_join && c->flag == cmp_project) || c->type == st_bat || c->type == st_idxbat || c->type == st_single);
+		if (c->flag & OUTER_ZERO)
+			outer_zero = true;
 		if (c->type != st_alias || c->q != c->op1->q) {
 			stmt *s = stmt_project(be, cand, c);
 			c = stmt_as(be, s, c);
@@ -484,6 +487,8 @@ subrel_project(backend *be, stmt *s, list *refs, sql_rel *rel)
 				s = stmt_project(be, cand, s);
 			c = stmt_as(be, s, c);
 		}
+		if (outer_zero)
+			c->flag |= OUTER_ZERO;
 		append(l, c);
 	}
 	s = stmt_list(be, l);

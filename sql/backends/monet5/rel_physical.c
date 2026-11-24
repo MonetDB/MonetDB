@@ -430,6 +430,18 @@ do_oahash_join(sql_rel *rel)
 	if (!MT_thread_get_qry_ctx()->pipeline_mode)
 		return 0;
 
+	if ((is_join(rel->op) || is_semi(rel->op)) && !list_empty(rel->exps)) {
+		for(node *n = rel->exps->h; n; n = n->next) {
+			sql_exp *e = n->data;
+			/* for now treat unnest joins as scan operators */
+			if (e->type == e_cmp && e->flag == cmp_equal) {
+				sql_exp *el = e->l, *er = e->r;
+				if (is_nested(el) || is_nested(er))
+					return 0;
+			}
+		}
+	}
+
 	// TODO groupjoin other then mark/exist
 	if (list_length(rel->attr) == 1) {
 		sql_exp *e = rel->attr->h->data;
@@ -803,7 +815,9 @@ rel_pipeline(visitor *v, sql_rel *rel, bool materialize, int pb)
 		materialize = true;
 
 	v->parent = rel;
-	if (is_basetable(rel->op)) {
+	if ((is_join(rel->op) || is_semi(rel->op)) && !do_oahash_join(rel))  {
+		res = 0;
+	} else if (is_basetable(rel->op)) {
 		if (pb) {
 			rel->spb = 1;
 			rel->partition = 1;
