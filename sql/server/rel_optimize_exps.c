@@ -216,7 +216,7 @@ simplify_mul(mvc *sql, sql_exp *e, sql_subfunc *f, list *l, int *changes)
 	sql_subtype *et = exp_subtype(e);
 
 	/* 0*a = 0 */
-	if (exp_is_atom(le) && exp_is_zero(le) && /*exp_is_atom(re) &&*/ !has_nil(re)) {
+	if (exp_is_atom(le) && exp_is_zero(le) && /*exp_is_atom(re) &&*/ !has_nil(re) && !exp_is_fallible(re)) {
 		(*changes)++;
 		le = exp_zero(sql->sa, et);
 		if (subtype_cmp(exp_subtype(e), exp_subtype(le)) != 0)
@@ -226,7 +226,7 @@ simplify_mul(mvc *sql, sql_exp *e, sql_subfunc *f, list *l, int *changes)
 		return le;
 	}
 	/* a*0 = 0 */
-	if (exp_is_atom(re) && exp_is_zero(re) && /*exp_is_atom(le) &&*/ !has_nil(le)) {
+	if (exp_is_atom(re) && exp_is_zero(re) && /*exp_is_atom(le) &&*/ !has_nil(le) && !exp_is_fallible(le)) {
 		(*changes)++;
 		re = exp_zero(sql->sa, et);
 		if (subtype_cmp(exp_subtype(e), exp_subtype(re)) != 0)
@@ -342,7 +342,7 @@ simplify_div(mvc *sql, sql_exp *e, sql_subfunc *f, list *l, int *changes)
 		return ne;
 	}
 	/* 0/a = 0 (if a != 0) */
-	if (exp_is_atom(le) && exp_is_zero(le) && !has_nil(re) && !exp_is_zero(re)) {
+	if (exp_is_atom(le) && exp_is_zero(le) && !has_nil(re) && !exp_is_zero(re) && !exp_is_fallible(re)) {
 		sql_exp *ne = exp_zero(sql->sa, exp_subtype(e));
 		if (subtype_cmp(exp_subtype(e), exp_subtype(ne)) != 0)
 			ne = exp_convert(sql, ne, exp_subtype(ne), exp_subtype(e));

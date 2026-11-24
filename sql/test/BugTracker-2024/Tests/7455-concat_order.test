@@ -58,7 +58,7 @@ SELECT (true BETWEEN v0.c0 AND v0.c0) FROM v0, t0 ORDER BY 1
 1
 
 query ITT nosort
-SELECT * FROM v0, t0 WHERE (true BETWEEN v0.c0 AND v0.c0)
+SELECT * FROM v0, t0 WHERE (true BETWEEN v0.c0 AND v0.c0) ORDER BY 1,2
 ----
 1	(empty)	0
 1	(empty)	0
