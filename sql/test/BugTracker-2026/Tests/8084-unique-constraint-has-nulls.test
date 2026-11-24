@@ -1,0 +1,29 @@
+statement ok 
+CREATE TABLE t (
+    u INTEGER UNIQUE
+)
+
+statement ok rowcount 2
+INSERT INTO t VALUES
+    (NULL),
+    (NULL)
+
+query I
+SELECT COUNT(*) AS group_count
+FROM (
+    SELECT u
+    FROM t
+    GROUP BY u
+) AS grouped_rows
+----
+1
+
+query I
+SELECT u
+FROM t
+GROUP BY u
+----
+NULL
+
+statement ok
+drop table t

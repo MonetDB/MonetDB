@@ -1,0 +1,10 @@
+statement ok
+CREATE TABLE t (
+    x VARCHAR(32) NOT NULL
+)
+
+statement ok rowcount 1
+INSERT INTO t VALUES ('not_an_integer')
+
+statement error
+SELECT 0 * CAST(x AS INTEGER) AS result FROM t
