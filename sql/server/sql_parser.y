@@ -1872,7 +1872,7 @@ max_memory:
 			errno = 0;
 			lng size = strtoll($2, &end, 10);
 			lng unit;
-			if (errno == ERANGE || size < 0 || (unit = size_unit(end)) < 0) {
+			if (errno == ERANGE || size < 0 || (unit = size_unit(end)) < 0 || (size * unit) < 0) {
 				$$ = -1;
 				yyerror(m, "Invalid size");
 				YYABORT;

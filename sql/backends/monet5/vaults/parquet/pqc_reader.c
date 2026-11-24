@@ -1874,10 +1874,10 @@ pqc_add_nil( pqc_reader_t *r, pqc_creader_t *cr, char *output, char *data, uint6
 		i -= len;
 		if (def) {
 			pos -= w*len;
-			memcpy(output+w*i, data+pos, len*w);
+			memmove(output+w*i, data+pos, len*w);
 		} else {
 			for(int j = 0; j<len; j++)
-				memcpy(output+w*(i+j), nil, w);
+				memmove(output+w*(i+j), nil, w);
 		}
 		def = !def;
 	}
@@ -2003,6 +2003,7 @@ static int64_t
 pqc_read_page_chunk( pqc_reader_t *r, pqc_creader_t *cr, void *output /*fixed sized atom storage */, void *voutput /* var storage */, uint64_t nrows, size_t *ssize, int *dict)
 {
 	bool swapped = false;
+	(void) swapped;
 	int64_t pos = cr->pos;
 	uint64_t orows = nrows;
 	if (r->pse->precision == 0 && !output)

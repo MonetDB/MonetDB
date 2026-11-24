@@ -613,12 +613,23 @@ supertype_opt_string(sql_subtype *super, sql_subtype *r, sql_subtype *i, bool su
 		}
 		/* with !super_string we follow the sql specification that for value lists and compare operators all values
 		 * should be string or we cast into the non-string super type */
-	} else if ((super_string && (EC_VARCHAR(i->type->eclass) || i->type->base.id > r->type->base.id)) ||
-			   (!super_string && ((EC_VARCHAR(r->type->eclass) && i->type->eclass != EC_ANY) || i->type->base.id > r->type->base.id))) {
-		lsuper = *i;
-		radix = i->type->radix;
-		tpe = i->type->base.name;
-		eclass = i->type->eclass;
+	} else {
+		bool prefer_i;
+		if (super_string) {
+			prefer_i = EC_VARCHAR(i->type->eclass) || i->type->base.id > r->type->base.id;
+		} else if (EC_VARCHAR(r->type->eclass) && !EC_VARCHAR(i->type->eclass) && i->type->eclass != EC_ANY) {
+			prefer_i = true; /* prefer non-string over string in comparisons */
+		} else if (EC_VARCHAR(i->type->eclass) && !EC_VARCHAR(r->type->eclass) && r->type->eclass != EC_ANY) {
+			prefer_i = false; /* prefer non-string over string in comparisons */
+		} else {
+			prefer_i = i->type->base.id > r->type->base.id;
+		}
+		if (prefer_i) {
+			lsuper = *i;
+			radix = i->type->radix;
+			tpe = i->type->base.name;
+			eclass = i->type->eclass;
+		}
 	}
 	if (!EC_SCALE(lsuper.type->eclass))
 		scale = 0; /* reset scale for types without it */

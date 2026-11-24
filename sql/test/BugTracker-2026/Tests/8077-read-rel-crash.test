@@ -1,0 +1,11 @@
+statement ok
+CREATE TABLE t (x INTEGER)
+
+statement ok
+CREATE FUNCTION read_dump_rel(plan_text STRING) RETURNS STRING EXTERNAL NAME sql.read_dump_rel
+
+statement error failed to read relational plan
+SELECT read_dump_rel(
+'select (
+table("sys"."t") [ "t"."x" ]
+) [ () = (int(31) "1") ]')

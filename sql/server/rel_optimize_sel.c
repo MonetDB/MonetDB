@@ -2661,10 +2661,19 @@ rel_push_semijoin_down_or_up(visitor *v, sql_rel *rel)
 			return rel;
 		if (right && is_left(lop))
 			return rel;
-		/* Only push down if neither join side is reducing.  A select on the
-		 * non-chosen side would make the push-up rule immediately undo this rewrite. */
-		if (rel_has_select_tree(ll) || rel_has_select_tree(lr))
-			return rel;
+		BUN sj_cnt = get_rel_count(rel), l_cnt = get_rel_count(l);
+		if (sj_cnt != BUN_NONE && l_cnt != BUN_NONE) {
+			/* count-based: only push down when semijoin reduces the join input. */
+			if (sj_cnt >= l_cnt)
+				return rel;
+			/* A left push with a reducing right side is undone by the push-up rule. */
+			if (left && rel_has_select_tree(lr))
+				return rel;
+		} else {
+			if (left ? (rel_has_select_tree(ll) || rel_has_select_tree(lr))
+					: rel_has_select_tree(lr))
+				return rel;
+		}
 		list *nsexps = exps_copy(v->sql, rel->exps);
 		list *nsattr = exps_copy(v->sql, rel->attr);
 		list *njexps = exps_copy(v->sql, l->exps);
@@ -3186,10 +3195,10 @@ filter_column_in_partition_by_columns(sql_exp *column, list *keyColumns)
 static void
 try_duplicate_select(visitor *v, sql_rel *r, sql_exp *e, bool leftside)
 {
-	if (!e || !r || e->type != e_cmp || e->flag != cmp_equal || is_anti(e) || list_empty(r->exps) || rel_is_ref(r))
+	if (!e || !r || e->type != e_cmp || !is_theta_exp(e->flag) || is_anti(e) || list_empty(r->exps) || rel_is_ref(r))
 		return;
-	sql_exp *el = e->l, *er = e->r;
-	if (!exp_is_atom(er) || !el->nid)
+	sql_exp *el = e->l, *er = e->r, *ef = e->f;
+	if (!exp_is_atom(er) || (ef && !exp_is_atom(ef)) || !el->nid)
 		return;
 	for (node *n = r->exps->h; n; n = n->next) {
 		sql_exp *je = n->data;
@@ -3209,15 +3218,32 @@ try_duplicate_select(visitor *v, sql_rel *r, sql_exp *e, bool leftside)
 					ne = jel;
 			}
 			if (ne) {
-				ne = exp_compare(v->sql->sa, ne, er, cmp_equal);
-				sql_rel *s = leftside ? r->l : r->r;
-				if (!is_select(s->op)) {
-					if (leftside)
-						r->l = rel_select(v->sql->sa, s, ne);
-					else
-						r->r = rel_select(v->sql->sa, s, ne);
+				if (!ef) {
+					ne = exp_compare(v->sql->sa, ne, er, e->flag);
+					if (is_anti(e))
+						set_anti(ne);
+					sql_rel *s = leftside ? r->l : r->r;
+					if (!is_select(s->op)) {
+						if (leftside)
+							r->l = rel_select(v->sql->sa, s, ne);
+						else
+							r->r = rel_select(v->sql->sa, s, ne);
+					} else {
+						rel_select_add_exp(v->sql->sa, s, ne);
+					}
 				} else {
-					rel_select_add_exp(v->sql->sa, s, ne);
+					ne = exp_compare2(v->sql->sa, ne, er, ef, e->flag, is_symmetric(e));
+					if (is_anti(e))
+						set_anti(ne);
+					sql_rel *s = leftside ? r->l : r->r;
+					if (!is_select(s->op)) {
+						if (leftside)
+							r->l = rel_select(v->sql->sa, s, ne);
+						else
+							r->r = rel_select(v->sql->sa, s, ne);
+					} else {
+						rel_select_add_exp(v->sql->sa, s, ne);
+					}
 				}
 				break;
 			}
