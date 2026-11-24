@@ -3096,7 +3096,7 @@ idx_stats(sql_trans *tr, sql_idx *i, bool *nonil, bool *unique, double *unique_e
 				*unique = bi.key;
 				*unique_est = bi.unique_est;
 				if (*unique_est == 0) {
-					if (bi.b->tstats) {
+					if (bi.sh) {
 						void *sk_b = tstats_sketch(bi.sh);
 						*unique_est = sketch_estimate(sk_b);
 					} else if (atom_sketchable(bi.type)) {
