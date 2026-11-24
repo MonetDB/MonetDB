@@ -717,7 +717,7 @@ rel2bin_oahash_outerselect(backend *be, stmt *sub, list *sexps, sql_rel *rel, st
 			q = pushArgument(be->mb, q, (*prb_mrk)->nr);
 			pushInstruction(be->mb, q);
 			stmt *rmrk = stmt_none(be);
-			rmrk->op4.typeval = *sql_fetch_localtype(TYPE_bit);
+			rmrk->subtype = *sql_fetch_localtype(TYPE_bit);
 			rmrk->nrcols = 2;
 			rmrk->nr = q->argv[0];
 			rmrk->q = q;
