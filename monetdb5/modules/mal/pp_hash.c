@@ -672,7 +672,6 @@ OAHASHmatched(Client ctx, bat *matched_first, const bat *matched, const bat *row
 	oid *row = Tloc(r, 0);
 	oid *matched_only = Tloc(mo, 0);
 
-
 	MT_lock_set(&m->theaplock);
 	if (r->ttype == TYPE_oid) {
 		TIMEOUT_LOOP_IDX_DECL(i, cnt, qry_ctx) {
@@ -703,7 +702,8 @@ OAHASHmatched(Client ctx, bat *matched_first, const bat *matched, const bat *row
 		TIMEOUT_CHECK(qry_ctx, err = createException(SQL, "oahash.build", RUNTIME_QRY_TIMEOUT));
 	BBPreclaim(m);
 	BBPreclaim(r);
-	BBPretain(*matched_first = mo->batCacheid);
+	*matched_first = mo->batCacheid;
+	BBPkeepref(mo);
 	return err;
 }
 

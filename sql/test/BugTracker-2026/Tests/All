@@ -240,3 +240,4 @@ KNOWNFAIL?8010-first_value-last_value-partition-range-bug
 8078-push-down-selective-semi
 8079-maxmemory-overflow
 8080-crash-in-remote-rewrite
+8089-imatched-bat-leak
