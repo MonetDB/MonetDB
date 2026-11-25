@@ -1860,7 +1860,7 @@ max_memory:
 				yyerror(m, "Invalid size");
 				YYABORT;
 			}
-			$$ = size * unit;
+			$$ = size;
 		}
 	;
 
