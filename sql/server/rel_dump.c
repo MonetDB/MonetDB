@@ -49,22 +49,26 @@ print_indent(mvc *sql, stream *fout, int depth, int decorate)
 }
 
 static void
-cmp_print(mvc *sql, stream *fout, int cmp)
+cmp_print(mvc *sql, stream *fout, int cmp, int anti)
 {
 	char *r = NULL;
 
 	(void)sql;
+	if (anti) {
+		if (cmp == cmp_equal)
+			r = "!=";
+		else if (cmp == cmp_in)
+			r = "notin";
+	}
 	switch(cmp) {
 	case cmp_gt: 		r = ">"; break;
 	case cmp_gte: 		r = ">="; break;
 	case cmp_lte: 		r = "<="; break;
 	case cmp_lt: 		r = "<"; break;
-	case cmp_equal: 	r = "="; break;
-	case cmp_notequal: 	r = "!="; break;
+	case cmp_equal: 	r = r?r:"="; break;
 
 	case cmp_filter: 	r = "filter"; break;
-	case cmp_in: 		r = "in"; break;
-	case cmp_notin: 	r = "notin"; break;
+	case cmp_in: 		r = r?r:"in"; break;
 
 	case cmp_all:
 	case cmp_project:
@@ -305,13 +309,13 @@ exp_print(mvc *sql, stream *fout, sql_exp *e, int depth, list *refs, int comma, 
 			alias = 0;
 	} break;
 	case e_cmp:
-		if (e->flag == cmp_in || e->flag == cmp_notin) {
+		if (e->flag == cmp_in) {
+			int anti = is_anti(e) != 0;
+
 			mnstr_printf(fout, "(");
 			exp_print(sql, fout, e->l, depth+1, refs, 0, 0, decorate);
 			mnstr_printf(fout, ")");
-			if (is_anti(e))
-				mnstr_printf(fout, " !");
-			cmp_print(sql, fout, e->flag);
+			cmp_print(sql, fout, e->flag, anti);
 			exps_print(sql, fout, e->r, depth, refs, 0, 1, decorate, 0);
 		} else if (e->flag == cmp_dis && (!is_anti(e) || list_length(e->l) == 2)) { /* output as old cmp_or right nested tree */
 			list *l = e->l;
@@ -340,29 +344,31 @@ exp_print(mvc *sql, stream *fout, sql_exp *e, int depth, list *refs, int comma, 
 			mnstr_printf(fout, ")");
 			if (is_anti(e))
 				mnstr_printf(fout, " !");
-			cmp_print(sql, fout, swap_compare(range2lcompare(e->flag)));
+			cmp_print(sql, fout, swap_compare(range2lcompare(e->flag)), 0);
 			mnstr_printf(fout, "(");
 			exp_print(sql, fout, e->l, depth+1, refs, 0, 0, decorate);
 			mnstr_printf(fout, ")");
 			if (is_anti(e))
 				mnstr_printf(fout, " !");
-			cmp_print(sql, fout, range2rcompare(e->flag));
+			cmp_print(sql, fout, range2rcompare(e->flag), 0);
 			mnstr_printf(fout, "(");
 			exp_print(sql, fout, e->f, depth+1, refs, 0, 0, decorate);
 			mnstr_printf(fout, ")");
 			if (is_symmetric(e))
 				mnstr_printf(fout, " SYM");
 		} else {
+			int anti = is_anti(e) && !is_semantics(e) ? 1 : 0;
+
 			mnstr_printf(fout, "(");
 			exp_print(sql, fout, e->l, depth+1, refs, 0, 0, decorate);
 			mnstr_printf(fout, ")");
-			if (is_anti(e))
+			if (is_anti(e) && !anti)
 				mnstr_printf(fout, " !");
 			if (is_semantics(e))
 				mnstr_printf(fout, " *");
 			if (is_any(e))
 				mnstr_printf(fout, " +");
-			cmp_print(sql, fout, e->flag);
+			cmp_print(sql, fout, e->flag, anti);
 
 			mnstr_printf(fout, "(");
 			exp_print(sql, fout, e->r, depth+1, refs, 0, 0, decorate);
@@ -1349,7 +1355,8 @@ exp_read(mvc *sql, sql_rel *lrel, sql_rel *rrel, list *top_exps, char *r, int *p
 			case 'n':
 				if (strncmp(r+*pos, "notin",  strlen("notin")) == 0) {
 					(*pos)+= (int) strlen("notin");
-					ctype = cmp_notin;
+					ctype = cmp_in;
+					anti = !anti; /* NOT IN is cmp_in plus the anti flag */
 				}
 				break;
 			case 'F':
@@ -1380,7 +1387,8 @@ exp_read(mvc *sql, sql_rel *lrel, sql_rel *rrel, list *top_exps, char *r, int *p
 				}
 				break;
 			case '!':
-				ctype = cmp_notequal;
+				ctype = cmp_equal;
+				anti = !anti;
 				(*pos)++;
 				if (r[(*pos)] == '=')
 					(*pos)++;
@@ -1420,7 +1428,6 @@ exp_read(mvc *sql, sql_rel *lrel, sql_rel *rrel, list *top_exps, char *r, int *p
 				case cmp_lte:
 				case cmp_lt:
 				case cmp_equal:
-				case cmp_notequal:
 					if (r[*pos] == '!' || r[*pos] == '<' || r[*pos] == '>') { /* BETWEEN case */
 						if (r[*pos] == '!') { /* ignore next anti */
 							(*pos)++;
@@ -1466,15 +1473,14 @@ exp_read(mvc *sql, sql_rel *lrel, sql_rel *rrel, list *top_exps, char *r, int *p
 							set_any(exp);
 					}
 					if (anti)
-						set_anti(exp);
+						(void) exp_set_anti(sql->sa, exp);
 					assert(list_length(lexps) == 1 && list_length(rexps) == 1 && (!fexps || list_length(fexps) == 1));
 					break;
 				case cmp_in:
-				case cmp_notin:
 					assert(list_length(lexps) == 1);
-					exp = exp_in(sql->sa, lexps->h->data, rexps, ctype);
+					exp = exp_in(sql->sa, lexps->h->data, rexps);
 					if (anti)
-						set_anti(exp);
+						(void) exp_set_anti(sql->sa, exp);
 					break;
 				case cmp_filter: {
 					sql_subfunc *f = NULL;

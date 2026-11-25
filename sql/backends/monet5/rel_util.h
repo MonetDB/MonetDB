@@ -14,7 +14,7 @@
 #include "sql_mvc.h"
 #include "sql_relation.h"
 
-#define is_equi_exp_(e) ((e)->flag == cmp_equal)
+extern bool is_equi_exp_(sql_exp *e);
 
 extern bool can_join_exp(sql_rel *rel, sql_exp *e, bool anti);
 extern void split_join_exps(sql_rel *rel, list *joinable, list *not_joinable, bool anti, bool eqonly, bool firstonly);

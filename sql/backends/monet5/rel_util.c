@@ -12,6 +12,23 @@
 #include "rel_exp.h"
 
 bool
+is_equi_exp_(sql_exp *e)
+{
+	if (!e || e->type != e_cmp || e->flag != cmp_equal)
+		return false;
+	if (!is_anti(e))
+		return true;
+	/* <> is canonical cmp_equal plus the anti flag and is not an equijoin.
+	 * IS NOT NULL uses the same encoding but keeps the semantics bit and
+	 * compares against NULL; like before the cleanup it can be hashed.
+	 * IS DISTINCT FROM keeps the semantics bit too, but compares two
+	 * arbitrary expressions and must stay a theta join. */
+	if (is_semantics(e))
+		return exp_is_null(e->l) || exp_is_null(e->r);
+	return false;
+}
+
+bool
 can_join_exp(sql_rel *rel, sql_exp *e, bool anti)
 {
 	bool can_join = 0;
