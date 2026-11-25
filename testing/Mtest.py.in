@@ -3845,6 +3845,8 @@ def main():
                         help='hash-threshold for .test files when approving')
     parser.add_argument('--ignore-conditions', action='store_true',
                         help='ignore conditions in All file')
+    parser.add_argument('--no-ignore-conditions', action='store_true',
+                        help='do not ignore conditions in All file')
     parser.add_argument('--skip-test-with-timeout', action='store_true',
                         help='skip tests that have a .timeout file')
     parser.add_argument('--stop-at-crash', action='store_true',
@@ -4360,6 +4362,9 @@ def main():
         else:
             # len(args) == 0: no explicit tests specified so do all
             recursive = True
+
+        if opts.no_ignore_conditions:
+            ignore_conditions = False
 
         if not dirlist:
             dirlist.append(os.getcwd())

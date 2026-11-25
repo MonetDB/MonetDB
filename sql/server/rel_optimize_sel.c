@@ -2359,17 +2359,17 @@ bind_optimize_joins(visitor *v, global_props *gp)
 		   || gp->cnt[op_full] || gp->cnt[op_semi] || gp->cnt[op_anti]) && (flag & optimize_joins) ? rel_optimize_joins : NULL;
 }
 
-static sql_rel *rel_push_semijoin_down_or_up(visitor *v, sql_rel *rel);
+static sql_rel *rel_push_semijoin_down_or_up(visitor *v, sql_rel *rel, bool costbased);
 
 static sql_rel *
 rel_joins_(visitor *v, sql_rel *rel)
 {
 	rel = rel_join2semijoin(v, rel);
 	/* joins runs after join_order2 and can create new semijoins.  The normal
-	 * optimize_semi_and_anti pass has already run at that point, so push
-	 * these semijoins down here before they are pinned above a large join. */
+	 * optimize_semi_and_anti pass has already run at that point, so decide
+	 * placement of these semijoins using the freshly ordered join tree. */
 	if (rel && is_semi(rel->op))
-		rel = rel_push_semijoin_down_or_up(v, rel);
+		rel = rel_push_semijoin_down_or_up(v, rel, true);
 	return rel;
 }
 
@@ -2549,6 +2549,55 @@ rel_has_select_tree(sql_rel *rel)
 	}
 }
 
+static dbl
+join_cost(BUN lc, BUN rc)
+{
+	if (lc == BUN_NONE || rc == BUN_NONE)
+		return -1.0;
+	return (dbl)(lc < rc ? lc : rc);
+}
+
+/* Decide whether moving the semijoin into a join is cheaper than keeping it above. */
+static bool
+semijoin_push_cost_cheaper(visitor *v, sql_rel *rel, sql_rel *j,
+			   sql_rel *target, sql_rel *other, bool left)
+{
+	BUN j_cnt = get_rel_count(j);
+	BUN t_cnt = get_rel_count(target);
+	BUN o_cnt = get_rel_count(other);
+	BUN r_cnt = get_rel_count(rel->r);
+	dbl keep, push;
+
+	if (j_cnt == BUN_NONE || t_cnt == BUN_NONE ||
+	    o_cnt == BUN_NONE || r_cnt == BUN_NONE)
+		return false;
+
+	/* estimate size of pushing semi down */
+	dbl sel = 1.0;
+	for (node *n = rel->exps->h; n; n = n->next)
+		sel *= exp_estimate_selectivity(v->sql, n->data, rel);
+	BUN pushed_cnt = (BUN)((dbl)t_cnt * sel);
+	if (pushed_cnt > o_cnt)
+		pushed_cnt = o_cnt;
+	if (pushed_cnt <= 1)
+		pushed_cnt = 2;
+
+	keep = join_cost(get_rel_count(j->l), get_rel_count(j->r));
+	keep += join_cost(j_cnt, r_cnt);
+	if (keep < 0.0)
+		return false;
+
+	push = join_cost(t_cnt, r_cnt);
+	if (left) /* join(semi(target, r), other) */
+		push += join_cost(pushed_cnt, o_cnt);
+	else /* join(other, semi(target, r)) */
+		push += join_cost(o_cnt, pushed_cnt);
+	if (push < 0.0)
+		return false;
+
+	return push <= keep;
+}
+
 /*
  * Push semijoins down, pushes the semijoin through a join (if join doesn't have any selects).
  *
@@ -2563,7 +2612,7 @@ rel_has_select_tree(sql_rel *rel)
  * semijoin. When the join reduces (ie when there are selects on it).
  */
 static inline sql_rel *
-rel_push_semijoin_down_or_up(visitor *v, sql_rel *rel)
+rel_push_semijoin_down_or_up(visitor *v, sql_rel *rel, bool costbased)
 {
 	if (rel->op == op_join && rel->exps && rel->l && !rel_is_ref(rel)) {
 		sql_rel *l = rel->l, *r = rel->r;
@@ -2666,9 +2715,19 @@ rel_push_semijoin_down_or_up(visitor *v, sql_rel *rel)
 			/* count-based: only push down when semijoin reduces the join input. */
 			if (sj_cnt >= l_cnt)
 				return rel;
-			/* A left push with a reducing right side is undone by the push-up rule. */
-			if (left && rel_has_select_tree(lr))
+			if (costbased && MT_thread_get_qry_ctx()->pipeline_mode) {
+				/* join_order2 has already reordered the inner joins.  Compare
+				 * the physical cost of keeping the semijoin above that tree
+				 * with the cost of pushing it into the bound side. */
+				sql_rel *target = left ? ll : lr;
+				sql_rel *other = left ? lr : ll;
+
+				if (!semijoin_push_cost_cheaper(v, rel, l, target, other, left))
+					return rel;
+			} else if (left && rel_has_select_tree(lr)) {
+				/* A left push with a reducing right side is undone by the push-up rule. */
 				return rel;
+			}
 		} else {
 			if (left ? (rel_has_select_tree(ll) || rel_has_select_tree(lr))
 					: rel_has_select_tree(lr))
@@ -2744,7 +2803,7 @@ rel_optimize_semi_and_anti_(visitor *v, sql_rel *rel)
 		rel = rel_rewrite_semijoin(v, rel);
 	/* push semijoin through join */
 	if (rel && (is_semi(rel->op) || is_innerjoin(rel->op)))
-		rel = rel_push_semijoin_down_or_up(v, rel);
+		rel = rel_push_semijoin_down_or_up(v, rel, false);
 	/* antijoin(a, union(b,c)) -> antijoin(antijoin(a,b), c) */
 	if (rel && rel->op == op_anti)
 		rel = rel_rewrite_antijoin(v, rel);
