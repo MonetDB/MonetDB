@@ -537,6 +537,7 @@ main(int argc, char *argv[])
 	}
 
 	mnstr_init();
+	MT_thread_init();
 
 	stream *f = open_rstream(argv[optind]);
 	if (!f) {
