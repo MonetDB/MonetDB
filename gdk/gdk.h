@@ -1953,8 +1953,8 @@ gdk_export size_t escapedStr(char *restrict dst, const char *restrict src,
 #define GDK_lng_max ((lng) INT64_MAX)
 #define GDK_lng_min ((lng) INT64_MIN+1)
 #ifdef HAVE_HGE
-#define GDK_hge_max ((((hge) 1) << 126) - 1 + (((hge) 1) << 126))
-#define GDK_hge_min (-GDK_hge_max)
+#define GDK_hge_max ((hge) INT128_MAX)
+#define GDK_hge_min ((hge) INT128_MIN+1)
 #endif
 #define GDK_flt_max ((flt) FLT_MAX)
 #define GDK_flt_min ((flt) -FLT_MAX)
@@ -2266,6 +2266,28 @@ VarHeapVal(const void *b, BUN p, int w)
 		MT_UNREACHABLE();
 	}
 }
+
+gdk_export bool add_int8_overflow(int8_t a, int8_t b, int8_t *d);
+gdk_export bool add_int16_overflow(int16_t a, int16_t b, int16_t *d);
+gdk_export bool add_int32_overflow(int32_t a, int32_t b, int32_t *d);
+gdk_export bool add_int64_overflow(int64_t a, int64_t b, int64_t *d);
+#ifdef HAVE_INT128_T
+gdk_export bool add_int128_overflow(int128_t a, int128_t b, int128_t *d);
+#endif
+gdk_export bool sub_int8_overflow(int8_t a, int8_t b, int8_t *d);
+gdk_export bool sub_int16_overflow(int16_t a, int16_t b, int16_t *d);
+gdk_export bool sub_int32_overflow(int32_t a, int32_t b, int32_t *d);
+gdk_export bool sub_int64_overflow(int64_t a, int64_t b, int64_t *d);
+#ifdef HAVE_INT128_T
+gdk_export bool sub_int128_overflow(int128_t a, int128_t b, int128_t *d);
+#endif
+gdk_export bool mul_int8_overflow(int8_t a, int8_t b, int8_t *d);
+gdk_export bool mul_int16_overflow(int16_t a, int16_t b, int16_t *d);
+gdk_export bool mul_int32_overflow(int32_t a, int32_t b, int32_t *d);
+gdk_export bool mul_int64_overflow(int64_t a, int64_t b, int64_t *d);
+#ifdef HAVE_INT128_T
+gdk_export bool mul_int128_overflow(int128_t a, int128_t b, int128_t *d);
+#endif
 
 /* BAT iterator, also protects use of BAT heaps with reference counts.
  *
