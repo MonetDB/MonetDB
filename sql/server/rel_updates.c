@@ -1524,7 +1524,7 @@ rel_merge(mvc *sql, sql_rel *join, sql_rel *upd1, sql_rel *upd2)
 
 		le = exp_ref(sql, le); /* matches ie select not null */
 		set_has_nil(le);
-		ce = exp_compare(sql->sa, le, exp_atom(sql->sa, atom_general(sql->sa, exp_subtype(le), NULL, 0)), cmp_notequal );
+		ce = exp_ne(sql->sa, le, exp_atom(sql->sa, atom_general(sql->sa, exp_subtype(le), NULL, 0)));
 		set_semantics(ce);
 		r = upd1->r;
 		if (r->op == op_update) /* nested update */

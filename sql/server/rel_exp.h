@@ -30,6 +30,8 @@
 #define is_notequal_func(sf) (!sf->func->s && strcmp(sf->func->base.name, "<>") == 0)
 
 extern comp_type compare_str2type(const char *compare_op);
+extern int is_notequal_op(const char *compare_op);
+extern sql_exp *exp_compare_op(allocator *sa, sql_exp *l, sql_exp *r, const char *compare_op);
 extern comp_type swap_compare( comp_type t );
 extern comp_type negate_compare( comp_type t );
 extern comp_type range2lcompare( int r );
@@ -39,8 +41,12 @@ extern int compare_funcs2range(const char *l, const char *r);
 
 extern sql_exp *exp_compare(allocator *sa, sql_exp *l, sql_exp *r, int cmptype);
 extern sql_exp *exp_compare2(allocator *sa, sql_exp *l, sql_exp *r, sql_exp *f, int cmptype, int symmetric);
+extern sql_exp *exp_ne(allocator *sa, sql_exp *l, sql_exp *r);
+extern sql_exp *exp_set_anti(allocator *sa, sql_exp *e);
+extern sql_exp *exp_reset_anti(allocator *sa, sql_exp *e);
 extern sql_exp *exp_filter(allocator *sa, list *l, list *r, sql_subfunc *f, int anti);
-extern sql_exp *exp_in(allocator *sa, sql_exp *l, list *r, int cmptype);
+extern sql_exp *exp_in(allocator *sa, sql_exp *l, list *r);
+extern sql_exp *exp_notin(allocator *sa, sql_exp *l, list *r);
 extern sql_exp *exp_in_func(mvc *sql, sql_exp *le, sql_exp *vals, int anyequal, int is_tuple);
 extern sql_exp *exp_in_aggr(mvc *sql, sql_exp *le, sql_exp *vals, int anyequal, int is_tuple);
 extern sql_exp *exp_compare_func(mvc *sql, sql_exp *le, sql_exp *re, const char *compareop, int quantifier);

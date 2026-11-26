@@ -243,3 +243,5 @@ KNOWNFAIL?8010-first_value-last_value-partition-range-bug
 8084-unique-constraint-has-nulls
 8085-transitive-select-push-down
 8089-imatched-bat-leak
+8090-cast-should-fail
+8095-double-negated-in

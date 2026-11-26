@@ -238,7 +238,7 @@ exp_find_table_columns(mvc *sql, sql_exp *e, sql_table *t, list *cols)
 			}
 		} break;
 		case e_cmp: {
-			if (e->flag == cmp_in || e->flag == cmp_notin) {
+			if (e->flag == cmp_in) {
 				exp_find_table_columns(sql, e->l, t, cols);
 				for (node *n = ((list*)e->r)->h ; n ; n = n->next)
 					exp_find_table_columns(sql, (sql_exp*) n->data, t, cols);

@@ -13,6 +13,80 @@
 #include "gdk_private.h"
 #include "gdk_calc_private.h"
 
+bool
+add_int8_overflow(int8_t a, int8_t b, int8_t *d)
+{
+	ADDI_WITH_CHECK(a, b, int8_t, *d, INT8_MAX, return true);
+	return false;
+}
+
+bool
+add_int16_overflow(int16_t a, int16_t b, int16_t *d)
+{
+	ADDI_WITH_CHECK(a, b, int16_t, *d, INT16_MAX, return true);
+	return false;
+}
+
+bool
+add_int32_overflow(int32_t a, int32_t b, int32_t *d)
+{
+	ADDI_WITH_CHECK(a, b, int32_t, *d, INT32_MAX, return true);
+	return false;
+}
+
+bool
+add_int64_overflow(int64_t a, int64_t b, int64_t *d)
+{
+	ADDI_WITH_CHECK(a, b, int64_t, *d, INT64_MAX, return true);
+	return false;
+}
+
+#ifdef HAVE_INT128_T
+bool
+add_int128_overflow(int128_t a, int128_t b, int128_t *d)
+{
+	ADDI_WITH_CHECK(a, b, int128_t, *d, INT128_MAX, return true);
+	return false;
+}
+#endif
+
+bool
+sub_int8_overflow(int8_t a, int8_t b, int8_t *d)
+{
+	SUBI_WITH_CHECK(a, b, int8_t, *d, INT8_MAX, return true);
+	return false;
+}
+
+bool
+sub_int16_overflow(int16_t a, int16_t b, int16_t *d)
+{
+	SUBI_WITH_CHECK(a, b, int16_t, *d, INT16_MAX, return true);
+	return false;
+}
+
+bool
+sub_int32_overflow(int32_t a, int32_t b, int32_t *d)
+{
+	SUBI_WITH_CHECK(a, b, int32_t, *d, INT32_MAX, return true);
+	return false;
+}
+
+bool
+sub_int64_overflow(int64_t a, int64_t b, int64_t *d)
+{
+	SUBI_WITH_CHECK(a, b, int64_t, *d, INT64_MAX, return true);
+	return false;
+}
+
+#ifdef HAVE_INT128_T
+bool
+sub_int128_overflow(int128_t a, int128_t b, int128_t *d)
+{
+	SUBI_WITH_CHECK(a, b, int128_t, *d, INT128_MAX, return true);
+	return false;
+}
+#endif
+
 /* ---------------------------------------------------------------------- */
 /* addition (any numeric type) */
 

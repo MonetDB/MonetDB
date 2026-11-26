@@ -215,7 +215,7 @@ hash_probe(backend *be, sql_rel *rel, list *jexps, list *exps_cmp_prb, const stm
 		assert(key); /* must find */
 		key = column(be, key);
 		bool single = ((rel->single == 1 && rel->op != op_semi) && (n->next == NULL) && !has_outerselect);
-		bool eq = (e2->flag == cmp_equal) && !anti;
+		bool eq = is_equi_exp_(e2) && !anti;
 		bool grpjoin = groupjoin && is_any(e2);
 
 		if (first && match_cnt && is_any(e2)) {
@@ -795,7 +795,7 @@ rel2bin_oahash_cart(backend *be, sql_rel *rel, list *refs, stmt *stmts_ht, stmt 
 				cross = true;
 		} else if (e->flag == cmp_con || e->flag == cmp_dis) {
 			cross = true;
-		} else if (e->flag == cmp_in || e->flag == cmp_notin) {
+		} else if (e->flag == cmp_in) {
 			cross = true;
 		} else {
 			if (!rel_has_exp(l, e->l, subexp)) {

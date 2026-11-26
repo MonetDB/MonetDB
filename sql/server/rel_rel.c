@@ -2189,7 +2189,7 @@ exp_deps(mvc *sql, sql_exp *e, list *refs, list *l)
 		} else if (e->flag == cmp_con || e->flag == cmp_dis) {
 				if (exps_deps(sql, e->l, refs, l) != 0)
 					return -1;
-		} else if (e->flag == cmp_in || e->flag == cmp_notin) {
+		} else if (e->flag == cmp_in) {
 			if (exp_deps(sql, e->l, refs, l) != 0 ||
 				exps_deps(sql, e->r, refs, l) != 0)
 				return -1;
@@ -2379,7 +2379,7 @@ exp_visitor(visitor *v, sql_rel *rel, sql_exp *e, int depth, exp_rewrite_fptr ex
 		} else if (e->flag == cmp_con || e->flag == cmp_dis) {
 			if ((e->l = exps_exp_visitor(v, rel, e->l, depth+1, exp_rewriter, topdown, relations_topdown, visit_relations_once)) == NULL)
 				return NULL;
-		} else if (e->flag == cmp_in || e->flag == cmp_notin) {
+		} else if (e->flag == cmp_in) {
 			if ((e->l = exp_visitor(v, rel, e->l, depth+1, exp_rewriter, topdown, relations_topdown, visit_relations_once, changed)) == NULL)
 				return NULL;
 			if ((e->r = exps_exp_visitor(v, rel, e->r, depth+1, exp_rewriter, topdown, relations_topdown, visit_relations_once)) == NULL)
@@ -2594,7 +2594,7 @@ exp_rel_visitor(visitor *v, sql_exp *e, rel_rewrite_fptr rel_rewriter, bool topd
 		} else if (e->flag == cmp_con || e->flag == cmp_dis) {
 			if ((e->l = exps_rel_visitor(v, e->l, rel_rewriter, topdown)) == NULL)
 				return NULL;
-		} else if (e->flag == cmp_in || e->flag == cmp_notin) {
+		} else if (e->flag == cmp_in) {
 			if ((e->l = exp_rel_visitor(v, e->l, rel_rewriter, topdown)) == NULL)
 				return NULL;
 			if ((e->r = exps_rel_visitor(v, e->r, rel_rewriter, topdown)) == NULL)
@@ -2862,7 +2862,7 @@ rel_rebind_exp(mvc *sql, sql_rel *rel, sql_exp *e)
 	case e_cmp:
 		if (e->flag == cmp_con || e->flag == cmp_dis)
 			return exps_rebind_exp(sql, rel, e->l);
-		if (e->flag == cmp_in || e->flag == cmp_notin)
+		if (e->flag == cmp_in)
 			return rel_rebind_exp(sql, rel, e->l) && exps_rebind_exp(sql, rel, e->r);
 		if (e->flag == cmp_filter)
 			return exps_rebind_exp(sql, rel, e->l) && exps_rebind_exp(sql, rel, e->r);

@@ -154,14 +154,14 @@ select_split_exp(split_select_ctx *s, sql_exp *e, bool *split, bool allow_conver
 		bool colcmp = false;
 
 		if (is_joinop(s->rel->op) && e->flag != cmp_filter && e->flag != cmp_con &&
-		    e->flag != cmp_dis && e->flag != cmp_in && e->flag != cmp_notin)
+		    e->flag != cmp_dis && e->flag != cmp_in)
 			colcmp = exp_is_column_value(e->l) && exp_is_column_value(e->r);
 		if (e->flag == cmp_filter) {
 			select_split_exps(s, e->l, split, false);
 			select_split_exps(s, e->r, split, false);
 		} else if (e->flag == cmp_con || e->flag == cmp_dis) {
 			select_split_exps(s, e->l, split, false);
-		} else if (e->flag == cmp_in || e->flag == cmp_notin) {
+		} else if (e->flag == cmp_in) {
 			e->l = select_split_exp(s, e->l, split, false);
 			select_split_exps(s, e->r, split, false);
 		} else {
@@ -586,7 +586,7 @@ exp_merge_range(visitor *v, sql_rel *rel, list *exps)
 }
 
 #define TRIVIAL_NOT_EQUAL_CMP(e) \
-	((e)->type == e_cmp && (e)->flag == cmp_notequal && !is_anti((e)) && !is_semantics((e)) && ((sql_exp*)(e)->l)->card != CARD_ATOM && ((sql_exp*)(e)->r)->card == CARD_ATOM)
+	((e)->type == e_cmp && (e)->flag == cmp_equal && is_anti((e)) && !is_semantics((e)) && ((sql_exp*)(e)->l)->card != CARD_ATOM && ((sql_exp*)(e)->r)->card == CARD_ATOM)
 
 static list *
 merge_notequal(mvc *sql, list *exps, int *changes)
@@ -641,7 +641,7 @@ merge_notequal(mvc *sql, list *exps, int *changes)
 					sql_exp *e = m->data;
 					list_append(notin, e->r);
 				}
-				list_append(nexps, exp_in(sql->sa, first->l, notin, cmp_notin));
+				list_append(nexps, exp_notin(sql->sa, first->l, notin));
 			} else {
 				list_append(nexps, first);
 			}
@@ -918,7 +918,7 @@ exp_or_chain_groups(list *exps, list **gen_ands, list **mce_ands, list **eqs, li
 	for (node *n = exps->h; n && eq_only; n = n->next) {
 		sql_exp *e = n->data;
 		sql_exp *le = e->l, *re = e->r;
-		eq_only &= (e->type == e_cmp && e->flag == cmp_equal &&
+		eq_only &= (e->type == e_cmp && e->flag == cmp_equal && !is_anti(e) &&
 			    le->card != CARD_ATOM && is_column(le->type) &&
 			    re->card == CARD_ATOM && !is_semantics(e));
 	}
@@ -955,7 +955,7 @@ generate_single_col_cmp_in(mvc *sql, sql_hash *eqh)
 			eq_cv *cv = he->value;
 			/* NOTE: cmp_eq expressions with a single entry are still in eqs */
 			if (list_length(cv->vs) > 1)
-				ins = append(ins, exp_in(sql->sa, cv->col, cv->vs, cmp_in));
+				ins = append(ins, exp_in(sql->sa, cv->col, cv->vs));
 			he = he->chain;
 		}
 	}
@@ -979,7 +979,7 @@ generate_multi_col_cmp_in(mvc *sql, sql_hash *meqh)
 				sql_exp *mc = exp_label(sql->sa, exp_values(sql->sa, mcv->cols), ++sql->label);
 				for (node *a = mcv->lvs->h; a; a = a->next)
 					a->data = exp_values(sql->sa, a->data);
-				ins = append(ins, exp_in(sql->sa, mc, mcv->lvs, cmp_in));
+				ins = append(ins, exp_in(sql->sa, mc, mcv->lvs));
 			}
 			he = he->chain;
 		}
@@ -1255,7 +1255,7 @@ cleanup_equal_exps(mvc *sql, sql_rel *rel, list *exps, int *changes)
 	if (is_join(rel->op)) {
 		for(node *n = exps->h; n; n = n->next) {
 			sql_exp *e = n->data;
-			if (e->type == e_cmp && !e->f && e->flag <= cmp_notequal &&
+			if (e->type == e_cmp && !e->f && is_theta_exp(e->flag) &&
 				!rel_find_exp(rel->l, e->l) && !rel_find_exp(rel->r, e->r) &&
 				!find_prop(e->p, PROP_HASHCOL) && !find_prop(e->p, PROP_JOINIDX)) {
 				exp_swap(e);
@@ -1366,25 +1366,25 @@ exp_or2in( mvc *sql, sql_exp *le, sql_exp *re)
 
 		append(exps, le->r);
 		append(exps, re->r);
-		return exp_in(sql->sa, le->l, exps, cmp_in);
+		return exp_in(sql->sa, le->l, exps);
 	} else if (le->flag == cmp_equal && re->flag == cmp_in){
 		list *exps = new_exp_list(sql->sa);
 
 		append(exps, le->r);
 		list_merge(exps, re->r, NULL);
-		return exp_in(sql->sa, le->l, exps, cmp_in);
+		return exp_in(sql->sa, le->l, exps);
 	} else if (le->flag == cmp_in && re->flag == cmp_equal){
 		list *exps = new_exp_list(sql->sa);
 
 		list_merge(exps, le->r, NULL);
 		append(exps, re->r);
-		return exp_in(sql->sa, le->l, exps, cmp_in);
+		return exp_in(sql->sa, le->l, exps);
 	} else if (le->flag == cmp_in && re->flag == cmp_in){
 		list *exps = new_exp_list(sql->sa);
 
 		list_merge(exps, le->r, NULL);
 		list_merge(exps, re->r, NULL);
-		return exp_in(sql->sa, le->l, exps, cmp_in);
+		return exp_in(sql->sa, le->l, exps);
 	}
 	return NULL;
 }
@@ -1617,7 +1617,6 @@ replace_column_references_with_nulls_2(mvc *sql, sql_rel *inner_join_side, sql_e
 		case cmp_lte:
 		case cmp_lt:
 		case cmp_equal:
-		case cmp_notequal:
 		{
 			sql_exp* l = e->l;
 			sql_exp* r = e->r;
@@ -1644,7 +1643,6 @@ replace_column_references_with_nulls_2(mvc *sql, sql_rel *inner_join_side, sql_e
 			break;
 		}
 		case cmp_in:
-		case cmp_notin:
 		{
 			sql_exp* l = e->l;
 			list* r = e->r;
@@ -1762,7 +1760,7 @@ has_semantics(sql_exp *e)
 			return all_semantics(e->l);
 		} else if (e->flag == cmp_dis) {
 			return any_semantics(e->l);
-		} else if (e->flag == cmp_in || e->flag == cmp_notin) {
+		} else if (e->flag == cmp_in) {
 			return has_semantics(e->l) || any_semantics(e->r);
 		} else if (e->flag == cmp_filter) {
 			return any_semantics(e->l) || any_semantics(e->r);
@@ -2359,17 +2357,17 @@ bind_optimize_joins(visitor *v, global_props *gp)
 		   || gp->cnt[op_full] || gp->cnt[op_semi] || gp->cnt[op_anti]) && (flag & optimize_joins) ? rel_optimize_joins : NULL;
 }
 
-static sql_rel *rel_push_semijoin_down_or_up(visitor *v, sql_rel *rel);
+static sql_rel *rel_push_semijoin_down_or_up(visitor *v, sql_rel *rel, bool costbased);
 
 static sql_rel *
 rel_joins_(visitor *v, sql_rel *rel)
 {
 	rel = rel_join2semijoin(v, rel);
 	/* joins runs after join_order2 and can create new semijoins.  The normal
-	 * optimize_semi_and_anti pass has already run at that point, so push
-	 * these semijoins down here before they are pinned above a large join. */
+	 * optimize_semi_and_anti pass has already run at that point, so decide
+	 * placement of these semijoins using the freshly ordered join tree. */
 	if (rel && is_semi(rel->op))
-		rel = rel_push_semijoin_down_or_up(v, rel);
+		rel = rel_push_semijoin_down_or_up(v, rel, true);
 	return rel;
 }
 
@@ -2549,6 +2547,55 @@ rel_has_select_tree(sql_rel *rel)
 	}
 }
 
+static dbl
+join_cost(BUN lc, BUN rc)
+{
+	if (lc == BUN_NONE || rc == BUN_NONE)
+		return -1.0;
+	return (dbl)(lc < rc ? lc : rc);
+}
+
+/* Decide whether moving the semijoin into a join is cheaper than keeping it above. */
+static bool
+semijoin_push_cost_cheaper(visitor *v, sql_rel *rel, sql_rel *j,
+			   sql_rel *target, sql_rel *other, bool left)
+{
+	BUN j_cnt = get_rel_count(j);
+	BUN t_cnt = get_rel_count(target);
+	BUN o_cnt = get_rel_count(other);
+	BUN r_cnt = get_rel_count(rel->r);
+	dbl keep, push;
+
+	if (j_cnt == BUN_NONE || t_cnt == BUN_NONE ||
+	    o_cnt == BUN_NONE || r_cnt == BUN_NONE)
+		return false;
+
+	/* estimate size of pushing semi down */
+	dbl sel = 1.0;
+	for (node *n = rel->exps->h; n; n = n->next)
+		sel *= exp_estimate_selectivity(v->sql, n->data, rel);
+	BUN pushed_cnt = (BUN)((dbl)t_cnt * sel);
+	if (pushed_cnt > o_cnt)
+		pushed_cnt = o_cnt;
+	if (pushed_cnt <= 1)
+		pushed_cnt = 2;
+
+	keep = join_cost(get_rel_count(j->l), get_rel_count(j->r));
+	keep += join_cost(j_cnt, r_cnt);
+	if (keep < 0.0)
+		return false;
+
+	push = join_cost(t_cnt, r_cnt);
+	if (left) /* join(semi(target, r), other) */
+		push += join_cost(pushed_cnt, o_cnt);
+	else /* join(other, semi(target, r)) */
+		push += join_cost(o_cnt, pushed_cnt);
+	if (push < 0.0)
+		return false;
+
+	return push <= keep;
+}
+
 /*
  * Push semijoins down, pushes the semijoin through a join (if join doesn't have any selects).
  *
@@ -2563,7 +2610,7 @@ rel_has_select_tree(sql_rel *rel)
  * semijoin. When the join reduces (ie when there are selects on it).
  */
 static inline sql_rel *
-rel_push_semijoin_down_or_up(visitor *v, sql_rel *rel)
+rel_push_semijoin_down_or_up(visitor *v, sql_rel *rel, bool costbased)
 {
 	if (rel->op == op_join && rel->exps && rel->l && !rel_is_ref(rel)) {
 		sql_rel *l = rel->l, *r = rel->r;
@@ -2666,9 +2713,19 @@ rel_push_semijoin_down_or_up(visitor *v, sql_rel *rel)
 			/* count-based: only push down when semijoin reduces the join input. */
 			if (sj_cnt >= l_cnt)
 				return rel;
-			/* A left push with a reducing right side is undone by the push-up rule. */
-			if (left && rel_has_select_tree(lr))
+			if (costbased && MT_thread_get_qry_ctx()->pipeline_mode) {
+				/* join_order2 has already reordered the inner joins.  Compare
+				 * the physical cost of keeping the semijoin above that tree
+				 * with the cost of pushing it into the bound side. */
+				sql_rel *target = left ? ll : lr;
+				sql_rel *other = left ? lr : ll;
+
+				if (!semijoin_push_cost_cheaper(v, rel, l, target, other, left))
+					return rel;
+			} else if (left && rel_has_select_tree(lr)) {
+				/* A left push with a reducing right side is undone by the push-up rule. */
 				return rel;
+			}
 		} else {
 			if (left ? (rel_has_select_tree(ll) || rel_has_select_tree(lr))
 					: rel_has_select_tree(lr))
@@ -2744,7 +2801,7 @@ rel_optimize_semi_and_anti_(visitor *v, sql_rel *rel)
 		rel = rel_rewrite_semijoin(v, rel);
 	/* push semijoin through join */
 	if (rel && (is_semi(rel->op) || is_innerjoin(rel->op)))
-		rel = rel_push_semijoin_down_or_up(v, rel);
+		rel = rel_push_semijoin_down_or_up(v, rel, false);
 	/* antijoin(a, union(b,c)) -> antijoin(antijoin(a,b), c) */
 	if (rel && rel->op == op_anti)
 		rel = rel_rewrite_antijoin(v, rel);
@@ -2844,7 +2901,7 @@ rel_push_join_down(visitor *v, sql_rel *rel)
 								int anti = is_anti(je), semantics = is_semantics(je);
 
 								je = exp_compare(v->sql->sa, le, re, je->flag);
-								if (anti) set_anti(je);
+								if (anti) (void) exp_set_anti(v->sql->sa, je);
 								if (semantics) set_semantics(je);
 								list_append(jes, je);
 							}
@@ -2945,7 +3002,7 @@ rel_simplify_project_fk_join(mvc *sql, sql_rel *r, list *pexps, list *orderexps,
 
 	/* remove NULL values, ie generate a select not null */
 	nje = exp_compare(sql->sa, exp_ref(sql, le), exp_atom(sql->sa, atom_general(sql->sa, exp_subtype(le), NULL, 0)), cmp_equal);
-	set_anti(nje);
+	(void) exp_set_anti(sql->sa, nje);
 	set_has_no_nil(nje);
 	set_semantics(nje);
 	if (fk_left) {
@@ -3022,7 +3079,7 @@ rel_simplify_count_fk_join(mvc *sql, sql_rel *r, list *gexps, list *gcols, int *
 
 	/* remove NULL values, ie generate a select not null */
 	nje = exp_compare(sql->sa, exp_ref(sql, le), exp_atom(sql->sa, atom_general(sql->sa, exp_subtype(le), NULL, 0)), cmp_equal);
-	set_anti(nje);
+	(void) exp_set_anti(sql->sa, nje);
 	set_has_no_nil(nje);
 	set_semantics(nje);
 	if (fk_left) {
@@ -3221,7 +3278,7 @@ try_duplicate_select(visitor *v, sql_rel *r, sql_exp *e, bool leftside)
 				if (!ef) {
 					ne = exp_compare(v->sql->sa, ne, er, e->flag);
 					if (is_anti(e))
-						set_anti(ne);
+						(void) exp_set_anti(v->sql->sa, ne);
 					sql_rel *s = leftside ? r->l : r->r;
 					if (!is_select(s->op)) {
 						if (leftside)
@@ -3234,7 +3291,7 @@ try_duplicate_select(visitor *v, sql_rel *r, sql_exp *e, bool leftside)
 				} else {
 					ne = exp_compare2(v->sql->sa, ne, er, ef, e->flag, is_symmetric(e));
 					if (is_anti(e))
-						set_anti(ne);
+						(void) exp_set_anti(v->sql->sa, ne);
 					sql_rel *s = leftside ? r->l : r->r;
 					if (!is_select(s->op)) {
 						if (leftside)
@@ -3424,7 +3481,7 @@ rel_push_select_down(visitor *v, sql_rel *rel)
 					if (e->type == e_cmp) {
 						/* simple comparison filter */
 						if (e->flag == cmp_gt || e->flag == cmp_gte || e->flag == cmp_lte || e->flag == cmp_lt
-							|| e->flag == cmp_equal || e->flag == cmp_notequal || e->flag == cmp_in || e->flag == cmp_notin
+							|| e->flag == cmp_equal || e->flag == cmp_in
 							|| (e->flag == cmp_filter && ((list*)e->l)->cnt == 1)) {
 							sql_exp* column;
 							/* the column in 'like' filters is stored inside a list */
@@ -3779,7 +3836,7 @@ can_push_func(sql_exp *e, sql_rel *rel, int *must, int depth)
 		sql_exp *l = e->l, *r = e->r, *f = e->f;
 
 		/* don't push down functions inside attribute joins */
-		if (e->flag == cmp_con || e->flag == cmp_dis || e->flag == cmp_in || e->flag == cmp_notin || e->flag == cmp_filter || (is_join(rel->op) && is_any(e)))
+		if (e->flag == cmp_con || e->flag == cmp_dis || e->flag == cmp_in || e->flag == cmp_filter || (is_join(rel->op) && is_any(e)))
 			return 0;
 		if (depth > 0) { /* for comparisons under the top ones, they become functions */
 			int lmust = 0;
@@ -3843,7 +3900,7 @@ exp_needs_push_down(sql_rel *rel, sql_exp *e)
 	switch(e->type) {
 	case e_cmp:
 		/* don't push down functions inside attribute joins */
-		if (e->flag == cmp_con || e->flag == cmp_dis || e->flag == cmp_in || e->flag == cmp_notin || e->flag == cmp_filter || (is_join(rel->op) && is_any(e)))
+		if (e->flag == cmp_con || e->flag == cmp_dis || e->flag == cmp_in || e->flag == cmp_filter || (is_join(rel->op) && is_any(e)))
 			return 0;
 		return exp_needs_push_down(rel, e->l) || exp_needs_push_down(rel, e->r) || (e->f && exp_needs_push_down(rel, e->f));
 	case e_convert:
@@ -3952,7 +4009,7 @@ exp_push_single_func_down(visitor *v, sql_rel *rel, sql_rel *ol, sql_rel *or, sq
 		} else if (e->flag == cmp_con || e->flag == cmp_dis) {
 			if ((e->l = exps_push_single_func_down(v, rel, ol, or, e->l, depth + 1)) == NULL)
 				return NULL;
-		} else if (e->flag == cmp_in || e->flag == cmp_notin) {
+		} else if (e->flag == cmp_in) {
 			if ((e->l = exp_push_single_func_down(v, rel, ol, or, e->l, depth + 1)) == NULL)
 				return NULL;
 			if ((e->r = exps_push_single_func_down(v, rel, ol, or, e->r, depth + 1)) == NULL)

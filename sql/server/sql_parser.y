@@ -1872,12 +1872,12 @@ max_memory:
 			errno = 0;
 			lng size = strtoll($2, &end, 10);
 			lng unit;
-			if (errno == ERANGE || size < 0 || (unit = size_unit(end)) < 0 || (size * unit) < 0) {
+			if (errno == ERANGE || size < 0 || (unit = size_unit(end)) < 0 || mul_int64_overflow(size, unit, &size)) {
 				$$ = -1;
 				yyerror(m, "Invalid size");
 				YYABORT;
 			}
-			$$ = size * unit;
+			$$ = size;
 		}
 	;
 
@@ -2006,16 +2006,17 @@ table_def:
 			append_symbol(l, NULL); /* only used for merge table */
 			$$ = _symbol_create_list( SQL_CREATE_TABLE, l );
 		}
-	|	local_temp VIEW qname opt_column_list AS SelectStmt
+	|	local_temp VIEW if_not_exists qname opt_column_list AS SelectStmt
 		{
 			dlist *l = L();
 			append_int(l, $1);
-			append_list(l, $3);
 			append_list(l, $4);
-			append_symbol(l, $6);
+			append_list(l, $5);
+			append_symbol(l, $7);
 			append_int(l, FALSE);
 			append_int(l, TRUE);
 			append_int(l, FALSE);
+			append_int(l, $3);	/* if not exists */
 			$$ = _symbol_create_list( SQL_CREATE_VIEW, l );
 		}
 	;
@@ -2528,28 +2529,30 @@ like_table:
 	;
 
 view_def:
-		create_or_replace VIEW qname opt_column_list AS SelectStmt opt_with_check_option
+		create_or_replace VIEW if_not_exists qname opt_column_list AS SelectStmt opt_with_check_option
 		{
 			dlist *l = L();
 			append_int(l, SQL_PERSIST);
-			append_list(l, $3);
 			append_list(l, $4);
-			append_symbol(l, $6);
-			append_int(l, $7);
+			append_list(l, $5);
+			append_symbol(l, $7);
+			append_int(l, $8);
 			append_int(l, TRUE);	/* persistent view */
-			append_int(l, $1);
+			append_int(l, $1);	/* replace */
+			append_int(l, $3);	/* if not exists */
 			$$ = _symbol_create_list( SQL_CREATE_VIEW, l );
 		}
-	|	CREATE OR REPLACE local_temp VIEW qname opt_column_list AS SelectStmt
+	|	CREATE OR REPLACE local_temp VIEW if_not_exists qname opt_column_list AS SelectStmt
 		{
 			dlist *l = L();
 			append_int(l, $4);
-			append_list(l, $6);
 			append_list(l, $7);
-			append_symbol(l, $9);
-			append_int(l, FALSE);
+			append_list(l, $8);
+			append_symbol(l, $10);
+			append_int(l, FALSE);	/* with check */
 			append_int(l, TRUE);	/* persistent view */
-			append_int(l, TRUE);  /* replace */
+			append_int(l, TRUE);	/* replace */
+			append_int(l, $6);		/* if not exists */
 			$$ = _symbol_create_list( SQL_CREATE_VIEW, l );
 		}
 	;
@@ -2635,61 +2638,65 @@ func_def_opt_order_spec:
 	;
 
 func_def:
-		create_or_replace func_def_type_no_proc qfunc '(' opt_paramlist ')' func_def_opt_returns func_def_opt_order_spec
+		create_or_replace func_def_type_no_proc if_not_exists qfunc '(' opt_paramlist ')' func_def_opt_returns func_def_opt_order_spec
 		EXTERNAL sqlNAME external_function_name
 		{
 			dlist *f = L();
-			append_list(f, $3);
-			append_list(f, $5);
-			append_symbol(f, $7);
-			append_list(f, $11);
+			append_list(f, $4);
+			append_list(f, $6);
+			append_symbol(f, $8);
+			append_list(f, $12);
 			append_list(f, NULL);
 			append_int(f, $2);
 			append_int(f, FUNC_LANG_MAL);
-			append_int(f, $1);
-			append_int(f, $8);
+			append_int(f, $1);	/* replace */
+			append_int(f, $9);
+			append_int(f, $3);	/* if not exists */
 			$$ = _symbol_create_list( SQL_CREATE_FUNC, f );
 		}
-	|	create_or_replace PROCEDURE qfunc '(' opt_paramlist ')' EXTERNAL sqlNAME external_function_name
+	|	create_or_replace PROCEDURE if_not_exists qfunc '(' opt_paramlist ')' EXTERNAL sqlNAME external_function_name
 		{
 			dlist *f = L();
-			append_list(f, $3);
-			append_list(f, $5);
+			append_list(f, $4);
+			append_list(f, $6);
 			append_symbol(f, NULL);
-			append_list(f, $9);
+			append_list(f, $10);
 			append_list(f, NULL);
 			append_int(f, F_PROC);
 			append_int(f, FUNC_LANG_MAL);
-			append_int(f, $1);
+			append_int(f, $1);	/* replace */
 			append_int(f, 0);
+			append_int(f, $3);	/* if not exists */
 			$$ = _symbol_create_list( SQL_CREATE_FUNC, f );
 		}
-	|	create_or_replace func_def_type_no_proc qfunc '(' opt_paramlist ')' func_def_opt_returns routine_body
+	|	create_or_replace func_def_type_no_proc if_not_exists qfunc '(' opt_paramlist ')' func_def_opt_returns routine_body
 		{
 			dlist *f = L();
-			append_list(f, $3);
-			append_list(f, $5);
-			append_symbol(f, $7);
+			append_list(f, $4);
+			append_list(f, $6);
+			append_symbol(f, $8);
+			append_list(f, NULL);
+			append_list(f, $9);
+			append_int(f, $2);
+			append_int(f, FUNC_LANG_SQL);
+			append_int(f, $1);	/* replace */
+			append_int(f, 0);
+			append_int(f, $3);	/* if not exists */
+			$$ = _symbol_create_list( SQL_CREATE_FUNC, f );
+		}
+	|	create_or_replace PROCEDURE if_not_exists qfunc '(' opt_paramlist ')' procedure_body
+		{
+			dlist *f = L();
+			append_list(f, $4);
+			append_list(f, $6);
+			append_symbol(f, NULL);
 			append_list(f, NULL);
 			append_list(f, $8);
-			append_int(f, $2);
-			append_int(f, FUNC_LANG_SQL);
-			append_int(f, $1);
-			append_int(f, 0);
-			$$ = _symbol_create_list( SQL_CREATE_FUNC, f );
-		}
-	|	create_or_replace PROCEDURE qfunc '(' opt_paramlist ')' procedure_body
-		{
-			dlist *f = L();
-			append_list(f, $3);
-			append_list(f, $5);
-			append_symbol(f, NULL);
-			append_list(f, NULL);
-			append_list(f, $7);
 			append_int(f, F_PROC);
 			append_int(f, FUNC_LANG_SQL);
-			append_int(f, $1);
+			append_int(f, $1);	/* replace */
 			append_int(f, 0);
+			append_int(f, $3);	/* if not exists */
 			$$ = _symbol_create_list( SQL_CREATE_FUNC, f );
 		}
 	;
@@ -2969,16 +2976,17 @@ Define triggered SQL-statements.
 */
 
 trigger_def:
-		create_or_replace TRIGGER qname trigger_action_time trigger_event opt_qname opt_referencing_list triggered_action
+		create_or_replace TRIGGER if_not_exists qname trigger_action_time trigger_event opt_qname opt_referencing_list triggered_action
 		{
 			dlist *l = L();
-			append_list(l, $3);
-			append_int(l, $4);
-			append_symbol(l, $5);
-			append_list(l, $6);
+			append_list(l, $4);
+			append_int(l, $5);
+			append_symbol(l, $6);
 			append_list(l, $7);
 			append_list(l, $8);
-			append_int(l, $1);
+			append_list(l, $9);
+			append_int(l, $1);	/* replace */
+			append_int(l, $3);	/* if not exists */
 			$$ = _symbol_create_list(SQL_CREATE_TRIGGER, l);
 		}
 	;
@@ -3920,6 +3928,7 @@ with_list_element:
 			append_int(l, FALSE); /* no with check */
 			append_int(l, FALSE); /* inlined view  (ie not persistent) */
 			append_int(l, FALSE); /* no replace clause */
+			append_int(l, FALSE); /* no if not exists */
 			$$ = _symbol_create_list( SQL_CREATE_VIEW, l );
 		}
 	;

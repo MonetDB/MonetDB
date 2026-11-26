@@ -1839,6 +1839,10 @@ stmt_uselect(backend *be, stmt *op1, stmt *op2, comp_type cmptype, stmt *sub, in
 		r = n;
 		cmptype = swap_compare(cmptype);
 	}
+	/* Canonical <>/NOT IN use cmp_equal/cmp_in plus the anti flag.  Fold
+	 * non-semantic equality into the operator itself; semantic equality
+	 * (IS [NOT] NULL) keeps the select's anti bit. */
+	bool eq_ne = cmptype == cmp_equal && anti && !is_semantics;
 	if (op2->nrcols >= 1) {
 		bit need_not = FALSE;
 		const char *mod = calcRef;
@@ -1847,10 +1851,7 @@ stmt_uselect(backend *be, stmt *op1, stmt *op2, comp_type cmptype, stmt *sub, in
 
 		switch (cmptype) {
 		case cmp_equal:
-			op = "=";
-			break;
-		case cmp_notequal:
-			op = "!=";
+			op = eq_ne ? "!=" : "=";
 			break;
 		case cmp_lt:
 			op = "<";
@@ -1896,7 +1897,7 @@ stmt_uselect(backend *be, stmt *op1, stmt *op2, comp_type cmptype, stmt *sub, in
 		q = pushBit(mb, q, !need_not);
 		q = pushBit(mb, q, TRUE);
 		q = pushBit(mb, q, TRUE);
-		q = pushBit(mb, q, anti);
+		q = pushBit(mb, q, eq_ne ? FALSE : anti);
 		k = getDestVar(q);
 	} else {
 		assert (cmptype != cmp_filter);
@@ -1917,13 +1918,7 @@ stmt_uselect(backend *be, stmt *op1, stmt *op2, comp_type cmptype, stmt *sub, in
 			if (is_semantics)
 				q = pushStr(mb, q, anti?"ne":"eq");
 			else
-				q = pushStr(mb, q, anti?"!=":"==");
-			break;
-		case cmp_notequal:
-			if (is_semantics)
-				q = pushStr(mb, q, anti?"eq":"ne");
-			else
-				q = pushStr(mb, q, anti?"==":"!=");
+				q = pushStr(mb, q, eq_ne?"!=":"==");
 			break;
 		case cmp_lt:
 			q = pushStr(mb, q, anti?">=":"<");
@@ -2632,9 +2627,6 @@ stmt_join_cand(backend *be, stmt *op1, stmt *op2, stmt *lcand, stmt *rcand, int 
 	InstrPtr q = NULL;
 	const char *sjt = inner?joinRef:outerjoinRef;
 
-	(void)anti;
-	(void)inner;
-
 	if (need_left) {
 		cmptype = cmp_equal;
 		sjt = leftjoinRef;
@@ -2644,36 +2636,9 @@ stmt_join_cand(backend *be, stmt *op1, stmt *op2, stmt *lcand, stmt *rcand, int 
 
 	assert (!single || cmptype == cmp_all);
 
-	if (anti) {
-		if (cmptype == cmp_equal)
-			cmptype = cmp_notequal;
-		else if (cmptype == cmp_notequal)
-			cmptype = cmp_equal;
-	}
 	switch (cmptype) {
 	case cmp_equal:
-		q = newStmtArgs(mb, algebraRef, sjt, 9);
-		if (q == NULL)
-			goto bailout;
-		q = pushReturn(mb, q, newTmpVariable(mb, TYPE_any));
-		q = pushArgument(mb, q, op1->nr);
-		q = pushArgument(mb, q, op2->nr);
-		if (!lcand)
-			q = pushNilBat(mb, q);
-		else
-			q = pushArgument(mb, q, lcand->nr);
-		if (!rcand)
-			q = pushNilBat(mb, q);
-		else
-			q = pushArgument(mb, q, rcand->nr);
-		q = pushBit(mb, q, is_semantics?TRUE:FALSE);
-		if (!inner)
-			q = pushBit(mb, q, FALSE); /* not match_one */
-		q = pushNil(mb, q, TYPE_lng);
-		pushInstruction(mb, q);
-		break;
-	case cmp_notequal:
-		if (inner)
+		if (anti && inner)
 			sjt = thetajoinRef;
 		q = newStmtArgs(mb, algebraRef, sjt, 9);
 		if (q == NULL)
@@ -2689,7 +2654,7 @@ stmt_join_cand(backend *be, stmt *op1, stmt *op2, stmt *lcand, stmt *rcand, int 
 			q = pushNilBat(mb, q);
 		else
 			q = pushArgument(mb, q, rcand->nr);
-		if (inner)
+		if (anti && inner)
 			q = pushInt(mb, q, JOIN_NE);
 		q = pushBit(mb, q, is_semantics?TRUE:FALSE);
 		if (!inner)

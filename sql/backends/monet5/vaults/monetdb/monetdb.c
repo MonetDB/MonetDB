@@ -264,8 +264,10 @@ monetdb_load(void *BE, sql_subfunc *f, char *uri, list *in_exps, sql_exp *topn)
 static str
 MONETDBprelude(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 {
-	(void)cntxt; (void)mb; (void)stk; (void)pci;
-
+	(void)cntxt;
+	(void)mb;
+	(void)stk;
+	(void)pci;
 	pl_register("monetdb", &monetdb_relation, &monetdb_load);
 	pl_register("monetdbs", &monetdb_relation, &monetdb_load);
 	pl_register("mapi", &monetdb_relation, &monetdb_load);
@@ -275,7 +277,7 @@ MONETDBprelude(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 static str
 MONETDBepilogue(Client cntxt, void *ret)
 {
-	(void) cntxt;
+	(void)cntxt;
 	pl_unregister("monetdb");
 	pl_unregister("monetdbs");
 	pl_unregister("mapi");

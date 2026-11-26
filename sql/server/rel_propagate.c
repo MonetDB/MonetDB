@@ -182,7 +182,7 @@ create_range_partition_anti_rel(sql_query* query, sql_table *mt, sql_table *pt, 
 				return NULL;
 
 			if (max_equal_min) {
-				anti_exp = exp_compare(sql->sa, exp_copy(sql, anti_le), e1, cmp_notequal);
+				anti_exp = exp_ne(sql->sa, exp_copy(sql, anti_le), e1);
 			} else {
 				e2 = exp_copy(sql, pmax);
 				if (!(e2 = exp_check_type(sql, &tpe, NULL, e2, type_equal)))
@@ -236,7 +236,7 @@ create_list_partition_anti_rel(sql_query* query, sql_table *mt, sql_table *pt, b
 		/* function may need conversion */
 		if (!(anti_le = exp_check_type(sql, ntpe, NULL, anti_le, type_equal)))
 			return NULL;
-		anti_exp = exp_in(sql->sa, anti_le, anti_exps, cmp_notin);
+		anti_exp = exp_notin(sql->sa, anti_le, anti_exps);
 		if (!with_nills) {
 			anti_nils = exp_compare(sql->sa, anti_nils, exp_atom_bool(sql->sa, 1), cmp_equal);
 			anti_exp = exp_disjunctive2(sql->sa, anti_exp, anti_nils);
@@ -499,7 +499,7 @@ exp_change_column_table(mvc *sql, sql_exp *e, sql_table* oldt, sql_table* newt)
 				e->l = a_create(sql->sa, newt->base.name);
 		} break;
 		case e_cmp: {
-			if (e->flag == cmp_in || e->flag == cmp_notin) {
+			if (e->flag == cmp_in) {
 				e->l = exp_change_column_table(sql, e->l, oldt, newt);
 				for (node *n = ((list*)e->r)->h ; n ; n = n->next)
 					n->data = exp_change_column_table(sql, (sql_exp*) n->data, oldt, newt);
@@ -813,7 +813,7 @@ rel_generate_subinserts(visitor *v, sql_rel *rel, sql_table *t,
 					list_append(exps, e1);
 					list_append(anti_exps, exp_copy(sql, e1));
 				}
-				ein = exp_in(sql->sa, le, exps, cmp_in);
+				ein = exp_in(sql->sa, le, exps);
 			} else {
 				assert(pt->with_nills);
 			}
@@ -867,7 +867,7 @@ rel_generate_subinserts(visitor *v, sql_rel *rel, sql_table *t,
 			}
 		} else if (isListPartitionTable(t)) {
 			if (list_length(anti_exps))
-				anti_exp = exp_in(sql->sa, anti_le, anti_exps, cmp_notin);
+				anti_exp = exp_notin(sql->sa, anti_le, anti_exps);
 		} else {
 			assert(0);
 		}
@@ -1014,7 +1014,7 @@ rel_subtable_insert(visitor *v, sql_rel *p, sql_table *t)
 				bool max_equal_min = ATOMeq(tpe, pt->part.range.maxvalue, pt->part.range.minvalue);
 
 				if (max_equal_min) {
-					anti_exp = exp_compare(sql->sa, exp_copy(sql, anti_le), e1, cmp_notequal);
+					anti_exp = exp_ne(sql->sa, exp_copy(sql, anti_le), e1);
 				} else {
 					sql_exp *e2 = exp_atom(sql->sa, atom_general_ptr(sql->sa, &tp, pt->part.range.maxvalue)),
 						*range1 = exp_compare(sql->sa, exp_copy(sql, anti_le), e1, cmp_lt),
@@ -1040,7 +1040,7 @@ rel_subtable_insert(visitor *v, sql_rel *p, sql_table *t)
 				sql_exp *e1 = exp_atom(sql->sa, atom_general_ptr(sql->sa, &tp, next->value));
 				list_append(anti_exps, exp_copy(sql, e1));
 			}
-			anti_exp = exp_in(sql->sa, exp_copy(sql, anti_le), anti_exps, cmp_notin);
+			anti_exp = exp_notin(sql->sa, exp_copy(sql, anti_le), anti_exps);
 
 			if (!pt->with_nills) { /* handle the nulls case */
 				anti_nils = rel_unop_(sql, anti_dup, exp_copy(sql, anti_le), "sys", "isnull", card_value);

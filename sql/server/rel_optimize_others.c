@@ -139,12 +139,14 @@ exp_push_down_prj(mvc *sql, sql_exp *e, sql_rel *f, sql_rel *t)
 				ne = exp_conjunctive(sql->sa, l);
 			else
 				ne = exp_disjunctive(sql->sa, l);
-		} else if (e->flag == cmp_in || e->flag == cmp_notin) {
+		} else if (e->flag == cmp_in) {
 			list *r = NULL;
 
 			if (!(l = exp_push_down_prj(sql, e->l, f, t)) || !(r = exps_push_down_prj(sql, e->r, f, t, true)))
 				return NULL;
-			ne = exp_in(sql->sa, l, r, e->flag);
+			ne = exp_in(sql->sa, l, r);
+			if (is_anti(e))
+				(void) exp_set_anti(sql->sa, ne);
 		} else {
 			if (!(l = exp_push_down_prj(sql, e->l, f, t)) || !(r = exp_push_down_prj(sql, e->r, f, t)) || (e->f && !(r2 = exp_push_down_prj(sql, e->f, f, t))))
 				return NULL;
@@ -345,7 +347,7 @@ exp_mark_used(sql_rel *subrel, sql_exp *e, int local_proj)
 			nr += exps_mark_used(subrel, e->r, local_proj);
 		} else if (e->flag == cmp_con || e->flag == cmp_dis) {
 			nr += exps_mark_used(subrel, e->l, local_proj);
-		} else if (e->flag == cmp_in || e->flag == cmp_notin) {
+		} else if (e->flag == cmp_in) {
 			nr += exp_mark_used(subrel, e->l, local_proj);
 			nr += exps_mark_used(subrel, e->r, local_proj);
 		} else {
@@ -498,7 +500,7 @@ exp_used(sql_exp *e)
 				exps_used(e->r);
 			} else if (e->flag == cmp_con || e->flag == cmp_dis) {
 				exps_used(e->l);
-			} else if (e->flag == cmp_in || e->flag == cmp_notin) {
+			} else if (e->flag == cmp_in) {
 				exp_used(e->l);
 				exps_used(e->r);
 			} else {

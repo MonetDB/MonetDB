@@ -537,6 +537,7 @@ main(int argc, char *argv[])
 	}
 
 	mnstr_init();
+	MT_thread_init();
 
 	allocator *ta = create_allocator("sqlparse", false);
 	MT_thread_setallocator(ta);

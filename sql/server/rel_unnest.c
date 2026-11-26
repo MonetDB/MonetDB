@@ -35,7 +35,7 @@ exp_set_freevar(mvc *sql, sql_exp *e, sql_rel *r)
 			exps_set_freevar(sql, e->r, r);
 		} else if (e->flag == cmp_con || e->flag == cmp_dis) {
 			exps_set_freevar(sql, e->l, r);
-		} else if (e->flag == cmp_in || e->flag == cmp_notin) {
+		} else if (e->flag == cmp_in) {
 			exp_set_freevar(sql, e->l, r);
 			exps_set_freevar(sql, e->r, r);
 		} else {
@@ -94,7 +94,7 @@ exp_has_freevar(mvc *sql, sql_exp *e)
 			return (exps_have_freevar(sql, e->l) || exps_have_freevar(sql, e->r));
 		} else if (e->flag == cmp_con || e->flag == cmp_dis) {
 			return exps_have_freevar(sql, e->l);
-		} else if (e->flag == cmp_in || e->flag == cmp_notin) {
+		} else if (e->flag == cmp_in) {
 			return (exp_has_freevar(sql, e->l) || exps_have_freevar(sql, e->r));
 		} else {
 			return (exp_has_freevar(sql, e->l) || exp_has_freevar(sql, e->r) ||
@@ -212,7 +212,7 @@ exp_only_freevar(sql_query *query, sql_exp *e, bool *arguments_correlated, bool 
 			exps_only_freevar(query, e->r, arguments_correlated, found_one_freevar, ungrouped_cols);
 		} else if (e->flag == cmp_con || e->flag == cmp_dis) {
 			exps_only_freevar(query, e->l, arguments_correlated, found_one_freevar, ungrouped_cols);
-		} else if (e->flag == cmp_in || e->flag == cmp_notin) {
+		} else if (e->flag == cmp_in) {
 			exp_only_freevar(query, e->l, arguments_correlated, found_one_freevar, ungrouped_cols);
 			exps_only_freevar(query, e->r, arguments_correlated, found_one_freevar, ungrouped_cols);
 		} else {
@@ -343,7 +343,7 @@ exp_freevar(mvc *sql, sql_exp *e, bool all)
 			return merge_freevar(l, r, all);
 		} else if (e->flag == cmp_con || e->flag == cmp_dis) {
 			return exps_freevar(sql, e->l, all);
-		} else if (e->flag == cmp_in || e->flag == cmp_notin) {
+		} else if (e->flag == cmp_in) {
 			list *l = exp_freevar(sql, e->l, all);
 			list *r = exps_freevar(sql, e->r, all);
 			return merge_freevar(l, r, all);
@@ -583,7 +583,7 @@ exp_accessing_ad(mvc *sql, sql_exp *e, list *ad, struct access_info **acc)
 				return true;
 		} else if (e->flag == cmp_con || e->flag == cmp_dis) {
 			return exps_accessing_ad(sql, e->l, ad, acc);
-		} else if (e->flag == cmp_in || e->flag == cmp_notin) {
+		} else if (e->flag == cmp_in) {
 			bool fnd1 = exp_accessing_ad(sql, e->l, ad, acc);
 			bool fnd2 = exps_accessing_ad(sql, e->r, ad, acc);
 			if (fnd1 || fnd2)
@@ -794,7 +794,7 @@ push_up_project_exp(visitor *v, sql_rel *rel, sql_exp *e)
 		} else if (e->flag == cmp_con || e->flag == cmp_dis) {
 			e->l = push_up_project_exps(v, rel, e->l);
 			return e;
-		} else if (e->flag == cmp_in || e->flag == cmp_notin) {
+		} else if (e->flag == cmp_in) {
 			e->l = push_up_project_exp(v, rel, e->l);
 			e->r = push_up_project_exps(v, rel, e->r);
 			return e;
@@ -1060,7 +1060,7 @@ exp_reset_props(sql_rel *rel, sql_exp *e, bool setnil)
 			exps_reset_props(rel, e->l, setnil);
 			if (setnil && have_nil(e->l))
 				set_has_nil(e);
-		} else if (e->flag == cmp_in || e->flag == cmp_notin) {
+		} else if (e->flag == cmp_in) {
 			exp_reset_props(rel, e->l, setnil);
 			exps_reset_props(rel, e->r, setnil);
 			if (setnil && (has_nil((sql_exp*)e->l) || have_nil(e->r)))
@@ -1384,7 +1384,7 @@ exp_reset_card_and_freevar_set_physical_type(visitor *v, sql_rel *rel, sql_exp *
 				e->card = MAX(exps_card(e->l), exps_card(e->r));
 			} else if (e->flag == cmp_con || e->flag == cmp_dis) {
 				e->card = exps_card(e->l);
-			} else if (e->flag == cmp_in || e->flag == cmp_notin) {
+			} else if (e->flag == cmp_in) {
 				e->card = MAX(exp_card(e->l), exps_card(e->r));
 			} else {
 				e->card = MAX(exp_card(e->l), exp_card(e->r));
@@ -1447,10 +1447,10 @@ exp_set_type(visitor *v, sql_rel *rel, sql_exp *e, int depth)
 			e->tpe = a->type;
 		}
 	} else if (e->type == e_cmp && !e->f) {
-		if (e->flag == cmp_in || e->flag == cmp_notin) {
+		if (e->flag == cmp_in) {
 			sql_subtype *lt = exp_subtype(e->l);
 			e->r = exps_check_type(v->sql, lt, e->r);
-		} else if (e->flag == cmp_equal || e->flag == cmp_notequal) {
+		} else if (e->flag == cmp_equal) {
 			sql_subtype *lt = exp_subtype(e->l);
 			sql_subtype *rt = exp_subtype(e->r);
 			if (!lt || lt->type->eclass == EC_ANY) {
@@ -2213,7 +2213,7 @@ exp_in_compare(mvc *sql, sql_exp **l, list *vals, int anyequal)
 			vals_only = 0;
 	}
 	if (vals_only)
-		return exp_in(sql->sa, *l, vals, anyequal?cmp_in:cmp_notin);
+		return anyequal ? exp_in(sql->sa, *l, vals) : exp_notin(sql->sa, *l, vals);
 
 	if (!(*l = exp_in_project(sql, l, vals, anyequal)))
 		return NULL;
@@ -2269,7 +2269,7 @@ rewrite_anyequal(visitor *v, sql_rel *rel, sql_exp *e, int depth)
 			} else if (!lsq && !exps_have_rel_exp(re->f) && !is_tuple) {
 				return e; /* leave as is, handled later */
 			} else if (!lsq && re->f && !exps_have_rel_exp(re->f) && exps_are_atoms(re->f) && is_tuple) {
-				return exp_in(sql->sa, le, re->f, is_anyequal(sf) ? cmp_in : cmp_notin);
+				return is_anyequal(sf) ? exp_in(sql->sa, le, re->f) : exp_notin(sql->sa, le, re->f);
 			}
 
 			if (is_atom(re->type) && re->f) { /* exp_values */
@@ -2368,7 +2368,7 @@ rewrite_anyequal(visitor *v, sql_rel *rel, sql_exp *e, int depth)
 				}
 				set_has_nil(le); /* outer joins could have introduced nils */
 				set_has_nil(re); /* outer joins could have introduced nils */
-				return exp_compare(v->sql->sa, le, re, is_anyequal(sf)?cmp_equal:cmp_notequal);
+				return is_anyequal(sf) ? exp_compare(v->sql->sa, le, re, cmp_equal) : exp_ne(v->sql->sa, le, re);
 			} else {
 				sql_rel *rewrite = NULL;
 				if (lsq) {
@@ -2513,7 +2513,7 @@ rewrite_compare(visitor *v, sql_rel *rel, sql_exp *e, int depth)
 					return NULL;
 				if (depth == 0 && is_select(rel->op)) {
 					v->changes++;
-					return exp_compare(v->sql->sa, le, re, compare_str2type(op));
+					return exp_compare_op(v->sql->sa, le, re, op);
 				} else {
 					return e;
 					/*
@@ -2621,7 +2621,7 @@ rewrite_compare(visitor *v, sql_rel *rel, sql_exp *e, int depth)
 					le = exp_compare_func(v->sql, le, re, op, 0);
 				} else {
 					v->changes++;
-					return exp_compare(v->sql->sa, le, re, compare_str2type(op));
+					return exp_compare_op(v->sql->sa, le, re, op);
 				}
 				if (exp_name(e))
 					exp_prop_alias(v->sql->sa, le, e);
@@ -2656,14 +2656,14 @@ rewrite_compare(visitor *v, sql_rel *rel, sql_exp *e, int depth)
 						append(r, re);
 					}
 					v->changes++;
-					return exp_compare(v->sql->sa, exp_values(v->sql->sa, l), exp_values(v->sql->sa, r), compare_str2type(op));
+					return exp_compare_op(v->sql->sa, exp_values(v->sql->sa, l), exp_values(v->sql->sa, r), op);
 				} else {
 					if (exp_has_freevar(v->sql, le))
 						rel_bind_var(v->sql, rel, le);
 					if (rel_convert_types(v->sql, NULL, NULL, &le, &re, 1, type_equal) < 0)
 						return NULL;
 					v->changes++;
-					return exp_compare(v->sql->sa, le, re, compare_str2type(op));
+					return exp_compare_op(v->sql->sa, le, re, op);
 				}
 			}
 		}
@@ -3712,7 +3712,7 @@ rewrite_column(visitor *v, sql_exp *e, struct unnesting *info)
 			e->r = rewrite_columns(v, e->r, info);
 		} else if (e->flag == cmp_con || e->flag == cmp_dis) {
 			e->l = rewrite_columns(v, e->l, info);
-		} else if (e->flag == cmp_in || e->flag == cmp_notin) {
+		} else if (e->flag == cmp_in) {
 			e->l = rewrite_column(v, e->l, info);
 			e->r = rewrite_columns(v, e->r, info);
 		} else {

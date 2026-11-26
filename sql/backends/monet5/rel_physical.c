@@ -511,7 +511,7 @@ find_cmp_exps(list **exps_hsh, list **exps_prb, const list *exps, sql_rel *rel_h
 
 		/* search first for the not-atom exp, otherwise rel_find_exp()
 		 * incorrectly returns TRUE for an atom-typed exp */
-		if (exp_is_atom(e->l) || e->flag != cmp_equal || exp_is_atom(e->r)) {
+		if (exp_is_atom(e->l) || !is_equi_exp_(e) || exp_is_atom(e->r)) {
 			assert(0);
 		} else {
 			sql_exp *ne = NULL;
@@ -684,7 +684,7 @@ exp_hash(sql_exp *e)
 			h *= (e->flag+1);
 			if (e->flag == cmp_con || e->flag == cmp_dis)
 				return h * exps_hash(e->l);
-			else if (e->flag == cmp_in || e->flag == cmp_notin)
+			else if (e->flag == cmp_in)
 				return h * exp_hash(e->l) * exps_hash(e->r);
 			else if (e->flag == cmp_filter)
 				return h * exps_hash(e->l) * exps_hash(e->r);
@@ -783,7 +783,7 @@ right_is_unique(sql_rel *r, list *exps)
 	if (list_length(exps) >= 1) {
 		sql_exp *e = exps->h->data;
 
-		if (e->type == e_cmp && e->flag == cmp_equal) {
+		if (e->type == e_cmp && is_equi_exp_(e)) {
 			if (rel_find_exp(r, e->l)) {
 				sql_exp *el = e->l;
 				return is_unique(el);
@@ -1350,7 +1350,7 @@ rel_count_gt_zero(visitor *v, sql_rel *rel)
 			e = exp_ref(sql, e);
 		}
 		rel->used |= rewrite_gt_zero_used;
-		e = exp_compare(sql->sa, e, exp_atom_lng(sql->sa, 0), cmp_notequal);
+		e = exp_ne(sql->sa, e, exp_atom_lng(sql->sa, 0));
 		if (rel_is_ref(rel)) {
 			sql_rel *i = rel_create(v->sql->sa);
 			*i = *rel;
@@ -1606,7 +1606,7 @@ append_func_argument(visitor *v, sql_exp *ie, list *resultexps)
 	} else if (ie->type == e_cmp) {
 		if (ie->flag == cmp_con || ie->flag == cmp_dis) {
 			resultexps = append_func_arguments(v, ie->l, resultexps);
-		} else if (ie->flag == cmp_in || ie->flag == cmp_notin) {
+		} else if (ie->flag == cmp_in) {
 			resultexps = append_func_argument(v, ie->l, resultexps);
 			resultexps = append_func_arguments(v, ie->r, resultexps);
 		} else if (ie->flag == cmp_filter) {

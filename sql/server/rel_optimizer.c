@@ -166,7 +166,7 @@ merge_table_prune_and_unionize(visitor *v, sql_rel *mt_rel, merge_table_prune_in
 						atom *lval = next->lval, *hval = next->hval;
 						list *values = next->values;
 
-						/* I don't handle cmp_in or cmp_notin cases with anti or null semantics yet */
+						/* I don't handle cmp_in with anti or null semantics yet */
 						if (next->flag == cmp_in && (next->anti || next->semantics))
 							continue;
 

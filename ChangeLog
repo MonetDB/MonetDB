@@ -1,6 +1,33 @@
 # ChangeLog file for devel
 # This file is updated with Maddlog
 
+* Thu Nov 26 2026 Martin van Dinther <martin.van.dinther@monetdbsolutions.com>
+- Added support for IF NOT EXISTS syntax in following CREATE statements:
+  CREATE AGGREGATE FUNCTION
+  CREATE FILTER FUNCTION
+  CREATE FUNCTION
+  CREATE PROCEDURE
+  CREATE TEMPORARY VIEW
+  CREATE TRIGGER
+  CREATE VIEW
+  CREATE WINDOW FUNCTION
+  The IF NOT EXISTS clause is optional but when used must be placed before
+  the object name, so:
+  CREATE AGGREGATE FUNCTION IF NOT EXISTS name ...
+  CREATE FILTER FUNCTION IF NOT EXISTS name ...
+  CREATE FUNCTION IF NOT EXISTS name ...
+  CREATE PROCEDURE IF NOT EXISTS name ...
+  CREATE TEMPORARY VIEW IF NOT EXISTS name ...
+  CREATE TRIGGER IF NOT EXISTS name ...
+  CREATE VIEW IF NOT EXISTS name ...
+  CREATE WINDOW FUNCTION IF NOT EXISTS name ...
+  When IF NOT EXIST is used in these CREATE statements, it will no longer
+  report an error when the object with same name or function signature
+  already exists. This can be useful in scripts, where you want to
+  create the object only if is does not yet exists.
+  Note: It is not allowed to combine both CREATE OR REPLACE and IF NOT EXISTS
+  in these CREATE statements.
+
 * Wed Nov 18 2026 Martin van Dinther <martin.van.dinther@monetdbsolutions.com>
 - Queries to a proto_loader('odbc:...') function with a limit-clause
   will now push the limit value down to the ODBC driver via ODBC call
