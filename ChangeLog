@@ -2,6 +2,12 @@
 # This file is updated with Maddlog
 
 * Thu Nov 26 2026 Martin van Dinther <martin.van.dinther@monetdbsolutions.com>
+- Announcement: In the next Feature release (mid 2027), 32-bit binaries
+  will no longer be created, tested or supported. If you still use
+  Windows or Debian 32-bit versions of MonetDB, please plan to upgrade
+  to 64-bit asap.
+
+* Thu Nov 26 2026 Martin van Dinther <martin.van.dinther@monetdbsolutions.com>
 - Added support for IF NOT EXISTS syntax in following CREATE statements:
   CREATE AGGREGATE FUNCTION
   CREATE FILTER FUNCTION
