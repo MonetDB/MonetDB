@@ -13,8 +13,20 @@ SELECT a1, b2 FROM viewtest
 1
 one
 
+statement error 42S01!CREATE VIEW: name 'viewtest' already in use
+CREATE VIEW viewtest AS SELECT a1, b2 FROM testing9 WHERE b2 = 'two'
+
 statement ok
 CREATE OR REPLACE VIEW viewtest AS SELECT a1, b2 FROM testing9 WHERE b2 = 'two'
+
+statement error 42000!syntax error, unexpected EXISTS, expecting NOT_EXISTS in: "create or replace view if exists"
+CREATE OR REPLACE VIEW IF EXISTS viewtest AS SELECT a1, b2 FROM testing9 WHERE b2 = 'twoXYZ'
+
+statement ok
+CREATE VIEW IF NOT EXISTS viewtest AS SELECT a1, b2 FROM testing9 WHERE b2 = 'twoXYZ'
+
+statement error 42000!Syntax error: CREATE OR REPLACE VIEW in combination with IF NOT EXISTS is not allowed
+CREATE OR REPLACE VIEW IF NOT EXISTS viewtest AS SELECT a1, b2 FROM testing9 WHERE b2 = 'twoXYZ'
 
 query IT rowsort
 SELECT a1, b2 FROM viewtest
@@ -22,8 +34,56 @@ SELECT a1, b2 FROM viewtest
 2
 two
 
-statement error
+statement error 42S02!SELECT: no such table 'testingnothing'
 CREATE OR REPLACE VIEW failureview AS SELECT b2 FROM testingnothing WHERE b2 = 'two'
+
+statement error 42000!Syntax error: CREATE OR REPLACE VIEW in combination with IF NOT EXISTS is not allowed
+CREATE OR REPLACE VIEW IF NOT EXISTS failureview AS SELECT b2 FROM testingnothing WHERE b2 = 'two'
+
+statement error 42S02!SELECT: no such table 'testingnothing'
+CREATE VIEW IF NOT EXISTS failureview AS SELECT b2 FROM testingnothing WHERE b2 = 'two'
+
+statement ok
+DROP VIEW viewtest
+
+statement error 42S02!DROP VIEW: no such view 'viewtest'
+DROP VIEW viewtest
+
+statement ok
+DROP VIEW IF EXISTS viewtest
+
+statement error 42000!syntax error, unexpected NOT_EXISTS, expecting EXISTS in: "drop view if not exists"
+DROP VIEW IF NOT EXISTS viewtest
+
+statement ok
+CREATE TEMP VIEW viewtest AS SELECT a1, b2 FROM testing9 WHERE a1 = 1
+
+query IT rowsort
+SELECT a1, b2 FROM viewtest
+----
+1
+one
+
+statement error 42S01!CREATE TEMPORARY VIEW: name 'viewtest' already in use
+CREATE TEMPORARY VIEW viewtest AS SELECT a1, b2 FROM testing9 WHERE b2 = 'two'
+
+statement ok
+CREATE OR REPLACE TEMPORARY VIEW viewtest AS SELECT a1, b2 FROM testing9 WHERE b2 = 'two'
+
+statement error 42000!syntax error, unexpected EXISTS, expecting NOT_EXISTS in: "create or replace temporary view if exists"
+CREATE OR REPLACE TEMPORARY VIEW IF EXISTS viewtest AS SELECT a1, b2 FROM testing9 WHERE b2 = 'twoXYZ'
+
+statement ok
+CREATE TEMPORARY VIEW IF NOT EXISTS viewtest AS SELECT a1, b2 FROM testing9 WHERE b2 = 'twoXYZ'
+
+statement error 42000!Syntax error: CREATE OR REPLACE TEMPORARY VIEW in combination with IF NOT EXISTS is not allowed
+CREATE OR REPLACE TEMPORARY VIEW IF NOT EXISTS viewtest AS SELECT a1, b2 FROM testing9 WHERE b2 = 'twoXYZ'
+
+query IT rowsort
+SELECT a1, b2 FROM viewtest
+----
+2
+two
 
 statement ok
 DROP VIEW viewtest
