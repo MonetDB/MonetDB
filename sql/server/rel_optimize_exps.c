@@ -216,7 +216,7 @@ simplify_mul(mvc *sql, sql_exp *e, sql_subfunc *f, list *l, int *changes)
 	sql_subtype *et = exp_subtype(e);
 
 	/* 0*a = 0 */
-	if (exp_is_atom(le) && exp_is_zero(le) && /*exp_is_atom(re) &&*/ !has_nil(re)) {
+	if (exp_is_atom(le) && exp_is_zero(le) && /*exp_is_atom(re) &&*/ !has_nil(re) && !exp_is_fallible(re)) {
 		(*changes)++;
 		le = exp_zero(sql->sa, et);
 		if (subtype_cmp(exp_subtype(e), exp_subtype(le)) != 0)
@@ -226,7 +226,7 @@ simplify_mul(mvc *sql, sql_exp *e, sql_subfunc *f, list *l, int *changes)
 		return le;
 	}
 	/* a*0 = 0 */
-	if (exp_is_atom(re) && exp_is_zero(re) && /*exp_is_atom(le) &&*/ !has_nil(le)) {
+	if (exp_is_atom(re) && exp_is_zero(re) && /*exp_is_atom(le) &&*/ !has_nil(le) && !exp_is_fallible(le)) {
 		(*changes)++;
 		re = exp_zero(sql->sa, et);
 		if (subtype_cmp(exp_subtype(e), exp_subtype(re)) != 0)
@@ -342,7 +342,7 @@ simplify_div(mvc *sql, sql_exp *e, sql_subfunc *f, list *l, int *changes)
 		return ne;
 	}
 	/* 0/a = 0 (if a != 0) */
-	if (exp_is_atom(le) && exp_is_zero(le) && !has_nil(re) && !exp_is_zero(re)) {
+	if (exp_is_atom(le) && exp_is_zero(le) && !has_nil(re) && !exp_is_zero(re) && !exp_is_fallible(re)) {
 		sql_exp *ne = exp_zero(sql->sa, exp_subtype(e));
 		if (subtype_cmp(exp_subtype(e), exp_subtype(ne)) != 0)
 			ne = exp_convert(sql, ne, exp_subtype(ne), exp_subtype(e));
@@ -672,7 +672,7 @@ static inline sql_exp *
 simplify_isnull_isnotnull_equals_bool(visitor *v, sql_exp *e)
 {
 	/* rewrite isnull/isnotnull(x) = TRUE/FALSE => x =/<> NULL */
-	if (!(is_compare(e->type) && (e->flag == cmp_equal || e->flag == cmp_notequal)))
+	if (!(is_compare(e->type) && (e->flag == cmp_equal)))
 		return e;
 	sql_exp *l = e->l;
 	sql_exp *r = e->r;
@@ -719,9 +719,7 @@ simplify_isnull_isnotnull_equals_bool(visitor *v, sql_exp *e)
 			if (is_semantics(e)) {
 				/* isnull/isnotnull(x) = NULL -> false,
 				 * isnull/isnotnull(x) <> NULL -> true */
-				int flag = e->flag == cmp_notequal;
-				if (is_anti(e))
-					flag = !flag;
+				int flag = is_anti(e) != 0; /* old cmp_notequal */
 				e = exp_atom_bool(v->sql->sa, flag);
 			} else {
 				/* always NULL */
@@ -738,21 +736,19 @@ simplify_isnull_isnotnull_equals_bool(visitor *v, sql_exp *e)
 			/* case isnotnull(x)  = FALSE => x  = NULL */
 			/* case isnotnull(x) != FALSE => x != NULL */
 			bool bval = a->data.val.bval;
+			bool outer_anti = is_anti(e) != 0;
 
 			assert(list_length(args) == 1);
 
 			l = ie;
 			if (exp_subtype(l)->type) {
 				r = exp_atom(v->sql->sa, atom_general(v->sql->sa, exp_subtype(l), NULL, 0));
-				e = exp_compare(v->sql->sa, l, r, e->flag);
-				if (e) {
-					if (bval == false && is_isnull_func(f))
-						set_anti(e);
-					if (bval == true && is_isnotnull_func(f))
-						set_anti(e);
-				}
+				e = exp_compare(v->sql->sa, l, r, cmp_equal);
 				if (e)
 					set_semantics(e);
+				if (e && (((bval == false && is_isnull_func(f)) ||
+					   (bval == true && is_isnotnull_func(f))) != outer_anti))
+					(void) exp_set_anti(v->sql->sa, e);
 				v->changes++;
 			}
 		}
@@ -774,9 +770,9 @@ simplify_not(visitor *v, sql_exp *e)
 
 		if (is_compare(i->type) && i->flag != cmp_filter) {
 			if (is_anti(i))
-				reset_anti(i);
+				(void) exp_reset_anti(v->sql->sa, i);
 			else
-				set_anti(i);
+				(void) exp_set_anti(v->sql->sa, i);
 			v->changes++;
 			if (exp_name(e))
 				exp_prop_alias(v->sql->sa, i, e);
@@ -794,41 +790,54 @@ simplify_not(visitor *v, sql_exp *e)
 static inline sql_exp *
 simplify_not_over_equality_exp(visitor *v, sql_exp *e)
 {
-	if (!(is_compare(e->type) && (e->flag == cmp_equal || e->flag == cmp_notequal)))
+	if (!(is_compare(e->type) && (e->flag == cmp_equal)))
 		return e;
 	sql_exp *l = e->l;
 	sql_exp *r = e->r;
 
-	if (e->flag == cmp_notequal && is_anti(e) && is_semantics(e)) {
-		reset_anti(e);
-		e->flag = cmp_equal;
-		v->changes++;
-		return e;
-	}
-	if (l->type == e_cmp && (l->flag == cmp_equal || l->flag == cmp_notequal)) {
-		/* ( (il ! * =  ir) = FALSE ) -> (il * = ir) */
-		if (is_atom(r->type) && r->l && !is_semantics(e) && !is_anti(e)) {
+	bool outer_anti = is_anti(e) != 0;
+
+	if (l->type == e_cmp && (l->flag == cmp_equal)) {
+		/* ((x = y) = TRUE/FALSE) -> (x = y) / (x <> y) */
+		if (is_atom(r->type) && r->l && !is_semantics(e)) {
 			/* direct literal */
 			atom *a = r->l;
 			if (a && a->data.vtype == TYPE_bit) {
-				if ((exp_is_true(r) && e->flag == cmp_equal) ||
-				    (exp_is_false(r) && e->flag == cmp_notequal)) {
+				if ((exp_is_true(r) && !outer_anti) ||
+				    (exp_is_false(r) && outer_anti)) {
 					v->changes++;
 					return l;
 				}
 
-				if ((exp_is_false(r) && e->flag == cmp_equal) ||
-				    (exp_is_true(r) && e->flag == cmp_notequal)) {
-					if (l->flag == cmp_equal)
-						l->flag = cmp_notequal;
-					else
-						l->flag = cmp_equal;
+				if ((exp_is_false(r) && !outer_anti) ||
+				    (exp_is_true(r) && outer_anti)) {
+					l = is_anti(l) ? exp_reset_anti(v->sql->sa, l) : exp_set_anti(v->sql->sa, l);
 					v->changes++;
 					return l;
 				}
 				return e;
 			}
 		}
+	}
+	if (l->type == e_cmp && (l->flag == cmp_in) &&
+	    is_atom(r->type) && r->l && !is_semantics(e)) {
+		/* ((in/not in) = TRUE/FALSE) -> the in-list or its negation.
+		 * NOT(NOT(i IN (...))) is first turned into (i !in (...)) = FALSE;
+		 * without this rewrite the equality wrapper prevents the fast
+		 * in-list select path (issue 8095). */
+		atom *a = r->l;
+		bool negate, notin;
+
+		if (a->isnull || a->data.vtype != TYPE_bit)
+			return e;
+		negate = exp_is_false(r) != outer_anti;
+		notin = (bool) is_anti(l) != negate;
+
+		l = notin ? exp_set_anti(v->sql->sa, l) : exp_reset_anti(v->sql->sa, l);
+		if (exp_name(e))
+			exp_prop_alias(v->sql->sa, l, e);
+		v->changes++;
+		return l;
 	}
 
 	if (!is_func(l->type))
@@ -855,7 +864,7 @@ simplify_not_over_equality_exp(visitor *v, sql_exp *e)
 			assert(list_length(args) == 1);
 			l = args->h->data;
 			e = exp_compare(v->sql->sa, l, r, e->flag);
-			if (anti) set_anti(e);
+			if (anti) (void) exp_set_anti(v->sql->sa, e);
 			if (is_semantics) set_semantics(e);
 			v->changes++;
 		} else if (is_func(inner->type) && !inf->func->s &&
@@ -867,12 +876,12 @@ simplify_not_over_equality_exp(visitor *v, sql_exp *e)
 
 			if (!strcmp(inf->func->base.name, "<>"))
 				flag = !flag;
-			if (e->flag == cmp_notequal)
+			if (is_anti(e))
 				flag = !flag;
 			assert(list_length(args) == 2);
 			l = args->h->data;
 			r = args->h->next->data;
-			ne = exp_compare(v->sql->sa, l, r, (!flag)?cmp_equal:cmp_notequal);
+			ne = flag ? exp_ne(v->sql->sa, l, r) : exp_compare(v->sql->sa, l, r, cmp_equal);
 			if (a->isnull)
 				e->l = ne;
 			else
@@ -886,7 +895,7 @@ simplify_not_over_equality_exp(visitor *v, sql_exp *e)
 			if (!a->isnull)
 				r = exp_atom_bool(v->sql->sa, !a->data.val.bval);
 			e = exp_compare(v->sql->sa, l, r, e->flag);
-			if (anti) set_anti(e);
+			if (anti) (void) exp_set_anti(v->sql->sa, e);
 			if (is_semantics) set_semantics(e);
 			v->changes++;
 		}
@@ -995,7 +1004,7 @@ rel_simplify_predicates(visitor *v, sql_rel *rel, sql_exp *e)
 			} else if (rewrite) { /* rewrite to cmp_equal ! */
 				list *l = e->l;
 				list *r = e->r;
-				e = exp_compare(v->sql->sa, l->h->data, r->h->data, is_anti(e) ? cmp_notequal : cmp_equal);
+				e = is_anti(e) ? exp_ne(v->sql->sa, l->h->data, r->h->data) : exp_compare(v->sql->sa, l->h->data, r->h->data, cmp_equal);
 				v->changes++;
 			}
 		}
@@ -1049,7 +1058,7 @@ rel_simplify_predicates(visitor *v, sql_rel *rel, sql_exp *e)
 #endif
 							if ((f = sql_bind_func(v->sql, "sys", "scale_down", exp_subtype(arg1), exp_subtype(arg2), F_FUNC, true, true))) {
 								e = exp_compare(v->sql->sa, le->l, exp_binop(v->sql->sa, arg1, arg2, f), e->flag);
-								if (anti) set_anti(e);
+								if (anti) (void) exp_set_anti(v->sql->sa, e);
 								v->changes++;
 							} else {
 								v->sql->session->status = 0;
@@ -1060,7 +1069,7 @@ rel_simplify_predicates(visitor *v, sql_rel *rel, sql_exp *e)
 				}
 			}
 		}
-		if (is_compare(e->type) && is_semantics(e) && (e->flag == cmp_equal || e->flag == cmp_notequal) && exp_is_null(e->r)) {
+		if (is_compare(e->type) && is_semantics(e) && (e->flag == cmp_equal) && exp_is_null(e->r)) {
 			/* simplify 'is null' predicates on constants */
 			if (exp_is_null(e->l)) {
 				int nval = e->flag == cmp_equal;
@@ -1069,8 +1078,7 @@ rel_simplify_predicates(visitor *v, sql_rel *rel, sql_exp *e)
 				v->changes++;
 				return e;
 			} else if (exp_is_not_null(e->l)) {
-				int nval = e->flag == cmp_notequal;
-				if (is_anti(e)) nval = !nval;
+				int nval = is_anti(e) != 0; /* old cmp_notequal */
 				e = exp_atom_bool(v->sql->sa, nval);
 				v->changes++;
 				return e;
@@ -1100,14 +1108,20 @@ rel_simplify_predicates(visitor *v, sql_rel *rel, sql_exp *e)
 					v->changes++;
 				} else if (l->l && r->l) {
 					int res = atom_cmp(l->l, r->l);
-					bool flag = !is_anti(e);
 
-					if (res == 0)
-						e = exp_atom_bool(v->sql->sa, (e->flag == cmp_equal || e->flag == cmp_gte || e->flag == cmp_lte) ? flag : !flag);
-					else if (res > 0)
-						e = exp_atom_bool(v->sql->sa, (e->flag == cmp_gt || e->flag == cmp_gte || e->flag == cmp_notequal) ? flag : !flag);
-					else
-						e = exp_atom_bool(v->sql->sa, (e->flag == cmp_lt || e->flag == cmp_lte || e->flag == cmp_notequal) ? flag : !flag);
+					if (e->flag == cmp_equal) {
+						/* <> is equality plus the anti flag */
+						e = exp_atom_bool(v->sql->sa, is_anti(e) ? res != 0 : res == 0);
+					} else {
+						bool flag = !is_anti(e);
+
+						if (res == 0)
+							e = exp_atom_bool(v->sql->sa, (e->flag == cmp_gte || e->flag == cmp_lte) ? flag : !flag);
+						else if (res > 0)
+							e = exp_atom_bool(v->sql->sa, (e->flag == cmp_gt || e->flag == cmp_gte) ? flag : !flag);
+						else
+							e = exp_atom_bool(v->sql->sa, (e->flag == cmp_lt || e->flag == cmp_lte) ? flag : !flag);
+					}
 					v->changes++;
 				}
 			}

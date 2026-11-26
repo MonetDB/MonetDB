@@ -209,7 +209,7 @@ exp_shares_exps(sql_exp *e, list *shared, uint64_t *uses)
 			return exps_shares_exps(e->l, shared, uses) || exps_shares_exps(e->r, shared, uses);
 		else if (e->flag == cmp_con || e->flag == cmp_dis)
 			return exps_shares_exps(e->l, shared, uses);
-		else if (e->flag == cmp_in || e->flag == cmp_notin)
+		else if (e->flag == cmp_in)
 			return exp_shares_exps(e->l, shared, uses) || exps_shares_exps(e->r, shared, uses);
 		else
 			return exp_shares_exps(e->l, shared, uses) || exp_shares_exps(e->r, shared, uses) || (e->f && exp_shares_exps(e->f, shared, uses));
@@ -453,7 +453,7 @@ exp_rename(mvc *sql, sql_exp *e, sql_rel *f, sql_rel *t)
 			e->r = exps_rename(sql, e->r, f, t);
 		} else if (e->flag == cmp_con || e->flag == cmp_dis) {
 			e->l = exps_rename(sql, e->l, f, t);
-		} else if (e->flag == cmp_in || e->flag == cmp_notin) {
+		} else if (e->flag == cmp_in) {
 			e->l = exp_rename(sql, e->l, f, t);
 			e->r = exps_rename(sql, e->r, f, t);
 		} else {
@@ -870,7 +870,7 @@ split_exp(mvc *sql, sql_exp *e, sql_rel *rel)
 			split_exps(sql, e->r, rel);
 		} else if (e->flag == cmp_con || e->flag == cmp_dis) {
 			split_exps(sql, e->l, rel);
-		} else if (e->flag == cmp_in || e->flag == cmp_notin) {
+		} else if (e->flag == cmp_in) {
 			e->l = split_exp(sql, e->l, rel);
 			split_exps(sql, e->r, rel);
 		} else {
@@ -1339,7 +1339,7 @@ exp_is_const_op(sql_exp *exp, sql_exp *tope, sql_rel *expr)
 			return exps_are_const_op(exp->l, tope, expr) && exps_are_const_op(exp->r, tope, expr);
 		if (exp->flag == cmp_con || exp->flag == cmp_dis)
 			return exps_are_const_op(exp->l, tope, expr);
-		if (exp->flag == cmp_in || exp->flag == cmp_notin)
+		if (exp->flag == cmp_in)
 			return exp_is_const_op(exp->l, tope, expr) && exps_are_const_op(exp->r, tope, expr);
 		return exp_is_const_op(exp->l, tope, expr) && exp_is_const_op(exp->r, tope, expr) && (!exp->f || exp_is_const_op(exp->f, tope, expr));
 	case e_column: {
@@ -1760,7 +1760,7 @@ exp_uses_exp(sql_exp *e, sql_exp *used_exp)
 		case e_cmp: {
 			if (e->flag == cmp_con || e->flag == cmp_dis) {
 				return list_exps_uses_exp(e->l, used_exp);
-			} else if (e->flag == cmp_in || e->flag == cmp_notin) {
+			} else if (e->flag == cmp_in) {
 				if ((res = exp_uses_exp(e->l, used_exp)))
 					return res;
 				return list_exps_uses_exp(e->r, used_exp);
@@ -2856,7 +2856,7 @@ rel_remove_const_aggr(visitor *v, sql_rel *rel)
 					sql_subfunc *cf = sql_bind_func(v->sql, "sys", "count", sql_fetch_localtype(TYPE_void), NULL, F_AGGR, true, true);
 					sql_exp *count = exp_aggr(v->sql->sa, NULL, cf, 0, 1, CARD_ATOM, 0);
 					count = rel_groupby_add_aggr(v->sql, rel, count);
-					sql_exp *cp = exp_compare(v->sql->sa, exp_ref(v->sql, count), exp_atom(v->sql->sa, atom_int(v->sql->sa, exp_subtype(count), 0)), cmp_notequal);
+					sql_exp *cp = exp_ne(v->sql->sa, exp_ref(v->sql, count), exp_atom(v->sql->sa, atom_int(v->sql->sa, exp_subtype(count), 0)));
 					rel = rel_select(v->sql->sa, rel, cp);
 					set_processed(rel);
 					return rel;

@@ -401,7 +401,10 @@ BATTXTSIMmaxlevenshtein(Client ctx, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			if (llen > maxlen) {
 				size_t osz = maxlen * sizeof(lng);
 				maxlen = llen;
-				buffer = ma_realloc(ma, buffer, (maxlen + 1) * sizeof(lng), osz);
+				if (!buffer)
+					buffer = ma_alloc(ma, (maxlen + 1) * sizeof(lng));
+				else
+					buffer = ma_realloc(ma, buffer, (maxlen + 1) * sizeof(lng), osz);
 				if (buffer == NULL) {
 					bat_iterator_end(&li);
 					bat_iterator_end(&ri);

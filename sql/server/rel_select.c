@@ -2058,7 +2058,7 @@ rel_compare_exp_(sql_query *query, sql_rel *rel, sql_exp *ls, sql_exp *rs, sql_e
 		if (rs2) {
 			e = exp_compare2(sql->sa, ls, rs, rs2, type, symmetric);
 			if (anti)
-				set_anti(e);
+				(void) exp_set_anti(sql->sa, e);
 		} else {
 			assert(!symmetric);
 			if (rel_convert_types(sql, rel, rel, &ls, &rs, 1, type_equal_no_any) < 0)
@@ -2089,7 +2089,7 @@ rel_compare_exp_(sql_query *query, sql_rel *rel, sql_exp *ls, sql_exp *rs, sql_e
 		e = exp_compare2(sql->sa, ls, rs, rs2, type, symmetric);
 	}
 	if (anti)
-		set_anti(e);
+		(void) exp_set_anti(sql->sa, e);
 
 	if (!rel)
 		return rel_select(sql->sa, rel_project_exp(sql, exp_atom_bool(sql->sa, 1)), e);
@@ -2148,14 +2148,15 @@ rel_compare(sql_query *query, sql_rel *rel, symbol *sc, symbol *lo, symbol *ro, 
 	sql_exp *rs = NULL, *ls;
 	comp_type cmp_type = compare_str2type(compare_op);
 	exp_kind ek = {type_value, card_column, FALSE};
-	int need_not = 0;
+	/* <> is canonical cmp_equal plus the anti flag */
+	int need_not = is_notequal_op(compare_op);
 
-	if ((quantifier == 1 && cmp_type == cmp_equal) ||
-	    (quantifier == 2 && cmp_type == cmp_notequal)) {
+	if ((quantifier == 1 && cmp_type == cmp_equal && !is_notequal_op(compare_op)) ||
+	    (quantifier == 2 && is_notequal_op(compare_op))) {
 		dnode *n = sc->data.lval->h;
 		dlist *dl = dlist_create(sql->sa);
 		/* map into IN/NOT IN */
-		sc->token = cmp_type==cmp_equal?SQL_IN:SQL_NOT_IN;
+		sc->token = is_notequal_op(compare_op)?SQL_NOT_IN:SQL_IN;
 		n->next->type = type_list;
 		n->next->data.lval = dl;
 		n->next->next->next = NULL; /* remove quantifier */
@@ -2164,7 +2165,7 @@ rel_compare(sql_query *query, sql_rel *rel, symbol *sc, symbol *lo, symbol *ro, 
 		return rel_logical_exp(query, rel, sc, f);
 	}
 	/* <> ANY -> NOT (= ALL) */
-	if (quantifier == 1 && cmp_type == cmp_notequal) {
+	if (quantifier == 1 && is_notequal_op(compare_op)) {
 		need_not = 1;
 		quantifier = 2;
 		cmp_type = cmp_equal;
@@ -2454,14 +2455,14 @@ rel_in_value_exp(sql_query *query, sql_rel **rel, symbol *sc, int f)
 					sql_exp *first = vals->h->data;
 					if (rel_convert_types(sql, rel ? *rel : NULL, rel ? *rel : NULL, &le, &first, 1, type_equal_no_any) < 0)
 						return NULL;
-					e = exp_compare(sql->sa, le, first, (sc->token == SQL_IN) ? cmp_equal : cmp_notequal);
+					e = (sc->token == SQL_IN) ? exp_compare(sql->sa, le, first, cmp_equal) : exp_ne(sql->sa, le, first);
 				} else { /* use cmp_in instead of anyequal for n simple expressions */
 					for (node *n = vals->h ; n ; n = n->next)
 						if ((n->data = exp_check_type(sql, &super, rel ? *rel : NULL, n->data, type_equal)) == NULL)
 							return NULL;
 					if ((le = exp_check_type(sql, &super, rel ? *rel : NULL, le, type_equal)) == NULL)
 						return NULL;
-					e = exp_in(sql->sa, le, vals, (sc->token == SQL_IN) ? cmp_in : cmp_notin);
+					e = (sc->token == SQL_IN) ? exp_in(sql->sa, le, vals) : exp_notin(sql->sa, le, vals);
 				}
 			}
 			if (!e) { /* after computing supertype, check types for each IN value */
@@ -2477,7 +2478,7 @@ rel_in_value_exp(sql_query *query, sql_rel **rel, symbol *sc, int f)
 			if (add_select && rel && *rel && !is_project((*rel)->op) && !is_select((*rel)->op) && !is_base((*rel)->op))
 				*rel = rel_select(sql->sa, *rel, NULL);
 			if (!exp_has_rel(le) && !exp_has_rel(values))
-				e = exp_in(sql->sa, le, values->f, (sc->token == SQL_IN) ? cmp_in : cmp_notin);
+				e = (sc->token == SQL_IN) ? exp_in(sql->sa, le, values->f) : exp_notin(sql->sa, le, values->f);
 			else if ((rel && *rel) || exp_has_rel(le) || exp_has_rel(values))
 				e = exp_in_func(sql, le, values, (sc->token == SQL_IN), is_tuple);
 			else
@@ -2499,7 +2500,7 @@ rel_in_exp(sql_query *query, sql_rel *rel, symbol *sc, int f)
 
 	if (e->type == e_cmp) { /* it's a exp_in or cmp_equal of simple expressions, push down early on if possible */
 		sql_exp *ls = e->l;
-		bool rlist = (e->flag == cmp_in || e->flag == cmp_notin);
+		bool rlist = (e->flag == cmp_in);
 		unsigned int rcard = rlist ? exps_card(e->r) : exp_card(e->r);
 		int r_is_atoms = rlist ? exps_are_atoms(e->r) : exp_is_atom(e->r);
 		int r_has_freevar = rlist ? exps_have_freevar(sql, e->r) : exp_has_freevar(sql, e->r);
@@ -2650,7 +2651,7 @@ rel_logical_value_exp(sql_query *query, sql_rel **rel, symbol *sc, int f, exp_ki
 		symbol *lo = n->data.sym;
 		symbol *ro = n->next->next->data.sym;
 		char *compare_op = n->next->data.sval;
-		int quantifier = 0, need_not = 0;
+		int quantifier = 0, need_not = is_notequal_op(compare_op);
 		sql_exp *rs = NULL, *ls;
 		comp_type cmp_type = compare_str2type(compare_op);
 		bool is_not_distinct_from = false;
@@ -2674,11 +2675,11 @@ rel_logical_value_exp(sql_query *query, sql_rel **rel, symbol *sc, int f, exp_ki
 				quantifier = 0;
 		}
 
-		if ((quantifier == 1 && cmp_type == cmp_equal) ||
-		    (quantifier == 2 && cmp_type == cmp_notequal)) {
+		if ((quantifier == 1 && cmp_type == cmp_equal && !is_notequal_op(compare_op)) ||
+		    (quantifier == 2 && is_notequal_op(compare_op))) {
 			dlist *dl = dlist_create(sql->sa);
 			/* map into IN/NOT IN */
-			sc->token = cmp_type==cmp_equal?SQL_IN:SQL_NOT_IN;
+			sc->token = is_notequal_op(compare_op)?SQL_NOT_IN:SQL_IN;
 			n->next->type = type_list;
 			n->next->data.lval = dl;
 			n->next->next->next = NULL; /* remove quantifier */
@@ -2687,7 +2688,7 @@ rel_logical_value_exp(sql_query *query, sql_rel **rel, symbol *sc, int f, exp_ki
 			return rel_logical_value_exp(query, rel, sc, f, ek);
 		}
 		/* <> ANY -> NOT (= ALL) */
-		if (quantifier == 1 && cmp_type == cmp_notequal) {
+		if (quantifier == 1 && is_notequal_op(compare_op)) {
 			need_not = 1;
 			quantifier = 2;
 			cmp_type = cmp_equal;
@@ -2707,7 +2708,7 @@ rel_logical_value_exp(sql_query *query, sql_rel **rel, symbol *sc, int f, exp_ki
 		if (is_distinct_from || is_not_distinct_from) {
 			if (rel_convert_types(sql, rel ? *rel : NULL, rel ? *rel : NULL, &ls, &rs, 1, type_equal_no_any) < 0)
 				return NULL;
-			sql_exp* e = exp_compare(sql->sa, ls, rs, is_not_distinct_from?cmp_equal:cmp_notequal);
+			sql_exp* e = is_not_distinct_from ? exp_compare(sql->sa, ls, rs, cmp_equal) : exp_ne(sql->sa, ls, rs);
 			set_semantics(e);
 			return e;
 		}
@@ -2728,7 +2729,7 @@ rel_logical_value_exp(sql_query *query, sql_rel **rel, symbol *sc, int f, exp_ki
 			return exp_atom(sql->sa, atom_general(sql->sa, sql_fetch_localtype(TYPE_bit), NULL, 0));
 
 		if (!quantifier)
-			return exp_compare(sql->sa, ls, rs, cmp_type);
+			return need_not ? exp_ne(sql->sa, ls, rs) : exp_compare(sql->sa, ls, rs, cmp_type);
 
 		return exp_compare_func(sql, ls, rs, compare_func(cmp_type, need_not), quantifier);
 	}
@@ -2804,7 +2805,7 @@ rel_logical_value_exp(sql_query *query, sql_rel **rel, symbol *sc, int f, exp_ki
 
 		le = exp_compare2(sql->sa, le, re1, re2, 3, symmetric);
 		if (sc->token == SQL_NOT_BETWEEN)
-			set_anti(le);
+			(void) exp_set_anti(sql->sa, le);
 		return le;
 	}
 	case SQL_IS_NULL:
@@ -2819,10 +2820,10 @@ rel_logical_value_exp(sql_query *query, sql_rel **rel, symbol *sc, int f, exp_ki
 		if (!(t = exp_subtype(le)))
 			return sql_error(sql, 01, SQLSTATE(42000) "Cannot have a parameter (?) for IS%s NULL operator", sc->token == SQL_IS_NOT_NULL ? " NOT" : "");
 		le = exp_compare(sql->sa, le, exp_atom(sql->sa, atom_general(sql->sa, t, NULL, 0)), cmp_equal);
-		if (sc->token == SQL_IS_NOT_NULL)
-			set_anti(le);
 		set_has_no_nil(le);
 		set_semantics(le);
+		if (sc->token == SQL_IS_NOT_NULL)
+			(void) exp_set_anti(sql->sa, le);
 		return le;
 	}
 	case SQL_NOT: {
@@ -3088,10 +3089,10 @@ rel_logical_exp(sql_query *query, sql_rel *rel, symbol *sc, int f)
 		if (!(t = exp_subtype(le)))
 			return sql_error(sql, 01, SQLSTATE(42000) "Cannot have a parameter (?) for IS%s NULL operator", sc->token == SQL_IS_NOT_NULL ? " NOT" : "");
 		le = exp_compare(sql->sa, le, exp_atom(sql->sa, atom_general(sql->sa, t, NULL, 0)), cmp_equal);
-		if (sc->token == SQL_IS_NOT_NULL)
-			set_anti(le);
 		set_has_no_nil(le);
 		set_semantics(le);
+		if (sc->token == SQL_IS_NOT_NULL)
+			(void) exp_set_anti(sql->sa, le);
 		return rel_select_push_compare_exp_down(sql, rel, le, le->l, le->r, NULL, f);
 	}
 	case SQL_NOT: {
@@ -3101,11 +3102,9 @@ rel_logical_exp(sql_query *query, sql_rel *rel, symbol *sc, int f)
 		sql_find_subtype(&bt, "boolean", 0, 0);
 		if (!le || !(le = exp_check_type(sql, &bt, rel, le, type_equal)))
 			return NULL;
-		/* in case of cmp_in/cmp_notin push NOT down */
-		if (le->flag == cmp_in)
-			le->flag = cmp_notin;
-		else if (le->flag == cmp_notin)
-			le->flag = cmp_in;
+		/* push NOT down into cmp_in; the anti flag represents NOT IN */
+		if (le->type == e_cmp && le->flag == cmp_in)
+			le = is_anti(le) ? exp_reset_anti(sql->sa, le) : exp_set_anti(sql->sa, le);
 		else
 			le = exp_compare(sql->sa, le, exp_atom_bool(sql->sa, 0), cmp_equal);
 		return rel_select_push_compare_exp_down(sql, rel, le, le->l, le->r, NULL, f);
@@ -5534,7 +5533,7 @@ exp_has_rank(sql_exp *e)
 	case e_cmp:
 		if (e->flag == cmp_filter)
 			return exps_has_rank(e->l) || exps_has_rank(e->r);
-		if (e->flag == cmp_in || e->flag == cmp_notin)
+		if (e->flag == cmp_in)
 			return exp_has_rank(e->l) || exps_has_rank(e->r);
 		return exp_has_rank(e->l) || exp_has_rank(e->r) || (e->f && exp_has_rank(e->f));
 	default:

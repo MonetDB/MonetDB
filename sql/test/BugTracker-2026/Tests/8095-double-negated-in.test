@@ -1,0 +1,43 @@
+statement ok
+CREATE TABLE t8095 (i BIGINT);
+
+statement ok
+INSERT INTO t8095 VALUES (NULL), (0), (1), (2), (3);
+
+query I
+SELECT count(*) FROM t8095 WHERE i IN (0, 1, 2);
+----
+3
+
+query I
+SELECT count(*) FROM t8095 WHERE NOT (NOT (i IN (0, 1, 2)));
+----
+3
+
+query I
+SELECT count(*) FROM t8095 WHERE NOT (NOT (NOT (i IN (0, 1, 2))));
+----
+1
+
+query I
+SELECT count(*) FROM t8095 WHERE NOT (NOT (i NOT IN (0, 1, 2)));
+----
+1
+
+query I
+SELECT i FROM t8095 WHERE NOT (NOT (i IN (0, 1, 2))) ORDER BY i NULLS FIRST;
+----
+0
+1
+2
+
+query T
+EXPLAIN SELECT count(*) AS n FROM t8095 WHERE NOT (NOT (i IN (0, 1, 2)));
+----
+project (
+| group by (
+| | select (
+| | | table("sys"."t8095") [ "t8095"."i" ]
+| | ) [ ("t8095"."i") in (bigint(63) "0", bigint(63) "1", bigint(63) "2") ]
+| ) [  ] [ "sys"."count"() as "%2"."%2" ]
+) [ "%2"."%2" as "n" ]

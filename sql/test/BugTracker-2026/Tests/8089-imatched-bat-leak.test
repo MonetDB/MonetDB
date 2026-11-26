@@ -1,0 +1,68 @@
+statement ok
+CREATE TABLE l(i INTEGER, j INTEGER)
+
+statement ok
+CREATE TABLE r(i INTEGER, j INTEGER)
+
+statement ok
+CREATE TABLE matched_before(n BIGINT)
+
+statement ok rowcount 1337
+INSERT INTO l
+SELECT value AS i, value AS j
+FROM sys.generate_series(1, 1338)
+
+statement ok rowcount 10000
+INSERT INTO r
+SELECT value AS i, value + 1 AS j
+FROM sys.generate_series(1, 10001)
+
+statement ok rowcount 1
+INSERT INTO matched_before
+SELECT COUNT(*)
+FROM sys.bbp()
+WHERE refcnt > 0
+  AND lrefcnt = 0
+  AND kind = 'transient'
+  AND ttype = 'oid'
+  AND "count" = 1337
+
+query I 
+SELECT n AS baseline_pinned_unreferenced_oid_bats
+FROM matched_before
+----
+0
+
+query I
+SELECT COUNT(*) AS matched_rows
+FROM l
+WHERE EXISTS (
+    SELECT 1
+    FROM r
+    WHERE r.i = l.i AND r.j > l.j
+)
+----
+1337
+
+query II
+SELECT current_count - n AS leaked_physical_references,
+       current_count - n = 0 AS oracle_no_leak
+FROM matched_before,
+     (SELECT COUNT(*) AS current_count
+      FROM sys.bbp()
+      WHERE refcnt > 0
+        AND lrefcnt = 0
+        AND kind = 'transient'
+        AND ttype = 'oid'
+        AND "count" = 1337) AS after_state
+----
+0	1
+
+statement ok
+DROP TABLE matched_before
+
+statement ok
+DROP TABLE l
+
+statement ok
+DROP TABLE r

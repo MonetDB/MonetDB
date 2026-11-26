@@ -13,6 +13,43 @@
 #include "gdk_private.h"
 #include "gdk_calc_private.h"
 
+bool
+mul_int8_overflow(int8_t a, int8_t b, int8_t *d)
+{
+	MULI4_WITH_CHECK(a, b, int8_t, *d, INT8_MAX, int16_t, return true);
+	return false;
+}
+
+bool
+mul_int16_overflow(int16_t a, int16_t b, int16_t *d)
+{
+	MULI4_WITH_CHECK(a, b, int16_t, *d, INT16_MAX, int32_t, return true);
+	return false;
+}
+
+bool
+mul_int32_overflow(int32_t a, int32_t b, int32_t *d)
+{
+	MULI4_WITH_CHECK(a, b, int32_t, *d, INT32_MAX, int64_t, return true);
+	return false;
+}
+
+bool
+mul_int64_overflow(int64_t a, int64_t b, int64_t *d)
+{
+	LNGMUL_CHECK(a, b, *d, INT64_MAX, return true);
+	return false;
+}
+
+#ifdef HAVE_INT128_T
+bool
+mul_int128_overflow(int128_t a, int128_t b, int128_t *d)
+{
+	HGEMUL_CHECK(a, b, *d, INT128_MAX, return true);
+	return false;
+}
+#endif
+
 /* ---------------------------------------------------------------------- */
 /* multiplication (any numeric type) */
 

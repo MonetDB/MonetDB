@@ -131,13 +131,9 @@ rel_propagate_column_ref_statistics(mvc *sql, sql_rel *rel, sql_exp *e)
 							} else if (lval_min && lval_max && rval_min && rval_max && atom_cmp(rval_max, lval_min) >= 0 && atom_cmp(rval_min, lval_max) <= 0) {
 								/* both min and max must be set and the intervals must overlap */
 								switch (comp->flag) {
-								case cmp_equal: /* for equality reduce */
+								case cmp_equal: /* equality reduces, anti (<>) expands */
 									set_minmax_property(sql, e, PROP_MAX, is_anti(comp) ? statistics_atom_max(sql, lval_max, rval_max) : statistics_atom_min(sql, lval_max, rval_max));
 									set_minmax_property(sql, e, PROP_MIN, is_anti(comp) ? statistics_atom_min(sql, lval_min, rval_min) : statistics_atom_max(sql, lval_min, rval_min));
-									break;
-								case cmp_notequal: /* for inequality expand */
-									set_minmax_property(sql, e, PROP_MAX, is_anti(comp) ? statistics_atom_min(sql, lval_max, rval_max) : statistics_atom_max(sql, lval_max, rval_max));
-									set_minmax_property(sql, e, PROP_MIN, is_anti(comp) ? statistics_atom_max(sql, lval_min, rval_min) : statistics_atom_min(sql, lval_min, rval_min));
 									break;
 								case cmp_gt:
 								case cmp_gte:
@@ -159,7 +155,7 @@ rel_propagate_column_ref_statistics(mvc *sql, sql_rel *rel, sql_exp *e)
 										set_minmax_property(sql, e, PROP_MIN, p ? statistics_atom_max(sql, lval_min, p->value.pval) : lval_min);
 									}
 									break;
-								default: /* Maybe later I can do cmp_in and cmp_notin */
+								default: /* Maybe later I can do cmp_in with anti */
 									break;
 								}
 							}
@@ -568,7 +564,7 @@ rel_propagate_statistics(visitor *v, sql_rel *rel, sql_exp *e, int depth)
 		} else if (e->flag == cmp_con || e->flag == cmp_dis) {
 			if (!have_nil(e->l))
 				set_has_no_nil(e);
-		} else if (e->flag == cmp_in || e->flag == cmp_notin) {
+		} else if (e->flag == cmp_in) {
 			sql_exp *le = e->l;
 			if (!has_nil(le) && !have_nil(e->r))
 				set_has_no_nil(e);
@@ -641,24 +637,23 @@ rel_prune_predicates(visitor *v, sql_rel *rel)
 				if (!is_semantics(e)) /* trivial not null cmp null case */
 					always_false |= !is_anti(e) && ((exp_is_not_null(le) && exp_is_null(re)) || (exp_is_null(le) && exp_is_not_null(re)));
 				switch (e->flag) {
-				case cmp_equal:
+				case cmp_equal: /* equality and its anti form (<>) */
 					if (lval_min && lval_max && rval_min && rval_max && (!is_semantics(e) || !has_nil(le) || !has_nil(re))) {
-						always_false |= (!is_anti(e) && (atom_cmp(rval_max, lval_min) < 0 || atom_cmp(rval_min, lval_max) > 0));
-						always_true |= (is_anti(e) && (atom_cmp(rval_max, lval_min) < 0 || atom_cmp(rval_min, lval_max) > 0));
+						bool disjoint = atom_cmp(rval_max, lval_min) < 0 || atom_cmp(rval_min, lval_max) > 0;
+
+						if (!is_semantics(e)) {
+							if (is_anti(e))
+								always_true |= !has_nil(le) && !has_nil(re) && disjoint;
+							else
+								always_false |= disjoint;
+						} else {
+							always_false |= !is_anti(e) && disjoint;
+							always_true |= is_anti(e) && disjoint;
+						}
 					}
 					if (is_semantics(e)) { /* prune *= NULL cases */
 						always_false |= (is_anti(e) ? (exp_is_null(le) && exp_is_null(re)) : ((exp_is_not_null(le) && exp_is_null(re)) || (exp_is_null(le) && exp_is_not_null(re))));
 						always_true |= (is_anti(e) ? ((exp_is_not_null(le) && exp_is_null(re)) || (exp_is_null(le) && exp_is_not_null(re))) : (exp_is_null(le) && exp_is_null(re)));
-					}
-					break;
-				case cmp_notequal:
-					if (lval_min && lval_max && rval_min && rval_max) {
-						always_true |= !has_nil(le) && !has_nil(re) && (!is_anti(e) && (atom_cmp(rval_max, lval_min) < 0 || atom_cmp(rval_min, lval_max) > 0));
-						always_false |= !has_nil(le) && !has_nil(re) && (is_anti(e) && (atom_cmp(rval_max, lval_min) < 0 || atom_cmp(rval_min, lval_max) > 0));
-					}
-					if (is_semantics(e)) {
-						always_true |= (is_anti(e) ? (exp_is_null(le) && exp_is_null(re)) : ((exp_is_not_null(le) && exp_is_null(re)) || (exp_is_null(le) && exp_is_not_null(re))));
-						always_false |= (is_anti(e) ? ((exp_is_not_null(le) && exp_is_null(re)) || (exp_is_null(le) && exp_is_not_null(re))) : (exp_is_null(le) && exp_is_null(re)));
 					}
 					break;
 				case cmp_gt:
@@ -685,7 +680,7 @@ rel_prune_predicates(visitor *v, sql_rel *rel)
 					if (lval_max && rval_min)
 						always_true |= !has_nil(le) && !has_nil(re) && (is_anti(e) ? atom_cmp(lval_max, rval_min) > 0 : atom_cmp(lval_max, rval_min) <= 0);
 					break;
-				default: /* Maybe later I can do cmp_in and cmp_notin but don't forget to remove is_theta_exp check up there */
+				default: /* Maybe later I can do cmp_in with anti but don't forget to remove is_theta_exp check up there */
 					break;
 				}
 			}
@@ -1529,7 +1524,7 @@ rel_groupby_order(visitor *v, sql_rel *rel)
 	sql_exp **exps = NULL;
 
 	if (v->parent && !is_topn(v->parent->op) && !is_sample(v->parent->op) &&
-			is_groupby(rel->op) && exps_unique(v->sql, rel, rel->r, false)) {
+			is_groupby(rel->op) && exps_unique(v->sql, rel, rel->r, true /* need also unique nulls */)) {
 		bool found = false;
 		for(node *n = rel->exps->h; n && !found; n = n->next) {
 			sql_exp *e = n->data;

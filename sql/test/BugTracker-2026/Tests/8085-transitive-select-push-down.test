@@ -1,0 +1,78 @@
+statement ok
+CREATE TABLE t_keys ( k INTEGER PRIMARY KEY)
+
+statement ok
+CREATE TABLE t_facts ( k INTEGER NOT NULL, g INTEGER NOT NULL, v INTEGER NOT NULL)
+
+statement ok rowcount 999999
+INSERT INTO t_keys SELECT value FROM generate_series(1, 1000000);
+
+statement ok rowcount 9999999
+INSERT INTO t_facts
+SELECT MOD(value, 1000000) + 1, value / 1000000, 1
+FROM generate_series(1, 10000000);
+
+query T
+explain
+WITH peer AS (
+  SELECT k, g, SUM(v) AS s
+  FROM t_facts
+  GROUP BY k, g
+)
+SELECT COALESCE(SUM(peer.s), 0)
+FROM t_keys AS wanted
+JOIN peer ON peer.k = wanted.k
+WHERE wanted.k BETWEEN 1 AND 10;
+----
+project (
+| group by (
+| | project (
+| | | join (
+| | | | group by (
+| | | | | select (
+| | | | | | table("sys"."t_facts") [ "t_facts"."k", "t_facts"."g", "t_facts"."v" ]
+| | | | | ) [ (int(31) "1") <= ("t_facts"."k") <= (int(31) "10") ]
+| | | | ) [ "t_facts"."k", "t_facts"."g" ] [ "t_facts"."k", "sys"."sum" no nil ("t_facts"."v") as "%1"."%1" ],
+| | | | select (
+| | | | | table("sys"."t_keys") [ "t_keys"."k" as "wanted"."k" ]
+| | | | ) [ (int(31) "1") <= ("wanted"."k") <= (int(31) "10") ]
+| | | ) [ ("t_facts"."k") = ("wanted"."k") ]
+| | ) [ "%1"."%1" as "peer"."s" ]
+| ) [  ] [ "sys"."sum" no nil ("peer"."s") as "%2"."%2" ]
+) [ "sys"."coalesce"("%2"."%2", bigint(63) "0") ]
+
+query T
+explain
+WITH peer AS (
+  SELECT k, g, SUM(v) AS s
+  FROM t_facts
+  WHERE k BETWEEN 1 AND 10
+  GROUP BY k, g
+)
+SELECT COALESCE(SUM(peer.s), 0)
+FROM t_keys AS wanted
+JOIN peer ON peer.k = wanted.k
+WHERE wanted.k BETWEEN 1 AND 10;
+----
+project (
+| group by (
+| | project (
+| | | join (
+| | | | group by (
+| | | | | select (
+| | | | | | table("sys"."t_facts") [ "t_facts"."k", "t_facts"."g", "t_facts"."v" ]
+| | | | | ) [ (int(31) "1") <= ("t_facts"."k") <= (int(31) "10") ]
+| | | | ) [ "t_facts"."k", "t_facts"."g" ] [ "t_facts"."k", "sys"."sum" no nil ("t_facts"."v") as "%1"."%1" ],
+| | | | select (
+| | | | | table("sys"."t_keys") [ "t_keys"."k" as "wanted"."k" ]
+| | | | ) [ (int(31) "1") <= ("wanted"."k") <= (int(31) "10") ]
+| | | ) [ ("t_facts"."k") = ("wanted"."k") ]
+| | ) [ "%1"."%1" as "peer"."s" ]
+| ) [  ] [ "sys"."sum" no nil ("peer"."s") as "%2"."%2" ]
+) [ "sys"."coalesce"("%2"."%2", bigint(63) "0") ]
+
+statement ok
+drop table t_facts
+
+statement ok
+drop table t_keys

@@ -146,10 +146,7 @@
 #define MULI4_WITH_CHECK(lft, rgt, TYPE3, dst, max, TYPE4, on_overflow) \
 	MUL4_WITH_CHECK(lft, rgt, TYPE3, dst, max, TYPE4, on_overflow)
 #endif
-#ifdef HAVE_HGE
-#define LNGMUL_CHECK(lft, rgt, dst, max, on_overflow)			\
-	MULI4_WITH_CHECK(lft, rgt, lng, dst, max, hge, on_overflow)
-#elif defined(HAVE_INT128_T)
+#ifdef HAVE_INT128_T
 #define LNGMUL_CHECK(lft, rgt, dst, max, on_overflow)			\
 	MULI4_WITH_CHECK(lft, rgt, lng, dst, max, int128_t, on_overflow)
 #elif defined(_MSC_VER) && defined(_M_AMD64) && !defined(__INTEL_COMPILER)
@@ -157,11 +154,11 @@
 #pragma intrinsic(_mul128)
 #define LNGMUL_CHECK(lft, rgt, dst, max, on_overflow)			\
 	do {								\
-		__int64 clo, chi;					\
-		clo = _mul128((__int64) (lft), (__int64) (rgt), &chi);	\
-		if ((chi == 0 && clo >= 0 /*&& clo <= (max)*/) ||	\
-		    (chi == -1 && clo < 0 && clo >= -(max))) {		\
-			(dst) = (lng) clo;				\
+		__int64 _clo, _chi;					\
+		_clo = _mul128((__int64) (lft), (__int64) (rgt), &_chi); \
+		if ((_chi == 0 && _clo >= 0 /*&& _clo <= (max)*/) ||	\
+		    (_chi == -1 && _clo < 0 && _clo >= -(max))) {	\
+			(dst) = (lng) _clo;				\
 		} else {						\
 			on_overflow;					\
 		}							\
@@ -169,29 +166,29 @@
 #else
 #define LNGMUL_CHECK(lft, rgt, dst, max, on_overflow)			\
 	do {								\
-		lng a = (lft), b = (rgt);				\
-		unsigned int a1, a2, b1, b2;				\
-		ulng c;							\
-		int sign = 1;						\
+		lng _a = (lft), _b = (rgt);				\
+		unsigned int _a1, _a2, _b1, _b2;			\
+		ulng _c;						\
+		int _sign = 1;						\
 									\
-		if (a < 0) {						\
-			sign = -sign;					\
-			a = -a;						\
+		if (_a < 0) {						\
+			_sign = -_sign;					\
+			_a = -_a;					\
 		}							\
-		if (b < 0) {						\
-			sign = -sign;					\
-			b = -b;						\
+		if (_b < 0) {						\
+			_sign = -_sign;					\
+			_b = -_b;					\
 		}							\
-		a1 = (unsigned int) (a >> 32);				\
-		a2 = (unsigned int) a;					\
-		b1 = (unsigned int) (b >> 32);				\
-		b2 = (unsigned int) b;					\
+		_a1 = (unsigned int) (_a >> 32);			\
+		_a2 = (unsigned int) _a;				\
+		_b1 = (unsigned int) (_b >> 32);			\
+		_b2 = (unsigned int) _b;				\
 		/* result = (a1*b1<<64) + (a1*b2+a2*b1<<32) + a2*b2 */	\
-		if ((a1 == 0 || b1 == 0) &&				\
-		    ((c = (ulng) a1 * b2 + (ulng) a2 * b1) & (~(ulng)0 << 31)) == 0 && \
-		    (((c = (c << 32) + (ulng) a2 * b2) & ((ulng) 1 << 63)) == 0 && \
-		     (c) <= (ulng) (max))) {				\
-			(dst) = sign * (lng) c;				\
+		if ((_a1 == 0 || _b1 == 0) &&				\
+		    ((_c = (ulng) _a1 * _b2 + (ulng) _a2 * _b1) & (~(ulng)0 << 31)) == 0 && \
+		    (((_c = (_c << 32) + (ulng) _a2 * _b2) & ((ulng) 1 << 63)) == 0 && \
+		     (_c) <= (ulng) (max))) {				\
+			(dst) = _sign * (lng) _c;			\
 		} else {						\
 			on_overflow;					\
 		}							\
@@ -207,29 +204,29 @@
 #else
 #define HGEMUL_CHECK(lft, rgt, dst, max, on_overflow)			\
 	do {								\
-		hge a = (lft), b = (rgt);				\
-		ulng a1, a2, b1, b2;					\
-		uhge c;							\
-		int sign = 1;						\
+		hge _a = (lft), _b = (rgt);				\
+		ulng _a1, _a2, _b1, _b2;				\
+		uhge _c;						\
+		int _sign = 1;						\
 									\
-		if (a < 0) {						\
-			sign = -sign;					\
-			a = -a;						\
+		if (_a < 0) {						\
+			_sign = -_sign;					\
+			_a = -_a;					\
 		}							\
-		if (b < 0) {						\
-			sign = -sign;					\
-			b = -b;						\
+		if (_b < 0) {						\
+			_sign = -_sign;					\
+			_b = -_b;					\
 		}							\
-		a1 = (ulng) (a >> 64);					\
-		a2 = (ulng) a;						\
-		b1 = (ulng) (b >> 64);					\
-		b2 = (ulng) b;						\
+		_a1 = (ulng) (_a >> 64);				\
+		_a2 = (ulng) _a;					\
+		_b1 = (ulng) (_b >> 64);				\
+		_b2 = (ulng) _b;					\
 		/* result = (a1*b1<<128) + ((a1*b2+a2*b1)<<64) + a2*b2 */ \
-		if ((a1 == 0 || b1 == 0) &&				\
-		    ((c = (uhge) a1 * b2 + (uhge) a2 * b1) & (~(uhge)0 << 63)) == 0 && \
-		    (((c = (c << 64) + (uhge) a2 * b2) & ((uhge) 1 << 127)) == 0) && \
-		    (c) <= (uhge) (max)) {				\
-			(dst) = sign * (hge) c;				\
+		if ((_a1 == 0 || _b1 == 0) &&				\
+		    ((_c = (uhge) _a1 * _b2 + (uhge) _a2 * _b1) & (~(uhge)0 << 63)) == 0 && \
+		    (((_c = (_c << 64) + (uhge) _a2 * _b2) & ((uhge) 1 << 127)) == 0) && \
+		    (_c) <= (uhge) (max)) {				\
+			(dst) = _sign * (hge) _c;			\
 		} else {						\
 			on_overflow;					\
 		}							\
