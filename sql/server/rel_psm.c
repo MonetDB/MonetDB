@@ -883,7 +883,7 @@ has_generic_decimal_result(list *types)
 #define admin_privs(g)	((g) == USER_MONETDB || (g) == ROLE_SYSADMIN)
 
 static sql_rel *
-rel_create_func(sql_query *query, dlist *qname, dlist *params, symbol *res, dlist *ext_name, dlist *body, sql_ftype type, sql_flang lang, int replace, int order_spec)
+rel_create_func(sql_query *query, dlist *qname, dlist *params, symbol *res, dlist *ext_name, dlist *body, sql_ftype type, sql_flang lang, int replace, int order_spec, int if_not_exists)
 {
 	mvc *sql = query->sql;
 	const char *fname = qname_schema_object(qname);
@@ -916,6 +916,9 @@ rel_create_func(sql_query *query, dlist *qname, dlist *params, symbol *res, dlis
 	if (create && store_readonly(sql->session->tr->store))
 		return sql_error(sql, 06, SQLSTATE(42000) "Schema statements cannot be executed on a readonly database.");
 
+	if (replace && if_not_exists)
+		return sql_error(sql, 02, SQLSTATE(42000) "Syntax error: CREATE OR REPLACE %s in combination with IF NOT EXISTS is not allowed", F);
+
 	if (union_err)
 		return sql_error(sql, 02, SQLSTATE(42000) "CREATE %s: %ss cannot return tables", F, fn);
 	else if (res && type == F_PROC)
@@ -945,6 +948,10 @@ rel_create_func(sql_query *query, dlist *qname, dlist *params, symbol *res, dlis
 		if (sf->func->private) { /* cannot create a function using a private name or replace a existing one */
 			list_destroy(type_list);
 			return sql_error(sql, 02, SQLSTATE(42000) "CREATE %s: name '%s' cannot be used", F, fname);
+		}
+		if (if_not_exists) {
+			list_destroy(type_list);
+			return rel_psm_block(sql->sa, new_exp_list(sql->sa));
 		}
 		if (!replace && params) {
 			char *arg_list = NULL;
@@ -1301,7 +1308,7 @@ _stack_push_table(mvc *sql, const char *tname, sql_table *t)
 }
 
 static sql_rel *
-create_trigger(sql_query *query, dlist *qname, int time, symbol *trigger_event, dlist *tqname, dlist *opt_ref, dlist *triggered_action, int replace)
+create_trigger(sql_query *query, dlist *qname, int time, symbol *trigger_event, dlist *tqname, dlist *opt_ref, dlist *triggered_action, int replace, int if_not_exists)
 {
 	mvc *sql = query->sql;
 	const char *triggerschema = qname_schema(qname);
@@ -1320,6 +1327,9 @@ create_trigger(sql_query *query, dlist *qname, int time, symbol *trigger_event, 
 	dlist *stmts = triggered_action->h->next->next->data.lval;
 	symbol *condition = triggered_action->h->next->data.sym;
 	bool old_useviews = sql->use_views;
+
+	if (replace && if_not_exists)
+		return sql_error(sql, 02, SQLSTATE(42000) "Syntax error: %s in combination with IF NOT EXISTS is not allowed", base);
 
 	if (opt_ref) {
 		dnode *dl = opt_ref->h;
@@ -1351,8 +1361,12 @@ create_trigger(sql_query *query, dlist *qname, int time, symbol *trigger_event, 
 		}
 		if (!mvc_schema_privs(sql, ss))
 			return sql_error(sql, 02, SQLSTATE(42000) "%s: access denied for %s to schema '%s'", base, get_string_global_var(sql, "current_user"), ss->base.name);
-		if (!replace && mvc_bind_trigger(sql, ss, triggername) != NULL)
-			return sql_error(sql, 02, SQLSTATE(42000) "%s: name '%s' already in use", base, triggername);
+		if (mvc_bind_trigger(sql, ss, triggername) != NULL) {
+			if (!replace && !if_not_exists)
+				return sql_error(sql, 02, SQLSTATE(42000) "%s: name '%s' already in use", base, triggername);
+			if (if_not_exists)
+				return rel_psm_block(sql->sa, new_exp_list(sql->sa));
+		}
 		switch (trigger_event->token) {
 			case SQL_INSERT: {
 				if (old_name)
@@ -1534,10 +1548,16 @@ rel_psm(sql_query *query, symbol *s)
 		dlist *l = s->data.lval;
 		sql_ftype type = (sql_ftype) l->h->next->next->next->next->next->data.i_val;
 		sql_flang lang = (sql_flang) l->h->next->next->next->next->next->next->data.i_val;
-		int repl = l->h->next->next->next->next->next->next->next->data.i_val;
-		int order_spec = l->h->next->next->next->next->next->next->next->next->data.i_val;
+		int replace =       l->h->next->next->next->next->next->next->next->data.i_val;
+		int order_spec =    l->h->next->next->next->next->next->next->next->next->data.i_val;
+		int if_not_exists = l->h->next->next->next->next->next->next->next->next->next->data.i_val;
 
-		ret = rel_create_func(query, l->h->data.lval, l->h->next->data.lval, l->h->next->next->data.sym, l->h->next->next->next->data.lval, l->h->next->next->next->next->data.lval, type, lang, repl, order_spec);
+		ret = rel_create_func(query, l->h->data.lval,
+				l->h->next->data.lval,
+				l->h->next->next->data.sym,
+				l->h->next->next->next->data.lval,
+				l->h->next->next->next->next->data.lval,
+				type, lang, replace, order_spec, if_not_exists);
 		sql->type = Q_SCHEMA;
 	} 	break;
 	case SQL_DROP_FUNC:
@@ -1585,7 +1605,14 @@ rel_psm(sql_query *query, symbol *s)
 		dlist *l = s->data.lval;
 
 		assert(l->h->next->type == type_int);
-		ret = create_trigger(query, l->h->data.lval, l->h->next->data.i_val, l->h->next->next->data.sym, l->h->next->next->next->data.lval, l->h->next->next->next->next->data.lval, l->h->next->next->next->next->next->data.lval, l->h->next->next->next->next->next->next->data.i_val);
+		ret = create_trigger(query, l->h->data.lval,
+				l->h->next->data.i_val,
+				l->h->next->next->data.sym,
+				l->h->next->next->next->data.lval,
+				l->h->next->next->next->next->data.lval,
+				l->h->next->next->next->next->next->data.lval,
+				l->h->next->next->next->next->next->next->data.i_val, /* or replace */
+				l->h->next->next->next->next->next->next->next->data.i_val); /* if not exists */
 		sql->type = Q_SCHEMA;
 	} break;
 	case SQL_DROP_TRIGGER:

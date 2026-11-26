@@ -1807,7 +1807,7 @@ rel_create_table(sql_query *query, int temp, const char *sname, const char *name
 }
 
 static sql_rel *
-rel_create_view(sql_query *query, int temp, dlist *qname, dlist *column_spec, symbol *ast, int check, int persistent, int replace)
+rel_create_view(sql_query *query, int temp, dlist *qname, dlist *column_spec, symbol *ast, int check, int persistent, int replace, int if_not_exists)
 {
 	mvc *sql = query->sql;
 	const char *name = qname_schema_object(qname);
@@ -1818,10 +1818,15 @@ rel_create_view(sql_query *query, int temp, dlist *qname, dlist *column_spec, sy
 	int deps = (sql->emode == m_deps);
 	int create = (!instantiate && !deps);
 	sqlid pfoundid = 0, foundid = 0;
-	const char *base = replace ? "CREATE OR REPLACE VIEW" : "CREATE VIEW";
+	const char *base = replace
+			? (temp == SQL_LOCAL_TEMP ? "CREATE OR REPLACE TEMPORARY VIEW" : "CREATE OR REPLACE VIEW")
+			: (temp == SQL_LOCAL_TEMP ? "CREATE TEMPORARY VIEW" : "CREATE VIEW");
 	const char *action = (temp == SQL_DECLARED_TABLE)?"DECLARE":"CREATE";
 
 	(void) check;
+
+	if (replace && if_not_exists)
+		return sql_error(sql, 02, SQLSTATE(42000) "Syntax error: %s in combination with IF NOT EXISTS is not allowed", base);
 
 	if (temp == SQL_GLOBAL_TEMP)
 		temp = SQL_PERSIST; /* just normal view */
@@ -1836,12 +1841,14 @@ rel_create_view(sql_query *query, int temp, dlist *qname, dlist *column_spec, sy
 	if (create && (!mvc_schema_privs(sql, s) && !(isTempSchema(s) && persistent == SQL_LOCAL_TEMP)))
 		return sql_error(sql, 02, SQLSTATE(42000) "%s: access denied for %s to schema '%s'", base, get_string_global_var(sql, "current_user"), s->base.name);
 	if (create && (t = mvc_bind_table(sql, s, name))) {
-		if (!replace)
+		if (!replace && !if_not_exists)
 			return sql_error(sql, 02, SQLSTATE(42S01) "%s: name '%s' already in use", base, name);
 		if (!isView(t))
 			return sql_error(sql, 02, SQLSTATE(42000) "%s: '%s' is not a view", base, name);
 		if (t->system)
 			return sql_error(sql, 02, SQLSTATE(42000) "%s: cannot replace system view '%s'", base, name);
+		if (if_not_exists)
+			return rel_psm_block(sql->sa, new_exp_list(sql->sa));
 		foundid = t->base.id; /* when recreating a view, the view itself can't be found */
 	}
 
@@ -3255,13 +3262,15 @@ rel_schemas(sql_query *query, symbol *s)
 		assert(l->h->type == type_int);
 		assert(l->h->next->next->next->next->type == type_int);
 		assert(l->h->next->next->next->next->next->type == type_int);
+		assert(l->h->next->next->next->next->next->next->type == type_int);
 		ret = rel_create_view(query, l->h->data.i_val,
 				l->h->next->data.lval,
 				l->h->next->next->data.lval,
 				l->h->next->next->next->data.sym,
 				l->h->next->next->next->next->data.i_val,
 				l->h->next->next->next->next->next->data.i_val,
-				l->h->next->next->next->next->next->next->data.i_val); /* or replace */
+				l->h->next->next->next->next->next->next->data.i_val, /* or replace */
+				l->h->next->next->next->next->next->next->next->data.i_val); /* if not exists */
 	} 	break;
 	case SQL_DROP_TABLE:
 	{

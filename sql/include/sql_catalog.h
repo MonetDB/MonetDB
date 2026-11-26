@@ -161,12 +161,10 @@ typedef enum comp_type {
 	cmp_lte = 2,
 	cmp_lt = 3,
 	cmp_equal = 4,
-	cmp_notequal = 5,
 
 	cmp_filter = 6,
 
-	cmp_in = 8,			/* in value list */
-	cmp_notin = 9,			/* not in value list */
+	cmp_in = 8,			/* in value list, negated by the anti flag */
 	cmp_con = 10,			/* conjunctive (and) list */
 	cmp_dis = 11,			/* disjunctive (or) list */
 
@@ -178,11 +176,11 @@ typedef enum comp_type {
 } comp_type;
 
 #define is_theta_exp(e) ((e) == cmp_gt || (e) == cmp_gte || (e) == cmp_lte ||\
-						 (e) == cmp_lt || (e) == cmp_equal || (e) == cmp_notequal)
+						 (e) == cmp_lt || (e) == cmp_equal)
 
-#define is_complex_exp(et) ((et) == cmp_in || (et) == cmp_notin || (et) == cmp_filter || (et) == cmp_con || (et) == cmp_dis)
+#define is_complex_exp(et) ((et) == cmp_in || (et) == cmp_filter || (et) == cmp_con || (et) == cmp_dis)
 
-#define is_equality_or_inequality_exp(et) ((et) == cmp_equal || (et) == cmp_notequal || (et) == cmp_in || (et) == cmp_notin)
+#define is_equality_or_inequality_exp(et) ((et) == cmp_equal || (et) == cmp_in)
 
 typedef enum commit_action_t {
 	CA_COMMIT, 	/* commit rows, only for persistent tables */
@@ -689,6 +687,10 @@ typedef enum table_types {
 #define isReplicaTable(x)                 ((x)->type==tt_replica_table)
 #define isUnloggedTable(x)				  ((x)->type==tt_unlogged_table)
 #define isKindOfTable(x)                  (isTable(x) || isMergeTable(x) || isRemote(x) || isReplicaTable(x) || isUnloggedTable(x))
+/* System tables, including the catalogue tables that record DDL effects. The
+ * row-aware concurrent-delta logic applies to all of them; non-catalogue
+ * system tables are not DDL targets, so this is a conservative superset. */
+#define isSystemTable(x)                  ((x) && (x)->system)
 
 #define TABLE_WRITABLE	0
 #define TABLE_READONLY	1

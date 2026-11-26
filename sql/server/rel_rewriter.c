@@ -455,7 +455,7 @@ exp_joins_rels(sql_exp *e, list *rels)
 
 		l = find_rel(rels, ll->h->data);
 		r = find_rel(rels, lr->h->data);
-	} else if (e->flag == cmp_in || e->flag == cmp_notin) {
+	} else if (e->flag == cmp_in) {
 		list *lr = e->r;
 
 		l = find_rel(rels, e->l);

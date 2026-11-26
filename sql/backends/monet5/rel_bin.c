@@ -574,8 +574,6 @@ handle_in_exps(backend *be, sql_exp *ce, list *nl, stmt *left, stmt *right, stmt
 				stmt_const(be, bin_find_smallest_column(be, left), s),
 				stmt_bool(be, 1), cmp_equal, sel, 0, 0);
 	} else if (list_length(nl) < 16) {
-		comp_type cmp = (in)?cmp_equal:cmp_notequal;
-
 		if (!in)
 			s = sel;
 		for (n = nl->h; n; n = n->next) {
@@ -585,13 +583,13 @@ handle_in_exps(backend *be, sql_exp *ce, list *nl, stmt *left, stmt *right, stmt
 				return NULL;
 
 			if (in) {
-				i = stmt_uselect(be, c, i, cmp, sel, 0, 0);
+				i = stmt_uselect(be, c, i, cmp_equal, sel, 0, 0);
 				if (s)
 					s = stmt_tunion(be, s, i);
 				else
 					s = i;
 			} else {
-				s = stmt_uselect(be, c, i, cmp, s, 0, 0);
+				s = stmt_uselect(be, c, i, cmp_equal, s, 1, 0);
 			}
 		}
 	} else {
@@ -2103,7 +2101,7 @@ exp_bin(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, 
 			s = stmt_genselect(be, l, r, e->f, sel, is_anti(e));
 			return s;
 		}
-		if (e->flag == cmp_in || e->flag == cmp_notin)
+		if (e->flag == cmp_in)
 			return handle_in_exps(be, e->l, e->r, left, right, grp, ext, cnt, sel, (e->flag == cmp_in)^is_anti(e), depth, reduce, push);
 		if (e->flag == cmp_con)
 			return exp_bin_conjunctive(be, e, left, right, grp, ext, cnt, sel, depth, reduce, push);
@@ -2180,7 +2178,7 @@ exp_bin(backend *be, sql_exp *e, stmt *left, stmt *right, stmt *grp, stmt *ext, 
 												   tail_type(l), tail_type(l), F_FUNC, true, true);
 					assert(f);
 					if (is_semantics(e)) {
-						if (exp_is_null(e->l) && exp_is_null(e->r) && (e->flag == cmp_equal || e->flag == cmp_notequal)) {
+						if (exp_is_null(e->l) && exp_is_null(e->r) && (e->flag == cmp_equal)) {
 							s = stmt_bool(be, e->flag == cmp_equal ? !is_anti(e): is_anti(e));
 						} else {
 							list *args = sa_list(sql->sa);
@@ -2542,7 +2540,7 @@ exp2bin_args(backend *be, sql_exp *e, list *args)
 		if (e->flag == cmp_filter) {
 			args = exps2bin_args(be, e->l, args);
 			args = exps2bin_args(be, e->r, args);
-		} else if (e->flag == cmp_in || e->flag == cmp_notin) {
+		} else if (e->flag == cmp_in) {
 			args = exp2bin_args(be, e->l, args);
 			args = exps2bin_args(be, e->r, args);
 		} else {
@@ -2965,7 +2963,7 @@ rel2bin_hash_lookup(backend *be, sql_rel *rel, stmt *left, stmt *right, sql_idx 
 		sql_exp *e = en->data;
 		stmt *s = NULL;
 
-		if (e->type == e_cmp && e->flag == cmp_equal) {
+		if (e->type == e_cmp && is_equi_exp_(e)) {
 			sql_exp *ee = (swap_exp)?e->l:e->r;
 			if (swap_rel)
 				s = exp_bin(be, ee, left, NULL, NULL, NULL, NULL, NULL, 0, 0, 0);
@@ -3342,7 +3340,7 @@ get_equi_joins_first(mvc *sql, list *exps, int *equality_only)
 	for (node *n = exps->h; n; n = n->next) {
 		sql_exp *e = n->data;
 
-		assert(e->type == e_cmp && e->flag != cmp_in && e->flag != cmp_notin);
+		assert(e->type == e_cmp && e->flag != cmp_in);
 		if (is_equi_exp_(e))
 			list_append(new_exps, e);
 		else
@@ -3432,7 +3430,7 @@ rel2bin_join(backend *be, sql_rel *rel, list *refs)
 				prop *p;
 
 				/* stop search for equi joins on first non equi */
-				if (list_length(lje) && (idx || e->type != e_cmp || e->flag != cmp_equal))
+				if (list_length(lje) && (idx || e->type != e_cmp || !is_equi_exp_(e)))
 					break;
 
 				/* handle possible index lookups, expressions are in index order! */
@@ -3462,7 +3460,7 @@ rel2bin_join(backend *be, sql_rel *rel, list *refs)
 				assert(s->type == st_join || s->type == st_join2 || s->type == st_joinN);
 				if (!join)
 					join = s;
-				if (e->flag != cmp_equal) { /* only collect equi joins */
+				if (!is_equi_exp_(e)) { /* only collect equi joins */
 					en = en->next;
 					break;
 				}
@@ -3675,8 +3673,7 @@ rel2bin_antijoin(backend *be, sql_rel *rel, list *refs)
 			bool composite = true;
 			for (node *m = jexps->h; m; m = m->next) {
 				sql_exp *ce = m->data;
-				if (ce->type != e_cmp || ce->flag != cmp_equal ||
-				    is_anti(ce) || !is_semantics(ce) || exp_has_func(ce)) {
+				if (ce->type != e_cmp || !is_equi_exp_(ce) || is_anti(ce) || !is_semantics(ce) || exp_has_func(ce)) {
 					composite = false;
 					break;
 				}
@@ -3708,7 +3705,7 @@ rel2bin_antijoin(backend *be, sql_rel *rel, list *refs)
 
 		if (!join) {
 				sql_exp *e = en->data;
-				if (e->type == e_cmp && (e->flag == cmp_equal || e->flag == cmp_notequal)) {
+				if (e->type == e_cmp && (e->flag == cmp_equal)) {
 				stmt *ls = exp_bin(be, e->l, left, NULL, NULL, NULL, NULL, NULL, 1, 0, 0), *rs;
 				bool constval = false;
 				if (!ls) {
@@ -3736,7 +3733,7 @@ rel2bin_antijoin(backend *be, sql_rel *rel, list *refs)
 				if (!li)
 					li = ls;
 
-				if (!en->next && !is_anti(e) && e->flag != cmp_notequal &&
+				if (!en->next && !is_anti(e) && e->flag == cmp_equal &&
 					(constval || stmt_has_null(ls) || stmt_has_null(rs))) {
 					join = stmt_tdiff2(be, ls, rs, NULL, is_semantics(e), is_any(e));
 					jexps = NULL;
@@ -3955,7 +3952,7 @@ rel2bin_semijoin(backend *be, sql_rel *rel, list *refs)
 					}
 					break;
 				}
-				if (list_length(lje) && (idx || e->type != e_cmp || (e->flag != cmp_equal && e->flag != cmp_filter) ||
+				if (list_length(lje) && (idx || e->type != e_cmp || (!is_equi_exp_(e) && e->flag != cmp_filter) ||
 				(join && e->flag == cmp_filter)))
 					break;
 
@@ -8343,11 +8340,11 @@ exp_remap(sql_exp *le, sql_exp *re, list *remapped)
 	case e_cmp:
 		if (le->flag != re->flag)
 			return -1;
-		if (le->flag <= cmp_notequal) {
+		if (le->flag <= cmp_equal) {
 			return (exp_remap(le->l, re->l, remapped) == 0 &&
 				exp_remap(le->r, re->r, remapped) == 0 &&
 			   ((!le->f && !re->f) || exp_remap(le->f, re->f, remapped) == 0))?0:-1;
-		} else if (le->flag == cmp_in || le->flag == cmp_notin) {
+		} else if (le->flag == cmp_in) {
 			return (exp_remap(le->l, re->l, remapped) == 0 &&
 				    exps_remap(le->r, re->r, remapped) == 0)?0:-1;
 		}

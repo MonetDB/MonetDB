@@ -9,21 +9,21 @@ statement ok
 create function f1(id int)
 RETURNS int
 BEGIN
-	return 0;
+	return 1 + id;
 END
 
 statement ok
 create function f2(id int)
 RETURNS int
 BEGIN
-	return 0;
+	return 2 + id;
 END
 
 statement ok
 create function f3(id int, name varchar(1024))
 RETURNS int
 BEGIN
-	return 0;
+	return 3 + id;
 END
 
 query T rowsort
@@ -34,7 +34,7 @@ f1
 f2
 f3
 
-statement error
+statement error 42000!DROP FUNCTION: there are more than one function called 'f1', please use the full signature
 DROP FUNCTION f1
 
 query T rowsort
@@ -55,7 +55,7 @@ f1
 f2
 f3
 
-statement error
+statement error 42000!DROP FUNCTION: no such function 'f2' (int, varchar(1024))
 DROP FUNCTION f2 (int, varchar(1024))
 
 query T rowsort
@@ -68,6 +68,9 @@ f3
 statement ok
 DROP FUNCTION f2 (int)
 
+statement ok
+DROP FUNCTION IF EXISTS f2
+
 query T rowsort
 select name from functions where name = 'f1' or name = 'f2' or name = 'f3'
 ----
@@ -76,6 +79,9 @@ f3
 
 statement ok
 DROP FUNCTION f3 (int, varchar(1024))
+
+statement ok
+DROP FUNCTION IF EXISTS f3 (int, varchar(1024))
 
 query T rowsort
 select name from functions where name = 'f1' or name = 'f2' or name = 'f3'
@@ -89,13 +95,71 @@ BEGIN
 	return f1(3);
 END
 
+query II nosort
+SELECT f1(), f1(7)
+----
+4
+8
+
 statement ok
 DROP ALL FUNCTION f1
 
-statement error
+statement error 3F000!DROP ALL FUNCTION: no such function 'f1'
 DROP ALL FUNCTION f1 CASCADE
+
+statement error 42000!syntax error, unexpected IF in: "drop all function if"
+DROP ALL FUNCTION IF EXISTS f1 CASCADE
 
 query T rowsort
 select name from functions where name = 'f1' or name = 'f2' or name = 'f3'
 ----
+
+-- test  CREATE OR REPLACE  and  IF NOT EXISTS variants
+statement ok
+create or replace function f1(id int) RETURNS int BEGIN return 1 + id; END
+
+query II nosort
+SELECT f1(NULL), f1(-6)
+----
+NULL
+-5
+
+statement error 42000!CREATE FUNCTION: name 'f1' (int) already in use
+create function f1(id int) RETURNS int BEGIN return 2 + id; END
+
+statement ok
+create function IF NOT EXISTS f1(id int) RETURNS int BEGIN return 2 + id; END
+
+query I nosort
+SELECT f1(2)
+----
+3
+
+statement ok
+create or replace function f1(id int) RETURNS int BEGIN return 3 + id; END
+
+query I nosort
+SELECT f1(2)
+----
+5
+
+statement error 42000!Syntax error: CREATE OR REPLACE FUNCTION in combination with IF NOT EXISTS is not allowed
+create or replace function IF NOT EXISTS f2(id int) RETURNS int BEGIN return 4 + id; END
+
+query T rowsort
+select name from functions where name = 'f1' or name = 'f2' or name = 'f3'
+----
+f1
+
+statement ok
+DROP FUNCTION IF EXISTS f1
+
+statement ok
+DROP FUNCTION IF EXISTS f1
+
+statement error 42000!syntax error, unexpected NOT_EXISTS, expecting EXISTS in: "drop function if not exists"
+DROP FUNCTION IF NOT EXISTS f1
+
+statement error 42000!DROP FUNCTION: no such function 'f1'
+DROP FUNCTION f1
 

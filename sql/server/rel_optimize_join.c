@@ -151,7 +151,7 @@ rel_estimate(visitor *v, sql_rel *rel)
 					prop *sp = prop_create(v->sql->sa, PROP_SELECTIVITY, (prop *) e->p);
 					sp->value.dval = s;
 					e->p = sp;
-				} else if (e->type == e_cmp && e->flag == cmp_equal) {
+				} else if (e->type == e_cmp && e->flag == cmp_equal && !is_anti(e)) {
 					/* if one of the sides is unique, the cardinality will be at most the cardinality of the other side */
 					if (!is_semantics(e) || !has_nil(el) || !has_nil(er)) {
 						BUN lu = 1, ru = 1; /* initialize with worst case */
@@ -331,11 +331,12 @@ exp_count(int *cnt, sql_exp *e)
 		flag = e->flag;
 		switch (flag) {
 		case cmp_equal:
+			if (is_anti(e) && !is_semantics(e)) { /* old cmp_notequal */
+				*cnt += 7;
+				return 7;
+			}
 			*cnt += 90;
 			return 90;
-		case cmp_notequal:
-			*cnt += 7;
-			return 7;
 		case cmp_gt:
 		case cmp_gte:
 		case cmp_lt:
@@ -371,8 +372,7 @@ exp_count(int *cnt, sql_exp *e)
 			*cnt += 3;
 			return 3;
 		}
-		case cmp_in:
-		case cmp_notin: {
+		case cmp_in: {
 			list *l = e->r;
 			int c = 9 - 10*list_length(l);
 			*cnt += c;
@@ -434,7 +434,7 @@ static void
 exp_set_uniques(sql_exp *e, sql_rel *l, sql_rel *r)
 {
 	if (e->type == e_cmp) {
-		if (e->flag == cmp_equal || e->flag == cmp_notequal) {
+		if (e->flag == cmp_equal && !is_anti(e)) {
 			exp_set_uniques(e->l, l, r);
 			exp_set_uniques(e->r, l, r);
 		}
@@ -477,7 +477,7 @@ exp_selectivity(visitor *v, sql_exp *e, sql_rel *l, sql_rel *r, prop *p)
 			p = prop_create(v->sql->sa, PROP_SELECTIVITY, (prop *) e->p);
 		p->value.dval = s;
 		e->p = p;
-	} else if (e->type == e_cmp && e->flag == cmp_equal) {
+	} else if (e->type == e_cmp && e->flag == cmp_equal && !is_anti(e)) {
 		/* if one of the sides is unique, the cardinality will be at most the cardinality of the other side */
 		if (!is_semantics(e) || !has_nil(el) || !has_nil(er)) {
 			BUN lu = 1, ru = 1; /* initialize with worst case */
@@ -1256,7 +1256,7 @@ order_joins(visitor *v, list *rels, list *exps)
 				for (en = sdje->h; en; ) {
 					node *next = en->next;
 					sql_exp *e = en->data;
-					if ((direct && ((e->flag <= cmp_notequal && (h[e->tmp] & rel_mask) == h[e->tmp] && h[e->tmp]) || (e->flag > cmp_notequal && rel_rebind_exp(v->sql, top, e))))  ||
+					if ((direct && ((is_theta_exp(e->flag) && (h[e->tmp] & rel_mask) == h[e->tmp] && h[e->tmp]) || (!is_theta_exp(e->flag) && rel_rebind_exp(v->sql, top, e))))  ||
 					    (!direct && rel_rebind_exp(v->sql, top, e))) {
 						rel_join_add_exp(v->sql->sa, top, e);
 						list_remove_data(sdje, NULL, en->data);
@@ -1370,7 +1370,7 @@ push_in_join_down(mvc *sql, list *rels, list *exps)
 				for(m = exps->h; !je && m; m = m->next) {
 					sql_exp *e = m->data;
 
-					if (e->type == e_cmp && e->flag == cmp_equal) {
+					if (e->type == e_cmp && e->flag == cmp_equal && !is_anti(e)) {
 						/* in values are on
 							the right of the join */
 						if (rel_has_exp(r, e->r, false) >= 0)

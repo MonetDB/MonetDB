@@ -35,7 +35,7 @@ p1
 p2
 p3
 
-statement error
+statement error 42000!DROP PROCEDURE: there are more than one procedure called 'p1', please use the full signature
 DROP PROCEDURE p1
 
 query T rowsort
@@ -56,7 +56,7 @@ p1
 p2
 p3
 
-statement error
+statement error 42000!DROP PROCEDURE: no such procedure 'p2' (int, varchar(1024))
 DROP PROCEDURE p2 (int, varchar(1024))
 
 query T rowsort
@@ -99,13 +99,13 @@ select * from t1
 ----
 1
 
-statement error
+statement error 42000!DROP TABLE: unable to drop table t1 (there are database objects which depend on it)
 DROP table t1
 
 statement ok
 DROP ALL PROCEDURE p1
 
-statement error
+statement error 3F000!DROP ALL PROCEDURE: no such procedure 'p1'
 DROP ALL PROCEDURE p1 CASCADE
 
 statement ok
@@ -122,13 +122,13 @@ BEGIN
 	set id = 0;
 END
 
-statement error
+statement error 42000!DROP FUNCTION: no such function 'p1'
 DROP FUNCTION p1
 
-statement error
+statement error 42000!DROP FUNCTION: no such function 'p1' ()
 DROP FUNCTION p1 ()
 
-statement error
+statement error 3F000!DROP ALL FUNCTION: no such function 'p1'
 DROP ALL FUNCTION p1
 
 query T rowsort
@@ -138,4 +138,72 @@ p1
 
 statement ok
 DROP PROCEDURE p1
+
+query T rowsort
+select name from functions where name = 'p1' or name = 'p2' or name = 'p3'
+----
+
+
+-- test  CREATE OR REPLACE  and  IF NOT EXISTS variants
+statement ok
+create table t1 (id int)
+
+statement ok
+create or replace PROCEDURE p1(id int) BEGIN insert into t1 values(id); END
+
+statement ok
+CALL p1(10);
+
+statement error 42000!CREATE PROCEDURE: name 'p1' (int) already in use
+create PROCEDURE p1(id int) BEGIN insert into t1 values(id +1); END
+
+statement ok
+CALL p1(10);
+
+statement ok
+create PROCEDURE IF NOT EXISTS p1(id int) BEGIN insert into t1 values(id +2); END
+
+statement ok
+CALL p1(10);
+
+statement ok
+create or replace PROCEDURE p1(id int) BEGIN insert into t1 values(id +3); END
+
+statement ok
+CALL p1(10);
+
+statement error 42000!Syntax error: CREATE OR REPLACE PROCEDURE in combination with IF NOT EXISTS is not allowed
+create or replace PROCEDURE IF NOT EXISTS p1(id int) BEGIN insert into t1 values(id +4); END
+
+statement ok
+CALL p1(10);
+
+query I rowsort
+select id from t1 order by id
+----
+10
+10
+10
+13
+13
+
+query T rowsort
+select name from functions where name = 'p1' or name = 'p2' or name = 'p3'
+----
+p1
+
+statement ok
+DROP PROCEDURE IF EXISTS p1
+
+statement ok
+DROP PROCEDURE IF EXISTS p1
+
+statement error 42000!syntax error, unexpected NOT_EXISTS, expecting EXISTS in: "drop procedure if not exists"
+DROP PROCEDURE IF NOT EXISTS p1
+
+statement error 42000!DROP PROCEDURE: no such procedure 'p1'
+DROP PROCEDURE p1
+
+statement ok
+DROP TABLE t1
 

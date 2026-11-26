@@ -72,13 +72,13 @@ COPYparse_generic(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	for (BUN i = 0; i < n; i++) {
 		gdk_return ok = GDK_SUCCEED;
 		int offset = offsetp[i];
-		const char *src = start + offset;
 		const void *to_insert;
 
 		if (is_int_nil(offset)) {
 			to_insert = nil_ptr;
 			has_nil = true;
 		} else {
+			const char *src = start + offset;
 			ssize_t len = BATatoms[tpe].atomFromStr(ma, src, &buffer_len, &buffer, false);
 			if (len >= 0) {
 				to_insert = buffer;
@@ -209,7 +209,6 @@ COPYparse_float(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 	for (BUN i = 0; i < n; i++) {
 		gdk_return ok = GDK_SUCCEED;
 		int offset = offsetp[i];
-		const char *src = start + offset;
 		const void *to_insert;
 
 		if (is_int_nil(offset)) {
@@ -217,6 +216,7 @@ COPYparse_float(Client cntxt, MalBlkPtr mb, MalStkPtr stk, InstrPtr pci)
 			nils++;
 		} else {
 			ssize_t len = -1;
+			const char *src = start + offset;
 			src = fltdbl_sepskip(src, sep, skip);
 			if (src)
 				len = BATatoms[tpe].atomFromStr(ma, src, &buffer_len, &buffer, false);

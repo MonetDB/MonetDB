@@ -27,15 +27,51 @@ SELECT abc FROM testing8
 1
 2
 
-statement error
+statement error 42S02!CREATE OR REPLACE TRIGGER: no such table 'testing3'
 CREATE OR REPLACE TRIGGER failedtrigger AFTER INSERT ON testing3 FOR EACH STATEMENT BEGIN ATOMIC INSERT INTO testing8 VALUES (3); END
+
+statement ok
+CREATE OR REPLACE TRIGGER trigger7 AFTER INSERT ON testing7 FOR EACH STATEMENT BEGIN ATOMIC INSERT INTO testing8 VALUES (4); END
+
+statement error 42000!Syntax error: CREATE OR REPLACE TRIGGER in combination with IF NOT EXISTS is not allowed
+CREATE OR REPLACE TRIGGER IF NOT EXISTS trigger7 AFTER INSERT ON testing7 FOR EACH STATEMENT BEGIN ATOMIC INSERT INTO testing8 VALUES (5); END
+
+statement ok
+CREATE TRIGGER IF NOT EXISTS trigger7 AFTER INSERT ON testing7 FOR EACH STATEMENT BEGIN ATOMIC INSERT INTO testing8 VALUES (6); END
 
 statement ok
 DROP TRIGGER nanani
 
+statement error 3F000!DROP TRIGGER: no such trigger 'nanani'
+DROP TRIGGER nanani
+
+statement ok
+DROP TRIGGER IF EXISTS nanani
+
+statement ok
+DROP TRIGGER trigger7
+
+statement error 3F000!DROP TRIGGER: no such trigger 'trigger7'
+DROP TRIGGER trigger7
+
+statement ok
+DROP TRIGGER IF EXISTS trigger7
+
 statement ok
 DROP TABLE testing7
 
+statement error 42S02!DROP TABLE: no such table 'testing7'
+DROP TABLE testing7
+
+statement ok
+DROP TABLE IF EXISTS testing7
+
 statement ok
 DROP TABLE testing8
+
+statement error 42S02!DROP TABLE: no such table 'testing8'
+DROP TABLE testing8
+
+statement ok
+DROP TABLE IF EXISTS testing8
 

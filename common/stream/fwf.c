@@ -74,18 +74,20 @@ stream_fwf_read(stream *restrict s, void *restrict buf, size_t elmsize, size_t c
 
 			for (field_idx = 0; field_idx < fsd->num_fields; field_idx++) {
 				char *val_start, *val_end;
-				val_start = fsd->in_buf + in_buf_pos;
-				in_buf_pos += fsd->widths[field_idx];
-				val_end = fsd->in_buf + in_buf_pos - 1;
-				while (*val_start == fsd->filler)
-					val_start++;
-				while (*val_end == fsd->filler)
-					val_end--;
-				while (val_start <= val_end) {
-					if (*val_start == STREAM_FWF_FIELD_SEP) {
-						fsd->out_buf[out_buf_pos++] = STREAM_FWF_ESCAPE;
+				if (fsd->widths[field_idx] > 0) {
+					val_start = fsd->in_buf + in_buf_pos;
+					in_buf_pos += fsd->widths[field_idx];
+					val_end = fsd->in_buf + in_buf_pos - 1;
+					while (*val_start == fsd->filler)
+						val_start++;
+					while (*val_end == fsd->filler)
+						val_end--;
+					while (val_start <= val_end) {
+						if (*val_start == STREAM_FWF_FIELD_SEP) {
+							fsd->out_buf[out_buf_pos++] = STREAM_FWF_ESCAPE;
+						}
+						fsd->out_buf[out_buf_pos++] = *val_start++;
 					}
-					fsd->out_buf[out_buf_pos++] = *val_start++;
 				}
 				fsd->out_buf[out_buf_pos++] = STREAM_FWF_FIELD_SEP;
 			}
@@ -161,7 +163,7 @@ stream_fwf_create(stream *restrict s, size_t num_fields, size_t *restrict widths
 		mnstr_set_open_error(STREAM_FWF_NAME, errno, NULL);
 		return NULL;
 	}
-	fsd->out_buf = malloc(fsd->line_len * 3);
+	fsd->out_buf = malloc(fsd->line_len * 2 + num_fields + 1);
 	if (fsd->out_buf == NULL) {
 		free(fsd->in_buf);
 		free(fsd);
