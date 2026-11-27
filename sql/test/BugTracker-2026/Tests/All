@@ -245,3 +245,4 @@ KNOWNFAIL?8010-first_value-last_value-partition-range-bug
 8089-imatched-bat-leak
 8090-cast-should-fail
 8095-double-negated-in
+8100-error-overflow
