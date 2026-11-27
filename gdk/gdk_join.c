@@ -15,17 +15,18 @@
 
 /*
  * All join variants produce some sort of join on two input BATs,
- * optionally subject to up to two candidate lists.  Only values in
- * the input BATs that are mentioned in the associated candidate list
- * (if provided) are eligible.  They all return two output BATs in the
- * first two arguments.  The join operations differ in the way in
- * which tuples from the two inputs are matched.
+ * optionally subject to up to two candidate lists.  Only values in the
+ * input BATs that are mentioned in the associated candidate list (if
+ * provided) are eligible.  They all return two output BATs in the first
+ * two arguments.  The join operations differ in the way in which tuples
+ * from the two inputs are matched.  (But also see BATintersect and
+ * BATdiff.)
  *
  * The outputs consist of two aligned BATs (i.e. same length and same
  * hseqbase (0@0)) that contain the OIDs of the input BATs that match.
  * The candidate lists, if given, contain the OIDs of the associated
- * input BAT which must be considered for matching.  The input BATs
- * must have the same type.
+ * input BAT which must be considered for matching.  The input BATs must
+ * have the same type.
  *
  * All functions also have a parameter nil_matches which indicates
  * whether NIL must be considered an ordinary value that can match, or
@@ -33,7 +34,7 @@
  *
  * The join functions that are provided here are:
  * BATjoin
- *	normal equi-join
+ *	normal equi-join, no guarantees about ordering of the output
  * BATleftjoin
  *	normal equi-join, but the left output is sorted
  * BATouterjoin
@@ -45,12 +46,12 @@
  *	multiple matches, only one is returned (i.e., the left output
  *	is also key, making it a candidate list)
  * BATmarkjoin
- *	equi-join, but the left output is sorted, if there is no
- *	match for a value in the left input, there is still an output
- *	with NIL in the right output, and there is a third output column
- *	containing a flag that indicates the "certainty" of the match: 1
- *	there is a match, 0, there is no match and there are no NIL
- *	values, NIL, there is no match but there are NIL values
+ *	equi-join, but the left output is sorted, if there is no match
+ *	for a value in the left input, there is still an output with NIL
+ *	in the right output, and there is a third output column
+ *	containing a flag that indicates the "certainty" of the match:
+ *	TRUE: there is a match, FALSE: there is no match and there are no
+ *	NIL values, NIL: there is no match but there are NIL values
  * BATthetajoin
  *	theta-join: an extra operator must be provided encoded as an
  *	integer (macros JOIN_EQ, JOIN_NE, JOIN_LT, JOIN_LE, JOIN_GT,
@@ -72,8 +73,9 @@
  * In addition to these functions, there are two more functions that
  * are closely related:
  * BATintersect
- *	intersection: return a candidate list with OIDs of tuples in
- *	the left input whose value occurs in the right input
+ *	intersection: return a candidate list with OIDs of tuples in the
+ *	left input whose value occurs in the right input (left output of
+ *	BATsemijoin)
  * BATdiff
  *	difference: return a candidate list with OIDs of tuples in the
  *	left input whose value does not occur in the right input
@@ -4780,7 +4782,7 @@ BATsemijoin(BAT **r1p, BAT **r2p, BAT *l, BAT *r, BAT *sl, BAT *sr,
  * at least one value for each row on the left.  If the second output
  * pointer (r2p) is NULL, this is also a semi-join, so returns exactly
  * one row for each row on the left.  If there is a match, the mark
- * column will be TRUE, of there is no match, the second output is NIL,
+ * column will be TRUE, if there is no match, the second output is NIL,
  * and the mark output is FALSE if there are no NILs in the right input,
  * and the left input is also not NIL, otherwise the mark output is
  * NIL. */
