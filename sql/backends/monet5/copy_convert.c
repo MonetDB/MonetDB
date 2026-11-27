@@ -293,7 +293,13 @@ string_sharing_bat(BUN cnt, const char *base)
 	b->tvheap = hp;
 	b->ttype = TYPE_str;
 	/* upgrade filename */
-	strtconcat(b->theap->filename, sizeof(b->theap->filename), nme, ".tail4", NULL);
+	strtconcat(b->theap->filename, sizeof(b->theap->filename), nme,
+#if SIZEOF_VAR_T == 8
+			   ".tail4",
+#else
+			   ".tail",
+#endif
+			   NULL);
 	return b;
 }
 
