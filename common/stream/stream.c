@@ -56,6 +56,7 @@
 #include "stream.h"
 #include "stream_internal.h"
 #include <stdio.h>
+#include "mstring.h"
 
 
 #ifdef HAVE_PTHREAD_H
@@ -453,11 +454,7 @@ my_strerror_r(int error_nr, char *buf, size_t buflen)
 #endif
 	if (to_move != NULL) {
 		// move to buffer
-		size_t size = strlen(to_move) + 1;
-		assert(size <= buflen);
-		// strerror_r may have return a pointer to/into the buffer
-		memmove(buf, to_move, size);
-		return size - 1;
+		return strcpy_len(buf, to_move, buflen);
 	} else {
 		return strlen(buf);
 	}
