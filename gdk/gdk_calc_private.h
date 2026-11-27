@@ -193,20 +193,20 @@
 			on_overflow;					\
 		}							\
 	} while (0)
-#endif	/* HAVE_HGE */
+#endif	/* HAVE_INT128_T */
 #define MULF4_WITH_CHECK(lft, rgt, TYPE3, dst, max, TYPE4, on_overflow) \
 	MUL4_WITH_CHECK(lft, rgt, TYPE3, dst, max, TYPE4, on_overflow)
 
-#ifdef HAVE_HGE
+#ifdef HAVE_INT128_T
 #ifdef OP_WITH_CHECK
 #define HGEMUL_CHECK(lft, rgt, dst, max, on_overflow)			\
-	OP_WITH_CHECK(lft, rgt, hge, dst, mul, max, on_overflow)
+	OP_WITH_CHECK(lft, rgt, int128_t, dst, mul, max, on_overflow)
 #else
 #define HGEMUL_CHECK(lft, rgt, dst, max, on_overflow)			\
 	do {								\
-		hge _a = (lft), _b = (rgt);				\
+		int128_t _a = (lft), _b = (rgt);			\
 		ulng _a1, _a2, _b1, _b2;				\
-		uhge _c;						\
+		uint128_t _c;						\
 		int _sign = 1;						\
 									\
 		if (_a < 0) {						\
@@ -223,16 +223,16 @@
 		_b2 = (ulng) _b;					\
 		/* result = (a1*b1<<128) + ((a1*b2+a2*b1)<<64) + a2*b2 */ \
 		if ((_a1 == 0 || _b1 == 0) &&				\
-		    ((_c = (uhge) _a1 * _b2 + (uhge) _a2 * _b1) & (~(uhge)0 << 63)) == 0 && \
-		    (((_c = (_c << 64) + (uhge) _a2 * _b2) & ((uhge) 1 << 127)) == 0) && \
-		    (_c) <= (uhge) (max)) {				\
-			(dst) = _sign * (hge) _c;			\
+		    ((_c = (uint128_t) _a1 * _b2 + (uint128_t) _a2 * _b1) & (~(uint128_t)0 << 63)) == 0 && \
+		    (((_c = (_c << 64) + (uint128_t) _a2 * _b2) & ((uint128_t) 1 << 127)) == 0) && \
+		    (_c) <= (uint128_t) (max)) {			\
+			(dst) = _sign * (int128_t) _c;			\
 		} else {						\
 			on_overflow;					\
 		}							\
 	} while (0)
 #endif	/* HAVE___BUILTIN_ADD_OVERFLOW */
-#endif	/* HAVE_HGE */
+#endif	/* HAVE_INT128_T */
 
 #define AVERAGE_ITER(TYPE, x, a, r, n)					\
 	do {								\
